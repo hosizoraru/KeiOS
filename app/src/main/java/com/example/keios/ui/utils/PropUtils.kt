@@ -1,4 +1,4 @@
-package com.example.keios.ui.page.main
+package com.example.keios.ui.utils
 
 import java.io.BufferedReader
 import java.io.InputStreamReader

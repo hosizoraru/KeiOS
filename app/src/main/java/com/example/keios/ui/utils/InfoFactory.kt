@@ -1,9 +1,11 @@
-package yuki.star.voyager.platform.voyager
+package com.example.keios.ui.utils
 
 import android.os.Build
-import yuki.star.voyager.platform.factory.findJavaPropString
-import yuki.star.voyager.platform.factory.findPropString
-import yuki.star.voyager.platform.voyager.Terminal.exec
+
+private fun exec(command: String): String = runCatching {
+    val process = Runtime.getRuntime().exec(command)
+    process.inputStream.bufferedReader().use { it.readText() }
+}.getOrDefault("")
 
 object InfoFactory {
     val procVersion
@@ -196,12 +198,10 @@ object InfoFactory {
         get() = selinux == "1"
 
     val selinuxPolicy: String
-        get() {
-            return when (selinux) {
-                "0" -> "Permissive"
-                "1" -> "Enforcing"
-                else -> "Unknown"
-            }
+        get() = when (selinux) {
+            "0" -> "Permissive"
+            "1" -> "Enforcing"
+            else -> "Unknown"
         }
 
     val preview
@@ -213,3 +213,4 @@ object InfoFactory {
     val fileSafStatus
         get() = fileSaf != "No activity found"
 }
+
