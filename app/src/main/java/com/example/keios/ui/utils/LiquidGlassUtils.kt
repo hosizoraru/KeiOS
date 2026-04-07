@@ -1,6 +1,4 @@
 package com.example.keios.ui.utils
-
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -15,7 +13,6 @@ import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.BlurDefaults
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
-import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.textureBlur
 
 @Composable
@@ -46,18 +43,10 @@ fun rememberCardBlurColors(): BlurColors {
     }
 }
 
-private fun isBlurDenylistedDevice(): Boolean {
-    val manufacturer = Build.MANUFACTURER.lowercase()
-    val brand = Build.BRAND.lowercase()
-    return manufacturer.contains("xiaomi") ||
-        brand.contains("xiaomi") ||
-        brand.contains("redmi") ||
-        brand.contains("poco")
-}
-
 fun isLiquidGlassSupported(): Boolean {
-    if (isBlurDenylistedDevice()) return false
-    return isRenderEffectSupported() || isRuntimeShaderSupported()
+    // Keep this aligned with InstallerX's stable path:
+    // enable texture blur only when RenderEffect is available.
+    return isRenderEffectSupported()
 }
 
 fun Modifier.installerXLiquidGlass(

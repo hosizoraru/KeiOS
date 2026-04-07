@@ -90,6 +90,8 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-shapes-android:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-blur-android:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-navigation3-ui-android:0.9.0")
+    implementation("io.github.kyant0:backdrop:1.0.6")
+    implementation("io.github.kyant0:capsule:2.1.3")
 
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")

@@ -11,31 +11,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.keios.ui.utils.installerXLiquidGlass
-import com.example.keios.ui.utils.rememberCardBlurColors
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.blur.LayerBackdrop
 
 @Composable
 fun FrostedBlock(
-    backdrop: LayerBackdrop?,
     title: String,
     subtitle: String,
     body: String,
     accent: Color,
 ) {
-    val cardBlurColors = rememberCardBlurColors()
-
     androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .installerXLiquidGlass(
-                backdrop = backdrop,
-                blurColors = cardBlurColors,
-                cornerRadiusDp = 22,
-                blurRadius = 52f
-            )
+            .background(Color.White.copy(alpha = 0.62f))
             .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

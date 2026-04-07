@@ -25,10 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.model.BottomPage
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
-import com.example.keios.ui.utils.isLiquidGlassSupported
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 
 @Composable
 fun MainScreen(
@@ -39,7 +37,7 @@ fun MainScreen(
 ) {
     var currentPage by remember { mutableStateOf(BottomPage.Home) }
     var clickCount by remember { mutableIntStateOf(0) }
-    val backdrop: LayerBackdrop? = if (isLiquidGlassSupported()) rememberLayerBackdrop() else null
+    val backdrop = rememberLayerBackdrop()
 
     Box(
         modifier = Modifier
@@ -50,19 +48,17 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 18.dp)
-                .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
+                .layerBackdrop(backdrop)
                 .padding(WindowInsets.safeDrawing.union(WindowInsets.navigationBars).asPaddingValues())
         ) {
             Spacer(modifier = Modifier.height(14.dp))
             if (currentPage == BottomPage.Home) {
                 HomePage(
-                    backdrop = backdrop,
                     clickCount = clickCount,
                     onPrimaryAction = { clickCount++ }
                 )
             } else {
                 AboutPage(
-                    backdrop = backdrop,
                     appLabel = appLabel,
                     packageInfo = packageInfo,
                     shizukuStatus = shizukuStatus,

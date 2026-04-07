@@ -14,11 +14,9 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.blur.LayerBackdrop
 
 @Composable
 fun AboutPage(
-    backdrop: LayerBackdrop?,
     appLabel: String,
     packageInfo: PackageInfo?,
     shizukuStatus: String,
@@ -30,7 +28,6 @@ fun AboutPage(
         Spacer(modifier = Modifier.height(14.dp))
 
         FrostedBlock(
-            backdrop = backdrop,
             title = "Shizuku",
             subtitle = "Permission Center",
             body = shizukuStatus,
@@ -48,7 +45,6 @@ fun AboutPage(
 
         Spacer(modifier = Modifier.height(12.dp))
         FrostedBlock(
-            backdrop = backdrop,
             title = appLabel,
             subtitle = "App Details",
             body = buildString {

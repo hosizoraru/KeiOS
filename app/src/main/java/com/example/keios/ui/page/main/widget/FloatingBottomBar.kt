@@ -6,40 +6,50 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.model.BottomPage
-import com.example.keios.ui.utils.installerXLiquidGlass
-import com.example.keios.ui.utils.rememberBottomBarBlurColors
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.blur.LayerBackdrop
 
 @Composable
 fun FloatingBottomBar(
-    backdrop: LayerBackdrop?,
+    backdrop: Backdrop,
     currentPage: BottomPage,
     onPageSelected: (BottomPage) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val bottomBarBlurColors = rememberBottomBarBlurColors()
-
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(999.dp))
-            .installerXLiquidGlass(
+            .height(64.dp)
+            .drawBackdrop(
                 backdrop = backdrop,
-                blurColors = bottomBarBlurColors,
-                cornerRadiusDp = 999,
-                blurRadius = 80f
+                shape = { ContinuousCapsule },
+                effects = {
+                    vibrancy()
+                    blur(8f.dp.toPx())
+                    lens(18f.dp.toPx(), 18f.dp.toPx())
+                },
+                highlight = { Highlight.Default.copy(alpha = 0.95f) },
+                shadow = { Shadow.Default.copy(color = Color.Black.copy(alpha = 0.12f)) },
+                onDrawSurface = {
+                    drawRect(Color.White.copy(alpha = 0.42f))
+                }
             )
             .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -71,7 +81,7 @@ private fun BottomBarItem(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(999.dp))
+            .background(Color.Transparent, ContinuousCapsule)
             .background(if (selected) Color(0x1A6F8FFF) else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp),
