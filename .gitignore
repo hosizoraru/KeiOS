@@ -1,0 +1,18 @@
+*.iml
+.gradle/
+.kotlin/
+local.properties
+/.idea/
+.DS_Store
+/build/
+.gradle-home/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystore
+*.jks
+*.keystore
+
+# Generated
+/app/build/
