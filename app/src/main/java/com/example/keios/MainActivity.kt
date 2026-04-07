@@ -5,6 +5,11 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,17 +32,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.keios.shizuku.ShizukuApiUtils
 import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.blur.BlendColorEntry
+import top.yukonga.miuix.kmp.blur.BlurBlendMode
+import top.yukonga.miuix.kmp.blur.BlurColors
+import top.yukonga.miuix.kmp.blur.BlurDefaults
+import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
+import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.blur.textureBlur
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Info
+import top.yukonga.miuix.kmp.icon.extended.Tasks
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -75,6 +93,7 @@ private fun KeiOSDemoScreen(
     val controller = remember { ThemeController(ColorSchemeMode.System) }
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfoCompat(context.packageName) }
+    val backdrop = rememberLayerBackdrop()
     val appLabel = remember {
         context.packageManager.getApplicationLabel(context.applicationInfo).toString()
     }
@@ -89,6 +108,7 @@ private fun KeiOSDemoScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 18.dp)
+                    .layerBackdrop(backdrop)
                     .padding(WindowInsets.safeDrawing.union(WindowInsets.navigationBars).asPaddingValues())
             ) {
                 Spacer(modifier = Modifier.height(14.dp))
@@ -109,6 +129,7 @@ private fun KeiOSDemoScreen(
             }
 
             FloatingBottomBar(
+                backdrop = backdrop,
                 currentPage = currentPage,
                 onPageSelected = { currentPage = it },
                 modifier = Modifier
@@ -236,27 +257,65 @@ private fun FrostedBlock(
 
 @Composable
 private fun FloatingBottomBar(
+    backdrop: top.yukonga.miuix.kmp.blur.LayerBackdrop,
     currentPage: BottomPage,
     onPageSelected: (BottomPage) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
+    val blurEnabled = isRenderEffectSupported() || isRuntimeShaderSupported()
+    val blurColors = remember(isDark) {
+        if (isDark) {
+            BlurColors(
+                blendColors = listOf(
+                    BlendColorEntry(Color(0x667A7A7A), BlurBlendMode.ColorBurn),
+                    BlendColorEntry(Color(0x33747474), BlurBlendMode.Overlay)
+                )
+            )
+        } else {
+            BlurColors(
+                blendColors = listOf(
+                    BlendColorEntry(Color(0x7F040404), BlurBlendMode.Overlay),
+                    BlendColorEntry(Color(0x26F1F1F1), BlurBlendMode.ColorDodge)
+                )
+            )
+        }
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(999.dp))
-            .background(Color.White.copy(alpha = 0.97f))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .textureBlur(
+                backdrop = backdrop,
+                shape = RoundedCornerShape(999.dp),
+                blurRadius = 80f,
+                noiseCoefficient = BlurDefaults.NoiseCoefficient,
+                colors = blurColors,
+                contentBlendMode = BlendMode.SrcOver,
+                enabled = blurEnabled
+            )
+            .background(
+                if (isDark) Color(0xCC1A1B22) else Color(0xB3FFFFFF)
+            )
+            .border(
+                BorderStroke(1.dp, if (isDark) Color(0x33FFFFFF) else Color(0x55FFFFFF)),
+                RoundedCornerShape(999.dp)
+            )
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         BottomBarItem(
             selected = currentPage == BottomPage.Home,
-            label = "主页",
+            label = BottomPage.Home.label,
+            icon = BottomPage.Home.icon,
             onClick = { onPageSelected(BottomPage.Home) },
             modifier = Modifier.weight(1f)
         )
         BottomBarItem(
             selected = currentPage == BottomPage.About,
-            label = "关于",
+            label = BottomPage.About.label,
+            icon = BottomPage.About.icon,
             onClick = { onPageSelected(BottomPage.About) },
             modifier = Modifier.weight(1f)
         )
@@ -267,22 +326,35 @@ private fun FloatingBottomBar(
 private fun BottomBarItem(
     selected: Boolean,
     label: String,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Column(
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (selected) Color(0xFF30354A) else Color(0xFFF0F2F7))
+            .background(
+                if (selected) Color(0x1A6F8FFF) else Color.Transparent
+            )
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text(text = label)
+        Icon(
+            imageVector = icon,
+            contentDescription = label
+        )
+        Text(text = label, modifier = Modifier.padding(top = 2.dp))
     }
 }
 
-private enum class BottomPage {
-    Home, About
+private enum class BottomPage(
+    val label: String,
+    val icon: ImageVector
+) {
+    Home("主页", MiuixIcons.Regular.Tasks),
+    About("关于", MiuixIcons.Regular.Info)
 }
 
 private fun android.content.pm.PackageManager.getPackageInfoCompat(packageName: String): PackageInfo {
