@@ -55,20 +55,28 @@ fun MainScreen(
                 .padding(WindowInsets.safeDrawing.union(WindowInsets.navigationBars).asPaddingValues())
         ) {
             Spacer(modifier = Modifier.height(14.dp))
-            if (currentPage == BottomPage.Home) {
-                HomePage(
-                    backdrop = backdrop,
-                    clickCount = clickCount,
-                    onPrimaryAction = { clickCount++ }
-                )
-            } else {
-                AboutPage(
-                    backdrop = backdrop,
-                    appLabel = appLabel,
-                    packageInfo = packageInfo,
-                    shizukuStatus = shizukuStatus,
-                    onCheckShizuku = onCheckOrRequestShizuku
-                )
+            when (currentPage) {
+                BottomPage.Home -> {
+                    HomePage(
+                        backdrop = backdrop,
+                        clickCount = clickCount,
+                        onPrimaryAction = { clickCount++ }
+                    )
+                }
+
+                BottomPage.System -> {
+                    SystemPage(backdrop = backdrop)
+                }
+
+                BottomPage.About -> {
+                    AboutPage(
+                        backdrop = backdrop,
+                        appLabel = appLabel,
+                        packageInfo = packageInfo,
+                        shizukuStatus = shizukuStatus,
+                        onCheckShizuku = onCheckOrRequestShizuku
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(110.dp))
         }

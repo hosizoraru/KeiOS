@@ -10,5 +10,6 @@ enum class BottomPage(
     val icon: ImageVector
 ) {
     Home("主页", MiuixIcons.Regular.Tasks),
+    System("系统", MiuixIcons.Regular.Info),
     About("关于", MiuixIcons.Regular.Info)
 }
