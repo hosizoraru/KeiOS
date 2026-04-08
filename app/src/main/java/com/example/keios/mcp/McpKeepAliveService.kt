@@ -8,8 +8,21 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class McpKeepAliveService : Service() {
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var heartbeatJob: Job? = null
+    private var currentRunning: Boolean = false
+    private var currentPort: Int = 38888
+    private var currentPath: String = "/mcp"
+    private var currentClients: Int = 0
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -17,6 +30,7 @@ class McpKeepAliveService : Service() {
         McpNotificationHelper.ensureChannel(this)
         when (intent?.action) {
             ACTION_STOP -> {
+                stopHeartbeat()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 return START_NOT_STICKY
@@ -25,11 +39,19 @@ class McpKeepAliveService : Service() {
             ACTION_START,
             ACTION_UPDATE,
             null -> {
+                val running = intent?.getBooleanExtra(EXTRA_RUNNING, false) == true
+                val port = intent?.getIntExtra(EXTRA_PORT, 38888) ?: 38888
+                val path = intent?.getStringExtra(EXTRA_PATH).orEmpty().ifBlank { "/mcp" }
+                val clients = intent?.getIntExtra(EXTRA_CLIENTS, 0) ?: 0
+                currentRunning = running
+                currentPort = port
+                currentPath = path
+                currentClients = clients
                 val notification = buildNotification(
-                    running = intent?.getBooleanExtra(EXTRA_RUNNING, false) == true,
-                    port = intent?.getIntExtra(EXTRA_PORT, 38888) ?: 38888,
-                    path = intent?.getStringExtra(EXTRA_PATH).orEmpty().ifBlank { "/mcp" },
-                    clients = intent?.getIntExtra(EXTRA_CLIENTS, 0) ?: 0
+                    running = running,
+                    port = port,
+                    path = path,
+                    clients = clients
                 )
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     startForeground(
@@ -40,10 +62,24 @@ class McpKeepAliveService : Service() {
                 } else {
                     startForeground(McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID, notification)
                 }
+                McpNotificationHelper.refreshForegroundAsIsland(
+                    context = this,
+                    running = running,
+                    port = port,
+                    path = path,
+                    clients = clients
+                )
+                startHeartbeat()
                 return START_STICKY
             }
         }
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        stopHeartbeat()
+        serviceScope.cancel()
+        super.onDestroy()
     }
 
     private fun buildNotification(
@@ -60,6 +96,29 @@ class McpKeepAliveService : Service() {
             clients = clients,
             ongoing = true
         )
+    }
+
+    private fun startHeartbeat() {
+        if (!currentRunning) return
+        heartbeatJob?.cancel()
+        heartbeatJob = serviceScope.launch {
+            while (true) {
+                delay(18_000)
+                if (!currentRunning) continue
+                McpNotificationHelper.refreshForegroundPulse(
+                    context = this@McpKeepAliveService,
+                    running = currentRunning,
+                    port = currentPort,
+                    path = currentPath,
+                    clients = currentClients
+                )
+            }
+        }
+    }
+
+    private fun stopHeartbeat() {
+        heartbeatJob?.cancel()
+        heartbeatJob = null
     }
 
     companion object {

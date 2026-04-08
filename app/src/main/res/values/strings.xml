@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">KeiOSDemo</string>
     <string name="mcp_keepalive_channel_name">MCP KeepAlive</string>
-    <string name="mcp_keepalive_channel_desc">用于维持 MCP Server 前台保活</string>
-    <string name="mcp_island_channel_name">MCP Super Island</string>
-    <string name="mcp_island_channel_desc">用于显示 HyperOS 超级岛 MCP 状态</string>
+    <string name="mcp_keepalive_channel_desc">用于维持 MCP Server 前台保活并显示超级岛信息</string>
 </resources>

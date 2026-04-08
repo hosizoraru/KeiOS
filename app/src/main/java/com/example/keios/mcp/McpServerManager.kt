@@ -204,22 +204,12 @@ class McpServerManager(
     @Synchronized
     fun stop() {
         stopInternal()
-        val stoppedState = _uiState.value.copy(
+        _uiState.value = _uiState.value.copy(
             running = false,
             connectedClients = 0,
             lastError = null
         )
-        _uiState.value = stoppedState
         runCatching { McpKeepAliveService.stop(appContext) }
-        runCatching {
-            McpNotificationHelper.notifyIslandStatus(
-                context = appContext,
-                running = false,
-                port = stoppedState.port,
-                path = stoppedState.endpointPath,
-                clients = 0
-            )
-        }
         appendLog("INFO", "MCP server stopped")
     }
 
@@ -335,13 +325,6 @@ class McpServerManager(
                 path = state.endpointPath,
                 clients = state.connectedClients,
                 forceStart = forceStart
-            )
-            McpNotificationHelper.notifyIslandStatus(
-                context = appContext,
-                running = true,
-                port = state.port,
-                path = state.endpointPath,
-                clients = state.connectedClients
             )
         }.onFailure {
             appendLog("WARN", "KeepAlive notification update failed: ${it.message ?: it.javaClass.simpleName}")

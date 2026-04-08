@@ -1,5 +1,7 @@
 package com.example.keios.mcp
 
+import android.app.Notification
+import android.app.PendingIntent
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Icon
@@ -12,7 +14,11 @@ object McpIslandNotificationBuilder {
         context: Context,
         title: String,
         content: String,
-        shortText: String
+        shortText: String,
+        statusText: String,
+        onlineText: String,
+        openPendingIntent: PendingIntent,
+        stopPendingIntent: PendingIntent
     ) = runCatching {
         val lightIcon = Icon.createWithResource(context, R.drawable.ic_notification_logo).setTint(Color.BLACK)
         val darkIcon = Icon.createWithResource(context, R.drawable.ic_notification_logo).setTint(Color.WHITE)
@@ -22,7 +28,7 @@ object McpIslandNotificationBuilder {
             val darkIconKey = createPicture("mcp_logo_dark", darkIcon)
 
             islandFirstFloat = true
-            enableFloat = true
+            enableFloat = false
             updatable = true
             ticker = shortText
             tickerPic = lightIconKey
@@ -32,16 +38,15 @@ object McpIslandNotificationBuilder {
                 islandProperty = 1
                 bigIslandArea {
                     imageTextInfoLeft {
-                        type = 1
-                        picInfo {
-                            type = 1
-                            pic = lightIconKey
+                        type = 3
+                        textInfo {
+                            this.title = statusText
                         }
                     }
                     imageTextInfoRight {
                         type = 3
                         textInfo {
-                            this.title = shortText
+                            this.title = onlineText
                         }
                     }
                 }
@@ -74,6 +79,30 @@ object McpIslandNotificationBuilder {
                 picDark = darkIconKey
             }
 
+            textButton {
+                addActionInfo {
+                    val openAction = Notification.Action.Builder(
+                        Icon.createWithResource(context, R.drawable.ic_notification_logo),
+                        "打开",
+                        openPendingIntent
+                    ).build()
+                    action = createAction("mcp_action_open", openAction)
+                    actionTitle = "打开"
+                    actionBgColor = "#006EFF"
+                    actionBgColorDark = "#006EFF"
+                    actionTitleColor = "#FFFFFF"
+                    actionTitleColorDark = "#FFFFFF"
+                }
+                addActionInfo {
+                    val stopAction = Notification.Action.Builder(
+                        Icon.createWithResource(context, R.drawable.ic_notification_logo),
+                        "停止",
+                        stopPendingIntent
+                    ).build()
+                    action = createAction("mcp_action_stop", stopAction)
+                    actionTitle = "停止"
+                }
+            }
         }
     }.getOrNull()
 }

@@ -16,10 +16,9 @@ import rikka.shizuku.Shizuku
 object McpNotificationHelper {
 
     const val CHANNEL_ID = "mcp_keepalive_channel"
-    const val CHANNEL_ID_ISLAND = "mcp_super_island_channel"
     const val KEEPALIVE_NOTIFICATION_ID = 38888
-    private const val TEST_NOTIFICATION_ID = 38889
-    private const val ISLAND_STATUS_NOTIFICATION_ID = 38890
+    private const val TEST_NOTIFICATION_ID = KEEPALIVE_NOTIFICATION_ID
+    private const val ACTION_STOP = "com.example.keios.mcp.keepalive.STOP"
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -28,23 +27,13 @@ object McpNotificationHelper {
             val keepalive = NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.mcp_keepalive_channel_name),
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = context.getString(R.string.mcp_keepalive_channel_desc)
                 setShowBadge(false)
+                enableVibration(false)
             }
             manager.createNotificationChannel(keepalive)
-        }
-        if (manager.getNotificationChannel(CHANNEL_ID_ISLAND) == null) {
-            val island = NotificationChannel(
-                CHANNEL_ID_ISLAND,
-                context.getString(R.string.mcp_island_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = context.getString(R.string.mcp_island_channel_desc)
-                setShowBadge(false)
-            }
-            manager.createNotificationChannel(island)
         }
     }
 
@@ -62,15 +51,26 @@ object McpNotificationHelper {
         } else {
             "点击返回应用重新启动 MCP 服务"
         }
-        val shortText = if (running) "MCP $port" else "MCP Offline"
+        val statusText = if (running) "运行中" else "已停止"
+        val onlineText = "在线 $clients"
+        val shortText = if (running) "$statusText · $onlineText" else "MCP Offline"
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         val openPendingIntent = PendingIntent.getActivity(
             context,
             1101,
             openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val stopIntent = Intent(context, McpKeepAliveService::class.java).apply {
+            action = ACTION_STOP
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            context,
+            1102,
+            stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -80,88 +80,27 @@ object McpNotificationHelper {
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText("$content\nEndpoint: http://127.0.0.1:$port$path"))
             .setContentIntent(openPendingIntent)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(ongoing)
-            .setOnlyAlertOnce(true)
-
-        McpIslandNotificationBuilder.buildExtras(
-            context = context,
-            title = title,
-            content = content,
-            shortText = shortText
-        )?.let(builder::addExtras)
-
-        return builder.build()
-    }
-
-    fun buildIslandNotification(
-        context: Context,
-        running: Boolean,
-        port: Int,
-        path: String,
-        clients: Int,
-        forTest: Boolean
-    ): android.app.Notification {
-        val title = if (running) "MCP Server 在线" else "MCP Server 通知测试"
-        val content = if (running) {
-            "MCP 协议 · 端口 $port · 在线 $clients"
-        } else {
-            "MCP 协议 · 端口 $port$path"
-        }
-        val shortText = if (running) "MCP ${port} Online" else "MCP Test"
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        }
-        val openPendingIntent = PendingIntent.getActivity(
-            context,
-            1201,
-            openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID_ISLAND)
-            .setSmallIcon(R.drawable.ic_notification_logo)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setStyle(NotificationCompat.BigTextStyle().bigText("$content\nEndpoint: http://127.0.0.1:$port$path"))
-            .setContentIntent(openPendingIntent)
+            .addAction(R.drawable.ic_notification_logo, "打开", openPendingIntent)
+            .addAction(R.drawable.ic_notification_logo, "停止", stopPendingIntent)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setOngoing(running && !forTest)
-            .setOnlyAlertOnce(!forTest)
-            .setAutoCancel(forTest)
+            .setOngoing(ongoing)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
 
         McpIslandNotificationBuilder.buildExtras(
             context = context,
             title = title,
             content = content,
-            shortText = shortText
+            shortText = shortText,
+            statusText = statusText,
+            onlineText = onlineText,
+            openPendingIntent = openPendingIntent,
+            stopPendingIntent = stopPendingIntent
         )?.let(builder::addExtras)
 
         return builder.build()
-    }
-
-    fun notifyIslandStatus(
-        context: Context,
-        running: Boolean,
-        port: Int,
-        path: String,
-        clients: Int
-    ) {
-        ensureChannel(context)
-        val notification = buildIslandNotification(
-            context = context,
-            running = running,
-            port = port,
-            path = path,
-            clients = clients,
-            forTest = false
-        )
-        notifyWithXiaomiMagic(
-            context = context,
-            notificationId = ISLAND_STATUS_NOTIFICATION_ID,
-            notification = notification
-        )
     }
 
     fun notifyTest(
@@ -172,18 +111,62 @@ object McpNotificationHelper {
         clients: Int
     ) {
         ensureChannel(context)
-        val notification = buildIslandNotification(
+        val notification = buildForegroundNotification(
             context = context,
             running = running,
             port = port,
             path = path,
             clients = clients,
-            forTest = true
+            ongoing = running
         )
         notifyWithXiaomiMagic(
             context = context,
             notificationId = TEST_NOTIFICATION_ID,
             notification = notification
+        )
+    }
+
+    fun refreshForegroundAsIsland(
+        context: Context,
+        running: Boolean,
+        port: Int,
+        path: String,
+        clients: Int
+    ) {
+        ensureChannel(context)
+        val notification = buildForegroundNotification(
+            context = context,
+            running = running,
+            port = port,
+            path = path,
+            clients = clients,
+            ongoing = true
+        )
+        notifyWithXiaomiMagic(
+            context = context,
+            notificationId = KEEPALIVE_NOTIFICATION_ID,
+            notification = notification
+        )
+    }
+
+    fun refreshForegroundPulse(
+        context: Context,
+        running: Boolean,
+        port: Int,
+        path: String,
+        clients: Int
+    ) {
+        ensureChannel(context)
+        NotificationManagerCompat.from(context).notify(
+            KEEPALIVE_NOTIFICATION_ID,
+            buildForegroundNotification(
+                context = context,
+                running = running,
+                port = port,
+                path = path,
+                clients = clients,
+                ongoing = true
+            )
         )
     }
 
