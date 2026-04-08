@@ -35,8 +35,6 @@ fun HomePage(
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
     val shizukuState = when {
         shizukuGranted -> "已授权"
-        shizukuStatus.contains("denied", ignoreCase = true) -> "已拒绝"
-        shizukuStatus.contains("unavailable", ignoreCase = true) -> "服务不可用"
         else -> "待检查"
     }
 
@@ -63,10 +61,11 @@ fun HomePage(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                MiuixInfoItem("MCP Server", "${if (mcpRunning) "运行中" else "未运行"} · 在线 $mcpConnectedClients")
-                MiuixInfoItem("MCP Endpoint", "$mcpPort 端口 · MCP 协议")
+                MiuixInfoItem(
+                    "MCP Server",
+                    "${if (mcpRunning) "运行中" else "未运行"} · 在线 $mcpConnectedClients · $mcpPort 端口 · MCP 协议"
+                )
                 MiuixInfoItem("Shizuku 授权", "$shizukuState · API $shizukuApiVersion")
-                MiuixInfoItem("Shizuku 详情", "$shizukuStatus（API $shizukuApiVersion）")
             }
         )
     }

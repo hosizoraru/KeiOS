@@ -58,6 +58,7 @@ fun MainScreen(
     var systemScrollToTopSignal by remember { mutableIntStateOf(0) }
     var aboutScrollToTopSignal by remember { mutableIntStateOf(0) }
     var mcpScrollToTopSignal by remember { mutableIntStateOf(0) }
+    var githubScrollToTopSignal by remember { mutableIntStateOf(0) }
     var showBottomBar by remember { mutableStateOf(true) }
     var liquidBottomBarEnabled by remember { mutableStateOf(UiPrefs.isLiquidBottomBarEnabled()) }
     val backdrop: Backdrop = rememberLayerBackdrop()
@@ -136,6 +137,14 @@ fun MainScreen(
                     )
                 }
 
+                BottomPage.GitHub -> {
+                    GitHubPage(
+                        backdrop = backdrop,
+                        contentBottomPadding = bottomOverlayPadding,
+                        scrollToTopSignal = githubScrollToTopSignal
+                    )
+                }
+
                 BottomPage.Settings -> {
                     SettingsPage(
                         backdrop = backdrop,
@@ -178,6 +187,9 @@ fun MainScreen(
                         }
                         if (selected == BottomPage.Mcp) {
                             mcpScrollToTopSignal++
+                        }
+                        if (selected == BottomPage.GitHub) {
+                            githubScrollToTopSignal++
                         }
                     } else {
                         currentPage = selected
