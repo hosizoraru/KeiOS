@@ -5,8 +5,12 @@ import android.content.Context
 import android.content.pm.FeatureInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,7 +36,9 @@ import com.example.keios.ui.utils.getAllSystemProperties
 import com.kyant.backdrop.Backdrop
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import java.text.SimpleDateFormat
@@ -76,12 +83,41 @@ private object TopInfoKeys {
     )
 
     val secure = linkedSetOf(
+        "AIRPODS_ADAPTER_JAR_ENABLE",
+        "FBO_STATE_OPEN",
+        "FBO_UPLOAD_LIST",
+        "FBO_UPLOAD_TIME",
+        "fbo_app_size",
+        "fbo_remaining_minutes",
+        "fbo_status",
+        "KEY_FBO_DATA",
+        "aod_category_name",
+        "aod_mode_user_set",
+        "aod_show_style",
+        "aod_style_state",
+        "assistant",
+        "auto_download",
+        "auto_update",
+        "autofill_user_data_max_category_count",
+        "backup_transport",
+        "bluetooth_name",
+        "customize_icon_init_time",
+        "enabled_accessibility_services",
+        "enabled_input_methods",
+        "entity_config_key_voice_assistant",
         "share_camera",
         "share_launcher",
         "share_unlock",
         "theme_rear_widget",
         "voice_interaction_service",
-        "voice_recognition_service"
+        "voice_recognition_service",
+        "package_verifier_state",
+        "packageinstaller_first_boot_time",
+        "pc_security_center_last_fully_charge_time",
+        "autofill_service",
+        "autofill_service_search_uri",
+        "credential_service",
+        "credential_service_primary"
     )
 
     val global = linkedSetOf(
@@ -126,7 +162,237 @@ private object TopInfoKeys {
         "task_stack_view_layout_style",
         "upload_apk_enable",
         "usb_mass_storage_enabled",
-        "xiaomi_mi_play_last_playing_package_name"
+        "xiaomi_mi_play_last_playing_package_name",
+        "zram_enabled"
+    )
+
+    val android = linkedSetOf(
+        "graphics.opengl.es",
+        "graphics.vulkan.version",
+        "prop.ro.hardware.egl",
+        "prop.ro.hardware.vulkan",
+        "feature.bluetooth_le",
+        "feature.wifi_aware",
+        "dalvik.vm.appimageformat",
+        "dalvik.vm.background-dex2oat-threads",
+        "dalvik.vm.boot-dex2oat-threads",
+        "dalvik.vm.dex2oat-Xms",
+        "dalvik.vm.dex2oat-Xmx",
+        "dalvik.vm.dex2oat-max-image-block-size",
+        "dalvik.vm.dex2oat-resolve-startup-strings",
+        "dalvik.vm.dex2oat-threads",
+        "dalvik.vm.dex2oat64.enabled",
+        "dalvik.vm.dexopt.secondary",
+        "dalvik.vm.dexopt.thermal-cutoff",
+        "dalvik.vm.enable_pr_dexopt",
+        "dalvik.vm.isa.arm64.variant",
+        "dalvik.vm.usejit",
+        "debug.device.battery_level_state",
+        "debug.device.usb_state",
+        "debug.hwui.skia_atrace_enabled",
+        "debug.tracing.battery_status",
+        "debug.tracing.screen_brightness",
+        "gsm.network.type",
+        "gsm.operator.alpha",
+        "gsm.operator.iso-country",
+        "gsm.operator.orig.alpha",
+        "gsm.sim.state",
+        "gsm.version.baseband",
+        "persist.audio.effect.device_map",
+        "persist.radio.modem_build_datetime",
+        "persist.radio.modem_release_datetime",
+        "persist.sys.computility.cpulevel",
+        "persist.sys.computility.gpulevel",
+        "persist.sys.computility.version",
+        "persist.sys.device_config_gki",
+        "persist.sys.device_name",
+        "persist.sys.grant_version",
+        "persist.sys.locale",
+        "persist.sys.memory.totalsize",
+        "persist.sys.memory.user_freesize",
+        "persist.sys.misight.detecttime",
+        "persist.sys.miui_art_ota_time",
+        "persist.sys.miui_gnss_dc",
+        "persist.sys.miui_resolution",
+        "persist.sys.updater.version",
+        "persist.sys.usb.config",
+        "persist.sys.xms.version",
+        "persist.sys.xring_extm.enable",
+        "persist.sys.zygote.last_pid",
+        "persist.sys.zygote.start_pid",
+        "persist.vendor.audio.effectimplenter",
+        "pm.dexopt.ab-ota",
+        "pm.dexopt.baseline",
+        "pm.dexopt.bg-dexopt",
+        "pm.dexopt.boot-after-mainline-update",
+        "pm.dexopt.boot-after-ota",
+        "pm.dexopt.boot-after-ota.concurrency",
+        "pm.dexopt.cmdline",
+        "pm.dexopt.first-boot",
+        "pm.dexopt.first-use",
+        "pm.dexopt.inactive",
+        "pm.dexopt.install",
+        "pm.dexopt.install-bulk",
+        "pm.dexopt.install-bulk-downgraded",
+        "pm.dexopt.install-bulk-secondary",
+        "pm.dexopt.install-bulk-secondary-downgraded",
+        "pm.dexopt.install-create-dm",
+        "pm.dexopt.install-fast",
+        "pm.dexopt.post-boot",
+        "pm.dexopt.secondary",
+        "pm.dexopt.shared",
+        "qcom.hw.aac.encoder",
+        "ro.adb.secure",
+        "ro.ai.os.version.code",
+        "ro.ai.os.version.name",
+        "ro.apex.updatable",
+        "ro.board.api_frozen",
+        "ro.board.api_level",
+        "ro.board.first_api_level",
+        "ro.board.platform",
+        "ro.boot.avb_version",
+        "ro.boot.baseband",
+        "ro.boot.flash.locked",
+        "ro.boot.hardware",
+        "ro.boot.hardware.cpu.pagesize",
+        "ro.boot.hardware.sku",
+        "ro.boot.hwc",
+        "ro.boot.hwlevel",
+        "ro.boot.hwversion",
+        "ro.boot.hypervisor.version",
+        "ro.boot.vbmeta.avb_version",
+        "ro.boot.vbmeta.device_state",
+        "ro.boot.verifiedbootstate",
+        "ro.boot.veritymode",
+        "ro.bootimage.build.version.sdk_full",
+        "ro.build.ab_update",
+        "ro.build.date",
+        "ro.build.description",
+        "ro.build.display.id",
+        "ro.build.fingerprint",
+        "ro.build.flavor",
+        "ro.build.hardware.version",
+        "ro.build.host",
+        "ro.build.id",
+        "ro.build.product",
+        "ro.build.tags",
+        "ro.build.type",
+        "ro.build.user",
+        "ro.build.version.all_codenames",
+        "ro.build.version.codename",
+        "ro.build.version.incremental",
+        "ro.build.version.min_supported_target_sdk",
+        "ro.build.version.preview_sdk",
+        "ro.build.version.preview_sdk_fingerprint",
+        "ro.build.version.release",
+        "ro.build.version.release_or_codename",
+        "ro.build.version.release_or_preview_display",
+        "ro.build.version.sdk",
+        "ro.build.version.sdk_full",
+        "ro.build.version.security_patch",
+        "ro.com.google.clientidbase",
+        "ro.fota.oem",
+        "ro.frp.pst",
+        "ro.gfx.driver.1",
+        "ro.hardware",
+        "ro.hardware.egl",
+        "ro.hardware.vulkan",
+        "ro.kernel.version",
+        "ro.llndk.api_level",
+        "ro.logd.size",
+        "ro.logd.size.stats",
+        "ro.mediaserver.64b.enable",
+        "ro.mi.os.soc.vendor",
+        "ro.mi.os.version.code",
+        "ro.mi.os.version.incremental",
+        "ro.mi.os.version.name",
+        "ro.mi.os.version.publish",
+        "ro.mi.xms.version.incremental",
+        "ro.millet.netlink",
+        "ro.miui.build.region",
+        "ro.miui.business.version",
+        "ro.miui.has_gmscore",
+        "ro.miui.mcc",
+        "ro.miui.mnc",
+        "ro.miui.product.home",
+        "ro.miui.region",
+        "ro.miui.support_miui_ime_bottom",
+        "ro.miui.ui.font.mi_font_path",
+        "ro.miui.ui.font.mi_fonts_customization_xml",
+        "ro.miui.ui.version.code",
+        "ro.miui.ui.version.name",
+        "ro.netflix.bsp_rev",
+        "ro.odm.build.date",
+        "ro.odm.build.fingerprint",
+        "ro.odm.build.media_performance_class",
+        "ro.odm.build.version.incremental",
+        "ro.opengles.version",
+        "ro.product.bootimage.cert",
+        "ro.product.bootimage.marketname",
+        "ro.product.brand",
+        "ro.product.build.date",
+        "ro.product.build.fingerprint",
+        "ro.product.build.id",
+        "ro.product.build.version.incremental",
+        "ro.product.camera.livephoto.support",
+        "ro.product.cert",
+        "ro.product.cpu.abi",
+        "ro.product.cpu.abilist",
+        "ro.product.cpu.abilist64",
+        "ro.product.cpu.pagesize.max",
+        "ro.product.device",
+        "ro.product.first_api_level",
+        "ro.product.manufacturer",
+        "ro.product.marketname",
+        "ro.product.mod_device",
+        "ro.product.model",
+        "ro.product.name",
+        "ro.product.vendor.model",
+        "ro.product.vendor.name",
+        "ro.secureboot.devicelock",
+        "ro.secureboot.lockstate",
+        "ro.sf.lcd_density",
+        "ro.sf.lcd_sec_density",
+        "ro.soc.model",
+        "ro.system.build.date",
+        "ro.system.build.fingerprint",
+        "ro.system.build.id",
+        "ro.system.build.version.incremental",
+        "ro.system.product.cpu.abilist",
+        "ro.vendor.api_level",
+        "ro.vendor.audio.dolby.dax.version",
+        "ro.vendor.build.date",
+        "ro.vendor.build.security_patch",
+        "ro.vendor.display.dynamic_refresh_rate",
+        "ro.vendor.mi_fake_32bit_support",
+        "ro.vendor.mi_sf.new_dynamic_refresh_rate",
+        "ro.vendor.mi_support_zygote32_lazyload",
+        "ro.zygote",
+        "rust.runtime_active",
+        "rust.runtime_version",
+        "sys.abreuse.size",
+        "sys.debug.graphic_buffer_maxsize",
+        "sys.ota.type",
+        "sys.power.starttimes",
+        "sys.usb.adb.disabled",
+        "sys.usb.config",
+        "sys.usb.configfs",
+        "sys.usb.controller",
+        "sys.usb.mtp.batchcancel",
+        "sys.usb.mtp.device_type",
+        "tango.debug",
+        "tango.enabled",
+        "tango.pretrans.apk",
+        "tango.pretrans.debug",
+        "tango.pretrans.lib",
+        "tango.pretrans.max_size",
+        "tango.pretrans_on_install",
+        "vendor.display.default_resolution",
+        "vendor.display.lcd_density",
+        "vendor.display.lcd_sec_density",
+        "vendor.qvirtmgr.oemvm.status",
+        "vendor.qvirtmgr.trustedvm.status",
+        "vendor.xiaomi.trustedvm.version"
     )
 
     val java = linkedSetOf(
@@ -393,9 +659,9 @@ private fun removeTopInfoRows(section: SectionKind, rows: List<InfoRow>): List<I
         SectionKind.SYSTEM -> TopInfoKeys.system
         SectionKind.SECURE -> TopInfoKeys.secure
         SectionKind.GLOBAL -> TopInfoKeys.global
+        SectionKind.ANDROID -> TopInfoKeys.android
         SectionKind.JAVA -> TopInfoKeys.java
         SectionKind.LINUX -> TopInfoKeys.linux
-        SectionKind.ANDROID -> emptySet()
     }
     return rows.filterNot { keySet.contains(it.key) }
 }
@@ -406,12 +672,14 @@ private fun buildTopInfoRows(
     systemRows: List<InfoRow>,
     secureRows: List<InfoRow>,
     globalRows: List<InfoRow>,
+    androidRows: List<InfoRow>,
     javaRows: List<InfoRow>,
     linuxRows: List<InfoRow>
 ): List<InfoRow> {
     val systemMap = mapRows(systemRows)
     val secureMap = mapRows(secureRows)
     val globalMap = mapRows(globalRows)
+    val androidMap = mapRows(androidRows)
     val javaMap = mapRows(javaRows)
     val linuxMap = mapRows(linuxRows)
 
@@ -419,9 +687,85 @@ private fun buildTopInfoRows(
     TopInfoKeys.system.forEach { key -> systemMap[key]?.let { rows += InfoRow("System.$key", it) } }
     TopInfoKeys.secure.forEach { key -> secureMap[key]?.let { rows += InfoRow("Secure.$key", it) } }
     TopInfoKeys.global.forEach { key -> globalMap[key]?.let { rows += InfoRow("Global.$key", it) } }
+    TopInfoKeys.android.forEach { key -> androidMap[key]?.let { rows += InfoRow("Android.$key", it) } }
     TopInfoKeys.java.forEach { key -> javaMap[key]?.let { rows += InfoRow("Java.$key", it) } }
     TopInfoKeys.linux.forEach { key -> linuxMap[key]?.let { rows += InfoRow("Linux.$key", it) } }
     return cleanRows(rows)
+}
+
+private data class ExportSections(
+    val topInfo: List<InfoRow>,
+    val system: List<InfoRow>,
+    val secure: List<InfoRow>,
+    val global: List<InfoRow>,
+    val android: List<InfoRow>,
+    val java: List<InfoRow>,
+    val linux: List<InfoRow>
+)
+
+private fun buildExportSections(
+    context: Context,
+    shizukuStatus: String,
+    shizukuApiUtils: ShizukuApiUtils
+): ExportSections {
+    val system = buildSectionRows(SectionKind.SYSTEM, context, shizukuStatus, shizukuApiUtils)
+    val secure = buildSectionRows(SectionKind.SECURE, context, shizukuStatus, shizukuApiUtils)
+    val global = buildSectionRows(SectionKind.GLOBAL, context, shizukuStatus, shizukuApiUtils)
+    val android = buildSectionRows(SectionKind.ANDROID, context, shizukuStatus, shizukuApiUtils)
+    val java = buildSectionRows(SectionKind.JAVA, context, shizukuStatus, shizukuApiUtils)
+    val linux = buildSectionRows(SectionKind.LINUX, context, shizukuStatus, shizukuApiUtils)
+    val topInfo = buildTopInfoRows(system, secure, global, android, java, linux)
+
+    return ExportSections(
+        topInfo = topInfo,
+        system = removeTopInfoRows(SectionKind.SYSTEM, system),
+        secure = removeTopInfoRows(SectionKind.SECURE, secure),
+        global = removeTopInfoRows(SectionKind.GLOBAL, global),
+        android = removeTopInfoRows(SectionKind.ANDROID, android),
+        java = removeTopInfoRows(SectionKind.JAVA, java),
+        linux = removeTopInfoRows(SectionKind.LINUX, linux)
+    )
+}
+
+private fun escapeMarkdown(text: String): String {
+    return text.replace("|", "\\|").replace("\n", "<br>")
+}
+
+private fun appendSectionMarkdown(builder: StringBuilder, title: String, rows: List<InfoRow>) {
+    builder.appendLine("## $title")
+    if (rows.isEmpty()) {
+        builder.appendLine("_No data_")
+        builder.appendLine()
+        return
+    }
+    builder.appendLine("| Key | Value |")
+    builder.appendLine("| --- | --- |")
+    rows.forEach { row ->
+        builder.appendLine("| ${escapeMarkdown(row.key)} | ${escapeMarkdown(row.value)} |")
+    }
+    builder.appendLine()
+}
+
+private fun buildSystemMarkdown(
+    generatedAt: String,
+    shizukuStatus: String,
+    sections: ExportSections
+): String {
+    return buildString {
+        appendLine("# KeiOS System Export")
+        appendLine()
+        appendLine("- Generated at: $generatedAt")
+        appendLine("- Shizuku status: $shizukuStatus")
+        appendLine("- Format: Markdown")
+        appendLine()
+        appendSectionMarkdown(this, "TopInfo", sections.topInfo)
+        appendSectionMarkdown(this, "System Table", sections.system)
+        appendSectionMarkdown(this, "Secure Table", sections.secure)
+        appendSectionMarkdown(this, "Global Table", sections.global)
+        appendSectionMarkdown(this, "Android Properties", sections.android)
+        appendSectionMarkdown(this, "Java Properties", sections.java)
+        appendSectionMarkdown(this, "Linux environment", sections.linux)
+    }
 }
 
 @Composable
@@ -433,6 +777,7 @@ fun SystemPage(
     contentBottomPadding: Dp = 72.dp
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val cached = remember { SystemInfoCache.read() }
     var query by remember { mutableStateOf("") }
@@ -444,6 +789,24 @@ fun SystemPage(
     var javaPropsExpanded by remember { mutableStateOf(false) }
     var linuxEnvExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    var pendingExportContent by remember { mutableStateOf<String?>(null) }
+    var exportPreparing by remember { mutableStateOf(false) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/markdown")
+    ) { uri ->
+        val content = pendingExportContent
+        if (uri == null || content.isNullOrBlank()) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openOutputStream(uri)?.bufferedWriter().use { writer ->
+                writer?.write(content)
+            }
+        }.onSuccess {
+            Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Toast.makeText(context, "导出失败: ${it.javaClass.simpleName}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     var sectionStates by remember {
         mutableStateOf(
@@ -515,13 +878,14 @@ fun SystemPage(
     val javaRows = sectionStates[SectionKind.JAVA]?.rows ?: emptyList()
     val linuxRows = sectionStates[SectionKind.LINUX]?.rows ?: emptyList()
 
-    val topInfoRows = remember(systemRows, secureRows, globalRows, javaRows, linuxRows) {
-        buildTopInfoRows(systemRows, secureRows, globalRows, javaRows, linuxRows)
+    val topInfoRows = remember(systemRows, secureRows, globalRows, androidRows, javaRows, linuxRows) {
+        buildTopInfoRows(systemRows, secureRows, globalRows, androidRows, javaRows, linuxRows)
     }
 
     val prunedSystemRows = remember(systemRows) { removeTopInfoRows(SectionKind.SYSTEM, systemRows) }
     val prunedSecureRows = remember(secureRows) { removeTopInfoRows(SectionKind.SECURE, secureRows) }
     val prunedGlobalRows = remember(globalRows) { removeTopInfoRows(SectionKind.GLOBAL, globalRows) }
+    val prunedAndroidRows = remember(androidRows) { removeTopInfoRows(SectionKind.ANDROID, androidRows) }
     val prunedJavaRows = remember(javaRows) { removeTopInfoRows(SectionKind.JAVA, javaRows) }
     val prunedLinuxRows = remember(linuxRows) { removeTopInfoRows(SectionKind.LINUX, linuxRows) }
 
@@ -530,7 +894,7 @@ fun SystemPage(
     val filteredSystemRows = remember(q, prunedSystemRows) { filterRows(prunedSystemRows, q) }
     val filteredSecureRows = remember(q, prunedSecureRows) { filterRows(prunedSecureRows, q) }
     val filteredGlobalRows = remember(q, prunedGlobalRows) { filterRows(prunedGlobalRows, q) }
-    val filteredAndroidRows = remember(q, androidRows) { filterRows(androidRows, q) }
+    val filteredAndroidRows = remember(q, prunedAndroidRows) { filterRows(prunedAndroidRows, q) }
     val filteredJavaRows = remember(q, prunedJavaRows) { filterRows(prunedJavaRows, q) }
     val filteredLinuxRows = remember(q, prunedLinuxRows) { filterRows(prunedLinuxRows, q) }
 
@@ -551,6 +915,28 @@ fun SystemPage(
                 .verticalScroll(scrollState)
                 .padding(bottom = contentBottomPadding)
         ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        if (exportPreparing) return@Button
+                        exportPreparing = true
+                        scope.launch {
+                            val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                            val markdown = withContext(Dispatchers.IO) {
+                                val exportSections = buildExportSections(context, shizukuStatus, shizukuApiUtils)
+                                buildSystemMarkdown(generatedAt, shizukuStatus, exportSections)
+                            }
+                            val fileName = "keios-system-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())}.md"
+                            pendingExportContent = markdown
+                            exportPreparing = false
+                            exportLauncher.launch(fileName)
+                        }
+                    }
+                ) {
+                    Text(if (exportPreparing) "准备导出..." else "导出 Markdown")
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(text = "System", modifier = Modifier.padding(top = 6.dp))
             Text(text = "系统参数与属性", modifier = Modifier.padding(top = 4.dp))
             Spacer(modifier = Modifier.height(10.dp))
