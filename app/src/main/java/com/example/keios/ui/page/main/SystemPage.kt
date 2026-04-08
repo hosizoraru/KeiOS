@@ -1,25 +1,23 @@
 package com.example.keios.ui.page.main
 
 import android.os.Build
-import java.util.Locale
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.keios.ui.page.main.widget.FrostedBlock
+import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.utils.InfoFactory
 import com.example.keios.ui.utils.ShizukuApiUtils
 import com.example.keios.ui.utils.findJavaPropString
@@ -27,7 +25,7 @@ import com.example.keios.ui.utils.findPropString
 import com.example.keios.ui.utils.getAllJavaPropString
 import com.example.keios.ui.utils.getAllSystemProperties
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.Button
+import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 
@@ -39,7 +37,11 @@ fun SystemPage(
     shizukuApiUtils: ShizukuApiUtils
 ) {
     var query by remember { mutableStateOf("") }
+    var keyInfoExpanded by remember { mutableStateOf(true) }
+    var infoFactoryExpanded by remember { mutableStateOf(true) }
+    var lowLevelExpanded by remember { mutableStateOf(false) }
     var systemPropsExpanded by remember { mutableStateOf(false) }
+    var javaPropsExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(scrollToTopSignal) {
@@ -119,30 +121,25 @@ fun SystemPage(
             "ls -l /dev/block/by-name/super (Shizuku) = ${privileged("ls -l /dev/block/by-name/super", "N/A")}"
         )
     }
+
     val systemProps = remember { getAllSystemProperties.toSortedMap() }
     val javaProps = remember { getAllJavaPropString.toSortedMap() }
     val q = query.trim()
-    val keyInfoText = remember(q, keyInfoLines) {
-        keyInfoLines.filter { q.isEmpty() || it.contains(q, true) }.joinToString("\n")
+
+    val filteredKeyInfoLines = remember(q, keyInfoLines) {
+        keyInfoLines.filter { q.isEmpty() || it.contains(q, true) }
     }
-    val infoFactoryText = remember(q, infoFactoryLines) {
-        infoFactoryLines.filter { q.isEmpty() || it.contains(q, true) }.joinToString("\n")
+    val filteredInfoFactoryLines = remember(q, infoFactoryLines) {
+        infoFactoryLines.filter { q.isEmpty() || it.contains(q, true) }
     }
-    val lowLevelDetectorText = remember(q, lowLevelDetectorLines) {
-        lowLevelDetectorLines.filter { q.isEmpty() || it.contains(q, true) }.joinToString("\n")
+    val filteredLowLevelLines = remember(q, lowLevelDetectorLines) {
+        lowLevelDetectorLines.filter { q.isEmpty() || it.contains(q, true) }
     }
     val filteredSystemProps = remember(q, systemProps) {
-        systemProps.entries
-            .filter { q.isEmpty() || it.key.contains(q, true) || it.value.contains(q, true) }
+        systemProps.entries.filter { q.isEmpty() || it.key.contains(q, true) || it.value.contains(q, true) }
     }
-    val systemPropsText = remember(filteredSystemProps, systemPropsExpanded) {
-        val displayEntries = if (systemPropsExpanded) filteredSystemProps else filteredSystemProps.take(24)
-        displayEntries.joinToString("\n") { "${it.key} = ${it.value}" }
-    }
-    val javaPropsText = remember(q, javaProps) {
-        javaProps.entries
-            .filter { q.isEmpty() || it.key.contains(q, true) || it.value.contains(q, true) }
-            .joinToString("\n") { "${it.key} = ${it.value}" }
+    val filteredJavaProps = remember(q, javaProps) {
+        javaProps.entries.filter { q.isEmpty() || it.key.contains(q, true) || it.value.contains(q, true) }
     }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -164,55 +161,75 @@ fun SystemPage(
             )
             Spacer(modifier = Modifier.height(14.dp))
 
-            FrostedBlock(
+            MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Key Info",
-                subtitle = "System / Java properties",
-                body = keyInfoText.ifBlank { "No matched results." },
-                accent = Color(0xFF5F9DFF)
-            )
+                subtitle = "${filteredKeyInfoLines.size} 条",
+                expanded = keyInfoExpanded,
+                onExpandedChange = { keyInfoExpanded = it }
+            ) {
+                Text(
+                    text = filteredKeyInfoLines.joinToString("\n").ifBlank { "No matched results." }
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
-            FrostedBlock(
+
+            MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "InfoFactory",
-                subtitle = "Migrated utils snapshot",
-                body = infoFactoryText.ifBlank { "No matched results." },
-                accent = Color(0xFF7E8CFF)
-            )
+                subtitle = "${filteredInfoFactoryLines.size} 条",
+                expanded = infoFactoryExpanded,
+                onExpandedChange = { infoFactoryExpanded = it }
+            ) {
+                Text(
+                    text = filteredInfoFactoryLines.joinToString("\n").ifBlank { "No matched results." }
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
-            FrostedBlock(
+
+            MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "AndroidLowLevelDetector",
-                subtitle = "Merged property set + Shizuku privileged probes",
-                body = lowLevelDetectorText.ifBlank { "No matched results." },
-                accent = Color(0xFF6D7B8A)
-            )
+                subtitle = "${filteredLowLevelLines.size} 条",
+                expanded = lowLevelExpanded,
+                onExpandedChange = { lowLevelExpanded = it }
+            ) {
+                Text(
+                    text = filteredLowLevelLines.joinToString("\n").ifBlank { "No matched results." }
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
-            FrostedBlock(
+
+            MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "getprop",
-                subtitle = if (systemPropsExpanded) {
-                    "All ${filteredSystemProps.size} entries"
-                } else {
-                    "Showing ${minOf(24, filteredSystemProps.size)}/${filteredSystemProps.size} entries"
-                },
-                body = systemPropsText.ifBlank { "No matched results." },
-                accent = Color(0xFF6ECF9C)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = { systemPropsExpanded = !systemPropsExpanded }
+                subtitle = "${filteredSystemProps.size} 条（默认收纳）",
+                expanded = systemPropsExpanded,
+                onExpandedChange = { systemPropsExpanded = it }
             ) {
-                Text(if (systemPropsExpanded) "收起 getprop" else "展开 getprop")
+                Text(
+                    text = filteredSystemProps.joinToString("\n") { "${it.key} = ${it.value}" }
+                        .ifBlank { "No matched results." }
+                )
             }
+
             Spacer(modifier = Modifier.height(12.dp))
-            FrostedBlock(
+
+            MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Java Properties",
-                subtitle = "All ${javaProps.size} entries",
-                body = javaPropsText.ifBlank { "No matched results." },
-                accent = Color(0xFFFFB26B)
-            )
+                subtitle = "${filteredJavaProps.size} 条",
+                expanded = javaPropsExpanded,
+                onExpandedChange = { javaPropsExpanded = it }
+            ) {
+                Text(
+                    text = filteredJavaProps.joinToString("\n") { "${it.key} = ${it.value}" }
+                        .ifBlank { "No matched results." }
+                )
+            }
         }
     }
 }
