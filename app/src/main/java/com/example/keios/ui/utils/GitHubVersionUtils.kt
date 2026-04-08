@@ -305,6 +305,11 @@ object GitHubVersionUtils {
         return info.versionName ?: "unknown"
     }
 
+    fun localVersionCode(context: Context, packageName: String): Long {
+        val info = context.packageManager.getPackageInfoCompat(packageName)
+        return info.longVersionCode
+    }
+
     private fun request(url: String, followRedirects: Boolean = true): Pair<Int, String> {
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"

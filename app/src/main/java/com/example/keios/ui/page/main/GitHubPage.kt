@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -71,6 +72,7 @@ import top.yukonga.miuix.kmp.window.WindowListPopup
 private data class VersionCheckUi(
     val loading: Boolean = false,
     val localVersion: String = "",
+    val localVersionCode: Long = -1L,
     val latestTag: String = "",
     val hasUpdate: Boolean? = null,
     val message: String = "",
@@ -126,6 +128,8 @@ fun GitHubPage(
         return withContext(Dispatchers.IO) {
                 val local = runCatching { GitHubVersionUtils.localVersionName(context, item.packageName) }
                     .getOrDefault("unknown")
+                val localVersionCode = runCatching { GitHubVersionUtils.localVersionCode(context, item.packageName) }
+                    .getOrDefault(-1L)
                 val atomEntries = GitHubVersionUtils.fetchReleaseEntriesFromAtom(item.owner, item.repo)
                     .getOrDefault(emptyList())
                 val matchedEntry = atomEntries.firstOrNull {
@@ -172,6 +176,7 @@ fun GitHubPage(
                         VersionCheckUi(
                             loading = false,
                             localVersion = local,
+                            localVersionCode = localVersionCode,
                             latestTag = signals.displayVersion,
                             hasUpdate = hasUpdate,
                             message = message,
@@ -193,6 +198,7 @@ fun GitHubPage(
                             VersionCheckUi(
                                 loading = false,
                                 localVersion = local,
+                                localVersionCode = localVersionCode,
                                 latestTag = matchedEntry.title.ifBlank { matchedEntry.tag },
                                 hasUpdate = latestPre != null,
                                 message = when {
@@ -212,6 +218,8 @@ fun GitHubPage(
                         } else {
                             VersionCheckUi(
                                 loading = false,
+                                localVersion = local,
+                                localVersionCode = localVersionCode,
                                 message = "检查失败: ${err.message ?: "unknown"}",
                                 preReleaseInfo = "",
                                 showPreReleaseInfo = false,
@@ -406,12 +414,12 @@ fun GitHubPage(
                         headerActions = {
                             val state = checkStates[item.id] ?: VersionCheckUi()
                             val statusText = when {
-                                state.loading -> "检查中"
-                                state.hasPreReleaseUpdate -> "预发有更新"
-                                state.isPreRelease -> "预发行"
-                                state.hasUpdate == true -> "有更新"
-                                state.hasUpdate == false -> "最新"
-                                else -> "待检查"
+                                state.loading -> "⏳"
+                                state.hasPreReleaseUpdate -> "🧪⬆"
+                                state.isPreRelease -> "🧪"
+                                state.hasUpdate == true -> "⬆"
+                                state.hasUpdate == false -> "✅"
+                                else -> "•"
                             }
                             val statusColor = when {
                                 state.loading -> MiuixTheme.colorScheme.onBackgroundVariant
@@ -436,31 +444,20 @@ fun GitHubPage(
                             Text(
                                 text = statusText,
                                 color = statusColor,
+                                fontWeight = FontWeight.Bold,
                                 modifier = clickableModifier
                             )
                         }
                     ) {
                         val state = checkStates[item.id] ?: VersionCheckUi()
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            AppIcon(
-                                packageName = item.packageName,
-                                size = 36.dp
-                            )
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(item.appLabel, color = MiuixTheme.colorScheme.onBackground)
-                                Text(
-                                    text = item.packageName,
-                                    color = MiuixTheme.colorScheme.primary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.clickable {
-                                        refreshItem(item, showToastOnError = true)
-                                        Toast.makeText(context, "已刷新 ${item.appLabel}", Toast.LENGTH_SHORT).show()
-                                    }
-                                )
+                        MiuixInfoItem(
+                            "应用包名（点击刷新）",
+                            item.packageName,
+                            onClick = {
+                                refreshItem(item, showToastOnError = true)
+                                Toast.makeText(context, "已刷新 ${item.appLabel}", Toast.LENGTH_SHORT).show()
                             }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        )
                         MiuixInfoItem(
                             "仓库地址",
                             item.repoUrl,
@@ -476,19 +473,46 @@ fun GitHubPage(
                         if (state.localVersion.isNotBlank()) {
                             Row {
                                 Text("本地 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                Text(state.localVersion, color = MiuixTheme.colorScheme.primary)
+                                val localText = if (state.localVersionCode >= 0L) {
+                                    "${state.localVersion} (${state.localVersionCode})"
+                                } else {
+                                    state.localVersion
+                                }
+                                Text(
+                                    localText,
+                                    color = MiuixTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                         if (state.latestTag.isNotBlank()) {
+                            val latestColor = if (state.hasUpdate == true) {
+                                MiuixTheme.colorScheme.error
+                            } else {
+                                MiuixTheme.colorScheme.secondary
+                            }
                             Row {
                                 Text("稳定 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                Text(state.latestTag, color = MiuixTheme.colorScheme.secondary)
+                                Text(
+                                    state.latestTag,
+                                    color = latestColor,
+                                    fontWeight = if (state.hasUpdate == true) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         }
                         if (state.showPreReleaseInfo && state.preReleaseInfo.isNotBlank()) {
+                            val preColor = if (state.hasPreReleaseUpdate) {
+                                MiuixTheme.colorScheme.error
+                            } else {
+                                MiuixTheme.colorScheme.secondary
+                            }
                             Row {
                                 Text("预发 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                Text(state.preReleaseInfo, color = MiuixTheme.colorScheme.error)
+                                Text(
+                                    state.preReleaseInfo,
+                                    color = preColor,
+                                    fontWeight = if (state.hasPreReleaseUpdate) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         }
                     }
