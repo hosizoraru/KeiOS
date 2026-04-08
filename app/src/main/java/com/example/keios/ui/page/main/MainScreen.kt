@@ -40,6 +40,7 @@ import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.model.BottomPage
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.utils.ShizukuApiUtils
+import com.example.keios.ui.utils.UiPrefs
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 
@@ -59,6 +60,7 @@ fun MainScreen(
     var aboutScrollToTopSignal by remember { mutableIntStateOf(0) }
     var mcpScrollToTopSignal by remember { mutableIntStateOf(0) }
     var showBottomBar by remember { mutableStateOf(true) }
+    var liquidBottomBarEnabled by remember { mutableStateOf(UiPrefs.isLiquidBottomBarEnabled()) }
     val manufacturer = Build.MANUFACTURER.lowercase()
     val brand = Build.BRAND.lowercase()
     val isBackdropSafe = !(manufacturer.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco"))
@@ -137,6 +139,17 @@ fun MainScreen(
                         scrollToTopSignal = mcpScrollToTopSignal
                     )
                 }
+
+                BottomPage.Settings -> {
+                    SettingsPage(
+                        backdrop = backdrop,
+                        liquidBottomBarEnabled = liquidBottomBarEnabled,
+                        onLiquidBottomBarChanged = {
+                            liquidBottomBarEnabled = it
+                            UiPrefs.setLiquidBottomBarEnabled(it)
+                        }
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(bottomOverlayPadding))
         }
@@ -157,6 +170,7 @@ fun MainScreen(
             FloatingBottomBar(
                 backdrop = backdrop,
                 currentPage = currentPage,
+                liquidGlassEnabled = liquidBottomBarEnabled,
                 onPageSelected = { selected ->
                     showBottomBar = true
                     if (selected == currentPage) {
@@ -174,7 +188,7 @@ fun MainScreen(
                     }
                 },
                 modifier = Modifier
-                    .padding(horizontal = 22.dp, vertical = 12.dp + navigationBarBottom)
+                    .padding(horizontal = 12.dp, vertical = 12.dp + navigationBarBottom)
             )
         }
     }
