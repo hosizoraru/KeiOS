@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import com.tencent.mmkv.MMKV
 import org.json.JSONArray
 import org.json.JSONObject
@@ -80,6 +81,25 @@ object GitHubTrackStore {
 }
 
 object GitHubVersionUtils {
+    fun buildReleaseUrl(owner: String, repo: String): String {
+        return "https://github.com/$owner/$repo/releases"
+    }
+
+    fun buildAppListPermissionIntent(context: Context): Intent? {
+        val pm = context.packageManager
+        val miuiIntent = Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+            putExtra("extra_pkgname", context.packageName)
+        }
+        if (miuiIntent.resolveActivity(pm) != null) return miuiIntent
+
+        val detailIntent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            android.net.Uri.parse("package:${context.packageName}")
+        )
+        if (detailIntent.resolveActivity(pm) != null) return detailIntent
+        return null
+    }
+
     fun parseOwnerRepo(input: String): Pair<String, String>? {
         val normalized = input.trim().let { raw ->
             if (raw.startsWith("http://") || raw.startsWith("https://")) raw else "https://$raw"
@@ -117,6 +137,16 @@ object GitHubVersionUtils {
     }
 
     fun compareVersion(local: String, remote: String): Int? {
+        val localCore = extractNumericCore(local)
+        val remoteCore = extractNumericCore(remote)
+        if (localCore != null && remoteCore != null) {
+            val coreCmp = compareNumericCore(localCore, remoteCore)
+            if (coreCmp != 0) return coreCmp
+            // Ignore build/commit suffix differences when numeric core is the same,
+            // e.g. 2.0.3 and 2.0.3-634166078 are treated as the same version.
+            return 0
+        }
+
         val a = tokenizeVersion(local)
         val b = tokenizeVersion(remote)
         if (a.isEmpty() || b.isEmpty()) return null
@@ -140,22 +170,26 @@ object GitHubVersionUtils {
 
     fun queryInstalledLaunchableApps(context: Context): List<InstalledAppItem> {
         val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+        val packages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
         } else {
             @Suppress("DEPRECATION")
-            pm.queryIntentActivities(intent, 0)
+            pm.getInstalledPackages(0)
         }
-        return resolveInfos
-            .mapNotNull { info ->
-                val pkg = info.activityInfo?.packageName ?: return@mapNotNull null
-                val label = runCatching { info.loadLabel(pm).toString() }
-                    .getOrDefault(pkg)
+        return packages
+            .asSequence()
+            .filter { info -> pm.getLaunchIntentForPackage(info.packageName) != null }
+            .map { info ->
+                val pkg = info.packageName
+                val appInfo = info.applicationInfo
+                val label = runCatching {
+                    if (appInfo != null) pm.getApplicationLabel(appInfo).toString() else pkg
+                }.getOrDefault(pkg)
                 InstalledAppItem(label = label.ifBlank { pkg }, packageName = pkg)
             }
             .distinctBy { it.packageName }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
+            .toList()
     }
 
     fun localVersionName(context: Context, packageName: String): String {
@@ -202,6 +236,30 @@ object GitHubVersionUtils {
             .removePrefix("v")
             .split(Regex("[^0-9a-zA-Z]+"))
             .filter { it.isNotBlank() }
+    }
+
+    private fun extractNumericCore(raw: String): List<Long>? {
+        val input = raw.lowercase(Locale.ROOT).removePrefix("v")
+        val match = Regex("\\d+(?:\\.\\d+)+").find(input) ?: return null
+        val numbers = match.value.split(".").mapNotNull { it.toLongOrNull() }
+        if (numbers.isEmpty()) return null
+        return trimTrailingZeros(numbers)
+    }
+
+    private fun compareNumericCore(a: List<Long>, b: List<Long>): Int {
+        val max = maxOf(a.size, b.size)
+        for (i in 0 until max) {
+            val ai = a.getOrElse(i) { 0L }
+            val bi = b.getOrElse(i) { 0L }
+            if (ai != bi) return ai.compareTo(bi)
+        }
+        return 0
+    }
+
+    private fun trimTrailingZeros(value: List<Long>): List<Long> {
+        var end = value.size
+        while (end > 1 && value[end - 1] == 0L) end--
+        return value.subList(0, end)
     }
 }
 

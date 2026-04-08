@@ -1,6 +1,10 @@
 package com.example.keios.ui.page.main
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -64,19 +68,43 @@ fun GitHubPage(
     var pickerExpanded by remember { mutableStateOf(false) }
     var selectedApp by remember { mutableStateOf<InstalledAppItem?>(null) }
     var appList by remember { mutableStateOf<List<InstalledAppItem>>(emptyList()) }
+    var appListLoaded by remember { mutableStateOf(false) }
+    var hasAutoRequestedPermission by remember { mutableStateOf(false) }
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
+
+    suspend fun reloadApps() {
+        appList = withContext(Dispatchers.IO) {
+            GitHubVersionUtils.queryInstalledLaunchableApps(context)
+        }
+        appListLoaded = true
+    }
+
+    val appListPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            scope.launch { reloadApps() }
+        }
 
     LaunchedEffect(Unit) {
         trackedItems.clear()
         trackedItems.addAll(GitHubTrackStore.load())
-        appList = withContext(Dispatchers.IO) {
-            GitHubVersionUtils.queryInstalledLaunchableApps(context)
-        }
+        reloadApps()
     }
 
     LaunchedEffect(scrollToTopSignal) {
         if (scrollToTopSignal > 0) scrollState.animateScrollTo(0)
+    }
+
+    LaunchedEffect(appListLoaded, appList) {
+        if (appListLoaded && appList.isEmpty() && !hasAutoRequestedPermission) {
+            hasAutoRequestedPermission = true
+            val intent = GitHubVersionUtils.buildAppListPermissionIntent(context)
+            if (intent != null) {
+                appListPermissionLauncher.launch(intent)
+            } else {
+                Toast.makeText(context, "无法打开权限页面，请手动到系统设置授权", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun refreshItem(item: GitHubTrackedApp) {
@@ -126,11 +154,26 @@ fun GitHubPage(
             .verticalScroll(scrollState)
             .padding(bottom = contentBottomPadding)
     ) {
-        Text(
-            text = "GitHub",
-            color = MiuixTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = 6.dp)
-        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                text = "GitHub",
+                color = MiuixTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+            Button(
+                modifier = Modifier.padding(top = 2.dp),
+                onClick = {
+                    if (trackedItems.isEmpty()) {
+                        Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
+                    } else {
+                        trackedItems.forEach { refreshItem(it) }
+                        Toast.makeText(context, "已开始检查全部跟踪", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            ) {
+                Text("检查")
+            }
+        }
         Text(
             text = "项目版本跟踪",
             color = MiuixTheme.colorScheme.onBackgroundVariant,
@@ -144,6 +187,16 @@ fun GitHubPage(
             subtitle = "输入 GitHub 仓库并绑定本机 App",
             accent = MiuixTheme.colorScheme.primary
         ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                StatusPill(
+                    label = if (!appListLoaded) "应用列表读取中" else if (appList.isNotEmpty()) "应用列表可用" else "应用列表受限",
+                    color = if (appList.isNotEmpty()) MiuixTheme.colorScheme.secondary else MiuixTheme.colorScheme.error
+                )
+                Row {
+                    Button(onClick = { scope.launch { reloadApps() } }) { Text("刷新列表") }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             TextField(
                 value = repoUrlInput,
                 onValueChange = { repoUrlInput = it },
@@ -234,31 +287,59 @@ fun GitHubPage(
             MiuixInfoItem("跟踪列表", "暂无条目，请先新增")
         } else {
             trackedItems.forEach { item ->
-                var expanded by remember(item.id) { mutableStateOf(true) }
+                var expanded by remember(item.id) { mutableStateOf(false) }
                 MiuixExpandableSection(
                     backdrop = backdrop,
                     title = "${item.owner}/${item.repo}",
                     subtitle = item.appLabel,
                     expanded = expanded,
-                    onExpandedChange = { expanded = it }
+                    onExpandedChange = { expanded = it },
+                    headerActions = {
+                        val state = checkStates[item.id] ?: VersionCheckUi()
+                        val statusText = when {
+                            state.loading -> "检查中"
+                            state.hasUpdate == true -> "有更新"
+                            state.hasUpdate == false -> "最新"
+                            else -> "待检查"
+                        }
+                        val statusColor = when {
+                            state.loading -> MiuixTheme.colorScheme.onBackgroundVariant
+                            state.hasUpdate == true -> MiuixTheme.colorScheme.error
+                            state.hasUpdate == false -> MiuixTheme.colorScheme.secondary
+                            else -> MiuixTheme.colorScheme.onBackgroundVariant
+                        }
+                        val clickableModifier = if (state.hasUpdate == true) {
+                            Modifier.clickable {
+                                val releaseUrl = GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
+                                runCatching {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl)))
+                                }.onFailure {
+                                    Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            Modifier
+                        }
+                        Text(
+                            text = statusText,
+                            color = statusColor,
+                            modifier = clickableModifier
+                        )
+                    }
                 ) {
                     val state = checkStates[item.id] ?: VersionCheckUi()
-                    val statusColor = when {
-                        state.loading -> MiuixTheme.colorScheme.onBackgroundVariant
-                        state.hasUpdate == true -> MiuixTheme.colorScheme.error
-                        else -> MiuixTheme.colorScheme.secondary
-                    }
-                    StatusPill(
-                        label = when {
-                            state.loading -> "检查中"
-                            state.hasUpdate == true -> "可更新"
-                            state.message.isNotBlank() -> state.message
-                            else -> "待检查"
-                        },
-                        color = statusColor
+                    MiuixInfoItem(
+                        "仓库地址",
+                        item.repoUrl,
+                        onClick = {
+                            val releaseUrl = GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl)))
+                            }.onFailure {
+                                Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    MiuixInfoItem("仓库地址", item.repoUrl)
                     MiuixInfoItem("应用包名", item.packageName)
                     if (state.localVersion.isNotBlank()) MiuixInfoItem("本地版本", state.localVersion)
                     if (state.latestTag.isNotBlank()) MiuixInfoItem("GitHub Latest Tag", state.latestTag)
