@@ -33,8 +33,11 @@ import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -84,7 +87,11 @@ fun McpPage(
                     Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
                 }
             ) {
-                Text("刷新")
+                Icon(
+                    imageVector = MiuixIcons.Regular.Refresh,
+                    contentDescription = "刷新",
+                    tint = MiuixTheme.colorScheme.onPrimary
+                )
             }
         }
         Text(text = "MCP Server 功能", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))

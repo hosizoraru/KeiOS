@@ -45,8 +45,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private data class VersionCheckUi(
@@ -296,7 +300,11 @@ fun GitHubPage(
                         modifier = Modifier.padding(top = 2.dp),
                         onClick = { showSortPopup = !showSortPopup }
                     ) {
-                        Text("排序")
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Sort,
+                            contentDescription = "排序",
+                            tint = MiuixTheme.colorScheme.onPrimary
+                        )
                     }
                     if (showSortPopup) {
                         Popup(
@@ -331,7 +339,11 @@ fun GitHubPage(
                     modifier = Modifier.padding(top = 2.dp),
                     onClick = { refreshAllTracked(showToast = true) }
                 ) {
-                    Text("检查")
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Refresh,
+                        contentDescription = "检查",
+                        tint = MiuixTheme.colorScheme.onPrimary
+                    )
                 }
             }
         }

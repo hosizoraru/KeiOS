@@ -16,7 +16,10 @@ import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -40,9 +43,10 @@ fun SettingsPage(
                 Text(text = "Settings", color = titleColor)
                 Text(text = "界面与样式", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
             }
-            Text(
-                text = "返回",
-                color = MiuixTheme.colorScheme.primary,
+            Icon(
+                imageVector = MiuixIcons.Regular.Back,
+                contentDescription = "返回",
+                tint = MiuixTheme.colorScheme.primary,
                 modifier = Modifier
                     .clickable { onBack() }
                     .padding(top = 4.dp)
