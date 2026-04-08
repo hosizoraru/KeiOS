@@ -30,6 +30,21 @@ data class InstalledAppItem(
     val packageName: String
 )
 
+data class GitHubReleaseVersionSignals(
+    val displayVersion: String,
+    val rawTag: String,
+    val rawName: String,
+    val candidates: List<String>
+)
+
+data class GitHubAtomReleaseEntry(
+    val tag: String,
+    val title: String,
+    val link: String,
+    val candidates: List<String>,
+    val isLikelyPreRelease: Boolean
+)
+
 object GitHubTrackStore {
     private const val KV_ID = "github_track_store"
     private const val KEY_ITEMS = "tracked_items"
@@ -118,22 +133,67 @@ object GitHubVersionUtils {
         }.getOrNull()
     }
 
-    fun fetchLatestTag(owner: String, repo: String): Result<String> {
+    fun fetchLatestReleaseSignals(owner: String, repo: String): Result<GitHubReleaseVersionSignals> {
         val releaseUrl = "https://api.github.com/repos/$owner/$repo/releases/latest"
         return requestJsonObject(releaseUrl).fold(
             onSuccess = { obj ->
                 val tag = obj.optString("tag_name").trim()
-                if (tag.isNotBlank()) Result.success(tag) else Result.failure(IllegalStateException("release tag 为空"))
+                val name = obj.optString("name").trim()
+                val candidates = collectVersionCandidates(tag, name)
+                val display = when {
+                    tag.isNotBlank() && name.isNotBlank() -> "$tag ($name)"
+                    tag.isNotBlank() -> tag
+                    name.isNotBlank() -> name
+                    else -> "unknown"
+                }
+                if (candidates.isNotEmpty()) {
+                    Result.success(
+                        GitHubReleaseVersionSignals(
+                            displayVersion = display,
+                            rawTag = tag,
+                            rawName = name,
+                            candidates = candidates
+                        )
+                    )
+                } else {
+                    Result.failure(IllegalStateException("release 版本信息为空"))
+                }
             },
             onFailure = {
                 val tagsUrl = "https://api.github.com/repos/$owner/$repo/tags"
                 requestJsonArray(tagsUrl).mapCatching { array ->
                     val latest = array.optJSONObject(0)?.optString("name").orEmpty().trim()
                     require(latest.isNotBlank()) { "tag 列表为空" }
-                    latest
+                    GitHubReleaseVersionSignals(
+                        displayVersion = latest,
+                        rawTag = latest,
+                        rawName = "",
+                        candidates = collectVersionCandidates(latest, "")
+                    )
                 }
             }
         )
+    }
+
+    fun fetchReleaseEntriesFromAtom(owner: String, repo: String, limit: Int = 20): Result<List<GitHubAtomReleaseEntry>> {
+        val atomUrl = "https://github.com/$owner/$repo/releases.atom"
+        return runCatching {
+            val (_, body) = request(atomUrl)
+            parseAtomEntries(body).take(limit)
+        }
+    }
+
+    fun compareVersionToCandidates(local: String, candidates: List<String>): Int? {
+        val results = candidates.mapNotNull { compareVersion(local, it) }
+        if (results.isEmpty()) return null
+        if (results.any { it == 0 }) return 0
+        val hasLower = results.any { it < 0 }
+        val hasHigher = results.any { it > 0 }
+        return when {
+            hasLower && !hasHigher -> -1
+            hasHigher && !hasLower -> 1
+            else -> null
+        }
     }
 
     fun compareVersion(local: String, remote: String): Int? {
@@ -236,6 +296,82 @@ object GitHubVersionUtils {
             .removePrefix("v")
             .split(Regex("[^0-9a-zA-Z]+"))
             .filter { it.isNotBlank() }
+    }
+
+    private fun collectVersionCandidates(tag: String, name: String): List<String> {
+        val set = linkedSetOf<String>()
+        if (tag.isNotBlank()) set += tag
+        if (name.isNotBlank()) set += name
+        set += extractPossibleVersionStrings(tag)
+        set += extractPossibleVersionStrings(name)
+        return set
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toList()
+    }
+
+    private fun extractPossibleVersionStrings(raw: String): List<String> {
+        if (raw.isBlank()) return emptyList()
+        val regex = Regex("v?\\d+(?:\\.\\d+)+(?:[-+._][0-9A-Za-z]+)*")
+        return regex.findAll(raw)
+            .map { it.value.trim() }
+            .filter { it.isNotBlank() }
+            .toList()
+    }
+
+    private fun parseAtomEntries(xml: String): List<GitHubAtomReleaseEntry> {
+        if (xml.isBlank()) return emptyList()
+        return Regex("<entry>(.*?)</entry>", RegexOption.DOT_MATCHES_ALL)
+            .findAll(xml)
+            .mapNotNull { match ->
+                val block = match.groupValues.getOrNull(1).orEmpty()
+                val link = Regex("<link[^>]*href=\"([^\"]*?/releases/tag/[^\"]+)\"")
+                    .find(block)
+                    ?.groupValues
+                    ?.getOrNull(1)
+                    .orEmpty()
+                val title = Regex("<title>(.*?)</title>", RegexOption.DOT_MATCHES_ALL)
+                    .find(block)
+                    ?.groupValues
+                    ?.getOrNull(1)
+                    .orEmpty()
+                    .trim()
+                val tag = Regex("/releases/tag/([^\"/<>]+)")
+                    .find(link)
+                    ?.groupValues
+                    ?.getOrNull(1)
+                    .orEmpty()
+                    .trim()
+                if (tag.isBlank() && title.isBlank()) return@mapNotNull null
+                val isLikelyPreRelease = isLikelyPreReleaseText("$tag $title")
+                GitHubAtomReleaseEntry(
+                    tag = tag,
+                    title = title,
+                    link = link,
+                    candidates = collectVersionCandidates(tag, title),
+                    isLikelyPreRelease = isLikelyPreRelease
+                )
+            }
+            .toList()
+    }
+
+    private fun isLikelyPreReleaseText(raw: String): Boolean {
+        val s = raw.lowercase(Locale.ROOT)
+        val markers = listOf(
+            "pre-release",
+            "prerelease",
+            "alpha",
+            "beta",
+            "rc",
+            "preview",
+            "nightly",
+            "canary",
+            "dev",
+            "snapshot"
+        )
+        if (markers.any { it in s }) return true
+        // Typical semantic pre-release marker: 1.2.3-xxx
+        return Regex("v?\\d+(?:\\.\\d+)+-[0-9a-z]+").containsMatchIn(s)
     }
 
     private fun extractNumericCore(raw: String): List<Long>? {

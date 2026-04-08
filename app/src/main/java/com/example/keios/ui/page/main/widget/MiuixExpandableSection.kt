@@ -84,7 +84,7 @@ fun MiuixExpandableSection(
                     headerActions?.invoke()
                     if (headerActions != null) Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (expanded) "收起" else "展开",
+                        text = if (expanded) "˄" else "˅",
                         color = MiuixTheme.colorScheme.primary
                     )
                 }
