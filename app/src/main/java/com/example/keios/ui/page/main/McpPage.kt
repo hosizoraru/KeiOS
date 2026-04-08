@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.mcp.McpServerManager
@@ -158,19 +156,14 @@ fun McpPage(
                 .padding(bottom = contentBottomPadding)
         ) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pointerInput(uiState.running, uiState.port, uiState.allowExternal, uiState.connectedClients) {
-                        detectTapGestures(
-                            onTap = { toggleServer() },
-                            onLongPress = { showEditSheet = true }
-                        )
-                    },
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.defaultColors(
                     color = if (uiState.running) overviewGreen else overviewRed,
                     contentColor = titleColor
                 ),
-                showIndication = false
+                showIndication = true,
+                onClick = toggleServer,
+                onLongPress = { showEditSheet = true }
             ) {
                 Column(
                     modifier = Modifier
