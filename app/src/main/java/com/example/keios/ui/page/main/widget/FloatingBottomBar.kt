@@ -68,17 +68,17 @@ fun FloatingBottomBar(
             modifier = Modifier.weight(1f)
         )
         BottomBarItem(
-            selected = currentPage == BottomPage.About,
-            label = BottomPage.About.label,
-            icon = BottomPage.About.icon,
-            onClick = { onPageSelected(BottomPage.About) },
-            modifier = Modifier.weight(1f)
-        )
-        BottomBarItem(
             selected = currentPage == BottomPage.Mcp,
             label = BottomPage.Mcp.label,
             icon = BottomPage.Mcp.icon,
             onClick = { onPageSelected(BottomPage.Mcp) },
+            modifier = Modifier.weight(1f)
+        )
+        BottomBarItem(
+            selected = currentPage == BottomPage.About,
+            label = BottomPage.About.label,
+            icon = BottomPage.About.icon,
+            onClick = { onPageSelected(BottomPage.About) },
             modifier = Modifier.weight(1f)
         )
     }

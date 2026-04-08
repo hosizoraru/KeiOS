@@ -23,8 +23,9 @@ fun FrostedBlock(
     backdrop: Backdrop?,
     title: String,
     subtitle: String,
-    body: String,
+    body: String = "",
     accent: Color,
+    content: (@Composable () -> Unit)? = null
 ) {
     androidx.compose.foundation.layout.Column(
         modifier = Modifier
@@ -60,6 +61,12 @@ fun FrostedBlock(
             }
         }
         Text(text = subtitle, modifier = Modifier.padding(top = 8.dp))
-        Text(text = body, modifier = Modifier.padding(top = 8.dp))
+        if (content != null) {
+            androidx.compose.foundation.layout.Column(modifier = Modifier.padding(top = 8.dp)) {
+                content()
+            }
+        } else if (body.isNotBlank()) {
+            Text(text = body, modifier = Modifier.padding(top = 8.dp))
+        }
     }
 }

@@ -28,11 +28,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.ShizukuApiUtils
 import com.example.keios.ui.utils.getAllJavaPropString
 import com.example.keios.ui.utils.getAllSystemProperties
@@ -1117,6 +1120,8 @@ fun SystemPage(
             else -> "$size 条"
         }
     }
+    val loadedFreshCount = sectionStates.values.count { it.loadedFresh }
+    val cachedSectionCount = sectionStates.values.count { !it.loadedFresh && it.rows.isNotEmpty() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = "System", modifier = Modifier.padding(top = 6.dp))
@@ -1146,6 +1151,32 @@ fun SystemPage(
                 Text(if (exportPreparing) "准备导出..." else "导出")
             }
         }
+        Spacer(modifier = Modifier.height(10.dp))
+        FrostedBlock(
+            backdrop = backdrop,
+            title = "Overview",
+            subtitle = "系统信息加载状态",
+            accent = Color(0xFF5B8FFF),
+            content = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatusPill(
+                        label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
+                        color = if (shizukuReady) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                    )
+                    StatusPill(
+                        label = "TopInfo ${topInfoRows.size}",
+                        color = Color(0xFF1565C0)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                MiuixInfoItem("Fresh Sections", "$loadedFreshCount / 6")
+                MiuixInfoItem("Cached Sections", cachedSectionCount.toString())
+                MiuixInfoItem("Search Query", if (query.isBlank()) "（空）" else query)
+            }
+        )
         Spacer(modifier = Modifier.height(10.dp))
         TextField(
             value = query,

@@ -21,12 +21,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.mcp.McpServerManager
+import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
@@ -61,6 +64,30 @@ fun McpPage(
     ) {
         Text(text = "MCP", modifier = Modifier.padding(top = 6.dp))
         Text(text = "MCP Server 功能", modifier = Modifier.padding(top = 4.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+        FrostedBlock(
+            backdrop = backdrop,
+            title = "Overview",
+            subtitle = "MCP 服务总览",
+            accent = Color(0xFF4B8DFF),
+            content = {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    StatusPill(
+                        label = if (uiState.running) "Server Running" else "Server Stopped",
+                        color = if (uiState.running) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    StatusPill(
+                        label = if (uiState.allowExternal) "LAN Enabled" else "Local Only",
+                        color = if (uiState.allowExternal) Color(0xFF1565C0) else Color(0xFF9E9E9E)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                MiuixInfoItem("Endpoint", uiState.localEndpoint)
+                MiuixInfoItem("Tools", uiState.tools.size.toString())
+                MiuixInfoItem("Auth", "Bearer ${uiState.authToken.take(8)}...${uiState.authToken.takeLast(8)}")
+            }
+        )
         Spacer(modifier = Modifier.height(12.dp))
 
         TextField(

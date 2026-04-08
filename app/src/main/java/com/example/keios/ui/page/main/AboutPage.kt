@@ -4,10 +4,12 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -17,10 +19,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.ShizukuApiUtils
 import com.kyant.backdrop.Backdrop
 import java.text.SimpleDateFormat
@@ -154,9 +159,36 @@ fun AboutPage(
             .verticalScroll(scrollState)
             .padding(bottom = contentBottomPadding)
     ) {
+        val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
         Text(text = "About", modifier = Modifier.padding(top = 6.dp))
         Text(text = "权限检查与应用详情", modifier = Modifier.padding(top = 4.dp))
         Spacer(modifier = Modifier.height(14.dp))
+
+        FrostedBlock(
+            backdrop = backdrop,
+            title = "Overview",
+            subtitle = "应用与权限状态总览",
+            accent = Color(0xFF4B8DFF),
+            content = {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    StatusPill(
+                        label = "Build ${packageInfo?.versionName ?: "unknown"}",
+                        color = Color(0xFF4B8DFF)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    StatusPill(
+                        label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
+                        color = if (shizukuReady) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                MiuixInfoItem("Package", packageInfo?.packageName ?: "unknown")
+                MiuixInfoItem("Version", "${packageInfo?.versionName ?: "unknown"} (${packageInfo?.longVersionCode ?: -1})")
+                MiuixInfoItem("Target SDK", appInfo?.targetSdkVersion?.toString() ?: "unknown")
+            }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Button(
             modifier = Modifier.fillMaxWidth(),

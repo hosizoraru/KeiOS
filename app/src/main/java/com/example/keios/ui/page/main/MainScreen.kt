@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.union
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ fun MainScreen(
     val brand = Build.BRAND.lowercase()
     val isBackdropSafe = !(manufacturer.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco"))
     val backdrop: Backdrop? = if (isBackdropSafe) rememberLayerBackdrop() else null
+    val mcpUiState by mcpServerManager.uiState.collectAsState()
     val density = LocalDensity.current
     val navigationBarBottom = with(density) {
         WindowInsets.navigationBars.getBottom(this).toDp()
@@ -70,7 +72,10 @@ fun MainScreen(
             when (currentPage) {
                 BottomPage.Home -> {
                     HomePage(
-                        backdrop = backdrop
+                        backdrop = backdrop,
+                        shizukuStatus = shizukuStatus,
+                        mcpRunning = mcpUiState.running,
+                        mcpEndpoint = mcpUiState.localEndpoint
                     )
                 }
 
