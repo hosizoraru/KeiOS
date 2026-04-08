@@ -38,6 +38,7 @@ fun MainScreen(
 ) {
     var currentPage by remember { mutableStateOf(BottomPage.Home) }
     var clickCount by remember { mutableIntStateOf(0) }
+    var systemScrollToTopSignal by remember { mutableIntStateOf(0) }
     val manufacturer = Build.MANUFACTURER.lowercase()
     val brand = Build.BRAND.lowercase()
     val isBackdropSafe = !(manufacturer.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco"))
@@ -65,7 +66,10 @@ fun MainScreen(
                 }
 
                 BottomPage.System -> {
-                    SystemPage(backdrop = backdrop)
+                    SystemPage(
+                        backdrop = backdrop,
+                        scrollToTopSignal = systemScrollToTopSignal
+                    )
                 }
 
                 BottomPage.About -> {
@@ -84,7 +88,15 @@ fun MainScreen(
         FloatingBottomBar(
             backdrop = backdrop,
             currentPage = currentPage,
-            onPageSelected = { currentPage = it },
+            onPageSelected = { selected ->
+                if (selected == currentPage) {
+                    if (selected == BottomPage.System) {
+                        systemScrollToTopSignal++
+                    }
+                } else {
+                    currentPage = selected
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 22.dp, vertical = 18.dp)

@@ -12,15 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.utils.InfoFactory
 import com.example.keios.ui.utils.findJavaPropString
@@ -34,11 +32,18 @@ import top.yukonga.miuix.kmp.basic.TextField
 
 @Composable
 fun SystemPage(
-    backdrop: Backdrop?
+    backdrop: Backdrop?,
+    scrollToTopSignal: Int
 ) {
     var query by remember { mutableStateOf("") }
+    var systemPropsExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
-    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(scrollToTopSignal) {
+        if (scrollToTopSignal > 0) {
+            scrollState.animateScrollTo(0)
+        }
+    }
 
     val keyInfoLines = remember {
         listOf(
@@ -82,10 +87,13 @@ fun SystemPage(
     val infoFactoryText = remember(q, infoFactoryLines) {
         infoFactoryLines.filter { q.isEmpty() || it.contains(q, true) }.joinToString("\n")
     }
-    val systemPropsText = remember(q, systemProps) {
+    val filteredSystemProps = remember(q, systemProps) {
         systemProps.entries
             .filter { q.isEmpty() || it.key.contains(q, true) || it.value.contains(q, true) }
-            .joinToString("\n") { "${it.key} = ${it.value}" }
+    }
+    val systemPropsText = remember(filteredSystemProps, systemPropsExpanded) {
+        val displayEntries = if (systemPropsExpanded) filteredSystemProps else filteredSystemProps.take(24)
+        displayEntries.joinToString("\n") { "${it.key} = ${it.value}" }
     }
     val javaPropsText = remember(q, javaProps) {
         javaProps.entries
@@ -131,10 +139,20 @@ fun SystemPage(
             FrostedBlock(
                 backdrop = backdrop,
                 title = "getprop",
-                subtitle = "All ${systemProps.size} entries",
+                subtitle = if (systemPropsExpanded) {
+                    "All ${filteredSystemProps.size} entries"
+                } else {
+                    "Showing ${minOf(24, filteredSystemProps.size)}/${filteredSystemProps.size} entries"
+                },
                 body = systemPropsText.ifBlank { "No matched results." },
                 accent = Color(0xFF6ECF9C)
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { systemPropsExpanded = !systemPropsExpanded }
+            ) {
+                Text(if (systemPropsExpanded) "收起 getprop" else "展开 getprop")
+            }
             Spacer(modifier = Modifier.height(12.dp))
             FrostedBlock(
                 backdrop = backdrop,
@@ -143,17 +161,6 @@ fun SystemPage(
                 body = javaPropsText.ifBlank { "No matched results." },
                 accent = Color(0xFFFFB26B)
             )
-        }
-
-        if (scrollState.value > 200) {
-            Button(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 2.dp, bottom = 8.dp),
-                onClick = { scope.launch { scrollState.animateScrollTo(0) } }
-            ) {
-                Text("回到顶部")
-            }
         }
     }
 }
