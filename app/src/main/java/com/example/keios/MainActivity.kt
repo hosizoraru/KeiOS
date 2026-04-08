@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.compose.runtime.mutableStateOf
+import com.example.keios.mcp.LocalMcpService
 import com.example.keios.ui.page.main.MainScreen
 import com.example.keios.ui.utils.ShizukuApiUtils
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
 
     private var shizukuStatus = mutableStateOf("Shizuku status: initializing...")
     private val shizukuApiUtils = ShizukuApiUtils()
+    private lateinit var localMcpService: LocalMcpService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,11 +36,17 @@ class MainActivity : ComponentActivity() {
         val packageInfo = runCatching {
             packageManager.getPackageInfoCompat(packageName)
         }.getOrNull()
+        localMcpService = LocalMcpService(
+            shizukuApiUtils = shizukuApiUtils,
+            appVersionName = packageInfo?.versionName ?: "unknown",
+            appVersionCode = packageInfo?.longVersionCode ?: -1L
+        )
         val controller = ThemeController(ColorSchemeMode.System)
 
         shizukuApiUtils.attach { status ->
             shizukuStatus.value = status
         }
+        runCatching { localMcpService.getOrCreateServer() }
 
         setContent {
             MiuixTheme(controller = controller) {

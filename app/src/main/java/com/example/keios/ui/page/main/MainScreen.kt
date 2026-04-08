@@ -40,7 +40,6 @@ fun MainScreen(
     shizukuApiUtils: ShizukuApiUtils,
 ) {
     var currentPage by remember { mutableStateOf(BottomPage.Home) }
-    var clickCount by remember { mutableIntStateOf(0) }
     var systemScrollToTopSignal by remember { mutableIntStateOf(0) }
     var aboutScrollToTopSignal by remember { mutableIntStateOf(0) }
     val manufacturer = Build.MANUFACTURER.lowercase()
@@ -68,9 +67,7 @@ fun MainScreen(
             when (currentPage) {
                 BottomPage.Home -> {
                     HomePage(
-                        backdrop = backdrop,
-                        clickCount = clickCount,
-                        onPrimaryAction = { clickCount++ }
+                        backdrop = backdrop
                     )
                 }
 

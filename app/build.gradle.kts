@@ -75,14 +75,13 @@ kotlin {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("com.google.android.material:material:1.13.0")
 
-    implementation("androidx.compose.ui:ui:1.8.1")
-    implementation("androidx.compose.foundation:foundation:1.8.1")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.8.1")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.8.1")
+    implementation("androidx.compose.ui:ui:1.10.6")
+    implementation("androidx.compose.foundation:foundation:1.10.6")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.10.6")
 
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.0")
@@ -96,5 +95,6 @@ dependencies {
 
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
-    implementation("com.tencent:mmkv:2.2.4")
+    implementation("com.tencent:mmkv:2.4.0")
+    implementation("io.modelcontextprotocol:kotlin-sdk:0.11.0")
 }
