@@ -20,9 +20,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -61,9 +61,8 @@ fun AboutPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0
 ) {
-    val primary = MiuixTheme.colorScheme.primary
-    val success = MiuixTheme.colorScheme.secondary
-    val inactive = MiuixTheme.colorScheme.onBackgroundVariant
+    val readyColor = Color(0xFF2E7D32)
+    val notReadyColor = Color(0xFFC62828)
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
 
@@ -177,7 +176,7 @@ fun AboutPage(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.defaultColors(
-                color = if (shizukuReady) primary.copy(alpha = 0.18f) else MiuixTheme.colorScheme.error.copy(alpha = 0.16f),
+                color = if (shizukuReady) readyColor.copy(alpha = 0.16f) else notReadyColor.copy(alpha = 0.16f),
                 contentColor = titleColor
             ),
             showIndication = true,
@@ -196,7 +195,7 @@ fun AboutPage(
                     Text("Overview", color = titleColor)
                     StatusPill(
                         label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
-                        color = if (shizukuReady) success else inactive
+                        color = if (shizukuReady) readyColor else notReadyColor
                     )
                 }
                 Text(
@@ -217,15 +216,6 @@ fun AboutPage(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        GlassTextButton(
-            backdrop = backdrop,
-            text = "检查 / 申请 Shizuku 权限",
-            modifier = Modifier.fillMaxWidth(),
-            onClick = onCheckShizuku
-        )
 
         Spacer(modifier = Modifier.height(12.dp))
 

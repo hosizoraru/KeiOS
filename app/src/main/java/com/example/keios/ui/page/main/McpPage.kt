@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
@@ -56,13 +57,12 @@ fun McpPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0
 ) {
-    val primary = MiuixTheme.colorScheme.primary
-    val success = MiuixTheme.colorScheme.secondary
-    val inactive = MiuixTheme.colorScheme.onBackgroundVariant
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
-    val overviewBlue = primary.copy(alpha = 0.18f)
-    val overviewRed = MiuixTheme.colorScheme.error.copy(alpha = 0.16f)
+    val runningColor = Color(0xFF2E7D32)
+    val stoppedColor = Color(0xFFC62828)
+    val overviewGreen = runningColor.copy(alpha = 0.16f)
+    val overviewRed = stoppedColor.copy(alpha = 0.16f)
 
     val context = LocalContext.current
     val uiState by mcpServerManager.uiState.collectAsState()
@@ -167,11 +167,10 @@ fun McpPage(
                         )
                     },
                 colors = CardDefaults.defaultColors(
-                    color = if (uiState.running) overviewBlue else overviewRed,
+                    color = if (uiState.running) overviewGreen else overviewRed,
                     contentColor = titleColor
                 ),
-                showIndication = true,
-                onClick = {}
+                showIndication = false
             ) {
                 Column(
                     modifier = Modifier
@@ -186,7 +185,7 @@ fun McpPage(
                         Text("MCP Server", color = titleColor)
                         StatusPill(
                             label = if (uiState.running) "Server Running" else "Server Stopped",
-                            color = if (uiState.running) success else inactive
+                            color = if (uiState.running) runningColor else stoppedColor
                         )
                     }
                     Text(
