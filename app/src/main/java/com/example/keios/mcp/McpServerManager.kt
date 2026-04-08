@@ -11,7 +11,9 @@ import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import java.net.Inet4Address
+import java.net.InetSocketAddress
 import java.net.NetworkInterface
+import java.net.ServerSocket
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -124,8 +126,18 @@ class McpServerManager(
         }
         return runCatching {
             val host = if (allowExternal) "0.0.0.0" else "127.0.0.1"
+            val current = _uiState.value
+            if (current.running && current.port == port && current.allowExternal == allowExternal) {
+                refreshNow()
+                syncKeepAliveNotification(forceStart = false)
+                appendLog("INFO", "MCP server already running on $host:$port")
+                return@runCatching
+            }
+            stopInternal()
+            ensurePortAvailable(host, port)
+
             val server = localMcpService.getOrCreateServer()
-            val token = _uiState.value.authToken
+            val token = current.authToken
             val newEngine = embeddedServer(
                 factory = CIO,
                 host = host,
@@ -143,7 +155,6 @@ class McpServerManager(
                 }
                 mcpStreamableHttp(path = "/mcp") { server }
             }
-            stopInternal()
             newEngine.start(wait = false)
             engine = newEngine
             lastConnectedCount = 0
@@ -312,6 +323,17 @@ class McpServerManager(
             }
             result.distinct()
         }.getOrDefault(emptyList())
+    }
+
+    private fun ensurePortAvailable(host: String, port: Int) {
+        runCatching {
+            ServerSocket().use { socket ->
+                socket.reuseAddress = true
+                socket.bind(InetSocketAddress(host, port))
+            }
+        }.getOrElse {
+            throw IllegalStateException("端口 $port 已被占用: ${it.message}", it)
+        }
     }
 
     private fun syncKeepAliveNotification(forceStart: Boolean) {

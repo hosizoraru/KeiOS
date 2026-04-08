@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.FrostedBlock
@@ -18,6 +17,7 @@ import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun SettingsPage(
@@ -25,16 +25,19 @@ fun SettingsPage(
     liquidBottomBarEnabled: Boolean,
     onLiquidBottomBarChanged: (Boolean) -> Unit
 ) {
+    val accent = MiuixTheme.colorScheme.primary
+    val titleColor = MiuixTheme.colorScheme.onBackground
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = "Settings", modifier = Modifier.padding(top = 6.dp))
-        Text(text = "界面与样式", modifier = Modifier.padding(top = 4.dp))
+        Text(text = "Settings", color = titleColor, modifier = Modifier.padding(top = 6.dp))
+        Text(text = "界面与样式", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
 
         Spacer(modifier = Modifier.height(14.dp))
         FrostedBlock(
             backdrop = backdrop,
             title = "Bottom Bar",
             subtitle = "底栏样式",
-            accent = Color(0xFF6E9EFF),
+            accent = accent,
             content = {
                 Row(
                     modifier = Modifier
@@ -43,9 +46,10 @@ fun SettingsPage(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("液态玻璃底栏")
+                        Text("液态玻璃底栏", color = MiuixTheme.colorScheme.onBackground)
                         Text(
                             text = if (liquidBottomBarEnabled) "已启用玻璃模糊与高光" else "使用纯色底栏",
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }

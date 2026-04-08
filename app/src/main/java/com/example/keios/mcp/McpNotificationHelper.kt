@@ -10,12 +10,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.keios.MainActivity
 import com.example.keios.R
-import java.util.concurrent.TimeUnit
-import rikka.shizuku.Shizuku
 
 object McpNotificationHelper {
 
-    const val CHANNEL_ID = "mcp_keepalive_channel"
+    const val CHANNEL_ID = "mcp_keepalive_channel_v2"
+    private const val LEGACY_CHANNEL_ID = "mcp_keepalive_channel"
     const val KEEPALIVE_NOTIFICATION_ID = 38888
     private const val TEST_NOTIFICATION_ID = KEEPALIVE_NOTIFICATION_ID
     private const val ACTION_STOP = "com.example.keios.mcp.keepalive.STOP"
@@ -23,6 +22,12 @@ object McpNotificationHelper {
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        runCatching {
+            val legacy = manager.getNotificationChannel(LEGACY_CHANNEL_ID)
+            if (legacy != null && legacy.importance < NotificationManager.IMPORTANCE_HIGH) {
+                manager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+            }
+        }
         if (manager.getNotificationChannel(CHANNEL_ID) == null) {
             val keepalive = NotificationChannel(
                 CHANNEL_ID,
@@ -43,7 +48,8 @@ object McpNotificationHelper {
         port: Int,
         path: String,
         clients: Int,
-        ongoing: Boolean
+        ongoing: Boolean,
+        onlyAlertOnce: Boolean = true
     ): android.app.Notification {
         val title = if (running) "MCP Server 正在后台运行" else "MCP Server 已停止"
         val content = if (running) {
@@ -85,7 +91,7 @@ object McpNotificationHelper {
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(ongoing)
-            .setOnlyAlertOnce(true)
+            .setOnlyAlertOnce(onlyAlertOnce)
             .setAutoCancel(false)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
 
@@ -117,7 +123,8 @@ object McpNotificationHelper {
             port = port,
             path = path,
             clients = clients,
-            ongoing = running
+            ongoing = running,
+            onlyAlertOnce = false
         )
         notifyWithXiaomiMagic(
             context = context,
@@ -140,7 +147,8 @@ object McpNotificationHelper {
             port = port,
             path = path,
             clients = clients,
-            ongoing = true
+            ongoing = true,
+            onlyAlertOnce = false
         )
         notifyWithXiaomiMagic(
             context = context,
@@ -157,16 +165,19 @@ object McpNotificationHelper {
         clients: Int
     ) {
         ensureChannel(context)
-        NotificationManagerCompat.from(context).notify(
-            KEEPALIVE_NOTIFICATION_ID,
-            buildForegroundNotification(
-                context = context,
-                running = running,
-                port = port,
-                path = path,
-                clients = clients,
-                ongoing = true
-            )
+        val notification = buildForegroundNotification(
+            context = context,
+            running = running,
+            port = port,
+            path = path,
+            clients = clients,
+            ongoing = true,
+            onlyAlertOnce = true
+        )
+        notifyWithXiaomiMagic(
+            context = context,
+            notificationId = KEEPALIVE_NOTIFICATION_ID,
+            notification = notification
         )
     }
 
@@ -175,54 +186,10 @@ object McpNotificationHelper {
         notificationId: Int,
         notification: android.app.Notification
     ) {
-        val manager = NotificationManagerCompat.from(context)
-        if (!shouldUseXiaomiMagic(context)) {
-            manager.notify(notificationId, notification)
-            return
-        }
-        Thread {
-            runCatching {
-                runShizukuCommand("cmd connectivity set-chain3-enabled true")
-                runShizukuCommand("cmd connectivity set-package-networking-enabled false com.xiaomi.xmsf")
-                manager.notify(notificationId, notification)
-                Thread.sleep(120)
-            }
-            runCatching {
-                runShizukuCommand("cmd connectivity set-package-networking-enabled true com.xiaomi.xmsf")
-            }
-        }.start()
-    }
-
-    private fun shouldUseXiaomiMagic(context: Context): Boolean {
-        val maker = Build.MANUFACTURER.lowercase()
-        val brand = Build.BRAND.lowercase()
-        val isXiaomi = maker.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")
-        if (!isXiaomi) return false
-        return runCatching {
-            if (!Shizuku.pingBinder()) return@runCatching false
-            if (Shizuku.checkSelfPermission() != android.content.pm.PackageManager.PERMISSION_GRANTED) return@runCatching false
-            val uidMethod = Shizuku::class.java.methods.firstOrNull {
-                it.name == "getUid" && it.parameterTypes.isEmpty()
-            } ?: return@runCatching false
-            val uid = (uidMethod.invoke(null) as? Int) ?: return@runCatching false
-            uid == 2000
-        }.getOrDefault(false)
-    }
-
-    private fun runShizukuCommand(command: String): String? {
-        return runCatching {
-            val method = Shizuku::class.java.getDeclaredMethod(
-                "newProcess",
-                Array<String>::class.java,
-                Array<String>::class.java,
-                String::class.java
-            )
-            method.isAccessible = true
-            val process = method.invoke(null, arrayOf("sh", "-c", command), null, null) as Process
-            val out = process.inputStream.bufferedReader().use { it.readText() }
-            val err = process.errorStream.bufferedReader().use { it.readText() }
-            process.waitFor(1200, TimeUnit.MILLISECONDS)
-            out.ifBlank { err }.trim().ifBlank { null }
-        }.getOrNull()
+        XiaomiIslandMagic.notify(
+            context = context,
+            notificationId = notificationId,
+            notification = notification
+        )
     }
 }

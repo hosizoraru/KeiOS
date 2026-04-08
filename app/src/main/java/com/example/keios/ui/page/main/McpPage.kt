@@ -35,6 +35,7 @@ import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun McpPage(
@@ -45,6 +46,13 @@ fun McpPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0
 ) {
+    val primary = MiuixTheme.colorScheme.primary
+    val success = MiuixTheme.colorScheme.secondary
+    val warning = MiuixTheme.colorScheme.error
+    val inactive = MiuixTheme.colorScheme.onBackgroundVariant
+    val titleColor = MiuixTheme.colorScheme.onBackground
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+
     val context = LocalContext.current
     val uiState by mcpServerManager.uiState.collectAsState()
     var portText by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
@@ -68,7 +76,7 @@ fun McpPage(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "MCP", modifier = Modifier.padding(top = 6.dp))
+            Text(text = "MCP", color = titleColor, modifier = Modifier.padding(top = 6.dp))
             Button(
                 modifier = Modifier.padding(top = 2.dp),
                 onClick = {
@@ -79,24 +87,24 @@ fun McpPage(
                 Text("刷新")
             }
         }
-        Text(text = "MCP Server 功能", modifier = Modifier.padding(top = 4.dp))
+        Text(text = "MCP Server 功能", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
         Spacer(modifier = Modifier.height(12.dp))
 
         FrostedBlock(
             backdrop = backdrop,
             title = "Overview",
             subtitle = "服务状态与通知状态",
-            accent = Color(0xFF4B8DFF),
+            accent = primary,
             content = {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     StatusPill(
                         label = if (uiState.running) "Server Running" else "Server Stopped",
-                        color = if (uiState.running) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                        color = if (uiState.running) success else inactive
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatusPill(
                         label = if (notificationPermissionGranted) "Notification Granted" else "Notification Required",
-                        color = if (notificationPermissionGranted) Color(0xFF1565C0) else Color(0xFFE65100)
+                        color = if (notificationPermissionGranted) primary else warning
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -106,6 +114,31 @@ fun McpPage(
                 MiuixInfoItem("通知权限", if (notificationPermissionGranted) "已授权" else "未授权")
             }
         )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        FrostedBlock(
+            backdrop = backdrop,
+            title = "超级岛预览",
+            subtitle = "实时模拟岛内文案与状态",
+            accent = primary,
+            content = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    StatusPill(
+                        label = if (uiState.running) "运行中" else "已停止",
+                        color = if (uiState.running) success else inactive
+                    )
+                    StatusPill(
+                        label = "在线 ${uiState.connectedClients}",
+                        color = primary
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                MiuixInfoItem("岛左侧", if (uiState.running) "MCP 运行中" else "MCP 已停止")
+                MiuixInfoItem("岛右侧", "在线 ${uiState.connectedClients}")
+                MiuixInfoItem("胶囊短文案", if (uiState.running) "运行中 · 在线 ${uiState.connectedClients}" else "MCP Offline")
+            }
+        )
+
         Spacer(modifier = Modifier.height(12.dp))
 
         TextField(

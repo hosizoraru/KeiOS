@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun MiuixExpandableSection(
@@ -30,6 +32,23 @@ fun MiuixExpandableSection(
     onExpandedChange: (Boolean) -> Unit,
     content: @Composable () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val sectionSurface = if (isDark) {
+        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.84f)
+    } else {
+        Color.White.copy(alpha = 0.62f)
+    }
+    val overlayColor = if (isDark) {
+        Color.White.copy(alpha = 0.03f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+    val shadowColor = if (isDark) {
+        Color.Black.copy(alpha = 0.24f)
+    } else {
+        Color.Black.copy(alpha = 0.08f)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,24 +59,27 @@ fun MiuixExpandableSection(
                         backdrop = backdrop,
                         shape = { RoundedRectangle(16.dp) },
                         effects = {},
-                        highlight = { Highlight.Default.copy(alpha = 0.75f) },
-                        shadow = { Shadow.Default.copy(color = Color.Black.copy(alpha = 0.08f)) },
+                        highlight = { Highlight.Default.copy(alpha = if (isDark) 0.32f else 0.75f) },
+                        shadow = { Shadow.Default.copy(color = shadowColor) },
                         onDrawSurface = {
-                            drawRect(Color.White.copy(alpha = 0.52f))
+                            drawRect(sectionSurface)
                         }
                     )
                 } else {
-                    Modifier.background(Color.White.copy(alpha = 0.62f))
+                    Modifier.background(sectionSurface)
                 }
             )
-            .background(Color.White.copy(alpha = 0.08f), shape = RoundedCornerShape(16.dp))
+            .background(overlayColor, shape = RoundedCornerShape(16.dp))
     ) {
         BasicComponent(
             title = title,
             summary = subtitle,
             onClick = { onExpandedChange(!expanded) },
             endActions = {
-                Text(text = if (expanded) "收起" else "展开")
+                Text(
+                    text = if (expanded) "收起" else "展开",
+                    color = MiuixTheme.colorScheme.primary
+                )
             }
         )
         AnimatedVisibility(

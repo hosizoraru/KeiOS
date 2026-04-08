@@ -19,7 +19,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.FrostedBlock
@@ -33,6 +32,7 @@ import java.util.Date
 import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private data class AboutRow(
     val key: String,
@@ -58,6 +58,12 @@ fun AboutPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0
 ) {
+    val primary = MiuixTheme.colorScheme.primary
+    val success = MiuixTheme.colorScheme.secondary
+    val inactive = MiuixTheme.colorScheme.onBackgroundVariant
+    val titleColor = MiuixTheme.colorScheme.onBackground
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+
     var identityExpanded by remember { mutableStateOf(false) }
     var buildExpanded by remember { mutableStateOf(false) }
     var installExpanded by remember { mutableStateOf(false) }
@@ -160,25 +166,25 @@ fun AboutPage(
             .padding(bottom = contentBottomPadding)
     ) {
         val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
-        Text(text = "About", modifier = Modifier.padding(top = 6.dp))
-        Text(text = "权限检查与应用详情", modifier = Modifier.padding(top = 4.dp))
+        Text(text = "About", color = titleColor, modifier = Modifier.padding(top = 6.dp))
+        Text(text = "权限检查与应用详情", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
         Spacer(modifier = Modifier.height(14.dp))
 
         FrostedBlock(
             backdrop = backdrop,
             title = "Overview",
             subtitle = "应用与权限状态总览",
-            accent = Color(0xFF4B8DFF),
+            accent = primary,
             content = {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     StatusPill(
                         label = "Build",
-                        color = Color(0xFF4B8DFF)
+                        color = primary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatusPill(
                         label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
-                        color = if (shizukuReady) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                        color = if (shizukuReady) success else inactive
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))

@@ -1,6 +1,7 @@
 package com.example.keios.ui.page.main.widget
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun FrostedBlock(
@@ -27,6 +29,23 @@ fun FrostedBlock(
     accent: Color,
     content: (@Composable () -> Unit)? = null
 ) {
+    val isDark = isSystemInDarkTheme()
+    val cardSurface = if (isDark) {
+        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f)
+    } else {
+        Color.White.copy(alpha = 0.62f)
+    }
+    val overlayColor = if (isDark) {
+        Color.White.copy(alpha = 0.03f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+    val shadowColor = if (isDark) {
+        Color.Black.copy(alpha = 0.24f)
+    } else {
+        Color.Black.copy(alpha = 0.08f)
+    }
+
     androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -37,17 +56,17 @@ fun FrostedBlock(
                         backdrop = backdrop,
                         shape = { RoundedRectangle(16.dp) },
                         effects = {},
-                        highlight = { Highlight.Default.copy(alpha = 0.75f) },
-                        shadow = { Shadow.Default.copy(color = Color.Black.copy(alpha = 0.08f)) },
+                        highlight = { Highlight.Default.copy(alpha = if (isDark) 0.32f else 0.75f) },
+                        shadow = { Shadow.Default.copy(color = shadowColor) },
                         onDrawSurface = {
-                            drawRect(Color.White.copy(alpha = 0.52f))
+                            drawRect(cardSurface)
                         }
                     )
                 } else {
-                    Modifier.background(Color.White.copy(alpha = 0.62f))
+                    Modifier.background(cardSurface)
                 }
             )
-            .background(Color.White.copy(alpha = 0.08f))
+            .background(overlayColor)
             .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -57,16 +76,24 @@ fun FrostedBlock(
                     .background(accent.copy(alpha = 0.22f))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
-                Text(text = title)
+                Text(text = title, color = accent)
             }
         }
-        Text(text = subtitle, modifier = Modifier.padding(top = 8.dp))
+        Text(
+            text = subtitle,
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
         if (content != null) {
             androidx.compose.foundation.layout.Column(modifier = Modifier.padding(top = 8.dp)) {
                 content()
             }
         } else if (body.isNotBlank()) {
-            Text(text = body, modifier = Modifier.padding(top = 8.dp))
+            Text(
+                text = body,
+                color = MiuixTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }

@@ -34,7 +34,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.model.BottomPage
@@ -43,6 +42,7 @@ import com.example.keios.ui.utils.ShizukuApiUtils
 import com.example.keios.ui.utils.UiPrefs
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun MainScreen(
@@ -84,7 +84,7 @@ fun MainScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF3F4F6))
+            .background(MiuixTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier

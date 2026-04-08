@@ -28,7 +28,7 @@ object McpIslandNotificationBuilder {
             val darkIconKey = createPicture("mcp_logo_dark", darkIcon)
 
             islandFirstFloat = true
-            enableFloat = false
+            enableFloat = true
             updatable = true
             ticker = shortText
             tickerPic = lightIconKey

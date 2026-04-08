@@ -28,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -46,6 +45,7 @@ import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -973,6 +973,12 @@ fun SystemPage(
     shizukuApiUtils: ShizukuApiUtils,
     contentBottomPadding: Dp = 72.dp
 ) {
+    val primary = MiuixTheme.colorScheme.primary
+    val success = MiuixTheme.colorScheme.secondary
+    val inactive = MiuixTheme.colorScheme.onBackgroundVariant
+    val titleColor = MiuixTheme.colorScheme.onBackground
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
@@ -1135,13 +1141,13 @@ fun SystemPage(
     val cachedSectionCount = sectionStates.values.count { !it.loadedFresh && it.rows.isNotEmpty() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = "System", modifier = Modifier.padding(top = 6.dp))
+        Text(text = "System", color = titleColor, modifier = Modifier.padding(top = 6.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "系统参数与属性", modifier = Modifier.padding(top = 4.dp))
+            Text(text = "系统参数与属性", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
             Button(
                 onClick = {
                     if (exportPreparing) return@Button
@@ -1192,11 +1198,11 @@ fun SystemPage(
                 ) {
                     StatusPill(
                         label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
-                        color = if (shizukuReady) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                        color = if (shizukuReady) success else inactive
                     )
                     StatusPill(
                         label = "TopInfo ${topInfoRows.size}",
-                        color = Color(0xFF1565C0)
+                        color = primary
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1215,11 +1221,12 @@ fun SystemPage(
                 onExpandedChange = { topInfoExpanded = it }
             ) {
                 if (filteredTopInfoRows.isEmpty()) {
-                    Text(text = "No matched results.")
+                    Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 } else {
                     groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
                         Text(
                             text = type,
+                            color = MiuixTheme.colorScheme.onBackground,
                             modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
                         )
                         rows.forEach { row ->
@@ -1238,7 +1245,7 @@ fun SystemPage(
                 expanded = systemTableExpanded,
                 onExpandedChange = { systemTableExpanded = it }
             ) {
-                if (filteredSystemRows.isEmpty()) Text(text = "No matched results.")
+                if (filteredSystemRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 else filteredSystemRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
 
@@ -1251,7 +1258,7 @@ fun SystemPage(
                 expanded = secureTableExpanded,
                 onExpandedChange = { secureTableExpanded = it }
             ) {
-                if (filteredSecureRows.isEmpty()) Text(text = "No matched results.")
+                if (filteredSecureRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 else filteredSecureRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
 
@@ -1264,7 +1271,7 @@ fun SystemPage(
                 expanded = globalTableExpanded,
                 onExpandedChange = { globalTableExpanded = it }
             ) {
-                if (filteredGlobalRows.isEmpty()) Text(text = "No matched results.")
+                if (filteredGlobalRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 else filteredGlobalRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
 
@@ -1277,7 +1284,7 @@ fun SystemPage(
                 expanded = androidPropsExpanded,
                 onExpandedChange = { androidPropsExpanded = it }
             ) {
-                if (filteredAndroidRows.isEmpty()) Text(text = "No matched results.")
+                if (filteredAndroidRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 else filteredAndroidRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
 
@@ -1290,7 +1297,7 @@ fun SystemPage(
                 expanded = javaPropsExpanded,
                 onExpandedChange = { javaPropsExpanded = it }
             ) {
-                if (filteredJavaRows.isEmpty()) Text(text = "No matched results.")
+                if (filteredJavaRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 else filteredJavaRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
 
@@ -1303,7 +1310,7 @@ fun SystemPage(
                 expanded = linuxEnvExpanded,
                 onExpandedChange = { linuxEnvExpanded = it }
             ) {
-                if (filteredLinuxRows.isEmpty()) Text(text = "No matched results.")
+                if (filteredLinuxRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 else filteredLinuxRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
             }

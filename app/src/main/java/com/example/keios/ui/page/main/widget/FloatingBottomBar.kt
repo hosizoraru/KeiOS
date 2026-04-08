@@ -119,6 +119,8 @@ fun FloatingBottomBar(
     // Keep old non-glass fallback for users who disable liquid style.
     if (!liquidGlassEnabled) {
         val normalSelectedTint = MiuixTheme.colorScheme.primary
+        val normalUnselectedTint = MiuixTheme.colorScheme.onBackgroundVariant
+        val normalSurface = MiuixTheme.colorScheme.surfaceContainer
         Row(
             modifier = modifier
                 .height(76.dp)
@@ -129,7 +131,7 @@ fun FloatingBottomBar(
                     effects = {},
                     highlight = { Highlight.Default.copy(alpha = 0.2f) },
                     shadow = { Shadow.Default.copy(color = Color.Black.copy(alpha = 0.12f)) },
-                    onDrawSurface = { drawRect(Color.White.copy(alpha = 0.92f)) }
+                    onDrawSurface = { drawRect(normalSurface.copy(alpha = 0.92f)) }
                 )
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -148,9 +150,13 @@ fun FloatingBottomBar(
                         imageVector = page.icon,
                         contentDescription = page.label,
                         modifier = Modifier.size(20.dp),
-                        tint = if (currentPage == page) normalSelectedTint else Color(0xFF4D4D4D)
+                        tint = if (currentPage == page) normalSelectedTint else normalUnselectedTint
                     )
-                    Text(text = page.label, modifier = Modifier.padding(top = 2.dp))
+                    Text(
+                        text = page.label,
+                        color = if (currentPage == page) normalSelectedTint else normalUnselectedTint,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
             }
         }
@@ -163,6 +169,8 @@ fun FloatingBottomBar(
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val isInLightTheme = !androidx.compose.foundation.isSystemInDarkTheme()
+    val selectedTint = MiuixTheme.colorScheme.primary
+    val unselectedTint = MiuixTheme.colorScheme.onBackgroundVariant
 
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
@@ -311,9 +319,13 @@ fun FloatingBottomBar(
                         imageVector = page.icon,
                         contentDescription = page.label,
                         modifier = Modifier.size(20.dp),
-                        tint = if (selected) Color(0xFF5F87FF) else Color(0xFF4D4D4D)
+                        tint = if (selected) selectedTint else unselectedTint
                     )
-                    Text(text = page.label, modifier = Modifier.padding(top = 2.dp))
+                    Text(
+                        text = page.label,
+                        color = if (selected) selectedTint else unselectedTint,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
             }
         }
@@ -359,7 +371,11 @@ fun FloatingBottomBar(
                             contentDescription = page.label,
                             modifier = Modifier.size(20.dp)
                         )
-                        Text(text = page.label, modifier = Modifier.padding(top = 2.dp))
+                        Text(
+                            text = page.label,
+                            color = unselectedTint,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
                     }
                 }
             }
