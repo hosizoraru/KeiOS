@@ -450,69 +450,74 @@ fun GitHubPage(
                         }
                     ) {
                         val state = checkStates[item.id] ?: VersionCheckUi()
-                        MiuixInfoItem(
-                            "应用包名（点击刷新）",
-                            item.packageName,
-                            onClick = {
-                                refreshItem(item, showToastOnError = true)
-                                Toast.makeText(context, "已刷新 ${item.appLabel}", Toast.LENGTH_SHORT).show()
-                            }
-                        )
-                        MiuixInfoItem(
-                            "仓库地址",
-                            item.repoUrl,
-                            onClick = {
-                                val releaseUrl = GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
-                                runCatching {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl)))
-                                }.onFailure {
-                                    Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            MiuixInfoItem(
+                                "应用包名（点击刷新）",
+                                item.packageName,
+                                onClick = {
+                                    refreshItem(item, showToastOnError = true)
+                                    Toast.makeText(context, "已刷新 ${item.appLabel}", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            MiuixInfoItem(
+                                "仓库地址",
+                                item.repoUrl,
+                                onClick = {
+                                    val releaseUrl = GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
+                                    runCatching {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl)))
+                                    }.onFailure {
+                                        Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            )
+                            if (state.localVersion.isNotBlank()) {
+                                Row {
+                                    Text("本地 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                                    val localText = if (state.localVersionCode >= 0L) {
+                                        "${state.localVersion} (${state.localVersionCode})"
+                                    } else {
+                                        state.localVersion
+                                    }
+                                    Text(
+                                        localText,
+                                        color = MiuixTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
-                        )
-                        if (state.localVersion.isNotBlank()) {
-                            Row {
-                                Text("本地 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                val localText = if (state.localVersionCode >= 0L) {
-                                    "${state.localVersion} (${state.localVersionCode})"
+                            if (state.latestTag.isNotBlank()) {
+                                val latestColor = if (state.hasUpdate == true) {
+                                    MiuixTheme.colorScheme.error
                                 } else {
-                                    state.localVersion
+                                    MiuixTheme.colorScheme.secondary
                                 }
-                                Text(
-                                    localText,
-                                    color = MiuixTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Row {
+                                    Text("稳定 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                                    Text(
+                                        state.latestTag,
+                                        color = latestColor,
+                                        fontWeight = if (state.hasUpdate == true) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
                             }
-                        }
-                        if (state.latestTag.isNotBlank()) {
-                            val latestColor = if (state.hasUpdate == true) {
-                                MiuixTheme.colorScheme.error
-                            } else {
-                                MiuixTheme.colorScheme.secondary
-                            }
-                            Row {
-                                Text("稳定 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                Text(
-                                    state.latestTag,
-                                    color = latestColor,
-                                    fontWeight = if (state.hasUpdate == true) FontWeight.Bold else FontWeight.Medium
-                                )
-                            }
-                        }
-                        if (state.showPreReleaseInfo && state.preReleaseInfo.isNotBlank()) {
-                            val preColor = if (state.hasPreReleaseUpdate) {
-                                MiuixTheme.colorScheme.error
-                            } else {
-                                MiuixTheme.colorScheme.secondary
-                            }
-                            Row {
-                                Text("预发 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                Text(
-                                    state.preReleaseInfo,
-                                    color = preColor,
-                                    fontWeight = if (state.hasPreReleaseUpdate) FontWeight.Bold else FontWeight.Medium
-                                )
+                            if (state.showPreReleaseInfo && state.preReleaseInfo.isNotBlank()) {
+                                val preColor = if (state.hasPreReleaseUpdate) {
+                                    MiuixTheme.colorScheme.error
+                                } else {
+                                    MiuixTheme.colorScheme.secondary
+                                }
+                                Row {
+                                    Text("预发 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                                    Text(
+                                        state.preReleaseInfo,
+                                        color = preColor,
+                                        fontWeight = if (state.hasPreReleaseUpdate) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
                             }
                         }
                     }

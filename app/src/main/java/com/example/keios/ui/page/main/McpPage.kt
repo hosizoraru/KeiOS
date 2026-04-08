@@ -50,7 +50,6 @@ fun McpPage(
 ) {
     val primary = MiuixTheme.colorScheme.primary
     val success = MiuixTheme.colorScheme.secondary
-    val warning = MiuixTheme.colorScheme.error
     val inactive = MiuixTheme.colorScheme.onBackgroundVariant
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
@@ -60,8 +59,9 @@ fun McpPage(
     var portText by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
     var allowExternal by remember(uiState.allowExternal) { mutableStateOf(uiState.allowExternal) }
     var serverName by remember(uiState.serverName) { mutableStateOf(uiState.serverName) }
+    var controlExpanded by remember { mutableStateOf(true) }
     var configExpanded by remember { mutableStateOf(true) }
-    var logsExpanded by remember { mutableStateOf(true) }
+    var logsExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(scrollToTopSignal) {
@@ -91,7 +91,7 @@ fun McpPage(
             )
         }
         Text(text = "MCP Server 功能", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         FrostedBlock(
             backdrop = backdrop,
@@ -114,122 +114,102 @@ fun McpPage(
                 MiuixInfoItem("通知权限", if (notificationPermissionGranted) "已授权" else "未授权")
             }
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        FrostedBlock(
+        MiuixExpandableSection(
             backdrop = backdrop,
-            title = "超级岛预览",
-            subtitle = "实时模拟岛内文案与状态",
-            accent = primary,
-            content = {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatusPill(
-                        label = if (uiState.running) "运行中" else "已停止",
-                        color = if (uiState.running) success else inactive
-                    )
-                    StatusPill(
-                        label = "在线 ${uiState.connectedClients}",
-                        color = primary
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                MiuixInfoItem("岛左侧", if (uiState.running) "MCP 运行中" else "MCP 已停止")
-                MiuixInfoItem("岛右侧", "在线 ${uiState.connectedClients}")
-                MiuixInfoItem("胶囊短文案", if (uiState.running) "运行中 · 在线 ${uiState.connectedClients}" else "MCP Offline")
+            title = "服务控制",
+            subtitle = "启动 / 停止 / 通知 / 网络范围",
+            expanded = controlExpanded,
+            onExpandedChange = { controlExpanded = it }
+        ) {
+            TextField(
+                value = portText,
+                onValueChange = { portText = it.filter(Char::isDigit).take(5) },
+                label = "服务端口",
+                useLabelAsPlaceholder = true,
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = serverName,
+                onValueChange = {
+                    serverName = it
+                    mcpServerManager.updateServerName(it)
+                },
+                label = "服务名称（配置展示名）",
+                useLabelAsPlaceholder = true,
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = if (!allowExternal) "仅本机(已选)" else "仅本机",
+                    onClick = { allowExternal = false }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = if (allowExternal) "局域网(已选)" else "局域网",
+                    onClick = { allowExternal = true }
+                )
             }
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        TextField(
-            value = portText,
-            onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-            label = "服务端口",
-            useLabelAsPlaceholder = true,
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = serverName,
-            onValueChange = {
-                serverName = it
-                mcpServerManager.updateServerName(it)
-            },
-            label = "服务名称（配置展示名）",
-            useLabelAsPlaceholder = true,
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            GlassTextButton(
-                backdrop = backdrop,
-                text = if (!allowExternal) "仅本机(已选)" else "仅本机",
-                onClick = { allowExternal = false }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            GlassTextButton(
-                backdrop = backdrop,
-                text = if (allowExternal) "局域网(已选)" else "局域网",
-                onClick = { allowExternal = true }
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            GlassTextButton(
-                backdrop = backdrop,
-                text = "启动服务",
-                onClick = {
-                    val port = portText.toIntOrNull()
-                    if (port == null) {
-                        Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
-                        return@GlassTextButton
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = "启动服务",
+                    onClick = {
+                        val port = portText.toIntOrNull()
+                        if (port == null) {
+                            Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
+                            return@GlassTextButton
+                        }
+                        mcpServerManager.start(port = port, allowExternal = allowExternal)
+                            .onSuccess {
+                                mcpServerManager.refreshAddresses()
+                                Toast.makeText(context, "MCP 服务已启动", Toast.LENGTH_SHORT).show()
+                            }
+                            .onFailure {
+                                Toast.makeText(context, "启动失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                            }
                     }
-                    mcpServerManager.start(port = port, allowExternal = allowExternal)
-                        .onSuccess {
-                            mcpServerManager.refreshAddresses()
-                            Toast.makeText(context, "MCP 服务已启动", Toast.LENGTH_SHORT).show()
-                        }
-                        .onFailure {
-                            Toast.makeText(context, "启动失败: ${it.message}", Toast.LENGTH_SHORT).show()
-                        }
-                }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            GlassTextButton(
-                backdrop = backdrop,
-                text = "停止服务",
-                onClick = {
-                    mcpServerManager.stop()
-                    Toast.makeText(context, "MCP 服务已停止", Toast.LENGTH_SHORT).show()
-                }
-            )
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = "停止服务",
+                    onClick = {
+                        mcpServerManager.stop()
+                        Toast.makeText(context, "MCP 服务已停止", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = if (notificationPermissionGranted) "重新检查通知权限" else "申请通知权限",
+                    onClick = {
+                        onRequestNotificationPermission()
+                        Toast.makeText(context, "已发起通知权限申请", Toast.LENGTH_SHORT).show()
+                    }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = "发送测试通知",
+                    onClick = {
+                        mcpServerManager.sendTestNotification()
+                            .onSuccess { Toast.makeText(context, "已发送 MCP 测试通知", Toast.LENGTH_SHORT).show() }
+                            .onFailure { Toast.makeText(context, "发送失败: ${it.message}", Toast.LENGTH_SHORT).show() }
+                    }
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth()) {
-            GlassTextButton(
-                backdrop = backdrop,
-                text = if (notificationPermissionGranted) "重新检查通知权限" else "申请通知权限",
-                onClick = {
-                    onRequestNotificationPermission()
-                    Toast.makeText(context, "已发起通知权限申请", Toast.LENGTH_SHORT).show()
-                }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            GlassTextButton(
-                backdrop = backdrop,
-                text = "发送测试通知",
-                onClick = {
-                    mcpServerManager.sendTestNotification()
-                        .onSuccess { Toast.makeText(context, "已发送 MCP 测试通知", Toast.LENGTH_SHORT).show() }
-                        .onFailure { Toast.makeText(context, "发送失败: ${it.message}", Toast.LENGTH_SHORT).show() }
-                }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         MiuixExpandableSection(
             backdrop = backdrop,
@@ -281,7 +261,7 @@ fun McpPage(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         MiuixExpandableSection(
             backdrop = backdrop,
