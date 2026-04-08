@@ -1,6 +1,9 @@
 package com.example.keios.ui.page.main
 
-import android.os.Build
+import android.app.ActivityManager
+import android.content.Context
+import android.content.pm.FeatureInfo
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,19 +18,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
-import com.example.keios.ui.utils.InfoFactory
 import com.example.keios.ui.utils.ShizukuApiUtils
-import com.example.keios.ui.utils.findJavaPropString
-import com.example.keios.ui.utils.findPropString
 import com.example.keios.ui.utils.getAllJavaPropString
 import com.example.keios.ui.utils.getAllSystemProperties
 import com.kyant.backdrop.Backdrop
-import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 
@@ -41,6 +41,113 @@ private fun matches(row: InfoRow, query: String): Boolean {
     return row.key.contains(query, ignoreCase = true) || row.value.contains(query, ignoreCase = true)
 }
 
+private fun isInvalidValue(raw: String): Boolean {
+    val value = raw.trim()
+    if (value.isBlank()) return true
+    val normalized = value.lowercase()
+    if (normalized == "n/a" || normalized == "na" || normalized == "unknown" || normalized == "null") return true
+    if (normalized == "not found" || normalized == "none") return true
+    if (normalized.contains("permission denial")) return true
+    return false
+}
+
+private fun cleanRows(rows: List<InfoRow>): List<InfoRow> {
+    val seen = LinkedHashSet<String>()
+    return rows
+        .map { InfoRow(it.key.trim(), it.value.trim()) }
+        .filter { it.key.isNotBlank() && !isInvalidValue(it.value) }
+        .filter { seen.add("${it.key}\u0000${it.value}") }
+}
+
+private fun execRuntimeCommand(command: String): String? {
+    return runCatching {
+        val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", command))
+        process.inputStream.bufferedReader().use { it.readText() }.trim()
+    }.getOrNull()?.ifBlank { null }
+}
+
+private fun parseKeyValueLines(raw: String?): List<InfoRow> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return raw.lineSequence()
+        .map { it.trim() }
+        .filter { it.isNotBlank() && it.contains("=") }
+        .mapNotNull { line ->
+            val index = line.indexOf('=')
+            if (index <= 0) return@mapNotNull null
+            InfoRow(
+                key = line.substring(0, index).trim(),
+                value = line.substring(index + 1).trim()
+            )
+        }
+        .toList()
+}
+
+private fun commandRows(command: String, shizukuApiUtils: ShizukuApiUtils): List<InfoRow> {
+    val shizuku = shizukuApiUtils.execCommand(command)
+    val runtime = if (shizuku.isNullOrBlank()) execRuntimeCommand(command) else null
+    return parseKeyValueLines(shizuku ?: runtime)
+}
+
+private fun decodeVulkanApiVersion(version: Int): String {
+    if (version <= 0) return ""
+    val major = version shr 22
+    val minor = (version shr 12) and 0x3ff
+    val patch = version and 0xfff
+    return "$major.$minor.$patch"
+}
+
+private fun featureVersion(features: Array<FeatureInfo>?, featureName: String): Int {
+    return features?.firstOrNull { it.name == featureName }?.version ?: 0
+}
+
+private fun boolFeatureRow(pm: PackageManager, featureName: String, label: String): InfoRow {
+    return InfoRow(label, pm.hasSystemFeature(featureName).toString())
+}
+
+private fun graphicsRows(context: Context): List<InfoRow> {
+    val pm = context.packageManager
+    val features = pm.systemAvailableFeatures
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+    val glEsVersion = activityManager?.deviceConfigurationInfo?.glEsVersion.orEmpty()
+
+    val vulkanVersionEncoded = featureVersion(features, "android.hardware.vulkan.version")
+    val vulkanLevel = featureVersion(features, "android.hardware.vulkan.level")
+    val vulkanVersionText = decodeVulkanApiVersion(vulkanVersionEncoded)
+
+    return listOf(
+        InfoRow("graphics.opengl.es", glEsVersion),
+        InfoRow("graphics.vulkan.version", vulkanVersionText),
+        InfoRow("graphics.vulkan.level", if (vulkanLevel > 0) vulkanLevel.toString() else ""),
+        boolFeatureRow(pm, "android.hardware.vulkan.version", "feature.vulkan.version"),
+        boolFeatureRow(pm, "android.hardware.vulkan.level", "feature.vulkan.level"),
+        boolFeatureRow(pm, "android.hardware.opengles.aep", "feature.opengl.aep"),
+        boolFeatureRow(pm, PackageManager.FEATURE_OPENGLES_EXTENSION_PACK, "feature.opengles.extension_pack"),
+        InfoRow("prop.ro.hardware.egl", execRuntimeCommand("getprop ro.hardware.egl").orEmpty()),
+        InfoRow("prop.ro.hardware.vulkan", execRuntimeCommand("getprop ro.hardware.vulkan").orEmpty())
+    )
+}
+
+private fun capabilityRows(context: Context): List<InfoRow> {
+    val pm = context.packageManager
+    return listOf(
+        boolFeatureRow(pm, PackageManager.FEATURE_BLUETOOTH, "feature.bluetooth"),
+        boolFeatureRow(pm, PackageManager.FEATURE_BLUETOOTH_LE, "feature.bluetooth_le"),
+        boolFeatureRow(pm, PackageManager.FEATURE_WIFI, "feature.wifi"),
+        boolFeatureRow(pm, PackageManager.FEATURE_WIFI_AWARE, "feature.wifi_aware"),
+        boolFeatureRow(pm, PackageManager.FEATURE_NFC, "feature.nfc"),
+        boolFeatureRow(pm, PackageManager.FEATURE_USB_HOST, "feature.usb_host"),
+        boolFeatureRow(pm, PackageManager.FEATURE_CAMERA, "feature.camera"),
+        boolFeatureRow(pm, PackageManager.FEATURE_CAMERA_FRONT, "feature.camera_front"),
+        boolFeatureRow(pm, PackageManager.FEATURE_CAMERA_FLASH, "feature.camera_flash"),
+        boolFeatureRow(pm, PackageManager.FEATURE_SENSOR_ACCELEROMETER, "feature.sensor.accelerometer"),
+        boolFeatureRow(pm, PackageManager.FEATURE_SENSOR_GYROSCOPE, "feature.sensor.gyroscope"),
+        boolFeatureRow(pm, PackageManager.FEATURE_SENSOR_BAROMETER, "feature.sensor.barometer"),
+        boolFeatureRow(pm, PackageManager.FEATURE_FINGERPRINT, "feature.fingerprint"),
+        boolFeatureRow(pm, PackageManager.FEATURE_LOCATION_GPS, "feature.location.gps"),
+        boolFeatureRow(pm, PackageManager.FEATURE_TELEPHONY, "feature.telephony")
+    )
+}
+
 @Composable
 fun SystemPage(
     backdrop: Backdrop?,
@@ -49,12 +156,14 @@ fun SystemPage(
     shizukuApiUtils: ShizukuApiUtils,
     contentBottomPadding: Dp = 72.dp
 ) {
+    val context = LocalContext.current
     var query by remember { mutableStateOf("") }
-    var keyInfoExpanded by remember { mutableStateOf(true) }
-    var infoFactoryExpanded by remember { mutableStateOf(true) }
-    var lowLevelExpanded by remember { mutableStateOf(false) }
-    var systemPropsExpanded by remember { mutableStateOf(false) }
+    var systemTableExpanded by remember { mutableStateOf(true) }
+    var secureTableExpanded by remember { mutableStateOf(false) }
+    var globalTableExpanded by remember { mutableStateOf(false) }
+    var androidPropsExpanded by remember { mutableStateOf(false) }
     var javaPropsExpanded by remember { mutableStateOf(false) }
+    var linuxEnvExpanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(scrollToTopSignal) {
@@ -63,97 +172,67 @@ fun SystemPage(
         }
     }
 
-    val keyInfoRows = remember {
-        listOf(
-            InfoRow("Brand", Build.BRAND),
-            InfoRow("Model", Build.MODEL),
-            InfoRow("Device", Build.DEVICE),
-            InfoRow("Release", findPropString("ro.build.version.release")),
-            InfoRow("SDK", findPropString("ro.build.version.sdk")),
-            InfoRow("Build ID", findPropString("ro.build.id")),
-            InfoRow("Display ID", findPropString("ro.build.display.id")),
-            InfoRow("Security Patch", findPropString("ro.build.version.security_patch")),
-            InfoRow("Locale", findPropString("persist.sys.locale", Locale.getDefault().toLanguageTag())),
-            InfoRow("Unicode", findJavaPropString("android.icu.unicode.version")),
-            InfoRow("OpenSSL", findJavaPropString("android.openssl.version"))
+    val systemTableRows = remember(shizukuStatus) {
+        cleanRows(commandRows("settings list system", shizukuApiUtils))
+    }
+    val secureTableRows = remember(shizukuStatus) {
+        cleanRows(commandRows("settings list secure", shizukuApiUtils))
+    }
+    val globalTableRows = remember(shizukuStatus) {
+        cleanRows(commandRows("settings list global", shizukuApiUtils))
+    }
+
+    val androidPropertiesRows = remember(context) {
+        cleanRows(
+            graphicsRows(context) +
+                capabilityRows(context) +
+                getAllSystemProperties
+                    .toSortedMap()
+                    .map { InfoRow(it.key, it.value) }
         )
     }
 
-    val infoFactoryRows = remember {
-        listOf(
-            InfoRow("procVersion", InfoFactory.procVersion),
-            InfoRow("abSlot", InfoFactory.abSlot),
-            InfoRow("toyboxVersion", InfoFactory.toyboxVersion),
-            InfoRow("vendorBuildSecurityPatch", InfoFactory.vendorBuildSecurityPatch),
-            InfoRow("miOSVersionName", InfoFactory.miOSVersionName),
-            InfoRow("miuiVersionName", InfoFactory.miuiVersionName),
-            InfoRow("miuiVersionCode", InfoFactory.miuiVersionCode),
-            InfoRow("deviceName", InfoFactory.deviceName),
-            InfoRow("zygote", InfoFactory.zygote),
-            InfoRow("unicodeVersion", InfoFactory.unicodeVersion),
-            InfoRow("opensslVersion", InfoFactory.opensslVersion),
-            InfoRow("selinuxPolicy", InfoFactory.selinuxPolicy),
-            InfoRow("backgroundBlurSupported", InfoFactory.backgroundBlurSupported.toString()),
-            InfoRow("fileSafStatus", InfoFactory.fileSafStatus.toString())
+    val javaPropertiesRows = remember {
+        cleanRows(
+            getAllJavaPropString
+                .toSortedMap()
+                .map { InfoRow(it.key, it.value) }
         )
     }
 
-    val lowLevelRows = remember(shizukuStatus) {
-        fun prop(key: String, fallback: String = ""): String = findPropString(key, fallback)
-        fun privileged(command: String, fallback: String = ""): String {
-            return shizukuApiUtils.execCommand(command)?.lineSequence()?.firstOrNull()?.ifBlank { null } ?: fallback
-        }
-        listOf(
-            InfoRow("Shizuku", shizukuStatus),
-            InfoRow("ro.build.ab_update", prop("ro.build.ab_update")),
-            InfoRow("ro.virtual_ab.enabled", prop("ro.virtual_ab.enabled")),
-            InfoRow("ro.virtual_ab.retrofit", prop("ro.virtual_ab.retrofit")),
-            InfoRow("ro.boot.slot_suffix", prop("ro.boot.slot_suffix")),
-            InfoRow("ro.boot.dynamic_partitions", prop("ro.boot.dynamic_partitions")),
-            InfoRow("ro.boot.dynamic_partitions_retrofit", prop("ro.boot.dynamic_partitions_retrofit")),
-            InfoRow("ro.treble.enabled", prop("ro.treble.enabled")),
-            InfoRow("ro.vndk.version", prop("ro.vndk.version")),
-            InfoRow("ro.vndk.lite", prop("ro.vndk.lite")),
-            InfoRow("ro.apex.updatable", prop("ro.apex.updatable")),
-            InfoRow("ro.adb.secure", prop("ro.adb.secure")),
-            InfoRow("ro.secure", prop("ro.secure")),
-            InfoRow("ro.debuggable", prop("ro.debuggable")),
-            InfoRow("ro.oem_unlock_supported", prop("ro.oem_unlock_supported")),
-            InfoRow("ro.boot.flash.locked", prop("ro.boot.flash.locked")),
-            InfoRow("ro.boot.verifiedbootstate", prop("ro.boot.verifiedbootstate")),
-            InfoRow("ro.boot.veritymode", prop("ro.boot.veritymode")),
-            InfoRow("ro.boot.vbmeta.device_state", prop("ro.boot.vbmeta.device_state")),
-            InfoRow("ro.boot.vbmeta.avb_version", prop("ro.boot.vbmeta.avb_version")),
-            InfoRow("ro.boot.avb_version", prop("ro.boot.avb_version")),
-            InfoRow("ro.boot.secureboot", prop("ro.boot.secureboot")),
-            InfoRow("ro.product.first_api_level", prop("ro.product.first_api_level")),
-            InfoRow("ro.board.first_api_level", prop("ro.board.first_api_level")),
-            InfoRow("getenforce (Shizuku)", privileged("getenforce", "N/A")),
-            InfoRow("toybox --version (Shizuku)", privileged("toybox --version", "N/A")),
-            InfoRow("uname -a (Shizuku)", privileged("uname -a", "N/A")),
-            InfoRow("cat /sys/fs/selinux/policyvers (Shizuku)", privileged("cat /sys/fs/selinux/policyvers", "N/A")),
-            InfoRow("ls -l /dev/block/by-name/super (Shizuku)", privileged("ls -l /dev/block/by-name/super", "N/A"))
-        )
-    }
+    val linuxEnvironmentRows = remember(shizukuStatus) {
+        val runtimeUname = execRuntimeCommand("uname -a")
+        val runtimeGetenforce = execRuntimeCommand("getenforce")
+        val runtimeProcVersion = execRuntimeCommand("cat /proc/version")
+        val runtimeToybox = execRuntimeCommand("toybox --version")
 
-    val systemPropRows = remember {
-        getAllSystemProperties
+        val shizukuUname = shizukuApiUtils.execCommand("uname -a")
+        val shizukuGetenforce = shizukuApiUtils.execCommand("getenforce")
+        val shizukuProcVersion = shizukuApiUtils.execCommand("cat /proc/version")
+        val shizukuToybox = shizukuApiUtils.execCommand("toybox --version")
+
+        val envRows = System.getenv()
             .toSortedMap()
-            .map { InfoRow(it.key, it.value) }
-    }
+            .map { InfoRow("env.${it.key}", it.value) }
 
-    val javaPropRows = remember {
-        getAllJavaPropString
-            .toSortedMap()
-            .map { InfoRow(it.key, it.value) }
+        cleanRows(
+            listOf(
+                InfoRow("Shizuku Status", shizukuStatus),
+                InfoRow("uname -a", shizukuUname?.lineSequence()?.firstOrNull() ?: runtimeUname.orEmpty()),
+                InfoRow("getenforce", shizukuGetenforce?.lineSequence()?.firstOrNull() ?: runtimeGetenforce.orEmpty()),
+                InfoRow("proc.version", shizukuProcVersion?.lineSequence()?.firstOrNull() ?: runtimeProcVersion.orEmpty()),
+                InfoRow("toybox --version", shizukuToybox?.lineSequence()?.firstOrNull() ?: runtimeToybox.orEmpty())
+            ) + envRows
+        )
     }
 
     val q = query.trim()
-    val filteredKeyInfoRows = remember(q, keyInfoRows) { keyInfoRows.filter { matches(it, q) } }
-    val filteredInfoFactoryRows = remember(q, infoFactoryRows) { infoFactoryRows.filter { matches(it, q) } }
-    val filteredLowLevelRows = remember(q, lowLevelRows) { lowLevelRows.filter { matches(it, q) } }
-    val filteredSystemPropRows = remember(q, systemPropRows) { systemPropRows.filter { matches(it, q) } }
-    val filteredJavaPropRows = remember(q, javaPropRows) { javaPropRows.filter { matches(it, q) } }
+    val filteredSystemTableRows = remember(q, systemTableRows) { systemTableRows.filter { matches(it, q) } }
+    val filteredSecureTableRows = remember(q, secureTableRows) { secureTableRows.filter { matches(it, q) } }
+    val filteredGlobalTableRows = remember(q, globalTableRows) { globalTableRows.filter { matches(it, q) } }
+    val filteredAndroidPropertiesRows = remember(q, androidPropertiesRows) { androidPropertiesRows.filter { matches(it, q) } }
+    val filteredJavaPropertiesRows = remember(q, javaPropertiesRows) { javaPropertiesRows.filter { matches(it, q) } }
+    val filteredLinuxEnvironmentRows = remember(q, linuxEnvironmentRows) { linuxEnvironmentRows.filter { matches(it, q) } }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -176,17 +255,15 @@ fun SystemPage(
 
             MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "Key Info",
-                subtitle = "${filteredKeyInfoRows.size} 条",
-                expanded = keyInfoExpanded,
-                onExpandedChange = { keyInfoExpanded = it }
+                title = "System Table",
+                subtitle = "${filteredSystemTableRows.size} 条",
+                expanded = systemTableExpanded,
+                onExpandedChange = { systemTableExpanded = it }
             ) {
-                if (filteredKeyInfoRows.isEmpty()) {
+                if (filteredSystemTableRows.isEmpty()) {
                     Text(text = "No matched results.")
                 } else {
-                    filteredKeyInfoRows.forEach { row ->
-                        MiuixInfoItem(key = row.key, value = row.value)
-                    }
+                    filteredSystemTableRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
                 }
             }
 
@@ -194,17 +271,15 @@ fun SystemPage(
 
             MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "InfoFactory",
-                subtitle = "${filteredInfoFactoryRows.size} 条",
-                expanded = infoFactoryExpanded,
-                onExpandedChange = { infoFactoryExpanded = it }
+                title = "Secure Table",
+                subtitle = "${filteredSecureTableRows.size} 条",
+                expanded = secureTableExpanded,
+                onExpandedChange = { secureTableExpanded = it }
             ) {
-                if (filteredInfoFactoryRows.isEmpty()) {
+                if (filteredSecureTableRows.isEmpty()) {
                     Text(text = "No matched results.")
                 } else {
-                    filteredInfoFactoryRows.forEach { row ->
-                        MiuixInfoItem(key = row.key, value = row.value)
-                    }
+                    filteredSecureTableRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
                 }
             }
 
@@ -212,17 +287,15 @@ fun SystemPage(
 
             MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "AndroidLowLevelDetector",
-                subtitle = "${filteredLowLevelRows.size} 条",
-                expanded = lowLevelExpanded,
-                onExpandedChange = { lowLevelExpanded = it }
+                title = "Global Table",
+                subtitle = "${filteredGlobalTableRows.size} 条",
+                expanded = globalTableExpanded,
+                onExpandedChange = { globalTableExpanded = it }
             ) {
-                if (filteredLowLevelRows.isEmpty()) {
+                if (filteredGlobalTableRows.isEmpty()) {
                     Text(text = "No matched results.")
                 } else {
-                    filteredLowLevelRows.forEach { row ->
-                        MiuixInfoItem(key = row.key, value = row.value)
-                    }
+                    filteredGlobalTableRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
                 }
             }
 
@@ -230,17 +303,15 @@ fun SystemPage(
 
             MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "getprop",
-                subtitle = "${filteredSystemPropRows.size} 条（默认收纳）",
-                expanded = systemPropsExpanded,
-                onExpandedChange = { systemPropsExpanded = it }
+                title = "Android Properties",
+                subtitle = "${filteredAndroidPropertiesRows.size} 条",
+                expanded = androidPropsExpanded,
+                onExpandedChange = { androidPropsExpanded = it }
             ) {
-                if (filteredSystemPropRows.isEmpty()) {
+                if (filteredAndroidPropertiesRows.isEmpty()) {
                     Text(text = "No matched results.")
                 } else {
-                    filteredSystemPropRows.forEach { row ->
-                        MiuixInfoItem(key = row.key, value = row.value)
-                    }
+                    filteredAndroidPropertiesRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
                 }
             }
 
@@ -249,16 +320,30 @@ fun SystemPage(
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Java Properties",
-                subtitle = "${filteredJavaPropRows.size} 条",
+                subtitle = "${filteredJavaPropertiesRows.size} 条",
                 expanded = javaPropsExpanded,
                 onExpandedChange = { javaPropsExpanded = it }
             ) {
-                if (filteredJavaPropRows.isEmpty()) {
+                if (filteredJavaPropertiesRows.isEmpty()) {
                     Text(text = "No matched results.")
                 } else {
-                    filteredJavaPropRows.forEach { row ->
-                        MiuixInfoItem(key = row.key, value = row.value)
-                    }
+                    filteredJavaPropertiesRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            MiuixExpandableSection(
+                backdrop = backdrop,
+                title = "Linux environment",
+                subtitle = "${filteredLinuxEnvironmentRows.size} 条",
+                expanded = linuxEnvExpanded,
+                onExpandedChange = { linuxEnvExpanded = it }
+            ) {
+                if (filteredLinuxEnvironmentRows.isEmpty()) {
+                    Text(text = "No matched results.")
+                } else {
+                    filteredLinuxEnvironmentRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
                 }
             }
         }
