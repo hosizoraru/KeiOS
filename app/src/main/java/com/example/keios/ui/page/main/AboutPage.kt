@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,13 +48,21 @@ fun AboutPage(
     packageInfo: PackageInfo?,
     shizukuStatus: String,
     onCheckShizuku: () -> Unit,
-    contentBottomPadding: Dp = 72.dp
+    contentBottomPadding: Dp = 72.dp,
+    scrollToTopSignal: Int = 0
 ) {
-    var identityExpanded by remember { mutableStateOf(true) }
+    var identityExpanded by remember { mutableStateOf(false) }
     var buildExpanded by remember { mutableStateOf(true) }
-    var installExpanded by remember { mutableStateOf(true) }
+    var installExpanded by remember { mutableStateOf(false) }
     var runtimeExpanded by remember { mutableStateOf(false) }
     var permissionExpanded by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(scrollToTopSignal) {
+        if (scrollToTopSignal > 0) {
+            scrollState.animateScrollTo(0)
+        }
+    }
 
     val appInfo: ApplicationInfo? = packageInfo?.applicationInfo
 
@@ -124,7 +133,7 @@ fun AboutPage(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(bottom = contentBottomPadding)
     ) {
         Text(text = "About", modifier = Modifier.padding(top = 6.dp))

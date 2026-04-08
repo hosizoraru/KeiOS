@@ -42,6 +42,7 @@ fun MainScreen(
     var currentPage by remember { mutableStateOf(BottomPage.Home) }
     var clickCount by remember { mutableIntStateOf(0) }
     var systemScrollToTopSignal by remember { mutableIntStateOf(0) }
+    var aboutScrollToTopSignal by remember { mutableIntStateOf(0) }
     val manufacturer = Build.MANUFACTURER.lowercase()
     val brand = Build.BRAND.lowercase()
     val isBackdropSafe = !(manufacturer.contains("xiaomi") || brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco"))
@@ -90,7 +91,8 @@ fun MainScreen(
                         packageInfo = packageInfo,
                         shizukuStatus = shizukuStatus,
                         onCheckShizuku = onCheckOrRequestShizuku,
-                        contentBottomPadding = bottomOverlayPadding
+                        contentBottomPadding = bottomOverlayPadding,
+                        scrollToTopSignal = aboutScrollToTopSignal
                     )
                 }
             }
@@ -104,6 +106,9 @@ fun MainScreen(
                 if (selected == currentPage) {
                     if (selected == BottomPage.System) {
                         systemScrollToTopSignal++
+                    }
+                    if (selected == BottomPage.About) {
+                        aboutScrollToTopSignal++
                     }
                 } else {
                     currentPage = selected
