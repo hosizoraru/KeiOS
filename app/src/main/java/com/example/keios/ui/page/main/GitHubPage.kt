@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
@@ -38,6 +41,7 @@ import com.example.keios.ui.utils.GitHubVersionUtils
 import com.example.keios.ui.utils.InstalledAppItem
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Button
@@ -53,8 +57,15 @@ private data class VersionCheckUi(
     val message: String = "",
     val isPreRelease: Boolean = false,
     val preReleaseInfo: String = "",
-    val showPreReleaseInfo: Boolean = false
+    val showPreReleaseInfo: Boolean = false,
+    val hasPreReleaseUpdate: Boolean = false
 )
+
+private enum class GitHubSortMode(val label: String) {
+    UpdateFirst("更新优先"),
+    NameAsc("名称 A-Z"),
+    PreReleaseFirst("预发行优先")
+}
 
 @Composable
 fun GitHubPage(
@@ -75,6 +86,8 @@ fun GitHubPage(
     var appList by remember { mutableStateOf<List<InstalledAppItem>>(emptyList()) }
     var appListLoaded by remember { mutableStateOf(false) }
     var hasAutoRequestedPermission by remember { mutableStateOf(false) }
+    var showSortPopup by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf(GitHubSortMode.UpdateFirst) }
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
@@ -86,10 +99,8 @@ fun GitHubPage(
         appListLoaded = true
     }
 
-    fun refreshItem(item: GitHubTrackedApp, showToastOnError: Boolean = false) {
-        scope.launch {
-            checkStates[item.id] = VersionCheckUi(loading = true)
-            val state = withContext(Dispatchers.IO) {
+    suspend fun resolveItemState(item: GitHubTrackedApp): VersionCheckUi {
+        return withContext(Dispatchers.IO) {
                 val local = runCatching { GitHubVersionUtils.localVersionName(context, item.packageName) }
                     .getOrDefault("unknown")
                 val atomEntries = GitHubVersionUtils.fetchReleaseEntriesFromAtom(item.owner, item.repo)
@@ -98,7 +109,11 @@ fun GitHubPage(
                     GitHubVersionUtils.compareVersionToCandidates(local, it.candidates) == 0
                 }
                 val latestPreEntry = atomEntries.firstOrNull { it.isLikelyPreRelease }
-                val stableResult = GitHubVersionUtils.fetchLatestReleaseSignals(item.owner, item.repo)
+                val stableResult = GitHubVersionUtils.fetchLatestReleaseSignals(
+                    owner = item.owner,
+                    repo = item.repo,
+                    atomEntriesHint = atomEntries
+                )
 
                 stableResult.fold(
                     onSuccess = { signals ->
@@ -110,16 +125,24 @@ fun GitHubPage(
                             null
                         }
                         val preRelevant = latestPreEntry != null && (preVsStable == null || preVsStable > 0)
-                        val localIsPreRelease = matchedEntry?.isLikelyPreRelease == true && cmp != 0 && preRelevant
-                        val hasUpdate = if (localIsPreRelease) false else cmp?.let { it < 0 }
+                        val localIsPreReleaseInstalled = matchedEntry?.isLikelyPreRelease == true
+                        val preCmp = if (latestPreEntry != null) {
+                            GitHubVersionUtils.compareVersionToCandidates(local, latestPreEntry.candidates)
+                        } else {
+                            null
+                        }
+                        val hasPreReleaseUpdate = localIsPreReleaseInstalled && preRelevant && (preCmp?.let { it < 0 } == true)
+                        val stableHasUpdate = cmp?.let { it < 0 } == true
+                        val hasUpdate = hasPreReleaseUpdate || stableHasUpdate
                         val message = when {
-                            localIsPreRelease -> "预发行"
-                            hasUpdate == true -> "发现更新"
+                            hasPreReleaseUpdate -> "预发有更新"
+                            stableHasUpdate -> "发现更新"
+                            localIsPreReleaseInstalled && preRelevant -> "预发行"
                             hasUpdate == false -> "已是最新"
                             else -> "版本格式无法精确比较"
                         }
                         val preInfo = when {
-                            localIsPreRelease -> matchedEntry.let { entry -> entry.title.ifBlank { entry.tag } }
+                            localIsPreReleaseInstalled && preRelevant -> matchedEntry.let { entry -> entry.title.ifBlank { entry.tag } }
                             preRelevant -> latestPreEntry.title.ifBlank { latestPreEntry.tag }
                             else -> ""
                         }
@@ -129,37 +152,60 @@ fun GitHubPage(
                             latestTag = signals.displayVersion,
                             hasUpdate = hasUpdate,
                             message = message,
-                            isPreRelease = localIsPreRelease,
+                            isPreRelease = localIsPreReleaseInstalled && preRelevant,
                             preReleaseInfo = preInfo,
-                            showPreReleaseInfo = preInfo.isNotBlank()
+                            showPreReleaseInfo = preInfo.isNotBlank(),
+                            hasPreReleaseUpdate = hasPreReleaseUpdate
                         )
                     },
                     onFailure = { err ->
                         if (matchedEntry != null) {
                             val localIsPreRelease = matchedEntry.isLikelyPreRelease
+                            val latestPre = latestPreEntry?.takeIf { entry ->
+                                GitHubVersionUtils.compareVersionToCandidates(
+                                    entry.title.ifBlank { entry.tag },
+                                    matchedEntry.candidates
+                                )?.let { it > 0 } == true
+                            }
                             VersionCheckUi(
                                 loading = false,
                                 localVersion = local,
                                 latestTag = matchedEntry.title.ifBlank { matchedEntry.tag },
-                                hasUpdate = false,
-                                message = if (localIsPreRelease) "预发行" else "已匹配发行",
+                                hasUpdate = latestPre != null,
+                                message = when {
+                                    latestPre != null -> "预发有更新"
+                                    localIsPreRelease -> "预发行"
+                                    else -> "已匹配发行"
+                                },
                                 isPreRelease = localIsPreRelease,
-                                preReleaseInfo = if (localIsPreRelease) matchedEntry.title.ifBlank { matchedEntry.tag } else "",
-                                showPreReleaseInfo = localIsPreRelease
+                                preReleaseInfo = when {
+                                    latestPre != null -> latestPre.title.ifBlank { latestPre.tag }
+                                    localIsPreRelease -> matchedEntry.title.ifBlank { matchedEntry.tag }
+                                    else -> ""
+                                },
+                                showPreReleaseInfo = localIsPreRelease || latestPre != null,
+                                hasPreReleaseUpdate = latestPre != null
                             )
                         } else {
-                            if (showToastOnError) {
-                                Toast.makeText(context, "检查失败: ${err.message ?: "unknown"}", Toast.LENGTH_SHORT).show()
-                            }
                             VersionCheckUi(
                                 loading = false,
                                 message = "检查失败: ${err.message ?: "unknown"}",
                                 preReleaseInfo = "",
-                                showPreReleaseInfo = false
+                                showPreReleaseInfo = false,
+                                hasPreReleaseUpdate = false
                             )
                         }
                     }
                 )
+            }
+    }
+
+    fun refreshItem(item: GitHubTrackedApp, showToastOnError: Boolean = false) {
+        scope.launch {
+            checkStates[item.id] = VersionCheckUi(loading = true)
+            val state = resolveItemState(item)
+            if (showToastOnError && state.message.startsWith("检查失败")) {
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
             }
             checkStates[item.id] = state
         }
@@ -170,8 +216,18 @@ fun GitHubPage(
             if (showToast) Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
             return
         }
-        trackedItems.forEach { refreshItem(it, showToastOnError = showToast) }
-        if (showToast) Toast.makeText(context, "已开始检查全部跟踪", Toast.LENGTH_SHORT).show()
+        scope.launch {
+            trackedItems.forEachIndexed { index, item ->
+                checkStates[item.id] = VersionCheckUi(loading = true)
+                val state = resolveItemState(item)
+                checkStates[item.id] = state
+                if (showToast && state.message.startsWith("检查失败")) {
+                    Toast.makeText(context, "${item.owner}/${item.repo}: ${state.message}", Toast.LENGTH_SHORT).show()
+                }
+                if (index < trackedItems.lastIndex) delay(120)
+            }
+            if (showToast) Toast.makeText(context, "检查完成", Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun saveTracked() {
@@ -213,6 +269,19 @@ fun GitHubPage(
             item.appLabel.contains(trackedSearch, ignoreCase = true) ||
             item.packageName.contains(trackedSearch, ignoreCase = true)
     }
+    val sortedTracked = when (sortMode) {
+        GitHubSortMode.UpdateFirst -> filteredTracked.sortedWith(
+            compareByDescending<GitHubTrackedApp> { checkStates[it.id]?.hasUpdate == true }
+                .thenByDescending { checkStates[it.id]?.hasPreReleaseUpdate == true }
+                .thenBy { "${it.owner}/${it.repo}".lowercase() }
+        )
+        GitHubSortMode.NameAsc -> filteredTracked.sortedBy { "${it.owner}/${it.repo}".lowercase() }
+        GitHubSortMode.PreReleaseFirst -> filteredTracked.sortedWith(
+            compareByDescending<GitHubTrackedApp> { checkStates[it.id]?.isPreRelease == true }
+                .thenByDescending { checkStates[it.id]?.hasUpdate == true }
+                .thenBy { "${it.owner}/${it.repo}".lowercase() }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -221,11 +290,49 @@ fun GitHubPage(
                 color = MiuixTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = 6.dp)
             )
-            Button(
-                modifier = Modifier.padding(top = 2.dp),
-                onClick = { refreshAllTracked(showToast = true) }
-            ) {
-                Text("检查")
+            Row {
+                Box {
+                    Button(
+                        modifier = Modifier.padding(top = 2.dp),
+                        onClick = { showSortPopup = !showSortPopup }
+                    ) {
+                        Text("排序")
+                    }
+                    if (showSortPopup) {
+                        Popup(
+                            alignment = androidx.compose.ui.Alignment.TopEnd,
+                            onDismissRequest = { showSortPopup = false },
+                            properties = PopupProperties(focusable = true)
+                        ) {
+                            MiuixExpandableSection(
+                                backdrop = backdrop,
+                                title = "排序方式",
+                                subtitle = sortMode.label,
+                                expanded = true,
+                                onExpandedChange = {}
+                            ) {
+                                GitHubSortMode.entries.forEach { mode ->
+                                    Button(
+                                        onClick = {
+                                            sortMode = mode
+                                            showSortPopup = false
+                                        }
+                                    ) {
+                                        Text(if (sortMode == mode) "${mode.label} ✓" else mode.label)
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    modifier = Modifier.padding(top = 2.dp),
+                    onClick = { refreshAllTracked(showToast = true) }
+                ) {
+                    Text("检查")
+                }
             }
         }
         Text(
@@ -358,7 +465,7 @@ fun GitHubPage(
             } else if (filteredTracked.isEmpty()) {
                 MiuixInfoItem("搜索结果", "没有匹配的跟踪项目")
             } else {
-                filteredTracked.forEach { item ->
+                sortedTracked.forEach { item ->
                     var expanded by remember(item.id) { mutableStateOf(false) }
                     MiuixExpandableSection(
                         backdrop = backdrop,
@@ -370,6 +477,7 @@ fun GitHubPage(
                             val state = checkStates[item.id] ?: VersionCheckUi()
                             val statusText = when {
                                 state.loading -> "检查中"
+                                state.hasPreReleaseUpdate -> "预发有更新"
                                 state.isPreRelease -> "预发行"
                                 state.hasUpdate == true -> "有更新"
                                 state.hasUpdate == false -> "最新"
@@ -377,6 +485,7 @@ fun GitHubPage(
                             }
                             val statusColor = when {
                                 state.loading -> MiuixTheme.colorScheme.onBackgroundVariant
+                                state.hasPreReleaseUpdate -> MiuixTheme.colorScheme.error
                                 state.isPreRelease -> MiuixTheme.colorScheme.secondary
                                 state.hasUpdate == true -> MiuixTheme.colorScheme.error
                                 state.hasUpdate == false -> MiuixTheme.colorScheme.secondary
