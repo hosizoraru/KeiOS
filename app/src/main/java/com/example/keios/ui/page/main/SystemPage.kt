@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -483,6 +482,7 @@ private object SystemInfoCache {
 
 private object SystemUiStateStore {
     private const val KV_ID = "system_ui_state"
+    private const val KEY_OVERVIEW = "expanded_overview"
     private const val KEY_TOP_INFO = "expanded_top_info"
     private const val KEY_SYSTEM_TABLE = "expanded_system_table"
     private const val KEY_SECURE_TABLE = "expanded_secure_table"
@@ -493,6 +493,9 @@ private object SystemUiStateStore {
 
     fun topInfoExpanded(defaultValue: Boolean = true): Boolean =
         MMKV.mmkvWithID(KV_ID).decodeBool(KEY_TOP_INFO, defaultValue)
+
+    fun overviewExpanded(defaultValue: Boolean = true): Boolean =
+        MMKV.mmkvWithID(KV_ID).decodeBool(KEY_OVERVIEW, defaultValue)
 
     fun systemTableExpanded(defaultValue: Boolean = false): Boolean =
         MMKV.mmkvWithID(KV_ID).decodeBool(KEY_SYSTEM_TABLE, defaultValue)
@@ -514,6 +517,10 @@ private object SystemUiStateStore {
 
     fun setTopInfoExpanded(value: Boolean) {
         MMKV.mmkvWithID(KV_ID).encode(KEY_TOP_INFO, value)
+    }
+
+    fun setOverviewExpanded(value: Boolean) {
+        MMKV.mmkvWithID(KV_ID).encode(KEY_OVERVIEW, value)
     }
 
     fun setSystemTableExpanded(value: Boolean) {
@@ -971,6 +978,7 @@ fun SystemPage(
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val cached = remember { SystemInfoCache.read() }
     var query by remember { mutableStateOf("") }
+    var overviewExpanded by remember { mutableStateOf(SystemUiStateStore.overviewExpanded(defaultValue = true)) }
     var topInfoExpanded by remember { mutableStateOf(SystemUiStateStore.topInfoExpanded(defaultValue = true)) }
     var systemTableExpanded by remember { mutableStateOf(SystemUiStateStore.systemTableExpanded(defaultValue = false)) }
     var secureTableExpanded by remember { mutableStateOf(SystemUiStateStore.secureTableExpanded(defaultValue = false)) }
@@ -1044,6 +1052,9 @@ fun SystemPage(
 
     LaunchedEffect(topInfoExpanded) {
         withContext(Dispatchers.IO) { SystemUiStateStore.setTopInfoExpanded(topInfoExpanded) }
+    }
+    LaunchedEffect(overviewExpanded) {
+        withContext(Dispatchers.IO) { SystemUiStateStore.setOverviewExpanded(overviewExpanded) }
     }
     LaunchedEffect(systemTableExpanded) {
         withContext(Dispatchers.IO) { SystemUiStateStore.setSystemTableExpanded(systemTableExpanded) }
@@ -1152,12 +1163,29 @@ fun SystemPage(
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
-        FrostedBlock(
-            backdrop = backdrop,
-            title = "Overview",
-            subtitle = "系统信息加载状态",
-            accent = Color(0xFF5B8FFF),
-            content = {
+        TextField(
+            value = query,
+            onValueChange = { query = it },
+            label = "搜索系统参数",
+            useLabelAsPlaceholder = true,
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .padding(bottom = contentBottomPadding)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+            MiuixExpandableSection(
+                backdrop = backdrop,
+                title = "Overview",
+                subtitle = "系统信息加载状态",
+                expanded = overviewExpanded,
+                onExpandedChange = { overviewExpanded = it }
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1176,24 +1204,8 @@ fun SystemPage(
                 MiuixInfoItem("Cached Sections", cachedSectionCount.toString())
                 MiuixInfoItem("Search Query", if (query.isBlank()) "（空）" else query)
             }
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        TextField(
-            value = query,
-            onValueChange = { query = it },
-            label = "搜索系统参数",
-            useLabelAsPlaceholder = true,
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(14.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(bottom = contentBottomPadding)
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.height(12.dp))
 
             MiuixExpandableSection(
                 backdrop = backdrop,

@@ -59,7 +59,7 @@ fun AboutPage(
     scrollToTopSignal: Int = 0
 ) {
     var identityExpanded by remember { mutableStateOf(false) }
-    var buildExpanded by remember { mutableStateOf(true) }
+    var buildExpanded by remember { mutableStateOf(false) }
     var installExpanded by remember { mutableStateOf(false) }
     var runtimeExpanded by remember { mutableStateOf(false) }
     var permissionExpanded by remember { mutableStateOf(false) }
@@ -172,7 +172,7 @@ fun AboutPage(
             content = {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     StatusPill(
-                        label = "Build ${packageInfo?.versionName ?: "unknown"}",
+                        label = "Build",
                         color = Color(0xFF4B8DFF)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -182,6 +182,7 @@ fun AboutPage(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                MiuixInfoItem("Build Version", packageInfo?.versionName ?: "unknown")
                 MiuixInfoItem("Package", packageInfo?.packageName ?: "unknown")
                 MiuixInfoItem("Version", "${packageInfo?.versionName ?: "unknown"} (${packageInfo?.longVersionCode ?: -1})")
                 MiuixInfoItem("Target SDK", appInfo?.targetSdkVersion?.toString() ?: "unknown")
