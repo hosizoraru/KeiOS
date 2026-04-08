@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -63,7 +64,21 @@ fun McpPage(
             .verticalScroll(scrollState)
             .padding(bottom = contentBottomPadding)
     ) {
-        Text(text = "MCP", modifier = Modifier.padding(top = 6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = "MCP", modifier = Modifier.padding(top = 6.dp))
+            Button(
+                modifier = Modifier.padding(top = 2.dp),
+                onClick = {
+                    mcpServerManager.refreshNow()
+                    Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
+                }
+            ) {
+                Text("刷新")
+            }
+        }
         Text(text = "MCP Server 功能", modifier = Modifier.padding(top = 4.dp))
         Spacer(modifier = Modifier.height(12.dp))
         FrostedBlock(
@@ -241,7 +256,7 @@ fun McpPage(
             onExpandedChange = { toolsExpanded = it }
         ) {
             uiState.tools.forEach { tool ->
-                MiuixInfoItem("Tool", tool)
+                MiuixInfoItem(tool.name, tool.description)
             }
         }
 

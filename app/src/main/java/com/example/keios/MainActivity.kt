@@ -41,7 +41,9 @@ class MainActivity : ComponentActivity() {
         localMcpService = LocalMcpService(
             shizukuApiUtils = shizukuApiUtils,
             appVersionName = packageInfo?.versionName ?: "unknown",
-            appVersionCode = packageInfo?.longVersionCode ?: -1L
+            appVersionCode = packageInfo?.longVersionCode ?: -1L,
+            appPackageName = packageName,
+            appLabel = appLabel
         )
         mcpServerManager = McpServerManager(localMcpService)
         val controller = ThemeController(ColorSchemeMode.System)

@@ -39,7 +39,7 @@ data class McpServerUiState(
     val allowExternal: Boolean = false,
     val addresses: List<String> = emptyList(),
     val lastError: String? = null,
-    val tools: List<String> = emptyList(),
+    val tools: List<McpToolMeta> = emptyList(),
     val authToken: String = "",
     val serverName: String = "KeiOS MCP",
     val connectedClients: Int = 0,
@@ -102,12 +102,16 @@ class McpServerManager(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _uiState = MutableStateFlow(
         McpServerUiState(
-            tools = localMcpService.listLocalToolNames(),
+            tools = localMcpService.listLocalTools(),
             authToken = Prefs.authToken(),
             serverName = Prefs.serverName()
         )
     )
     val uiState: StateFlow<McpServerUiState> = _uiState.asStateFlow()
+
+    init {
+        localMcpService.bindMcpStateProvider { _uiState.value }
+    }
 
     @Synchronized
     fun start(port: Int, allowExternal: Boolean): Result<Unit> {
@@ -208,6 +212,21 @@ class McpServerManager(
     @Synchronized
     fun clearLogs() {
         _uiState.value = _uiState.value.copy(logs = emptyList())
+    }
+
+    @Synchronized
+    fun refreshNow() {
+        val running = _uiState.value.running
+        if (_uiState.value.allowExternal) {
+            _uiState.value = _uiState.value.copy(addresses = ipv4Addresses())
+        }
+        if (running) {
+            val sessions = runCatching { localMcpService.getOrCreateServer().sessions.size }.getOrDefault(0)
+            _uiState.value = _uiState.value.copy(connectedClients = sessions)
+            appendLog("INFO", "Snapshot refreshed: clients=$sessions")
+        } else {
+            appendLog("INFO", "Snapshot refreshed: server stopped")
+        }
     }
 
     @Synchronized

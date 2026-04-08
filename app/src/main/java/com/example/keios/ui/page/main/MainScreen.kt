@@ -97,7 +97,8 @@ fun MainScreen(
                         shizukuStatus = shizukuStatus,
                         mcpRunning = mcpUiState.running,
                         mcpPort = mcpUiState.port,
-                        shizukuApiVersion = ShizukuApiUtils.API_VERSION
+                        shizukuApiVersion = ShizukuApiUtils.API_VERSION,
+                        mcpConnectedClients = mcpUiState.connectedClients
                     )
                 }
 

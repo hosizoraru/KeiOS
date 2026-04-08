@@ -23,7 +23,8 @@ fun HomePage(
     shizukuStatus: String,
     mcpRunning: Boolean,
     mcpPort: Int,
-    shizukuApiVersion: String
+    shizukuApiVersion: String,
+    mcpConnectedClients: Int
 ) {
     val shizukuGranted = shizukuStatus.contains("granted", ignoreCase = true)
     val shizukuState = when {
@@ -58,6 +59,7 @@ fun HomePage(
                 Spacer(modifier = Modifier.height(8.dp))
                 MiuixInfoItem("MCP Server", if (mcpRunning) "运行中" else "未运行")
                 MiuixInfoItem("MCP Endpoint", "$mcpPort 端口 · MCP 协议")
+                MiuixInfoItem("MCP 在线客户端", mcpConnectedClients.toString())
                 MiuixInfoItem("Shizuku 授权", shizukuState)
                 MiuixInfoItem("Shizuku 详情", "$shizukuStatus（API $shizukuApiVersion）")
             }
