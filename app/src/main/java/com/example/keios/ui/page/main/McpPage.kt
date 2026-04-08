@@ -36,8 +36,15 @@ import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Copy
+import top.yukonga.miuix.kmp.icon.extended.Edit
+import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.icon.extended.Pause
+import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowBottomSheet
 
 @Composable
 fun McpPage(
@@ -59,6 +66,7 @@ fun McpPage(
     var portText by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
     var allowExternal by remember(uiState.allowExternal) { mutableStateOf(uiState.allowExternal) }
     var serverName by remember(uiState.serverName) { mutableStateOf(uiState.serverName) }
+    var showEditSheet by remember { mutableStateOf(false) }
     var controlExpanded by remember { mutableStateOf(true) }
     var configExpanded by remember { mutableStateOf(true) }
     var logsExpanded by remember { mutableStateOf(false) }
@@ -79,16 +87,68 @@ fun McpPage(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = "MCP", color = titleColor, modifier = Modifier.padding(top = 6.dp))
-            GlassIconButton(
-                backdrop = backdrop,
-                icon = MiuixIcons.Regular.Refresh,
-                contentDescription = "刷新",
-                modifier = Modifier.padding(top = 2.dp),
-                onClick = {
-                    mcpServerManager.refreshNow()
-                    Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
-                }
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
+                    contentDescription = if (uiState.running) "停止服务" else "启动服务",
+                    modifier = Modifier.padding(top = 2.dp),
+                    onClick = {
+                        if (uiState.running) {
+                            mcpServerManager.stop()
+                            Toast.makeText(context, "MCP 服务已停止", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val port = portText.toIntOrNull()
+                            if (port == null) {
+                                Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
+                                return@GlassIconButton
+                            }
+                            mcpServerManager.updateServerName(serverName)
+                            mcpServerManager.start(port = port, allowExternal = allowExternal)
+                                .onSuccess {
+                                    mcpServerManager.refreshAddresses()
+                                    Toast.makeText(context, "MCP 服务已启动", Toast.LENGTH_SHORT).show()
+                                }
+                                .onFailure {
+                                    Toast.makeText(context, "启动失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                    }
+                )
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.Edit,
+                    contentDescription = "编辑服务参数",
+                    modifier = Modifier.padding(top = 2.dp),
+                    onClick = { showEditSheet = true }
+                )
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.Copy,
+                    contentDescription = "复制当前配置",
+                    modifier = Modifier.padding(top = 2.dp),
+                    onClick = {
+                        val endpoint = if (allowExternal && uiState.addresses.isNotEmpty()) {
+                            "http://${uiState.addresses.first()}:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
+                        } else {
+                            "http://127.0.0.1:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
+                        }
+                        val json = mcpServerManager.buildConfigJson(endpoint)
+                        copyToClipboard(context, "mcp-config", json)
+                        Toast.makeText(context, "MCP 配置已复制", Toast.LENGTH_SHORT).show()
+                    }
+                )
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.Refresh,
+                    contentDescription = "刷新",
+                    modifier = Modifier.padding(top = 2.dp),
+                    onClick = {
+                        mcpServerManager.refreshNow()
+                        Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
         }
         Text(text = "MCP Server 功能", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
         Spacer(modifier = Modifier.height(10.dp))
@@ -111,7 +171,6 @@ fun McpPage(
                     "${if (uiState.running) "运行中" else "未运行"} · 在线 ${uiState.connectedClients} · ${uiState.port} 端口 · MCP 协议"
                 )
                 MiuixInfoItem("Tools", uiState.tools.size.toString())
-                MiuixInfoItem("通知权限", if (notificationPermissionGranted) "已授权" else "未授权")
             }
         )
         Spacer(modifier = Modifier.height(10.dp))
@@ -119,74 +178,10 @@ fun McpPage(
         MiuixExpandableSection(
             backdrop = backdrop,
             title = "服务控制",
-            subtitle = "启动 / 停止 / 通知 / 网络范围",
+            subtitle = "通知与连接调试",
             expanded = controlExpanded,
             onExpandedChange = { controlExpanded = it }
         ) {
-            TextField(
-                value = portText,
-                onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-                label = "服务端口",
-                useLabelAsPlaceholder = true,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
-                value = serverName,
-                onValueChange = {
-                    serverName = it
-                    mcpServerManager.updateServerName(it)
-                },
-                label = "服务名称（配置展示名）",
-                useLabelAsPlaceholder = true,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = if (!allowExternal) "仅本机(已选)" else "仅本机",
-                    onClick = { allowExternal = false }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = if (allowExternal) "局域网(已选)" else "局域网",
-                    onClick = { allowExternal = true }
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "启动服务",
-                    onClick = {
-                        val port = portText.toIntOrNull()
-                        if (port == null) {
-                            Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
-                            return@GlassTextButton
-                        }
-                        mcpServerManager.start(port = port, allowExternal = allowExternal)
-                            .onSuccess {
-                                mcpServerManager.refreshAddresses()
-                                Toast.makeText(context, "MCP 服务已启动", Toast.LENGTH_SHORT).show()
-                            }
-                            .onFailure {
-                                Toast.makeText(context, "启动失败: ${it.message}", Toast.LENGTH_SHORT).show()
-                            }
-                    }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "停止服务",
-                    onClick = {
-                        mcpServerManager.stop()
-                        Toast.makeText(context, "MCP 服务已停止", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 GlassTextButton(
                     backdrop = backdrop,
@@ -235,27 +230,6 @@ fun McpPage(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "复制当前配置",
-                    onClick = {
-                        val json = mcpServerManager.buildConfigJson(preferredEndpoint)
-                        copyToClipboard(context, "mcp-config", json)
-                        Toast.makeText(context, "MCP 配置已复制", Toast.LENGTH_SHORT).show()
-                    }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "重置 Token",
-                    onClick = {
-                        mcpServerManager.regenerateAuthToken()
-                        Toast.makeText(context, "Token 已重置，需重连客户端", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
             uiState.tools.forEach { tool ->
                 MiuixInfoItem(tool.name, tool.description)
             }
@@ -283,6 +257,78 @@ fun McpPage(
                 text = "清空日志",
                 onClick = { mcpServerManager.clearLogs() }
             )
+        }
+    }
+
+    WindowBottomSheet(
+        show = showEditSheet,
+        title = "编辑 MCP 服务",
+        onDismissRequest = { showEditSheet = false },
+        startAction = {
+            GlassIconButton(
+                backdrop = backdrop,
+                icon = MiuixIcons.Regular.Close,
+                contentDescription = "关闭",
+                onClick = { showEditSheet = false }
+            )
+        },
+        endAction = {
+            GlassIconButton(
+                backdrop = backdrop,
+                icon = MiuixIcons.Regular.Ok,
+                contentDescription = "保存",
+                onClick = {
+                    mcpServerManager.updateServerName(serverName)
+                    Toast.makeText(context, "已保存，修改将在下次启动或重启服务后生效", Toast.LENGTH_SHORT).show()
+                    showEditSheet = false
+                }
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            TextField(
+                value = serverName,
+                onValueChange = { serverName = it },
+                label = "服务名称（配置展示名）",
+                useLabelAsPlaceholder = true,
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = portText,
+                onValueChange = { portText = it.filter(Char::isDigit).take(5) },
+                label = "服务端口",
+                useLabelAsPlaceholder = true,
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = if (!allowExternal) "仅本机(已选)" else "仅本机",
+                    onClick = { allowExternal = false }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = if (allowExternal) "局域网(已选)" else "局域网",
+                    onClick = { allowExternal = true }
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            GlassTextButton(
+                backdrop = backdrop,
+                text = "重置 Token",
+                onClick = {
+                    mcpServerManager.regenerateAuthToken()
+                    Toast.makeText(context, "Token 已重置，需重连客户端", Toast.LENGTH_SHORT).show()
+                }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

@@ -132,6 +132,7 @@ fun MainScreen(
                         backdrop = backdrop,
                         appLabel = appLabel,
                         packageInfo = packageInfo,
+                        notificationPermissionGranted = notificationPermissionGranted,
                         shizukuStatus = shizukuStatus,
                         shizukuApiUtils = shizukuApiUtils,
                         onCheckShizuku = onCheckOrRequestShizuku,

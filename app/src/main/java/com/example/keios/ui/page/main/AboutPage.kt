@@ -52,6 +52,7 @@ fun AboutPage(
     backdrop: Backdrop?,
     appLabel: String,
     packageInfo: PackageInfo?,
+    notificationPermissionGranted: Boolean,
     shizukuStatus: String,
     shizukuApiUtils: ShizukuApiUtils,
     onCheckShizuku: () -> Unit,
@@ -136,10 +137,11 @@ fun AboutPage(
         )
     }
 
-    val permissionRows = remember(shizukuStatus) {
+    val permissionRows = remember(shizukuStatus, notificationPermissionGranted) {
         mutableListOf(
             AboutRow("Shizuku Status", shizukuStatus),
-            AboutRow("Shizuku Ready", shizukuStatus.contains("granted", ignoreCase = true).toString())
+            AboutRow("Shizuku Ready", shizukuStatus.contains("granted", ignoreCase = true).toString()),
+            AboutRow("Notification Permission", if (notificationPermissionGranted) "granted" else "not granted")
         )
     }
 
