@@ -317,7 +317,6 @@ private fun MainPagerLayout(
                             shizukuStatus = shizukuStatus,
                             mcpRunning = mcpUiState.running,
                             mcpPort = mcpUiState.port,
-                            shizukuApiVersion = ShizukuApiUtils.API_VERSION,
                             mcpConnectedClients = mcpUiState.connectedClients,
                             onOpenSettings = { navigator.push(KeiosRoute.Settings) },
                             contentTopPadding = homeTopInset,
