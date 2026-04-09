@@ -264,6 +264,11 @@ fun FloatingBottomBar(
             onPageSelected(tabs[index])
         }
     }
+    val highlightIndex by remember {
+        derivedStateOf {
+            dampedDragAnimation.value.fastRoundToInt().fastCoerceIn(0, tabs.size - 1)
+        }
+    }
 
     val interactiveHighlight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         remember(animationScope, tabWidthPx, tabs.size, isLtr) {
@@ -329,20 +334,19 @@ fun FloatingBottomBar(
         ) {
             tabs.forEachIndexed { index, page ->
                 FloatingBottomBarItem(
-                    selected = index == currentIndex,
+                    selected = index == highlightIndex,
                     page = page,
                     onClick = { currentIndex = index }
                 ) {
-                    val selected = currentIndex == index
                     Icon(
                         imageVector = page.icon,
                         contentDescription = page.label,
                         modifier = Modifier.size(20.dp),
-                        tint = if (selected) selectedTint else unselectedTint
+                        tint = if (index == highlightIndex) selectedTint else unselectedTint
                     )
                     Text(
                         text = page.label,
-                        color = if (selected) selectedTint else unselectedTint,
+                        color = if (index == highlightIndex) selectedTint else unselectedTint,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
@@ -443,11 +447,20 @@ fun FloatingBottomBar(
                         },
                         onDrawSurface = {
                             val progress = dampedDragAnimation.pressProgress
-                            drawRect(
-                                color = if (isInLightTheme) Color.Black.copy(0.15f) else Color.White.copy(0.1f),
-                                alpha = 1f - progress
-                            )
-                            drawRect(Color.Black.copy(alpha = 0.03f * progress))
+                            if (isInLightTheme) {
+                                // Keep selected icon/text vivid in light mode: brighten instead of darkening.
+                                drawRect(
+                                    color = Color.White.copy(alpha = 0.42f),
+                                    alpha = 1f - progress
+                                )
+                                drawRect(Color.Black.copy(alpha = 0.015f * progress))
+                            } else {
+                                drawRect(
+                                    color = Color.White.copy(0.1f),
+                                    alpha = 1f - progress
+                                )
+                                drawRect(Color.Black.copy(alpha = 0.03f * progress))
+                            }
                         }
                     )
                     .height(68.dp)
