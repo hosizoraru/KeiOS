@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +41,7 @@ import com.example.keios.ui.utils.getAllSystemProperties
 import com.kyant.backdrop.Backdrop
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -987,8 +988,9 @@ fun SystemPage(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
-    val cached = remember { SystemInfoCache.read() }
-    var query by remember { mutableStateOf("") }
+    var cacheLoaded by remember { mutableStateOf(false) }
+    var queryInput by remember { mutableStateOf("") }
+    var queryApplied by remember { mutableStateOf("") }
     var topInfoExpanded by remember { mutableStateOf(SystemUiStateStore.topInfoExpanded(defaultValue = true)) }
     var systemTableExpanded by remember { mutableStateOf(SystemUiStateStore.systemTableExpanded(defaultValue = false)) }
     var secureTableExpanded by remember { mutableStateOf(SystemUiStateStore.secureTableExpanded(defaultValue = false)) }
@@ -996,7 +998,7 @@ fun SystemPage(
     var androidPropsExpanded by remember { mutableStateOf(SystemUiStateStore.androidPropsExpanded(defaultValue = false)) }
     var javaPropsExpanded by remember { mutableStateOf(SystemUiStateStore.javaPropsExpanded(defaultValue = false)) }
     var linuxEnvExpanded by remember { mutableStateOf(SystemUiStateStore.linuxEnvExpanded(defaultValue = false)) }
-    val scrollState = rememberScrollState()
+    val listState = rememberLazyListState()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var exportPreparing by remember { mutableStateOf(false) }
     var refreshing by remember { mutableStateOf(false) }
@@ -1020,12 +1022,12 @@ fun SystemPage(
     var sectionStates by remember {
         mutableStateOf(
             mapOf(
-                SectionKind.SYSTEM to SectionState(rows = cached.system),
-                SectionKind.SECURE to SectionState(rows = cached.secure),
-                SectionKind.GLOBAL to SectionState(rows = cached.global),
-                SectionKind.ANDROID to SectionState(rows = cached.android),
-                SectionKind.JAVA to SectionState(rows = cached.java),
-                SectionKind.LINUX to SectionState(rows = cached.linux)
+                SectionKind.SYSTEM to SectionState(),
+                SectionKind.SECURE to SectionState(),
+                SectionKind.GLOBAL to SectionState(),
+                SectionKind.ANDROID to SectionState(),
+                SectionKind.JAVA to SectionState(),
+                SectionKind.LINUX to SectionState()
             )
         )
     }
@@ -1067,7 +1069,25 @@ fun SystemPage(
     }
 
     LaunchedEffect(scrollToTopSignal) {
-        if (scrollToTopSignal > 0) scrollState.animateScrollTo(0)
+        if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
+    }
+
+    LaunchedEffect(queryInput) {
+        delay(180)
+        queryApplied = queryInput
+    }
+
+    LaunchedEffect(Unit) {
+        val cached = withContext(Dispatchers.IO) { SystemInfoCache.read() }
+        sectionStates = mapOf(
+            SectionKind.SYSTEM to SectionState(rows = cached.system),
+            SectionKind.SECURE to SectionState(rows = cached.secure),
+            SectionKind.GLOBAL to SectionState(rows = cached.global),
+            SectionKind.ANDROID to SectionState(rows = cached.android),
+            SectionKind.JAVA to SectionState(rows = cached.java),
+            SectionKind.LINUX to SectionState(rows = cached.linux)
+        )
+        cacheLoaded = true
     }
 
     LaunchedEffect(shizukuReady) {
@@ -1136,15 +1156,31 @@ fun SystemPage(
     val prunedJavaRows = remember(javaRows) { removeTopInfoRows(SectionKind.JAVA, javaRows) }
     val prunedLinuxRows = remember(linuxRows) { removeTopInfoRows(SectionKind.LINUX, linuxRows) }
 
-    val q = query.trim()
-    val filteredTopInfoRows = remember(q, topInfoRows) { sortRowsByType(filterRows(topInfoRows, q)) }
-    val filteredSystemRows = remember(q, prunedSystemRows) { sortRowsByType(filterRows(prunedSystemRows, q)) }
-    val filteredSecureRows = remember(q, prunedSecureRows) { sortRowsByType(filterRows(prunedSecureRows, q)) }
-    val filteredGlobalRows = remember(q, prunedGlobalRows) { sortRowsByType(filterRows(prunedGlobalRows, q)) }
-    val filteredAndroidRows = remember(q, prunedAndroidRows) { sortRowsByType(filterRows(prunedAndroidRows, q)) }
-    val filteredJavaRows = remember(q, prunedJavaRows) { sortRowsByType(filterRows(prunedJavaRows, q)) }
-    val filteredLinuxRows = remember(q, prunedLinuxRows) { sortRowsByType(filterRows(prunedLinuxRows, q)) }
-    val groupedTopInfoRows = remember(filteredTopInfoRows) { groupTopInfoRows(filteredTopInfoRows) }
+    val q = queryApplied.trim()
+    val displayedTopInfoRows = remember(q, topInfoRows, topInfoExpanded) {
+        if (q.isBlank() && !topInfoExpanded) topInfoRows else sortRowsByType(filterRows(topInfoRows, q))
+    }
+    val displayedSystemRows = remember(q, prunedSystemRows, systemTableExpanded) {
+        if (q.isBlank() && !systemTableExpanded) prunedSystemRows else sortRowsByType(filterRows(prunedSystemRows, q))
+    }
+    val displayedSecureRows = remember(q, prunedSecureRows, secureTableExpanded) {
+        if (q.isBlank() && !secureTableExpanded) prunedSecureRows else sortRowsByType(filterRows(prunedSecureRows, q))
+    }
+    val displayedGlobalRows = remember(q, prunedGlobalRows, globalTableExpanded) {
+        if (q.isBlank() && !globalTableExpanded) prunedGlobalRows else sortRowsByType(filterRows(prunedGlobalRows, q))
+    }
+    val displayedAndroidRows = remember(q, prunedAndroidRows, androidPropsExpanded) {
+        if (q.isBlank() && !androidPropsExpanded) prunedAndroidRows else sortRowsByType(filterRows(prunedAndroidRows, q))
+    }
+    val displayedJavaRows = remember(q, prunedJavaRows, javaPropsExpanded) {
+        if (q.isBlank() && !javaPropsExpanded) prunedJavaRows else sortRowsByType(filterRows(prunedJavaRows, q))
+    }
+    val displayedLinuxRows = remember(q, prunedLinuxRows, linuxEnvExpanded) {
+        if (q.isBlank() && !linuxEnvExpanded) prunedLinuxRows else sortRowsByType(filterRows(prunedLinuxRows, q))
+    }
+    val groupedTopInfoRows = remember(displayedTopInfoRows, topInfoExpanded, q) {
+        if (q.isBlank() && !topInfoExpanded) emptyList() else groupTopInfoRows(displayedTopInfoRows)
+    }
 
     fun sectionSubtitle(section: SectionKind, size: Int): String {
         val state = sectionStates[section] ?: SectionState()
@@ -1202,21 +1238,21 @@ fun SystemPage(
         }
         Spacer(modifier = Modifier.height(10.dp))
         TextField(
-            value = query,
-            onValueChange = { query = it },
+            value = queryInput,
+            onValueChange = { queryInput = it },
             label = "搜索系统参数",
             useLabelAsPlaceholder = true,
             singleLine = true
         )
         Spacer(modifier = Modifier.height(14.dp))
 
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(bottom = contentBottomPadding)
+                .padding(bottom = contentBottomPadding),
+            state = listState
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.defaultColors(
@@ -1247,115 +1283,140 @@ fun SystemPage(
                         color = subtitleColor
                     )
                     Text(
-                        text = "缓存分区 $cachedSectionCount · 查询 ${if (query.isBlank()) "（空）" else query}",
+                        text = if (!cacheLoaded) {
+                            "读取缓存中... · 查询 ${if (q.isBlank()) "（空）" else q}"
+                        } else {
+                            "缓存分区 $cachedSectionCount · 查询 ${if (q.isBlank()) "（空）" else q}"
+                        },
                         color = subtitleColor
                     )
                 }
             }
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "TopInfo",
-                subtitle = "${filteredTopInfoRows.size} 条",
+                subtitle = "${displayedTopInfoRows.size} 条",
                 expanded = topInfoExpanded,
                 onExpandedChange = { topInfoExpanded = it }
             ) {
-                if (filteredTopInfoRows.isEmpty()) {
+                if (displayedTopInfoRows.isEmpty()) {
                     Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
                 } else {
-                    groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
-                        Text(
-                            text = type,
-                            color = MiuixTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
-                        )
-                        rows.forEach { row ->
+                    if (q.isBlank() && !topInfoExpanded) {
+                        displayedTopInfoRows.forEach { row ->
                             MiuixInfoItem(row.key, row.value)
+                        }
+                    } else {
+                        groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
+                            Text(
+                                text = type,
+                                color = MiuixTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
+                            )
+                            rows.forEach { row ->
+                                MiuixInfoItem(row.key, row.value)
+                            }
                         }
                     }
                 }
             }
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "System Table",
-                subtitle = sectionSubtitle(SectionKind.SYSTEM, filteredSystemRows.size),
+                subtitle = sectionSubtitle(SectionKind.SYSTEM, if (q.isBlank()) prunedSystemRows.size else displayedSystemRows.size),
                 expanded = systemTableExpanded,
                 onExpandedChange = { systemTableExpanded = it }
             ) {
-                if (filteredSystemRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                else filteredSystemRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                if (displayedSystemRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                else displayedSystemRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+            }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Secure Table",
-                subtitle = sectionSubtitle(SectionKind.SECURE, filteredSecureRows.size),
+                subtitle = sectionSubtitle(SectionKind.SECURE, if (q.isBlank()) prunedSecureRows.size else displayedSecureRows.size),
                 expanded = secureTableExpanded,
                 onExpandedChange = { secureTableExpanded = it }
             ) {
-                if (filteredSecureRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                else filteredSecureRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                if (displayedSecureRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                else displayedSecureRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+            }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Global Table",
-                subtitle = sectionSubtitle(SectionKind.GLOBAL, filteredGlobalRows.size),
+                subtitle = sectionSubtitle(SectionKind.GLOBAL, if (q.isBlank()) prunedGlobalRows.size else displayedGlobalRows.size),
                 expanded = globalTableExpanded,
                 onExpandedChange = { globalTableExpanded = it }
             ) {
-                if (filteredGlobalRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                else filteredGlobalRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                if (displayedGlobalRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                else displayedGlobalRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+            }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Android Properties",
-                subtitle = sectionSubtitle(SectionKind.ANDROID, filteredAndroidRows.size),
+                subtitle = sectionSubtitle(SectionKind.ANDROID, if (q.isBlank()) prunedAndroidRows.size else displayedAndroidRows.size),
                 expanded = androidPropsExpanded,
                 onExpandedChange = { androidPropsExpanded = it }
             ) {
-                if (filteredAndroidRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                else filteredAndroidRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                if (displayedAndroidRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                else displayedAndroidRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+            }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Java Properties",
-                subtitle = sectionSubtitle(SectionKind.JAVA, filteredJavaRows.size),
+                subtitle = sectionSubtitle(SectionKind.JAVA, if (q.isBlank()) prunedJavaRows.size else displayedJavaRows.size),
                 expanded = javaPropsExpanded,
                 onExpandedChange = { javaPropsExpanded = it }
             ) {
-                if (filteredJavaRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                else filteredJavaRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                if (displayedJavaRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                else displayedJavaRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+            }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
+            item {
             MiuixExpandableSection(
                 backdrop = backdrop,
                 title = "Linux environment",
-                subtitle = sectionSubtitle(SectionKind.LINUX, filteredLinuxRows.size),
+                subtitle = sectionSubtitle(SectionKind.LINUX, if (q.isBlank()) prunedLinuxRows.size else displayedLinuxRows.size),
                 expanded = linuxEnvExpanded,
                 onExpandedChange = { linuxEnvExpanded = it }
             ) {
-                if (filteredLinuxRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                else filteredLinuxRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                if (displayedLinuxRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                else displayedLinuxRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
             }
             }
+            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 }

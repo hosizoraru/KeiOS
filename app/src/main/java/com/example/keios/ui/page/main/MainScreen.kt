@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.pager.HorizontalPager
@@ -41,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.model.BottomPage
@@ -83,10 +86,15 @@ fun MainScreen(
     val navigationBarBottom = with(density) {
         WindowInsets.navigationBars.getBottom(this).toDp()
     }
-    val bottomOverlayPadding = 112.dp + navigationBarBottom
+    val bottomOverlayPadding = 0.dp
     val systemInsets = WindowInsets.safeDrawing.union(WindowInsets.navigationBars).asPaddingValues()
     val isImmersiveHome = currentPage == BottomPage.Home && !settingsVisible
-    val contentInsets = if (isImmersiveHome) PaddingValues(0.dp) else systemInsets
+    val contentInsets = if (isImmersiveHome) PaddingValues(0.dp) else PaddingValues(
+        start = systemInsets.calculateStartPadding(LayoutDirection.Ltr),
+        top = systemInsets.calculateTopPadding(),
+        end = systemInsets.calculateEndPadding(LayoutDirection.Ltr),
+        bottom = 0.dp
+    )
     val homeTopInset = systemInsets.calculateTopPadding()
     val homeBottomInset = systemInsets.calculateBottomPadding()
     val nestedScrollConnection = remember {
