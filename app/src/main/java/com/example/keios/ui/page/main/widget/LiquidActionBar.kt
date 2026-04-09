@@ -4,13 +4,13 @@ import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,7 +38,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.util.lerp
 import com.example.keios.ui.animation.DampedDragAnimation
 import com.example.keios.ui.animation.InteractiveHighlight
 import com.kyant.backdrop.Backdrop
@@ -54,11 +52,11 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
-import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlinx.coroutines.launch
 
 data class LiquidActionItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -67,10 +65,24 @@ data class LiquidActionItem(
 )
 
 @Composable
-private fun RowScope.LiquidActionItemSlot(item: LiquidActionItem, tint: Color) {
+private fun RowScope.LiquidActionItemSlot(
+    item: LiquidActionItem,
+    tint: Color,
+    onClick: (() -> Unit)? = null
+) {
+    val clickModifier = if (onClick != null) {
+        Modifier.clickable(
+            interactionSource = null,
+            indication = null,
+            onClick = onClick
+        )
+    } else {
+        Modifier
+    }
     Box(
         modifier = Modifier
             .clip(ContinuousCapsule)
+            .then(clickModifier)
             .fillMaxHeight()
             .weight(1f),
         contentAlignment = Alignment.Center
@@ -122,9 +134,7 @@ fun LiquidActionBar(
         }
     }
 
-    var currentIndex by remember { mutableIntStateOf(0) }
     var gestureActive by remember { mutableStateOf(false) }
-    var gestureIndex by remember { mutableIntStateOf(0) }
 
     val dampedDragAnimation = remember(animationScope, items.size, density, isLtr) {
         DampedDragAnimation(
@@ -134,29 +144,16 @@ fun LiquidActionBar(
             visibilityThreshold = 0.001f,
             initialScale = 1f,
             pressedScale = 74f / 42f,
-            canDrag = { offset ->
-                if (totalWidthPx <= 0f) return@DampedDragAnimation false
-                offset.x in 0f..totalWidthPx
-            },
-            onDragStarted = { position ->
+            canDrag = { true },
+            onDragStarted = {
                 gestureActive = true
                 onInteractionChanged(true)
-                if (tabWidthPx <= 0f) {
-                    gestureActive = false
-                    onInteractionChanged(false)
-                    return@DampedDragAnimation
-                }
-                val padding = with(density) { 4.dp.toPx() }
-                val raw = ((position.x - padding) / tabWidthPx).fastCoerceIn(0f, items.lastIndex.toFloat())
-                gestureIndex = raw.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
-                updateValue(raw)
             },
             onDragStopped = {
                 if (!gestureActive) return@DampedDragAnimation
                 gestureActive = false
                 onInteractionChanged(false)
-                val targetIndex = gestureIndex.fastCoerceIn(0, items.lastIndex)
-                currentIndex = targetIndex
+                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
                 animateToValue(targetIndex.toFloat())
                 items.getOrNull(targetIndex)?.onClick?.invoke()
                 animationScope.launch {
@@ -167,7 +164,6 @@ fun LiquidActionBar(
                 if (tabWidthPx > 0) {
                     val raw = (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
                         .fastCoerceIn(0f, items.lastIndex.toFloat())
-                    gestureIndex = raw.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
                     updateValue(raw)
                     animationScope.launch {
                         offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
@@ -202,6 +198,7 @@ fun LiquidActionBar(
     ) {
         Row(
             Modifier
+                .fillMaxWidth()
                 .onGloballyPositioned { coords ->
                     totalWidthPx = coords.size.width.toFloat()
                     val contentWidthPx = totalWidthPx - with(density) { 8.dp.toPx() }
@@ -233,13 +230,24 @@ fun LiquidActionBar(
                 .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            items.forEach { item ->
-                LiquidActionItemSlot(item = item, tint = iconColor)
+            items.forEachIndexed { index, item ->
+                LiquidActionItemSlot(
+                    item = item,
+                    tint = iconColor,
+                    onClick = {
+                        dampedDragAnimation.animateToValue(index.toFloat())
+                        item.onClick()
+                        animationScope.launch {
+                            offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
+                        }
+                    }
+                )
             }
         }
 
         Row(
             Modifier
+                .fillMaxWidth()
                 .clearAndSetSemantics {}
                 .alpha(0f)
                 .layerBackdrop(tabsBackdrop)
@@ -271,7 +279,7 @@ fun LiquidActionBar(
             }
         }
 
-        if (tabWidthPx > 0f && dampedDragAnimation.pressProgress > 0.001f) {
+        if (tabWidthPx > 0f) {
             Box(
                 Modifier
                     .padding(horizontal = 4.dp)
@@ -285,6 +293,8 @@ fun LiquidActionBar(
                             -progressOffset + panelOffset
                         }
                     }
+                    .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
+                    .then(dampedDragAnimation.modifier)
                     .drawBackdrop(
                         backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
                         shape = { ContinuousCapsule },
@@ -321,7 +331,7 @@ fun LiquidActionBar(
                                 } else {
                                     Color.White.copy(0.1f)
                                 },
-                                alpha = 1f - progress
+                                alpha = progress * (1f - progress)
                             )
                             drawRect(Color.Black.copy(alpha = 0.03f * progress))
                         }
@@ -330,11 +340,5 @@ fun LiquidActionBar(
                     .width(with(density) { ((totalWidthPx - 8.dp.toPx()) / items.size).toDp() })
             )
         }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
-                .then(dampedDragAnimation.modifier)
-        )
     }
 }
