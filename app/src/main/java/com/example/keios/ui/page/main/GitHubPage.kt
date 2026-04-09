@@ -906,11 +906,11 @@ fun GitHubPage(
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
-            TextField(
+            GlassSearchField(
                 value = appSearch,
                 onValueChange = { appSearch = it },
                 label = "筛选本机 App（名称或包名）",
-                useLabelAsPlaceholder = true,
+                backdrop = backdrop,
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
