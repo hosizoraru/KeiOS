@@ -99,6 +99,10 @@ class LocalMcpService(
         return created
     }
 
+    fun getSkillMarkdownForUi(): String {
+        return loadSkillMarkdown()
+    }
+
     fun listLocalTools(): List<McpToolMeta> {
         return listOf(
             McpToolMeta("keios.health.ping", "连通性检测，用于确认 Claw 与 KeiOS MCP 通道正常"),

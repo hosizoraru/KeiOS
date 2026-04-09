@@ -68,6 +68,9 @@ class McpServerManager(
         private const val KV_ID = "mcp_server_prefs"
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_SERVER_NAME = "server_name"
+        private const val KEY_PORT = "port"
+        private const val KEY_ALLOW_EXTERNAL = "allow_external"
+        private const val DEFAULT_PORT = 38888
         private val random = SecureRandom()
 
         private fun kv() = MMKV.mmkvWithID(KV_ID)
@@ -84,12 +87,31 @@ class McpServerManager(
             return kv().decodeString(KEY_SERVER_NAME, "KeiOS MCP").orEmpty().ifBlank { "KeiOS MCP" }
         }
 
+        fun port(): Int {
+            val value = kv().decodeInt(KEY_PORT, DEFAULT_PORT)
+            return if (value in 1..65535) value else DEFAULT_PORT
+        }
+
+        fun allowExternal(): Boolean {
+            return kv().decodeBool(KEY_ALLOW_EXTERNAL, false)
+        }
+
         fun saveAuthToken(token: String) {
             kv().encode(KEY_AUTH_TOKEN, token)
         }
 
         fun saveServerName(name: String) {
             kv().encode(KEY_SERVER_NAME, name)
+        }
+
+        fun savePort(port: Int) {
+            if (port in 1..65535) {
+                kv().encode(KEY_PORT, port)
+            }
+        }
+
+        fun saveAllowExternal(allowExternal: Boolean) {
+            kv().encode(KEY_ALLOW_EXTERNAL, allowExternal)
         }
 
         fun regenerateToken(): String {
@@ -111,6 +133,8 @@ class McpServerManager(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _uiState = MutableStateFlow(
         McpServerUiState(
+            port = Prefs.port(),
+            allowExternal = Prefs.allowExternal(),
             tools = localMcpService.listLocalTools(),
             authToken = Prefs.authToken(),
             serverName = Prefs.serverName()
@@ -180,6 +204,8 @@ class McpServerManager(
                 connectedClients = 0,
                 lastError = null
             )
+            Prefs.savePort(port)
+            Prefs.saveAllowExternal(allowExternal)
             syncKeepAliveNotification(forceStart = true)
             appendLog("INFO", "MCP server started on $host:$port/mcp")
         }.onFailure {
@@ -203,6 +229,39 @@ class McpServerManager(
         val fixed = name.trim().ifBlank { "KeiOS MCP" }
         Prefs.saveServerName(fixed)
         _uiState.value = _uiState.value.copy(serverName = fixed)
+    }
+
+    @Synchronized
+    fun updatePort(port: Int): Result<Unit> {
+        if (port !in 1..65535) {
+            val message = "端口无效: $port"
+            _uiState.value = _uiState.value.copy(lastError = message)
+            return Result.failure(IllegalArgumentException(message))
+        }
+        Prefs.savePort(port)
+        val current = _uiState.value
+        _uiState.value = if (current.running) {
+            current.copy(lastError = null)
+        } else {
+            current.copy(port = port, lastError = null)
+        }
+        return Result.success(Unit)
+    }
+
+    @Synchronized
+    fun updateAllowExternal(allowExternal: Boolean): Result<Unit> {
+        Prefs.saveAllowExternal(allowExternal)
+        val current = _uiState.value
+        _uiState.value = if (current.running) {
+            current.copy(lastError = null)
+        } else {
+            current.copy(allowExternal = allowExternal, lastError = null)
+        }
+        return Result.success(Unit)
+    }
+
+    fun getSkillMarkdown(): String {
+        return localMcpService.getSkillMarkdownForUi()
     }
 
     fun buildConfigJson(url: String? = null): String {

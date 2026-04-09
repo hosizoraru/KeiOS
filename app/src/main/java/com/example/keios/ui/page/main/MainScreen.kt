@@ -109,6 +109,12 @@ fun MainScreen(
                     onBack = { navigator.pop() }
                 )
             }
+            entry<KeiosRoute.McpSkill> {
+                McpSkillPage(
+                    mcpServerManager = mcpServerManager,
+                    onBack = { navigator.pop() }
+                )
+            }
         }
     }
 
@@ -346,6 +352,7 @@ private fun MainPagerLayout(
                             mcpServerManager = mcpServerManager,
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = mcpScrollToTopSignal,
+                            onOpenSkill = { navigator.push(KeiosRoute.McpSkill) },
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
                             }

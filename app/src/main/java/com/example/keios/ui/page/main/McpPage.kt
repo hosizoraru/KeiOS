@@ -58,6 +58,7 @@ import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Report
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 
@@ -66,6 +67,7 @@ fun McpPage(
     mcpServerManager: McpServerManager,
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    onOpenSkill: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val titleColor = MiuixTheme.colorScheme.onBackground
@@ -139,6 +141,11 @@ fun McpPage(
                                 icon = MiuixIcons.Regular.Edit,
                                 contentDescription = "编辑服务参数",
                                 onClick = { showEditSheet = true }
+                            ),
+                            LiquidActionItem(
+                                icon = MiuixIcons.Regular.Report,
+                                contentDescription = "查看 SKILL.md",
+                                onClick = onOpenSkill
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Copy,
@@ -237,15 +244,25 @@ fun McpPage(
                 expanded = controlExpanded,
                 onExpandedChange = { controlExpanded = it }
             ) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "发送测试通知",
-                    onClick = {
-                        mcpServerManager.sendTestNotification()
-                            .onSuccess { Toast.makeText(context, "已发送 MCP 测试通知", Toast.LENGTH_SHORT).show() }
-                            .onFailure { Toast.makeText(context, "发送失败: ${it.message}", Toast.LENGTH_SHORT).show() }
-                    }
-                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "发送测试通知",
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            mcpServerManager.sendTestNotification()
+                                .onSuccess { Toast.makeText(context, "已发送 MCP 测试通知", Toast.LENGTH_SHORT).show() }
+                                .onFailure { Toast.makeText(context, "发送失败: ${it.message}", Toast.LENGTH_SHORT).show() }
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "查看 SKILL.md",
+                        modifier = Modifier.weight(1f),
+                        onClick = onOpenSkill
+                    )
+                }
             }
             }
 
@@ -311,7 +328,20 @@ fun McpPage(
                 icon = MiuixIcons.Regular.Ok,
                 contentDescription = "保存",
                 onClick = {
+                    val port = portText.toIntOrNull()
+                    if (port == null) {
+                        Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
+                        return@GlassIconButton
+                    }
                     mcpServerManager.updateServerName(serverName)
+                    mcpServerManager.updatePort(port).onFailure {
+                        Toast.makeText(context, "保存失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                        return@GlassIconButton
+                    }
+                    mcpServerManager.updateAllowExternal(allowExternal).onFailure {
+                        Toast.makeText(context, "保存失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                        return@GlassIconButton
+                    }
                     Toast.makeText(context, "已保存，修改将在下次启动或重启服务后生效", Toast.LENGTH_SHORT).show()
                     showEditSheet = false
                 }
