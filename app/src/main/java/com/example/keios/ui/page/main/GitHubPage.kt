@@ -7,7 +7,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -39,15 +42,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassTextButton
-import com.example.keios.ui.page.main.widget.MiuixExpandableSection
+import com.example.keios.ui.page.main.widget.AppTopBar
+import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.AppIconCache
+import com.example.keios.ui.utils.GitHubCheckCacheEntry
 import com.example.keios.ui.utils.GitHubTrackStore
 import com.example.keios.ui.utils.GitHubTrackedApp
 import com.example.keios.ui.utils.GitHubVersionUtils
 import com.example.keios.ui.utils.InstalledAppItem
-import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.capsule.ContinuousCapsule
@@ -56,20 +60,33 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.DropdownImpl
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.AddCircle
 import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Report
 import top.yukonga.miuix.kmp.icon.extended.Sort
+import top.yukonga.miuix.kmp.icon.extended.Timer
+import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
+import kotlin.math.max
 
 private data class VersionCheckUi(
     val loading: Boolean = false,
@@ -90,6 +107,37 @@ private enum class GitHubSortMode(val label: String) {
     PreReleaseFirst("预发行优先")
 }
 
+private enum class OverviewRefreshState {
+    Idle,
+    Cached,
+    Refreshing,
+    Completed
+}
+
+private enum class RefreshIntervalOption(val hours: Int, val label: String) {
+    Hour1(1, "1 小时"),
+    Hour3(3, "3 小时"),
+    Hour6(6, "6 小时"),
+    Hour12(12, "12 小时");
+
+    companion object {
+        fun fromHours(hours: Int): RefreshIntervalOption {
+            return entries.firstOrNull { it.hours == hours } ?: Hour3
+        }
+    }
+}
+
+private fun formatRefreshAgo(lastRefreshMs: Long, nowMs: Long = System.currentTimeMillis()): String {
+    if (lastRefreshMs <= 0L) return "未刷新"
+    val deltaMs = max(0L, nowMs - lastRefreshMs)
+    val minutes = deltaMs / 60_000L
+    if (minutes <= 0L) return "刚刚"
+    if (minutes < 60L) return "$minutes 分钟前"
+    val hours = minutes / 60L
+    val mins = minutes % 60L
+    return if (mins == 0L) "$hours 小时前" else "$hours 小时 $mins 分钟前"
+}
+
 @Composable
 fun GitHubPage(
     contentBottomPadding: Dp = 72.dp,
@@ -98,6 +146,12 @@ fun GitHubPage(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val isDark = isSystemInDarkTheme()
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val backdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
 
     var trackedSearch by remember { mutableStateOf("") }
     var repoUrlInput by remember { mutableStateOf("") }
@@ -109,16 +163,51 @@ fun GitHubPage(
     var appListLoaded by remember { mutableStateOf(false) }
     var hasAutoRequestedPermission by remember { mutableStateOf(false) }
     var showSortPopup by remember { mutableStateOf(false) }
+    var showIntervalPopup by remember { mutableStateOf(false) }
     var sortMode by remember { mutableStateOf(GitHubSortMode.UpdateFirst) }
     var pendingDeleteItem by remember { mutableStateOf<GitHubTrackedApp?>(null) }
+    var overviewRefreshState by remember { mutableStateOf(OverviewRefreshState.Idle) }
+    var lastRefreshMs by remember { mutableStateOf(0L) }
+    var refreshIntervalHours by remember { mutableStateOf(GitHubTrackStore.loadRefreshIntervalHours()) }
+    var refreshProgress by remember { mutableStateOf(0f) }
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
-    val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop: LayerBackdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
+
+    fun VersionCheckUi.toCacheEntry(): GitHubCheckCacheEntry = GitHubCheckCacheEntry(
+        loading = false,
+        localVersion = localVersion,
+        localVersionCode = localVersionCode,
+        latestTag = latestTag,
+        hasUpdate = hasUpdate,
+        message = message,
+        isPreRelease = isPreRelease,
+        preReleaseInfo = preReleaseInfo,
+        showPreReleaseInfo = showPreReleaseInfo,
+        hasPreReleaseUpdate = hasPreReleaseUpdate
+    )
+
+    fun GitHubCheckCacheEntry.toUi(): VersionCheckUi = VersionCheckUi(
+        loading = false,
+        localVersion = localVersion,
+        localVersionCode = localVersionCode,
+        latestTag = latestTag,
+        hasUpdate = hasUpdate,
+        message = message,
+        isPreRelease = isPreRelease,
+        preReleaseInfo = preReleaseInfo,
+        showPreReleaseInfo = showPreReleaseInfo,
+        hasPreReleaseUpdate = hasPreReleaseUpdate
+    )
+
+    fun persistCheckCache(refreshTimestamp: Long = lastRefreshMs) {
+        val states = trackedItems.associate { item ->
+            val state = checkStates[item.id] ?: VersionCheckUi()
+            item.id to state.toCacheEntry()
+        }
+        GitHubTrackStore.saveCheckCache(states, refreshTimestamp)
     }
+
     suspend fun reloadApps() {
         appList = withContext(Dispatchers.IO) {
             GitHubVersionUtils.queryInstalledLaunchableApps(context)
@@ -244,24 +333,38 @@ fun GitHubPage(
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
             }
             checkStates[item.id] = state
+            persistCheckCache()
         }
     }
 
     fun refreshAllTracked(showToast: Boolean = true) {
         if (trackedItems.isEmpty()) {
             if (showToast) Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
+            overviewRefreshState = OverviewRefreshState.Idle
+            refreshProgress = 0f
             return
         }
         scope.launch {
+            GitHubTrackStore.clearCheckCache()
+            lastRefreshMs = 0L
+            overviewRefreshState = OverviewRefreshState.Refreshing
+            refreshProgress = 0f
+            trackedItems.forEach { item ->
+                checkStates[item.id] = VersionCheckUi(loading = true, message = "刷新中...")
+            }
             trackedItems.forEachIndexed { index, item ->
-                checkStates[item.id] = VersionCheckUi(loading = true)
                 val state = resolveItemState(item)
                 checkStates[item.id] = state
+                refreshProgress = (index + 1).toFloat() / trackedItems.size.toFloat()
                 if (showToast && state.message.startsWith("检查失败")) {
                     Toast.makeText(context, "${item.owner}/${item.repo}: ${state.message}", Toast.LENGTH_SHORT).show()
                 }
                 if (index < trackedItems.lastIndex) delay(120)
             }
+            overviewRefreshState = OverviewRefreshState.Completed
+            lastRefreshMs = System.currentTimeMillis()
+            refreshProgress = 1f
+            persistCheckCache(lastRefreshMs)
             if (showToast) Toast.makeText(context, "检查完成", Toast.LENGTH_SHORT).show()
         }
     }
@@ -279,7 +382,26 @@ fun GitHubPage(
         trackedItems.clear()
         trackedItems.addAll(GitHubTrackStore.load())
         reloadApps()
-        refreshAllTracked(showToast = false)
+        val (cachedStates, cachedRefreshMs) = GitHubTrackStore.loadCheckCache()
+        checkStates.clear()
+        trackedItems.forEach { item ->
+            cachedStates[item.id]?.let { cached -> checkStates[item.id] = cached.toUi() }
+        }
+        lastRefreshMs = cachedRefreshMs
+        refreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
+        val hasTracked = trackedItems.isNotEmpty()
+        val hasCachedForTracked = trackedItems.any { cachedStates.containsKey(it.id) }
+        val stale = hasTracked && lastRefreshMs > 0L &&
+            (System.currentTimeMillis() - lastRefreshMs) >= refreshIntervalHours * 60L * 60L * 1000L
+        if (!hasCachedForTracked && hasTracked) {
+            refreshAllTracked(showToast = false)
+        } else if (stale) {
+            refreshAllTracked(showToast = false)
+        } else if (hasCachedForTracked) {
+            overviewRefreshState = OverviewRefreshState.Cached
+        } else {
+            overviewRefreshState = OverviewRefreshState.Idle
+        }
     }
 
     LaunchedEffect(scrollToTopSignal) {
@@ -318,70 +440,116 @@ fun GitHubPage(
                 .thenBy { it.appLabel.lowercase() }
         )
     }
+    val trackedCount = trackedItems.size
+    val updatableCount = trackedItems.count { checkStates[it.id]?.hasUpdate == true }
+    val preReleaseCount = trackedItems.count { checkStates[it.id]?.isPreRelease == true }
+    val stableLatestCount = trackedItems.count {
+        val s = checkStates[it.id]
+        s?.hasUpdate == false && s.isPreRelease.not()
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = "GitHub",
-                color = MiuixTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-            Row {
-                Box(modifier = Modifier.padding(top = 2.dp)) {
-                    GlassIconButton(
-                        backdrop = backdrop,
-                        icon = MiuixIcons.Regular.Sort,
+        AppTopBar(
+            title = "GitHub",
+            subtitle = "项目版本跟踪",
+            showSubtitle = true,
+            actions = {
+                Row {
+                    IconButton(onClick = { refreshAllTracked(showToast = true) }) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Refresh,
+                            contentDescription = "检查",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = { showAddSheet = true }) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.AddCircle,
+                            contentDescription = "新增跟踪",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Box(modifier = Modifier.padding(top = 2.dp)) {
+                IconButton(onClick = { showSortPopup = !showSortPopup }) {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Sort,
                         contentDescription = "排序",
-                        onClick = { showSortPopup = !showSortPopup }
+                        tint = MiuixTheme.colorScheme.onSurface
                     )
-                    if (showSortPopup) {
-                        WindowListPopup(
-                            show = showSortPopup,
-                            alignment = PopupPositionProvider.Align.End,
-                            onDismissRequest = { showSortPopup = false },
-                            enableWindowDim = false
-                        ) {
-                            ListPopupColumn {
-                                val modes = GitHubSortMode.entries
-                                modes.forEachIndexed { index, mode ->
-                                    DropdownImpl(
-                                        text = mode.label,
-                                        optionSize = modes.size,
-                                        isSelected = sortMode == mode,
-                                        index = index,
-                                        onSelectedIndexChange = { selectedIndex ->
-                                            sortMode = modes[selectedIndex]
-                                            showSortPopup = false
-                                        }
-                                    )
-                                }
+                }
+                if (showSortPopup) {
+                    WindowListPopup(
+                        show = showSortPopup,
+                        alignment = PopupPositionProvider.Align.BottomEnd,
+                        onDismissRequest = { showSortPopup = false },
+                        enableWindowDim = false
+                    ) {
+                        ListPopupColumn {
+                            val modes = GitHubSortMode.entries
+                            modes.forEachIndexed { index, mode ->
+                                DropdownImpl(
+                                    text = mode.label,
+                                    optionSize = modes.size,
+                                    isSelected = sortMode == mode,
+                                    index = index,
+                                    onSelectedIndexChange = { selectedIndex ->
+                                        sortMode = modes[selectedIndex]
+                                        showSortPopup = false
+                                    }
+                                )
                             }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassIconButton(
-                    backdrop = backdrop,
-                    icon = MiuixIcons.Regular.Refresh,
-                    contentDescription = "检查",
-                    onClick = { refreshAllTracked(showToast = true) }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassIconButton(
-                    backdrop = backdrop,
-                    icon = MiuixIcons.Regular.AddCircle,
-                    contentDescription = "新增跟踪",
-                    onClick = { showAddSheet = true },
-                    modifier = Modifier.padding(top = 2.dp)
-                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(modifier = Modifier.padding(top = 2.dp)) {
+                IconButton(onClick = { showIntervalPopup = !showIntervalPopup }) {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Timer,
+                        contentDescription = "刷新间隔",
+                        tint = MiuixTheme.colorScheme.onSurface
+                    )
+                }
+                if (showIntervalPopup) {
+                    WindowListPopup(
+                        show = showIntervalPopup,
+                        alignment = PopupPositionProvider.Align.BottomEnd,
+                        onDismissRequest = { showIntervalPopup = false },
+                        enableWindowDim = false
+                    ) {
+                        ListPopupColumn {
+                            val options = RefreshIntervalOption.entries
+                            val selected = RefreshIntervalOption.fromHours(refreshIntervalHours)
+                            options.forEachIndexed { index, option ->
+                                DropdownImpl(
+                                    text = option.label,
+                                    optionSize = options.size,
+                                    isSelected = selected == option,
+                                    index = index,
+                                    onSelectedIndexChange = { selectedIndex ->
+                                        val picked = options[selectedIndex]
+                                        refreshIntervalHours = picked.hours
+                                        GitHubTrackStore.saveRefreshIntervalHours(picked.hours)
+                                        showIntervalPopup = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
-        Text(
-            text = "项目版本跟踪",
-            color = MiuixTheme.colorScheme.onBackgroundVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
             value = trackedSearch,
@@ -399,6 +567,117 @@ fun GitHubPage(
                 .verticalScroll(scrollState)
                 .padding(bottom = contentBottomPadding)
         ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                colors = CardDefaults.defaultColors(
+                    color = when (overviewRefreshState) {
+                        OverviewRefreshState.Cached -> if (isDark) {
+                            androidx.compose.ui.graphics.Color(0x55F59E0B)
+                        } else {
+                            androidx.compose.ui.graphics.Color(0x33F59E0B)
+                        }
+                        OverviewRefreshState.Refreshing -> if (isDark) {
+                            androidx.compose.ui.graphics.Color(0x553B82F6)
+                        } else {
+                            androidx.compose.ui.graphics.Color(0x333B82F6)
+                        }
+                        OverviewRefreshState.Completed -> if (isDark) {
+                            androidx.compose.ui.graphics.Color(0x5522C55E)
+                        } else {
+                            androidx.compose.ui.graphics.Color(0x3322C55E)
+                        }
+                        OverviewRefreshState.Idle -> MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
+                    },
+                    contentColor = MiuixTheme.colorScheme.onBackground
+                ),
+                showIndication = true,
+                onClick = { refreshAllTracked(showToast = true) }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = { refreshAllTracked(showToast = true) },
+                            onLongClick = { showAddSheet = true }
+                        )
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text("Overview", color = MiuixTheme.colorScheme.onBackground)
+                        Text(
+                            text = formatRefreshAgo(lastRefreshMs),
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatusPill(
+                            label = when (overviewRefreshState) {
+                                OverviewRefreshState.Cached -> "Cache"
+                                OverviewRefreshState.Refreshing -> "Refreshing"
+                                OverviewRefreshState.Completed -> "Synced"
+                                OverviewRefreshState.Idle -> "Idle"
+                            },
+                            color = when (overviewRefreshState) {
+                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0xFFF59E0B)
+                                OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0xFF22C55E)
+                                OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
+                            }
+                        )
+                    }
+                    Text(
+                        "追踪 $trackedCount 项 · 可更新 $updatableCount 项",
+                        color = MiuixTheme.colorScheme.onBackgroundVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "最新稳定版 $stableLatestCount 项 · 预发行 $preReleaseCount 项",
+                            color = MiuixTheme.colorScheme.onBackgroundVariant
+                        )
+                        if (overviewRefreshState != OverviewRefreshState.Idle) {
+                            val indicatorColor = when (overviewRefreshState) {
+                                OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0xFF22C55E)
+                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0xFFF59E0B)
+                                OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
+                            }
+                            val indicatorBg = when (overviewRefreshState) {
+                                OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0x553B82F6)
+                                OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0x5522C55E)
+                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0x55F59E0B)
+                                OverviewRefreshState.Idle -> MiuixTheme.colorScheme.surface
+                            }
+                            val progressValue = when (overviewRefreshState) {
+                                OverviewRefreshState.Refreshing -> refreshProgress.coerceIn(0f, 1f)
+                                OverviewRefreshState.Completed,
+                                OverviewRefreshState.Cached -> 1f
+                                OverviewRefreshState.Idle -> 0f
+                            }
+                            CircularProgressIndicator(
+                                progress = progressValue,
+                                size = 18.dp,
+                                strokeWidth = 2.dp,
+                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                    foregroundColor = indicatorColor,
+                                    backgroundColor = indicatorBg
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             if (trackedItems.isEmpty()) {
                 MiuixInfoItem("跟踪列表", "暂无条目，请先新增")
             } else if (filteredTracked.isEmpty()) {
@@ -406,7 +685,7 @@ fun GitHubPage(
             } else {
                 sortedTracked.forEach { item ->
                     var expanded by remember(item.id) { mutableStateOf(false) }
-                    MiuixExpandableSection(
+                    MiuixAccordionCard(
                         backdrop = backdrop,
                         title = item.appLabel,
                         subtitle = "${item.owner}/${item.repo}",
@@ -418,20 +697,20 @@ fun GitHubPage(
                         onHeaderLongClick = { pendingDeleteItem = item },
                         headerActions = {
                             val state = checkStates[item.id] ?: VersionCheckUi()
-                            val statusText = when {
-                                state.loading -> "⏳"
-                                state.hasPreReleaseUpdate -> "🧪⬆"
-                                state.isPreRelease -> "🧪"
-                                state.hasUpdate == true -> "⬆"
-                                state.hasUpdate == false -> "✅"
-                                else -> "•"
+                            val statusIcon = when {
+                                state.loading -> MiuixIcons.Regular.Refresh
+                                state.hasPreReleaseUpdate -> MiuixIcons.Regular.Update
+                                state.isPreRelease -> MiuixIcons.Regular.Report
+                                state.hasUpdate == true -> MiuixIcons.Regular.Update
+                                state.hasUpdate == false -> MiuixIcons.Regular.Ok
+                                else -> MiuixIcons.Regular.More
                             }
                             val statusColor = when {
-                                state.loading -> MiuixTheme.colorScheme.onBackgroundVariant
-                                state.hasPreReleaseUpdate -> MiuixTheme.colorScheme.error
-                                state.isPreRelease -> MiuixTheme.colorScheme.secondary
-                                state.hasUpdate == true -> MiuixTheme.colorScheme.error
-                                state.hasUpdate == false -> MiuixTheme.colorScheme.secondary
+                                state.loading -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                state.hasPreReleaseUpdate -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                state.hasUpdate == true -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                state.isPreRelease && state.hasUpdate == false -> androidx.compose.ui.graphics.Color(0xFF22C55E)
+                                state.hasUpdate == false -> androidx.compose.ui.graphics.Color(0xFF22C55E)
                                 else -> MiuixTheme.colorScheme.onBackgroundVariant
                             }
                             val clickableModifier = if (state.hasUpdate == true || state.isPreRelease) {
@@ -446,10 +725,10 @@ fun GitHubPage(
                             } else {
                                 Modifier
                             }
-                            Text(
-                                text = statusText,
-                                color = statusColor,
-                                fontWeight = FontWeight.Bold,
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = state.message.ifBlank { "状态" },
+                                tint = statusColor,
                                 modifier = clickableModifier
                             )
                         }
@@ -457,7 +736,7 @@ fun GitHubPage(
                         val state = checkStates[item.id] ?: VersionCheckUi()
                         Column(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             MiuixInfoItem(
                                 "应用包名（点击刷新）",
@@ -480,19 +759,16 @@ fun GitHubPage(
                                 }
                             )
                             if (state.localVersion.isNotBlank()) {
-                                Row {
-                                    Text("本地 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                    val localText = if (state.localVersionCode >= 0L) {
-                                        "${state.localVersion} (${state.localVersionCode})"
-                                    } else {
-                                        state.localVersion
-                                    }
-                                    Text(
-                                        localText,
-                                        color = MiuixTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                val localText = if (state.localVersionCode >= 0L) {
+                                    "${state.localVersion} (${state.localVersionCode})"
+                                } else {
+                                    state.localVersion
                                 }
+                                VersionValueRow(
+                                    label = "本地",
+                                    value = localText,
+                                    valueColor = MiuixTheme.colorScheme.primary
+                                )
                             }
                             if (state.latestTag.isNotBlank()) {
                                 val latestColor = if (state.hasUpdate == true) {
@@ -500,14 +776,12 @@ fun GitHubPage(
                                 } else {
                                     MiuixTheme.colorScheme.secondary
                                 }
-                                Row {
-                                    Text("稳定 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                    Text(
-                                        state.latestTag,
-                                        color = latestColor,
-                                        fontWeight = if (state.hasUpdate == true) FontWeight.Bold else FontWeight.Medium
-                                    )
-                                }
+                                VersionValueRow(
+                                    label = "稳定",
+                                    value = state.latestTag,
+                                    valueColor = latestColor,
+                                    emphasized = state.hasUpdate == true
+                                )
                             }
                             if (state.showPreReleaseInfo && state.preReleaseInfo.isNotBlank()) {
                                 val preColor = if (state.hasPreReleaseUpdate) {
@@ -515,14 +789,12 @@ fun GitHubPage(
                                 } else {
                                     MiuixTheme.colorScheme.secondary
                                 }
-                                Row {
-                                    Text("预发 ", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                    Text(
-                                        state.preReleaseInfo,
-                                        color = preColor,
-                                        fontWeight = if (state.hasPreReleaseUpdate) FontWeight.Bold else FontWeight.Medium
-                                    )
-                                }
+                                VersionValueRow(
+                                    label = "预发",
+                                    value = state.preReleaseInfo,
+                                    valueColor = preColor,
+                                    emphasized = state.hasPreReleaseUpdate
+                                )
                             }
                         }
                     }
@@ -652,30 +924,62 @@ fun GitHubPage(
         summary = pendingDeleteItem?.let { "确定删除 ${it.appLabel} (${it.owner}/${it.repo}) 吗？" },
         onDismissRequest = { pendingDeleteItem = null }
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            GlassTextButton(
-                backdrop = null,
-                text = "取消",
-                onClick = { pendingDeleteItem = null }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            GlassTextButton(
-                backdrop = null,
-                text = "删除",
-                onClick = {
-                    pendingDeleteItem?.let { deleting ->
-                        trackedItems.remove(deleting)
-                        checkStates.remove(deleting.id)
-                        saveTracked()
-                        Toast.makeText(context, "已删除 ${deleting.appLabel}", Toast.LENGTH_SHORT).show()
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    text = "取消",
+                    onClick = { pendingDeleteItem = null }
+                )
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    text = "删除",
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                    onClick = {
+                        pendingDeleteItem?.let { deleting ->
+                            trackedItems.remove(deleting)
+                            checkStates.remove(deleting.id)
+                            saveTracked()
+                            persistCheckCache()
+                            Toast.makeText(context, "已删除 ${deleting.appLabel}", Toast.LENGTH_SHORT).show()
+                        }
+                        pendingDeleteItem = null
                     }
-                    pendingDeleteItem = null
-                }
-            )
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun VersionValueRow(
+    label: String,
+    value: String,
+    valueColor: Color,
+    emphasized: Boolean = false
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            modifier = Modifier.width(34.dp)
+        )
+        Text(
+            text = value,
+            color = valueColor,
+            fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

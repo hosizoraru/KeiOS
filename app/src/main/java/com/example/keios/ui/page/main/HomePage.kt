@@ -23,14 +23,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.CircleShape
 import com.example.keios.ui.page.main.widget.AppTopBar
-import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.rememberCardBlurColors
-import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.blur.BlurDefaults
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -64,11 +63,6 @@ fun HomePage(
     val shizukuState = when {
         shizukuGranted -> "已授权"
         else -> "待检查"
-    }
-    val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop: LayerBackdrop = com.kyant.backdrop.backdrops.rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
     }
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -132,12 +126,13 @@ fun HomePage(
                 AppTopBar(
                     title = "KeiOS",
                     actions = {
-                        GlassIconButton(
-                            backdrop = backdrop,
-                            icon = MiuixIcons.Regular.Settings,
-                            contentDescription = "设置",
-                            onClick = onOpenSettings
-                        )
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(
+                                imageVector = MiuixIcons.Regular.Settings,
+                                contentDescription = "设置",
+                                tint = MiuixTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 )
                 Spacer(modifier = Modifier.height(14.dp))

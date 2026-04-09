@@ -38,6 +38,8 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -108,27 +110,24 @@ fun McpPage(
         AppTopBar(
             title = "MCP",
             subtitle = "本地 MCP 服务",
+            showSubtitle = true,
             actions = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GlassIconButton(
-                        backdrop = backdrop,
-                        icon = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
-                        contentDescription = if (uiState.running) "停止服务" else "启动服务",
-                        modifier = Modifier.padding(top = 2.dp),
-                        onClick = toggleServer
-                    )
-                    GlassIconButton(
-                        backdrop = backdrop,
-                        icon = MiuixIcons.Regular.Edit,
-                        contentDescription = "编辑服务参数",
-                        modifier = Modifier.padding(top = 2.dp),
-                        onClick = { showEditSheet = true }
-                    )
-                    GlassIconButton(
-                        backdrop = backdrop,
-                        icon = MiuixIcons.Regular.Copy,
-                        contentDescription = "复制当前配置",
-                        modifier = Modifier.padding(top = 2.dp),
+                    IconButton(onClick = toggleServer) {
+                        Icon(
+                            imageVector = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
+                            contentDescription = if (uiState.running) "停止服务" else "启动服务",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { showEditSheet = true }) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Edit,
+                            contentDescription = "编辑服务参数",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(
                         onClick = {
                             val endpoint = if (allowExternal && uiState.addresses.isNotEmpty()) {
                                 "http://${uiState.addresses.first()}:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
@@ -139,17 +138,25 @@ fun McpPage(
                             copyToClipboard(context, "mcp-config", json)
                             Toast.makeText(context, "MCP 配置已复制", Toast.LENGTH_SHORT).show()
                         }
-                    )
-                    GlassIconButton(
-                        backdrop = backdrop,
-                        icon = MiuixIcons.Regular.Refresh,
-                        contentDescription = "刷新",
-                        modifier = Modifier.padding(top = 2.dp),
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Copy,
+                            contentDescription = "复制当前配置",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(
                         onClick = {
                             mcpServerManager.refreshNow()
                             Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
                         }
-                    )
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Refresh,
+                            contentDescription = "刷新",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         )

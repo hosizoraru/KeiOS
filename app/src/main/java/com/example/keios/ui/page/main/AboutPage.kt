@@ -79,7 +79,8 @@ fun AboutPage(
         val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
         AppTopBar(
             title = "About",
-            subtitle = "权限检查与应用详情"
+            subtitle = "权限检查与应用详情",
+            showSubtitle = true
         )
         Spacer(modifier = Modifier.height(4.dp))
 

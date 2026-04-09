@@ -31,7 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.keios.ui.page.main.widget.GlassTextButton
+import com.example.keios.ui.page.main.widget.AppTopBar
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -47,8 +47,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Download
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -1144,33 +1148,36 @@ fun SystemPage(
     val cachedSectionCount = sectionStates.values.count { !it.loadedFresh && it.rows.isNotEmpty() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = "System", color = titleColor, modifier = Modifier.padding(top = 6.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "系统参数与属性", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
-            GlassTextButton(
-                backdrop = backdrop,
-                text = if (exportPreparing) "准备导出..." else "导出",
-                onClick = {
-                    if (exportPreparing) return@GlassTextButton
-                    exportPreparing = true
-                    scope.launch {
-                        val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                        val markdown = withContext(Dispatchers.IO) {
-                            val exportSections = buildExportSections(context, shizukuStatus, shizukuApiUtils)
-                            buildSystemMarkdown(generatedAt, shizukuStatus, exportSections)
+        AppTopBar(
+            title = "System",
+            subtitle = "系统参数与属性",
+            showSubtitle = true,
+            actions = {
+                IconButton(
+                    onClick = {
+                        if (exportPreparing) return@IconButton
+                        exportPreparing = true
+                        scope.launch {
+                            val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                            val markdown = withContext(Dispatchers.IO) {
+                                val exportSections = buildExportSections(context, shizukuStatus, shizukuApiUtils)
+                                buildSystemMarkdown(generatedAt, shizukuStatus, exportSections)
+                            }
+                            val fileName = "keios-system-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())}.md"
+                            pendingExportContent = markdown
+                            exportPreparing = false
+                            exportLauncher.launch(fileName)
                         }
-                        val fileName = "keios-system-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())}.md"
-                        pendingExportContent = markdown
-                        exportPreparing = false
-                        exportLauncher.launch(fileName)
                     }
+                ) {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Download,
+                        contentDescription = if (exportPreparing) "准备导出中" else "导出",
+                        tint = MiuixTheme.colorScheme.onSurface
+                    )
                 }
-            )
-        }
+            }
+        )
         Spacer(modifier = Modifier.height(10.dp))
         TextField(
             value = query,
