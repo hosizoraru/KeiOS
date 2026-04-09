@@ -1,18 +1,55 @@
-*.iml
-.gradle/
-.kotlin/
-local.properties
-/.idea/
+# macOS / OS
 .DS_Store
-/build/
-.gradle-home/
-/captures/
-.externalNativeBuild/
-.cxx/
+Thumbs.db
 
-# Keystore
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Gradle / Kotlin
+.gradle/
+.gradle-home/
+.kotlin/
+build/
+**/build/
+
+# Android local config
+local.properties
+
+# Native / NDK
+.cxx/
+.externalNativeBuild/
+
+# Android Studio captures / profiling
+captures/
+*.hprof
+*.prof
+
+# Logs
+*.log
+
+# Signing / secrets
 *.jks
 *.keystore
+*.pem
+*.p12
+*.key
+keystore.properties
+signing.properties
+*.env
+.env
+.env.*
 
-# Generated
-/app/build/
+# Temporary / local scratch
+tmp/
+/tmp/
+*.tmp
+*.bak
+
+# Keep Gradle wrapper jars and scripts tracked
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradlew
+!gradlew.bat
