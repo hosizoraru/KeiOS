@@ -461,96 +461,109 @@ fun GitHubPage(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = "GitHub",
-                scrollBehavior = scrollBehavior,
-                color = MiuixTheme.colorScheme.surface,
-                actions = {
-                    Box {
-                        IconButton(onClick = { showSortPopup = !showSortPopup }) {
-                            Icon(
-                                imageVector = MiuixIcons.Regular.Sort,
-                                contentDescription = "排序",
-                                tint = MiuixTheme.colorScheme.onSurface
-                            )
-                        }
-                        if (showSortPopup) {
-                            WindowListPopup(
-                                show = showSortPopup,
-                                alignment = PopupPositionProvider.Align.BottomEnd,
-                                onDismissRequest = { showSortPopup = false },
-                                enableWindowDim = false
-                            ) {
-                                ListPopupColumn {
-                                    val modes = GitHubSortMode.entries
-                                    modes.forEachIndexed { index, mode ->
-                                        DropdownImpl(
-                                            text = mode.label,
-                                            optionSize = modes.size,
-                                            isSelected = sortMode == mode,
-                                            index = index,
-                                            onSelectedIndexChange = { selectedIndex ->
-                                                sortMode = modes[selectedIndex]
-                                                showSortPopup = false
-                                            }
-                                        )
+            Column {
+                TopAppBar(
+                    title = "GitHub",
+                    scrollBehavior = scrollBehavior,
+                    color = MiuixTheme.colorScheme.surface,
+                    actions = {
+                        Box {
+                            IconButton(onClick = { showSortPopup = !showSortPopup }) {
+                                Icon(
+                                    imageVector = MiuixIcons.Regular.Sort,
+                                    contentDescription = "排序",
+                                    tint = MiuixTheme.colorScheme.onSurface
+                                )
+                            }
+                            if (showSortPopup) {
+                                WindowListPopup(
+                                    show = showSortPopup,
+                                    alignment = PopupPositionProvider.Align.BottomEnd,
+                                    onDismissRequest = { showSortPopup = false },
+                                    enableWindowDim = false
+                                ) {
+                                    ListPopupColumn {
+                                        val modes = GitHubSortMode.entries
+                                        modes.forEachIndexed { index, mode ->
+                                            DropdownImpl(
+                                                text = mode.label,
+                                                optionSize = modes.size,
+                                                isSelected = sortMode == mode,
+                                                index = index,
+                                                onSelectedIndexChange = { selectedIndex ->
+                                                    sortMode = modes[selectedIndex]
+                                                    showSortPopup = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    Box {
-                        IconButton(onClick = { showIntervalPopup = !showIntervalPopup }) {
-                            Icon(
-                                imageVector = MiuixIcons.Regular.Timer,
-                                contentDescription = "刷新间隔",
-                                tint = MiuixTheme.colorScheme.onSurface
-                            )
-                        }
-                        if (showIntervalPopup) {
-                            WindowListPopup(
-                                show = showIntervalPopup,
-                                alignment = PopupPositionProvider.Align.BottomEnd,
-                                onDismissRequest = { showIntervalPopup = false },
-                                enableWindowDim = false
-                            ) {
-                                ListPopupColumn {
-                                    val options = RefreshIntervalOption.entries
-                                    val selected = RefreshIntervalOption.fromHours(refreshIntervalHours)
-                                    options.forEachIndexed { index, option ->
-                                        DropdownImpl(
-                                            text = option.label,
-                                            optionSize = options.size,
-                                            isSelected = selected == option,
-                                            index = index,
-                                            onSelectedIndexChange = { selectedIndex ->
-                                                val picked = options[selectedIndex]
-                                                refreshIntervalHours = picked.hours
-                                                GitHubTrackStore.saveRefreshIntervalHours(picked.hours)
-                                                showIntervalPopup = false
-                                            }
-                                        )
+                        Box {
+                            IconButton(onClick = { showIntervalPopup = !showIntervalPopup }) {
+                                Icon(
+                                    imageVector = MiuixIcons.Regular.Timer,
+                                    contentDescription = "刷新间隔",
+                                    tint = MiuixTheme.colorScheme.onSurface
+                                )
+                            }
+                            if (showIntervalPopup) {
+                                WindowListPopup(
+                                    show = showIntervalPopup,
+                                    alignment = PopupPositionProvider.Align.BottomEnd,
+                                    onDismissRequest = { showIntervalPopup = false },
+                                    enableWindowDim = false
+                                ) {
+                                    ListPopupColumn {
+                                        val options = RefreshIntervalOption.entries
+                                        val selected = RefreshIntervalOption.fromHours(refreshIntervalHours)
+                                        options.forEachIndexed { index, option ->
+                                            DropdownImpl(
+                                                text = option.label,
+                                                optionSize = options.size,
+                                                isSelected = selected == option,
+                                                index = index,
+                                                onSelectedIndexChange = { selectedIndex ->
+                                                    val picked = options[selectedIndex]
+                                                    refreshIntervalHours = picked.hours
+                                                    GitHubTrackStore.saveRefreshIntervalHours(picked.hours)
+                                                    showIntervalPopup = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
+                        IconButton(onClick = { refreshAllTracked(showToast = true) }) {
+                            Icon(
+                                imageVector = MiuixIcons.Regular.Refresh,
+                                contentDescription = "检查",
+                                tint = MiuixTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = { showAddSheet = true }) {
+                            Icon(
+                                imageVector = MiuixIcons.Regular.AddCircle,
+                                contentDescription = "新增跟踪",
+                                tint = MiuixTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                    IconButton(onClick = { refreshAllTracked(showToast = true) }) {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Refresh,
-                            contentDescription = "检查",
-                            tint = MiuixTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { showAddSheet = true }) {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.AddCircle,
-                            contentDescription = "新增跟踪",
-                            tint = MiuixTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
+                )
+                TextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    value = trackedSearch,
+                    onValueChange = { trackedSearch = it },
+                    label = "搜索已跟踪项目（仓库/应用/包名）",
+                    useLabelAsPlaceholder = true,
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     ) { innerPadding ->
         LazyColumn(
@@ -567,16 +580,7 @@ fun GitHubPage(
         ) {
             item { SmallTitle("项目版本跟踪") }
             item { Spacer(modifier = Modifier.height(8.dp)) }
-            item {
-                TextField(
-                    value = trackedSearch,
-                    onValueChange = { trackedSearch = it },
-                    label = "搜索已跟踪项目（仓库/应用/包名）",
-                    useLabelAsPlaceholder = true,
-                    singleLine = true
-                )
-            }
-            item { Spacer(modifier = Modifier.height(10.dp)) }
+            item { Spacer(modifier = Modifier.height(2.dp)) }
             item {
                 Card(
                 modifier = Modifier
