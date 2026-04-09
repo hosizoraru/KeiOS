@@ -45,6 +45,7 @@ import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.AppIconCache
+import com.example.keios.ui.utils.GitHubCheckCacheEntry
 import com.example.keios.ui.utils.GitHubTrackStore
 import com.example.keios.ui.utils.GitHubTrackedApp
 import com.example.keios.ui.utils.GitHubVersionUtils
@@ -56,22 +57,30 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.DropdownImpl
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.AddCircle
 import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Report
 import top.yukonga.miuix.kmp.icon.extended.Sort
+import top.yukonga.miuix.kmp.icon.extended.Timer
+import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
+import kotlin.math.max
 
 private data class VersionCheckUi(
     val loading: Boolean = false,
@@ -94,8 +103,33 @@ private enum class GitHubSortMode(val label: String) {
 
 private enum class OverviewRefreshState {
     Idle,
+    Cached,
     Refreshing,
     Completed
+}
+
+private enum class RefreshIntervalOption(val hours: Int, val label: String) {
+    Hour1(1, "1 小时"),
+    Hour3(3, "3 小时"),
+    Hour6(6, "6 小时"),
+    Hour12(12, "12 小时");
+
+    companion object {
+        fun fromHours(hours: Int): RefreshIntervalOption {
+            return entries.firstOrNull { it.hours == hours } ?: Hour3
+        }
+    }
+}
+
+private fun formatRefreshAgo(lastRefreshMs: Long, nowMs: Long = System.currentTimeMillis()): String {
+    if (lastRefreshMs <= 0L) return "未刷新"
+    val deltaMs = max(0L, nowMs - lastRefreshMs)
+    val minutes = deltaMs / 60_000L
+    if (minutes <= 0L) return "刚刚"
+    if (minutes < 60L) return "$minutes 分钟前"
+    val hours = minutes / 60L
+    val mins = minutes % 60L
+    return if (mins == 0L) "$hours 小时前" else "$hours 小时 $mins 分钟前"
 }
 
 @Composable
@@ -119,12 +153,50 @@ fun GitHubPage(
     var appListLoaded by remember { mutableStateOf(false) }
     var hasAutoRequestedPermission by remember { mutableStateOf(false) }
     var showSortPopup by remember { mutableStateOf(false) }
+    var showIntervalPopup by remember { mutableStateOf(false) }
     var sortMode by remember { mutableStateOf(GitHubSortMode.UpdateFirst) }
     var pendingDeleteItem by remember { mutableStateOf<GitHubTrackedApp?>(null) }
     var overviewRefreshState by remember { mutableStateOf(OverviewRefreshState.Idle) }
+    var lastRefreshMs by remember { mutableStateOf(0L) }
+    var refreshIntervalHours by remember { mutableStateOf(GitHubTrackStore.loadRefreshIntervalHours()) }
+    var refreshProgress by remember { mutableStateOf(0f) }
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
+
+    fun VersionCheckUi.toCacheEntry(): GitHubCheckCacheEntry = GitHubCheckCacheEntry(
+        loading = false,
+        localVersion = localVersion,
+        localVersionCode = localVersionCode,
+        latestTag = latestTag,
+        hasUpdate = hasUpdate,
+        message = message,
+        isPreRelease = isPreRelease,
+        preReleaseInfo = preReleaseInfo,
+        showPreReleaseInfo = showPreReleaseInfo,
+        hasPreReleaseUpdate = hasPreReleaseUpdate
+    )
+
+    fun GitHubCheckCacheEntry.toUi(): VersionCheckUi = VersionCheckUi(
+        loading = false,
+        localVersion = localVersion,
+        localVersionCode = localVersionCode,
+        latestTag = latestTag,
+        hasUpdate = hasUpdate,
+        message = message,
+        isPreRelease = isPreRelease,
+        preReleaseInfo = preReleaseInfo,
+        showPreReleaseInfo = showPreReleaseInfo,
+        hasPreReleaseUpdate = hasPreReleaseUpdate
+    )
+
+    fun persistCheckCache(refreshTimestamp: Long = lastRefreshMs) {
+        val states = trackedItems.associate { item ->
+            val state = checkStates[item.id] ?: VersionCheckUi()
+            item.id to state.toCacheEntry()
+        }
+        GitHubTrackStore.saveCheckCache(states, refreshTimestamp)
+    }
 
     suspend fun reloadApps() {
         appList = withContext(Dispatchers.IO) {
@@ -251,6 +323,7 @@ fun GitHubPage(
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
             }
             checkStates[item.id] = state
+            persistCheckCache()
         }
     }
 
@@ -258,20 +331,30 @@ fun GitHubPage(
         if (trackedItems.isEmpty()) {
             if (showToast) Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
             overviewRefreshState = OverviewRefreshState.Idle
+            refreshProgress = 0f
             return
         }
         scope.launch {
+            GitHubTrackStore.clearCheckCache()
+            lastRefreshMs = 0L
             overviewRefreshState = OverviewRefreshState.Refreshing
+            refreshProgress = 0f
+            trackedItems.forEach { item ->
+                checkStates[item.id] = VersionCheckUi(loading = true, message = "刷新中...")
+            }
             trackedItems.forEachIndexed { index, item ->
-                checkStates[item.id] = VersionCheckUi(loading = true)
                 val state = resolveItemState(item)
                 checkStates[item.id] = state
+                refreshProgress = (index + 1).toFloat() / trackedItems.size.toFloat()
                 if (showToast && state.message.startsWith("检查失败")) {
                     Toast.makeText(context, "${item.owner}/${item.repo}: ${state.message}", Toast.LENGTH_SHORT).show()
                 }
                 if (index < trackedItems.lastIndex) delay(120)
             }
             overviewRefreshState = OverviewRefreshState.Completed
+            lastRefreshMs = System.currentTimeMillis()
+            refreshProgress = 1f
+            persistCheckCache(lastRefreshMs)
             if (showToast) Toast.makeText(context, "检查完成", Toast.LENGTH_SHORT).show()
         }
     }
@@ -289,7 +372,26 @@ fun GitHubPage(
         trackedItems.clear()
         trackedItems.addAll(GitHubTrackStore.load())
         reloadApps()
-        refreshAllTracked(showToast = false)
+        val (cachedStates, cachedRefreshMs) = GitHubTrackStore.loadCheckCache()
+        checkStates.clear()
+        trackedItems.forEach { item ->
+            cachedStates[item.id]?.let { cached -> checkStates[item.id] = cached.toUi() }
+        }
+        lastRefreshMs = cachedRefreshMs
+        refreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
+        val hasTracked = trackedItems.isNotEmpty()
+        val hasCachedForTracked = trackedItems.any { cachedStates.containsKey(it.id) }
+        val stale = hasTracked && lastRefreshMs > 0L &&
+            (System.currentTimeMillis() - lastRefreshMs) >= refreshIntervalHours * 60L * 60L * 1000L
+        if (!hasCachedForTracked && hasTracked) {
+            refreshAllTracked(showToast = false)
+        } else if (stale) {
+            refreshAllTracked(showToast = false)
+        } else if (hasCachedForTracked) {
+            overviewRefreshState = OverviewRefreshState.Cached
+        } else {
+            overviewRefreshState = OverviewRefreshState.Idle
+        }
     }
 
     LaunchedEffect(scrollToTopSignal) {
@@ -377,6 +479,42 @@ fun GitHubPage(
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
+                Box(modifier = Modifier.padding(top = 2.dp)) {
+                    GlassIconButton(
+                        backdrop = backdrop,
+                        icon = MiuixIcons.Regular.Timer,
+                        contentDescription = "刷新间隔",
+                        onClick = { showIntervalPopup = !showIntervalPopup }
+                    )
+                    if (showIntervalPopup) {
+                        WindowListPopup(
+                            show = showIntervalPopup,
+                            alignment = PopupPositionProvider.Align.End,
+                            onDismissRequest = { showIntervalPopup = false },
+                            enableWindowDim = false
+                        ) {
+                            ListPopupColumn {
+                                val options = RefreshIntervalOption.entries
+                                val selected = RefreshIntervalOption.fromHours(refreshIntervalHours)
+                                options.forEachIndexed { index, option ->
+                                    DropdownImpl(
+                                        text = option.label,
+                                        optionSize = options.size,
+                                        isSelected = selected == option,
+                                        index = index,
+                                        onSelectedIndexChange = { selectedIndex ->
+                                            val picked = options[selectedIndex]
+                                            refreshIntervalHours = picked.hours
+                                            GitHubTrackStore.saveRefreshIntervalHours(picked.hours)
+                                            showIntervalPopup = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
@@ -421,6 +559,11 @@ fun GitHubPage(
                     .fillMaxWidth(),
                 colors = CardDefaults.defaultColors(
                     color = when (overviewRefreshState) {
+                        OverviewRefreshState.Cached -> if (isDark) {
+                            androidx.compose.ui.graphics.Color(0x55F59E0B)
+                        } else {
+                            androidx.compose.ui.graphics.Color(0x33F59E0B)
+                        }
                         OverviewRefreshState.Refreshing -> if (isDark) {
                             androidx.compose.ui.graphics.Color(0x553B82F6)
                         } else {
@@ -450,16 +593,24 @@ fun GitHubPage(
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
                         Text("Overview", color = MiuixTheme.colorScheme.onBackground)
+                        Text(
+                            text = formatRefreshAgo(lastRefreshMs),
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
                         StatusPill(
                             label = when (overviewRefreshState) {
+                                OverviewRefreshState.Cached -> "Cache"
                                 OverviewRefreshState.Refreshing -> "Refreshing"
                                 OverviewRefreshState.Completed -> "Synced"
                                 OverviewRefreshState.Idle -> "Idle"
                             },
                             color = when (overviewRefreshState) {
+                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0xFFF59E0B)
                                 OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
                                 OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0xFF22C55E)
                                 OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
@@ -474,6 +625,22 @@ fun GitHubPage(
                         "最新稳定版 $stableLatestCount 项 · 预发行 $preReleaseCount 项",
                         color = MiuixTheme.colorScheme.onBackgroundVariant
                     )
+                    if (overviewRefreshState == OverviewRefreshState.Refreshing) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            CircularProgressIndicator(
+                                progress = refreshProgress.coerceIn(0f, 1f),
+                                size = 18.dp,
+                                strokeWidth = 2.dp,
+                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                    foregroundColor = androidx.compose.ui.graphics.Color(0xFF3B82F6),
+                                    backgroundColor = androidx.compose.ui.graphics.Color(0x553B82F6)
+                                )
+                            )
+                        }
+                    }
                 }
             }
 
@@ -498,20 +665,20 @@ fun GitHubPage(
                         onHeaderLongClick = { pendingDeleteItem = item },
                         headerActions = {
                             val state = checkStates[item.id] ?: VersionCheckUi()
-                            val statusText = when {
-                                state.loading -> "⏳"
-                                state.hasPreReleaseUpdate -> "🧪⬆"
-                                state.isPreRelease -> "🧪"
-                                state.hasUpdate == true -> "⬆"
-                                state.hasUpdate == false -> "✅"
-                                else -> "•"
+                            val statusIcon = when {
+                                state.loading -> MiuixIcons.Regular.Refresh
+                                state.hasPreReleaseUpdate -> MiuixIcons.Regular.Update
+                                state.isPreRelease -> MiuixIcons.Regular.Report
+                                state.hasUpdate == true -> MiuixIcons.Regular.Update
+                                state.hasUpdate == false -> MiuixIcons.Regular.Ok
+                                else -> MiuixIcons.Regular.More
                             }
                             val statusColor = when {
-                                state.loading -> MiuixTheme.colorScheme.onBackgroundVariant
-                                state.hasPreReleaseUpdate -> MiuixTheme.colorScheme.error
-                                state.isPreRelease -> MiuixTheme.colorScheme.secondary
-                                state.hasUpdate == true -> MiuixTheme.colorScheme.error
-                                state.hasUpdate == false -> MiuixTheme.colorScheme.secondary
+                                state.loading -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                state.hasPreReleaseUpdate -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                state.hasUpdate == true -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
+                                state.isPreRelease && state.hasUpdate == false -> androidx.compose.ui.graphics.Color(0xFF22C55E)
+                                state.hasUpdate == false -> androidx.compose.ui.graphics.Color(0xFF22C55E)
                                 else -> MiuixTheme.colorScheme.onBackgroundVariant
                             }
                             val clickableModifier = if (state.hasUpdate == true || state.isPreRelease) {
@@ -526,10 +693,10 @@ fun GitHubPage(
                             } else {
                                 Modifier
                             }
-                            Text(
-                                text = statusText,
-                                color = statusColor,
-                                fontWeight = FontWeight.Bold,
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = state.message.ifBlank { "状态" },
+                                tint = statusColor,
                                 modifier = clickableModifier
                             )
                         }
@@ -750,6 +917,7 @@ fun GitHubPage(
                         trackedItems.remove(deleting)
                         checkStates.remove(deleting.id)
                         saveTracked()
+                        persistCheckCache()
                         Toast.makeText(context, "已删除 ${deleting.appLabel}", Toast.LENGTH_SHORT).show()
                     }
                     pendingDeleteItem = null

@@ -40,6 +40,19 @@ data class GitHubReleaseVersionSignals(
     val candidates: List<String>
 )
 
+data class GitHubCheckCacheEntry(
+    val loading: Boolean = false,
+    val localVersion: String = "",
+    val localVersionCode: Long = -1L,
+    val latestTag: String = "",
+    val hasUpdate: Boolean? = null,
+    val message: String = "",
+    val isPreRelease: Boolean = false,
+    val preReleaseInfo: String = "",
+    val showPreReleaseInfo: Boolean = false,
+    val hasPreReleaseUpdate: Boolean = false
+)
+
 data class GitHubAtomReleaseEntry(
     val tag: String,
     val title: String,
@@ -51,6 +64,12 @@ data class GitHubAtomReleaseEntry(
 object GitHubTrackStore {
     private const val KV_ID = "github_track_store"
     private const val KEY_ITEMS = "tracked_items"
+    private const val KEY_CHECK_CACHE = "tracked_check_cache"
+    private const val KEY_LAST_REFRESH_MS = "last_full_refresh_ms"
+    private const val KEY_REFRESH_INTERVAL_HOURS = "refresh_interval_hours"
+
+    @Volatile
+    private var didAutoRefreshInSession: Boolean = false
 
     private fun kv(): MMKV = MMKV.mmkvWithID(KV_ID)
 
@@ -95,6 +114,81 @@ object GitHubTrackStore {
             array.put(obj)
         }
         kv().encode(KEY_ITEMS, array.toString())
+    }
+
+    fun loadCheckCache(): Pair<Map<String, GitHubCheckCacheEntry>, Long> {
+        val raw = kv().decodeString(KEY_CHECK_CACHE).orEmpty()
+        val ts = kv().decodeLong(KEY_LAST_REFRESH_MS, 0L)
+        if (raw.isBlank()) return emptyMap<String, GitHubCheckCacheEntry>() to ts
+        val map = runCatching {
+            val obj = JSONObject(raw)
+            buildMap {
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val id = keys.next()
+                    val item = obj.optJSONObject(id) ?: continue
+                    put(
+                        id,
+                        GitHubCheckCacheEntry(
+                            loading = false,
+                            localVersion = item.optString("localVersion"),
+                            localVersionCode = item.optLong("localVersionCode", -1L),
+                            latestTag = item.optString("latestTag"),
+                            hasUpdate = if (item.has("hasUpdate")) item.optBoolean("hasUpdate") else null,
+                            message = item.optString("message"),
+                            isPreRelease = item.optBoolean("isPreRelease", false),
+                            preReleaseInfo = item.optString("preReleaseInfo"),
+                            showPreReleaseInfo = item.optBoolean("showPreReleaseInfo", false),
+                            hasPreReleaseUpdate = item.optBoolean("hasPreReleaseUpdate", false)
+                        )
+                    )
+                }
+            }
+        }.getOrDefault(emptyMap())
+        return map to ts
+    }
+
+    fun saveCheckCache(states: Map<String, GitHubCheckCacheEntry>, lastRefreshMs: Long) {
+        val obj = JSONObject()
+        states.forEach { (id, state) ->
+            obj.put(
+                id,
+                JSONObject()
+                    .put("localVersion", state.localVersion)
+                    .put("localVersionCode", state.localVersionCode)
+                    .put("latestTag", state.latestTag)
+                    .put("hasUpdate", state.hasUpdate)
+                    .put("message", state.message)
+                    .put("isPreRelease", state.isPreRelease)
+                    .put("preReleaseInfo", state.preReleaseInfo)
+                    .put("showPreReleaseInfo", state.showPreReleaseInfo)
+                    .put("hasPreReleaseUpdate", state.hasPreReleaseUpdate)
+            )
+        }
+        kv().encode(KEY_CHECK_CACHE, obj.toString())
+        kv().encode(KEY_LAST_REFRESH_MS, lastRefreshMs)
+    }
+
+    fun clearCheckCache() {
+        kv().removeValueForKey(KEY_CHECK_CACHE)
+        kv().removeValueForKey(KEY_LAST_REFRESH_MS)
+    }
+
+    fun shouldAutoRefreshOnceInSession(): Boolean = !didAutoRefreshInSession
+
+    fun markAutoRefreshDoneInSession() {
+        didAutoRefreshInSession = true
+    }
+
+    fun loadRefreshIntervalHours(defaultValue: Int = 3): Int {
+        val value = kv().decodeInt(KEY_REFRESH_INTERVAL_HOURS, defaultValue)
+        return if (value in setOf(1, 3, 6, 12)) value else defaultValue
+    }
+
+    fun saveRefreshIntervalHours(hours: Int) {
+        if (hours in setOf(1, 3, 6, 12)) {
+            kv().encode(KEY_REFRESH_INTERVAL_HOURS, hours)
+        }
     }
 }
 

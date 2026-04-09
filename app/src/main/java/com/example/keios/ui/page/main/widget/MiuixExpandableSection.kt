@@ -24,7 +24,10 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.ExpandLess
+import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -100,9 +103,10 @@ fun MiuixExpandableSection(
                 Row {
                     headerActions?.invoke()
                     if (headerActions != null) Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (expanded) "˄" else "˅",
-                        color = MiuixTheme.colorScheme.primary
+                    Icon(
+                        imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
+                        contentDescription = if (expanded) "收起" else "展开",
+                        tint = MiuixTheme.colorScheme.primary
                     )
                 }
             }
