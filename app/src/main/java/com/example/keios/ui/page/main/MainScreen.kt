@@ -318,6 +318,7 @@ private fun MainPagerLayout(
                             mcpRunning = mcpUiState.running,
                             mcpPort = mcpUiState.port,
                             mcpConnectedClients = mcpUiState.connectedClients,
+                            mcpAllowExternal = mcpUiState.allowExternal,
                             onOpenSettings = { navigator.push(KeiosRoute.Settings) },
                             contentTopPadding = homeTopInset,
                             contentBottomPadding = homeBottomInset

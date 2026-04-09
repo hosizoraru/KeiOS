@@ -2,6 +2,8 @@ package com.example.keios.ui.page.main
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -35,8 +38,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -53,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -63,17 +67,13 @@ import kotlinx.coroutines.flow.onEach
 import com.rosan.installer.ui.library.blend.BlendTokenConfig
 import com.rosan.installer.ui.library.blend.ColorBlendToken
 import com.rosan.installer.ui.library.effect.BgEffectBackground
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurBlendMode
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.BlurDefaults
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
@@ -99,61 +99,81 @@ private fun formatGitHubCacheAgo(lastRefreshMs: Long, nowMs: Long = System.curre
 
 @Composable
 private fun HomeInfoCard(
-    title: String,
-    subtitle: String,
     backdrop: LayerBackdrop,
     blurEnabled: Boolean,
     blurRadius: Float,
     blendColors: List<BlendColorEntry>,
     content: @Composable () -> Unit,
 ) {
-    Card(
+    val isDark = isSystemInDarkTheme()
+    val shape = RoundedCornerShape(20.dp)
+    val glassSurface = if (isDark) {
+        Color.White.copy(alpha = 0.16f)
+    } else {
+        Color.White.copy(alpha = 0.28f)
+    }
+    val borderBrush = Brush.linearGradient(
+        listOf(
+            Color.White.copy(alpha = if (isDark) 0.52f else 0.68f),
+            Color.White.copy(alpha = if (isDark) 0.22f else 0.34f),
+            Color.White.copy(alpha = if (isDark) 0.46f else 0.62f),
+        )
+    )
+
+    Box(
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
             .textureBlur(
                 backdrop = backdrop,
-                shape = RoundedRectangle(16.dp),
+                shape = RoundedRectangle(20.dp),
                 blurRadius = blurRadius,
                 noiseCoefficient = BlurDefaults.NoiseCoefficient,
                 colors = BlurColors(blendColors = blendColors),
                 enabled = blurEnabled,
-            ),
-        colors = CardDefaults.defaultColors(
-            if (blurEnabled) Color.Transparent else MiuixTheme.colorScheme.surfaceContainer,
-            Color.Transparent,
-        ),
+            )
+            .background(
+                color = if (blurEnabled) glassSurface else MiuixTheme.colorScheme.surfaceContainer,
+                shape = shape
+            )
+            .border(width = 1.dp, brush = borderBrush, shape = shape)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(74.dp)
-                    .graphicsLayer(alpha = 0.85f)
-                    .textureBlur(
-                        backdrop = backdrop,
-                        shape = RoundedRectangle(16.dp),
-                        blurRadius = 18f,
-                        noiseCoefficient = 0f,
-                        colors = BlurColors(
-                            blendColors = listOf(
-                                BlendColorEntry(Color.White.copy(alpha = 0.20f), BlurBlendMode.SrcOver),
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = if (isDark) 0.22f else 0.30f),
+                                Color.White.copy(alpha = if (isDark) 0.16f else 0.20f),
+                                Color.White.copy(alpha = if (isDark) 0.12f else 0.15f),
+                                Color.Transparent
                             )
                         ),
-                        enabled = blurEnabled
+                        shape = shape
+                    )
+            )
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.linearGradient(
+                            listOf(
+                                Color.White.copy(alpha = if (isDark) 0.18f else 0.24f),
+                                Color.Transparent,
+                                Color.White.copy(alpha = if (isDark) 0.16f else 0.22f),
+                            )
+                        ),
+                        shape = shape
                     )
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(text = title)
-                Text(
-                    text = subtitle,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
-                )
                 content()
             }
         }
@@ -166,6 +186,7 @@ fun HomePage(
     mcpRunning: Boolean,
     mcpPort: Int,
     mcpConnectedClients: Int,
+    mcpAllowExternal: Boolean,
     onOpenSettings: () -> Unit,
     contentTopPadding: Dp = 0.dp,
     contentBottomPadding: Dp = 0.dp
@@ -200,22 +221,19 @@ fun HomePage(
     val trackedCount = trackedItems.size
     val cacheHitCount = trackedItems.count { cachedStates.containsKey(it.id) }
     val updatableCount = trackedItems.count { cachedStates[it.id]?.hasUpdate == true }
-    val preReleaseCount = trackedItems.count { cachedStates[it.id]?.isPreRelease == true }
-    val stableLatestCount = trackedItems.count {
-        val state = cachedStates[it.id]
-        state?.hasUpdate == false && state.isPreRelease.not()
-    }
     val cacheStateColor = if (cacheHitCount > 0) githubCacheColor else inactiveColor
 
-    val cacheSummaryLine = when {
-        trackedCount == 0 -> "未配置 GitHub 跟踪项目"
-        cacheHitCount == 0 -> "追踪 $trackedCount 项 · 暂无可用缓存"
-        else -> "追踪 $trackedCount 项 · 缓存命中 $cacheHitCount 项 · 可更新 $updatableCount 项"
+    val networkModeText = if (mcpAllowExternal) "局域网可访问" else "仅本机"
+    val cacheRefreshLine = if (cachedRefreshMs > 0L) formatGitHubCacheAgo(cachedRefreshMs) else "未刷新"
+    val githubLastUpdateLine = when {
+        trackedCount == 0 -> "未配置"
+        cacheHitCount == 0 -> "暂无缓存"
+        else -> cacheRefreshLine
     }
-    val cacheDetailLine = when {
-        trackedCount == 0 -> "请到 GitHub 页面新增项目"
-        cacheHitCount == 0 -> "请在 GitHub 页面执行一次刷新以生成缓存"
-        else -> "最新稳定版 $stableLatestCount 项 · 预发行 $preReleaseCount 项 · ${formatGitHubCacheAgo(cachedRefreshMs)}"
+    val githubUpdatableLine = when {
+        trackedCount == 0 -> "0 项"
+        cacheHitCount == 0 -> "待刷新"
+        else -> "$updatableCount 项"
     }
 
     var logoHeightPx by remember { mutableIntStateOf(0) }
@@ -236,7 +254,7 @@ fun HomePage(
         label = "home_top_bar_progress"
     )
     val cardBlurRadius by animateFloatAsState(
-        targetValue = if (blurEnabled) BlendTokenConfig.Effects.THIN - (8f * scrollProgress) else 0f,
+        targetValue = if (blurEnabled) BlendTokenConfig.Effects.DEFAULT + 10f - (6f * scrollProgress) else 0f,
         label = "home_card_blur_radius"
     )
     val bgAlpha by animateFloatAsState(
@@ -285,23 +303,7 @@ fun HomePage(
     }
 
     val cardBlendColors = remember(isDark) {
-        if (isDark) ColorBlendToken.Overlay_Extra_Thin_Dark else ColorBlendToken.Pured_Regular_Light
-    }
-
-    val logoBlend = remember(isDark) {
-        if (isDark) {
-            listOf(
-                BlendColorEntry(Color(0xE6A1A1A1), BlurBlendMode.ColorDodge),
-                BlendColorEntry(Color(0x4DE6E6E6), BlurBlendMode.LinearLight),
-                BlendColorEntry(Color(0xFF1AF500), BlurBlendMode.Lab),
-            )
-        } else {
-            listOf(
-                BlendColorEntry(Color(0xCC4A4A4A), BlurBlendMode.ColorBurn),
-                BlendColorEntry(Color(0xFF4F4F4F), BlurBlendMode.LinearLight),
-                BlendColorEntry(Color(0xFF1AF200), BlurBlendMode.Lab),
-            )
-        }
+        if (isDark) ColorBlendToken.Colored_Thick_Dark else ColorBlendToken.Colored_Thick_Light
     }
 
     Scaffold(
@@ -358,7 +360,7 @@ fun HomePage(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(96.dp)
                         .graphicsLayer {
                             alpha = 1f - iconProgress
                             scaleX = 1f - (iconProgress * 0.05f)
@@ -368,34 +370,53 @@ fun HomePage(
                             if (iconY != 0f) return@onGloballyPositioned
                             iconY = coordinates.positionInWindow().y + coordinates.size.height
                         }
+                        .textureBlur(
+                            backdrop = backdrop,
+                            shape = RoundedRectangle(48.dp),
+                            blurRadius = 72f,
+                            noiseCoefficient = BlurDefaults.NoiseCoefficient,
+                            colors = BlurColors(blendColors = cardBlendColors),
+                            enabled = blurEnabled,
+                        )
+                        .background(
+                            color = if (isDark) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.30f),
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = if (isDark) 0.56f else 0.70f),
+                            shape = CircleShape
+                        )
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = if (isDark) 0.34f else 0.44f),
+                                        Color.White.copy(alpha = if (isDark) 0.08f else 0.14f),
+                                        Color.Transparent
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
+                    )
                     Image(
                         painter = painterResource(id = R.drawable.ic_notification_logo),
                         contentDescription = null,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = 2f
-                                scaleY = 2f
-                            }
-                            .textureBlur(
-                                backdrop = backdrop,
-                                shape = RoundedRectangle(16.dp),
-                                blurRadius = 200f,
-                                noiseCoefficient = BlurDefaults.NoiseCoefficient,
-                                colors = BlurColors(blendColors = logoBlend),
-                                contentBlendMode = BlendMode.DstIn,
-                                enabled = blurEnabled,
-                            ),
+                            .size(52.dp)
+                            .clip(CircleShape)
                     )
                 }
 
                 Text(
                     text = "KeiOS",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 35.sp,
+                    fontSize = 33.sp,
                     modifier = Modifier
-                        .padding(top = 12.dp, bottom = 5.dp)
+                        .padding(top = 14.dp, bottom = 6.dp)
                         .onGloballyPositioned { coordinates ->
                             if (titleY != 0f) return@onGloballyPositioned
                             titleY = coordinates.positionInWindow().y + coordinates.size.height
@@ -405,15 +426,6 @@ fun HomePage(
                             scaleX = 1f - (titleProgress * 0.05f)
                             scaleY = 1f - (titleProgress * 0.05f)
                         }
-                        .textureBlur(
-                            backdrop = backdrop,
-                            shape = RoundedRectangle(16.dp),
-                            blurRadius = 200f,
-                            noiseCoefficient = BlurDefaults.NoiseCoefficient,
-                            colors = BlurColors(blendColors = logoBlend),
-                            contentBlendMode = BlendMode.DstIn,
-                            enabled = blurEnabled,
-                        )
                 )
 
                 Column(
@@ -431,7 +443,7 @@ fun HomePage(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "MCP / GitHub Runtime",
+                        text = "MCP / GitHub Overview",
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center,
@@ -495,66 +507,31 @@ fun HomePage(
                 item(key = "home_content") {
                     Column(
                         modifier = Modifier
-                            .fillParentMaxHeight()
+                            .fillMaxWidth()
                             .padding(bottom = listContentPadding.calculateBottomPadding())
                     ) {
-                        SmallTitle("Runtime")
                         HomeInfoCard(
-                            title = "Runtime Status",
-                            subtitle = "核心服务状态概览",
                             backdrop = backdrop,
                             blurEnabled = blurEnabled,
                             blurRadius = cardBlurRadius,
                             blendColors = cardBlendColors
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Start
-                            ) {
-                                StatusPill(
-                                    label = "MCP",
-                                    color = if (mcpRunning) runningColor else stoppedColor
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                StatusPill(label = "GitHub", color = cacheStateColor)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                StatusPill(
-                                    label = "Shizuku",
-                                    color = if (shizukuGranted) runningColor else stoppedColor
-                                )
-                            }
                             MiuixInfoItem(
-                                "MCP Server",
-                                "${if (mcpRunning) "运行中" else "未运行"} · 在线 $mcpConnectedClients · 端口 $mcpPort"
+                                "MCP",
+                                "状态 ${if (mcpRunning) "运行中" else "未运行"} · 端口 $mcpPort · 在线 $mcpConnectedClients · 网络模式 $networkModeText"
                             )
                         }
 
-                        SmallTitle("MCP")
                         HomeInfoCard(
-                            title = "MCP Server",
-                            subtitle = "本地服务运行参数",
                             backdrop = backdrop,
                             blurEnabled = blurEnabled,
                             blurRadius = cardBlurRadius,
                             blendColors = cardBlendColors
                         ) {
-                            MiuixInfoItem("服务状态", if (mcpRunning) "运行中" else "未运行")
-                            MiuixInfoItem("在线设备", mcpConnectedClients.toString())
-                            MiuixInfoItem("监听端口", mcpPort.toString())
-                            MiuixInfoItem("连接协议", "MCP")
-                        }
-
-                        SmallTitle("GitHub")
-                        HomeInfoCard(
-                            title = "GitHub Cache",
-                            subtitle = "跟踪缓存汇总",
-                            backdrop = backdrop,
-                            blurEnabled = blurEnabled,
-                            blurRadius = cardBlurRadius,
-                            blendColors = cardBlendColors
-                        ) {
-                            MiuixInfoItem("缓存状态", cacheSummaryLine)
-                            MiuixInfoItem("缓存详情", cacheDetailLine)
+                            MiuixInfoItem(
+                                "GitHub Cache",
+                                "追踪 $trackedCount 项 · 上次更新 $githubLastUpdateLine · 可更新 $githubUpdatableLine"
+                            )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
