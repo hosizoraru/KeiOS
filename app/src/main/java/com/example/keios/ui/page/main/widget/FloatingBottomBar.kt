@@ -180,7 +180,11 @@ fun FloatingBottomBar(
     val animationScope = rememberCoroutineScope()
     val isInLightTheme = !androidx.compose.foundation.isSystemInDarkTheme()
     val selectedTint = MiuixTheme.colorScheme.primary
-    val unselectedTint = MiuixTheme.colorScheme.onBackgroundVariant
+    val unselectedTint = if (isInLightTheme) {
+        MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.82f)
+    } else {
+        MiuixTheme.colorScheme.onBackgroundVariant
+    }
 
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
@@ -311,7 +315,12 @@ fun FloatingBottomBar(
                         scaleX = scale
                         scaleY = scale
                     },
-                    onDrawSurface = { drawRect(Color.White.copy(alpha = if (isInLightTheme) 0.34f else 0.18f)) }
+                    onDrawSurface = {
+                        drawRect(Color.White.copy(alpha = if (isInLightTheme) 0.46f else 0.18f))
+                        if (isInLightTheme) {
+                            drawRect(Color.Black.copy(alpha = 0.06f))
+                        }
+                    }
                 )
                 .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                 .height(76.dp)
@@ -363,7 +372,12 @@ fun FloatingBottomBar(
                         highlight = {
                             Highlight.Default.copy(alpha = dampedDragAnimation.pressProgress)
                         },
-                        onDrawSurface = { drawRect(Color.White.copy(alpha = if (isInLightTheme) 0.30f else 0.15f)) }
+                        onDrawSurface = {
+                            drawRect(Color.White.copy(alpha = if (isInLightTheme) 0.40f else 0.15f))
+                            if (isInLightTheme) {
+                                drawRect(Color.Black.copy(alpha = 0.05f))
+                            }
+                        }
                     )
                     .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .height(68.dp)
@@ -430,7 +444,7 @@ fun FloatingBottomBar(
                         onDrawSurface = {
                             val progress = dampedDragAnimation.pressProgress
                             drawRect(
-                                color = if (isInLightTheme) Color.Black.copy(0.1f) else Color.White.copy(0.1f),
+                                color = if (isInLightTheme) Color.Black.copy(0.15f) else Color.White.copy(0.1f),
                                 alpha = 1f - progress
                             )
                             drawRect(Color.Black.copy(alpha = 0.03f * progress))

@@ -1,9 +1,12 @@
 package com.example.keios.ui.page.main.widget
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -34,6 +37,7 @@ fun GlassIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     val iconTint = MiuixTheme.colorScheme.primary
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
     Box(
@@ -49,12 +53,24 @@ fun GlassIconButton(
                         shape = { ContinuousCapsule },
                         effects = {
                             vibrancy()
-                            blur(7.dp.toPx())
-                            lens(18.dp.toPx(), 18.dp.toPx())
+                            blur(if (isDark) 7.dp.toPx() else 11.dp.toPx())
+                            lens(24.dp.toPx(), 24.dp.toPx())
                         },
-                        highlight = { Highlight.Default.copy(alpha = 0.9f) },
-                        shadow = { Shadow.Default.copy(color = Color.Black.copy(alpha = 0.12f)) },
-                        onDrawSurface = { drawRect(Color.White.copy(alpha = 0.20f)) }
+                        highlight = {
+                            Highlight.Default.copy(alpha = if (isDark) 0.9f else 1.0f)
+                        },
+                        shadow = {
+                            Shadow.Default.copy(
+                                color = Color.Black.copy(alpha = if (isDark) 0.12f else 0.20f)
+                            )
+                        },
+                        onDrawSurface = {
+                            drawRect(Color.White.copy(alpha = if (isDark) 0.20f else 0.46f))
+                            if (!isDark) {
+                                // Add a subtle contour to keep button boundaries visible on bright pages.
+                                drawRect(Color.Black.copy(alpha = 0.06f))
+                            }
+                        }
                     )
                 } else {
                     Modifier.background(fallbackSurface.copy(alpha = 0.9f))
@@ -62,6 +78,16 @@ fun GlassIconButton(
             ),
         contentAlignment = Alignment.Center
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(ContinuousCapsule)
+                .border(
+                    width = 1.dp,
+                    color = if (isDark) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.16f),
+                    shape = ContinuousCapsule
+                )
+        )
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
@@ -77,6 +103,7 @@ fun GlassTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     val textColor = MiuixTheme.colorScheme.primary
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
     Box(
@@ -91,16 +118,32 @@ fun GlassTextButton(
                         shape = { ContinuousCapsule },
                         effects = {
                             vibrancy()
-                            blur(7.dp.toPx())
-                            lens(18.dp.toPx(), 18.dp.toPx())
+                            blur(if (isDark) 7.dp.toPx() else 11.dp.toPx())
+                            lens(24.dp.toPx(), 24.dp.toPx())
                         },
-                        highlight = { Highlight.Default.copy(alpha = 0.9f) },
-                        shadow = { Shadow.Default.copy(color = Color.Black.copy(alpha = 0.12f)) },
-                        onDrawSurface = { drawRect(Color.White.copy(alpha = 0.20f)) }
+                        highlight = {
+                            Highlight.Default.copy(alpha = if (isDark) 0.9f else 1.0f)
+                        },
+                        shadow = {
+                            Shadow.Default.copy(
+                                color = Color.Black.copy(alpha = if (isDark) 0.12f else 0.20f)
+                            )
+                        },
+                        onDrawSurface = {
+                            drawRect(Color.White.copy(alpha = if (isDark) 0.20f else 0.46f))
+                            if (!isDark) {
+                                drawRect(Color.Black.copy(alpha = 0.06f))
+                            }
+                        }
                     )
                 } else {
                     Modifier.background(fallbackSurface.copy(alpha = 0.9f))
                 }
+            )
+            .border(
+                width = 1.dp,
+                color = if (isDark) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.16f),
+                shape = ContinuousCapsule
             )
             .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
@@ -108,4 +151,3 @@ fun GlassTextButton(
         Text(text = text, color = textColor)
     }
 }
-
