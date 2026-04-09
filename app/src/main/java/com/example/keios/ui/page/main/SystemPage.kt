@@ -31,7 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.keios.ui.page.main.widget.GlassTextButton
+import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -43,6 +43,9 @@ import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Download
+import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
@@ -996,6 +999,7 @@ fun SystemPage(
     val scrollState = rememberScrollState()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var exportPreparing by remember { mutableStateOf(false) }
+    var refreshing by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/markdown")
@@ -1033,9 +1037,13 @@ fun SystemPage(
         }
     }
 
-    suspend fun ensureLoad(section: SectionKind) {
+    suspend fun ensureLoad(section: SectionKind, forceRefresh: Boolean = false) {
         val current = sectionStates[section] ?: SectionState()
-        if (current.loading || current.loadedFresh) return
+        if (current.loading) return
+        if (!forceRefresh) {
+            if (current.loadedFresh) return
+            if (current.rows.isNotEmpty()) return
+        }
         updateSection(section) { it.copy(loading = true) }
         val fresh = withContext(Dispatchers.IO) {
             buildSectionRows(section, context, shizukuStatus, shizukuApiUtils)
@@ -1043,6 +1051,18 @@ fun SystemPage(
         updateSection(section) { it.copy(rows = fresh, loading = false, loadedFresh = true) }
         withContext(Dispatchers.IO) {
             SystemInfoCache.write(section, fresh)
+        }
+    }
+
+    suspend fun refreshAllSections() {
+        refreshing = true
+        try {
+            SectionKind.entries.forEach { section ->
+                ensureLoad(section, forceRefresh = true)
+            }
+            Toast.makeText(context, "系统参数已刷新并缓存", Toast.LENGTH_SHORT).show()
+        } finally {
+            refreshing = false
         }
     }
 
@@ -1146,25 +1166,39 @@ fun SystemPage(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "系统参数与属性", color = subtitleColor, modifier = Modifier.padding(top = 4.dp))
-            GlassTextButton(
-                backdrop = backdrop,
-                text = if (exportPreparing) "准备导出..." else "导出",
-                onClick = {
-                    if (exportPreparing) return@GlassTextButton
-                    exportPreparing = true
-                    scope.launch {
-                        val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                        val markdown = withContext(Dispatchers.IO) {
-                            val exportSections = buildExportSections(context, shizukuStatus, shizukuApiUtils)
-                            buildSystemMarkdown(generatedAt, shizukuStatus, exportSections)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.Refresh,
+                    contentDescription = "刷新系统参数",
+                    onClick = {
+                        if (refreshing) return@GlassIconButton
+                        scope.launch {
+                            refreshAllSections()
                         }
-                        val fileName = "keios-system-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())}.md"
-                        pendingExportContent = markdown
-                        exportPreparing = false
-                        exportLauncher.launch(fileName)
                     }
-                }
-            )
+                )
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.Download,
+                    contentDescription = if (exportPreparing) "准备导出中" else "导出",
+                    onClick = {
+                        if (exportPreparing) return@GlassIconButton
+                        exportPreparing = true
+                        scope.launch {
+                            val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                            val markdown = withContext(Dispatchers.IO) {
+                                val exportSections = buildExportSections(context, shizukuStatus, shizukuApiUtils)
+                                buildSystemMarkdown(generatedAt, shizukuStatus, exportSections)
+                            }
+                            val fileName = "keios-system-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())}.md"
+                            pendingExportContent = markdown
+                            exportPreparing = false
+                            exportLauncher.launch(fileName)
+                        }
+                    }
+                )
+            }
         }
         Spacer(modifier = Modifier.height(10.dp))
         TextField(
