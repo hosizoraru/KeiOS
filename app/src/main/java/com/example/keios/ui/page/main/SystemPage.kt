@@ -9,6 +9,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -53,7 +55,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
@@ -78,6 +82,13 @@ private enum class SectionKind {
     ANDROID,
     JAVA,
     LINUX
+}
+
+private enum class SystemOverviewState {
+    Idle,
+    Cached,
+    Refreshing,
+    Completed
 }
 
 private data class SectionState(
@@ -493,6 +504,16 @@ private object SystemInfoCache {
             SectionKind.JAVA -> kv.encode(KEY_JAVA, encodeRows(rows))
             SectionKind.LINUX -> kv.encode(KEY_LINUX, encodeRows(rows))
         }
+    }
+
+    fun hasPersistedCache(): Boolean {
+        val kv = MMKV.mmkvWithID(KV_ID)
+        return kv.containsKey(KEY_SYSTEM) &&
+            kv.containsKey(KEY_SECURE) &&
+            kv.containsKey(KEY_GLOBAL) &&
+            kv.containsKey(KEY_ANDROID) &&
+            kv.containsKey(KEY_JAVA) &&
+            kv.containsKey(KEY_LINUX)
     }
 }
 
@@ -989,16 +1010,19 @@ fun SystemPage(
     contentBottomPadding: Dp = 72.dp,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
-    val primary = MiuixTheme.colorScheme.primary
-    val success = MiuixTheme.colorScheme.secondary
+    val isDark = isSystemInDarkTheme()
     val inactive = MiuixTheme.colorScheme.onBackgroundVariant
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val cachedColor = Color(0xFFF59E0B)
+    val refreshingColor = Color(0xFF3B82F6)
+    val syncedColor = Color(0xFF22C55E)
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     var cacheLoaded by remember { mutableStateOf(false) }
+    var cachePersisted by remember { mutableStateOf(false) }
     var queryInput by remember { mutableStateOf("") }
     var queryApplied by remember { mutableStateOf("") }
     var topInfoExpanded by remember { mutableStateOf(SystemUiStateStore.topInfoExpanded(defaultValue = true)) }
@@ -1013,6 +1037,7 @@ fun SystemPage(
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var exportPreparing by remember { mutableStateOf(false) }
     var refreshing by remember { mutableStateOf(false) }
+    var refreshProgress by remember { mutableStateOf(0f) }
     val surfaceColor = MiuixTheme.colorScheme.surface
     val backdrop: LayerBackdrop = rememberLayerBackdrop {
         drawRect(surfaceColor)
@@ -1069,16 +1094,20 @@ fun SystemPage(
             buildSectionRows(section, context, shizukuStatus, shizukuApiUtils)
         }
         updateSection(section) { it.copy(rows = fresh, loading = false, loadedFresh = true) }
-        withContext(Dispatchers.IO) {
+        cachePersisted = withContext(Dispatchers.IO) {
             SystemInfoCache.write(section, fresh)
+            SystemInfoCache.hasPersistedCache()
         }
     }
 
     suspend fun refreshAllSections() {
         refreshing = true
+        refreshProgress = 0f
         try {
-            SectionKind.entries.forEach { section ->
+            val sectionCount = SectionKind.entries.size
+            SectionKind.entries.forEachIndexed { index, section ->
                 ensureLoad(section, forceRefresh = true)
+                refreshProgress = (index + 1).toFloat() / sectionCount.toFloat()
             }
             Toast.makeText(context, "系统参数已刷新并缓存", Toast.LENGTH_SHORT).show()
         } finally {
@@ -1096,7 +1125,9 @@ fun SystemPage(
     }
 
     LaunchedEffect(Unit) {
-        val cached = withContext(Dispatchers.IO) { SystemInfoCache.read() }
+        val (cached, persisted) = withContext(Dispatchers.IO) {
+            SystemInfoCache.read() to SystemInfoCache.hasPersistedCache()
+        }
         sectionStates = mapOf(
             SectionKind.SYSTEM to SectionState(rows = cached.system),
             SectionKind.SECURE to SectionState(rows = cached.secure),
@@ -1105,6 +1136,7 @@ fun SystemPage(
             SectionKind.JAVA to SectionState(rows = cached.java),
             SectionKind.LINUX to SectionState(rows = cached.linux)
         )
+        cachePersisted = persisted
         cacheLoaded = true
     }
 
@@ -1211,6 +1243,37 @@ fun SystemPage(
     }
     val loadedFreshCount = sectionStates.values.count { it.loadedFresh }
     val cachedSectionCount = sectionStates.values.count { !it.loadedFresh && it.rows.isNotEmpty() }
+    val sectionCount = SectionKind.entries.size
+    val overviewState = when {
+        refreshing -> SystemOverviewState.Refreshing
+        loadedFreshCount == sectionCount && sectionCount > 0 -> SystemOverviewState.Completed
+        cachePersisted || cachedSectionCount > 0 -> SystemOverviewState.Cached
+        else -> SystemOverviewState.Idle
+    }
+    val statusLabel = when (overviewState) {
+        SystemOverviewState.Cached -> "Cached"
+        SystemOverviewState.Refreshing -> "Refreshing"
+        SystemOverviewState.Completed -> "Synced"
+        SystemOverviewState.Idle -> "Idle"
+    }
+    val statusColor = when (overviewState) {
+        SystemOverviewState.Cached -> cachedColor
+        SystemOverviewState.Refreshing -> refreshingColor
+        SystemOverviewState.Completed -> syncedColor
+        SystemOverviewState.Idle -> inactive
+    }
+    val indicatorProgress = when (overviewState) {
+        SystemOverviewState.Refreshing -> refreshProgress.coerceIn(0f, 1f)
+        SystemOverviewState.Completed,
+        SystemOverviewState.Cached -> 1f
+        SystemOverviewState.Idle -> 0f
+    }
+    val indicatorBg = when (overviewState) {
+        SystemOverviewState.Refreshing -> Color(0x553B82F6)
+        SystemOverviewState.Completed -> Color(0x5522C55E)
+        SystemOverviewState.Cached -> Color(0x55F59E0B)
+        SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -1288,11 +1351,19 @@ fun SystemPage(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.defaultColors(
-                    color = if (shizukuReady) primary.copy(alpha = 0.18f) else MiuixTheme.colorScheme.error.copy(alpha = 0.16f),
+                    color = when (overviewState) {
+                        SystemOverviewState.Cached -> if (isDark) Color(0x55F59E0B) else Color(0x33F59E0B)
+                        SystemOverviewState.Refreshing -> if (isDark) Color(0x553B82F6) else Color(0x333B82F6)
+                        SystemOverviewState.Completed -> if (isDark) Color(0x5522C55E) else Color(0x3322C55E)
+                        SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
+                    },
                     contentColor = titleColor
                 ),
                 showIndication = true,
-                onClick = { }
+                onClick = {
+                    if (refreshing) return@Card
+                    scope.launch { refreshAllSections() }
+                }
             ) {
                 Column(
                     modifier = Modifier
@@ -1302,26 +1373,43 @@ fun SystemPage(
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Overview", color = titleColor)
-                        StatusPill(
-                            label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
-                            color = if (shizukuReady) success else inactive
-                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        StatusPill(label = statusLabel, color = statusColor)
+                        StatusPill(label = "Shizuku", color = if (shizukuReady) syncedColor else inactive)
                     }
                     Text(
-                        text = "TopInfo ${topInfoRows.size} 条 · Fresh $loadedFreshCount / 6",
+                        text = "TopInfo ${topInfoRows.size} 条 · 查询 ${if (q.isBlank()) "（空）" else q}",
                         color = subtitleColor
                     )
-                    Text(
-                        text = if (!cacheLoaded) {
-                            "读取缓存中... · 查询 ${if (q.isBlank()) "（空）" else q}"
-                        } else {
-                            "缓存分区 $cachedSectionCount · 查询 ${if (q.isBlank()) "（空）" else q}"
-                        },
-                        color = subtitleColor
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (!cacheLoaded) {
+                                "读取缓存中... · Fresh $loadedFreshCount / $sectionCount"
+                            } else {
+                                "缓存分区 $cachedSectionCount · Fresh $loadedFreshCount / $sectionCount"
+                            },
+                            color = subtitleColor
+                        )
+                        if (overviewState != SystemOverviewState.Idle) {
+                            CircularProgressIndicator(
+                                progress = indicatorProgress,
+                                size = 18.dp,
+                                strokeWidth = 2.dp,
+                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                    foregroundColor = statusColor,
+                                    backgroundColor = indicatorBg
+                                )
+                            )
+                        }
+                    }
                 }
             }
             }
