@@ -4,32 +4,36 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
-import com.example.keios.ui.page.main.widget.AppTopBar
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.ShizukuApiUtils
-import com.kyant.backdrop.Backdrop
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private fun formatTime(epochMillis: Long): String {
@@ -55,101 +59,115 @@ fun AboutPage(
     val notReadyColor = Color(0xFFC62828)
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
-    val scrollState = rememberScrollState()
+    val listState = rememberLazyListState()
+    val scrollBehavior = MiuixScrollBehavior()
 
     LaunchedEffect(scrollToTopSignal) {
-        if (scrollToTopSignal > 0) {
-            scrollState.animateScrollTo(0)
-        }
+        if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
     }
 
     val appInfo: ApplicationInfo? = packageInfo?.applicationInfo
-
     val shizukuDetailMap = remember(shizukuStatus) {
-        shizukuApiUtils.detailedRows()
-            .toMap()
+        shizukuApiUtils.detailedRows().toMap()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(scrollState)
-            .padding(bottom = contentBottomPadding)
-    ) {
-        val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
-        AppTopBar(
-            title = "About",
-            subtitle = "权限检查与应用详情",
-            showSubtitle = true
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.defaultColors(
-                color = if (shizukuReady) readyColor.copy(alpha = 0.16f) else notReadyColor.copy(alpha = 0.16f),
-                contentColor = titleColor
-            ),
-            showIndication = true,
-            onClick = onCheckShizuku
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = "About",
+                scrollBehavior = scrollBehavior,
+                color = MiuixTheme.colorScheme.surface
+            )
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
+            state = listState,
+            contentPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                start = 12.dp,
+                end = 12.dp
+            )
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Row(
+            item { SmallTitle("权限检查与应用详情") }
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+            item {
+                val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    colors = CardDefaults.defaultColors(
+                        color = if (shizukuReady) readyColor.copy(alpha = 0.16f) else notReadyColor.copy(alpha = 0.16f),
+                        contentColor = titleColor
+                    ),
+                    showIndication = true,
+                    onClick = onCheckShizuku
                 ) {
-                    Text("Overview", color = titleColor)
-                    StatusPill(
-                        label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
-                        color = if (shizukuReady) readyColor else notReadyColor
-                    )
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Overview", color = titleColor)
+                            StatusPill(
+                                label = if (shizukuReady) "Shizuku Ready" else "Shizuku Limited",
+                                color = if (shizukuReady) readyColor else notReadyColor
+                            )
+                        }
+                        MiuixInfoItem(
+                            "App",
+                            buildString {
+                                append(appLabel)
+                                append(" · ")
+                                append(packageInfo?.packageName ?: "unknown")
+                                append(" · Debuggable ")
+                                append(((appInfo?.flags ?: 0) and ApplicationInfo.FLAG_DEBUGGABLE != 0))
+                            }
+                        )
+                        MiuixInfoItem(
+                            "Version",
+                            "${packageInfo?.versionName ?: "unknown"} (${packageInfo?.longVersionCode ?: -1})"
+                        )
+                        MiuixInfoItem(
+                            "Runtime",
+                            buildString {
+                                append("API ")
+                                append(Build.VERSION.SDK_INT)
+                                append(" · Security Patch ")
+                                append(Build.VERSION.SECURITY_PATCH ?: "unknown")
+                                append(" · Last Update ")
+                                append(packageInfo?.lastUpdateTime?.let(::formatTime) ?: "unknown")
+                            }
+                        )
+                        MiuixInfoItem(
+                            "Framework",
+                            "Miuix UI 0.9.0 · Shizuku API ${ShizukuApiUtils.API_VERSION}"
+                        )
+                        MiuixInfoItem(
+                            "Permissions & Service",
+                            buildString {
+                                append("Notification ")
+                                append(if (notificationPermissionGranted) "granted" else "not granted")
+                                append(" · uname ")
+                                append(shizukuDetailMap["Shizuku uname"] ?: "N/A")
+                                append(" · SELinux ")
+                                append(shizukuDetailMap["Shizuku getenforce"] ?: "N/A")
+                            }
+                        )
+                    }
                 }
-                MiuixInfoItem(
-                    "App",
-                    buildString {
-                        append(appLabel)
-                        append(" · ")
-                        append(packageInfo?.packageName ?: "unknown")
-                        append(" · Debuggable ")
-                        append(((appInfo?.flags ?: 0) and ApplicationInfo.FLAG_DEBUGGABLE != 0))
-                    }
-                )
-                MiuixInfoItem(
-                    "Version",
-                    "${packageInfo?.versionName ?: "unknown"} (${packageInfo?.longVersionCode ?: -1})"
-                )
-                MiuixInfoItem(
-                    "Runtime",
-                    buildString {
-                        append("API ")
-                        append(Build.VERSION.SDK_INT)
-                        append(" · Security Patch ")
-                        append(Build.VERSION.SECURITY_PATCH ?: "unknown")
-                        append(" · Last Update ")
-                        append(packageInfo?.lastUpdateTime?.let(::formatTime) ?: "unknown")
-                    }
-                )
-                MiuixInfoItem(
-                    "Framework",
-                    "Miuix UI 0.9.0 · Shizuku API ${ShizukuApiUtils.API_VERSION}"
-                )
-                MiuixInfoItem(
-                    "Permissions & Service",
-                    buildString {
-                        append("Notification ")
-                        append(if (notificationPermissionGranted) "granted" else "not granted")
-                        append(" · uname ")
-                        append(shizukuDetailMap["Shizuku uname"] ?: "N/A")
-                        append(" · SELinux ")
-                        append(shizukuDetailMap["Shizuku getenforce"] ?: "N/A")
-                    }
-                )
             }
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
         }
     }
 }

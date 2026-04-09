@@ -276,21 +276,24 @@ private fun MainPagerLayout(
 
             val currentPageType = tabs[pageIndex]
             val isHome = currentPageType == BottomPage.Home
-            val isMcpOrGitHub = currentPageType == BottomPage.Mcp || currentPageType == BottomPage.GitHub
+            val isTopBarManagedPage = currentPageType == BottomPage.System ||
+                currentPageType == BottomPage.About ||
+                currentPageType == BottomPage.Mcp ||
+                currentPageType == BottomPage.GitHub
 
             val pageHorizontalPadding = when {
                 isHome -> 0.dp
-                isMcpOrGitHub -> 0.dp
+                isTopBarManagedPage -> 0.dp
                 else -> 18.dp
             }
             val contentInsets = when {
                 isHome -> PaddingValues(0.dp)
-                isMcpOrGitHub -> PaddingValues(0.dp)
+                isTopBarManagedPage -> PaddingValues(0.dp)
                 else -> systemInsets
             }
             val topSpacerPadding = when {
                 isHome -> 0.dp
-                isMcpOrGitHub -> 0.dp
+                isTopBarManagedPage -> 0.dp
                 else -> 14.dp
             }
 
