@@ -101,6 +101,7 @@ fun LiquidActionBar(
     backdrop: Backdrop,
     items: List<LiquidActionItem>,
     isBlurEnabled: Boolean = true,
+    compactSingleItem: Boolean = false,
     onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     if (items.isEmpty()) return
@@ -190,7 +191,8 @@ fun LiquidActionBar(
         null
     }
 
-    val barWidth = remember(items.size) { maxOf(156.dp, (items.size * 38).dp) }
+    val minimumWidth = if (compactSingleItem && items.size == 1) 50.dp else 156.dp
+    val barWidth = remember(items.size, compactSingleItem) { maxOf(minimumWidth, (items.size * 38).dp) }
 
     Box(
         modifier = modifier.width(barWidth),

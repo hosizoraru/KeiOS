@@ -53,22 +53,23 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
-import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.LiquidActionBar
+import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.GitHubTrackStore
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop as rememberActionBarBackdrop
 import com.kyant.shapes.RoundedRectangle
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.onEach
 import com.rosan.installer.ui.library.blend.BlendTokenConfig
 import com.rosan.installer.ui.library.blend.ColorBlendToken
 import com.rosan.installer.ui.library.effect.BgEffectBackground
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
@@ -80,7 +81,7 @@ import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop as rememberMiuixLayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Settings
@@ -90,11 +91,11 @@ private fun formatGitHubCacheAgo(lastRefreshMs: Long, nowMs: Long = System.curre
     if (lastRefreshMs <= 0L) return "未刷新"
     val deltaMs = (nowMs - lastRefreshMs).coerceAtLeast(0L)
     val minutes = TimeUnit.MILLISECONDS.toMinutes(deltaMs)
-    if (minutes <= 0L) return "刚刚"
-    if (minutes < 60L) return "${minutes} 分钟前"
+    if (minutes <= 0L) return "just now"
+    if (minutes < 60L) return "${minutes}min ago"
     val hours = minutes / 60L
     val remainMinutes = minutes % 60L
-    return if (remainMinutes == 0L) "${hours} 小时前" else "${hours} 小时 ${remainMinutes} 分钟前"
+    return if (remainMinutes == 0L) "${hours}h ago" else "${hours}h ${remainMinutes}min ago"
 }
 
 @Composable
@@ -181,6 +182,50 @@ private fun HomeInfoCard(
 }
 
 @Composable
+private fun HomeInlineInfoItem(
+    title: String,
+    headline: String,
+    detail: String
+) {
+    val summaryColor = if (isSystemInDarkTheme()) {
+        Color(0xFF8AB8FF)
+    } else {
+        Color(0xFF1E63D6)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.width(14.dp))
+            Text(
+                text = headline.ifBlank { "N/A" },
+                color = summaryColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Text(
+            text = detail.ifBlank { "N/A" },
+            color = summaryColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
 fun HomePage(
     shizukuStatus: String,
     mcpRunning: Boolean,
@@ -201,7 +246,12 @@ fun HomePage(
     val blurEnabled = isRenderEffectSupported()
     val dynamicBackgroundEnabled = isRuntimeShaderSupported()
     val effectBackgroundEnabled = isRuntimeShaderSupported()
-    val backdrop = rememberLayerBackdrop()
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val backdrop = rememberMiuixLayerBackdrop()
+    val actionBarBackdrop = rememberActionBarBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
 
     val shizukuGranted = shizukuStatus.contains("granted", ignoreCase = true)
     val runningColor = Color(0xFF2E7D32)
@@ -314,12 +364,17 @@ fun HomePage(
                 color = MiuixTheme.colorScheme.surface.copy(alpha = if (scrollProgress == 1f) 1f else 0f),
                 titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = topBarProgress),
                 actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Settings,
-                            contentDescription = "设置"
-                        )
-                    }
+                    LiquidActionBar(
+                        backdrop = actionBarBackdrop,
+                        items = listOf(
+                            LiquidActionItem(
+                                icon = MiuixIcons.Regular.Settings,
+                                contentDescription = "设置",
+                                onClick = onOpenSettings
+                            )
+                        ),
+                        compactSingleItem = true
+                    )
                 }
             )
         }
@@ -516,9 +571,10 @@ fun HomePage(
                             blurRadius = cardBlurRadius,
                             blendColors = cardBlendColors
                         ) {
-                            MiuixInfoItem(
+                            HomeInlineInfoItem(
                                 "MCP",
-                                "状态 ${if (mcpRunning) "运行中" else "未运行"} · 端口 $mcpPort · 在线 $mcpConnectedClients · 网络模式 $networkModeText"
+                                "状态：${if (mcpRunning) "运行中" else "未运行"}   在线设备：$mcpConnectedClients",
+                                "端口：$mcpPort   网络模式：$networkModeText"
                             )
                         }
 
@@ -528,9 +584,10 @@ fun HomePage(
                             blurRadius = cardBlurRadius,
                             blendColors = cardBlendColors
                         ) {
-                            MiuixInfoItem(
+                            HomeInlineInfoItem(
                                 "GitHub Cache",
-                                "追踪 $trackedCount 项 · 上次更新 $githubLastUpdateLine · 可更新 $githubUpdatableLine"
+                                "上次更新：$githubLastUpdateLine",
+                                "追踪：$trackedCount 项   可更新：$githubUpdatableLine"
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
