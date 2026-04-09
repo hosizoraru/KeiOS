@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.GlassIconButton
+import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
@@ -579,14 +580,14 @@ fun GitHubPage(
                         }
                     }
                 )
-                TextField(
+                GlassSearchField(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp),
                     value = trackedSearch,
                     onValueChange = { trackedSearch = it },
                     label = "搜索已跟踪项目（仓库/应用/包名）",
-                    useLabelAsPlaceholder = true,
+                    backdrop = backdrop,
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
