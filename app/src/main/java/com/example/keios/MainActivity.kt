@@ -103,16 +103,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun hasNotificationPermission(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
-        return ContextCompat.checkSelfPermission(
+    private fun hasNotificationPermission()=
+         ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
-    }
 }
 
-private fun android.content.pm.PackageManager.getPackageInfoCompat(packageName: String): PackageInfo {
+private fun PackageManager.getPackageInfoCompat(packageName: String): PackageInfo {
     return getPackageInfo(packageName, 0)
 }
 

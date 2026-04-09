@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -45,6 +46,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
@@ -76,8 +78,6 @@ private val LocalFloatingBottomBarTabScale = staticCompositionLocalOf { { 1f } }
 
 @Composable
 private fun RowScope.FloatingBottomBarItem(
-    selected: Boolean,
-    page: BottomPage,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
@@ -117,7 +117,7 @@ fun FloatingBottomBar(
     val tabs = BottomPage.entries
     val selectedIndex = tabs.indexOf(currentPage).coerceAtLeast(0)
 
-    // Keep old non-glass fallback for users who disable liquid style.
+    // Normal Style Fallback
     if (!liquidGlassEnabled) {
         val normalSelectedTint = MiuixTheme.colorScheme.primary
         val normalUnselectedTint = MiuixTheme.colorScheme.onBackgroundVariant
@@ -170,16 +170,16 @@ fun FloatingBottomBar(
         return
     }
 
-    if (backdrop == null) {
-        return
-    }
+    if (backdrop == null) return
+
+    // Liquid Glass Style
     val usedBackdrop = backdrop
     val tabsBackdrop = rememberLayerBackdrop()
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val isInLightTheme = !androidx.compose.foundation.isSystemInDarkTheme()
-    val selectedTint = MiuixTheme.colorScheme.primary
+    val accentColor = MiuixTheme.colorScheme.primary
     val unselectedTint = MiuixTheme.colorScheme.onBackgroundVariant
 
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
@@ -196,15 +196,11 @@ fun FloatingBottomBar(
             }
         }
     }
-
-    var currentIndex by remember { mutableIntStateOf(selectedIndex) }
-
     class DampedDragAnimationHolder {
         var instance: DampedDragAnimation? = null
     }
-
     val holder = remember { DampedDragAnimationHolder() }
-
+    var currentIndex by remember { mutableIntStateOf(selectedIndex) }
     val dampedDragAnimation = remember(animationScope, tabs.size, density, isLtr) {
         DampedDragAnimation(
             animationScope = animationScope,
@@ -217,12 +213,13 @@ fun FloatingBottomBar(
                 val anim = holder.instance ?: return@DampedDragAnimation true
                 if (tabWidthPx == 0f) return@DampedDragAnimation false
 
+                // 【修正点】使用 anim.value 而不是 value
                 val currentValue = anim.value
                 val indicatorX = currentValue * tabWidthPx
+
                 val padding = with(density) { 4.dp.toPx() }
                 val globalTouchX = if (isLtr) {
-                    val touchX = indicatorX + offset.x
-                    padding + touchX
+                    padding + indicatorX + offset.x
                 } else {
                     totalWidthPx - padding - tabWidthPx - indicatorX + offset.x
                 }
@@ -233,27 +230,18 @@ fun FloatingBottomBar(
                 val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, tabs.size - 1)
                 currentIndex = targetIndex
                 animateToValue(targetIndex.toFloat())
-                animationScope.launch {
-                    offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
-                }
+                animationScope.launch { offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f)) }
             },
             onDrag = { _, dragAmount ->
                 if (tabWidthPx > 0) {
-                    updateValue(
-                        (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
-                            .fastCoerceIn(0f, (tabs.size - 1).toFloat())
-                    )
-                    animationScope.launch {
-                        offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
-                    }
+                    updateValue((targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f).fastCoerceIn(0f, (tabs.size - 1).toFloat()))
+                    animationScope.launch { offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x) }
                 }
             }
-        ).also { holder.instance = it }
+        )
     }
 
-    LaunchedEffect(selectedIndex) {
-        currentIndex = selectedIndex
-    }
+    LaunchedEffect(selectedIndex) { currentIndex = selectedIndex }
     LaunchedEffect(dampedDragAnimation) {
         snapshotFlow { currentIndex }.drop(1).collectLatest { index ->
             dampedDragAnimation.animateToValue(index.toFloat())
@@ -276,10 +264,8 @@ fun FloatingBottomBar(
         }
     } else null
 
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.CenterStart
-    ) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+        // 1. Bottom Row: Static Background and Unselected Icons
         Row(
             Modifier
                 .onGloballyPositioned { coords ->
@@ -288,109 +274,55 @@ fun FloatingBottomBar(
                     tabWidthPx = contentWidthPx / tabs.size
                 }
                 .graphicsLayer { translationX = panelOffset }
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {}
-                )
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {})
                 .drawBackdrop(
                     backdrop = usedBackdrop,
                     shape = { ContinuousCapsule },
-                    effects = {
-                        vibrancy()
-                        blur(8f.dp.toPx())
-                        lens(24f.dp.toPx(), 24f.dp.toPx())
-                    },
+                    effects = { vibrancy(); blur(8f.dp.toPx()); lens(24f.dp.toPx(), 24f.dp.toPx()) },
                     highlight = { Highlight.Default.copy(alpha = 1f) },
-                    shadow = {
-                        Shadow.Default.copy(color = Color.Black.copy(if (isInLightTheme) 0.1f else 0.2f))
-                    },
-                    layerBlock = {
-                        val progress = dampedDragAnimation.pressProgress
-                        val scale = lerp(1f, 1f + 16f.dp.toPx() / size.width, progress)
-                        scaleX = scale
-                        scaleY = scale
-                    },
+                    shadow = { Shadow.Default.copy(color = Color.Black.copy(if (isInLightTheme) 0.1f else 0.2f)) },
                     onDrawSurface = { drawRect(Color.White.copy(alpha = if (isInLightTheme) 0.34f else 0.18f)) }
                 )
-                .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
+                .then(interactiveHighlight?.modifier ?: Modifier)
                 .height(76.dp)
                 .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             tabs.forEachIndexed { index, page ->
-                FloatingBottomBarItem(
-                    selected = index == currentIndex,
-                    page = page,
-                    onClick = { currentIndex = index }
-                ) {
-                    val selected = currentIndex == index
-                    Icon(
-                        imageVector = page.icon,
-                        contentDescription = page.label,
-                        modifier = Modifier.size(20.dp),
-                        tint = if (selected) selectedTint else unselectedTint
-                    )
-                    Text(
-                        text = page.label,
-                        color = if (selected) selectedTint else unselectedTint,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
+                FloatingBottomBarItem(onClick = { currentIndex = index }) {
+                    Icon(imageVector = page.icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = unselectedTint)
+                    Text(text = page.label, color = unselectedTint, fontSize = 11.sp)
                 }
             }
         }
 
-        CompositionLocalProvider(
-            LocalFloatingBottomBarTabScale provides {
-                lerp(1f, 1.2f, dampedDragAnimation.pressProgress)
-            }
-        ) {
+        // 2. Middle Row: The "Source" for the colored highlight (Captured by tabsBackdrop)
+        CompositionLocalProvider(LocalFloatingBottomBarTabScale provides { lerp(1f, 1.2f, dampedDragAnimation.pressProgress) }) {
             Row(
                 Modifier
                     .clearAndSetSemantics {}
-                    .alpha(0f)
+                    .alpha(0f) // Keep it invisible but available for backdrop capture
                     .layerBackdrop(tabsBackdrop)
-                    .graphicsLayer { translationX = panelOffset }
-                    .drawBackdrop(
-                        backdrop = usedBackdrop,
-                        shape = { ContinuousCapsule },
-                        effects = {
-                            val progress = dampedDragAnimation.pressProgress
-                            vibrancy()
-                            blur(8f.dp.toPx())
-                            lens(24f.dp.toPx() * progress, 24f.dp.toPx() * progress)
-                        },
-                        highlight = {
-                            Highlight.Default.copy(alpha = dampedDragAnimation.pressProgress)
-                        },
-                        onDrawSurface = { drawRect(Color.White.copy(alpha = if (isInLightTheme) 0.30f else 0.15f)) }
-                    )
-                    .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
-                    .height(68.dp)
+                    .graphicsLayer {
+                        translationX = panelOffset
+                        // FIX: Tint the entire layer to the accent color.
+                        // When the indicator lens reads this, it sees colored icons.
+                        colorFilter = ColorFilter.tint(accentColor)
+                    }
+                    .height(68.dp) // Align height with the indicator Box
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 tabs.forEachIndexed { index, page ->
-                    FloatingBottomBarItem(
-                        selected = index == currentIndex,
-                        page = page,
-                        onClick = { currentIndex = index }
-                    ) {
-                        Icon(
-                            imageVector = page.icon,
-                            contentDescription = page.label,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = page.label,
-                            color = unselectedTint,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
+                    FloatingBottomBarItem(onClick = { currentIndex = index }) {
+                        Icon(imageVector = page.icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Text(text = page.label, fontSize = 11.sp)
                     }
                 }
             }
         }
 
+        // 3. Top Layer: The Moving Indicator (Lens)
         if (tabWidthPx > 0f) {
             Box(
                 Modifier
@@ -401,39 +333,31 @@ fun FloatingBottomBar(
                         val progressOffset = dampedDragAnimation.value * singleTabWidth
                         translationX = if (isLtr) progressOffset + panelOffset else -progressOffset + panelOffset
                     }
-                    .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
+                    .then(interactiveHighlight?.gestureModifier ?: Modifier)
                     .then(dampedDragAnimation.modifier)
                     .drawBackdrop(
+                        // Combined backdrop allows reading both the wallpaper and the colored icons
                         backdrop = rememberCombinedBackdrop(usedBackdrop, tabsBackdrop),
                         shape = { ContinuousCapsule },
                         effects = {
                             val progress = dampedDragAnimation.pressProgress
+                            // isLens = true is critical for the "colored glass" effect
                             lens(10f.dp.toPx() * progress, 14f.dp.toPx() * progress, true)
                         },
-                        highlight = {
-                            Highlight.Default.copy(alpha = dampedDragAnimation.pressProgress)
-                        },
+                        highlight = { Highlight.Default.copy(alpha = dampedDragAnimation.pressProgress) },
                         shadow = { Shadow(alpha = dampedDragAnimation.pressProgress) },
-                        innerShadow = {
-                            InnerShadow(
-                                radius = 8f.dp * dampedDragAnimation.pressProgress,
-                                alpha = dampedDragAnimation.pressProgress
-                            )
-                        },
+                        innerShadow = { InnerShadow(radius = 8f.dp * dampedDragAnimation.pressProgress, alpha = dampedDragAnimation.pressProgress) },
                         layerBlock = {
                             scaleX = dampedDragAnimation.scaleX
                             scaleY = dampedDragAnimation.scaleY
-                            val velocity = dampedDragAnimation.velocity / 10f
-                            scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                            scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
                         },
                         onDrawSurface = {
                             val progress = dampedDragAnimation.pressProgress
+                            // Draw a subtle surface color for the indicator
                             drawRect(
-                                color = if (isInLightTheme) Color.Black.copy(0.1f) else Color.White.copy(0.1f),
+                                color = if (isInLightTheme) Color.Black.copy(0.12f) else Color.White.copy(0.12f),
                                 alpha = 1f - progress
                             )
-                            drawRect(Color.Black.copy(alpha = 0.03f * progress))
                         }
                     )
                     .height(68.dp)

@@ -41,7 +41,6 @@ private fun formatTime(epochMillis: Long): String {
 
 @Composable
 fun AboutPage(
-    backdrop: Backdrop?,
     appLabel: String,
     packageInfo: PackageInfo?,
     notificationPermissionGranted: Boolean,

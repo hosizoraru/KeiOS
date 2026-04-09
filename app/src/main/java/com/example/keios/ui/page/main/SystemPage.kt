@@ -39,6 +39,8 @@ import com.example.keios.ui.utils.ShizukuApiUtils
 import com.example.keios.ui.utils.getAllJavaPropString
 import com.example.keios.ui.utils.getAllSystemProperties
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -969,7 +971,6 @@ private fun buildSystemMarkdown(
 
 @Composable
 fun SystemPage(
-    backdrop: Backdrop?,
     scrollToTopSignal: Int,
     shizukuStatus: String,
     shizukuApiUtils: ShizukuApiUtils,
@@ -996,7 +997,11 @@ fun SystemPage(
     val scrollState = rememberScrollState()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var exportPreparing by remember { mutableStateOf(false) }
-
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val backdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/markdown")
     ) { uri ->

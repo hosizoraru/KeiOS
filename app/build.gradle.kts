@@ -81,6 +81,8 @@ dependencies {
 
     implementation("androidx.compose.ui:ui:1.10.6")
     implementation("androidx.compose.foundation:foundation:1.10.6")
+    implementation("androidx.navigation3:navigation3-runtime:1.1.0")
+    implementation("androidx.navigation:navigation-common-ktx:2.9.7")
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.6")
 
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.0")

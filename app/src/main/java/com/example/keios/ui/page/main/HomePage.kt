@@ -28,6 +28,7 @@ import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.rememberCardBlurColors
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.BlurDefaults
@@ -41,7 +42,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun HomePage(
-    backdrop: Backdrop?,
     shizukuStatus: String,
     mcpRunning: Boolean,
     mcpPort: Int,
@@ -65,7 +65,11 @@ fun HomePage(
         shizukuGranted -> "已授权"
         else -> "待检查"
     }
-
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val backdrop: LayerBackdrop = com.kyant.backdrop.backdrops.rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier

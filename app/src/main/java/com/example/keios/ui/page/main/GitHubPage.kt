@@ -48,6 +48,8 @@ import com.example.keios.ui.utils.GitHubTrackedApp
 import com.example.keios.ui.utils.GitHubVersionUtils
 import com.example.keios.ui.utils.InstalledAppItem
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -90,7 +92,6 @@ private enum class GitHubSortMode(val label: String) {
 
 @Composable
 fun GitHubPage(
-    backdrop: Backdrop?,
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0
 ) {
@@ -113,7 +114,11 @@ fun GitHubPage(
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
-
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val backdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
     suspend fun reloadApps() {
         appList = withContext(Dispatchers.IO) {
             GitHubVersionUtils.queryInstalledLaunchableApps(context)

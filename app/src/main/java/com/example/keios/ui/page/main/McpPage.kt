@@ -33,6 +33,8 @@ import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
@@ -50,7 +52,6 @@ import top.yukonga.miuix.kmp.window.WindowBottomSheet
 
 @Composable
 fun McpPage(
-    backdrop: Backdrop?,
     mcpServerManager: McpServerManager,
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0
@@ -93,7 +94,11 @@ fun McpPage(
             }
         }
     }
-
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    val backdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
+    }
     LaunchedEffect(scrollToTopSignal) {
         if (scrollToTopSignal > 0) scrollState.animateScrollTo(0)
     }
