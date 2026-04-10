@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -44,6 +45,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
@@ -259,18 +262,26 @@ private fun MainPagerLayout(
                                 onClick = { handlePageSelected(index) },
                                 modifier = Modifier.defaultMinSize(minWidth = 76.dp)
                             ) {
+                                val tabIconModifier = Modifier
+                                    .size(20.dp)
+                                    .graphicsLayer {
+                                        scaleX = page.iconScale
+                                        scaleY = page.iconScale
+                                    }
                                 if (page.iconRes != null) {
                                     Icon(
                                         painter = painterResource(id = page.iconRes),
                                         contentDescription = page.label,
-                                        tint = MiuixTheme.colorScheme.onSurface
+                                        tint = if (page.keepOriginalColors) Color.Unspecified else MiuixTheme.colorScheme.onSurface,
+                                        modifier = tabIconModifier
                                     )
                                 } else {
                                     page.icon?.let { icon ->
                                         Icon(
                                             imageVector = icon,
                                             contentDescription = page.label,
-                                            tint = MiuixTheme.colorScheme.onSurface
+                                            tint = MiuixTheme.colorScheme.onSurface,
+                                            modifier = tabIconModifier
                                         )
                                     }
                                 }

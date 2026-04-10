@@ -3,20 +3,17 @@ package com.example.keios.ui.page.main.model
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.keios.R
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.CloudFill
-import top.yukonga.miuix.kmp.icon.extended.Link
-import top.yukonga.miuix.kmp.icon.extended.Sidebar
-import top.yukonga.miuix.kmp.icon.extended.Tune
 
 enum class BottomPage(
     val label: String,
     val icon: ImageVector? = null,
-    @DrawableRes val iconRes: Int? = null
+    @DrawableRes val iconRes: Int? = null,
+    val keepOriginalColors: Boolean = false,
+    val iconScale: Float = 1f,
 ) {
-    Home("主页", MiuixIcons.Regular.Sidebar),
-    System("系统", MiuixIcons.Regular.Tune),
-    Mcp("MCP", MiuixIcons.Regular.CloudFill),
-    GitHub("GitHub", MiuixIcons.Regular.Link),
-    Ba("BA", iconRes = R.drawable.ic_ba_schale)
+    Home("主页", iconRes = R.drawable.ic_kei_logo_color, keepOriginalColors = true, iconScale = 1.22f),
+    System("系统", iconRes = R.drawable.ic_hyperos_symbol),
+    Mcp("MCP", iconRes = R.drawable.ic_mcp_lobehub),
+    GitHub("GitHub", iconRes = R.drawable.ic_github_invertocat),
+    Ba("BA", iconRes = R.drawable.ic_ba_schale, iconScale = 1.16f)
 }

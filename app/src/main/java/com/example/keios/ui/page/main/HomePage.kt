@@ -4,6 +4,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import com.kyant.shapes.RoundedRectangle
+import top.yukonga.miuix.kmp.blur.BlurColors
+import top.yukonga.miuix.kmp.blur.BlurDefaults
+import top.yukonga.miuix.kmp.blur.textureBlur
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,9 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -66,7 +70,6 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.utils.GitHubTrackStore
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop as rememberActionBarBackdrop
-import com.kyant.shapes.RoundedRectangle
 import com.tencent.mmkv.MMKV
 import java.util.concurrent.TimeUnit
 import java.util.Locale
@@ -79,14 +82,11 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
-import top.yukonga.miuix.kmp.blur.BlurColors
-import top.yukonga.miuix.kmp.blur.BlurDefaults
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop as rememberMiuixLayerBackdrop
-import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Settings
@@ -499,44 +499,11 @@ fun HomePage(
                             if (iconY != 0f) return@onGloballyPositioned
                             iconY = coordinates.positionInWindow().y + coordinates.size.height
                         }
-                        .textureBlur(
-                            backdrop = backdrop,
-                            shape = RoundedRectangle(48.dp),
-                            blurRadius = 72f,
-                            noiseCoefficient = BlurDefaults.NoiseCoefficient,
-                            colors = BlurColors(blendColors = cardBlendColors),
-                            enabled = blurEnabled,
-                        )
-                        .background(
-                            color = if (isDark) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.30f),
-                            shape = CircleShape
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = if (isDark) 0.56f else 0.70f),
-                            shape = CircleShape
-                        )
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    listOf(
-                                        Color.White.copy(alpha = if (isDark) 0.34f else 0.44f),
-                                        Color.White.copy(alpha = if (isDark) 0.08f else 0.14f),
-                                        Color.Transparent
-                                    )
-                                ),
-                                shape = CircleShape
-                            )
-                    )
                     Image(
-                        painter = painterResource(id = R.drawable.ic_notification_logo),
+                        painter = painterResource(id = R.drawable.ic_kei_logo_color),
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.size(96.dp)
                     )
                 }
 
