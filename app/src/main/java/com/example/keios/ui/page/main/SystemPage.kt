@@ -1327,6 +1327,7 @@ fun SystemPage(
                     onValueChange = { queryInput = it },
                     label = "搜索系统参数",
                     backdrop = backdrop,
+                    bottomBarStyle = true,
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))

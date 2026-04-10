@@ -3,10 +3,8 @@ package com.example.keios.ui.page.main.widget
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
@@ -43,21 +44,12 @@ fun MiuixExpandableSection(
     onHeaderLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val sectionSurface = if (isDark) {
-        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.84f)
-    } else {
-        Color.White.copy(alpha = 0.62f)
-    }
-    val overlayColor = if (isDark) {
-        Color.White.copy(alpha = 0.03f)
-    } else {
-        Color.White.copy(alpha = 0.08f)
-    }
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val sectionSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
     val shadowColor = if (isDark) {
-        Color.Black.copy(alpha = 0.24f)
+        Color.Black.copy(alpha = 0.20f)
     } else {
-        Color.Black.copy(alpha = 0.08f)
+        Color.Black.copy(alpha = 0.10f)
     }
 
     Column(
@@ -69,22 +61,18 @@ fun MiuixExpandableSection(
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
                         shape = { RoundedRectangle(16.dp) },
-                        effects = {},
-                        highlight = { Highlight.Default.copy(alpha = if (isDark) 0.32f else 0.75f) },
+                        effects = {
+                            vibrancy()
+                            blur(8.dp.toPx())
+                            lens(24.dp.toPx(), 24.dp.toPx())
+                        },
+                        highlight = { Highlight.Default.copy(alpha = 1f) },
                         shadow = { Shadow.Default.copy(color = shadowColor) },
-                        onDrawSurface = {
-                            drawRect(sectionSurface)
-                        }
+                        onDrawSurface = { drawRect(sectionSurface) }
                     )
                 } else {
                     Modifier.background(sectionSurface)
                 }
-            )
-            .background(overlayColor, shape = RoundedCornerShape(16.dp))
-            .border(
-                width = 1.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.14f) else Color.Black.copy(alpha = 0.14f),
-                shape = RoundedCornerShape(16.dp)
             )
     ) {
         val headerModifier = if (onHeaderLongClick != null) {

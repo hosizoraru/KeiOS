@@ -247,6 +247,7 @@ fun McpPage(
                 Row(modifier = Modifier.fillMaxWidth()) {
                     GlassTextButton(
                         backdrop = backdrop,
+                        bottomBarStyle = true,
                         text = "发送测试通知",
                         modifier = Modifier.weight(1f),
                         onClick = {
@@ -258,6 +259,7 @@ fun McpPage(
                     Spacer(modifier = Modifier.width(8.dp))
                     GlassTextButton(
                         backdrop = backdrop,
+                        bottomBarStyle = true,
                         text = "查看 SKILL.md",
                         modifier = Modifier.weight(1f),
                         onClick = onOpenSkill
@@ -302,6 +304,7 @@ fun McpPage(
                 Spacer(modifier = Modifier.height(8.dp))
                 GlassTextButton(
                     backdrop = backdrop,
+                    bottomBarStyle = true,
                     text = "清空日志",
                     onClick = { mcpServerManager.clearLogs() }
                 )
@@ -317,6 +320,7 @@ fun McpPage(
         startAction = {
             GlassIconButton(
                 backdrop = backdrop,
+                bottomBarStyle = true,
                 icon = MiuixIcons.Regular.Close,
                 contentDescription = "关闭",
                 onClick = { showEditSheet = false }
@@ -325,6 +329,7 @@ fun McpPage(
         endAction = {
             GlassIconButton(
                 backdrop = backdrop,
+                bottomBarStyle = true,
                 icon = MiuixIcons.Regular.Ok,
                 contentDescription = "保存",
                 onClick = {
@@ -359,6 +364,7 @@ fun McpPage(
                 onValueChange = { serverName = it },
                 label = "服务名称（配置展示名）",
                 backdrop = backdrop,
+                bottomBarStyle = true,
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -367,12 +373,14 @@ fun McpPage(
                 onValueChange = { portText = it.filter(Char::isDigit).take(5) },
                 label = "服务端口",
                 backdrop = backdrop,
+                bottomBarStyle = true,
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 GlassTextButton(
                     backdrop = backdrop,
+                    bottomBarStyle = true,
                     text = if (!allowExternal) "仅本机(已选)" else "仅本机",
                     modifier = Modifier.weight(1f),
                     onClick = { allowExternal = false }
@@ -380,6 +388,7 @@ fun McpPage(
                 Spacer(modifier = Modifier.width(8.dp))
                 GlassTextButton(
                     backdrop = backdrop,
+                    bottomBarStyle = true,
                     text = if (allowExternal) "局域网(已选)" else "局域网",
                     modifier = Modifier.weight(1f),
                     onClick = { allowExternal = true }
@@ -387,6 +396,7 @@ fun McpPage(
                 Spacer(modifier = Modifier.width(8.dp))
                 GlassTextButton(
                     backdrop = backdrop,
+                    bottomBarStyle = true,
                     text = "重置Token",
                     modifier = Modifier.weight(1f),
                     onClick = {

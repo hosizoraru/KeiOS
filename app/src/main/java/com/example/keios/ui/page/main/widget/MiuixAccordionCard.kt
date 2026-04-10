@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -21,6 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
@@ -44,13 +46,8 @@ fun MiuixAccordionCard(
     content: @Composable () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val surface = if (isDark) {
-        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.86f)
-    } else {
-        Color.White.copy(alpha = 0.70f)
-    }
-    val borderColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.14f)
-    val shadowColor = if (isDark) Color.Black.copy(alpha = 0.24f) else Color.Black.copy(alpha = 0.08f)
+    val surface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+    val shadowColor = if (isDark) Color.Black.copy(alpha = 0.20f) else Color.Black.copy(alpha = 0.10f)
 
     Column(
         modifier = Modifier
@@ -61,8 +58,12 @@ fun MiuixAccordionCard(
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
                         shape = { RoundedRectangle(16.dp) },
-                        effects = {},
-                        highlight = { Highlight.Default.copy(alpha = if (isDark) 0.30f else 0.72f) },
+                        effects = {
+                            vibrancy()
+                            blur(8.dp.toPx())
+                            lens(24.dp.toPx(), 24.dp.toPx())
+                        },
+                        highlight = { Highlight.Default.copy(alpha = 1f) },
                         shadow = { Shadow.Default.copy(color = shadowColor) },
                         onDrawSurface = { drawRect(surface) }
                     )
@@ -70,7 +71,6 @@ fun MiuixAccordionCard(
                     Modifier.background(surface)
                 }
             )
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
     ) {
         val headerModifier = Modifier.combinedClickable(
             onClick = { onExpandedChange(!expanded) },
@@ -108,4 +108,3 @@ fun MiuixAccordionCard(
         }
     }
 }
-
