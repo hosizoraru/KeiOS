@@ -45,11 +45,11 @@ fun GlassSearchField(
     singleLine: Boolean = true,
     textAlign: TextAlign = TextAlign.Start,
     fontSize: TextUnit = 15.sp,
+    textColor: Color = MiuixTheme.colorScheme.onBackground,
     onImeActionDone: (() -> Unit)? = null
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
-    val textColor = MiuixTheme.colorScheme.onBackground
     val placeholderColor = MiuixTheme.colorScheme.onBackgroundVariant
     val glassBaseColor = if (isDark) {
         Color(0xFF111111).copy(alpha = 0.60f)
