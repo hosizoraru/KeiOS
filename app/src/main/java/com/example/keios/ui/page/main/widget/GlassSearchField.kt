@@ -21,6 +21,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,20 +47,23 @@ fun GlassSearchField(
     textAlign: TextAlign = TextAlign.Start,
     fontSize: TextUnit = 15.sp,
     textColor: Color = MiuixTheme.colorScheme.onBackground,
-    onImeActionDone: (() -> Unit)? = null
+    onImeActionDone: (() -> Unit)? = null,
+    blurRadius: Dp? = null,
+    lightMaterial: Boolean = false
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
     val placeholderColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val blurDp = blurRadius ?: 12.dp
     val glassBaseColor = if (isDark) {
-        Color(0xFF111111).copy(alpha = 0.60f)
+        Color(0xFF111111).copy(alpha = if (lightMaterial) 0.12f else 0.60f)
     } else {
-        Color.White.copy(alpha = 0.58f)
+        Color.White.copy(alpha = if (lightMaterial) 0.28f else 0.58f)
     }
     val glassOverlayColor = if (isDark) {
-        Color.White.copy(alpha = 0.08f)
+        Color.White.copy(alpha = if (lightMaterial) 0.03f else 0.08f)
     } else {
-        Color.Black.copy(alpha = 0.06f)
+        Color.Black.copy(alpha = if (lightMaterial) 0.03f else 0.06f)
     }
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
 
@@ -80,15 +84,30 @@ fun GlassSearchField(
                         shape = { ContinuousCapsule },
                         effects = {
                             vibrancy()
-                            blur(12.dp.toPx())
-                            lens(26.dp.toPx(), 28.dp.toPx())
+                            blur(blurDp.toPx())
+                            lens(
+                                if (lightMaterial) 24.dp.toPx() else 26.dp.toPx(),
+                                if (lightMaterial) 24.dp.toPx() else 28.dp.toPx()
+                            )
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = if (isDark) 0.98f else 1f)
+                            Highlight.Default.copy(
+                                alpha = if (lightMaterial) {
+                                    if (isDark) 0.52f else 0.58f
+                                } else {
+                                    if (isDark) 0.98f else 1f
+                                }
+                            )
                         },
                         shadow = {
                             Shadow.Default.copy(
-                                color = Color.Black.copy(alpha = if (isDark) 0.24f else 0.14f)
+                                color = Color.Black.copy(
+                                    alpha = if (lightMaterial) {
+                                        if (isDark) 0.08f else 0.10f
+                                    } else {
+                                        if (isDark) 0.24f else 0.14f
+                                    }
+                                )
                             )
                         },
                         onDrawSurface = {
@@ -97,12 +116,19 @@ fun GlassSearchField(
                         }
                     )
                 } else {
-                    Modifier.background(fallbackSurface.copy(alpha = 0.95f), ContinuousCapsule)
+                    Modifier.background(
+                        fallbackSurface.copy(alpha = if (lightMaterial) 0.68f else 0.95f),
+                        ContinuousCapsule
+                    )
                 }
             )
             .border(
                 width = 1.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.20f),
+                color = if (isDark) {
+                    Color.White.copy(alpha = if (lightMaterial) 0.10f else 0.28f)
+                } else {
+                    Color.Black.copy(alpha = if (lightMaterial) 0.10f else 0.20f)
+                },
                 shape = ContinuousCapsule
             )
             .padding(horizontal = 14.dp, vertical = 10.dp)

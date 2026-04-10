@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,15 @@ class McpKeepAliveService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         McpNotificationHelper.ensureChannel(this)
         when (intent?.action) {
+            ACTION_DISMISS -> {
+                val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID)
+                NotificationManagerCompat.from(this).cancel(notificationId)
+                if (!currentRunning) {
+                    stopSelf()
+                }
+                return START_NOT_STICKY
+            }
+
             ACTION_STOP -> {
                 stopHeartbeat()
                 McpNotificationHelper.restoreXiaomiNetworkIfNeeded(this)
@@ -136,6 +146,8 @@ class McpKeepAliveService : Service() {
         private const val ACTION_START = "com.example.keios.mcp.keepalive.START"
         private const val ACTION_UPDATE = "com.example.keios.mcp.keepalive.UPDATE"
         private const val ACTION_STOP = "com.example.keios.mcp.keepalive.STOP"
+        private const val ACTION_DISMISS = "com.example.keios.mcp.keepalive.DISMISS"
+        private const val EXTRA_NOTIFICATION_ID = "notification_id"
         private const val EXTRA_RUNNING = "running"
         private const val EXTRA_PORT = "port"
         private const val EXTRA_PATH = "path"

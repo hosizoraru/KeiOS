@@ -60,7 +60,7 @@ object McpIslandNotificationBuilder : McpNotificationBuilder {
                 add(
                     IslandAction(
                         key = "mcp_action_stop",
-                        title = "停止",
+                        title = payload.stopActionTitle,
                         pendingIntent = payload.stopPendingIntent
                     )
                 )

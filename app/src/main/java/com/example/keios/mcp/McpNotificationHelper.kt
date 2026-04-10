@@ -25,8 +25,11 @@ object McpNotificationHelper {
     const val CHANNEL_ID = "mcp_keepalive_channel_v2"
     private const val LEGACY_CHANNEL_ID = "mcp_keepalive_channel"
     const val KEEPALIVE_NOTIFICATION_ID = 38888
+    private const val BA_AP_NOTIFICATION_ID = 38889
     private const val TEST_NOTIFICATION_ID = KEEPALIVE_NOTIFICATION_ID
     private const val ACTION_STOP = "com.example.keios.mcp.keepalive.STOP"
+    private const val ACTION_DISMISS = "com.example.keios.mcp.keepalive.DISMISS"
+    private const val EXTRA_NOTIFICATION_ID = "notification_id"
     private const val XMSF_PACKAGE_NAME = "com.xiaomi.xmsf"
     private const val XIAOMI_MAGIC_BLOCK_INTERVAL_MS = 100L
 
@@ -90,8 +93,13 @@ object McpNotificationHelper {
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
+        val actionForSecondaryButton = if (isBlueArchiveAp) ACTION_DISMISS else ACTION_STOP
         val stopIntent = Intent(context, McpKeepAliveService::class.java).apply {
-            action = ACTION_STOP
+            action = actionForSecondaryButton
+            if (isBlueArchiveAp) {
+                putExtra(EXTRA_NOTIFICATION_ID, BA_AP_NOTIFICATION_ID)
+            }
         }
         val stopPendingIntent = PendingIntent.getService(
             context,
@@ -133,9 +141,14 @@ object McpNotificationHelper {
             ongoing = running,
             onlyAlertOnce = false
         )
+        val notificationId = if (serverName.trim() == "BlueArchive AP") {
+            BA_AP_NOTIFICATION_ID
+        } else {
+            TEST_NOTIFICATION_ID
+        }
         notifyWithXiaomiMagic(
             context = context,
-            notificationId = TEST_NOTIFICATION_ID,
+            notificationId = notificationId,
             notification = notification
         )
     }

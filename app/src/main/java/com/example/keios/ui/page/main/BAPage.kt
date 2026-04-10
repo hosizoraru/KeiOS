@@ -46,7 +46,6 @@ import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
-import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.tencent.mmkv.MMKV
@@ -73,8 +72,10 @@ import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowListPopup
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -88,6 +89,8 @@ private const val BA_AP_LIMIT_MAX = 240
 private const val BA_AP_REGEN_INTERVAL_MS = 6 * 60 * 1000L
 private const val BA_AP_REGEN_TICK_MS = 30_000L
 private const val BA_CAFE_HOURLY_INTERVAL_MS = 60 * 60 * 1000L
+private const val BA_HEADPAT_COOLDOWN_MS = 3 * 60 * 60 * 1000L
+private const val BA_INVITE_COOLDOWN_MS = 20 * 60 * 60 * 1000L
 private const val BA_DEFAULT_NICKNAME = "Kei"
 private const val BA_DEFAULT_FRIEND_CODE = "ARISUKEI"
 private val BA_CAFE_DAILY_AP_BY_LEVEL = intArrayOf(92, 152, 222, 302, 390, 460, 530, 600, 570, 740)
@@ -121,11 +124,78 @@ private fun cafeStorageCap(level: Int): Double {
 
 private fun floorToHourMs(epochMs: Long): Long = epochMs - (epochMs % BA_CAFE_HOURLY_INTERVAL_MS)
 
+private fun serverRefreshTimeZone(serverIndex: Int): TimeZone {
+    return if (serverIndex == 0) TimeZone.getTimeZone("Asia/Shanghai") else TimeZone.getTimeZone("Asia/Tokyo")
+}
+
+private fun nextCafeStudentRefreshMs(fromMs: Long, serverIndex: Int): Long {
+    val timeZone = serverRefreshTimeZone(serverIndex)
+    val nowCal = Calendar.getInstance(timeZone).apply { timeInMillis = fromMs }
+    val dayStartCal = Calendar.getInstance(timeZone).apply {
+        timeInMillis = fromMs
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    val refresh4 = (dayStartCal.clone() as Calendar).apply { set(Calendar.HOUR_OF_DAY, 4) }.timeInMillis
+    val refresh16 = (dayStartCal.clone() as Calendar).apply { set(Calendar.HOUR_OF_DAY, 16) }.timeInMillis
+    return when {
+        fromMs < refresh4 -> refresh4
+        fromMs < refresh16 -> refresh16
+        else -> {
+            nowCal.add(Calendar.DAY_OF_YEAR, 1)
+            nowCal.set(Calendar.HOUR_OF_DAY, 4)
+            nowCal.set(Calendar.MINUTE, 0)
+            nowCal.set(Calendar.SECOND, 0)
+            nowCal.set(Calendar.MILLISECOND, 0)
+            nowCal.timeInMillis
+        }
+    }
+}
+
+private fun calculateNextHeadpatAvailableMs(lastHeadpatMs: Long, serverIndex: Int): Long {
+    if (lastHeadpatMs <= 0L) return 0L
+    val cooldownReadyAt = lastHeadpatMs + BA_HEADPAT_COOLDOWN_MS
+    val refreshAt = nextCafeStudentRefreshMs(lastHeadpatMs, serverIndex)
+    return minOf(cooldownReadyAt, refreshAt)
+}
+
+private fun calculateInviteTicketAvailableMs(lastUsedMs: Long): Long {
+    if (lastUsedMs <= 0L) return 0L
+    return lastUsedMs + BA_INVITE_COOLDOWN_MS
+}
+
 private fun formatBaDateTime(epochMillis: Long): String {
     if (epochMillis <= 0L) return "未同步"
     return runCatching {
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(epochMillis))
+        SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()).format(Date(epochMillis))
     }.getOrDefault("未同步")
+}
+
+private fun formatBaDateTimeNoSeconds(epochMillis: Long): String {
+    if (epochMillis <= 0L) return "未同步"
+    return runCatching {
+        SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(epochMillis))
+    }.getOrDefault("未同步")
+}
+
+private fun formatBaRemainingTime(targetMs: Long, nowMs: Long = System.currentTimeMillis()): String {
+    val remainMs = (targetMs - nowMs).coerceAtLeast(0L)
+    var totalSeconds = (remainMs + 999L) / 1000L
+    val days = totalSeconds / 86_400L
+    totalSeconds %= 86_400L
+    val hours = totalSeconds / 3_600L
+    totalSeconds %= 3_600L
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+
+    val parts = mutableListOf<String>()
+    if (days > 0L) parts += "${days}d"
+    if (hours > 0L) parts += "${hours}h"
+    if (minutes > 0L) parts += "${minutes}min"
+    if (seconds > 0L || parts.isEmpty()) parts += "${seconds}s"
+    return parts.joinToString(" ")
 }
 
 private object BASettingsStore {
@@ -143,6 +213,9 @@ private object BASettingsStore {
     private const val KEY_AP_CURRENT_EXACT = "ap_current_exact"
     private const val KEY_AP_REGEN_BASE_MS = "ap_regen_base_ms"
     private const val KEY_AP_SYNC_MS = "ap_sync_ms"
+    private const val KEY_COFFEE_HEADPAT_MS = "coffee_headpat_ms"
+    private const val KEY_COFFEE_INVITE1_USED_MS = "coffee_invite1_used_ms"
+    private const val KEY_COFFEE_INVITE2_USED_MS = "coffee_invite2_used_ms"
 
     private const val DEFAULT_SERVER_INDEX = 2
     private const val DEFAULT_CAFE_LEVEL = 1
@@ -255,6 +328,24 @@ private object BASettingsStore {
     fun saveApSyncMs(epochMs: Long) {
         kv().encode(KEY_AP_SYNC_MS, epochMs.coerceAtLeast(0L))
     }
+
+    fun loadCoffeeHeadpatMs(): Long = kv().decodeLong(KEY_COFFEE_HEADPAT_MS, 0L)
+
+    fun saveCoffeeHeadpatMs(epochMs: Long) {
+        kv().encode(KEY_COFFEE_HEADPAT_MS, epochMs.coerceAtLeast(0L))
+    }
+
+    fun loadCoffeeInvite1UsedMs(): Long = kv().decodeLong(KEY_COFFEE_INVITE1_USED_MS, 0L)
+
+    fun saveCoffeeInvite1UsedMs(epochMs: Long) {
+        kv().encode(KEY_COFFEE_INVITE1_USED_MS, epochMs.coerceAtLeast(0L))
+    }
+
+    fun loadCoffeeInvite2UsedMs(): Long = kv().decodeLong(KEY_COFFEE_INVITE2_USED_MS, 0L)
+
+    fun saveCoffeeInvite2UsedMs(epochMs: Long) {
+        kv().encode(KEY_COFFEE_INVITE2_USED_MS, epochMs.coerceAtLeast(0L))
+    }
 }
 
 @Composable
@@ -271,6 +362,9 @@ fun BAPage(
         drawRect(surfaceColor)
         drawContent()
     }
+    val baGlassBlur = 4.dp
+    val baLightGlass = true
+    val baSmallTitleMargin = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
     val serverOptions = remember { listOf("国服", "国际服", "日服") }
     val cafeLevelOptions = remember { (1..10).toList() }
 
@@ -293,6 +387,10 @@ fun BAPage(
     var apSyncMs by remember { mutableLongStateOf(BASettingsStore.loadApSyncMs()) }
     var apNotifyEnabled by remember { mutableStateOf(BASettingsStore.loadApNotifyEnabled()) }
     var apNotifyThreshold by remember { mutableIntStateOf(BASettingsStore.loadApNotifyThreshold()) }
+    var coffeeHeadpatMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeHeadpatMs()) }
+    var coffeeInvite1UsedMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeInvite1UsedMs()) }
+    var coffeeInvite2UsedMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeInvite2UsedMs()) }
+    var uiNowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     var sheetCafeLevel by remember { mutableIntStateOf(cafeLevel) }
     var sheetApNotifyEnabled by remember { mutableStateOf(apNotifyEnabled) }
@@ -303,6 +401,15 @@ fun BAPage(
     var idNicknameInput by remember { mutableStateOf(idNickname) }
     var idFriendCodeInput by remember { mutableStateOf(idFriendCode) }
     var apLastNotifiedLevel by remember { mutableIntStateOf(-1) }
+    var glassButtonPressCount by remember { mutableIntStateOf(0) }
+    val suspendCardFeedback = glassButtonPressCount > 0
+    val onGlassButtonPressedChange: (Boolean) -> Unit = { pressed ->
+        glassButtonPressCount = if (pressed) {
+            glassButtonPressCount + 1
+        } else {
+            (glassButtonPressCount - 1).coerceAtLeast(0)
+        }
+    }
 
     fun ensureRegenBase(nowMs: Long = System.currentTimeMillis()) {
         if (apRegenBaseMs <= 0L) {
@@ -444,6 +551,17 @@ fun BAPage(
         return nowMs + untilNextPoint + (pointsNeeded - 1L) * BA_AP_REGEN_INTERVAL_MS
     }
 
+    fun calculateApNextPointAtMs(nowMs: Long = System.currentTimeMillis()): Long {
+        val limit = apLimit.coerceIn(0, BA_AP_LIMIT_MAX)
+        if (limit <= 0) return nowMs
+        if (apCurrent >= limit.toDouble()) return nowMs
+        val base = apRegenBaseMs.takeIf { it > 0L } ?: nowMs
+        val elapsed = (nowMs - base).coerceAtLeast(0L)
+        val remainder = elapsed % BA_AP_REGEN_INTERVAL_MS
+        val untilNextPoint = if (remainder == 0L) BA_AP_REGEN_INTERVAL_MS else BA_AP_REGEN_INTERVAL_MS - remainder
+        return nowMs + untilNextPoint
+    }
+
     fun applyCafeStorage(nowMs: Long = System.currentTimeMillis()) {
         ensureCafeHourBase(nowMs)
         val currentHour = floorToHourMs(nowMs)
@@ -487,7 +605,49 @@ fun BAPage(
         Toast.makeText(context, "好友码已复制", Toast.LENGTH_SHORT).show()
     }
 
-    fun sendApTestNotification(showToast: Boolean = true): Boolean {
+    fun touchHead() {
+        val nowMs = System.currentTimeMillis()
+        val availableAt = calculateNextHeadpatAvailableMs(coffeeHeadpatMs, serverIndex)
+        if (coffeeHeadpatMs > 0L && availableAt > nowMs) return
+        coffeeHeadpatMs = nowMs
+        BASettingsStore.saveCoffeeHeadpatMs(nowMs)
+    }
+
+    fun forceResetHeadpatCooldown() {
+        coffeeHeadpatMs = 0L
+        BASettingsStore.saveCoffeeHeadpatMs(0L)
+    }
+
+    fun useInviteTicket1() {
+        val nowMs = System.currentTimeMillis()
+        val availableAt = calculateInviteTicketAvailableMs(coffeeInvite1UsedMs)
+        if (coffeeInvite1UsedMs > 0L && availableAt > nowMs) return
+        coffeeInvite1UsedMs = nowMs
+        BASettingsStore.saveCoffeeInvite1UsedMs(nowMs)
+    }
+
+    fun forceResetInviteTicket1Cooldown() {
+        coffeeInvite1UsedMs = 0L
+        BASettingsStore.saveCoffeeInvite1UsedMs(0L)
+    }
+
+    fun useInviteTicket2() {
+        val nowMs = System.currentTimeMillis()
+        val availableAt = calculateInviteTicketAvailableMs(coffeeInvite2UsedMs)
+        if (coffeeInvite2UsedMs > 0L && availableAt > nowMs) return
+        coffeeInvite2UsedMs = nowMs
+        BASettingsStore.saveCoffeeInvite2UsedMs(nowMs)
+    }
+
+    fun forceResetInviteTicket2Cooldown() {
+        coffeeInvite2UsedMs = 0L
+        BASettingsStore.saveCoffeeInvite2UsedMs(0L)
+    }
+
+    fun sendApTestNotification(
+        showToast: Boolean = true,
+        thresholdTriggered: Boolean = false
+    ): Boolean {
         val notificationsGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         } else {
@@ -497,15 +657,21 @@ fun BAPage(
             if (showToast) Toast.makeText(context, "请先授予通知权限", Toast.LENGTH_SHORT).show()
             return false
         }
+        val currentDisplay = displayAp(apCurrent)
+        val limitDisplay = apLimit.coerceIn(0, BA_AP_MAX)
+        val thresholdDisplay = apNotifyThreshold.coerceIn(0, BA_AP_MAX)
         McpNotificationHelper.notifyTest(
             context = context,
             serverName = "BlueArchive AP",
             running = true,
-            port = displayAp(apCurrent),
-            path = "阈值:$apNotifyThreshold",
-            clients = apLimit
+            port = currentDisplay,
+            path = thresholdDisplay.toString(),
+            clients = limitDisplay
         )
-        if (showToast) Toast.makeText(context, "已发送AP测试通知", Toast.LENGTH_SHORT).show()
+        if (showToast) {
+            val notifyText = if (thresholdTriggered) "已发送AP阈值提醒" else "已发送AP通知"
+            Toast.makeText(context, notifyText, Toast.LENGTH_SHORT).show()
+        }
         return true
     }
 
@@ -521,7 +687,7 @@ fun BAPage(
             return
         }
         if (currentDisplay == apLastNotifiedLevel) return
-        if (sendApTestNotification(showToast = false)) {
+        if (sendApTestNotification(showToast = false, thresholdTriggered = true)) {
             apLastNotifiedLevel = currentDisplay
         }
     }
@@ -581,6 +747,13 @@ fun BAPage(
             delay(BA_AP_REGEN_TICK_MS)
             applyCafeStorage()
             applyApRegen()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+            uiNowMs = System.currentTimeMillis()
         }
     }
 
@@ -658,11 +831,17 @@ fun BAPage(
                 end = 12.dp
             )
         ) {
-            item { SmallTitle("夏莱办公室") }
+            item { SmallTitle("夏莱办公室", insideMargin = baSmallTitleMargin) }
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
             item {
                 val isWorkActivated = idFriendCode != BA_DEFAULT_FRIEND_CODE
+                val apNextPointAt = calculateApNextPointAtMs(uiNowMs)
+                val apFullAt = calculateApFullAtMs(uiNowMs)
+                val apNextPointRemain = formatBaRemainingTime(apNextPointAt, uiNowMs)
+                val apSyncTimeText = if (apSyncMs > 0L) formatBaDateTime(apSyncMs) else "未同步"
+                val apFullText = formatBaRemainingTime(apFullAt, uiNowMs)
+                val apFullTimeText = formatBaDateTime(apFullAt)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -687,23 +866,13 @@ fun BAPage(
                 ) {
                     val accentBlue = Color(0xFF3B82F6)
                     val accentGreen = Color(0xFF22C55E)
+                    val countdownBlue = Color(0xFF60A5FA)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("AP", color = MiuixTheme.colorScheme.onBackground)
-                            StatusPill(
-                                label = if (isWorkActivated) "Work" else "Init",
-                                color = if (isWorkActivated) Color(0xFF3B82F6) else Color(0xFFF59E0B)
-                            )
-                        }
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -721,6 +890,8 @@ fun BAPage(
                                 GlassTextButton(
                                     backdrop = backdrop,
                                     text = serverOptions[serverIndex],
+                                    blurRadius = baGlassBlur,
+                                    lightMaterial = baLightGlass,
                                     onClick = { showOverviewServerPopup = !showOverviewServerPopup }
                                 )
                                 if (showOverviewServerPopup) {
@@ -780,6 +951,8 @@ fun BAPage(
                                     },
                                     label = "0",
                                     backdrop = backdrop,
+                                    blurRadius = baGlassBlur,
+                                    lightMaterial = baLightGlass,
                                     singleLine = true,
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
@@ -808,6 +981,8 @@ fun BAPage(
                                     },
                                     label = "240",
                                     backdrop = backdrop,
+                                    blurRadius = baGlassBlur,
+                                    lightMaterial = baLightGlass,
                                     singleLine = true,
                                     textAlign = TextAlign.Center,
                                     fontSize = 18.sp,
@@ -837,12 +1012,16 @@ fun BAPage(
                                     backdrop = backdrop,
                                     text = "领取",
                                     textColor = Color(0xFF22C55E),
+                                    blurRadius = baGlassBlur,
+                                    lightMaterial = baLightGlass,
                                     onClick = { claimCafeStoredAp() }
                                 )
                                 GlassTextButton(
                                     backdrop = backdrop,
-                                    text = "${cafeStoredAp.roundToInt()}/${cafeDailyCapacity(cafeLevel)}",
+                                    text = "${displayAp(cafeStoredAp)}/${cafeDailyCapacity(cafeLevel)}",
                                     textColor = accentGreen,
+                                    blurRadius = baGlassBlur,
+                                    lightMaterial = baLightGlass,
                                     onClick = {}
                                 )
                             }
@@ -861,12 +1040,23 @@ fun BAPage(
                             ) {
                                 Text("AP Sync", color = MiuixTheme.colorScheme.onBackground)
                             }
-                            Text(
-                                text = formatBaDateTime(apSyncMs),
-                                color = accentBlue,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = apNextPointRemain,
+                                    color = countdownBlue,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = apSyncTimeText,
+                                    color = accentBlue,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                         Row(
                             modifier = Modifier
@@ -881,9 +1071,167 @@ fun BAPage(
                             ) {
                                 Text("AP Full", color = MiuixTheme.colorScheme.onBackground)
                             }
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = apFullText,
+                                    color = countdownBlue,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = apFullTimeText,
+                                    color = accentBlue,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(6.dp)) }
+            item { SmallTitle("咖啡厅", insideMargin = baSmallTitleMargin) }
+            item { Spacer(modifier = Modifier.height(6.dp)) }
+
+            item {
+                val accentPink = Color(0xFFF472B6)
+                val accentYellow = Color(0xFFF59E0B)
+                val countdownBlue = Color(0xFF60A5FA)
+                val nowMs = uiNowMs
+                val nextHeadpatAt = calculateNextHeadpatAvailableMs(coffeeHeadpatMs, serverIndex)
+                val nextStudentRefreshAt = nextCafeStudentRefreshMs(nowMs, serverIndex)
+                val nextHeadpatText = if (coffeeHeadpatMs <= 0L || nextHeadpatAt <= nowMs) {
+                    "0s"
+                } else {
+                    formatBaRemainingTime(nextHeadpatAt, nowMs)
+                }
+                val nextStudentRefreshText = formatBaRemainingTime(nextStudentRefreshAt, nowMs)
+                val invite1AvailableAt = calculateInviteTicketAvailableMs(coffeeInvite1UsedMs)
+                val invite2AvailableAt = calculateInviteTicketAvailableMs(coffeeInvite2UsedMs)
+                val invite1Ready = coffeeInvite1UsedMs <= 0L || invite1AvailableAt <= nowMs
+                val invite2Ready = coffeeInvite2UsedMs <= 0L || invite2AvailableAt <= nowMs
+                val invite1Color = if (invite1Ready) accentPink else accentYellow
+                val invite2Color = if (invite2Ready) accentPink else accentYellow
+                val invite1Text = if (invite1Ready) "0s" else formatBaRemainingTime(invite1AvailableAt, nowMs)
+                val invite2Text = if (invite2Ready) "0s" else formatBaRemainingTime(invite2AvailableAt, nowMs)
+                val invite1TimeText = formatBaDateTimeNoSeconds(if (invite1Ready) nowMs else invite1AvailableAt)
+                val invite2TimeText = formatBaDateTimeNoSeconds(if (invite2Ready) nowMs else invite2AvailableAt)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = Color(0x223B82F6),
+                        contentColor = MiuixTheme.colorScheme.onBackground
+                    ),
+                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Tilt,
+                    showIndication = !suspendCardFeedback,
+                    onClick = {}
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("学生访问", color = accentPink)
                             Text(
-                                text = formatBaDateTime(calculateApFullAtMs()),
-                                color = accentBlue,
+                                text = nextStudentRefreshText,
+                                color = countdownBlue,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                text = "摸摸头",
+                                textColor = accentPink,
+                                enabled = coffeeHeadpatMs <= 0L || nextHeadpatAt <= nowMs,
+                                blurRadius = baGlassBlur,
+                                lightMaterial = baLightGlass,
+                                onClick = { touchHead() },
+                                onLongClick = { forceResetHeadpatCooldown() },
+                                onPressedChange = onGlassButtonPressedChange
+                            )
+                            Text(
+                                text = nextHeadpatText,
+                                color = countdownBlue,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = if (coffeeHeadpatMs > 0L) formatBaDateTimeNoSeconds(coffeeHeadpatMs) else "-",
+                                color = accentPink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                text = "邀请券1",
+                                textColor = invite1Color,
+                                enabled = invite1Ready,
+                                blurRadius = baGlassBlur,
+                                lightMaterial = baLightGlass,
+                                onClick = { useInviteTicket1() },
+                                onLongClick = { forceResetInviteTicket1Cooldown() },
+                                onPressedChange = onGlassButtonPressedChange
+                            )
+                            Text(
+                                text = invite1Text,
+                                color = countdownBlue,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = invite1TimeText,
+                                color = invite1Color,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                text = "邀请券2",
+                                textColor = invite2Color,
+                                enabled = invite2Ready,
+                                blurRadius = baGlassBlur,
+                                lightMaterial = baLightGlass,
+                                onClick = { useInviteTicket2() },
+                                onLongClick = { forceResetInviteTicket2Cooldown() },
+                                onPressedChange = onGlassButtonPressedChange
+                            )
+                            Text(
+                                text = invite2Text,
+                                color = countdownBlue,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = invite2TimeText,
+                                color = invite2Color,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -892,7 +1240,9 @@ fun BAPage(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(10.dp)) }
+            item { Spacer(modifier = Modifier.height(6.dp)) }
+            item { SmallTitle("ID卡", insideMargin = baSmallTitleMargin) }
+            item { Spacer(modifier = Modifier.height(6.dp)) }
 
             item {
                 val nicknameLengthForWidth = idNicknameInput.ifEmpty { BA_DEFAULT_NICKNAME }.length.coerceIn(1, 10)
@@ -905,8 +1255,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = PressFeedbackType.Tilt,
-                    showIndication = true,
+                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Tilt,
+                    showIndication = !suspendCardFeedback,
                     onClick = {}
                 ) {
                     val accentBlue = Color(0xFF3B82F6)
@@ -916,7 +1266,6 @@ fun BAPage(
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("ID卡", color = MiuixTheme.colorScheme.onBackground)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -941,6 +1290,8 @@ fun BAPage(
                                     onImeActionDone = { saveIdNicknameFromInput() },
                                     label = "Kei",
                                     backdrop = backdrop,
+                                    blurRadius = baGlassBlur,
+                                    lightMaterial = baLightGlass,
                                     singleLine = true,
                                     textAlign = TextAlign.Center
                                 )
@@ -970,6 +1321,8 @@ fun BAPage(
                                 onImeActionDone = { saveIdFriendCodeFromInput() },
                                 label = "ARISUKEI",
                                 backdrop = backdrop,
+                                blurRadius = baGlassBlur,
+                                lightMaterial = baLightGlass,
                                 singleLine = true,
                                 textAlign = TextAlign.Center
                             )
@@ -978,7 +1331,9 @@ fun BAPage(
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(10.dp)) }
+            item { Spacer(modifier = Modifier.height(6.dp)) }
+            item { SmallTitle("Test", insideMargin = baSmallTitleMargin) }
+            item { Spacer(modifier = Modifier.height(6.dp)) }
 
             item {
                 Card(
@@ -987,8 +1342,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = PressFeedbackType.Tilt,
-                    showIndication = true,
+                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Tilt,
+                    showIndication = !suspendCardFeedback,
                     onClick = {}
                 ) {
                     Column(
@@ -997,7 +1352,6 @@ fun BAPage(
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Test", color = MiuixTheme.colorScheme.onBackground)
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -1005,12 +1359,18 @@ fun BAPage(
                             GlassTextButton(
                                 backdrop = backdrop,
                                 text = "AP通知",
-                                onClick = { sendApTestNotification(showToast = true) }
+                                blurRadius = baGlassBlur,
+                                lightMaterial = baLightGlass,
+                                onClick = { sendApTestNotification(showToast = true) },
+                                onPressedChange = onGlassButtonPressedChange
                             )
                             GlassTextButton(
                                 backdrop = backdrop,
                                 text = "咖啡厅3h AP",
-                                onClick = { testCafePlus3Hours() }
+                                blurRadius = baGlassBlur,
+                                lightMaterial = baLightGlass,
+                                onClick = { testCafePlus3Hours() },
+                                onPressedChange = onGlassButtonPressedChange
                             )
                         }
                     }
@@ -1028,6 +1388,8 @@ fun BAPage(
                 backdrop = backdrop,
                 icon = MiuixIcons.Regular.Close,
                 contentDescription = "关闭",
+                blurRadius = baGlassBlur,
+                lightMaterial = baLightGlass,
                 onClick = { closeSettingsSheet() }
             )
         },
@@ -1036,6 +1398,8 @@ fun BAPage(
                 backdrop = backdrop,
                 icon = MiuixIcons.Regular.Ok,
                 contentDescription = "保存",
+                blurRadius = baGlassBlur,
+                lightMaterial = baLightGlass,
                 onClick = { saveSettings() }
             )
         }
@@ -1062,6 +1426,8 @@ fun BAPage(
                     GlassTextButton(
                         backdrop = backdrop,
                         text = "${sheetCafeLevel}级",
+                        blurRadius = baGlassBlur,
+                        lightMaterial = baLightGlass,
                         onClick = { showCafeLevelPopup = !showCafeLevelPopup }
                     )
                     if (showCafeLevelPopup) {
@@ -1137,6 +1503,8 @@ fun BAPage(
                         },
                         label = "120",
                         backdrop = backdrop,
+                        blurRadius = baGlassBlur,
+                        lightMaterial = baLightGlass,
                         singleLine = true,
                         textAlign = TextAlign.Center,
                         fontSize = 18.sp,

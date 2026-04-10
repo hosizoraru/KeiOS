@@ -2,7 +2,10 @@ package com.example.keios.ui.page.main.widget
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
@@ -11,11 +14,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
@@ -35,11 +43,35 @@ fun GlassIconButton(
     icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    blurRadius: Dp? = null,
+    lightMaterial: Boolean = false
 ) {
     val isDark = isSystemInDarkTheme()
     val iconTint = MiuixTheme.colorScheme.primary
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
+    val blurDp = blurRadius ?: if (isDark) 7.dp else 11.dp
+    val surfaceAlpha = if (lightMaterial) {
+        if (isDark) 0.12f else 0.28f
+    } else {
+        if (isDark) 0.20f else 0.46f
+    }
+    val overlayAlpha = if (lightMaterial) {
+        if (isDark) 0.03f else 0.03f
+    } else {
+        if (isDark) 0.0f else 0.06f
+    }
+    val highlightAlpha = if (lightMaterial) {
+        if (isDark) 0.52f else 0.58f
+    } else {
+        if (isDark) 0.9f else 1.0f
+    }
+    val shadowAlpha = if (lightMaterial) {
+        if (isDark) 0.08f else 0.10f
+    } else {
+        if (isDark) 0.12f else 0.20f
+    }
+    val borderAlpha = if (lightMaterial) 0.10f else 0.16f
     Box(
         modifier = modifier
             .width(40.dp)
@@ -53,27 +85,26 @@ fun GlassIconButton(
                         shape = { ContinuousCapsule },
                         effects = {
                             vibrancy()
-                            blur(if (isDark) 7.dp.toPx() else 11.dp.toPx())
+                            blur(blurDp.toPx())
                             lens(24.dp.toPx(), 24.dp.toPx())
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = if (isDark) 0.9f else 1.0f)
+                            Highlight.Default.copy(alpha = highlightAlpha)
                         },
                         shadow = {
                             Shadow.Default.copy(
-                                color = Color.Black.copy(alpha = if (isDark) 0.12f else 0.20f)
+                                color = Color.Black.copy(alpha = shadowAlpha)
                             )
                         },
                         onDrawSurface = {
-                            drawRect(Color.White.copy(alpha = if (isDark) 0.20f else 0.46f))
-                            if (!isDark) {
-                                // Add a subtle contour to keep button boundaries visible on bright pages.
-                                drawRect(Color.Black.copy(alpha = 0.06f))
+                            drawRect(Color.White.copy(alpha = surfaceAlpha))
+                            if (overlayAlpha > 0f) {
+                                drawRect(Color.Black.copy(alpha = overlayAlpha))
                             }
                         }
                     )
                 } else {
-                    Modifier.background(fallbackSurface.copy(alpha = 0.9f))
+                    Modifier.background(fallbackSurface.copy(alpha = if (lightMaterial) 0.68f else 0.9f))
                 }
             ),
         contentAlignment = Alignment.Center
@@ -84,7 +115,7 @@ fun GlassIconButton(
                 .clip(ContinuousCapsule)
                 .border(
                     width = 1.dp,
-                    color = if (isDark) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.16f),
+                    color = if (isDark) Color.White.copy(alpha = borderAlpha) else Color.Black.copy(alpha = borderAlpha),
                     shape = ContinuousCapsule
                 )
         )
@@ -102,15 +133,70 @@ fun GlassTextButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    textColor: Color = MiuixTheme.colorScheme.primary
+    textColor: Color = MiuixTheme.colorScheme.primary,
+    enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    onPressedChange: ((Boolean) -> Unit)? = null,
+    blurRadius: Dp? = null,
+    lightMaterial: Boolean = false
 ) {
     val isDark = isSystemInDarkTheme()
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
+    val longClick = onLongClick
+    val blurDp = blurRadius ?: if (isDark) 7.dp else 11.dp
+    val surfaceAlpha = if (lightMaterial) {
+        if (isDark) 0.12f else 0.28f
+    } else {
+        if (isDark) 0.20f else 0.46f
+    }
+    val overlayAlpha = if (lightMaterial) {
+        if (isDark) 0.03f else 0.03f
+    } else {
+        if (isDark) 0.0f else 0.06f
+    }
+    val highlightAlpha = if (lightMaterial) {
+        if (isDark) 0.52f else 0.58f
+    } else {
+        if (isDark) 0.9f else 1.0f
+    }
+    val shadowAlpha = if (lightMaterial) {
+        if (isDark) 0.08f else 0.10f
+    } else {
+        if (isDark) 0.12f else 0.20f
+    }
+    val borderAlpha = if (lightMaterial) 0.10f else 0.16f
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    LaunchedEffect(isPressed, onPressedChange) {
+        onPressedChange?.invoke(isPressed)
+    }
+    DisposableEffect(onPressedChange) {
+        onDispose { onPressedChange?.invoke(false) }
+    }
+
     Box(
         modifier = modifier
             .defaultMinSize(minHeight = 40.dp)
             .clip(ContinuousCapsule)
-            .clickable(onClick = onClick)
+            .then(
+                if (longClick != null) {
+                    Modifier.combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        enabled = true,
+                        onClick = { if (enabled) onClick() },
+                        onLongClick = longClick
+                    )
+                } else {
+                    Modifier.clickable(
+                        enabled = enabled,
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick
+                    )
+                }
+            )
             .then(
                 if (backdrop != null) {
                     Modifier.drawBackdrop(
@@ -118,31 +204,31 @@ fun GlassTextButton(
                         shape = { ContinuousCapsule },
                         effects = {
                             vibrancy()
-                            blur(if (isDark) 7.dp.toPx() else 11.dp.toPx())
+                            blur(blurDp.toPx())
                             lens(24.dp.toPx(), 24.dp.toPx())
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = if (isDark) 0.9f else 1.0f)
+                            Highlight.Default.copy(alpha = highlightAlpha)
                         },
                         shadow = {
                             Shadow.Default.copy(
-                                color = Color.Black.copy(alpha = if (isDark) 0.12f else 0.20f)
+                                color = Color.Black.copy(alpha = shadowAlpha)
                             )
                         },
                         onDrawSurface = {
-                            drawRect(Color.White.copy(alpha = if (isDark) 0.20f else 0.46f))
-                            if (!isDark) {
-                                drawRect(Color.Black.copy(alpha = 0.06f))
+                            drawRect(Color.White.copy(alpha = surfaceAlpha))
+                            if (overlayAlpha > 0f) {
+                                drawRect(Color.Black.copy(alpha = overlayAlpha))
                             }
                         }
                     )
                 } else {
-                    Modifier.background(fallbackSurface.copy(alpha = 0.9f))
+                    Modifier.background(fallbackSurface.copy(alpha = if (lightMaterial) 0.68f else 0.9f))
                 }
             )
             .border(
                 width = 1.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.16f),
+                color = if (isDark) Color.White.copy(alpha = borderAlpha) else Color.Black.copy(alpha = borderAlpha),
                 shape = ContinuousCapsule
             )
             .padding(horizontal = 14.dp, vertical = 10.dp),
