@@ -1625,64 +1625,58 @@ fun BAPage(
                                 val remainText = formatBaRemainingTime(remainTarget, uiNowMs)
                                 val statusText = if (activity.isRunning) "进行中" else "即将开始"
                                 val statusColor = if (activity.isRunning) accentGreen else accentBlue
-                                Row(
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .combinedClickable(
                                             onClick = { openCalendarLink(activity.linkUrl) },
                                             onLongClick = { openCalendarLink(activity.linkUrl) }
                                         ),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            text = "${activity.kindName} · ${activity.title}",
-                                            maxLines = 3,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = "${formatBaDateTimeNoYearInTimeZone(activity.beginAtMs, serverTimeZone)} - ${
-                                                formatBaDateTimeNoYearInTimeZone(
-                                                    activity.endAtMs,
-                                                    serverTimeZone
-                                                )
-                                            }",
-                                            color = countdownBlue,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        LinearProgressIndicator(
-                                            progress = activityProgress(activity, uiNowMs),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 2.dp),
-                                            height = 5.dp,
-                                            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                                foregroundColor = if (activity.isRunning) accentGreen else accentBlue,
-                                                backgroundColor = MiuixTheme.colorScheme.secondaryContainer
+                                    Text(
+                                        text = "${activity.kindName} · ${activity.title}",
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "${formatBaDateTimeNoYearInTimeZone(activity.beginAtMs, serverTimeZone)} - ${
+                                            formatBaDateTimeNoYearInTimeZone(
+                                                activity.endAtMs,
+                                                serverTimeZone
                                             )
+                                        }",
+                                        color = countdownBlue,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    LinearProgressIndicator(
+                                        progress = activityProgress(activity, uiNowMs),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 2.dp),
+                                        height = 5.dp,
+                                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                            foregroundColor = if (activity.isRunning) accentGreen else accentBlue,
+                                            backgroundColor = MiuixTheme.colorScheme.secondaryContainer
                                         )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column(
-                                        horizontalAlignment = Alignment.End,
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(statusText, color = statusColor)
                                         Text(
                                             text = remainText,
                                             color = countdownBlue,
-                                            maxLines = 2,
+                                            maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
                                 if (index < baCalendarEntries.lastIndex) {
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
                                 }
                             }
                         }
