@@ -102,5 +102,6 @@ dependencies {
     implementation("io.ktor:ktor-server-cio:3.4.2")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("com.xzakota.hyper.notification:focus-api:1.4")
 }

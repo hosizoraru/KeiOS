@@ -56,6 +56,9 @@ import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Pause
+import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
@@ -410,6 +413,133 @@ fun GuideSkillCardItem(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GuideVoiceLanguageCard(
+    headers: List<String>,
+    backdrop: Backdrop?,
+    selectedIndex: Int,
+    onSelectIndex: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (headers.isEmpty()) return
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "配音",
+                color = MiuixTheme.colorScheme.onBackgroundVariant
+            )
+            headers.forEachIndexed { index, header ->
+                val selected = index == selectedIndex
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = if (selected) "已选 $header" else header,
+                    textColor = if (selected) Color(0xFF22C55E) else Color(0xFF3B82F6),
+                    bottomBarStyle = true,
+                    onClick = { onSelectIndex(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GuideVoiceEntryCard(
+    entry: BaGuideVoiceEntry,
+    languageHeaders: List<String>,
+    selectedLanguageIndex: Int,
+    backdrop: Backdrop?,
+    isPlaying: Boolean,
+    onTogglePlay: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val labels = if (languageHeaders.isNotEmpty()) {
+        languageHeaders
+    } else {
+        listOf("日配", "中配", "韩配")
+    }
+    val activeLanguageIndex = selectedLanguageIndex.coerceAtLeast(0)
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (entry.section.isNotBlank()) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = entry.section,
+                        enabled = false,
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = {}
+                    )
+                }
+                Text(
+                    text = entry.title.ifBlank { "语音条目" },
+                    color = MiuixTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f)
+                )
+                if (entry.audioUrl.isNotBlank()) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "",
+                        leadingIcon = if (isPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = { onTogglePlay(entry.audioUrl) }
+                    )
+                }
+            }
+
+            if (entry.lines.isNotEmpty()) {
+                val line = entry.lines.getOrNull(activeLanguageIndex).orEmpty()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = labels.getOrNull(activeLanguageIndex) ?: "配音${activeLanguageIndex + 1}",
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        modifier = Modifier.width(58.dp)
+                    )
+                    Text(
+                        text = line.ifBlank { "该语言暂无台词文本" },
+                        color = MiuixTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }

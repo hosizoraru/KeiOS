@@ -70,6 +70,28 @@ object BaStudentGuideStore {
         }
     }
 
+    private fun encodeVoiceEntries(items: List<BaGuideVoiceEntry>): JSONArray {
+        return JSONArray().apply {
+            items.forEach { item ->
+                put(
+                    JSONObject().apply {
+                        put("s", item.section)
+                        put("t", item.title)
+                        put("a", item.audioUrl)
+                        put(
+                            "ls",
+                            JSONArray().apply {
+                                item.lines.forEach { line ->
+                                    if (line.isNotBlank()) put(line)
+                                }
+                            }
+                        )
+                    }
+                )
+            }
+        }
+    }
+
     private fun decodeGalleryItems(obj: JSONObject, key: String): List<BaGuideGalleryItem> {
         val arr = obj.optJSONArray(key) ?: return emptyList()
         return buildList {
@@ -79,6 +101,36 @@ object BaStudentGuideStore {
                 val imageUrl = item.optString("img").trim()
                 if (imageUrl.isBlank()) continue
                 add(BaGuideGalleryItem(title = title, imageUrl = imageUrl))
+            }
+        }
+    }
+
+    private fun decodeVoiceEntries(obj: JSONObject, key: String): List<BaGuideVoiceEntry> {
+        val arr = obj.optJSONArray(key) ?: return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val item = arr.optJSONObject(i) ?: continue
+                val section = item.optString("s").trim()
+                val title = item.optString("t").trim()
+                val audioUrl = item.optString("a").trim()
+                val lines = buildList {
+                    val lineArray = item.optJSONArray("ls")
+                    if (lineArray != null) {
+                        for (j in 0 until lineArray.length()) {
+                            val line = lineArray.optString(j).trim()
+                            if (line.isNotBlank()) add(line)
+                        }
+                    }
+                }
+                if (section.isBlank() && title.isBlank() && audioUrl.isBlank() && lines.isEmpty()) continue
+                add(
+                    BaGuideVoiceEntry(
+                        section = section,
+                        title = title,
+                        lines = lines,
+                        audioUrl = audioUrl
+                    )
+                )
             }
         }
     }
@@ -119,6 +171,8 @@ object BaStudentGuideStore {
             put("galleryItems", encodeGalleryItems(info.galleryItems))
             put("growthRows", encodeGuideRows(info.growthRows))
             put("voiceRows", encodeGuideRows(info.voiceRows))
+            put("voiceLanguageHeaders", JSONArray().apply { info.voiceLanguageHeaders.forEach { put(it) } })
+            put("voiceEntries", encodeVoiceEntries(info.voiceEntries))
             put("tabSkillIconUrl", info.tabSkillIconUrl)
             put("tabProfileIconUrl", info.tabProfileIconUrl)
             put("tabVoiceIconUrl", info.tabVoiceIconUrl)
@@ -156,6 +210,16 @@ object BaStudentGuideStore {
                 galleryItems = decodeGalleryItems(obj, "galleryItems"),
                 growthRows = decodeGuideRows(obj, "growthRows"),
                 voiceRows = decodeGuideRows(obj, "voiceRows"),
+                voiceLanguageHeaders = buildList {
+                    val headers = obj.optJSONArray("voiceLanguageHeaders")
+                    if (headers != null) {
+                        for (j in 0 until headers.length()) {
+                            val value = headers.optString(j).trim()
+                            if (value.isNotBlank()) add(value)
+                        }
+                    }
+                },
+                voiceEntries = decodeVoiceEntries(obj, "voiceEntries"),
                 tabSkillIconUrl = obj.optString("tabSkillIconUrl").trim(),
                 tabProfileIconUrl = obj.optString("tabProfileIconUrl").trim(),
                 tabVoiceIconUrl = obj.optString("tabVoiceIconUrl").trim(),

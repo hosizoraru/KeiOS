@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -40,6 +41,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
 import com.example.keios.ui.page.main.student.GuideBottomTab
@@ -50,6 +58,8 @@ import com.example.keios.ui.page.main.student.GuideProfileMetaLine
 import com.example.keios.ui.page.main.student.GuideRemoteImage
 import com.example.keios.ui.page.main.student.GuideRowsSection
 import com.example.keios.ui.page.main.student.GuideSkillCardItem
+import com.example.keios.ui.page.main.student.GuideVoiceEntryCard
+import com.example.keios.ui.page.main.student.GuideVoiceLanguageCard
 import com.example.keios.ui.page.main.student.GuideWeaponCardItem
 import com.example.keios.ui.page.main.student.buildCombatMetaItems
 import com.example.keios.ui.page.main.student.buildProfileMetaItems
@@ -102,10 +112,63 @@ fun BaStudentGuidePage(
     var error by remember { mutableStateOf<String?>(null) }
     var refreshSignal by remember { mutableStateOf(0) }
     var selectedBottomTabIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(0) }
+    var playingVoiceUrl by rememberSaveable(sourceUrl) { mutableStateOf("") }
+    var selectedVoiceLanguageIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(-1) }
     val bottomTabs = GuideBottomTab.entries
     val activeBottomTab = bottomTabs.getOrElse(selectedBottomTabIndex) { GuideBottomTab.Archive }
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val pageTitle = info?.title?.ifBlank { "学生图鉴" } ?: "学生图鉴"
+    val voicePlayer = remember(context, sourceUrl) {
+        val referer = normalizeGuideUrl(sourceUrl).ifBlank { "https://www.gamekee.com/" }
+        val desktopUa =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+        val defaultHeaders = mapOf(
+            "Accept" to "*/*",
+            "Accept-Language" to "zh-CN",
+            "Referer" to referer,
+            "User-Agent" to desktopUa,
+            "device-num" to "1",
+            "game-alias" to "ba",
+            "Connection" to "close"
+        )
+        val httpFactory = DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setUserAgent(desktopUa)
+            .setDefaultRequestProperties(defaultHeaders)
+        val mediaSourceFactory = DefaultMediaSourceFactory(
+            DefaultDataSource.Factory(context, httpFactory)
+        )
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build()
+    }
+
+    DisposableEffect(voicePlayer) {
+        onDispose {
+            runCatching { voicePlayer.release() }
+        }
+    }
+
+    DisposableEffect(voicePlayer) {
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED || playbackState == Player.STATE_IDLE) {
+                    if (!voicePlayer.isPlaying) {
+                        playingVoiceUrl = ""
+                    }
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                playingVoiceUrl = ""
+                Toast.makeText(context, "语音播放失败：${error.errorCodeName}", Toast.LENGTH_SHORT).show()
+            }
+        }
+        voicePlayer.addListener(listener)
+        onDispose {
+            voicePlayer.removeListener(listener)
+        }
+    }
 
     fun openExternal(url: String) {
         val target = normalizeGuideUrl(url)
@@ -118,6 +181,39 @@ fun BaStudentGuidePage(
         }.onFailure {
             Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    fun toggleVoicePlayback(rawAudioUrl: String) {
+        val target = normalizeGuideUrl(rawAudioUrl)
+        if (target.isBlank()) return
+        runCatching {
+            if (playingVoiceUrl == target) {
+                if (voicePlayer.isPlaying) {
+                    voicePlayer.pause()
+                    playingVoiceUrl = ""
+                } else {
+                    voicePlayer.play()
+                    playingVoiceUrl = target
+                }
+            } else {
+                voicePlayer.setMediaItem(MediaItem.fromUri(target))
+                voicePlayer.prepare()
+                voicePlayer.play()
+                playingVoiceUrl = target
+            }
+        }.onFailure {
+            playingVoiceUrl = ""
+            Toast.makeText(context, "语音播放失败", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun defaultVoiceLanguageIndex(headers: List<String>): Int {
+        if (headers.isEmpty()) return 0
+        val jpIndex = headers.indexOfFirst { label ->
+            val value = label.lowercase()
+            value.contains("日") || value.contains("jp") || value.contains("jpn")
+        }
+        return if (jpIndex >= 0) jpIndex else 0
     }
 
     LaunchedEffect(sourceUrl, refreshSignal) {
@@ -136,6 +232,14 @@ fun BaStudentGuidePage(
             error = if (info != null) "网络请求失败，已显示本地缓存" else "图鉴信息加载失败"
         }
         loading = false
+    }
+
+    LaunchedEffect(info?.voiceLanguageHeaders) {
+        val headers = info?.voiceLanguageHeaders.orEmpty()
+        if (headers.isEmpty()) return@LaunchedEffect
+        if (selectedVoiceLanguageIndex !in headers.indices) {
+            selectedVoiceLanguageIndex = defaultVoiceLanguageIndex(headers)
+        }
     }
 
     Scaffold(
@@ -457,6 +561,133 @@ fun BaStudentGuidePage(
                                         card = weapon,
                                         backdrop = backdrop
                                     )
+                                }
+                            }
+
+                            item { Spacer(modifier = Modifier.height(10.dp)) }
+                            item {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.defaultColors(
+                                        color = Color(0x223B82F6),
+                                        contentColor = MiuixTheme.colorScheme.onBackground
+                                    ),
+                                    onClick = {}
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                                    ) {
+                                        MiuixInfoItem(
+                                            key = "来源",
+                                            value = guide.sourceUrl,
+                                            onClick = { openExternal(guide.sourceUrl) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    GuideBottomTab.Voice -> {
+                        val guide = info
+                        if (guide == null) {
+                            item {
+                                FrostedBlock(
+                                    backdrop = backdrop,
+                                    title = activeBottomTab.label,
+                                    subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
+                                    accent = accent
+                                )
+                            }
+                        } else {
+                            val voiceEntries = guide.voiceEntries.filter {
+                                it.section.isNotBlank() || it.title.isNotBlank() || it.lines.isNotEmpty() || it.audioUrl.isNotBlank()
+                            }
+
+                            if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            if (showLoadingText(loading = loading, hasInfo = true)) {
+                                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                                            }
+                                            error?.takeIf { it.isNotBlank() }?.let {
+                                                Text(
+                                                    text = it,
+                                                    color = MiuixTheme.colorScheme.error,
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                            }
+
+                            if (guide.voiceLanguageHeaders.isNotEmpty()) {
+                                item {
+                                    GuideVoiceLanguageCard(
+                                        headers = guide.voiceLanguageHeaders,
+                                        backdrop = backdrop,
+                                        selectedIndex = selectedVoiceLanguageIndex.coerceAtLeast(0),
+                                        onSelectIndex = { selectedVoiceLanguageIndex = it }
+                                    )
+                                }
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                            }
+
+                            if (voiceEntries.isNotEmpty()) {
+                                voiceEntries.forEachIndexed { index, entry ->
+                                    item {
+                                        GuideVoiceEntryCard(
+                                            entry = entry,
+                                            languageHeaders = guide.voiceLanguageHeaders,
+                                            selectedLanguageIndex = selectedVoiceLanguageIndex.coerceAtLeast(0),
+                                            backdrop = backdrop,
+                                            isPlaying = normalizeGuideUrl(entry.audioUrl) == playingVoiceUrl && voicePlayer.isPlaying,
+                                            onTogglePlay = ::toggleVoicePlayback
+                                        )
+                                    }
+                                    if (index < voiceEntries.lastIndex) {
+                                        item { Spacer(modifier = Modifier.height(10.dp)) }
+                                    }
+                                }
+                            } else {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                                        ) {
+                                            Text(
+                                                text = "暂未解析到结构化语音台词，点击右上角刷新后重试。",
+                                                color = MiuixTheme.colorScheme.onBackgroundVariant
+                                            )
+                                        }
+                                    }
                                 }
                             }
 

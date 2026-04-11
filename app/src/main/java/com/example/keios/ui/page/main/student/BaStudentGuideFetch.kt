@@ -101,6 +101,8 @@ private data class GuideDetailExtract(
     val galleryItems: List<BaGuideGalleryItem> = emptyList(),
     val growthRows: List<BaGuideRow> = emptyList(),
     val voiceRows: List<BaGuideRow> = emptyList(),
+    val voiceLanguageHeaders: List<String> = emptyList(),
+    val voiceEntries: List<BaGuideVoiceEntry> = emptyList(),
     val tabSkillIconUrl: String = "",
     val tabProfileIconUrl: String = "",
     val tabVoiceIconUrl: String = "",
@@ -113,6 +115,8 @@ private data class GuideBaseRow(
     val textValues: List<String>,
     val imageValues: List<String>
 )
+
+private val voiceCategoryKeys = setOf("通常", "大厅及咖啡馆", "战斗", "活动", "事件", "好感度")
 
 private fun looksLikeImageUrl(raw: String): Boolean {
     val value = raw.lowercase()
@@ -140,6 +144,108 @@ private fun extractImageUrlsFromHtml(sourceUrl: String, raw: String): List<Strin
         .filter { it.isNotBlank() }
         .distinct()
         .toList()
+}
+
+private fun normalizeMediaUrl(sourceUrl: String, mediaRaw: String): String {
+    return normalizeImageUrl(sourceUrl, mediaRaw)
+}
+
+private fun isAudioUrl(url: String): Boolean {
+    val value = url.trim().lowercase()
+    if (value.isBlank()) return false
+    return Regex("""\.(mp3|ogg|wav|m4a|aac)(\?.*)?$""").containsMatchIn(value)
+}
+
+private fun extractAudioUrlsFromRaw(sourceUrl: String, raw: String): List<String> {
+    if (raw.isBlank()) return emptyList()
+    val regex = Regex(
+        """(?i)((?:https?:)?//[^\s"'<>]+|/[^\s"'<>]+|[^\s"'<>]+\.(?:mp3|ogg|wav|m4a|aac)(?:\?[^\s"'<>]*)?)"""
+    )
+    return regex.findAll(raw)
+        .mapNotNull { match ->
+            normalizeMediaUrl(sourceUrl, match.groupValues.getOrNull(1).orEmpty())
+        }
+        .filter { it.isNotBlank() && isAudioUrl(it) }
+        .distinct()
+        .toList()
+}
+
+private fun parseVoiceDataFromBaseData(
+    baseData: JSONArray,
+    sourceUrl: String
+): Pair<List<String>, List<BaGuideVoiceEntry>> {
+    val languageHeaders = mutableListOf<String>()
+    val entries = mutableListOf<BaGuideVoiceEntry>()
+    var inVoiceBlock = false
+
+    for (i in 0 until baseData.length()) {
+        val row = baseData.optJSONArray(i) ?: continue
+        if (row.length() == 0) continue
+        val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+        if (key == "配音语言") {
+            inVoiceBlock = true
+            languageHeaders.clear()
+            for (j in 1 until row.length()) {
+                val cell = row.optJSONObject(j) ?: continue
+                val text = stripHtml(cell.optString("value"))
+                if (text.isNotBlank()) {
+                    languageHeaders += text
+                }
+            }
+            continue
+        }
+        if (!inVoiceBlock) continue
+        if (key.isBlank() || key == "配音" || key == "配音大类") continue
+
+        if (key !in voiceCategoryKeys) {
+            if (entries.isNotEmpty() && (
+                    key.startsWith("官方介绍") ||
+                        key.startsWith("角色表情") ||
+                        key.contains("设定集") ||
+                        key.contains("本家画") ||
+                        key.contains("原画师") ||
+                        key.contains("个人账号主页")
+                    )
+            ) {
+                break
+            }
+            continue
+        }
+
+        val texts = mutableListOf<String>()
+        var audioUrl = ""
+        for (j in 1 until row.length()) {
+            val cell = row.optJSONObject(j) ?: continue
+            val type = cell.optString("type").trim().lowercase()
+            val rawValue = cell.optString("value").trim()
+            if (rawValue.isBlank()) continue
+            val text = stripHtml(rawValue)
+            val audioFromRaw = extractAudioUrlsFromRaw(sourceUrl, rawValue).firstOrNull().orEmpty()
+            if (type == "audio") {
+                val normalized = audioFromRaw.ifBlank { normalizeMediaUrl(sourceUrl, rawValue) }
+                if (audioUrl.isBlank() && isAudioUrl(normalized)) {
+                    audioUrl = normalized
+                }
+                continue
+            }
+            if (audioUrl.isBlank() && audioFromRaw.isNotBlank()) {
+                audioUrl = audioFromRaw
+            }
+            if (text.isNotBlank()) {
+                texts += text
+            }
+        }
+        if (texts.isEmpty() && audioUrl.isBlank()) continue
+
+        entries += BaGuideVoiceEntry(
+            section = key,
+            title = texts.firstOrNull().orEmpty(),
+            lines = texts.drop(1),
+            audioUrl = audioUrl
+        )
+    }
+
+    return languageHeaders to entries
 }
 
 private fun firstImageFromAny(any: Any?, sourceUrl: String, depth: Int = 0): String {
@@ -299,6 +405,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 tabGalleryIconUrl = tabIcons[GuideTab.Gallery].orEmpty(),
                 tabSimulateIconUrl = tabIcons[GuideTab.Simulate].orEmpty()
             )
+        val (voiceLanguageHeaders, voiceEntries) = parseVoiceDataFromBaseData(baseData, sourceUrl)
         val baseRows = mutableListOf<GuideBaseRow>()
         var firstImage = ""
 
@@ -356,7 +463,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             // 兼容专武面板使用“攻击力/生命值/治愈力”等简写字段
             "攻击力", "生命值", "防御力", "暴击", "爆伤", "命中", "闪避"
         )
-        val voiceKeywords = listOf("战斗", "活动", "大厅及咖啡馆", "事件", "好感度")
+        val voiceKeywords = listOf("通常", "战斗", "活动", "大厅及咖啡馆", "事件", "好感度")
 
         val skillRows = mutableListOf<BaGuideRow>()
         val profileRows = mutableListOf<BaGuideRow>()
@@ -480,6 +587,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             galleryItems = distinctGallery,
             growthRows = growthRows.take(160),
             voiceRows = voiceRows.take(160),
+            voiceLanguageHeaders = voiceLanguageHeaders,
+            voiceEntries = voiceEntries,
             tabSkillIconUrl = tabIcons[GuideTab.Skills].orEmpty(),
             tabProfileIconUrl = tabIcons[GuideTab.Profile].orEmpty(),
             tabVoiceIconUrl = tabIcons[GuideTab.Voice].orEmpty(),
@@ -576,6 +685,8 @@ private fun fetchGuideInfoByApi(sourceUrl: String): BaStudentGuideInfo {
         galleryItems = detail.galleryItems,
         growthRows = detail.growthRows,
         voiceRows = detail.voiceRows,
+        voiceLanguageHeaders = detail.voiceLanguageHeaders,
+        voiceEntries = detail.voiceEntries,
         tabSkillIconUrl = detail.tabSkillIconUrl,
         tabProfileIconUrl = detail.tabProfileIconUrl,
         tabVoiceIconUrl = detail.tabVoiceIconUrl,

@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -145,6 +147,8 @@ fun GlassTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     textColor: Color = MiuixTheme.colorScheme.primary,
+    leadingIcon: ImageVector? = null,
+    iconTint: Color = textColor,
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     onPressedChange: ((Boolean) -> Unit)? = null,
@@ -258,6 +262,20 @@ fun GlassTextButton(
             .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = text, color = textColor)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            leadingIcon?.let { icon ->
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint
+                )
+            }
+            if (text.isNotBlank()) {
+                Text(text = text, color = textColor)
+            }
+        }
     }
 }

@@ -22,6 +22,8 @@ data class BaStudentGuideInfo(
     val galleryItems: List<BaGuideGalleryItem> = emptyList(),
     val growthRows: List<BaGuideRow> = emptyList(),
     val voiceRows: List<BaGuideRow> = emptyList(),
+    val voiceLanguageHeaders: List<String> = emptyList(),
+    val voiceEntries: List<BaGuideVoiceEntry> = emptyList(),
     val tabSkillIconUrl: String = "",
     val tabProfileIconUrl: String = "",
     val tabVoiceIconUrl: String = "",
@@ -40,6 +42,13 @@ data class BaGuideRow(
 data class BaGuideGalleryItem(
     val title: String,
     val imageUrl: String
+)
+
+data class BaGuideVoiceEntry(
+    val section: String,
+    val title: String,
+    val lines: List<String> = emptyList(),
+    val audioUrl: String = ""
 )
 
 data class BaGuideMetaItem(
