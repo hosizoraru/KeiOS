@@ -2,6 +2,12 @@ package com.example.keios.ui.page.main
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -33,8 +39,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -75,6 +84,7 @@ import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.utils.UiPrefs
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
@@ -120,6 +130,17 @@ fun BaStudentGuidePage(
     val bottomTabs = GuideBottomTab.entries
     val activeBottomTab = bottomTabs.getOrElse(selectedBottomTabIndex) { GuideBottomTab.Archive }
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
+    var showBottomBar by remember { mutableStateOf(true) }
+    val bottomBarNestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -1f) showBottomBar = false
+                if (available.y > 1f) showBottomBar = true
+                return Offset.Zero
+            }
+        }
+    }
     val pageTitle = info?.title?.ifBlank { "学生图鉴" } ?: "学生图鉴"
     val voicePlayer = remember(context, sourceUrl) {
         // GameKee CDN 对语音资源的防盗链策略更偏向根站 Referer，
@@ -282,7 +303,9 @@ fun BaStudentGuidePage(
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(bottomBarNestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = pageTitle,
@@ -320,58 +343,71 @@ fun BaStudentGuidePage(
         },
         bottomBar = {
             Box(modifier = Modifier.fillMaxWidth()) {
-                FloatingBottomBar(
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {}
-                        )
-                        .padding(
-                            horizontal = 12.dp,
-                            vertical = 12.dp + navigationBarBottom
-                        ),
-                    selectedIndex = { selectedBottomTabIndex },
-                    onSelected = { index -> selectedBottomTabIndex = index },
-                    backdrop = backdrop,
-                    tabsCount = bottomTabs.size,
-                    isBlurEnabled = true
+                AnimatedVisibility(
+                    visible = showBottomBar,
+                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
+                        animationSpec = tween(220),
+                        initialOffsetY = { it / 2 }
+                    ),
+                    exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
+                        animationSpec = tween(180),
+                        targetOffsetY = { it / 2 }
+                    ),
+                    modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
-                    bottomTabs.forEachIndexed { index, tab ->
-                        FloatingBottomBarItem(
-                            onClick = { selectedBottomTabIndex = index },
-                            modifier = Modifier.defaultMinSize(minWidth = 76.dp)
-                        ) {
-                            val tabIconModifier = Modifier
-                                .size(20.dp)
-                                .graphicsLayer {
-                                    scaleX = 1f
-                                    scaleY = 1f
+                    FloatingBottomBar(
+                        modifier = Modifier
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {}
+                            )
+                            .padding(
+                                horizontal = 12.dp,
+                                vertical = 12.dp + navigationBarBottom
+                            ),
+                        selectedIndex = { selectedBottomTabIndex },
+                        onSelected = { index -> selectedBottomTabIndex = index },
+                        backdrop = backdrop,
+                        tabsCount = bottomTabs.size,
+                        isBlurEnabled = liquidBottomBarEnabled
+                    ) {
+                        bottomTabs.forEachIndexed { index, tab ->
+                            FloatingBottomBarItem(
+                                onClick = { selectedBottomTabIndex = index },
+                                modifier = Modifier.defaultMinSize(minWidth = 76.dp)
+                            ) {
+                                val tabIconModifier = Modifier
+                                    .size(20.dp)
+                                    .graphicsLayer {
+                                        scaleX = 1f
+                                        scaleY = 1f
+                                    }
+                                if (tab.localLogoRes != null) {
+                                    Icon(
+                                        painter = painterResource(id = tab.localLogoRes),
+                                        contentDescription = tab.label,
+                                        tint = Color.Unspecified,
+                                        modifier = tabIconModifier
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = tab.icon,
+                                        contentDescription = tab.label,
+                                        tint = MiuixTheme.colorScheme.onSurface,
+                                        modifier = tabIconModifier
+                                    )
                                 }
-                            if (tab.localLogoRes != null) {
-                                Icon(
-                                    painter = painterResource(id = tab.localLogoRes),
-                                    contentDescription = tab.label,
-                                    tint = Color.Unspecified,
-                                    modifier = tabIconModifier
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = tab.icon,
-                                    contentDescription = tab.label,
-                                    tint = MiuixTheme.colorScheme.onSurface,
-                                    modifier = tabIconModifier
+                                Text(
+                                    text = tab.label,
+                                    fontSize = 11.sp,
+                                    lineHeight = 14.sp,
+                                    color = MiuixTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Visible
                                 )
                             }
-                            Text(
-                                text = tab.label,
-                                fontSize = 11.sp,
-                                lineHeight = 14.sp,
-                                color = MiuixTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Visible
-                            )
                         }
                     }
                 }

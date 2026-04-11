@@ -1222,6 +1222,7 @@ fun BAPage(
     var idFriendCodeInput by remember { mutableStateOf(idFriendCode) }
     var apLastNotifiedLevel by remember { mutableIntStateOf(-1) }
     var glassButtonPressCount by remember { mutableIntStateOf(0) }
+    var consumedScrollToTopSignal by remember { mutableIntStateOf(scrollToTopSignal) }
     val officeSmallTitle = when (serverIndex) {
         0 -> "沙勒办公室"
         1 -> "夏萊行政室"
@@ -1647,7 +1648,12 @@ fun BAPage(
     }
 
     LaunchedEffect(scrollToTopSignal) {
-        if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
+        if (scrollToTopSignal > consumedScrollToTopSignal) {
+            consumedScrollToTopSignal = scrollToTopSignal
+            listState.animateScrollToItem(0)
+        } else {
+            consumedScrollToTopSignal = scrollToTopSignal
+        }
     }
 
     LaunchedEffect(Unit) {

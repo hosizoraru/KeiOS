@@ -258,7 +258,13 @@ private fun MainPagerLayout(
                                 vertical = 12.dp + navigationBarBottom
                             ),
                         selectedIndex = { pagerState.currentPage },
-                        onSelected = handlePageSelected,
+                        onSelected = { index ->
+                            // Ignore mirror callbacks emitted after pager page sync.
+                            // Keep explicit tab click behavior (including reselect-to-top) unchanged.
+                            if (index != pagerState.currentPage) {
+                                handlePageSelected(index)
+                            }
+                        },
                         backdrop = backdrop,
                         tabsCount = tabs.size,
                         isBlurEnabled = liquidBottomBarEnabled
