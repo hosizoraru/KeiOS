@@ -6,15 +6,21 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
@@ -34,13 +40,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.keios.ba.helper.GameKeeFetchHelper
 import com.example.keios.ui.page.main.widget.FrostedBlock
+import com.example.keios.ui.page.main.widget.FloatingBottomBar
+import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -56,12 +67,17 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Album
 import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.ContactsBook
+import top.yukonga.miuix.kmp.icon.extended.Image
+import top.yukonga.miuix.kmp.icon.extended.Mic
 import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Stopwatch
+import top.yukonga.miuix.kmp.icon.extended.Tasks
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val BA_GUIDE_KV_ID = "ba_student_guide"
@@ -107,6 +123,19 @@ private enum class GuideTab(val label: String) {
     Voice("语音台词"),
     Gallery("影画鉴赏"),
     Simulate("养成模拟")
+}
+
+private enum class GuideBottomTab(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val guideTab: GuideTab? = null
+) {
+    Archive("档案", MiuixIcons.Regular.ContactsBook),
+    Skills(GuideTab.Skills.label, MiuixIcons.Regular.Tasks, GuideTab.Skills),
+    Profile(GuideTab.Profile.label, MiuixIcons.Regular.ContactsBook, GuideTab.Profile),
+    Voice(GuideTab.Voice.label, MiuixIcons.Regular.Mic, GuideTab.Voice),
+    Gallery(GuideTab.Gallery.label, MiuixIcons.Regular.Album, GuideTab.Gallery),
+    Simulate(GuideTab.Simulate.label, MiuixIcons.Regular.Stopwatch, GuideTab.Simulate)
 }
 
 object BaStudentGuideStore {
@@ -891,7 +920,10 @@ fun BaStudentGuidePage(
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var refreshSignal by remember { mutableStateOf(0) }
-    var selectedTabIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(0) }
+    var selectedBottomTabIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(0) }
+    val bottomTabs = GuideBottomTab.entries
+    val activeBottomTab = bottomTabs.getOrElse(selectedBottomTabIndex) { GuideBottomTab.Archive }
+    val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val pageTitle = info?.title?.ifBlank { "学生图鉴" } ?: "学生图鉴"
 
     fun openExternal(url: String) {
@@ -955,6 +987,64 @@ fun BaStudentGuidePage(
                     }
                 }
             )
+        },
+        bottomBar = {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                FloatingBottomBar(
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        )
+                        .padding(
+                            horizontal = 12.dp,
+                            vertical = 12.dp + navigationBarBottom
+                        ),
+                    selectedIndex = { selectedBottomTabIndex },
+                    onSelected = { index -> selectedBottomTabIndex = index },
+                    backdrop = backdrop,
+                    tabsCount = bottomTabs.size,
+                    isBlurEnabled = true
+                ) {
+                    bottomTabs.forEachIndexed { index, tab ->
+                        val dynamicIconUrl = info?.bottomTabIconUrl(tab).orEmpty()
+                        FloatingBottomBarItem(
+                            onClick = { selectedBottomTabIndex = index },
+                            modifier = Modifier.defaultMinSize(minWidth = 72.dp)
+                        ) {
+                            if (dynamicIconUrl.isNotBlank()) {
+                                GuideRemoteIcon(
+                                    imageUrl = dynamicIconUrl,
+                                    iconWidth = 18.dp,
+                                    iconHeight = 18.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = tab.icon,
+                                    contentDescription = tab.label,
+                                    tint = MiuixTheme.colorScheme.onSurface,
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .graphicsLayer {
+                                            scaleX = 1f
+                                            scaleY = 1f
+                                        }
+                                )
+                            }
+                            Text(
+                                text = tab.label,
+                                fontSize = 10.sp,
+                                lineHeight = 12.sp,
+                                color = MiuixTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Visible
+                            )
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         LazyColumn(
@@ -968,7 +1058,7 @@ fun BaStudentGuidePage(
                 end = 16.dp
             )
         ) {
-            item { SmallTitle("档案") }
+            item { SmallTitle(activeBottomTab.label) }
             item { Spacer(modifier = Modifier.height(14.dp)) }
 
             if (sourceUrl.isBlank()) {
@@ -981,205 +1071,202 @@ fun BaStudentGuidePage(
                     )
                 }
             } else {
-                item {
-                    val guide = info
-                    val profileItems = guide?.buildProfileMetaItems().orEmpty()
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.defaultColors(
-                            color = Color(0x223B82F6),
-                            contentColor = MiuixTheme.colorScheme.onBackground
-                        ),
-                        onClick = {}
-                    ) {
-                        if (showLoadingText(loading = loading, hasInfo = guide != null)) {
-                            Text(
-                                text = "同步中...",
-                                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
-                            )
-                        }
-                        if (guide != null) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                when (activeBottomTab) {
+                    GuideBottomTab.Archive -> {
+                        item {
+                            val guide = info
+                            val profileItems = guide?.buildProfileMetaItems().orEmpty()
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.defaultColors(
+                                    color = Color(0x223B82F6),
+                                    contentColor = MiuixTheme.colorScheme.onBackground
+                                ),
+                                onClick = {}
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Box(modifier = Modifier.width(112.dp)) {
-                                        if (guide.imageUrl.isNotBlank()) {
-                                            GuideRemoteImage(
-                                                imageUrl = guide.imageUrl,
-                                                imageHeight = 152.dp
-                                            )
-                                        } else {
-                                            Text(
-                                                text = "暂无图片",
-                                                color = MiuixTheme.colorScheme.onBackgroundVariant
-                                            )
-                                        }
-                                    }
+                                if (showLoadingText(loading = loading, hasInfo = guide != null)) {
+                                    Text(
+                                        text = "同步中...",
+                                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
+                                    )
+                                }
+                                if (guide != null) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(152.dp),
-                                        verticalArrangement = Arrangement.SpaceBetween
+                                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        profileItems.forEach { item ->
-                                            GuideProfileMetaLine(item)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalAlignment = Alignment.Top
+                                        ) {
+                                            Box(modifier = Modifier.width(112.dp)) {
+                                                if (guide.imageUrl.isNotBlank()) {
+                                                    GuideRemoteImage(
+                                                        imageUrl = guide.imageUrl,
+                                                        imageHeight = 152.dp
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        text = "暂无图片",
+                                                        color = MiuixTheme.colorScheme.onBackgroundVariant
+                                                    )
+                                                }
+                                            }
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(152.dp),
+                                                verticalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                profileItems.forEach { item ->
+                                                    GuideProfileMetaLine(item)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        item { Spacer(modifier = Modifier.height(10.dp)) }
+                        item {
+                            val guide = info
+                            val combatItems = guide?.buildCombatMetaItems().orEmpty()
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.defaultColors(
+                                    color = Color(0x223B82F6),
+                                    contentColor = MiuixTheme.colorScheme.onBackground
+                                ),
+                                onClick = {}
+                            ) {
+                                if (showLoadingText(loading = loading, hasInfo = guide != null)) {
+                                    Text(
+                                        text = "同步中...",
+                                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
+                                    )
+                                }
+                                if (guide != null) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        combatItems.forEachIndexed { index, item ->
+                                            GuideCombatMetaTile(
+                                                item = item,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            if (index < combatItems.lastIndex) {
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                item { Spacer(modifier = Modifier.height(10.dp)) }
-                item {
-                    val guide = info
-                    val combatItems = guide?.buildCombatMetaItems().orEmpty()
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.defaultColors(
-                            color = Color(0x223B82F6),
-                            contentColor = MiuixTheme.colorScheme.onBackground
-                        ),
-                        onClick = {}
-                    ) {
-                        if (showLoadingText(loading = loading, hasInfo = guide != null)) {
-                            Text(
-                                text = "同步中...",
-                                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
+
+                    else -> {
+                        item {
+                            FrostedBlock(
+                                backdrop = backdrop,
+                                title = activeBottomTab.label,
+                                subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
+                                accent = accent,
+                                content = {
+                                    if (showLoadingText(loading = loading, hasInfo = info != null)) {
+                                        Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                    error?.takeIf { it.isNotBlank() }?.let {
+                                        Text(
+                                            text = it,
+                                            color = MiuixTheme.colorScheme.error,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                    val guide = info
+                                    if (guide != null) {
+                                        val skillRows = guide.skillRowsForDisplay()
+                                        val profileRows = guide.profileRowsForDisplay()
+                                        val visibleSkillRows = skillRows.filterNot { shouldHideMovedHeaderRow(it) }
+                                        val visibleProfileRows = profileRows.filterNot { shouldHideMovedHeaderRow(it) }
+                                        val growthRows = guide.growthRowsForDisplay()
+                                        val galleryItems = if (guide.galleryItems.isNotEmpty()) {
+                                            guide.galleryItems
+                                        } else {
+                                            listOfNotNull(
+                                                guide.imageUrl
+                                                    .takeIf { it.isNotBlank() }
+                                                    ?.let { BaGuideGalleryItem("立绘", it) }
+                                            )
+                                        }
+                                        val activeGuideTab = activeBottomTab.guideTab
+
+                                        Text(
+                                            text = guide.summary.ifBlank { guide.description },
+                                            color = MiuixTheme.colorScheme.onBackground
+                                        )
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        when (activeGuideTab) {
+                                            GuideTab.Skills -> {
+                                                GuideRowsSection(
+                                                    rows = visibleSkillRows,
+                                                    emptyText = "暂未解析到角色技能数据。"
+                                                )
+                                            }
+
+                                            GuideTab.Profile -> {
+                                                GuideRowsSection(
+                                                    rows = visibleProfileRows,
+                                                    emptyText = "暂未解析到学生档案数据。"
+                                                )
+                                            }
+
+                                            GuideTab.Voice -> {
+                                                GuideRowsSection(
+                                                    rows = guide.voiceRows,
+                                                    emptyText = "语音台词解析中，当前版本先完善其他栏目。"
+                                                )
+                                            }
+
+                                            GuideTab.Gallery -> {
+                                                GuideGallerySection(
+                                                    items = galleryItems,
+                                                    emptyText = "暂未解析到影画鉴赏内容。"
+                                                )
+                                            }
+
+                                            GuideTab.Simulate -> {
+                                                GuideRowsSection(
+                                                    rows = growthRows,
+                                                    emptyText = "暂未解析到养成模拟数据。"
+                                                )
+                                            }
+
+                                            else -> {}
+                                        }
+
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        MiuixInfoItem(
+                                            "来源",
+                                            guide.sourceUrl,
+                                            onClick = { openExternal(guide.sourceUrl) }
+                                        )
+                                    }
+                                }
                             )
                         }
-                        if (guide != null) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                combatItems.forEachIndexed { index, item ->
-                                    GuideCombatMetaTile(
-                                        item = item,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                    if (index < combatItems.lastIndex) {
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                    }
-                                }
-                            }
-                        }
                     }
-                }
-                item { Spacer(modifier = Modifier.height(10.dp)) }
-                item {
-                    FrostedBlock(
-                        backdrop = backdrop,
-                        title = "图鉴详情",
-                        subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
-                        accent = accent,
-                        content = {
-                            if (showLoadingText(loading = loading, hasInfo = info != null)) {
-                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                            error?.takeIf { it.isNotBlank() }?.let {
-                                Text(
-                                    text = it,
-                                    color = MiuixTheme.colorScheme.error,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                            val guide = info
-                            if (guide != null) {
-                                val skillRows = guide.skillRowsForDisplay()
-                                val profileRows = guide.profileRowsForDisplay()
-                                val visibleSkillRows = skillRows.filterNot { shouldHideMovedHeaderRow(it) }
-                                val visibleProfileRows = profileRows.filterNot { shouldHideMovedHeaderRow(it) }
-                                val growthRows = guide.growthRowsForDisplay()
-
-                                Text(
-                                    text = guide.summary.ifBlank { guide.description },
-                                    color = MiuixTheme.colorScheme.onBackground
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                val tabs = GuideTab.entries
-                                val activeTab = tabs.getOrElse(selectedTabIndex) { GuideTab.Profile }
-                                val galleryItems = if (guide.galleryItems.isNotEmpty()) {
-                                    guide.galleryItems
-                                } else {
-                                    listOfNotNull(
-                                        guide.imageUrl
-                                            .takeIf { it.isNotBlank() }
-                                            ?.let { BaGuideGalleryItem("立绘", it) }
-                                    )
-                                }
-
-                                TabRow(
-                                    tabs = tabs.map { it.label },
-                                    selectedTabIndex = tabs.indexOf(activeTab).coerceAtLeast(0),
-                                    onTabSelected = { index ->
-                                        selectedTabIndex = index
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                when (activeTab) {
-                                    GuideTab.Skills -> {
-                                        GuideRowsSection(
-                                            rows = visibleSkillRows,
-                                            emptyText = "暂未解析到角色技能数据。"
-                                        )
-                                    }
-
-                                    GuideTab.Profile -> {
-                                        GuideRowsSection(
-                                            rows = visibleProfileRows,
-                                            emptyText = "暂未解析到学生档案数据。"
-                                        )
-                                    }
-
-                                    GuideTab.Voice -> {
-                                        GuideRowsSection(
-                                            rows = guide.voiceRows,
-                                            emptyText = "语音台词解析中，当前版本先完善其他栏目。"
-                                        )
-                                    }
-
-                                    GuideTab.Gallery -> {
-                                        GuideGallerySection(
-                                            items = galleryItems,
-                                            emptyText = "暂未解析到影画鉴赏内容。"
-                                        )
-                                    }
-
-                                    GuideTab.Simulate -> {
-                                        GuideRowsSection(
-                                            rows = growthRows,
-                                            emptyText = "暂未解析到养成模拟数据。"
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-                                MiuixInfoItem(
-                                    "来源",
-                                    guide.sourceUrl,
-                                    onClick = { openExternal(guide.sourceUrl) }
-                                )
-                            }
-                        }
-                    )
                 }
             }
         }
@@ -1188,6 +1275,40 @@ fun BaStudentGuidePage(
 
 private fun showLoadingText(loading: Boolean, hasInfo: Boolean): Boolean {
     return loading && hasInfo
+}
+
+private fun BaStudentGuideInfo.bottomTabIconUrl(tab: GuideBottomTab): String {
+    return when (tab) {
+        GuideBottomTab.Archive -> ""
+        GuideBottomTab.Skills -> skillRowsForDisplay()
+            .firstOrNull { row ->
+                row.imageUrl.isNotBlank() &&
+                    (row.key.contains("技能", ignoreCase = true) || row.key.contains("EX", ignoreCase = true))
+            }
+            ?.imageUrl
+            .orEmpty()
+
+        GuideBottomTab.Profile -> profileRowsForDisplay()
+            .firstOrNull { row ->
+                row.imageUrl.isNotBlank() &&
+                    (row.key.contains("学园", ignoreCase = true) ||
+                        row.key.contains("学院", ignoreCase = true) ||
+                        row.key.contains("稀有度", ignoreCase = true) ||
+                        row.key.contains("头像", ignoreCase = true))
+            }
+            ?.imageUrl
+            .orEmpty()
+
+        GuideBottomTab.Voice -> voiceRows.firstOrNull { it.imageUrl.isNotBlank() }?.imageUrl.orEmpty()
+        GuideBottomTab.Gallery -> galleryItems.firstOrNull()?.imageUrl.orEmpty()
+        GuideBottomTab.Simulate -> growthRowsForDisplay()
+            .firstOrNull { row ->
+                row.imageUrl.isNotBlank() &&
+                    !row.key.contains("材料", ignoreCase = true)
+            }
+            ?.imageUrl
+            .orEmpty()
+    }
 }
 
 private fun BaStudentGuideInfo.skillRowsForDisplay(): List<BaGuideRow> {
