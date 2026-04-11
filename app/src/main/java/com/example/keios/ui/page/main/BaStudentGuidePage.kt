@@ -1,7 +1,6 @@
 package com.example.keios.ui.page.main
 
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -74,7 +73,8 @@ import com.example.keios.ui.page.main.student.weaponCardForDisplay
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
-import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.LiquidActionBar
+import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
@@ -92,6 +92,7 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Share
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -193,16 +194,24 @@ fun BaStudentGuidePage(
         }
     }
 
-    fun openExternal(url: String) {
-        val target = normalizeGuideUrl(url)
-        if (target.isBlank()) return
+    fun shareSource() {
+        val raw = info?.sourceUrl?.ifBlank { sourceUrl } ?: sourceUrl
+        val target = normalizeGuideUrl(raw)
+        if (target.isBlank()) {
+            Toast.makeText(context, "暂无可分享的来源链接", Toast.LENGTH_SHORT).show()
+            return
+        }
         runCatching {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target)).apply {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, target)
+            }
+            val chooser = Intent.createChooser(intent, "分享来源").apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(intent)
+            context.startActivity(chooser)
         }.onFailure {
-            Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "分享失败", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -289,15 +298,21 @@ fun BaStudentGuidePage(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            refreshSignal += 1
-                        }
-                    ) {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Refresh,
-                            contentDescription = "刷新",
-                            tint = MiuixTheme.colorScheme.onSurface
+                    Box {
+                        LiquidActionBar(
+                            backdrop = backdrop,
+                            items = listOf(
+                                LiquidActionItem(
+                                    icon = MiuixIcons.Regular.Share,
+                                    contentDescription = "分享来源",
+                                    onClick = ::shareSource
+                                ),
+                                LiquidActionItem(
+                                    icon = MiuixIcons.Regular.Refresh,
+                                    contentDescription = "刷新",
+                                    onClick = { refreshSignal += 1 }
+                                )
+                            )
                         )
                     }
                 }
@@ -593,30 +608,6 @@ fun BaStudentGuidePage(
                                     )
                                 }
                             }
-
-                            item { Spacer(modifier = Modifier.height(10.dp)) }
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.defaultColors(
-                                        color = Color(0x223B82F6),
-                                        contentColor = MiuixTheme.colorScheme.onBackground
-                                    ),
-                                    onClick = {}
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                                    ) {
-                                        MiuixInfoItem(
-                                            key = "来源",
-                                            value = guide.sourceUrl,
-                                            onClick = { openExternal(guide.sourceUrl) }
-                                        )
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -714,30 +705,6 @@ fun BaStudentGuidePage(
                                     }
                                 }
                             }
-
-                            item { Spacer(modifier = Modifier.height(10.dp)) }
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.defaultColors(
-                                        color = Color(0x223B82F6),
-                                        contentColor = MiuixTheme.colorScheme.onBackground
-                                    ),
-                                    onClick = {}
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                                    ) {
-                                        MiuixInfoItem(
-                                            key = "来源",
-                                            value = guide.sourceUrl,
-                                            onClick = { openExternal(guide.sourceUrl) }
-                                        )
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -815,13 +782,6 @@ fun BaStudentGuidePage(
 
                                             else -> {}
                                         }
-
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        MiuixInfoItem(
-                                            "来源",
-                                            guide.sourceUrl,
-                                            onClick = { openExternal(guide.sourceUrl) }
-                                        )
                                     }
                                 }
                             )
