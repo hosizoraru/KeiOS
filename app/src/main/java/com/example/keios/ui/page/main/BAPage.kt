@@ -891,6 +891,8 @@ private object BASettingsStore {
     private const val KEY_COFFEE_HEADPAT_MS = "coffee_headpat_ms"
     private const val KEY_COFFEE_INVITE1_USED_MS = "coffee_invite1_used_ms"
     private const val KEY_COFFEE_INVITE2_USED_MS = "coffee_invite2_used_ms"
+    private const val KEY_LIST_SCROLL_INDEX = "list_scroll_index"
+    private const val KEY_LIST_SCROLL_OFFSET = "list_scroll_offset"
 
     private const val DEFAULT_SERVER_INDEX = 2
     private const val DEFAULT_CAFE_LEVEL = 10
@@ -1109,6 +1111,15 @@ private object BASettingsStore {
     fun saveCoffeeInvite2UsedMs(epochMs: Long) {
         kv().encode(KEY_COFFEE_INVITE2_USED_MS, epochMs.coerceAtLeast(0L))
     }
+
+    fun loadListScrollIndex(): Int = kv().decodeInt(KEY_LIST_SCROLL_INDEX, 0).coerceAtLeast(0)
+
+    fun loadListScrollOffset(): Int = kv().decodeInt(KEY_LIST_SCROLL_OFFSET, 0).coerceAtLeast(0)
+
+    fun saveListScrollState(index: Int, offset: Int) {
+        kv().encode(KEY_LIST_SCROLL_INDEX, index.coerceAtLeast(0))
+        kv().encode(KEY_LIST_SCROLL_OFFSET, offset.coerceAtLeast(0))
+    }
 }
 
 @Composable
@@ -1119,7 +1130,12 @@ fun BAPage(
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val listState = rememberLazyListState()
+    val initialScrollIndex = remember { BASettingsStore.loadListScrollIndex() }
+    val initialScrollOffset = remember { BASettingsStore.loadListScrollOffset() }
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = initialScrollIndex,
+        initialFirstVisibleItemScrollOffset = initialScrollOffset
+    )
     val scrollBehavior = MiuixScrollBehavior()
     val surfaceColor = MiuixTheme.colorScheme.surface
     val backdrop: LayerBackdrop = rememberLayerBackdrop {
@@ -1139,7 +1155,26 @@ fun BAPage(
     var showCafeLevelPopup by remember { mutableStateOf(false) }
     var showCalendarIntervalPopup by remember { mutableStateOf(false) }
 
-    var serverIndex by remember { mutableIntStateOf(BASettingsStore.loadServerIndex()) }
+    val initialServerIndex = remember { BASettingsStore.loadServerIndex() }
+    val initialSnapshotNowMs = remember { System.currentTimeMillis() }
+    val initialCalendarCache = remember(initialServerIndex) {
+        BASettingsStore.loadCalendarCache(initialServerIndex)
+    }
+    val initialPoolCache = remember(initialServerIndex) {
+        BASettingsStore.loadPoolCache(initialServerIndex)
+    }
+    val initialCalendarEntries = remember(initialCalendarCache, initialSnapshotNowMs) {
+        runCatching {
+            decodeBaCalendarEntries(initialCalendarCache.first, initialSnapshotNowMs)
+        }.getOrElse { emptyList() }
+    }
+    val initialPoolEntries = remember(initialPoolCache, initialSnapshotNowMs) {
+        runCatching {
+            decodeBaPoolEntries(initialPoolCache.first, initialSnapshotNowMs)
+        }.getOrElse { emptyList() }
+    }
+
+    var serverIndex by remember { mutableIntStateOf(initialServerIndex) }
     var cafeLevel by remember { mutableIntStateOf(BASettingsStore.loadCafeLevel()) }
     var cafeStoredAp by remember { mutableStateOf(BASettingsStore.loadCafeStoredAp()) }
     var cafeLastHourMs by remember { mutableLongStateOf(BASettingsStore.loadCafeLastHourMs()) }
@@ -1157,15 +1192,15 @@ fun BAPage(
     var coffeeInvite1UsedMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeInvite1UsedMs()) }
     var coffeeInvite2UsedMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeInvite2UsedMs()) }
     var uiNowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var baCalendarEntries by remember { mutableStateOf<List<BaCalendarEntry>>(emptyList()) }
+    var baCalendarEntries by remember { mutableStateOf(initialCalendarEntries) }
     var baCalendarLoading by remember { mutableStateOf(false) }
     var baCalendarError by remember { mutableStateOf<String?>(null) }
-    var baCalendarLastSyncMs by remember { mutableLongStateOf(0L) }
+    var baCalendarLastSyncMs by remember { mutableLongStateOf(initialCalendarCache.second) }
     var baCalendarReloadSignal by remember { mutableIntStateOf(0) }
-    var baPoolEntries by remember { mutableStateOf<List<BaPoolEntry>>(emptyList()) }
+    var baPoolEntries by remember { mutableStateOf(initialPoolEntries) }
     var baPoolLoading by remember { mutableStateOf(false) }
     var baPoolError by remember { mutableStateOf<String?>(null) }
-    var baPoolLastSyncMs by remember { mutableLongStateOf(0L) }
+    var baPoolLastSyncMs by remember { mutableLongStateOf(initialPoolCache.second) }
     var baPoolReloadSignal by remember { mutableIntStateOf(0) }
     var showEndedPools by remember { mutableStateOf(BASettingsStore.loadPoolShowEnded()) }
     var showEndedActivities by remember { mutableStateOf(BASettingsStore.loadActivityShowEnded()) }
@@ -1600,6 +1635,15 @@ fun BAPage(
 
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
+    }
+
+    DisposableEffect(listState) {
+        onDispose {
+            BASettingsStore.saveListScrollState(
+                index = listState.firstVisibleItemIndex,
+                offset = listState.firstVisibleItemScrollOffset
+            )
+        }
     }
 
     LaunchedEffect(scrollToTopSignal) {
@@ -2598,7 +2642,13 @@ fun BAPage(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .combinedClickable(
-                                            onClick = { onOpenPoolStudentGuide(pool.linkUrl) },
+                                            onClick = {
+                                                BASettingsStore.saveListScrollState(
+                                                    index = listState.firstVisibleItemIndex,
+                                                    offset = listState.firstVisibleItemScrollOffset
+                                                )
+                                                onOpenPoolStudentGuide(pool.linkUrl)
+                                            },
                                             onLongClick = { openCalendarLink(pool.linkUrl) }
                                         ),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
