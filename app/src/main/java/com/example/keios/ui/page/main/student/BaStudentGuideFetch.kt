@@ -175,8 +175,19 @@ private fun parseVoiceDataFromBaseData(
     sourceUrl: String
 ): Pair<List<String>, List<BaGuideVoiceEntry>> {
     val languageHeaders = mutableListOf<String>()
+    val rawLanguageHeaders = mutableListOf<String>()
     val entries = mutableListOf<BaGuideVoiceEntry>()
     var inVoiceBlock = false
+
+    fun isJapaneseHeader(value: String): Boolean {
+        val text = value.trim().lowercase()
+        return text.contains("日") || text.contains("jp") || text.contains("jpn")
+    }
+
+    fun isChineseHeader(value: String): Boolean {
+        val text = value.trim().lowercase()
+        return text.contains("中") || text.contains("cn")
+    }
 
     for (i in 0 until baseData.length()) {
         val row = baseData.optJSONArray(i) ?: continue
@@ -184,14 +195,19 @@ private fun parseVoiceDataFromBaseData(
         val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
         if (key == "配音语言") {
             inVoiceBlock = true
+            rawLanguageHeaders.clear()
             languageHeaders.clear()
             for (j in 1 until row.length()) {
                 val cell = row.optJSONObject(j) ?: continue
                 val text = stripHtml(cell.optString("value"))
                 if (text.isNotBlank()) {
-                    languageHeaders += text
+                    rawLanguageHeaders += text
                 }
             }
+            val jpHeader = rawLanguageHeaders.firstOrNull(::isJapaneseHeader) ?: "日配"
+            val cnHeader = rawLanguageHeaders.firstOrNull(::isChineseHeader) ?: "中配"
+            languageHeaders += jpHeader
+            languageHeaders += cnHeader
             continue
         }
         if (!inVoiceBlock) continue
@@ -212,14 +228,16 @@ private fun parseVoiceDataFromBaseData(
             continue
         }
 
-        val texts = mutableListOf<String>()
+        val languageSlotSize = maxOf(rawLanguageHeaders.size, 2)
+        val languageTexts = MutableList(languageSlotSize) { "" }
+        var title = ""
+        var titleAssigned = false
+        var languageCursor = 0
         var audioUrl = ""
         for (j in 1 until row.length()) {
             val cell = row.optJSONObject(j) ?: continue
             val type = cell.optString("type").trim().lowercase()
             val rawValue = cell.optString("value").trim()
-            if (rawValue.isBlank()) continue
-            val text = stripHtml(rawValue)
             val audioFromRaw = extractAudioUrlsFromRaw(sourceUrl, rawValue).firstOrNull().orEmpty()
             if (type == "audio") {
                 val normalized = audioFromRaw.ifBlank { normalizeMediaUrl(sourceUrl, rawValue) }
@@ -231,16 +249,31 @@ private fun parseVoiceDataFromBaseData(
             if (audioUrl.isBlank() && audioFromRaw.isNotBlank()) {
                 audioUrl = audioFromRaw
             }
-            if (text.isNotBlank()) {
-                texts += text
+            val text = stripHtml(rawValue)
+            if (!titleAssigned) {
+                title = text
+                titleAssigned = true
+            } else {
+                if (languageCursor < languageTexts.size) {
+                    languageTexts[languageCursor] = text
+                }
+                languageCursor += 1
             }
         }
-        if (texts.isEmpty() && audioUrl.isBlank()) continue
+
+        val jpIndex = rawLanguageHeaders.indexOfFirst(::isJapaneseHeader).takeIf { it >= 0 } ?: 0
+        val cnIndex = rawLanguageHeaders.indexOfFirst(::isChineseHeader).takeIf { it >= 0 }
+            ?: if (languageTexts.size > 1) 1 else 0
+        val jpText = languageTexts.getOrNull(jpIndex).orEmpty().trim()
+        val cnText = languageTexts.getOrNull(cnIndex).orEmpty().trim()
+
+        // 过滤网站预留但没有实际台词文本的占位条目。
+        if (jpText.isBlank() && cnText.isBlank()) continue
 
         entries += BaGuideVoiceEntry(
             section = key,
-            title = texts.firstOrNull().orEmpty(),
-            lines = texts.drop(1),
+            title = title,
+            lines = listOf(jpText, cnText),
             audioUrl = audioUrl
         )
     }

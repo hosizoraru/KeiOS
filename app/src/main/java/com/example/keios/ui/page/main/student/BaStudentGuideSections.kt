@@ -423,11 +423,15 @@ fun GuideSkillCardItem(
 fun GuideVoiceLanguageCard(
     headers: List<String>,
     backdrop: Backdrop?,
-    selectedIndex: Int,
-    onSelectIndex: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (headers.isEmpty()) return
+    val visibleHeaders = headers
+        .filterNot { header ->
+            val value = header.lowercase()
+            value.contains("韩") || value.contains("kr") || value.contains("korean")
+        }
+        .ifEmpty { listOf("日配", "中配") }
+        .take(2)
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.defaultColors(
@@ -447,14 +451,14 @@ fun GuideVoiceLanguageCard(
                 text = "配音",
                 color = MiuixTheme.colorScheme.onBackgroundVariant
             )
-            headers.forEachIndexed { index, header ->
-                val selected = index == selectedIndex
+            visibleHeaders.forEach { header ->
                 GlassTextButton(
                     backdrop = backdrop,
-                    text = if (selected) "已选 $header" else header,
-                    textColor = if (selected) Color(0xFF22C55E) else Color(0xFF3B82F6),
+                    text = header,
+                    enabled = false,
+                    textColor = Color(0xFF3B82F6),
                     bottomBarStyle = true,
-                    onClick = { onSelectIndex(index) }
+                    onClick = {}
                 )
             }
         }
@@ -465,7 +469,6 @@ fun GuideVoiceLanguageCard(
 fun GuideVoiceEntryCard(
     entry: BaGuideVoiceEntry,
     languageHeaders: List<String>,
-    selectedLanguageIndex: Int,
     backdrop: Backdrop?,
     isPlaying: Boolean,
     onTogglePlay: (String) -> Unit,
@@ -474,9 +477,12 @@ fun GuideVoiceEntryCard(
     val labels = if (languageHeaders.isNotEmpty()) {
         languageHeaders
     } else {
-        listOf("日配", "中配", "韩配")
+        listOf("日配", "中配")
     }
-    val activeLanguageIndex = selectedLanguageIndex.coerceAtLeast(0)
+    val jpLabel = labels.getOrNull(0) ?: "日配"
+    val cnLabel = labels.getOrNull(1) ?: "中配"
+    val jpText = entry.lines.getOrNull(0).orEmpty().trim()
+    val cnText = entry.lines.getOrNull(1).orEmpty().trim()
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.defaultColors(
@@ -523,20 +529,20 @@ fun GuideVoiceEntryCard(
                 }
             }
 
-            if (entry.lines.isNotEmpty()) {
-                val line = entry.lines.getOrNull(activeLanguageIndex).orEmpty()
+            val compareLines = listOf(jpLabel to jpText, cnLabel to cnText)
+            compareLines.forEach { (label, line) ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = labels.getOrNull(activeLanguageIndex) ?: "配音${activeLanguageIndex + 1}",
+                        text = label,
                         color = MiuixTheme.colorScheme.onBackgroundVariant,
                         modifier = Modifier.width(58.dp)
                     )
                     Text(
-                        text = line.ifBlank { "该语言暂无台词文本" },
+                        text = line.ifBlank { "暂无台词文本" },
                         color = MiuixTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )

@@ -113,19 +113,21 @@ fun BaStudentGuidePage(
     var refreshSignal by remember { mutableStateOf(0) }
     var selectedBottomTabIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(0) }
     var playingVoiceUrl by rememberSaveable(sourceUrl) { mutableStateOf("") }
-    var selectedVoiceLanguageIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(-1) }
     val bottomTabs = GuideBottomTab.entries
     val activeBottomTab = bottomTabs.getOrElse(selectedBottomTabIndex) { GuideBottomTab.Archive }
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val pageTitle = info?.title?.ifBlank { "学生图鉴" } ?: "学生图鉴"
     val voicePlayer = remember(context, sourceUrl) {
-        val referer = normalizeGuideUrl(sourceUrl).ifBlank { "https://www.gamekee.com/" }
+        // GameKee CDN 对语音资源的防盗链策略更偏向根站 Referer，
+        // 使用详情页 Referer 容易返回 567（EdgeOne 拦截页）。
+        val referer = "https://www.gamekee.com/"
         val desktopUa =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
         val defaultHeaders = mapOf(
             "Accept" to "*/*",
             "Accept-Language" to "zh-CN",
             "Referer" to referer,
+            "Origin" to "https://www.gamekee.com",
             "User-Agent" to desktopUa,
             "device-num" to "1",
             "game-alias" to "ba",
@@ -207,15 +209,6 @@ fun BaStudentGuidePage(
         }
     }
 
-    fun defaultVoiceLanguageIndex(headers: List<String>): Int {
-        if (headers.isEmpty()) return 0
-        val jpIndex = headers.indexOfFirst { label ->
-            val value = label.lowercase()
-            value.contains("日") || value.contains("jp") || value.contains("jpn")
-        }
-        return if (jpIndex >= 0) jpIndex else 0
-    }
-
     LaunchedEffect(sourceUrl, refreshSignal) {
         if (sourceUrl.isBlank()) return@LaunchedEffect
         val cached = BaStudentGuideStore.loadInfo(sourceUrl)
@@ -232,14 +225,6 @@ fun BaStudentGuidePage(
             error = if (info != null) "网络请求失败，已显示本地缓存" else "图鉴信息加载失败"
         }
         loading = false
-    }
-
-    LaunchedEffect(info?.voiceLanguageHeaders) {
-        val headers = info?.voiceLanguageHeaders.orEmpty()
-        if (headers.isEmpty()) return@LaunchedEffect
-        if (selectedVoiceLanguageIndex !in headers.indices) {
-            selectedVoiceLanguageIndex = defaultVoiceLanguageIndex(headers)
-        }
     }
 
     Scaffold(
@@ -603,7 +588,9 @@ fun BaStudentGuidePage(
                             }
                         } else {
                             val voiceEntries = guide.voiceEntries.filter {
-                                it.section.isNotBlank() || it.title.isNotBlank() || it.lines.isNotEmpty() || it.audioUrl.isNotBlank()
+                                val jp = it.lines.getOrNull(0).orEmpty().trim()
+                                val cn = it.lines.getOrNull(1).orEmpty().trim()
+                                jp.isNotBlank() || cn.isNotBlank()
                             }
 
                             if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
@@ -643,9 +630,7 @@ fun BaStudentGuidePage(
                                 item {
                                     GuideVoiceLanguageCard(
                                         headers = guide.voiceLanguageHeaders,
-                                        backdrop = backdrop,
-                                        selectedIndex = selectedVoiceLanguageIndex.coerceAtLeast(0),
-                                        onSelectIndex = { selectedVoiceLanguageIndex = it }
+                                        backdrop = backdrop
                                     )
                                 }
                                 item { Spacer(modifier = Modifier.height(10.dp)) }
@@ -657,7 +642,6 @@ fun BaStudentGuidePage(
                                         GuideVoiceEntryCard(
                                             entry = entry,
                                             languageHeaders = guide.voiceLanguageHeaders,
-                                            selectedLanguageIndex = selectedVoiceLanguageIndex.coerceAtLeast(0),
                                             backdrop = backdrop,
                                             isPlaying = normalizeGuideUrl(entry.audioUrl) == playingVoiceUrl && voicePlayer.isPlaying,
                                             onTogglePlay = ::toggleVoicePlayback
