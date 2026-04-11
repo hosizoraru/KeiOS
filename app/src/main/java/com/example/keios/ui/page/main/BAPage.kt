@@ -1165,6 +1165,7 @@ private object BASettingsStore {
 fun BAPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    onOpenPoolStudentGuide: (String) -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -2627,7 +2628,7 @@ fun BAPage(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .combinedClickable(
-                                            onClick = { openCalendarLink(pool.linkUrl) },
+                                            onClick = { onOpenPoolStudentGuide(pool.linkUrl) },
                                             onLongClick = { openCalendarLink(pool.linkUrl) }
                                         ),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)

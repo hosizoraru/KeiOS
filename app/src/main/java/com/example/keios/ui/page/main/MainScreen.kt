@@ -130,6 +130,11 @@ fun MainScreen(
                     onBack = { navigator.pop() }
                 )
             }
+            entry<KeiosRoute.BaStudentGuide> {
+                BaStudentGuidePage(
+                    onBack = { navigator.pop() }
+                )
+            }
         }
     }
 
@@ -376,6 +381,13 @@ private fun MainPagerLayout(
                         BAPage(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = baScrollToTopSignal,
+                            onOpenPoolStudentGuide = { sourceUrl ->
+                                val target = sourceUrl.trim()
+                                if (target.isNotBlank()) {
+                                    BaStudentGuideStore.setCurrentUrl(target)
+                                    navigator.push(KeiosRoute.BaStudentGuide)
+                                }
+                            },
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
                             }
