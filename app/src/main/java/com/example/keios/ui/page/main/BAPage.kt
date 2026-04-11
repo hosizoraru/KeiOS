@@ -5,12 +5,16 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -33,12 +38,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,12 +70,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.DropdownImpl
+import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
@@ -83,9 +92,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import java.text.SimpleDateFormat
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -251,9 +260,10 @@ private const val BA_CALENDAR_ENDPOINT = "https://www.gamekee.com/v1/activity/pa
 private const val BA_CALENDAR_CONNECT_TIMEOUT_MS = 10_000
 private const val BA_CALENDAR_READ_TIMEOUT_MS = 10_000
 private const val BA_CALENDAR_MAX_ITEMS = 6
+private const val BA_CALENDAR_CACHE_SCHEMA_VERSION = 3
 private const val BA_POOL_ENDPOINT = "https://www.gamekee.com/v1/cardPool/query-list"
 private const val BA_POOL_MAX_ITEMS = 6
-private const val BA_POOL_CACHE_SCHEMA_VERSION = 4
+private const val BA_POOL_CACHE_SCHEMA_VERSION = 5
 
 private val BA_POOL_TAGS = listOf(
     5 to "常驻",
@@ -274,6 +284,7 @@ private data class BaCalendarEntry(
     val beginAtMs: Long,
     val endAtMs: Long,
     val linkUrl: String,
+    val imageUrl: String,
     val isRunning: Boolean
 )
 
@@ -285,6 +296,7 @@ private data class BaPoolEntry(
     val startAtMs: Long,
     val endAtMs: Long,
     val linkUrl: String,
+    val imageUrl: String,
     val isRunning: Boolean
 )
 
@@ -301,6 +313,133 @@ private fun normalizeGameKeeLink(url: String): String {
     if (raw.isBlank()) return "https://www.gamekee.com/ba/huodong"
     if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
     return if (raw.startsWith("/")) "https://www.gamekee.com$raw" else "https://www.gamekee.com/$raw"
+}
+
+private fun normalizeGameKeeImageLink(url: String): String {
+    val raw = url.trim()
+    if (raw.isBlank()) return ""
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
+    if (raw.startsWith("//")) return "https:$raw"
+    return if (raw.startsWith("/")) "https://www.gamekee.com$raw" else "https://www.gamekee.com/$raw"
+}
+
+private fun looksLikeImageUrl(raw: String): Boolean {
+    val value = raw.lowercase(Locale.ROOT)
+    if (value.isBlank()) return false
+    val hasProtocol = value.startsWith("http://") || value.startsWith("https://") || value.startsWith("//") || value.startsWith("/")
+    if (!hasProtocol) return false
+    if (value.endsWith(".jpg") || value.endsWith(".jpeg") || value.endsWith(".png") || value.endsWith(".webp") || value.endsWith(".gif")) {
+        return true
+    }
+    return value.contains("image") || value.contains("img") || value.contains("upload") || value.contains("cdn")
+}
+
+private fun findImageLinkRecursively(any: Any?, depth: Int = 0): String {
+    if (any == null || depth > 3) return ""
+    return when (any) {
+        is String -> {
+            val normalized = normalizeGameKeeImageLink(any)
+            if (looksLikeImageUrl(normalized)) normalized else ""
+        }
+        is JSONObject -> {
+            val keys = any.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val found = findImageLinkRecursively(any.opt(key), depth + 1)
+                if (found.isNotBlank()) return found
+            }
+            ""
+        }
+        is JSONArray -> {
+            for (i in 0 until any.length()) {
+                val found = findImageLinkRecursively(any.opt(i), depth + 1)
+                if (found.isNotBlank()) return found
+            }
+            ""
+        }
+        else -> ""
+    }
+}
+
+private fun extractGameKeeImageLink(item: JSONObject): String {
+    val directKeys = listOf(
+        "image_url", "img_url", "cover_url", "cover", "cover_img", "cover_image",
+        "topic_img", "topic_image", "title_img", "main_img", "list_img", "small_img",
+        "image", "img", "pic_url", "pic", "thumb", "thumbnail", "avatar", "banner", "icon", "logo"
+    )
+    directKeys.forEach { key ->
+        val value = normalizeGameKeeImageLink(item.optString(key))
+        if (looksLikeImageUrl(value)) return value
+    }
+
+    val nestedKeys = listOf("cover", "image", "thumb", "thumbnail", "banner", "icon")
+    val nestedValueKeys = listOf("url", "src", "image_url", "img_url", "cover", "thumb")
+    nestedKeys.forEach { key ->
+        val nested = item.optJSONObject(key) ?: return@forEach
+        nestedValueKeys.forEach { nestedKey ->
+            val value = normalizeGameKeeImageLink(nested.optString(nestedKey))
+            if (value.isNotBlank()) return value
+        }
+    }
+
+    val images = item.optJSONArray("images")
+    if (images != null) {
+        for (index in 0 until images.length()) {
+            val imageObj = images.optJSONObject(index) ?: continue
+            nestedValueKeys.forEach { nestedKey ->
+                val value = normalizeGameKeeImageLink(imageObj.optString(nestedKey))
+                if (value.isNotBlank()) return value
+            }
+        }
+    }
+    return findImageLinkRecursively(item)
+}
+
+@Composable
+private fun GameKeeCoverImage(
+    imageUrl: String,
+    modifier: Modifier = Modifier
+) {
+    val normalizedUrl = remember(imageUrl) { normalizeGameKeeImageLink(imageUrl) }
+    if (normalizedUrl.isBlank()) return
+
+    val bitmap by produceState<Bitmap?>(initialValue = null, normalizedUrl) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val conn = (URL(normalizedUrl).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = BA_CALENDAR_CONNECT_TIMEOUT_MS
+                    readTimeout = BA_CALENDAR_READ_TIMEOUT_MS
+                    setRequestProperty("Accept", "image/*,*/*")
+                    setRequestProperty("User-Agent", "Mozilla/5.0 (Android) KeiOS/1.0")
+                    setRequestProperty("Referer", "https://www.gamekee.com/")
+                }
+                try {
+                    val code = conn.responseCode
+                    if (code !in 200..299) return@runCatching null
+                    conn.inputStream.use { BitmapFactory.decodeStream(it) }
+                } finally {
+                    conn.disconnect()
+                }
+            }.getOrNull()
+        }
+    }
+
+    val rendered = bitmap ?: return
+    val aspectRatioValue = remember(rendered.width, rendered.height) {
+        val w = rendered.width.coerceAtLeast(1)
+        val h = rendered.height.coerceAtLeast(1)
+        (w.toFloat() / h.toFloat()).coerceIn(1.0f, 2.4f)
+    }
+    Image(
+        bitmap = rendered.asImageBitmap(),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(aspectRatioValue)
+            .clip(RoundedCornerShape(12.dp))
+    )
 }
 
 private fun parsePoolTagIds(raw: String): List<Int> {
@@ -369,6 +508,7 @@ private fun fetchBaCalendarEntries(serverIndex: Int, nowMs: Long = System.curren
                 beginAtMs = beginAtMs,
                 endAtMs = endAtMs,
                 linkUrl = normalizeGameKeeLink(item.optString("link_url")),
+                imageUrl = extractGameKeeImageLink(item),
                 isRunning = nowMs in beginAtMs until endAtMs
             )
         }
@@ -391,7 +531,8 @@ private fun normalizeBaCalendarEntries(entries: List<BaCalendarEntry>, nowMs: Lo
                 beginAtMs = beginAtMs,
                 endAtMs = endAtMs,
                 isRunning = nowMs in beginAtMs until endAtMs,
-                linkUrl = normalizeGameKeeLink(entry.linkUrl)
+                linkUrl = normalizeGameKeeLink(entry.linkUrl),
+                imageUrl = normalizeGameKeeImageLink(entry.imageUrl)
             )
         }
         .filter { it.endAtMs > nowMs }
@@ -418,6 +559,7 @@ private fun encodeBaCalendarEntries(entries: List<BaCalendarEntry>): String {
                 put("beginAtMs", item.beginAtMs)
                 put("endAtMs", item.endAtMs)
                 put("linkUrl", item.linkUrl)
+                put("imageUrl", item.imageUrl)
             }
         )
     }
@@ -443,6 +585,7 @@ private fun decodeBaCalendarEntries(raw: String, nowMs: Long = System.currentTim
             beginAtMs = beginAtMs,
             endAtMs = endAtMs,
             linkUrl = normalizeGameKeeLink(obj.optString("linkUrl")),
+            imageUrl = normalizeGameKeeImageLink(obj.optString("imageUrl")),
             isRunning = nowMs in beginAtMs until endAtMs
         )
     }
@@ -466,7 +609,8 @@ private fun normalizeBaPoolEntries(entries: List<BaPoolEntry>, nowMs: Long = Sys
                 startAtMs = startAtMs,
                 endAtMs = endAtMs,
                 isRunning = nowMs in startAtMs until endAtMs,
-                linkUrl = normalizeGameKeeLink(entry.linkUrl)
+                linkUrl = normalizeGameKeeLink(entry.linkUrl),
+                imageUrl = normalizeGameKeeImageLink(entry.imageUrl)
             )
         }
         .toList()
@@ -569,6 +713,7 @@ private fun fetchBaPoolEntriesByTag(serverIndex: Int, tagId: Int, tagName: Strin
                 startAtMs = startAtMs,
                 endAtMs = endAtMs,
                 linkUrl = normalizeGameKeeLink(item.optString("link_url")),
+                imageUrl = extractGameKeeImageLink(item),
                 isRunning = nowMs in startAtMs until endAtMs
             )
         }
@@ -637,6 +782,7 @@ private fun fetchBaPoolEntriesFromAll(serverIndex: Int, nowMs: Long): List<BaPoo
                 startAtMs = startAtMs,
                 endAtMs = endAtMs,
                 linkUrl = normalizeGameKeeLink(item.optString("link_url")),
+                imageUrl = extractGameKeeImageLink(item),
                 isRunning = isRunning
             )
         }
@@ -683,6 +829,7 @@ private fun encodeBaPoolEntries(entries: List<BaPoolEntry>): String {
                 put("startAtMs", item.startAtMs)
                 put("endAtMs", item.endAtMs)
                 put("linkUrl", item.linkUrl)
+                put("imageUrl", item.imageUrl)
             }
         )
     }
@@ -708,6 +855,7 @@ private fun decodeBaPoolEntries(raw: String, nowMs: Long = System.currentTimeMil
             startAtMs = startAtMs,
             endAtMs = endAtMs,
             linkUrl = normalizeGameKeeLink(obj.optString("linkUrl")),
+            imageUrl = normalizeGameKeeImageLink(obj.optString("imageUrl")),
             isRunning = nowMs in startAtMs until endAtMs
         )
     }
@@ -746,6 +894,7 @@ private object BASettingsStore {
     private const val KEY_AP_REGEN_BASE_MS = "ap_regen_base_ms"
     private const val KEY_AP_SYNC_MS = "ap_sync_ms"
     private const val KEY_POOL_SHOW_ENDED = "pool_show_ended"
+    private const val KEY_SHOW_CALENDAR_POOL_IMAGES = "show_calendar_pool_images"
     private const val KEY_COFFEE_HEADPAT_MS = "coffee_headpat_ms"
     private const val KEY_COFFEE_INVITE1_USED_MS = "coffee_invite1_used_ms"
     private const val KEY_COFFEE_INVITE2_USED_MS = "coffee_invite2_used_ms"
@@ -760,6 +909,7 @@ private object BASettingsStore {
     private const val DEFAULT_AP_CURRENT = 0.0
     private const val KEY_CALENDAR_CACHE_PREFIX = "calendar_cache_"
     private const val KEY_CALENDAR_SYNC_PREFIX = "calendar_sync_"
+    private const val KEY_CALENDAR_CACHE_VERSION_PREFIX = "calendar_cache_version_"
     private const val KEY_POOL_CACHE_PREFIX = "pool_cache_"
     private const val KEY_POOL_SYNC_PREFIX = "pool_sync_"
     private const val KEY_POOL_CACHE_VERSION_PREFIX = "pool_cache_version_"
@@ -769,6 +919,9 @@ private object BASettingsStore {
     private fun calendarCacheKey(serverIndex: Int): String = "$KEY_CALENDAR_CACHE_PREFIX${serverIndex.coerceIn(0, 2)}"
 
     private fun calendarSyncKey(serverIndex: Int): String = "$KEY_CALENDAR_SYNC_PREFIX${serverIndex.coerceIn(0, 2)}"
+
+    private fun calendarCacheVersionKey(serverIndex: Int): String =
+        "$KEY_CALENDAR_CACHE_VERSION_PREFIX${serverIndex.coerceIn(0, 2)}"
 
     private fun poolCacheKey(serverIndex: Int): String = "$KEY_POOL_CACHE_PREFIX${serverIndex.coerceIn(0, 2)}"
 
@@ -786,6 +939,11 @@ private object BASettingsStore {
         val store = kv()
         store.encode(calendarCacheKey(serverIndex), encodedEntries)
         store.encode(calendarSyncKey(serverIndex), syncMs.coerceAtLeast(0L))
+        store.encode(calendarCacheVersionKey(serverIndex), BA_CALENDAR_CACHE_SCHEMA_VERSION)
+    }
+
+    fun loadCalendarCacheVersion(serverIndex: Int): Int {
+        return kv().decodeInt(calendarCacheVersionKey(serverIndex), 0)
     }
 
     fun loadPoolCache(serverIndex: Int): Pair<String, Long> {
@@ -809,6 +967,12 @@ private object BASettingsStore {
 
     fun savePoolShowEnded(enabled: Boolean) {
         kv().encode(KEY_POOL_SHOW_ENDED, enabled)
+    }
+
+    fun loadShowCalendarPoolImages(): Boolean = kv().decodeBool(KEY_SHOW_CALENDAR_POOL_IMAGES, true)
+
+    fun saveShowCalendarPoolImages(enabled: Boolean) {
+        kv().encode(KEY_SHOW_CALENDAR_POOL_IMAGES, enabled)
     }
 
     fun loadCalendarRefreshIntervalHours(): Int {
@@ -1004,6 +1168,7 @@ fun BAPage(
     var baPoolLastSyncMs by remember { mutableLongStateOf(0L) }
     var baPoolReloadSignal by remember { mutableIntStateOf(0) }
     var showEndedPools by remember { mutableStateOf(BASettingsStore.loadPoolShowEnded()) }
+    var showCalendarPoolImages by remember { mutableStateOf(BASettingsStore.loadShowCalendarPoolImages()) }
     var calendarRefreshIntervalHours by remember {
         mutableIntStateOf(BASettingsStore.loadCalendarRefreshIntervalHours())
     }
@@ -1012,6 +1177,7 @@ fun BAPage(
     var sheetApNotifyEnabled by remember { mutableStateOf(apNotifyEnabled) }
     var sheetApNotifyThresholdText by remember { mutableStateOf(apNotifyThreshold.toString()) }
     var sheetShowEndedPools by remember { mutableStateOf(showEndedPools) }
+    var sheetShowCalendarPoolImages by remember { mutableStateOf(showCalendarPoolImages) }
 
     var apCurrentInput by remember { mutableStateOf(displayAp(apCurrent).toString()) }
     var apLimitInput by remember { mutableStateOf(apLimit.toString()) }
@@ -1344,6 +1510,7 @@ fun BAPage(
         sheetApNotifyEnabled = apNotifyEnabled
         sheetApNotifyThresholdText = apNotifyThreshold.toString()
         sheetShowEndedPools = showEndedPools
+        sheetShowCalendarPoolImages = showCalendarPoolImages
         showSettingsSheet = true
     }
 
@@ -1354,6 +1521,33 @@ fun BAPage(
         sheetApNotifyEnabled = apNotifyEnabled
         sheetApNotifyThresholdText = apNotifyThreshold.toString()
         sheetShowEndedPools = showEndedPools
+        sheetShowCalendarPoolImages = showCalendarPoolImages
+    }
+
+    fun hasAnyImageInCalendarCache(serverIdx: Int): Boolean {
+        val (raw, _) = BASettingsStore.loadCalendarCache(serverIdx)
+        if (raw.isBlank()) return false
+        return runCatching {
+            val arr = JSONArray(raw)
+            for (i in 0 until arr.length()) {
+                val obj = arr.optJSONObject(i) ?: continue
+                if (normalizeGameKeeImageLink(obj.optString("imageUrl")).isNotBlank()) return@runCatching true
+            }
+            false
+        }.getOrDefault(false)
+    }
+
+    fun hasAnyImageInPoolCache(serverIdx: Int): Boolean {
+        val (raw, _) = BASettingsStore.loadPoolCache(serverIdx)
+        if (raw.isBlank()) return false
+        return runCatching {
+            val arr = JSONArray(raw)
+            for (i in 0 until arr.length()) {
+                val obj = arr.optJSONObject(i) ?: continue
+                if (normalizeGameKeeImageLink(obj.optString("imageUrl")).isNotBlank()) return@runCatching true
+            }
+            false
+        }.getOrDefault(false)
     }
 
     fun saveSettings() {
@@ -1372,6 +1566,18 @@ fun BAPage(
         apNotifyThreshold = savedThreshold
         BASettingsStore.savePoolShowEnded(sheetShowEndedPools)
         showEndedPools = sheetShowEndedPools
+
+        val wasShowingImages = showCalendarPoolImages
+        val turningImagesOn = !wasShowingImages && sheetShowCalendarPoolImages
+        BASettingsStore.saveShowCalendarPoolImages(sheetShowCalendarPoolImages)
+        showCalendarPoolImages = sheetShowCalendarPoolImages
+
+        if (turningImagesOn) {
+            val calendarHasImage = hasAnyImageInCalendarCache(serverIndex)
+            val poolHasImage = hasAnyImageInPoolCache(serverIndex)
+            if (!calendarHasImage) refreshCalendar(force = true)
+            if (!poolHasImage) refreshPool(force = true)
+        }
 
         applyApRegen()
         showSettingsSheet = false
@@ -1431,6 +1637,7 @@ fun BAPage(
     LaunchedEffect(serverIndex, baCalendarReloadSignal, calendarRefreshIntervalHours) {
         val now = System.currentTimeMillis()
         val (cachedRaw, cachedSyncMs) = BASettingsStore.loadCalendarCache(serverIndex)
+        val cachedVersion = BASettingsStore.loadCalendarCacheVersion(serverIndex)
         val hasCache = cachedRaw.isNotBlank()
         val cachedEntries = if (hasCache) {
             runCatching { decodeBaCalendarEntries(cachedRaw, now) }.getOrElse { emptyList() }
@@ -1440,8 +1647,9 @@ fun BAPage(
         val networkAvailable = isNetworkAvailable(context)
         val intervalMs = calendarRefreshIntervalHours.coerceAtLeast(1) * 60L * 60L * 1000L
         val cacheExpired = !hasCache || cachedSyncMs <= 0L || (now - cachedSyncMs).coerceAtLeast(0L) >= intervalMs
+        val cacheSchemaExpired = cachedVersion < BA_CALENDAR_CACHE_SCHEMA_VERSION
         val forceRefresh = baCalendarReloadSignal > 0
-        val shouldRequestNetwork = forceRefresh || cacheExpired
+        val shouldRequestNetwork = forceRefresh || cacheExpired || cacheSchemaExpired
 
         if (hasCache) {
             baCalendarEntries = cachedEntries
@@ -2197,6 +2405,14 @@ fun BAPage(
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis
                                     )
+
+                                    if (showCalendarPoolImages) {
+                                        GameKeeCoverImage(
+                                            imageUrl = activity.imageUrl,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                        )
+                                    }
                                     Text(
                                         text = "${formatBaDateTimeNoYearInTimeZone(activity.beginAtMs, serverTimeZone)} - ${
                                             formatBaDateTimeNoYearInTimeZone(
@@ -2344,6 +2560,14 @@ fun BAPage(
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis
                                     )
+
+                                    if (showCalendarPoolImages) {
+                                        GameKeeCoverImage(
+                                            imageUrl = pool.imageUrl,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                        )
+                                    }
                                     Text(
                                         text = "${formatBaDateTimeNoYearInTimeZone(pool.startAtMs, serverTimeZone)} - ${formatBaDateTimeNoYearInTimeZone(pool.endAtMs, serverTimeZone)}",
                                         color = countdownBlue,
@@ -2568,10 +2792,15 @@ fun BAPage(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "咖啡厅等级",
-                    color = MiuixTheme.colorScheme.onBackground
-                )
+                Box(
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "咖啡厅等级",
+                        color = MiuixTheme.colorScheme.onBackground
+                    )
+                }
                 Box {
                     GlassTextButton(
                         backdrop = backdrop,
@@ -2614,10 +2843,15 @@ fun BAPage(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "AP通知",
-                    color = MiuixTheme.colorScheme.onBackground
-                )
+                Box(
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "AP通知",
+                        color = MiuixTheme.colorScheme.onBackground
+                    )
+                }
                 Switch(
                     checked = sheetApNotifyEnabled,
                     onCheckedChange = { checked -> sheetApNotifyEnabled = checked }
@@ -2631,13 +2865,40 @@ fun BAPage(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "显示已结束卡池",
-                    color = MiuixTheme.colorScheme.onBackground
-                )
+                Box(
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "显示已结束卡池",
+                        color = MiuixTheme.colorScheme.onBackground
+                    )
+                }
                 Switch(
                     checked = sheetShowEndedPools,
                     onCheckedChange = { checked -> sheetShowEndedPools = checked }
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "显示活动/卡池图片",
+                        color = MiuixTheme.colorScheme.onBackground
+                    )
+                }
+                Switch(
+                    checked = sheetShowCalendarPoolImages,
+                    onCheckedChange = { checked -> sheetShowCalendarPoolImages = checked }
                 )
             }
 
