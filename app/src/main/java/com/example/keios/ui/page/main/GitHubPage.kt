@@ -256,7 +256,7 @@ fun GitHubPage(
             overviewRefreshState = OverviewRefreshState.Refreshing
             refreshProgress = 0f
             trackedItems.forEach { item ->
-                checkStates[item.id] = VersionCheckUi(loading = true, message = "刷新中...")
+                checkStates[item.id] = VersionCheckUi(loading = true, message = "检查中...")
             }
             trackedItems.forEachIndexed { index, item ->
                 val state = resolveItemState(item)
@@ -423,6 +423,8 @@ fun GitHubPage(
     val trackedCount = trackedItems.size
     val updatableCount = trackedItems.count { checkStates[it.id]?.hasUpdate == true }
     val preReleaseCount = trackedItems.count { checkStates[it.id]?.isPreRelease == true }
+    val preReleaseUpdateCount = trackedItems.count { checkStates[it.id]?.hasPreReleaseUpdate == true }
+    val failedCount = trackedItems.count { checkStates[it.id]?.message?.startsWith("检查失败") == true }
     val stableLatestCount = trackedItems.count {
         val s = checkStates[it.id]
         s?.hasUpdate == false && s.isPreRelease.not()
@@ -558,24 +560,10 @@ fun GitHubPage(
                 modifier = Modifier
                     .fillMaxWidth(),
                 colors = CardDefaults.defaultColors(
-                    color = when (overviewRefreshState) {
-                        OverviewRefreshState.Cached -> if (isDark) {
-                            androidx.compose.ui.graphics.Color(0x55F59E0B)
-                        } else {
-                            androidx.compose.ui.graphics.Color(0x33F59E0B)
-                        }
-                        OverviewRefreshState.Refreshing -> if (isDark) {
-                            androidx.compose.ui.graphics.Color(0x553B82F6)
-                        } else {
-                            androidx.compose.ui.graphics.Color(0x333B82F6)
-                        }
-                        OverviewRefreshState.Completed -> if (isDark) {
-                            androidx.compose.ui.graphics.Color(0x5522C55E)
-                        } else {
-                            androidx.compose.ui.graphics.Color(0x3322C55E)
-                        }
-                        OverviewRefreshState.Idle -> MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
-                    },
+                    color = overviewRefreshState.surfaceColor(
+                        isDark = isDark,
+                        neutralSurface = MiuixTheme.colorScheme.surface
+                    ),
                     contentColor = MiuixTheme.colorScheme.onBackground
                 ),
                 showIndication = cardPressFeedbackEnabled,
@@ -596,80 +584,15 @@ fun GitHubPage(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
-                        val refreshColor = when (overviewRefreshState) {
-                            OverviewRefreshState.Refreshing -> Color(0xFF3B82F6)
-                            OverviewRefreshState.Completed -> Color(0xFF22C55E)
-                            OverviewRefreshState.Cached -> Color(0xFFF59E0B)
-                            OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
-                        }
                         Text("项目版本跟踪", color = MiuixTheme.colorScheme.onBackground)
-                        Text(
-                            text = formatRefreshAgo(lastRefreshMs),
-                            color = refreshColor,
-                            modifier = Modifier.weight(1f)
-                        )
-                        StatusPill(
-                            label = when (overviewRefreshState) {
-                                OverviewRefreshState.Cached -> "Cache"
-                                OverviewRefreshState.Refreshing -> "Refreshing"
-                                OverviewRefreshState.Completed -> "Synced"
-                                OverviewRefreshState.Idle -> "Idle"
-                            },
-                            color = when (overviewRefreshState) {
-                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0xFFF59E0B)
-                                OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
-                                OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0xFF22C55E)
-                                OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
-                            }
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "追踪 $trackedCount 项",
-                            color = if (trackedCount > 0) MiuixTheme.colorScheme.onBackground else MiuixTheme.colorScheme.onBackgroundVariant
-                        )
-                        Text("·", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                        Text(
-                            "可更新 $updatableCount 项",
-                            color = if (updatableCount > 0) Color(0xFF22C55E) else MiuixTheme.colorScheme.onBackgroundVariant
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "最新稳定版 $stableLatestCount 项",
-                                color = if (stableLatestCount > 0) Color(0xFF3B82F6) else MiuixTheme.colorScheme.onBackgroundVariant
-                            )
-                            Text("·", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                            Text(
-                                "预发行 $preReleaseCount 项",
-                                color = if (preReleaseCount > 0) Color(0xFFF59E0B) else MiuixTheme.colorScheme.onBackgroundVariant
-                            )
-                        }
+                        Spacer(modifier = Modifier.weight(1f))
                         if (overviewRefreshState != OverviewRefreshState.Idle) {
-                            val indicatorColor = when (overviewRefreshState) {
-                                OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
-                                OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0xFF22C55E)
-                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0xFFF59E0B)
-                                OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
-                            }
-                            val indicatorBg = when (overviewRefreshState) {
-                                OverviewRefreshState.Refreshing -> androidx.compose.ui.graphics.Color(0x553B82F6)
-                                OverviewRefreshState.Completed -> androidx.compose.ui.graphics.Color(0x5522C55E)
-                                OverviewRefreshState.Cached -> androidx.compose.ui.graphics.Color(0x55F59E0B)
-                                OverviewRefreshState.Idle -> MiuixTheme.colorScheme.surface
-                            }
+                            val indicatorColor = overviewRefreshState.color(
+                                neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
+                            )
+                            val indicatorBg = overviewRefreshState.indicatorBackground(
+                                neutralSurface = MiuixTheme.colorScheme.surface
+                            )
                             val progressValue = when (overviewRefreshState) {
                                 OverviewRefreshState.Refreshing -> refreshProgress.coerceIn(0f, 1f)
                                 OverviewRefreshState.Completed,
@@ -686,6 +609,75 @@ fun GitHubPage(
                                 )
                             )
                         }
+                        StatusPill(
+                            label = when (overviewRefreshState) {
+                                OverviewRefreshState.Cached -> "缓存"
+                                OverviewRefreshState.Refreshing -> "检查中"
+                                OverviewRefreshState.Completed -> "已检查"
+                                OverviewRefreshState.Idle -> "待检查"
+                            },
+                            color = overviewRefreshState.color(
+                                neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
+                            )
+                        )
+                    }
+                    GitHubOverviewMetricItem(
+                        label = "上次检查",
+                        value = formatRefreshAgo(lastRefreshMs),
+                        valueColor = overviewRefreshState.color(
+                            neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
+                        )
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        GitHubOverviewMetricItem(
+                            label = "已追踪",
+                            value = "$trackedCount 项",
+                            valueColor = if (trackedCount > 0) GitHubStatusPalette.Stable else MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GitHubOverviewMetricItem(
+                            label = "稳定可更新",
+                            value = "$updatableCount 项",
+                            valueColor = if (updatableCount > 0) GitHubStatusPalette.Update else MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        GitHubOverviewMetricItem(
+                            label = "稳定已最新",
+                            value = "$stableLatestCount 项",
+                            valueColor = if (stableLatestCount > 0) GitHubStatusPalette.Stable else MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GitHubOverviewMetricItem(
+                            label = "预发跟踪",
+                            value = "$preReleaseCount 项",
+                            valueColor = if (preReleaseCount > 0) GitHubStatusPalette.PreRelease else MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        GitHubOverviewMetricItem(
+                            label = "预发可更新",
+                            value = "$preReleaseUpdateCount 项",
+                            valueColor = if (preReleaseUpdateCount > 0) GitHubStatusPalette.PreRelease else MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GitHubOverviewMetricItem(
+                            label = "检查失败",
+                            value = "$failedCount 项",
+                            valueColor = if (failedCount > 0) GitHubStatusPalette.Error else MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -712,22 +704,10 @@ fun GitHubPage(
                         onHeaderLongClick = { openTrackSheetForEdit(item) },
                         headerActions = {
                             val state = checkStates[item.id] ?: VersionCheckUi()
-                            val statusIcon = when {
-                                state.loading -> MiuixIcons.Regular.Refresh
-                                state.hasPreReleaseUpdate -> MiuixIcons.Regular.Update
-                                state.isPreRelease -> MiuixIcons.Regular.Report
-                                state.hasUpdate == true -> MiuixIcons.Regular.Update
-                                state.hasUpdate == false -> MiuixIcons.Regular.Ok
-                                else -> MiuixIcons.Regular.More
-                            }
-                            val statusColor = when {
-                                state.loading -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
-                                state.hasPreReleaseUpdate -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
-                                state.hasUpdate == true -> androidx.compose.ui.graphics.Color(0xFF3B82F6)
-                                state.isPreRelease && state.hasUpdate == false -> androidx.compose.ui.graphics.Color(0xFF22C55E)
-                                state.hasUpdate == false -> androidx.compose.ui.graphics.Color(0xFF22C55E)
-                                else -> MiuixTheme.colorScheme.onBackgroundVariant
-                            }
+                            val statusIcon = state.statusIcon()
+                            val statusColor = state.statusColor(
+                                neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
+                            )
                             val clickableModifier = if (state.hasUpdate == true || state.isPreRelease) {
                                 Modifier.clickable {
                                     val releaseUrl = when {
@@ -773,7 +753,7 @@ fun GitHubPage(
                                 valueColor = MiuixTheme.colorScheme.primary,
                                 onClick = {
                                     refreshItem(item, showToastOnError = true)
-                                    Toast.makeText(context, "已刷新 ${item.appLabel}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "已检查 ${item.appLabel}", Toast.LENGTH_SHORT).show()
                                 }
                             )
                             GitHubCompactInfoRow(
@@ -796,32 +776,28 @@ fun GitHubPage(
                                     state.localVersion
                                 }
                                 VersionValueRow(
-                                    label = "本地",
+                                    label = "本地版本",
                                     value = localText,
                                     valueColor = MiuixTheme.colorScheme.primary
                                 )
                             }
                             if (state.latestTag.isNotBlank()) {
-                                val latestColor = if (state.hasUpdate == true) {
-                                    MiuixTheme.colorScheme.error
-                                } else {
-                                    MiuixTheme.colorScheme.secondary
-                                }
+                                val latestColor = state.stableVersionColor(
+                                    neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
+                                )
                                 VersionValueRow(
-                                    label = "稳定",
+                                    label = "稳定版本",
                                     value = state.latestTag,
                                     valueColor = latestColor,
                                     emphasized = state.hasUpdate == true
                                 )
                             }
                             if (state.showPreReleaseInfo && state.preReleaseInfo.isNotBlank()) {
-                                val preColor = if (state.hasPreReleaseUpdate) {
-                                    MiuixTheme.colorScheme.error
-                                } else {
-                                    MiuixTheme.colorScheme.secondary
-                                }
+                                val preColor = state.preReleaseVersionColor(
+                                    neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
+                                )
                                 VersionValueRow(
-                                    label = "预发",
+                                    label = "预发版本",
                                     value = state.preReleaseInfo,
                                     valueColor = preColor,
                                     emphasized = state.hasPreReleaseUpdate

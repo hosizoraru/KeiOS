@@ -84,8 +84,42 @@ internal fun VersionValueRow(
         valueColor = valueColor,
         titleColor = MiuixTheme.colorScheme.primary,
         emphasized = emphasized,
-        titleWidth = 44.dp
+        titleWidth = 64.dp
     )
+}
+
+@Composable
+internal fun GitHubOverviewMetricItem(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    valueColor: Color = MiuixTheme.colorScheme.onBackground,
+    titleColor: Color = MiuixTheme.colorScheme.onBackgroundVariant,
+    emphasized: Boolean = false
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = titleColor,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = value.ifBlank { "N/A" },
+            color = valueColor,
+            fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End
+        )
+    }
 }
 
 @Composable
