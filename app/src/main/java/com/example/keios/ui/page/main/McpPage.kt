@@ -45,6 +45,10 @@ import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetInputTitle
+import com.example.keios.ui.page.main.widget.SheetRow
+import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
@@ -376,20 +380,11 @@ fun McpPage(
             )
         }
     ) {
-        val sheetFieldTitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f)
-        val sheetSectionTitleColor = MiuixTheme.colorScheme.onBackground
-        val sheetDangerTitleColor = MiuixTheme.colorScheme.error
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-        ) {
-            Row(
+        SheetContentColumn {
+            SheetRow(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(end = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -397,10 +392,7 @@ fun McpPage(
                         .heightIn(min = 40.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    Text(
-                        text = "服务名称",
-                        color = sheetFieldTitleColor
-                    )
+                    SheetInputTitle("服务名称")
                 }
                 GlassSearchField(
                     value = serverName,
@@ -413,13 +405,10 @@ fun McpPage(
                     modifier = Modifier.width(serverNameFieldWidth)
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
+            SheetRow(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(end = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -427,10 +416,7 @@ fun McpPage(
                         .heightIn(min = 40.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    Text(
-                        text = "服务端口",
-                        color = sheetFieldTitleColor
-                    )
+                    SheetInputTitle("服务端口")
                 }
                 GlassSearchField(
                     value = portText,
@@ -443,13 +429,7 @@ fun McpPage(
                     modifier = Modifier.width(portFieldWidth)
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "网络访问范围",
-                color = sheetSectionTitleColor,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            SheetSectionTitle("网络访问范围")
             McpNetworkModeOption(
                 backdrop = backdrop,
                 title = "仅本机",
@@ -465,12 +445,10 @@ fun McpPage(
                 selected = allowExternal,
                 onClick = { allowExternal = true }
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
+            Spacer(modifier = Modifier.height(4.dp))
+            SheetSectionTitle(
                 text = "危险操作",
-                color = sheetDangerTitleColor,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                danger = true
             )
             GlassTextButton(
                 backdrop = backdrop,
@@ -480,7 +458,6 @@ fun McpPage(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { showResetTokenConfirm = true }
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 

@@ -74,7 +74,7 @@ fun SnapshotWindowBottomSheet(
     onDismissRequest: (() -> Unit)? = null,
     onDismissFinished: (() -> Unit)? = null,
     outsideMargin: DpSize = BottomSheetDefaults.outsideMargin,
-    insideMargin: DpSize = DpSize(BottomSheetDefaults.insideMargin.width, 12.dp),
+    insideMargin: DpSize = DpSize(BottomSheetDefaults.insideMargin.width, 14.dp),
     defaultWindowInsetsPadding: Boolean = true,
     dragHandleColor: Color = BottomSheetDefaults.dragHandleColor(),
     allowDismiss: Boolean = true,

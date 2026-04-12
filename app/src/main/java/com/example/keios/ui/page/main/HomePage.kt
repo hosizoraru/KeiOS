@@ -69,6 +69,9 @@ import com.example.keios.ui.page.main.model.BottomPage
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetDescriptionText
+import com.example.keios.ui.page.main.widget.SheetRow
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.feature.github.data.local.GitHubTrackStore
@@ -492,9 +495,6 @@ fun HomePage(
             )
         }
     ) { innerPadding ->
-        val bottomSheetSafePadding = with(density) {
-            WindowInsets.safeDrawing.getBottom(this).toDp()
-        }
         SnapshotWindowBottomSheet(
             show = showBottomPageEditor,
             title = "底栏板块",
@@ -509,19 +509,11 @@ fun HomePage(
                 )
             }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = bottomSheetSafePadding + 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+            SheetContentColumn(
+                scrollable = false,
+                verticalSpacing = 14.dp
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                SheetRow {
                     HomeBottomPageLabel(
                         page = BottomPage.Home,
                         modifier = Modifier.defaultMinSize(minHeight = 24.dp)
@@ -535,13 +527,7 @@ fun HomePage(
                 BottomPage.entries
                     .filter { it != BottomPage.Home }
                     .forEach { page ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        SheetRow {
                             HomeBottomPageLabel(
                                 page = page,
                                 modifier = Modifier.defaultMinSize(minHeight = 24.dp)
@@ -556,10 +542,8 @@ fun HomePage(
                     }
 
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
+                SheetDescriptionText(
                     text = "Home 固定显示，其他板块可按需隐藏或重新显示。",
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = 13.sp
                 )
             }
         }

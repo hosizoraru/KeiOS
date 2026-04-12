@@ -55,6 +55,8 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetRow
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -947,11 +949,7 @@ fun GitHubPage(
             )
         }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-        ) {
+        SheetContentColumn {
             GlassSearchField(
                 value = repoUrlInput,
                 onValueChange = { repoUrlInput = it },
@@ -969,8 +967,7 @@ fun GitHubPage(
                 bottomBarStyle = true,
                 singleLine = true
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            SheetRow {
                 Text(
                     text = "已选应用: ${selectedApp?.label ?: "未选择"}",
                     color = Color(0xFF3A8DFF)
@@ -982,11 +979,7 @@ fun GitHubPage(
                     onClick = { pickerExpanded = !pickerExpanded }
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
+            SheetRow {
                 Text(
                     text = "检查预发行版本",
                     color = MiuixTheme.colorScheme.onBackground,
@@ -998,7 +991,6 @@ fun GitHubPage(
                 )
             }
             if (pickerExpanded) {
-                Spacer(modifier = Modifier.height(8.dp))
                 val filteredApps = appList.filter { app ->
                     appSearch.isBlank() ||
                         app.label.contains(appSearch, ignoreCase = true) ||
@@ -1031,7 +1023,6 @@ fun GitHubPage(
                 }
             }
             if (editingTrackedItem != null) {
-                Spacer(modifier = Modifier.height(10.dp))
                 GlassTextButton(
                     backdrop = backdrop,
                     bottomBarStyle = true,
@@ -1046,7 +1037,6 @@ fun GitHubPage(
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 

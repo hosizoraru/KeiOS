@@ -140,9 +140,6 @@ private data class CachedSections(
 private object TopInfoKeys {
     val system = linkedSetOf(
         "locked_apps",
-        "long_press_camera_key",
-        "long_press_home_key",
-        "long_press_power_key"
     )
 
     val secure = linkedSetOf(

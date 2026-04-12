@@ -60,6 +60,8 @@ import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
@@ -1843,11 +1845,8 @@ fun BAPage(
             )
         }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        SheetContentColumn(
+            verticalSpacing = 8.dp
         ) {
             Row(
                 modifier = Modifier
@@ -2029,11 +2028,10 @@ fun BAPage(
                 )
             }
 
-            Text(
+            SheetDescriptionText(
                 text = "不同服务器时区不同，建议按实际游玩服务器设置。",
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
