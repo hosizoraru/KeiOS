@@ -686,26 +686,28 @@ fun HomePage(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                     ) {
                         StatusPill(
                             label = "MCP",
-                            color = if (mcpRunning) runningColor else stoppedColor
+                            color = if (mcpRunning) runningColor else stoppedColor,
+                            modifier = Modifier.defaultMinSize(minWidth = 68.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
                         StatusPill(
                             label = "GitHub",
-                            color = cacheStateColor
+                            color = cacheStateColor,
+                            modifier = Modifier.defaultMinSize(minWidth = 78.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        StatusPill(
-                            label = "Shizuku",
-                            color = if (shizukuGranted) runningColor else stoppedColor
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                         StatusPill(
                             label = "BA",
-                            color = if (baOverview.activated) runningColor else stoppedColor
+                            color = if (baOverview.activated) runningColor else stoppedColor,
+                            modifier = Modifier.defaultMinSize(minWidth = 68.dp)
+                        )
+                        StatusPill(
+                            label = "Shizuku",
+                            color = if (shizukuGranted) runningColor else stoppedColor,
+                            modifier = Modifier.defaultMinSize(minWidth = 78.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp)
                         )
                     }
                 }
