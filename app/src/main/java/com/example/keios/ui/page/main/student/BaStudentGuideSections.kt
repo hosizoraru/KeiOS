@@ -293,13 +293,16 @@ fun GuideGalleryCardItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 if (isImageType && displayImageUrl.isNotBlank()) {
+                    val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
+                    val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
+                    val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
                     CircularProgressIndicator(
-                        progress = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f,
+                        progress = imageProgressValue,
                         size = 18.dp,
                         strokeWidth = 2.dp,
                         colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = Color(0xFF3B82F6),
-                            backgroundColor = Color(0x553B82F6)
+                            foregroundColor = progressForegroundColor,
+                            backgroundColor = progressBackgroundColor
                         )
                     )
                 }
@@ -413,13 +416,16 @@ fun GuideGalleryExpressionCardItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 if (isImageType && displayImageUrl.isNotBlank()) {
+                    val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
+                    val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
+                    val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
                     CircularProgressIndicator(
-                        progress = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f,
+                        progress = imageProgressValue,
                         size = 18.dp,
                         strokeWidth = 2.dp,
                         colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = Color(0xFF3B82F6),
-                            backgroundColor = Color(0x553B82F6)
+                            foregroundColor = progressForegroundColor,
+                            backgroundColor = progressBackgroundColor
                         )
                     )
                 }
