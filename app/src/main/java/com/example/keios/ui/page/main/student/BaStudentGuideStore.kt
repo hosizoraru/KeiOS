@@ -64,6 +64,8 @@ object BaStudentGuideStore {
                     JSONObject().apply {
                         put("t", item.title)
                         put("img", item.imageUrl)
+                        put("mt", item.mediaType)
+                        put("mu", item.mediaUrl)
                     }
                 )
             }
@@ -99,8 +101,17 @@ object BaStudentGuideStore {
                 val item = arr.optJSONObject(i) ?: continue
                 val title = item.optString("t").trim()
                 val imageUrl = item.optString("img").trim()
-                if (imageUrl.isBlank()) continue
-                add(BaGuideGalleryItem(title = title, imageUrl = imageUrl))
+                val mediaType = item.optString("mt").trim().ifBlank { "image" }
+                val mediaUrl = item.optString("mu").trim().ifBlank { imageUrl }
+                if (imageUrl.isBlank() && mediaUrl.isBlank()) continue
+                add(
+                    BaGuideGalleryItem(
+                        title = title,
+                        imageUrl = imageUrl,
+                        mediaType = mediaType,
+                        mediaUrl = mediaUrl
+                    )
+                )
             }
         }
     }

@@ -12,6 +12,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.dnsoverhttps.DnsOverHttps
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.net.InetAddress
 import java.net.URI
@@ -437,7 +439,34 @@ object GameKeeFetchHelper {
         )
     }
 
-    fun fetchImage(imageUrl: String): Bitmap? {
+    private fun decodeBitmap(
+        response: Response,
+        onProgress: ((downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
+    ): Bitmap? {
+        if (!response.isSuccessful) return null
+        val body = response.body ?: return null
+        val total = body.contentLength()
+        body.byteStream().use { input ->
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var downloaded = 0L
+            while (true) {
+                val count = input.read(buffer)
+                if (count <= 0) break
+                output.write(buffer, 0, count)
+                downloaded += count
+                onProgress?.invoke(downloaded, total)
+            }
+            val bytes = output.toByteArray()
+            if (bytes.isEmpty()) return null
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }
+    }
+
+    private fun fetchImageInternal(
+        imageUrl: String,
+        onProgress: ((downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
+    ): Bitmap? {
         val normalized = imageUrl.trim()
         if (normalized.isBlank()) return null
 
@@ -468,9 +497,7 @@ object GameKeeFetchHelper {
                         .build()
                     val result = runCatching {
                         client.newCall(req).execute().use { resp: Response ->
-                            if (!resp.isSuccessful) return@use null
-                            val bytes = resp.body?.bytes() ?: return@use null
-                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            decodeBitmap(resp, onProgress)
                         }
                     }
                     if (result.isSuccess && result.getOrNull() != null) return result.getOrNull()
@@ -481,5 +508,96 @@ object GameKeeFetchHelper {
 
         if (lastError != null) throw lastError
         return null
+    }
+
+    fun fetchImage(imageUrl: String): Bitmap? {
+        return fetchImageInternal(imageUrl, onProgress = null)
+    }
+
+    fun fetchImageWithProgress(
+        imageUrl: String,
+        onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit
+    ): Bitmap? {
+        return fetchImageInternal(imageUrl, onProgress = onProgress)
+    }
+
+    fun downloadToFile(
+        mediaUrl: String,
+        targetFile: File,
+        onProgress: ((downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
+    ): Boolean {
+        val normalized = mediaUrl.trim()
+        if (normalized.isBlank()) return false
+
+        val requestUrls = buildList {
+            add(normalized)
+            if (normalized.startsWith("//")) add("https:$normalized")
+        }.distinct()
+
+        val referers = listOf(
+            "https://www.gamekee.com/",
+            "https://www.gamekee.com/ba/huodong/15",
+            "https://www.gamekee.com/ba/kachi/15"
+        )
+        val uas = listOf(DESKTOP_UA, ANDROID_UA)
+        val tempFile = File(targetFile.parentFile ?: return false, "${targetFile.name}.part")
+        targetFile.parentFile?.mkdirs()
+
+        var lastError: Throwable? = null
+        requestUrls.forEach { url ->
+            referers.forEach { referer ->
+                uas.forEach { ua ->
+                    val req = Request.Builder()
+                        .url(url)
+                        .get()
+                        .header("Accept", ACCEPT_IMAGE)
+                        .header("Accept-Language", ACCEPT_LANGUAGE)
+                        .header("Referer", referer)
+                        .header("User-Agent", ua)
+                        .header("Connection", "close")
+                        .build()
+
+                    val result = runCatching {
+                        client.newCall(req).execute().use { resp ->
+                            if (!resp.isSuccessful) return@use false
+                            val body = resp.body ?: return@use false
+                            val total = body.contentLength()
+                            body.byteStream().use { input ->
+                                tempFile.outputStream().use { out ->
+                                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                    var downloaded = 0L
+                                    while (true) {
+                                        val count = input.read(buffer)
+                                        if (count <= 0) break
+                                        out.write(buffer, 0, count)
+                                        downloaded += count
+                                        onProgress?.invoke(downloaded, total)
+                                    }
+                                }
+                            }
+                            true
+                        }
+                    }
+                    if (result.isSuccess && result.getOrDefault(false)) {
+                        if (targetFile.exists()) {
+                            runCatching { targetFile.delete() }
+                        }
+                        return tempFile.renameTo(targetFile)
+                    }
+                    if (result.isFailure) {
+                        lastError = result.exceptionOrNull()
+                    }
+                    if (tempFile.exists()) {
+                        runCatching { tempFile.delete() }
+                    }
+                }
+            }
+        }
+
+        if (tempFile.exists()) {
+            runCatching { tempFile.delete() }
+        }
+        if (lastError != null) throw lastError
+        return false
     }
 }

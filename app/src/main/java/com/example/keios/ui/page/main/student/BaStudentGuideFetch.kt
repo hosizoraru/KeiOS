@@ -113,7 +113,9 @@ private data class GuideDetailExtract(
 private data class GuideBaseRow(
     val key: String,
     val textValues: List<String>,
-    val imageValues: List<String>
+    val imageValues: List<String>,
+    val videoValues: List<String> = emptyList(),
+    val mediaTypes: Set<String> = emptySet()
 )
 
 private val voiceCategoryKeys = setOf("通常", "大厅及咖啡馆", "战斗", "活动", "事件", "好感度")
@@ -132,6 +134,16 @@ private fun looksLikeImageUrl(raw: String): Boolean {
         value.contains("cdnimg")
 }
 
+private fun looksLikeVideoUrl(raw: String): Boolean {
+    val value = raw.trim().lowercase()
+    if (value.isBlank()) return false
+    return value.endsWith(".mp4") ||
+        value.endsWith(".webm") ||
+        value.endsWith(".mov") ||
+        value.endsWith(".m3u8") ||
+        value.contains(".mp4?")
+}
+
 private fun extractImageUrlsFromHtml(sourceUrl: String, raw: String): List<String> {
     if (raw.isBlank()) return emptyList()
     val regex = Regex(
@@ -148,6 +160,192 @@ private fun extractImageUrlsFromHtml(sourceUrl: String, raw: String): List<Strin
 
 private fun normalizeMediaUrl(sourceUrl: String, mediaRaw: String): String {
     return normalizeImageUrl(sourceUrl, mediaRaw)
+}
+
+private fun extractImageUrlsFromAny(sourceUrl: String, any: Any?, depth: Int = 0): List<String> {
+    if (any == null || depth > 6) return emptyList()
+    return when (any) {
+        is String -> {
+            val normalized = normalizeImageUrl(sourceUrl, any)
+            buildList {
+                if (looksLikeImageUrl(normalized)) add(normalized)
+                addAll(
+                    any.split(",", ";")
+                        .map { normalizeImageUrl(sourceUrl, it.trim()) }
+                        .filter { looksLikeImageUrl(it) }
+                )
+                addAll(extractImageUrlsFromHtml(sourceUrl, any))
+            }.distinct()
+        }
+
+        is JSONObject -> {
+            val result = mutableListOf<String>()
+            val keys = any.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                result += extractImageUrlsFromAny(sourceUrl, any.opt(key), depth + 1)
+            }
+            result.distinct()
+        }
+
+        is JSONArray -> {
+            val result = mutableListOf<String>()
+            for (i in 0 until any.length()) {
+                result += extractImageUrlsFromAny(sourceUrl, any.opt(i), depth + 1)
+            }
+            result.distinct()
+        }
+
+        else -> emptyList()
+    }
+}
+
+private fun extractVideoUrlsFromAny(sourceUrl: String, any: Any?, depth: Int = 0): List<String> {
+    if (any == null || depth > 6) return emptyList()
+    return when (any) {
+        is String -> {
+            buildList {
+                val normalized = normalizeMediaUrl(sourceUrl, any)
+                if (looksLikeVideoUrl(normalized)) add(normalized)
+                any.split(",", ";")
+                    .map { normalizeMediaUrl(sourceUrl, it.trim()) }
+                    .filter { looksLikeVideoUrl(it) }
+                    .forEach { add(it) }
+            }.distinct()
+        }
+
+        is JSONObject -> {
+            val result = mutableListOf<String>()
+            val keys = any.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                result += extractVideoUrlsFromAny(sourceUrl, any.opt(key), depth + 1)
+            }
+            result.distinct()
+        }
+
+        is JSONArray -> {
+            val result = mutableListOf<String>()
+            for (i in 0 until any.length()) {
+                result += extractVideoUrlsFromAny(sourceUrl, any.opt(i), depth + 1)
+            }
+            result.distinct()
+        }
+
+        else -> emptyList()
+    }
+}
+
+private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String): List<BaGuideGalleryItem> {
+    val out = mutableListOf<BaGuideGalleryItem>()
+    val galleryKeywords = listOf(
+        "立绘", "本家画", "TV动画设定图", "回忆大厅视频", "回忆大厅", "PV", "Live", "巧克力图",
+        "互动家具", "角色表情", "表情", "角色演示", "设定集", "官方介绍", "情人节巧克力"
+    )
+
+    fun isGalleryKey(raw: String): Boolean {
+        val key = stripHtml(raw).trim()
+        if (key.isBlank()) return false
+        return galleryKeywords.any { key.contains(it, ignoreCase = true) }
+    }
+
+    for (i in 0 until baseData.length()) {
+        val row = baseData.optJSONArray(i) ?: continue
+        if (row.length() == 0) continue
+        val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+        if (key.replace(" ", "").startsWith("回忆大厅文件")) continue
+        if (!isGalleryKey(key)) continue
+
+        val rowImages = linkedSetOf<String>()
+        val rowVideos = linkedSetOf<String>()
+
+        for (j in 1 until row.length()) {
+            val cell = row.optJSONObject(j) ?: continue
+            val type = cell.optString("type").trim().lowercase()
+            val valueAny = cell.opt("value")
+            val valueText = cell.optString("value").trim()
+
+            when (type) {
+                "image" -> {
+                    val normalized = normalizeImageUrl(sourceUrl, valueText)
+                    if (normalized.isNotBlank()) rowImages += normalized
+                }
+                "imageset", "live2d" -> {
+                    rowImages += extractImageUrlsFromAny(sourceUrl, valueAny)
+                }
+                "video" -> {
+                    val direct = normalizeMediaUrl(sourceUrl, valueText)
+                    if (looksLikeVideoUrl(direct)) rowVideos += direct
+                    rowVideos += extractVideoUrlsFromAny(sourceUrl, valueAny)
+                    rowImages += extractImageUrlsFromAny(sourceUrl, valueAny)
+                }
+                else -> {
+                    rowImages += extractImageUrlsFromHtml(sourceUrl, valueText)
+                    rowImages += extractImageUrlsFromAny(sourceUrl, valueAny)
+                    rowVideos += extractVideoUrlsFromAny(sourceUrl, valueAny)
+                }
+            }
+        }
+
+        if (rowImages.isNotEmpty()) {
+            out += rowImages.mapIndexed { index, imageUrl ->
+                BaGuideGalleryItem(
+                    title = if (rowImages.size > 1) "$key ${index + 1}" else key,
+                    imageUrl = imageUrl,
+                    mediaType = "image",
+                    mediaUrl = imageUrl
+                )
+            }
+        }
+        if (rowVideos.isNotEmpty()) {
+            out += rowVideos.mapIndexed { index, videoUrl ->
+                BaGuideGalleryItem(
+                    title = if (rowVideos.size > 1) "$key ${index + 1}" else key,
+                    imageUrl = rowImages.firstOrNull().orEmpty(),
+                    mediaType = "video",
+                    mediaUrl = videoUrl
+                )
+            }
+        }
+    }
+
+    return out
+}
+
+private fun parseGalleryItemsFromStyleData(styleData: JSONArray?, sourceUrl: String): List<BaGuideGalleryItem> {
+    if (styleData == null || styleData.length() == 0) return emptyList()
+    val out = mutableListOf<BaGuideGalleryItem>()
+    for (i in 0 until styleData.length()) {
+        val block = styleData.optJSONObject(i) ?: continue
+        val blockName = stripHtml(block.optString("name"))
+            .ifBlank { "样式 ${i + 1}" }
+        val blockData = block.opt("data") ?: continue
+        val imageUrls = extractImageUrlsFromAny(sourceUrl, blockData)
+            .filter { it.isNotBlank() }
+            .distinct()
+        val videoUrls = extractVideoUrlsFromAny(sourceUrl, blockData)
+            .filter { it.isNotBlank() }
+            .distinct()
+        if (imageUrls.isEmpty() && videoUrls.isEmpty()) continue
+
+        imageUrls.forEachIndexed { index, imageUrl ->
+            out += BaGuideGalleryItem(
+                title = if (imageUrls.size > 1) "$blockName ${index + 1}" else blockName,
+                imageUrl = imageUrl,
+                mediaType = "image",
+                mediaUrl = imageUrl
+            )
+        }
+        videoUrls.forEachIndexed { index, videoUrl ->
+            out += BaGuideGalleryItem(
+                title = if (videoUrls.size > 1) "$blockName ${index + 1}" else blockName,
+                imageUrl = imageUrls.firstOrNull().orEmpty(),
+                mediaType = "video",
+                mediaUrl = videoUrl
+            )
+        }
+    }
+    return out
 }
 
 private fun isAudioUrl(url: String): Boolean {
@@ -430,8 +628,11 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
     return runCatching {
         val root = JSONObject(raw)
         val tabIcons = extractGuideTabIcons(root, sourceUrl)
+        val styleData = root.optJSONArray("styleData")
+        val galleryFromStyleData = parseGalleryItemsFromStyleData(styleData, sourceUrl)
         val baseData = root.optJSONArray("baseData")
             ?: return@runCatching GuideDetailExtract(
+                galleryItems = galleryFromStyleData,
                 tabSkillIconUrl = tabIcons[GuideTab.Skills].orEmpty(),
                 tabProfileIconUrl = tabIcons[GuideTab.Profile].orEmpty(),
                 tabVoiceIconUrl = tabIcons[GuideTab.Voice].orEmpty(),
@@ -439,6 +640,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 tabSimulateIconUrl = tabIcons[GuideTab.Simulate].orEmpty()
             )
         val (voiceLanguageHeaders, voiceEntries) = parseVoiceDataFromBaseData(baseData, sourceUrl)
+        val galleryFromMediaTypes = parseGalleryItemsFromBaseData(baseData, sourceUrl)
         val baseRows = mutableListOf<GuideBaseRow>()
         var firstImage = ""
 
@@ -448,19 +650,53 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
             val textValues = mutableListOf<String>()
             val imageValues = mutableListOf<String>()
+            val videoValues = mutableListOf<String>()
+            val mediaTypes = mutableSetOf<String>()
             for (j in 1 until row.length()) {
                 val cell = row.optJSONObject(j) ?: continue
                 val type = cell.optString("type").trim().lowercase()
+                val rawValueAny = cell.opt("value")
                 val rawValue = cell.optString("value").trim()
                 if (rawValue.isBlank()) continue
-                if (type == "image") {
-                    val normalized = normalizeImageUrl(sourceUrl, rawValue)
-                    if (normalized.isNotBlank()) imageValues += normalized
-                } else {
-                    val inlineImages = extractImageUrlsFromHtml(sourceUrl, rawValue)
-                    if (inlineImages.isNotEmpty()) imageValues += inlineImages
-                    val normalized = stripHtml(rawValue)
-                    if (normalized.isNotBlank()) textValues += normalized
+
+                when (type) {
+                    "image" -> {
+                        val normalized = normalizeImageUrl(sourceUrl, rawValue)
+                        if (normalized.isNotBlank()) {
+                            mediaTypes += type
+                            imageValues += normalized
+                        }
+                    }
+
+                    "imageset", "live2d" -> {
+                        val images = extractImageUrlsFromAny(sourceUrl, rawValueAny)
+                        if (images.isNotEmpty()) {
+                            mediaTypes += type
+                            imageValues += images
+                        }
+                    }
+
+                    "video" -> {
+                        val directVideo = normalizeMediaUrl(sourceUrl, rawValue)
+                        val videos = buildList {
+                            if (looksLikeVideoUrl(directVideo)) add(directVideo)
+                            addAll(extractVideoUrlsFromAny(sourceUrl, rawValueAny))
+                        }.distinct()
+                        if (videos.isNotEmpty()) {
+                            mediaTypes += type
+                            videoValues += videos
+                        }
+                        val inlineImages = extractImageUrlsFromAny(sourceUrl, rawValueAny)
+                        if (inlineImages.isNotEmpty()) imageValues += inlineImages
+                    }
+
+                    else -> {
+                        val inlineImages = extractImageUrlsFromHtml(sourceUrl, rawValue)
+                        if (inlineImages.isNotEmpty()) imageValues += inlineImages
+                        videoValues += extractVideoUrlsFromAny(sourceUrl, rawValueAny)
+                        val normalized = stripHtml(rawValue)
+                        if (normalized.isNotBlank()) textValues += normalized
+                    }
                 }
             }
             if (firstImage.isBlank() && imageValues.isNotEmpty()) {
@@ -469,7 +705,9 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             baseRows += GuideBaseRow(
                 key = key,
                 textValues = textValues,
-                imageValues = imageValues
+                imageValues = imageValues.distinct(),
+                videoValues = videoValues.distinct(),
+                mediaTypes = mediaTypes
             )
         }
 
@@ -487,8 +725,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             "兴趣爱好", "声优", "画师", "介绍", "个人简介", "MomoTalk", "回忆大厅解锁等级", "同名角色", "角色头像"
         )
         val galleryKeywords = listOf(
-            "立绘", "本家画", "TV动画设定图", "回忆大厅文件", "回忆大厅视频", "回忆大厅", "PV", "Live", "巧克力图",
-            "互动家具"
+            "立绘", "本家画", "TV动画设定图", "回忆大厅视频", "回忆大厅", "PV", "Live", "巧克力图",
+            "互动家具", "角色表情", "设定集", "官方介绍", "情人节巧克力"
         )
         val growthKeywords = listOf(
             "装备", "专武", "能力解放", "礼物偏好", "羁绊", "升级材料", "所需", "LV", "T1", "T2", "爱用品", "初始数据",
@@ -513,7 +751,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             val key = row.key
             val value = row.textValues.joinToString(" / ")
             val imageUrl = row.imageValues.firstOrNull().orEmpty()
-            if (key.isBlank() && value.isBlank() && imageUrl.isBlank()) return@forEach
+            val videoUrl = row.videoValues.firstOrNull().orEmpty()
+            if (key.isBlank() && value.isBlank() && imageUrl.isBlank() && videoUrl.isBlank()) return@forEach
 
             val guideRow = BaGuideRow(
                 key = key.ifBlank { "信息" },
@@ -524,6 +763,9 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             val normalizedKey = key.ifBlank { value }
                 .replace("\n", " ")
                 .trim()
+            if (normalizedKey.replace(" ", "").startsWith("回忆大厅文件")) {
+                return@forEach
+            }
             val isWeaponBlockStart = normalizedKey == "专武"
             val isWeaponBlockEnd = normalizedKey.contains("爱用品") ||
                 normalizedKey.contains("专武考据") ||
@@ -564,12 +806,27 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 isGrowth -> growthRows += guideRow
                 isSkill -> skillRows += guideRow
                 isGallery -> {
-                    if (imageUrl.isNotBlank()) {
-                        galleryItems += BaGuideGalleryItem(
-                            title = guideRow.key.ifBlank { "影画" },
-                            imageUrl = imageUrl
-                        )
-                    } else if (guideRow.value.isNotBlank()) {
+                    if (row.imageValues.isNotEmpty()) {
+                        galleryItems += row.imageValues.mapIndexed { index, url ->
+                            BaGuideGalleryItem(
+                                title = if (row.imageValues.size > 1) "${guideRow.key.ifBlank { "影画" }} ${index + 1}" else guideRow.key.ifBlank { "影画" },
+                                imageUrl = url,
+                                mediaType = if (row.mediaTypes.contains("live2d")) "live2d" else "image",
+                                mediaUrl = url
+                            )
+                        }
+                    }
+                    if (row.videoValues.isNotEmpty()) {
+                        galleryItems += row.videoValues.mapIndexed { index, url ->
+                            BaGuideGalleryItem(
+                                title = if (row.videoValues.size > 1) "${guideRow.key.ifBlank { "影画" }} ${index + 1}" else guideRow.key.ifBlank { "影画" },
+                                imageUrl = row.imageValues.firstOrNull().orEmpty(),
+                                mediaType = "video",
+                                mediaUrl = url
+                            )
+                        }
+                    }
+                    if (row.imageValues.isEmpty() && row.videoValues.isEmpty() && guideRow.value.isNotBlank()) {
                         profileRows += guideRow
                     }
                 }
@@ -582,12 +839,6 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 }
             }
 
-            if (imageUrl.isNotBlank() && (isGallery || guideRow.key.contains("立绘") || guideRow.key.contains("本家画"))) {
-                galleryItems += BaGuideGalleryItem(
-                    title = guideRow.key.ifBlank { "影画" },
-                    imageUrl = imageUrl
-                )
-            }
             if (guideRow.key.isNotBlank() && guideRow.value.isNotBlank() && stats.none { it.first == guideRow.key }) {
                 stats += guideRow.key to guideRow.value
                 if (summaryCandidates.size < 4) {
@@ -607,8 +858,17 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         }
 
         val distinctGallery = galleryItems
-            .distinctBy { it.imageUrl }
-            .take(24)
+            .plus(galleryFromMediaTypes)
+            .plus(galleryFromStyleData)
+            .filter {
+                val media = it.mediaUrl.ifBlank { it.imageUrl }
+                media.isNotBlank()
+            }
+            .distinctBy {
+                val media = it.mediaUrl.ifBlank { it.imageUrl }
+                "${it.mediaType}|$media"
+            }
+            .take(100)
 
         GuideDetailExtract(
             imageUrl = firstImage,

@@ -1,6 +1,11 @@
 package com.example.keios.ui.page.main.student
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.widget.Toast
+import android.view.ViewGroup
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.text.BasicText
@@ -11,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,7 +24,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -31,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
@@ -43,12 +52,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import com.example.keios.ba.helper.GameKeeFetchHelper
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -64,17 +84,43 @@ import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
+private fun normalizeGuideMediaSource(raw: String): String {
+    val value = raw.trim()
+    if (value.isBlank()) return ""
+    return if (value.startsWith("file://", ignoreCase = true)) {
+        value
+    } else {
+        normalizeGuideUrl(value)
+    }
+}
+
+private fun loadGuideBitmapSource(
+    source: String,
+    onProgress: ((downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
+): Bitmap? {
+    if (source.isBlank()) return null
+    if (source.startsWith("file://", ignoreCase = true)) {
+        val path = runCatching { Uri.parse(source).path.orEmpty() }.getOrDefault("")
+        return if (path.isNotBlank()) BitmapFactory.decodeFile(path) else null
+    }
+    return if (onProgress != null) {
+        GameKeeFetchHelper.fetchImageWithProgress(source, onProgress)
+    } else {
+        GameKeeFetchHelper.fetchImage(source)
+    }
+}
+
 @Composable
 fun GuideRemoteImage(
     imageUrl: String,
     modifier: Modifier = Modifier,
     imageHeight: androidx.compose.ui.unit.Dp = 220.dp
 ) {
-    val target = remember(imageUrl) { normalizeGuideUrl(imageUrl) }
+    val target = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
     if (target.isBlank()) return
     val bitmap by produceState<Bitmap?>(initialValue = null, target) {
         value = withContext(Dispatchers.IO) {
-            runCatching { GameKeeFetchHelper.fetchImage(target) }.getOrNull()
+            runCatching { loadGuideBitmapSource(target) }.getOrNull()
         }
     }
     val rendered = bitmap ?: return
@@ -90,17 +136,67 @@ fun GuideRemoteImage(
 }
 
 @Composable
+fun GuideRemoteImageAdaptive(
+    imageUrl: String,
+    modifier: Modifier = Modifier,
+    progressState: MutableStateFlow<Float>? = null,
+    onLoadingChanged: ((Boolean) -> Unit)? = null
+) {
+    val target = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
+    if (target.isBlank()) {
+        progressState?.value = 1f
+        onLoadingChanged?.invoke(false)
+        return
+    }
+    val bitmap by produceState<Bitmap?>(initialValue = null, target) {
+        progressState?.value = 0f
+        onLoadingChanged?.invoke(true)
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                loadGuideBitmapSource(target) { downloadedBytes, totalBytes ->
+                    if (totalBytes > 0L) {
+                        progressState?.value =
+                            (downloadedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
+                    }
+                }
+            }.getOrNull()
+        }
+        if (value != null) {
+            progressState?.value = 1f
+        }
+        onLoadingChanged?.invoke(false)
+    }
+    val rendered = bitmap ?: return
+    val ratio = remember(rendered.width, rendered.height) {
+        if (rendered.width > 0 && rendered.height > 0) {
+            rendered.width.toFloat() / rendered.height.toFloat()
+        } else {
+            1f
+        }
+    }
+    Image(
+        bitmap = rendered.asImageBitmap(),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(ratio)
+            .clip(RoundedCornerShape(14.dp))
+    )
+}
+
+@Composable
 fun GuideRemoteIcon(
     imageUrl: String,
     modifier: Modifier = Modifier,
     iconWidth: androidx.compose.ui.unit.Dp = 20.dp,
     iconHeight: androidx.compose.ui.unit.Dp = iconWidth
 ) {
-    val target = remember(imageUrl) { normalizeGuideUrl(imageUrl) }
+    val target = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
     if (target.isBlank()) return
     val bitmap by produceState<Bitmap?>(initialValue = null, target) {
         value = withContext(Dispatchers.IO) {
-            runCatching { GameKeeFetchHelper.fetchImage(target) }.getOrNull()
+            runCatching { loadGuideBitmapSource(target) }.getOrNull()
         }
     }
     val rendered = bitmap ?: return
@@ -146,28 +242,447 @@ fun GuideRowsSection(
 }
 
 @Composable
-fun GuideGallerySection(
-    items: List<BaGuideGalleryItem>,
-    emptyText: String
+fun GuideGalleryCardItem(
+    item: BaGuideGalleryItem,
+    backdrop: Backdrop?,
+    onOpenMedia: (String) -> Unit,
+    mediaUrlResolver: (String) -> String = { it },
+    modifier: Modifier = Modifier
 ) {
-    if (items.isEmpty()) {
-        Text(emptyText, color = MiuixTheme.colorScheme.onBackgroundVariant)
+    val mediaTypeLabel = when (item.mediaType.lowercase()) {
+        "video" -> "视频"
+        "live2d" -> "Live2D"
+        "imageset" -> "图集"
+        else -> "影画"
+    }
+    val displayImageUrl = mediaUrlResolver(item.imageUrl)
+    val displayMediaUrl = mediaUrlResolver(item.mediaUrl)
+    val isImageType = item.mediaType.lowercase() != "video"
+    val canOpenMedia = item.mediaUrl.isNotBlank() && item.mediaUrl != item.imageUrl
+    val imageProgressState = remember(displayImageUrl) {
+        MutableStateFlow(if (displayImageUrl.isBlank()) 1f else 0f)
+    }
+    val imageProgress by imageProgressState.collectAsState()
+    var imageLoading by remember(displayImageUrl) { mutableStateOf(displayImageUrl.isNotBlank()) }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = item.title.ifBlank { "影画条目" },
+                    color = MiuixTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (isImageType && displayImageUrl.isNotBlank()) {
+                    CircularProgressIndicator(
+                        progress = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f,
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = Color(0xFF3B82F6),
+                            backgroundColor = Color(0x553B82F6)
+                        )
+                    )
+                }
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = mediaTypeLabel,
+                    enabled = false,
+                    textColor = Color(0xFF3B82F6),
+                    bottomBarStyle = true,
+                    onClick = {}
+                )
+            }
+
+            if (displayImageUrl.isNotBlank()) {
+                GuideRemoteImageAdaptive(
+                    imageUrl = displayImageUrl,
+                    progressState = if (isImageType) imageProgressState else null,
+                    onLoadingChanged = if (isImageType) {
+                        { loading -> imageLoading = loading }
+                    } else {
+                        null
+                    }
+                )
+            }
+
+            if (canOpenMedia) {
+                if (item.mediaType.lowercase() == "video") {
+                    GuideInlineVideoPlayer(
+                        mediaUrl = displayMediaUrl,
+                        backdrop = backdrop,
+                        onOpenExternal = onOpenMedia
+                    )
+                } else {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "打开",
+                        leadingIcon = MiuixIcons.Regular.Play,
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = { onOpenMedia(item.mediaUrl) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GuideGalleryExpressionCardItem(
+    title: String,
+    items: List<BaGuideGalleryItem>,
+    backdrop: Backdrop?,
+    onOpenMedia: (String) -> Unit,
+    mediaUrlResolver: (String) -> String = { it },
+    modifier: Modifier = Modifier
+) {
+    if (items.isEmpty()) return
+    var showPicker by remember(title, items.size) { mutableStateOf(false) }
+    var selectedIndex by rememberSaveable(title, items.size) { mutableStateOf(0) }
+    LaunchedEffect(items.size) {
+        if (selectedIndex !in items.indices) selectedIndex = 0
+    }
+    val selectedItem = items.getOrElse(selectedIndex) { items.first() }
+    val displayImageUrl = mediaUrlResolver(selectedItem.imageUrl)
+    val displayMediaUrl = mediaUrlResolver(selectedItem.mediaUrl)
+    val optionLabels = remember(items) {
+        items.mapIndexed { index, _ -> "角色表情${index + 1}" }
+    }
+    val canOpenMedia = selectedItem.mediaUrl.isNotBlank() && selectedItem.mediaUrl != selectedItem.imageUrl
+    val isImageType = selectedItem.mediaType.lowercase() != "video"
+    val imageProgressState = remember(displayImageUrl) {
+        MutableStateFlow(if (displayImageUrl.isBlank()) 1f else 0f)
+    }
+    val imageProgress by imageProgressState.collectAsState()
+    var imageLoading by remember(displayImageUrl) { mutableStateOf(displayImageUrl.isNotBlank()) }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    color = MiuixTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (isImageType && displayImageUrl.isNotBlank()) {
+                    CircularProgressIndicator(
+                        progress = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f,
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = Color(0xFF3B82F6),
+                            backgroundColor = Color(0x553B82F6)
+                        )
+                    )
+                }
+                Box {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = optionLabels.getOrElse(selectedIndex) { "角色表情1" },
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = { showPicker = !showPicker }
+                    )
+                    if (showPicker) {
+                        WindowListPopup(
+                            show = showPicker,
+                            alignment = PopupPositionProvider.Align.BottomEnd,
+                            onDismissRequest = { showPicker = false },
+                            enableWindowDim = false
+                        ) {
+                            ListPopupColumn {
+                                optionLabels.forEachIndexed { idx, option ->
+                                    DropdownImpl(
+                                        text = option,
+                                        optionSize = optionLabels.size,
+                                        isSelected = selectedIndex == idx,
+                                        index = idx,
+                                        onSelectedIndexChange = { selected ->
+                                            selectedIndex = selected
+                                            showPicker = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (displayImageUrl.isNotBlank()) {
+                GuideRemoteImageAdaptive(
+                    imageUrl = displayImageUrl,
+                    progressState = if (isImageType) imageProgressState else null,
+                    onLoadingChanged = if (isImageType) {
+                        { loading -> imageLoading = loading }
+                    } else {
+                        null
+                    }
+                )
+            }
+
+            if (canOpenMedia) {
+                if (selectedItem.mediaType.lowercase() == "video") {
+                    GuideInlineVideoPlayer(
+                        mediaUrl = displayMediaUrl,
+                        backdrop = backdrop,
+                        onOpenExternal = onOpenMedia
+                    )
+                } else {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "打开",
+                        leadingIcon = MiuixIcons.Regular.Play,
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = { onOpenMedia(selectedItem.mediaUrl) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuideInlineVideoPlayer(
+    mediaUrl: String,
+    backdrop: Backdrop?,
+    onOpenExternal: (String) -> Unit
+) {
+    val context = LocalContext.current
+    var expanded by rememberSaveable(mediaUrl) { mutableStateOf(false) }
+    val normalizedUrl = remember(mediaUrl) { normalizeGuideMediaSource(mediaUrl) }
+    var videoRatio by remember(normalizedUrl) { mutableStateOf(16f / 9f) }
+    var isBuffering by remember(normalizedUrl) { mutableStateOf(false) }
+    var isPlaying by remember(normalizedUrl) { mutableStateOf(false) }
+    var loadError by remember(normalizedUrl) { mutableStateOf<String?>(null) }
+
+    if (!expanded) {
+        GlassTextButton(
+            backdrop = backdrop,
+            text = "播放",
+            leadingIcon = MiuixIcons.Regular.Play,
+            textColor = Color(0xFF3B82F6),
+            bottomBarStyle = true,
+            onClick = {
+                if (normalizedUrl.isBlank()) {
+                    Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                    return@GlassTextButton
+                }
+                loadError = null
+                expanded = true
+            }
+        )
         return
     }
-    val visibleItems = items.distinctBy { it.imageUrl }.take(24)
-    visibleItems.forEachIndexed { index, item ->
-        if (item.title.isNotBlank()) {
-            Text(item.title, color = MiuixTheme.colorScheme.onBackground)
-            Spacer(modifier = Modifier.height(6.dp))
-        }
-        GuideRemoteImage(
-            imageUrl = item.imageUrl,
-            imageHeight = 220.dp
-        )
-        if (index < visibleItems.lastIndex) {
-            Spacer(modifier = Modifier.height(10.dp))
+
+    val player = remember(context, normalizedUrl, expanded) {
+        if (!expanded || normalizedUrl.isBlank()) {
+            null
+        } else {
+            buildGuideVideoPlayer(context).apply {
+                setMediaItem(MediaItem.fromUri(normalizedUrl))
+                playWhenReady = true
+                prepare()
+            }
         }
     }
+
+    DisposableEffect(player) {
+        val boundPlayer = player ?: return@DisposableEffect onDispose { }
+        val listener = object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    videoRatio = videoSize.width.toFloat() / videoSize.height.toFloat()
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                isBuffering = playbackState == Player.STATE_BUFFERING
+            }
+
+            override fun onIsPlayingChanged(isPlayingNow: Boolean) {
+                isPlaying = isPlayingNow
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                isBuffering = false
+                isPlaying = false
+                loadError = error.errorCodeName
+            }
+        }
+        boundPlayer.addListener(listener)
+        onDispose {
+            boundPlayer.removeListener(listener)
+            runCatching { boundPlayer.release() }
+            isBuffering = false
+            isPlaying = false
+        }
+    }
+
+    val activePlayer = player
+    if (activePlayer == null) {
+        GlassTextButton(
+            backdrop = backdrop,
+            text = "外部打开",
+            textColor = Color(0xFF3B82F6),
+            bottomBarStyle = true,
+            onClick = { onOpenExternal(mediaUrl) }
+        )
+        return
+    }
+
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(videoRatio)
+            .clip(RoundedCornerShape(14.dp)),
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                useController = true
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                this.player = activePlayer
+            }
+        },
+        update = { view ->
+            view.player = activePlayer
+            view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        }
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        GlassTextButton(
+            backdrop = backdrop,
+            text = if (isPlaying) "暂停" else "继续",
+            leadingIcon = if (isPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
+            textColor = Color(0xFF3B82F6),
+            bottomBarStyle = true,
+            onClick = {
+                if (isPlaying) {
+                    activePlayer.pause()
+                } else {
+                    activePlayer.play()
+                }
+            }
+        )
+        GlassTextButton(
+            backdrop = backdrop,
+            text = "外部打开",
+            textColor = Color(0xFF3B82F6),
+            bottomBarStyle = true,
+            onClick = { onOpenExternal(mediaUrl) }
+        )
+        GlassTextButton(
+            backdrop = backdrop,
+            text = "收起",
+            textColor = Color(0xFF3B82F6),
+            bottomBarStyle = true,
+            onClick = { expanded = false }
+        )
+    }
+
+    if (isBuffering) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(
+                progress = 0.35f,
+                size = 14.dp,
+                strokeWidth = 2.dp,
+                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                    foregroundColor = Color(0xFF60A5FA),
+                    backgroundColor = Color(0x3360A5FA)
+                )
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "视频加载中...",
+                color = MiuixTheme.colorScheme.onBackgroundVariant
+            )
+        }
+    }
+
+    loadError?.takeIf { it.isNotBlank() }?.let { err ->
+        Text(
+            text = "视频播放失败：$err，可尝试外部打开",
+            color = MiuixTheme.colorScheme.error,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun buildGuideVideoPlayer(context: Context): ExoPlayer {
+    val referer = "https://www.gamekee.com/"
+    val desktopUa =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+    val defaultHeaders = mapOf(
+        "Accept" to "*/*",
+        "Accept-Language" to "zh-CN",
+        "Referer" to referer,
+        "Origin" to "https://www.gamekee.com",
+        "User-Agent" to desktopUa,
+        "device-num" to "1",
+        "game-alias" to "ba",
+        "Connection" to "close"
+    )
+    val httpFactory = DefaultHttpDataSource.Factory()
+        .setAllowCrossProtocolRedirects(true)
+        .setUserAgent(desktopUa)
+        .setDefaultRequestProperties(defaultHeaders)
+    val mediaSourceFactory = DefaultMediaSourceFactory(
+        DefaultDataSource.Factory(context, httpFactory)
+    )
+    return ExoPlayer.Builder(context)
+        .setMediaSourceFactory(mediaSourceFactory)
+        .build()
 }
 
 @Composable

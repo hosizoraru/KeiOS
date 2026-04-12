@@ -41,7 +41,9 @@ data class BaGuideRow(
 
 data class BaGuideGalleryItem(
     val title: String,
-    val imageUrl: String
+    val imageUrl: String,
+    val mediaType: String = "image",
+    val mediaUrl: String = imageUrl
 )
 
 data class BaGuideVoiceEntry(

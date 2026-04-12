@@ -1,6 +1,7 @@
 package com.example.keios.ui.page.main
 
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -58,11 +59,13 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
+import com.example.keios.ui.page.main.student.BaGuideTempMediaCache
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
 import com.example.keios.ui.page.main.student.GuideBottomTab
 import com.example.keios.ui.page.main.student.GuideTab
 import com.example.keios.ui.page.main.student.GuideCombatMetaTile
-import com.example.keios.ui.page.main.student.GuideGallerySection
+import com.example.keios.ui.page.main.student.GuideGalleryCardItem
+import com.example.keios.ui.page.main.student.GuideGalleryExpressionCardItem
 import com.example.keios.ui.page.main.student.GuideProfileMetaLine
 import com.example.keios.ui.page.main.student.GuideRemoteImage
 import com.example.keios.ui.page.main.student.GuideRowsSection
@@ -127,6 +130,8 @@ fun BaStudentGuidePage(
     var playingVoiceUrl by rememberSaveable(sourceUrl) { mutableStateOf("") }
     var isVoicePlaying by remember(sourceUrl) { mutableStateOf(false) }
     var voicePlayProgress by remember(sourceUrl) { mutableFloatStateOf(0f) }
+    var galleryPrefetchRequested by rememberSaveable(sourceUrl) { mutableStateOf(false) }
+    var galleryCacheRevision by remember(sourceUrl) { mutableIntStateOf(0) }
     val bottomTabs = GuideBottomTab.entries
     val activeBottomTab = bottomTabs.getOrElse(selectedBottomTabIndex) { GuideBottomTab.Archive }
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -173,6 +178,12 @@ fun BaStudentGuidePage(
     DisposableEffect(voicePlayer) {
         onDispose {
             runCatching { voicePlayer.release() }
+        }
+    }
+
+    DisposableEffect(sourceUrl) {
+        onDispose {
+            BaGuideTempMediaCache.clearGuideCache(context, sourceUrl)
         }
     }
 
@@ -236,6 +247,19 @@ fun BaStudentGuidePage(
         }
     }
 
+    fun openExternal(rawUrl: String) {
+        val target = normalizeGuideUrl(rawUrl)
+        if (target.isBlank()) return
+        runCatching {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }.onFailure {
+            Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun toggleVoicePlayback(rawAudioUrl: String) {
         val target = normalizeGuideUrl(rawAudioUrl)
         if (target.isBlank()) return
@@ -282,6 +306,48 @@ fun BaStudentGuidePage(
             }
             delay(220)
         }
+    }
+
+    LaunchedEffect(activeBottomTab) {
+        if (activeBottomTab == GuideBottomTab.Gallery) {
+            galleryPrefetchRequested = true
+        }
+    }
+
+    LaunchedEffect(sourceUrl, galleryPrefetchRequested, info?.syncedAtMs) {
+        if (!galleryPrefetchRequested) return@LaunchedEffect
+        val guide = info ?: return@LaunchedEffect
+        val galleryItemsForPrefetch = if (guide.galleryItems.isNotEmpty()) {
+            guide.galleryItems
+                .filter { it.imageUrl.isNotBlank() || it.mediaUrl.isNotBlank() }
+                .distinctBy { "${it.mediaType}|${it.mediaUrl.ifBlank { it.imageUrl }}" }
+        } else {
+            listOfNotNull(
+                guide.imageUrl.takeIf { it.isNotBlank() }?.let {
+                    BaGuideGalleryItem(
+                        title = "立绘",
+                        imageUrl = it,
+                        mediaType = "image",
+                        mediaUrl = it
+                    )
+                }
+            )
+        }.filterNot(::isMemoryHallFileGalleryItem)
+
+        val urls = galleryItemsForPrefetch
+            .flatMap { item -> listOf(item.imageUrl, item.mediaUrl) }
+            .filter { it.isNotBlank() }
+            .distinct()
+        if (urls.isEmpty()) return@LaunchedEffect
+
+        withContext(Dispatchers.IO) {
+            BaGuideTempMediaCache.prefetchForGuide(
+                context = context,
+                sourceUrl = sourceUrl,
+                rawUrls = urls
+            )
+        }
+        galleryCacheRevision += 1
     }
 
     LaunchedEffect(sourceUrl, refreshSignal) {
@@ -744,6 +810,154 @@ fun BaStudentGuidePage(
                         }
                     }
 
+                    GuideBottomTab.Gallery -> {
+                        val guide = info
+                        if (guide == null) {
+                            item {
+                                FrostedBlock(
+                                    backdrop = backdrop,
+                                    title = activeBottomTab.label,
+                                    subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
+                                    accent = accent
+                                )
+                            }
+                        } else {
+                            val galleryItems = if (guide.galleryItems.isNotEmpty()) {
+                                guide.galleryItems
+                                    .filter {
+                                        it.imageUrl.isNotBlank() || it.mediaUrl.isNotBlank()
+                                    }
+                                    .distinctBy {
+                                        val media = it.mediaUrl.ifBlank { it.imageUrl }
+                                        "${it.mediaType}|$media"
+                                    }
+                            } else {
+                                listOfNotNull(
+                                    guide.imageUrl.takeIf { it.isNotBlank() }?.let {
+                                        BaGuideGalleryItem(
+                                            title = "立绘",
+                                            imageUrl = it,
+                                            mediaType = "image",
+                                            mediaUrl = it
+                                        )
+                                    }
+                                )
+                            }
+                            val cleanedGalleryItems = galleryItems.filterNot(::isMemoryHallFileGalleryItem)
+                            val expressionItems = cleanedGalleryItems
+                                .withIndex()
+                                .filter { isExpressionGalleryItem(it.value) }
+                                .sortedBy { indexed ->
+                                    expressionGalleryOrder(indexed.value.title, indexed.index + 1)
+                                }
+                                .map { it.value }
+                            val firstExpressionIndex = cleanedGalleryItems.indexOfFirst(::isExpressionGalleryItem)
+
+                            if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            if (showLoadingText(loading = loading, hasInfo = true)) {
+                                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                                            }
+                                            error?.takeIf { it.isNotBlank() }?.let {
+                                                Text(
+                                                    text = it,
+                                                    color = MiuixTheme.colorScheme.error,
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                            }
+
+                            if (cleanedGalleryItems.isNotEmpty()) {
+                                var renderedCount = 0
+                                cleanedGalleryItems.forEachIndexed { index, item ->
+                                    val isExpression = isExpressionGalleryItem(item)
+                                    if (isExpression && index != firstExpressionIndex) {
+                                        return@forEachIndexed
+                                    }
+                                    if (renderedCount > 0) {
+                                        item { Spacer(modifier = Modifier.height(10.dp)) }
+                                    }
+                                    item {
+                                        if (isExpression && expressionItems.isNotEmpty()) {
+                                            GuideGalleryExpressionCardItem(
+                                                title = "角色表情",
+                                                items = expressionItems,
+                                                backdrop = backdrop,
+                                                onOpenMedia = ::openExternal,
+                                                mediaUrlResolver = { raw ->
+                                                    galleryCacheRevision.let {
+                                                        BaGuideTempMediaCache.resolveCachedUrl(
+                                                            context = context,
+                                                            sourceUrl = sourceUrl,
+                                                            rawUrl = raw
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                        } else {
+                                            GuideGalleryCardItem(
+                                                item = item,
+                                                backdrop = backdrop,
+                                                onOpenMedia = ::openExternal,
+                                                mediaUrlResolver = { raw ->
+                                                    galleryCacheRevision.let {
+                                                        BaGuideTempMediaCache.resolveCachedUrl(
+                                                            context = context,
+                                                            sourceUrl = sourceUrl,
+                                                            rawUrl = raw
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                    renderedCount += 1
+                                }
+                            } else {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                                        ) {
+                                            Text(
+                                                text = "暂未解析到影画鉴赏内容，点击右上角刷新后重试。",
+                                                color = MiuixTheme.colorScheme.onBackgroundVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     else -> {
                         item {
                             FrostedBlock(
@@ -770,15 +984,6 @@ fun BaStudentGuidePage(
                                         val profileRows = guide.profileRowsForDisplay()
                                         val visibleProfileRows = profileRows.filterNot { shouldHideMovedHeaderRow(it) }
                                         val growthRows = guide.growthRowsForDisplay()
-                                        val galleryItems = if (guide.galleryItems.isNotEmpty()) {
-                                            guide.galleryItems
-                                        } else {
-                                            listOfNotNull(
-                                                guide.imageUrl
-                                                    .takeIf { it.isNotBlank() }
-                                                    ?.let { BaGuideGalleryItem("立绘", it) }
-                                            )
-                                        }
                                         val activeGuideTab = activeBottomTab.guideTab
 
                                         Text(
@@ -802,13 +1007,6 @@ fun BaStudentGuidePage(
                                                 )
                                             }
 
-                                            GuideTab.Gallery -> {
-                                                GuideGallerySection(
-                                                    items = galleryItems,
-                                                    emptyText = "暂未解析到影画鉴赏内容。"
-                                                )
-                                            }
-
                                             GuideTab.Simulate -> {
                                                 GuideRowsSection(
                                                     rows = growthRows,
@@ -827,4 +1025,29 @@ fun BaStudentGuidePage(
             }
         }
     }
+}
+
+private fun normalizeGalleryTitle(raw: String): String {
+    return raw.replace(Regex("\\s+"), "").trim()
+}
+
+private fun isMemoryHallFileGalleryItem(item: BaGuideGalleryItem): Boolean {
+    val title = normalizeGalleryTitle(item.title)
+    return title.startsWith("回忆大厅文件")
+}
+
+private fun isExpressionGalleryItem(item: BaGuideGalleryItem): Boolean {
+    val title = normalizeGalleryTitle(item.title)
+    return title.startsWith("角色表情")
+}
+
+private fun expressionGalleryOrder(title: String, fallback: Int): Int {
+    val normalized = normalizeGalleryTitle(title)
+    if (normalized == "角色表情") return 1
+    return Regex("""角色表情(\d+)""")
+        .find(normalized)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
+        ?: fallback
 }
