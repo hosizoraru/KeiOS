@@ -220,26 +220,34 @@ object GitHubVersionUtils {
         val src = raw.trim().lowercase(Locale.ROOT)
         if (src.isBlank()) return null
 
-        val numberMatches = Regex("""\d+""").findAll(src).map { it.value.toIntOrNull() ?: 0 }.toList()
-        if (numberMatches.isEmpty()) return null
+        val normalized = src.removePrefix("v")
+        val coreMatch = Regex("""\d+(?:[._]\d+)*""").find(normalized) ?: return null
+        val coreNumbers = coreMatch.value
+            .split('.', '_')
+            .mapNotNull { it.toIntOrNull() }
+        if (coreNumbers.isEmpty()) return null
 
-        val channel = when {
-            src.contains("dev") || src.contains("canary") -> Channel.DEV
-            src.contains("alpha") || src.contains("a") -> Channel.ALPHA
-            src.contains("beta") || src.contains("b") -> Channel.BETA
-            src.contains("rc") -> Channel.RC
-            src.contains("preview") || src.contains("pre") -> Channel.PREVIEW
+        val suffix = normalized.substring(coreMatch.range.last + 1)
+        val channelMatch = Regex(
+            """(?:^|[^a-z])(dev|canary|alpha|beta|rc|preview|pre(?:-release)?)(?:[^a-z0-9]*(\d+))?"""
+        ).find(suffix.ifBlank { normalized })
+
+        val channel = when (channelMatch?.groupValues?.getOrNull(1).orEmpty()) {
+            "dev", "canary" -> Channel.DEV
+            "alpha" -> Channel.ALPHA
+            "beta" -> Channel.BETA
+            "rc" -> Channel.RC
+            "preview", "pre", "pre-release" -> Channel.PREVIEW
             else -> Channel.STABLE
         }
 
-        val channelNumber = Regex("""(?:dev|canary|alpha|beta|rc|preview|pre)\D*(\d+)""")
-            .find(src)
+        val channelNumber = channelMatch
             ?.groupValues
-            ?.getOrNull(1)
+            ?.getOrNull(2)
             ?.toIntOrNull()
             ?: 0
 
-        return VersionParts(numberMatches, channel, channelNumber)
+        return VersionParts(coreNumbers, channel, channelNumber)
     }
 
     private fun String.decodeXmlEscapes(): String {

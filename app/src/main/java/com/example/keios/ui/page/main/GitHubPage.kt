@@ -218,7 +218,9 @@ fun GitHubPage(
                 stableResult.fold(
                     onSuccess = { signals ->
                         val cmp = GitHubVersionUtils.compareVersionToCandidates(local, signals.candidates)
-                        val latestPreLabel = latestPreEntry?.title?.ifBlank { latestPreEntry.tag }.orEmpty()
+                        val latestPreLabel = latestPreEntry?.tag?.ifBlank {
+                            latestPreEntry.title
+                        }.orEmpty()
                         val preVsStable = if (latestPreLabel.isNotBlank()) {
                             GitHubVersionUtils.compareVersionToCandidates(latestPreLabel, signals.candidates)
                         } else {

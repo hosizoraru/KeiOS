@@ -828,7 +828,9 @@ class LocalMcpService(
         return stableResult.fold(
             onSuccess = { stable ->
                 val cmp = GitHubVersionUtils.compareVersionToCandidates(local, stable.candidates)
-                val latestPreLabel = latestPreEntry?.title?.ifBlank { latestPreEntry.tag }.orEmpty()
+                val latestPreLabel = latestPreEntry?.tag?.ifBlank {
+                    latestPreEntry.title
+                }.orEmpty()
                 val preVsStable = if (latestPreLabel.isNotBlank()) {
                     GitHubVersionUtils.compareVersionToCandidates(latestPreLabel, stable.candidates)
                 } else {
