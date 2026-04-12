@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -43,11 +46,11 @@ import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
@@ -61,8 +64,13 @@ import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Report
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun McpPage(
@@ -89,6 +97,7 @@ fun McpPage(
     var controlExpanded by remember { mutableStateOf(true) }
     var configExpanded by remember { mutableStateOf(false) }
     var logsExpanded by remember { mutableStateOf(false) }
+    var showResetTokenConfirm by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val toggleServer: () -> Unit = {
@@ -362,53 +371,192 @@ fun McpPage(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            GlassSearchField(
-                value = serverName,
-                onValueChange = { serverName = it },
-                label = "服务名称（配置展示名）",
-                backdrop = backdrop,
-                bottomBarStyle = true,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            GlassSearchField(
-                value = portText,
-                onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-                label = "服务端口",
-                backdrop = backdrop,
-                bottomBarStyle = true,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                GlassTextButton(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(0.34f)
+                        .heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "服务名称",
+                        color = MiuixTheme.colorScheme.onBackgroundVariant
+                    )
+                }
+                GlassSearchField(
+                    value = serverName,
+                    onValueChange = { serverName = it },
+                    label = "输入服务名称",
                     backdrop = backdrop,
                     bottomBarStyle = true,
-                    text = if (!allowExternal) "仅本机(已选)" else "仅本机",
-                    modifier = Modifier.weight(1f),
-                    onClick = { allowExternal = false }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassTextButton(
-                    backdrop = backdrop,
-                    bottomBarStyle = true,
-                    text = if (allowExternal) "局域网(已选)" else "局域网",
-                    modifier = Modifier.weight(1f),
-                    onClick = { allowExternal = true }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                GlassTextButton(
-                    backdrop = backdrop,
-                    bottomBarStyle = true,
-                    text = "重置Token",
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        mcpServerManager.regenerateAuthToken()
-                        Toast.makeText(context, "Token 已重置，需重连客户端", Toast.LENGTH_SHORT).show()
-                    }
+                    singleLine = true,
+                    modifier = Modifier.weight(0.66f)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(0.34f)
+                        .heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = "服务端口",
+                        color = MiuixTheme.colorScheme.onBackgroundVariant
+                    )
+                }
+                GlassSearchField(
+                    value = portText,
+                    onValueChange = { portText = it.filter(Char::isDigit).take(5) },
+                    label = "输入端口",
+                    backdrop = backdrop,
+                    bottomBarStyle = true,
+                    singleLine = true,
+                    modifier = Modifier.weight(0.66f)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "网络访问范围",
+                color = MiuixTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            McpNetworkModeOption(
+                backdrop = backdrop,
+                title = "仅本机",
+                summary = "仅允许本机客户端通过 127.0.0.1 访问",
+                selected = !allowExternal,
+                onClick = { allowExternal = false }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            McpNetworkModeOption(
+                backdrop = backdrop,
+                title = "局域网",
+                summary = "允许同一局域网设备接入，请注意网络安全",
+                selected = allowExternal,
+                onClick = { allowExternal = true }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "危险操作",
+                color = MiuixTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            GlassTextButton(
+                backdrop = backdrop,
+                bottomBarStyle = true,
+                text = "重置 Token",
+                textColor = MiuixTheme.colorScheme.error,
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { showResetTokenConfirm = true }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+
+    WindowDialog(
+        show = showResetTokenConfirm,
+        title = "重置 Token",
+        summary = "重置后，现有客户端需要重新配置或重新连接。确定继续吗？",
+        onDismissRequest = { showResetTokenConfirm = false }
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    text = "取消",
+                    onClick = { showResetTokenConfirm = false }
+                )
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    text = "重置",
+                    colors = ButtonDefaults.textButtonColors(
+                        color = MiuixTheme.colorScheme.error,
+                        textColor = MiuixTheme.colorScheme.onError
+                    ),
+                    onClick = {
+                        mcpServerManager.regenerateAuthToken()
+                        Toast.makeText(context, "Token 已重置，需重连客户端", Toast.LENGTH_SHORT).show()
+                        showResetTokenConfirm = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun McpNetworkModeOption(
+    backdrop: Backdrop?,
+    title: String,
+    summary: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val selectedColor = Color(0xFF22C55E)
+    val cardColor = if (selected) selectedColor.copy(alpha = 0.12f) else MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        colors = CardDefaults.defaultColors(
+            color = cardColor,
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        color = MiuixTheme.colorScheme.onBackground
+                    )
+                    if (selected) {
+                        StatusPill(
+                            label = "已激活",
+                            color = selectedColor
+                        )
+                    }
+                }
+                Text(
+                    text = summary,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                )
+            }
+            RadioButton(
+                selected = selected,
+                onClick = onClick
+            )
         }
     }
 }
