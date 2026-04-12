@@ -158,6 +158,7 @@ private fun formatRefreshAgo(lastRefreshMs: Long, nowMs: Long = System.currentTi
 fun GitHubPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    cardPressFeedbackEnabled: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -728,7 +729,7 @@ fun GitHubPage(
                     },
                     contentColor = MiuixTheme.colorScheme.onBackground
                 ),
-                showIndication = true,
+                showIndication = cardPressFeedbackEnabled,
                 onClick = { refreshAllTracked(showToast = true) }
             ) {
                 Column(

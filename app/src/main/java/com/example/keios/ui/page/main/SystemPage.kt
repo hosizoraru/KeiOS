@@ -1009,6 +1009,7 @@ fun SystemPage(
     scrollToTopSignal: Int,
     shizukuStatus: String,
     shizukuApiUtils: ShizukuApiUtils,
+    cardPressFeedbackEnabled: Boolean = true,
     contentBottomPadding: Dp = 72.dp,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -1362,7 +1363,7 @@ fun SystemPage(
                     },
                     contentColor = titleColor
                 ),
-                showIndication = true,
+                showIndication = cardPressFeedbackEnabled,
                 onClick = {
                     if (refreshing) return@Card
                     scope.launch { refreshAllSections() }

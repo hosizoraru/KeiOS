@@ -87,6 +87,7 @@ fun MainScreen(
     val navigator = remember { Navigator(backStack) }
 
     var liquidBottomBarEnabled by remember { mutableStateOf(UiPrefs.isLiquidBottomBarEnabled()) }
+    var cardPressFeedbackEnabled by remember { mutableStateOf(UiPrefs.isCardPressFeedbackEnabled()) }
 
     val entryProvider = remember(backStack) {
         entryProvider<NavKey> {
@@ -95,6 +96,7 @@ fun MainScreen(
                 MainPagerLayout(
                     navigator = navigator,
                     liquidBottomBarEnabled = liquidBottomBarEnabled,
+                    cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     appLabel = appLabel,
                     packageInfo = packageInfo,
                     shizukuStatus = shizukuStatus,
@@ -110,6 +112,11 @@ fun MainScreen(
                     onLiquidBottomBarChanged = {
                         liquidBottomBarEnabled = it
                         UiPrefs.setLiquidBottomBarEnabled(it)
+                    },
+                    cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                    onCardPressFeedbackChanged = {
+                        cardPressFeedbackEnabled = it
+                        UiPrefs.setCardPressFeedbackEnabled(it)
                     },
                     onBack = { navigator.pop() }
                 )
@@ -156,6 +163,7 @@ fun MainScreen(
 private fun MainPagerLayout(
     navigator: Navigator,
     liquidBottomBarEnabled: Boolean,
+    cardPressFeedbackEnabled: Boolean,
     appLabel: String,
     packageInfo: PackageInfo?,
     shizukuStatus: String,
@@ -378,6 +386,7 @@ private fun MainPagerLayout(
                             scrollToTopSignal = systemScrollToTopSignal,
                             shizukuStatus = shizukuStatus,
                             shizukuApiUtils = shizukuApiUtils,
+                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             contentBottomPadding = bottomOverlayPadding,
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
@@ -388,6 +397,7 @@ private fun MainPagerLayout(
                         BAPage(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = baScrollToTopSignal,
+                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             onOpenPoolStudentGuide = { sourceUrl ->
                                 val target = sourceUrl.trim()
                                 if (target.isNotBlank()) {
@@ -405,6 +415,7 @@ private fun MainPagerLayout(
                             mcpServerManager = mcpServerManager,
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = mcpScrollToTopSignal,
+                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             onOpenSkill = { navigator.push(KeiosRoute.McpSkill) },
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
@@ -415,6 +426,7 @@ private fun MainPagerLayout(
                         GitHubPage(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = githubScrollToTopSignal,
+                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
                             }

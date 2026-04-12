@@ -1129,6 +1129,7 @@ private object BASettingsStore {
 fun BAPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    cardPressFeedbackEnabled: Boolean = true,
     onOpenPoolStudentGuide: (String) -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -1236,7 +1237,7 @@ fun BAPage(
         1 -> "夏萊行政室"
         else -> "夏莱办公室"
     }
-    val suspendCardFeedback = glassButtonPressCount > 0
+    val disableCardFeedback = glassButtonPressCount > 0 || !cardPressFeedbackEnabled
     val onGlassButtonPressedChange: (Boolean) -> Unit = { pressed ->
         glassButtonPressCount = if (pressed) {
             glassButtonPressCount + 1
@@ -1992,7 +1993,7 @@ fun BAPage(
                         color = if (isWorkActivated) Color(0x333B82F6) else Color(0x33F59E0B),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    showIndication = true,
+                    showIndication = !disableCardFeedback,
                     onClick = {
                         if (initState == BAInitState.Empty) {
                             initState = BAInitState.Draft
@@ -2270,8 +2271,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
-                    showIndication = !suspendCardFeedback,
+                    pressFeedbackType = if (disableCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
+                    showIndication = !disableCardFeedback,
                     onClick = {}
                 ) {
                     Column(
@@ -2420,8 +2421,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
-                    showIndication = !suspendCardFeedback,
+                    pressFeedbackType = if (disableCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
+                    showIndication = !disableCardFeedback,
                     onClick = {}
                 ) {
                     Column(
@@ -2575,8 +2576,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
-                    showIndication = !suspendCardFeedback,
+                    pressFeedbackType = if (disableCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
+                    showIndication = !disableCardFeedback,
                     onClick = {}
                 ) {
                     Column(
@@ -2722,8 +2723,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
-                    showIndication = !suspendCardFeedback,
+                    pressFeedbackType = if (disableCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
+                    showIndication = !disableCardFeedback,
                     onClick = {}
                 ) {
                     val accentBlue = Color(0xFF3B82F6)
@@ -2811,8 +2812,8 @@ fun BAPage(
                         color = Color(0x223B82F6),
                         contentColor = MiuixTheme.colorScheme.onBackground
                     ),
-                    pressFeedbackType = if (suspendCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
-                    showIndication = !suspendCardFeedback,
+                    pressFeedbackType = if (disableCardFeedback) PressFeedbackType.None else PressFeedbackType.Sink,
+                    showIndication = !disableCardFeedback,
                     onClick = {}
                 ) {
                     Column(

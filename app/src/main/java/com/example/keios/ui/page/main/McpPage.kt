@@ -69,6 +69,7 @@ fun McpPage(
     mcpServerManager: McpServerManager,
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    cardPressFeedbackEnabled: Boolean = true,
     onOpenSkill: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -201,7 +202,7 @@ fun McpPage(
                     color = if (uiState.running) overviewGreen else overviewRed,
                     contentColor = titleColor
                 ),
-                showIndication = true,
+                showIndication = cardPressFeedbackEnabled,
                 onClick = toggleServer,
                 onLongPress = { showEditSheet = true }
             ) {

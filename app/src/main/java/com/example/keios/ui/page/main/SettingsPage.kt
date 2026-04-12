@@ -36,6 +36,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun SettingsPage(
     liquidBottomBarEnabled: Boolean,
     onLiquidBottomBarChanged: (Boolean) -> Unit,
+    cardPressFeedbackEnabled: Boolean,
+    onCardPressFeedbackChanged: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     val titleColor = MiuixTheme.colorScheme.onBackground
@@ -129,6 +131,70 @@ fun SettingsPage(
                         MiuixInfoItem(
                             key = "样式说明",
                             value = "胶囊底栏 + 选中态高亮 + 轻量玻璃质感"
+                        )
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = Color(0x223B82F6),
+                        contentColor = MiuixTheme.colorScheme.onBackground
+                    ),
+                    onClick = {}
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Card Feedback", color = titleColor)
+                            GlassTextButton(
+                                backdrop = null,
+                                text = if (cardPressFeedbackEnabled) "ON" else "OFF",
+                                enabled = false,
+                                textColor = if (cardPressFeedbackEnabled) Color(0xFF34C759) else Color(0xFF60A5FA),
+                                bottomBarStyle = true,
+                                onClick = {}
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onCardPressFeedbackChanged(!cardPressFeedbackEnabled) },
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("卡片按压反馈", color = titleColor)
+                                Text(
+                                    text = if (cardPressFeedbackEnabled) {
+                                        "启用所有支持 PressFeedback 的卡片反馈"
+                                    } else {
+                                        "全局禁用 Sink / Tilt 等卡片按压反馈"
+                                    },
+                                    color = subtitleColor,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                            Switch(
+                                checked = cardPressFeedbackEnabled,
+                                onCheckedChange = { checked -> onCardPressFeedbackChanged(checked) }
+                            )
+                        }
+
+                        MiuixInfoItem(
+                            key = "作用范围",
+                            value = "System / MCP / GitHub / BA 等支持按压反馈的卡片"
                         )
                     }
                 }
