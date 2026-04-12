@@ -87,7 +87,8 @@ import top.yukonga.miuix.kmp.window.WindowListPopup
 private fun normalizeGuideMediaSource(raw: String): String {
     val value = raw.trim()
     if (value.isBlank()) return ""
-    return if (value.startsWith("file://", ignoreCase = true)) {
+    val scheme = runCatching { Uri.parse(value).scheme.orEmpty() }.getOrDefault("")
+    return if (scheme.equals("file", ignoreCase = true)) {
         value
     } else {
         normalizeGuideUrl(value)
@@ -99,8 +100,9 @@ private fun loadGuideBitmapSource(
     onProgress: ((downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
 ): Bitmap? {
     if (source.isBlank()) return null
-    if (source.startsWith("file://", ignoreCase = true)) {
-        val path = runCatching { Uri.parse(source).path.orEmpty() }.getOrDefault("")
+    val uri = runCatching { Uri.parse(source) }.getOrNull()
+    if (uri?.scheme.equals("file", ignoreCase = true)) {
+        val path = uri?.path.orEmpty().ifBlank { Uri.decode(uri?.encodedPath.orEmpty()) }
         return if (path.isNotBlank()) BitmapFactory.decodeFile(path) else null
     }
     return if (onProgress != null) {
@@ -476,6 +478,47 @@ fun GuideGalleryExpressionCardItem(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun GuideGalleryUnlockLevelCardItem(
+    level: String,
+    backdrop: Backdrop?,
+    modifier: Modifier = Modifier
+) {
+    if (level.isBlank()) return
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "回忆大厅解锁等级",
+                color = MiuixTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            GlassTextButton(
+                backdrop = backdrop,
+                text = level,
+                enabled = false,
+                textColor = Color(0xFF3B82F6),
+                bottomBarStyle = true,
+                onClick = {}
+            )
         }
     }
 }

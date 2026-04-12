@@ -43,7 +43,8 @@ data class BaGuideGalleryItem(
     val title: String,
     val imageUrl: String,
     val mediaType: String = "image",
-    val mediaUrl: String = imageUrl
+    val mediaUrl: String = imageUrl,
+    val memoryUnlockLevel: String = ""
 )
 
 data class BaGuideVoiceEntry(

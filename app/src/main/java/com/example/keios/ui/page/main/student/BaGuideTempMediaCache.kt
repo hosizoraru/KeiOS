@@ -82,7 +82,7 @@ object BaGuideTempMediaCache {
         if (normalized.isBlank()) return normalized
         val file = targetFile(context, sourceUrl, normalized)
         if (file.exists() && file.length() > 0L) {
-            return file.toURI().toString()
+            return Uri.fromFile(file).toString()
         }
         return normalized
     }
@@ -99,4 +99,3 @@ object BaGuideTempMediaCache {
         }
     }
 }
-

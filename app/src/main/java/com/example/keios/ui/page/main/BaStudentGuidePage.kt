@@ -66,6 +66,7 @@ import com.example.keios.ui.page.main.student.GuideTab
 import com.example.keios.ui.page.main.student.GuideCombatMetaTile
 import com.example.keios.ui.page.main.student.GuideGalleryCardItem
 import com.example.keios.ui.page.main.student.GuideGalleryExpressionCardItem
+import com.example.keios.ui.page.main.student.GuideGalleryUnlockLevelCardItem
 import com.example.keios.ui.page.main.student.GuideProfileMetaLine
 import com.example.keios.ui.page.main.student.GuideRemoteImage
 import com.example.keios.ui.page.main.student.GuideRowsSection
@@ -844,6 +845,18 @@ fun BaStudentGuidePage(
                                 )
                             }
                             val cleanedGalleryItems = galleryItems.filterNot(::isMemoryHallFileGalleryItem)
+                            val memoryUnlockLevel = cleanedGalleryItems
+                                .asSequence()
+                                .map { it.memoryUnlockLevel }
+                                .firstOrNull { it.isNotBlank() }
+                                .orEmpty()
+                                .ifBlank {
+                                    val fallback = guide.profileRows
+                                        .firstOrNull { it.key.trim() == "回忆大厅解锁等级" }
+                                        ?.value
+                                        .orEmpty()
+                                    Regex("""\d+""").find(fallback)?.value.orEmpty().ifBlank { fallback }
+                                }
                             val expressionItems = cleanedGalleryItems
                                 .withIndex()
                                 .filter { isExpressionGalleryItem(it.value) }
@@ -852,6 +865,7 @@ fun BaStudentGuidePage(
                                 }
                                 .map { it.value }
                             val firstExpressionIndex = cleanedGalleryItems.indexOfFirst(::isExpressionGalleryItem)
+                            val firstMemoryHallIndex = cleanedGalleryItems.indexOfFirst(::isMemoryHallGalleryItem)
 
                             if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
                                 item {
@@ -888,6 +902,7 @@ fun BaStudentGuidePage(
 
                             if (cleanedGalleryItems.isNotEmpty()) {
                                 var renderedCount = 0
+                                var insertedUnlockLevel = false
                                 cleanedGalleryItems.forEachIndexed { index, item ->
                                     val isExpression = isExpressionGalleryItem(item)
                                     if (isExpression && index != firstExpressionIndex) {
@@ -896,6 +911,22 @@ fun BaStudentGuidePage(
                                     if (renderedCount > 0) {
                                         item { Spacer(modifier = Modifier.height(10.dp)) }
                                     }
+
+                                    // 将“回忆大厅解锁等级”展示在立绘组和回忆大厅之间。
+                                    if (!insertedUnlockLevel &&
+                                        memoryUnlockLevel.isNotBlank() &&
+                                        index == firstMemoryHallIndex
+                                    ) {
+                                        item {
+                                            GuideGalleryUnlockLevelCardItem(
+                                                level = memoryUnlockLevel,
+                                                backdrop = backdrop
+                                            )
+                                        }
+                                        item { Spacer(modifier = Modifier.height(10.dp)) }
+                                        insertedUnlockLevel = true
+                                    }
+
                                     item {
                                         if (isExpression && expressionItems.isNotEmpty()) {
                                             GuideGalleryExpressionCardItem(
@@ -1039,6 +1070,11 @@ private fun isMemoryHallFileGalleryItem(item: BaGuideGalleryItem): Boolean {
 private fun isExpressionGalleryItem(item: BaGuideGalleryItem): Boolean {
     val title = normalizeGalleryTitle(item.title)
     return title.startsWith("角色表情")
+}
+
+private fun isMemoryHallGalleryItem(item: BaGuideGalleryItem): Boolean {
+    val title = normalizeGalleryTitle(item.title)
+    return title.startsWith("回忆大厅") && !title.startsWith("回忆大厅视频") && !title.startsWith("回忆大厅文件")
 }
 
 private fun expressionGalleryOrder(title: String, fallback: Int): Int {

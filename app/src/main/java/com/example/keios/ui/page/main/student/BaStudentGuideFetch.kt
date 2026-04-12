@@ -249,10 +249,35 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
         return galleryKeywords.any { key.contains(it, ignoreCase = true) }
     }
 
+    val memoryUnlockLevel = run {
+        var level = ""
+        for (i in 0 until baseData.length()) {
+            val row = baseData.optJSONArray(i) ?: continue
+            if (row.length() == 0) continue
+            val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+            if (key != "回忆大厅解锁等级") continue
+            val value = buildString {
+                for (j in 1 until row.length()) {
+                    val cell = row.optJSONObject(j) ?: continue
+                    val text = stripHtml(cell.optString("value"))
+                    if (text.isNotBlank()) {
+                        append(text)
+                        break
+                    }
+                }
+            }
+            val digits = Regex("""\d+""").find(value)?.value.orEmpty()
+            level = if (digits.isNotBlank()) digits else value
+            break
+        }
+        level
+    }
+
     for (i in 0 until baseData.length()) {
         val row = baseData.optJSONArray(i) ?: continue
         if (row.length() == 0) continue
         val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+        if (key == "回忆大厅解锁等级") continue
         if (key.replace(" ", "").startsWith("回忆大厅文件")) continue
         if (!isGalleryKey(key)) continue
 
@@ -293,7 +318,8 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
                     title = if (rowImages.size > 1) "$key ${index + 1}" else key,
                     imageUrl = imageUrl,
                     mediaType = "image",
-                    mediaUrl = imageUrl
+                    mediaUrl = imageUrl,
+                    memoryUnlockLevel = if (key.startsWith("回忆大厅")) memoryUnlockLevel else ""
                 )
             }
         }
@@ -303,7 +329,8 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
                     title = if (rowVideos.size > 1) "$key ${index + 1}" else key,
                     imageUrl = rowImages.firstOrNull().orEmpty(),
                     mediaType = "video",
-                    mediaUrl = videoUrl
+                    mediaUrl = videoUrl,
+                    memoryUnlockLevel = if (key.startsWith("回忆大厅")) memoryUnlockLevel else ""
                 )
             }
         }
@@ -711,6 +738,15 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             )
         }
 
+        val memoryUnlockLevel = run {
+            val raw = baseRows.firstOrNull { it.key == "回忆大厅解锁等级" }
+                ?.textValues
+                ?.joinToString(" ")
+                .orEmpty()
+            val digits = Regex("""\d+""").find(raw)?.value.orEmpty()
+            if (digits.isNotBlank()) digits else raw
+        }
+
         fun containsAny(target: String, keywords: List<String>): Boolean {
             return keywords.any { key -> target.contains(key, ignoreCase = true) }
         }
@@ -763,6 +799,9 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             val normalizedKey = key.ifBlank { value }
                 .replace("\n", " ")
                 .trim()
+            if (normalizedKey == "回忆大厅解锁等级") {
+                return@forEach
+            }
             if (normalizedKey.replace(" ", "").startsWith("回忆大厅文件")) {
                 return@forEach
             }
@@ -812,7 +851,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                                 title = if (row.imageValues.size > 1) "${guideRow.key.ifBlank { "影画" }} ${index + 1}" else guideRow.key.ifBlank { "影画" },
                                 imageUrl = url,
                                 mediaType = if (row.mediaTypes.contains("live2d")) "live2d" else "image",
-                                mediaUrl = url
+                                mediaUrl = url,
+                                memoryUnlockLevel = if (guideRow.key.startsWith("回忆大厅")) memoryUnlockLevel else ""
                             )
                         }
                     }
@@ -822,7 +862,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                                 title = if (row.videoValues.size > 1) "${guideRow.key.ifBlank { "影画" }} ${index + 1}" else guideRow.key.ifBlank { "影画" },
                                 imageUrl = row.imageValues.firstOrNull().orEmpty(),
                                 mediaType = "video",
-                                mediaUrl = url
+                                mediaUrl = url,
+                                memoryUnlockLevel = if (guideRow.key.startsWith("回忆大厅")) memoryUnlockLevel else ""
                             )
                         }
                     }
@@ -868,6 +909,20 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 val media = it.mediaUrl.ifBlank { it.imageUrl }
                 "${it.mediaType}|$media"
             }
+            .sortedWith(
+                compareBy<BaGuideGalleryItem> {
+                    val title = it.title.replace(" ", "")
+                    when {
+                        title.startsWith("立绘") -> 0
+                        title.startsWith("回忆大厅") && !title.startsWith("回忆大厅视频") -> 1
+                        title.startsWith("回忆大厅视频") -> 2
+                        else -> 3
+                    }
+                }.thenBy {
+                    Regex("""(\d+)""").find(it.title)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                        ?: Int.MAX_VALUE
+                }
+            )
             .take(100)
 
         GuideDetailExtract(
