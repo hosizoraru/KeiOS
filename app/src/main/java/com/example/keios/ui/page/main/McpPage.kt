@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.mcp.McpServerManager
@@ -100,6 +101,14 @@ fun McpPage(
     var showResetTokenConfirm by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
+    val serverNameFieldWidth = remember(serverName) {
+        val visibleChars = serverName.trim().ifBlank { "输入服务名称" }.length.coerceIn(6, 18)
+        (visibleChars * 11 + 36).dp
+    }
+    val portFieldWidth = remember(portText) {
+        val visibleChars = portText.trim().ifBlank { "38888" }.length.coerceIn(4, 6)
+        (visibleChars * 14 + 28).dp
+    }
     val toggleServer: () -> Unit = {
         if (uiState.running) {
             mcpServerManager.stop()
@@ -380,7 +389,7 @@ fun McpPage(
             ) {
                 Box(
                     modifier = Modifier
-                        .weight(0.34f)
+                        .weight(1f)
                         .heightIn(min = 40.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -396,7 +405,8 @@ fun McpPage(
                     backdrop = backdrop,
                     bottomBarStyle = true,
                     singleLine = true,
-                    modifier = Modifier.weight(0.66f)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(serverNameFieldWidth)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -409,7 +419,7 @@ fun McpPage(
             ) {
                 Box(
                     modifier = Modifier
-                        .weight(0.34f)
+                        .weight(1f)
                         .heightIn(min = 40.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -425,7 +435,8 @@ fun McpPage(
                     backdrop = backdrop,
                     bottomBarStyle = true,
                     singleLine = true,
-                    modifier = Modifier.weight(0.66f)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(portFieldWidth)
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
