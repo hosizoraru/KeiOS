@@ -120,28 +120,64 @@ private data class GuideBaseRow(
 
 private val voiceCategoryKeys = setOf("通常", "大厅及咖啡馆", "战斗", "活动", "事件", "好感度")
 
+private fun isPlaceholderMediaToken(raw: String): Boolean {
+    val value = raw.trim().lowercase()
+    if (value.isBlank()) return true
+    if (value == "n" || value == "null" || value == "undefined" || value == "nan") return true
+    return value.matches(Regex("""^\d+$"""))
+}
+
+private fun hasInvalidMediaTail(rawUrl: String): Boolean {
+    val value = rawUrl.trim()
+    if (value.isBlank()) return true
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull() ?: return false
+    val host = uri.host?.lowercase().orEmpty()
+    if (!host.endsWith("gamekee.com")) return false
+    val segments = uri.pathSegments.filter { it.isNotBlank() }
+    if (segments.size != 1) return false
+    val tail = segments.first()
+        .substringBefore('?')
+        .substringBefore('#')
+        .trim()
+    return isPlaceholderMediaToken(tail)
+}
+
 private fun looksLikeImageUrl(raw: String): Boolean {
-    val value = raw.lowercase()
+    val value = raw.trim()
     if (value.isBlank()) return false
-    if (value.startsWith("data:image")) return true
-    return value.startsWith("http://") ||
-        value.startsWith("https://") ||
-        value.startsWith("//") ||
-        value.endsWith(".png") ||
-        value.endsWith(".jpg") ||
-        value.endsWith(".jpeg") ||
-        value.endsWith(".webp") ||
-        value.contains("cdnimg")
+    if (value.startsWith("data:image", ignoreCase = true)) return true
+    if (isPlaceholderMediaToken(value)) return false
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val lower = normalized.lowercase()
+    if (Regex("""\.(png|jpg|jpeg|webp|gif|bmp|svg|avif)(\?.*)?(#.*)?$""").containsMatchIn(lower)) {
+        return true
+    }
+    if (hasInvalidMediaTail(normalized)) return false
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull()
+    val host = uri?.host?.lowercase().orEmpty()
+    val path = (uri?.encodedPath ?: uri?.path ?: "").lowercase()
+    if (host.contains("cdnimg") || host.contains("img")) return true
+    if (path.contains("/upload") || path.contains("/uploads") || path.contains("/images/") || path.contains("/wiki/")) {
+        return true
+    }
+    return lower.contains("x-oss-process=image")
 }
 
 private fun looksLikeVideoUrl(raw: String): Boolean {
-    val value = raw.trim().lowercase()
+    val value = raw.trim()
     if (value.isBlank()) return false
-    return value.endsWith(".mp4") ||
-        value.endsWith(".webm") ||
-        value.endsWith(".mov") ||
-        value.endsWith(".m3u8") ||
-        value.contains(".mp4?")
+    if (value.startsWith("data:video", ignoreCase = true)) return true
+    if (isPlaceholderMediaToken(value)) return false
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val lower = normalized.lowercase()
+    if (hasInvalidMediaTail(normalized)) return false
+    return lower.endsWith(".mp4") ||
+        lower.endsWith(".webm") ||
+        lower.endsWith(".mov") ||
+        lower.endsWith(".m3u8") ||
+        lower.contains(".mp4?") ||
+        lower.contains(".m3u8?")
 }
 
 private fun extractImageUrlsFromHtml(sourceUrl: String, raw: String): List<String> {
@@ -292,8 +328,9 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
 
             when (type) {
                 "image" -> {
+                    if (isPlaceholderMediaToken(valueText)) continue
                     val normalized = normalizeImageUrl(sourceUrl, valueText)
-                    if (normalized.isNotBlank()) rowImages += normalized
+                    if (looksLikeImageUrl(normalized)) rowImages += normalized
                 }
                 "imageset", "live2d" -> {
                     rowImages += extractImageUrlsFromAny(sourceUrl, valueAny)
@@ -688,8 +725,9 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
 
                 when (type) {
                     "image" -> {
+                        if (isPlaceholderMediaToken(rawValue)) continue
                         val normalized = normalizeImageUrl(sourceUrl, rawValue)
-                        if (normalized.isNotBlank()) {
+                        if (looksLikeImageUrl(normalized)) {
                             mediaTypes += type
                             imageValues += normalized
                         }

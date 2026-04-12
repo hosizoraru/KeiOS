@@ -60,6 +60,8 @@ import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ba.helper.GameKeeFetchHelper
+import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
+import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.tencent.mmkv.MMKV
@@ -1142,6 +1144,7 @@ fun BAPage(
         drawRect(surfaceColor)
         drawContent()
     }
+    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val baGlassBlur = 4.dp
     val baLightGlass = true
     val baBottomBarGlass = true
@@ -1855,7 +1858,7 @@ fun BAPage(
                 TopAppBar(
                     title = "BlueArchive",
                     scrollBehavior = scrollBehavior,
-                    color = MiuixTheme.colorScheme.surface,
+                    color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     actions = {
                         Box {
                             LiquidActionBar(

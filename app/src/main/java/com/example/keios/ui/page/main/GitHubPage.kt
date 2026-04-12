@@ -61,6 +61,8 @@ import com.example.keios.ui.utils.GitHubTrackStore
 import com.example.keios.ui.utils.GitHubTrackedApp
 import com.example.keios.ui.utils.GitHubVersionUtils
 import com.example.keios.ui.utils.InstalledAppItem
+import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
+import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.capsule.ContinuousCapsule
@@ -168,6 +170,7 @@ fun GitHubPage(
         drawRect(surfaceColor)
         drawContent()
     }
+    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     var trackedSearch by remember { mutableStateOf("") }
     var repoUrlInput by remember { mutableStateOf("") }
     var appSearch by remember { mutableStateOf("") }
@@ -564,7 +567,7 @@ fun GitHubPage(
                 TopAppBar(
                     title = "GitHub",
                     scrollBehavior = scrollBehavior,
-                    color = MiuixTheme.colorScheme.surface,
+                    color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     actions = {
                         Box {
                             LiquidActionBar(

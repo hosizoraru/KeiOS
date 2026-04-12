@@ -41,6 +41,8 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
+import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Card
@@ -114,6 +116,7 @@ fun McpPage(
         drawRect(surfaceColor)
         drawContent()
     }
+    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
     }
@@ -127,7 +130,7 @@ fun McpPage(
             TopAppBar(
                 title = "MCP",
                 scrollBehavior = scrollBehavior,
-                color = MiuixTheme.colorScheme.surface,
+                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 actions = {
                     LiquidActionBar(
                         backdrop = backdrop,

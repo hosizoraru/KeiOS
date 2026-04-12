@@ -46,6 +46,8 @@ import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.system.getAllJavaPropString
 import com.example.keios.core.system.getAllSystemProperties
+import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
+import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.tencent.mmkv.MMKV
@@ -1043,6 +1045,7 @@ fun SystemPage(
         drawRect(surfaceColor)
         drawContent()
     }
+    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
     }
@@ -1282,7 +1285,7 @@ fun SystemPage(
                 TopAppBar(
                     title = "System",
                     scrollBehavior = scrollBehavior,
-                    color = MiuixTheme.colorScheme.surface,
+                    color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     actions = {
                         LiquidActionBar(
                             backdrop = backdrop,

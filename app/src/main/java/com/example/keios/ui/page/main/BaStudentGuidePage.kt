@@ -89,6 +89,8 @@ import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.utils.UiPrefs
+import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
+import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
@@ -120,6 +122,7 @@ fun BaStudentGuidePage(
         drawRect(surfaceColor)
         drawContent()
     }
+    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val scrollBehavior = MiuixScrollBehavior()
 
     val sourceUrl = remember { BaStudentGuideStore.loadCurrentUrl() }
@@ -320,7 +323,7 @@ fun BaStudentGuidePage(
         val guide = info ?: return@LaunchedEffect
         val galleryItemsForPrefetch = if (guide.galleryItems.isNotEmpty()) {
             guide.galleryItems
-                .filter { it.imageUrl.isNotBlank() || it.mediaUrl.isNotBlank() }
+                .filter(::hasRenderableGalleryMedia)
                 .distinctBy { "${it.mediaType}|${it.mediaUrl.ifBlank { it.imageUrl }}" }
         } else {
             listOfNotNull(
@@ -330,14 +333,14 @@ fun BaStudentGuidePage(
                         imageUrl = it,
                         mediaType = "image",
                         mediaUrl = it
-                    )
+                    ).takeIf(::hasRenderableGalleryMedia)
                 }
             )
         }.filterNot(::isMemoryHallFileGalleryItem)
 
         val urls = galleryItemsForPrefetch
             .flatMap { item -> listOf(item.imageUrl, item.mediaUrl) }
-            .filter { it.isNotBlank() }
+            .filter { it.isNotBlank() && (isRenderableGalleryImageUrl(it) || isRenderableGalleryVideoUrl(it)) }
             .distinct()
         if (urls.isEmpty()) return@LaunchedEffect
 
@@ -377,7 +380,7 @@ fun BaStudentGuidePage(
             TopAppBar(
                 title = pageTitle,
                 scrollBehavior = scrollBehavior,
-                color = MiuixTheme.colorScheme.surface,
+                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -825,9 +828,7 @@ fun BaStudentGuidePage(
                         } else {
                             val galleryItems = if (guide.galleryItems.isNotEmpty()) {
                                 guide.galleryItems
-                                    .filter {
-                                        it.imageUrl.isNotBlank() || it.mediaUrl.isNotBlank()
-                                    }
+                                    .filter(::hasRenderableGalleryMedia)
                                     .distinctBy {
                                         val media = it.mediaUrl.ifBlank { it.imageUrl }
                                         "${it.mediaType}|$media"
@@ -840,7 +841,7 @@ fun BaStudentGuidePage(
                                             imageUrl = it,
                                             mediaType = "image",
                                             mediaUrl = it
-                                        )
+                                        ).takeIf(::hasRenderableGalleryMedia)
                                     }
                                 )
                             }
@@ -1060,6 +1061,71 @@ fun BaStudentGuidePage(
 
 private fun normalizeGalleryTitle(raw: String): String {
     return raw.replace(Regex("\\s+"), "").trim()
+}
+
+private fun isPlaceholderGalleryToken(raw: String): Boolean {
+    val value = raw.trim().lowercase()
+    if (value.isBlank()) return true
+    if (value == "n" || value == "null" || value == "undefined" || value == "nan") return true
+    return value.matches(Regex("""^\d+$"""))
+}
+
+private fun hasInvalidGameKeeMediaTail(rawUrl: String): Boolean {
+    val value = rawUrl.trim()
+    if (value.isBlank()) return true
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull() ?: return false
+    val host = uri.host?.lowercase().orEmpty()
+    if (!host.endsWith("gamekee.com")) return false
+    val segments = uri.pathSegments.filter { it.isNotBlank() }
+    if (segments.size != 1) return false
+    return isPlaceholderGalleryToken(segments.first())
+}
+
+private fun isRenderableGalleryImageUrl(raw: String): Boolean {
+    val value = raw.trim()
+    if (value.isBlank()) return false
+    if (value.startsWith("data:image", ignoreCase = true)) return true
+    if (isPlaceholderGalleryToken(value)) return false
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val lower = normalized.lowercase()
+    if (Regex("""\.(png|jpg|jpeg|webp|gif|bmp|svg|avif)(\?.*)?(#.*)?$""").containsMatchIn(lower)) {
+        return true
+    }
+    if (hasInvalidGameKeeMediaTail(normalized)) return false
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull()
+    val host = uri?.host?.lowercase().orEmpty()
+    val path = (uri?.encodedPath ?: uri?.path ?: "").lowercase()
+    if (host.contains("cdnimg") || host.contains("img")) return true
+    if (path.contains("/upload") || path.contains("/uploads") || path.contains("/images/") || path.contains("/wiki/")) {
+        return true
+    }
+    return lower.contains("x-oss-process=image")
+}
+
+private fun isRenderableGalleryVideoUrl(raw: String): Boolean {
+    val value = raw.trim()
+    if (value.isBlank()) return false
+    if (value.startsWith("data:video", ignoreCase = true)) return true
+    if (isPlaceholderGalleryToken(value)) return false
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val lower = normalized.lowercase()
+    if (hasInvalidGameKeeMediaTail(normalized)) return false
+    return lower.endsWith(".mp4") ||
+        lower.endsWith(".webm") ||
+        lower.endsWith(".mov") ||
+        lower.endsWith(".m3u8") ||
+        lower.contains(".mp4?") ||
+        lower.contains(".m3u8?")
+}
+
+private fun hasRenderableGalleryMedia(item: BaGuideGalleryItem): Boolean {
+    val imageRenderable = isRenderableGalleryImageUrl(item.imageUrl)
+    val mediaRenderable = when (item.mediaType.lowercase()) {
+        "video" -> isRenderableGalleryVideoUrl(item.mediaUrl)
+        else -> isRenderableGalleryImageUrl(item.mediaUrl)
+    }
+    return imageRenderable || mediaRenderable
 }
 
 private fun isMemoryHallFileGalleryItem(item: BaGuideGalleryItem): Boolean {
