@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.LiquidActionBar
@@ -65,10 +68,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
@@ -431,17 +432,59 @@ fun OsPage(
         SystemOverviewState.Completed -> syncedColor
         SystemOverviewState.Idle -> inactive
     }
-    val indicatorProgress = when (overviewState) {
-        SystemOverviewState.Refreshing -> refreshProgress.coerceIn(0f, 1f)
-        SystemOverviewState.Completed,
-        SystemOverviewState.Cached -> 1f
-        SystemOverviewState.Idle -> 0f
+    val overviewCardColor = if (overviewState == SystemOverviewState.Idle) {
+        MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
+    } else {
+        statusColor.copy(alpha = if (isDark) 0.24f else 0.16f)
     }
-    val indicatorBg = when (overviewState) {
-        SystemOverviewState.Refreshing -> Color(0x553B82F6)
-        SystemOverviewState.Completed -> Color(0x5522C55E)
-        SystemOverviewState.Cached -> Color(0x55F59E0B)
-        SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface
+    val overviewItemColor = if (overviewState == SystemOverviewState.Idle) {
+        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
+    } else {
+        statusColor.copy(alpha = if (isDark) 0.20f else 0.12f)
+    }
+    val overviewMetrics = remember(
+        statusLabel,
+        statusColor,
+        shizukuReady,
+        topInfoRows.size,
+        q,
+        sectionCount,
+        loadedFreshCount,
+        cachedSectionCount,
+        cacheLoaded,
+        cachePersisted,
+        refreshProgress,
+        overviewState,
+        syncedColor,
+        inactive
+    ) {
+        val queryLabel = if (q.isBlank()) "（空）" else q
+        val cacheStateLabel = when {
+            !cacheLoaded -> "读取中"
+            cachePersisted || cachedSectionCount > 0 -> "可用"
+            else -> "无缓存"
+        }
+        val progressLabel = when (overviewState) {
+            SystemOverviewState.Refreshing -> "${(refreshProgress.coerceIn(0f, 1f) * 100f).toInt()}%"
+            SystemOverviewState.Completed -> "100%"
+            SystemOverviewState.Cached -> "缓存态"
+            SystemOverviewState.Idle -> "0%"
+        }
+        listOf(
+            OsOverviewMetric(label = "状态", value = statusLabel, valueColor = statusColor),
+            OsOverviewMetric(
+                label = "Shizuku",
+                value = if (shizukuReady) "Ready" else "Not Ready",
+                valueColor = if (shizukuReady) syncedColor else inactive
+            ),
+            OsOverviewMetric(label = "TopInfo", value = "${topInfoRows.size} 条"),
+            OsOverviewMetric(label = "当前查询", value = queryLabel),
+            OsOverviewMetric(label = "可见分区", value = "$sectionCount 个"),
+            OsOverviewMetric(label = "Fresh 分区", value = "$loadedFreshCount / $sectionCount"),
+            OsOverviewMetric(label = "缓存分区", value = "$cachedSectionCount 个"),
+            OsOverviewMetric(label = "刷新进度", value = progressLabel),
+            OsOverviewMetric(label = "缓存状态", value = cacheStateLabel)
+        )
     }
 
     Scaffold(
@@ -508,7 +551,6 @@ fun OsPage(
             }
         }
     ) { innerPadding ->
-        val bottomSheetSafePadding = with(density) { WindowInsets.safeDrawing.getBottom(this).toDp() }
         SnapshotWindowBottomSheet(
             show = showCardManager,
             title = "显示卡片",
@@ -526,7 +568,9 @@ fun OsPage(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = bottomSheetSafePadding + 12.dp),
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 @Composable
@@ -599,12 +643,7 @@ fun OsPage(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.defaultColors(
-                        color = when (overviewState) {
-                            SystemOverviewState.Cached -> if (isDark) Color(0x55F59E0B) else Color(0x33F59E0B)
-                            SystemOverviewState.Refreshing -> if (isDark) Color(0x553B82F6) else Color(0x333B82F6)
-                            SystemOverviewState.Completed -> if (isDark) Color(0x5522C55E) else Color(0x3322C55E)
-                            SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
-                        },
+                        color = overviewCardColor,
                         contentColor = titleColor
                     ),
                     showIndication = cardPressFeedbackEnabled,
@@ -629,33 +668,29 @@ fun OsPage(
                             StatusPill(label = statusLabel, color = statusColor)
                             StatusPill(label = "Shizuku", color = if (shizukuReady) syncedColor else inactive)
                         }
-                        Text(
-                            text = "TopInfo ${topInfoRows.size} 条 · 查询 ${if (q.isBlank()) "（空）" else q}",
-                            color = subtitleColor
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (!cacheLoaded) {
-                                    "读取缓存中... · Fresh $loadedFreshCount / $sectionCount"
-                                } else {
-                                    "缓存分区 $cachedSectionCount · Fresh $loadedFreshCount / $sectionCount"
-                                },
-                                color = subtitleColor
-                            )
-                            if (overviewState != SystemOverviewState.Idle) {
-                                CircularProgressIndicator(
-                                    progress = indicatorProgress,
-                                    size = 18.dp,
-                                    strokeWidth = 2.dp,
-                                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                        foregroundColor = statusColor,
-                                        backgroundColor = indicatorBg
-                                    )
+                        overviewMetrics.chunked(2).forEach { pair ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OsOverviewMetricItem(
+                                    metric = pair[0],
+                                    cardColor = overviewItemColor,
+                                    labelColor = subtitleColor,
+                                    defaultValueColor = titleColor,
+                                    modifier = Modifier.weight(1f)
                                 )
+                                if (pair.size > 1) {
+                                    OsOverviewMetricItem(
+                                        metric = pair[1],
+                                        cardColor = overviewItemColor,
+                                        labelColor = subtitleColor,
+                                        defaultValueColor = titleColor,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
                             }
                         }
                     }
@@ -799,6 +834,53 @@ fun OsPage(
                 }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
             }
+        }
+    }
+}
+
+private data class OsOverviewMetric(
+    val label: String,
+    val value: String,
+    val valueColor: Color? = null
+)
+
+@Composable
+private fun OsOverviewMetricItem(
+    metric: OsOverviewMetric,
+    cardColor: Color,
+    labelColor: Color,
+    defaultValueColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        colors = CardDefaults.defaultColors(
+            color = cardColor,
+            contentColor = defaultValueColor
+        ),
+        showIndication = false,
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = metric.label,
+                color = labelColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = metric.value.ifBlank { "N/A" },
+                color = metric.valueColor ?: defaultValueColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
