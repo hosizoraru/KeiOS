@@ -66,6 +66,7 @@ import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
@@ -249,8 +250,11 @@ fun GuideGalleryCardItem(
     mediaUrlResolver: (String) -> String = { it },
     modifier: Modifier = Modifier
 ) {
-    val mediaTypeLabel = when (item.mediaType.lowercase()) {
+    val context = LocalContext.current
+    val normalizedMediaType = item.mediaType.lowercase()
+    val mediaTypeLabel = when (normalizedMediaType) {
         "video" -> "视频"
+        "audio" -> ""
         "live2d" -> "Live2D"
         "imageset" -> "图集"
         else -> "影画"
@@ -258,8 +262,81 @@ fun GuideGalleryCardItem(
     val displayImageUrl = mediaUrlResolver(item.imageUrl)
     val displayMediaUrl = mediaUrlResolver(item.mediaUrl)
     val noteText = item.note.trim()
-    val isImageType = item.mediaType.lowercase() != "video"
+    val isImageType = normalizedMediaType != "video" && normalizedMediaType != "audio"
     val canOpenMedia = item.mediaUrl.isNotBlank() && item.mediaUrl != item.imageUrl
+    val audioTargetUrl = remember(normalizedMediaType, displayMediaUrl) {
+        if (normalizedMediaType == "audio") normalizeGuideMediaSource(displayMediaUrl) else ""
+    }
+    var audioIsPlaying by remember(audioTargetUrl) { mutableStateOf(false) }
+    var audioIsBuffering by remember(audioTargetUrl) { mutableStateOf(false) }
+    var audioPlayProgress by remember(audioTargetUrl) { mutableStateOf(0f) }
+    var audioLoadError by remember(audioTargetUrl) { mutableStateOf<String?>(null) }
+    val audioPlayer = remember(context, audioTargetUrl) {
+        if (audioTargetUrl.isNotBlank()) {
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(createGameKeeMediaSourceFactory(context))
+                .build()
+        } else {
+            null
+        }
+    }
+    DisposableEffect(audioPlayer) {
+        onDispose {
+            runCatching { audioPlayer?.release() }
+        }
+    }
+    DisposableEffect(audioPlayer, audioTargetUrl) {
+        val player = audioPlayer ?: return@DisposableEffect onDispose { }
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(isPlayingNow: Boolean) {
+                audioIsPlaying = isPlayingNow
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_BUFFERING -> audioIsBuffering = true
+                    Player.STATE_READY -> audioIsBuffering = false
+                    Player.STATE_ENDED -> {
+                        audioIsBuffering = false
+                        audioIsPlaying = false
+                        audioPlayProgress = 1f
+                    }
+                    Player.STATE_IDLE -> {
+                        audioIsBuffering = false
+                        if (!player.isPlaying) audioPlayProgress = 0f
+                    }
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                audioIsBuffering = false
+                audioIsPlaying = false
+                audioLoadError = error.errorCodeName
+            }
+        }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
+    }
+    LaunchedEffect(audioIsPlaying, audioTargetUrl) {
+        if (!audioIsPlaying) {
+            val player = audioPlayer
+            if (player == null || player.duration <= 0L || player.currentPosition <= 0L) {
+                audioPlayProgress = 0f
+            }
+            return@LaunchedEffect
+        }
+        val player = audioPlayer ?: return@LaunchedEffect
+        while (audioIsPlaying) {
+            val duration = player.duration
+            val position = player.currentPosition
+            audioPlayProgress = if (duration > 0L && position >= 0L) {
+                (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+            delay(200)
+        }
+    }
     val imageProgressState = remember(displayImageUrl) {
         MutableStateFlow(if (displayImageUrl.isBlank()) 1f else 0f)
     }
@@ -306,14 +383,60 @@ fun GuideGalleryCardItem(
                         )
                     )
                 }
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = mediaTypeLabel,
-                    enabled = false,
-                    textColor = Color(0xFF3B82F6),
-                    bottomBarStyle = true,
-                    onClick = {}
-                )
+                if (mediaTypeLabel.isNotBlank()) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = mediaTypeLabel,
+                        enabled = false,
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = {}
+                    )
+                }
+                if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
+                    if (audioIsPlaying || audioIsBuffering) {
+                        CircularProgressIndicator(
+                            progress = if (audioIsBuffering) 0.35f else audioPlayProgress.coerceIn(0f, 1f),
+                            size = 18.dp,
+                            strokeWidth = 2.dp,
+                            colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                foregroundColor = Color(0xFF3B82F6),
+                                backgroundColor = Color(0x553B82F6)
+                            )
+                        )
+                    }
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "",
+                        leadingIcon = if (audioIsPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
+                        textColor = Color(0xFF3B82F6),
+                        bottomBarStyle = true,
+                        onClick = {
+                            val player = audioPlayer ?: run {
+                                Toast.makeText(context, "音频地址无效", Toast.LENGTH_SHORT).show()
+                                return@GlassTextButton
+                            }
+                            runCatching {
+                                audioLoadError = null
+                                if (player.currentMediaItem == null) {
+                                    player.setMediaItem(MediaItem.fromUri(audioTargetUrl))
+                                    player.prepare()
+                                    player.play()
+                                } else if (player.isPlaying) {
+                                    player.pause()
+                                } else {
+                                    if (player.playbackState == Player.STATE_ENDED) {
+                                        player.seekTo(0)
+                                    }
+                                    player.play()
+                                }
+                            }.onFailure {
+                                audioLoadError = it.message
+                                Toast.makeText(context, "音频播放失败", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                }
             }
 
             if (noteText.isNotBlank()) {
@@ -325,7 +448,7 @@ fun GuideGalleryCardItem(
                 )
             }
 
-            if (displayImageUrl.isNotBlank() && item.mediaType.lowercase() != "video") {
+            if (displayImageUrl.isNotBlank() && normalizedMediaType != "video" && normalizedMediaType != "audio") {
                 GuideRemoteImageAdaptive(
                     imageUrl = displayImageUrl,
                     progressState = if (isImageType) imageProgressState else null,
@@ -337,24 +460,37 @@ fun GuideGalleryCardItem(
                 )
             }
 
-            if (canOpenMedia) {
-                if (item.mediaType.lowercase() == "video") {
-                    GuideInlineVideoPlayer(
-                        mediaUrl = displayMediaUrl,
-                        previewImageUrl = displayImageUrl,
-                        backdrop = backdrop,
-                        onOpenExternal = onOpenMedia
-                    )
-                } else {
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        text = "打开",
-                        leadingIcon = MiuixIcons.Regular.Play,
-                        textColor = Color(0xFF3B82F6),
-                        bottomBarStyle = true,
-                        onClick = { onOpenMedia(item.mediaUrl) }
-                    )
+            if (canOpenMedia && normalizedMediaType != "audio") {
+                when (normalizedMediaType) {
+                    "video" -> {
+                        GuideInlineVideoPlayer(
+                            mediaUrl = displayMediaUrl,
+                            previewImageUrl = displayImageUrl,
+                            backdrop = backdrop,
+                            onOpenExternal = onOpenMedia
+                        )
+                    }
+
+                    else -> {
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            text = "打开",
+                            leadingIcon = MiuixIcons.Regular.Play,
+                            textColor = Color(0xFF3B82F6),
+                            bottomBarStyle = true,
+                            onClick = { onOpenMedia(item.mediaUrl) }
+                        )
+                    }
                 }
+            }
+
+            audioLoadError?.takeIf { it.isNotBlank() }?.let { err ->
+                Text(
+                    text = "音频播放失败：$err",
+                    color = MiuixTheme.colorScheme.error,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

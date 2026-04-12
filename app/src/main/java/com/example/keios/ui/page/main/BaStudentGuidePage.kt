@@ -894,7 +894,12 @@ fun BaStudentGuidePage(
                             // 影画条目若没有可用封面图，则不渲染对应卡片，避免出现空壳卡片。
                             val displayGalleryItems = cleanedGalleryItems
                                 .filterNot(::isPreviewVideoCategoryGalleryItem)
-                                .filter { isRenderableGalleryImageUrl(it.imageUrl) }
+                                .filter { item ->
+                                    when (item.mediaType.lowercase()) {
+                                        "audio" -> isRenderableGalleryAudioUrl(item.mediaUrl)
+                                        else -> isRenderableGalleryImageUrl(item.imageUrl)
+                                    }
+                                }
                             val memoryUnlockLevel = cleanedGalleryItems
                                 .asSequence()
                                 .map { it.memoryUnlockLevel }
@@ -1234,6 +1239,9 @@ private fun isRenderableGalleryImageUrl(raw: String): Boolean {
     if (isPlaceholderGalleryToken(value)) return false
     val normalized = if (value.startsWith("//")) "https:$value" else value
     val lower = normalized.lowercase()
+    if (Regex("""\.(mp3|ogg|wav|m4a|aac)(\?.*)?(#.*)?$""").containsMatchIn(lower)) {
+        return false
+    }
     if (Regex("""\.(png|jpg|jpeg|webp|gif|bmp|svg|avif)(\?.*)?(#.*)?$""").containsMatchIn(lower)) {
         return true
     }
@@ -1264,10 +1272,31 @@ private fun isRenderableGalleryVideoUrl(raw: String): Boolean {
         lower.contains(".m3u8?")
 }
 
+private fun isRenderableGalleryAudioUrl(raw: String): Boolean {
+    val value = raw.trim()
+    if (value.isBlank()) return false
+    if (value.startsWith("data:audio", ignoreCase = true)) return true
+    if (isPlaceholderGalleryToken(value)) return false
+    val normalized = if (value.startsWith("//")) "https:$value" else value
+    val lower = normalized.lowercase()
+    if (hasInvalidGameKeeMediaTail(normalized)) return false
+    return lower.endsWith(".mp3") ||
+        lower.endsWith(".ogg") ||
+        lower.endsWith(".wav") ||
+        lower.endsWith(".m4a") ||
+        lower.endsWith(".aac") ||
+        lower.contains(".mp3?") ||
+        lower.contains(".ogg?") ||
+        lower.contains(".wav?") ||
+        lower.contains(".m4a?") ||
+        lower.contains(".aac?")
+}
+
 private fun hasRenderableGalleryMedia(item: BaGuideGalleryItem): Boolean {
     val imageRenderable = isRenderableGalleryImageUrl(item.imageUrl)
     val mediaRenderable = when (item.mediaType.lowercase()) {
         "video" -> isRenderableGalleryVideoUrl(item.mediaUrl)
+        "audio" -> isRenderableGalleryAudioUrl(item.mediaUrl)
         else -> isRenderableGalleryImageUrl(item.mediaUrl)
     }
     return imageRenderable || mediaRenderable

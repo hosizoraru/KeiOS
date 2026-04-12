@@ -150,6 +150,10 @@ private fun looksLikeImageUrl(raw: String): Boolean {
     if (isPlaceholderMediaToken(value)) return false
     val normalized = if (value.startsWith("//")) "https:$value" else value
     val lower = normalized.lowercase()
+    // 避免把音频地址误判成图片（例如 BGM 的 .ogg）。
+    if (Regex("""\.(mp3|ogg|wav|m4a|aac)(\?.*)?(#.*)?$""").containsMatchIn(lower)) {
+        return false
+    }
     if (Regex("""\.(png|jpg|jpeg|webp|gif|bmp|svg|avif)(\?.*)?(#.*)?$""").containsMatchIn(lower)) {
         return true
     }
@@ -276,11 +280,18 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
     val out = mutableListOf<BaGuideGalleryItem>()
     val galleryKeywords = listOf(
         "立绘", "本家画", "TV动画设定图", "回忆大厅视频", "回忆大厅", "PV", "Live", "巧克力图",
-        "互动家具", "角色表情", "表情", "角色演示", "设定集", "官方介绍", "官方衍生", "情人节巧克力"
+        "互动家具", "角色表情", "表情", "角色演示", "设定集", "官方介绍", "官方衍生", "情人节巧克力", "BGM"
+    )
+    val galleryContextStartKeywords = galleryKeywords + listOf("视频")
+    val nonGallerySectionKeywords = listOf(
+        "技能", "技能类型", "技能名词", "EX技能升级材料", "其他技能升级材料",
+        "专武", "爱用品", "能力解放", "礼物偏好", "初始数据", "顶级数据",
+        "学生信息", "介绍", "配音"
     )
     val nonGalleryFallbackKeywords = listOf(
         "头像", "技能", "图标", "语音", "台词", "专武", "武器", "装备", "材料",
-        "能力解放", "礼物偏好", "初始数据", "学生信息", "角色名称", "稀有度", "所属学园", "所属社团"
+        "能力解放", "礼物偏好", "初始数据", "学生信息", "角色名称", "稀有度", "所属学园", "所属社团",
+        "战术作用", "攻击类型", "防御类型", "位置", "武器类型", "市街", "屋外", "屋内", "室内"
     )
 
     fun noteForImageIndex(texts: List<String>, index: Int, imageCount: Int): String {
@@ -322,15 +333,32 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
         level
     }
 
+    var inGalleryContext = false
+    var lastGalleryTitle = ""
     for (i in 0 until baseData.length()) {
         val row = baseData.optJSONArray(i) ?: continue
         if (row.length() == 0) continue
         val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
         if (key == "回忆大厅解锁等级") continue
         if (key.replace(" ", "").startsWith("回忆大厅文件")) continue
+        val isGalleryContextStart = galleryContextStartKeywords.any { key.contains(it, ignoreCase = true) }
+        val isNonGallerySectionStart = key.isNotBlank() && nonGallerySectionKeywords.any {
+            key.contains(it, ignoreCase = true)
+        }
+        if (isNonGallerySectionStart && !isGalleryContextStart) {
+            inGalleryContext = false
+            lastGalleryTitle = ""
+        }
+        if (isGalleryContextStart) {
+            inGalleryContext = true
+            if (key.isNotBlank()) {
+                lastGalleryTitle = key
+            }
+        }
 
         val rowImages = linkedSetOf<String>()
         val rowVideos = linkedSetOf<String>()
+        val rowAudios = linkedSetOf<String>()
         val rowTexts = mutableListOf<String>()
 
         for (j in 1 until row.length()) {
@@ -354,27 +382,34 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
                     rowVideos += extractVideoUrlsFromAny(sourceUrl, valueAny)
                     rowImages += extractImageUrlsFromAny(sourceUrl, valueAny)
                 }
+                "audio" -> {
+                    val direct = normalizeMediaUrl(sourceUrl, valueText)
+                    if (isAudioUrl(direct)) rowAudios += direct
+                    rowAudios += extractAudioUrlsFromRaw(sourceUrl, valueText)
+                }
                 else -> {
                     rowImages += extractImageUrlsFromHtml(sourceUrl, valueText)
                     rowImages += extractImageUrlsFromAny(sourceUrl, valueAny)
                     rowVideos += extractVideoUrlsFromAny(sourceUrl, valueAny)
+                    rowAudios += extractAudioUrlsFromRaw(sourceUrl, valueText)
                     val plain = stripHtml(valueText)
                     if (plain.isNotBlank()) rowTexts += plain
                 }
             }
         }
 
-        val hasMedia = rowImages.isNotEmpty() || rowVideos.isNotEmpty()
+        val hasMedia = rowImages.isNotEmpty() || rowVideos.isNotEmpty() || rowAudios.isNotEmpty()
         val isFallbackGallery =
             hasMedia &&
-                key.isNotBlank() &&
+                inGalleryContext &&
                 nonGalleryFallbackKeywords.none { key.contains(it, ignoreCase = true) }
         if (!isGalleryKey(key) && !isFallbackGallery) continue
+        val galleryTitle = key.ifBlank { lastGalleryTitle.ifBlank { "影画" } }
 
         if (rowImages.isNotEmpty()) {
             out += rowImages.mapIndexed { index, imageUrl ->
                 BaGuideGalleryItem(
-                    title = if (rowImages.size > 1) "$key ${index + 1}" else key,
+                    title = if (rowImages.size > 1) "$galleryTitle ${index + 1}" else galleryTitle,
                     imageUrl = imageUrl,
                     mediaType = "image",
                     mediaUrl = imageUrl,
@@ -387,12 +422,25 @@ private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String
             val videoNote = rowTexts.joinToString(" / ").trim()
             out += rowVideos.mapIndexed { index, videoUrl ->
                 BaGuideGalleryItem(
-                    title = if (rowVideos.size > 1) "$key ${index + 1}" else key,
+                    title = if (rowVideos.size > 1) "$galleryTitle ${index + 1}" else galleryTitle,
                     imageUrl = rowImages.firstOrNull().orEmpty(),
                     mediaType = "video",
                     mediaUrl = videoUrl,
                     memoryUnlockLevel = if (key.startsWith("回忆大厅")) memoryUnlockLevel else "",
                     note = videoNote
+                )
+            }
+        }
+        if (rowAudios.isNotEmpty()) {
+            val audioNote = rowTexts.joinToString(" / ").trim()
+            out += rowAudios.mapIndexed { index, audioUrl ->
+                BaGuideGalleryItem(
+                    title = if (rowAudios.size > 1) "$galleryTitle ${index + 1}" else galleryTitle,
+                    imageUrl = rowImages.firstOrNull().orEmpty(),
+                    mediaType = "audio",
+                    mediaUrl = audioUrl,
+                    memoryUnlockLevel = if (key.startsWith("回忆大厅")) memoryUnlockLevel else "",
+                    note = audioNote
                 )
             }
         }
@@ -825,11 +873,18 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         )
         val galleryKeywords = listOf(
             "立绘", "本家画", "TV动画设定图", "回忆大厅视频", "回忆大厅", "PV", "Live", "巧克力图",
-            "互动家具", "角色表情", "设定集", "官方介绍", "官方衍生", "情人节巧克力"
+            "互动家具", "角色表情", "设定集", "官方介绍", "官方衍生", "情人节巧克力", "BGM"
+        )
+        val galleryContextStartKeywords = galleryKeywords + listOf("视频")
+        val nonGallerySectionKeywords = listOf(
+            "技能", "技能类型", "技能名词", "EX技能升级材料", "其他技能升级材料",
+            "专武", "爱用品", "能力解放", "礼物偏好", "初始数据", "顶级数据",
+            "学生信息", "介绍", "配音"
         )
         val nonGalleryFallbackKeywords = listOf(
             "头像", "技能", "图标", "语音", "台词", "专武", "武器", "装备", "材料",
-            "能力解放", "礼物偏好", "初始数据", "学生信息", "角色名称", "稀有度", "所属学园", "所属社团"
+            "能力解放", "礼物偏好", "初始数据", "学生信息", "角色名称", "稀有度", "所属学园", "所属社团",
+            "战术作用", "攻击类型", "防御类型", "位置", "武器类型", "市街", "屋外", "屋内", "室内"
         )
         val growthKeywords = listOf(
             "装备", "专武", "能力解放", "礼物偏好", "羁绊", "升级材料", "所需", "LV", "T1", "T2", "爱用品", "初始数据",
@@ -859,6 +914,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         var inSkillBlock = false
         var inSkillGlossaryBlock = false
         var inWeaponBlock = false
+        var inGalleryContext = false
+        var lastGalleryTitle = ""
         baseRows.forEach { row ->
             val key = row.key
             val value = row.textValues.joinToString(" / ")
@@ -904,6 +961,22 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             if (isSkillGlossaryStart) {
                 inSkillGlossaryBlock = true
             }
+            val isGalleryContextStart = galleryContextStartKeywords.any {
+                normalizedKey.contains(it, ignoreCase = true)
+            }
+            val isNonGallerySectionStart = normalizedKey.isNotBlank() && nonGallerySectionKeywords.any {
+                normalizedKey.contains(it, ignoreCase = true)
+            }
+            if (isNonGallerySectionStart && !isGalleryContextStart) {
+                inGalleryContext = false
+                lastGalleryTitle = ""
+            }
+            if (isGalleryContextStart) {
+                inGalleryContext = true
+                if (guideRow.key.isNotBlank()) {
+                    lastGalleryTitle = guideRow.key
+                }
+            }
 
             val isVoice = containsAny(normalizedKey, voiceKeywords)
             val matchesSkillKeywords = containsAny(normalizedKey, skillKeywords)
@@ -913,16 +986,18 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 (inSkillGlossaryBlock && normalizedKey.isNotBlank() && !inWeaponBlock) ||
                 (matchesSkillKeywords && !inWeaponBlock)
             val isGrowth = inWeaponBlock || (matchesGrowthKeywords && !isSkill)
+            val isProfile = containsAny(normalizedKey, profileKeywords)
             val hasMedia = row.imageValues.isNotEmpty() || row.videoValues.isNotEmpty()
             val isFallbackGallery =
                 hasMedia &&
-                    normalizedKey.isNotBlank() &&
-                    !isSkill &&
-                    !isGrowth &&
-                    !isVoice &&
-                    nonGalleryFallbackKeywords.none { normalizedKey.contains(it, ignoreCase = true) }
+                !isSkill &&
+                !isGrowth &&
+                !isVoice &&
+                !isProfile &&
+                inGalleryContext &&
+                nonGalleryFallbackKeywords.none { normalizedKey.contains(it, ignoreCase = true) }
             val isGallery = containsAny(normalizedKey, galleryKeywords) || isFallbackGallery
-            val isProfile = containsAny(normalizedKey, profileKeywords)
+            val galleryTitle = guideRow.key.ifBlank { lastGalleryTitle.ifBlank { "影画" } }
 
             when {
                 isVoice && !inWeaponBlock -> voiceRows += guideRow
@@ -932,7 +1007,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                     if (row.imageValues.isNotEmpty()) {
                         galleryItems += row.imageValues.mapIndexed { index, url ->
                             BaGuideGalleryItem(
-                                title = if (row.imageValues.size > 1) "${guideRow.key.ifBlank { "影画" }} ${index + 1}" else guideRow.key.ifBlank { "影画" },
+                                title = if (row.imageValues.size > 1) "$galleryTitle ${index + 1}" else galleryTitle,
                                 imageUrl = url,
                                 mediaType = if (row.mediaTypes.contains("live2d")) "live2d" else "image",
                                 mediaUrl = url,
@@ -945,7 +1020,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                         val videoNote = row.textValues.joinToString(" / ").trim()
                         galleryItems += row.videoValues.mapIndexed { index, url ->
                             BaGuideGalleryItem(
-                                title = if (row.videoValues.size > 1) "${guideRow.key.ifBlank { "影画" }} ${index + 1}" else guideRow.key.ifBlank { "影画" },
+                                title = if (row.videoValues.size > 1) "$galleryTitle ${index + 1}" else galleryTitle,
                                 imageUrl = row.imageValues.firstOrNull().orEmpty(),
                                 mediaType = "video",
                                 mediaUrl = url,
@@ -954,7 +1029,15 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                             )
                         }
                     }
-                    if (row.imageValues.isEmpty() && row.videoValues.isEmpty() && guideRow.value.isNotBlank()) {
+                    val isPureMediaText = row.textValues.any { text ->
+                        val normalized = normalizeMediaUrl(sourceUrl, text)
+                        isAudioUrl(normalized) || looksLikeVideoUrl(normalized) || looksLikeImageUrl(normalized)
+                    }
+                    if (row.imageValues.isEmpty() &&
+                        row.videoValues.isEmpty() &&
+                        guideRow.value.isNotBlank() &&
+                        !isPureMediaText
+                    ) {
                         profileRows += guideRow
                     }
                 }
@@ -985,6 +1068,45 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             }
         }
 
+        fun normalizedGalleryTitle(raw: String): String = raw.replace(" ", "").trim()
+
+        fun galleryCategoryOrder(rawTitle: String): Int {
+            val title = normalizedGalleryTitle(rawTitle)
+            return when {
+                title.startsWith("立绘") -> 0
+                title.startsWith("回忆大厅") && !title.startsWith("回忆大厅视频") -> 1
+                title.startsWith("回忆大厅视频") -> 2
+                title.startsWith("BGM") -> 3
+                title.startsWith("官方介绍") -> 4
+                title.startsWith("本家画") -> 5
+                title.startsWith("官方衍生") -> 6
+                title.startsWith("TV动画设定图") -> 7
+                title.startsWith("设定集") -> 8
+                title.startsWith("角色表情") -> 9
+                title.startsWith("互动家具") -> 10
+                title.startsWith("情人节巧克力") -> 11
+                title.startsWith("巧克力图") -> 12
+                title.startsWith("PV") -> 13
+                title.startsWith("角色演示") -> 14
+                title.startsWith("Live") -> 15
+                else -> 99
+            }
+        }
+
+        fun galleryTitleGroupKey(rawTitle: String): String {
+            val normalized = normalizedGalleryTitle(rawTitle)
+            return normalized.replace(Regex("""\d+$"""), "")
+        }
+
+        fun galleryItemIndex(rawTitle: String): Int {
+            return Regex("""(\d+)(?!.*\d)""")
+                .find(normalizedGalleryTitle(rawTitle))
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.toIntOrNull()
+                ?: Int.MAX_VALUE
+        }
+
         val distinctGallery = galleryItems
             .plus(galleryFromMediaTypes)
             .plus(galleryFromStyleData)
@@ -997,18 +1119,9 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 "${it.mediaType}|$media"
             }
             .sortedWith(
-                compareBy<BaGuideGalleryItem> {
-                    val title = it.title.replace(" ", "")
-                    when {
-                        title.startsWith("立绘") -> 0
-                        title.startsWith("回忆大厅") && !title.startsWith("回忆大厅视频") -> 1
-                        title.startsWith("回忆大厅视频") -> 2
-                        else -> 3
-                    }
-                }.thenBy {
-                    Regex("""(\d+)""").find(it.title)?.groupValues?.getOrNull(1)?.toIntOrNull()
-                        ?: Int.MAX_VALUE
-                }
+                compareBy<BaGuideGalleryItem> { galleryCategoryOrder(it.title) }
+                    .thenBy { galleryTitleGroupKey(it.title) }
+                    .thenBy { galleryItemIndex(it.title) }
             )
             .take(100)
 
