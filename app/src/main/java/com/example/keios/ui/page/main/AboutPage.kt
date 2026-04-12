@@ -1,8 +1,12 @@
 package com.example.keios.ui.page.main
 
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow.Companion.Clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -48,12 +53,24 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+private const val KEIOS_PROJECT_URL = "https://github.com/hosizoraru/KeiOS"
+
 private fun formatTime(epochMillis: Long): String {
     if (epochMillis <= 0L) return "N/A"
     return runCatching {
         val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         formatter.format(Date(epochMillis))
     }.getOrDefault("N/A")
+}
+
+private fun openExternalUrl(context: Context, url: String): Boolean {
+    return runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+        true
+    }.getOrDefault(false)
 }
 
 @Composable
@@ -163,6 +180,7 @@ fun AboutPage(
     scrollToTopSignal: Int = 0,
     onBack: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
     val accent = MiuixTheme.colorScheme.primary
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
     val readyColor = Color(0xFF2E7D32)
@@ -264,6 +282,16 @@ fun AboutPage(
                             AboutCompactInfoRow(
                                 "版本",
                                 "${packageInfo?.versionName ?: "unknown"} (${packageInfo?.longVersionCode ?: -1})"
+                            )
+                            AboutCompactInfoRow(
+                                "项目地址",
+                                KEIOS_PROJECT_URL,
+                                valueColor = accent,
+                                onClick = {
+                                    if (!openExternalUrl(context, KEIOS_PROJECT_URL)) {
+                                        Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             )
                             AboutCompactInfoRow(
                                 "最后更新",
