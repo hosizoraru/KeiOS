@@ -7,6 +7,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -85,6 +86,7 @@ import java.util.concurrent.TimeUnit
 import java.util.Locale
 import kotlinx.coroutines.flow.onEach
 import com.rosan.installer.ui.library.effect.BgEffectBackground
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
@@ -206,6 +208,46 @@ private fun HomeInfoCard(
         ) {
             content()
         }
+    }
+}
+
+@Composable
+private fun HomeBottomPageLabel(
+    page: BottomPage,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val iconModifier = Modifier
+            .size(18.dp)
+            .graphicsLayer {
+                scaleX = page.iconScale
+                scaleY = page.iconScale
+            }
+        if (page.iconRes != null) {
+            Icon(
+                painter = painterResource(id = page.iconRes),
+                contentDescription = page.label,
+                tint = if (page.keepOriginalColors) Color.Unspecified else MiuixTheme.colorScheme.onBackground,
+                modifier = iconModifier
+            )
+        } else {
+            page.icon?.let { icon ->
+                Icon(
+                    imageVector = icon,
+                    contentDescription = page.label,
+                    tint = MiuixTheme.colorScheme.onBackground,
+                    modifier = iconModifier
+                )
+            }
+        }
+        Text(
+            text = page.label,
+            color = MiuixTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -480,9 +522,9 @@ fun HomePage(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = BottomPage.Home.label,
-                        color = MiuixTheme.colorScheme.onBackground
+                    HomeBottomPageLabel(
+                        page = BottomPage.Home,
+                        modifier = Modifier.defaultMinSize(minHeight = 24.dp)
                     )
                     StatusPill(
                         label = "固定显示",
@@ -500,9 +542,9 @@ fun HomePage(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = page.label,
-                                color = MiuixTheme.colorScheme.onBackground
+                            HomeBottomPageLabel(
+                                page = page,
+                                modifier = Modifier.defaultMinSize(minHeight = 24.dp)
                             )
                             Switch(
                                 checked = visibleBottomPages.contains(page),
