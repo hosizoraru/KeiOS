@@ -56,10 +56,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.keios.ba.helper.GameKeeFetchHelper
@@ -703,28 +700,8 @@ private fun GuideInlineVideoPlayer(
 }
 
 private fun buildGuideVideoPlayer(context: Context): ExoPlayer {
-    val referer = "https://www.gamekee.com/"
-    val desktopUa =
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
-    val defaultHeaders = mapOf(
-        "Accept" to "*/*",
-        "Accept-Language" to "zh-CN",
-        "Referer" to referer,
-        "Origin" to "https://www.gamekee.com",
-        "User-Agent" to desktopUa,
-        "device-num" to "1",
-        "game-alias" to "ba",
-        "Connection" to "close"
-    )
-    val httpFactory = DefaultHttpDataSource.Factory()
-        .setAllowCrossProtocolRedirects(true)
-        .setUserAgent(desktopUa)
-        .setDefaultRequestProperties(defaultHeaders)
-    val mediaSourceFactory = DefaultMediaSourceFactory(
-        DefaultDataSource.Factory(context, httpFactory)
-    )
     return ExoPlayer.Builder(context)
-        .setMediaSourceFactory(mediaSourceFactory)
+        .setMediaSourceFactory(createGameKeeMediaSourceFactory(context))
         .build()
 }
 

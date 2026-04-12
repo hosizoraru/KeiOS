@@ -54,13 +54,11 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
 import com.example.keios.ui.page.main.student.BaGuideTempMediaCache
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
+import com.example.keios.ui.page.main.student.createGameKeeMediaSourceFactory
 import com.example.keios.ui.page.main.student.GuideBottomTab
 import com.example.keios.ui.page.main.student.GuideTab
 import com.example.keios.ui.page.main.student.GuideCombatMetaTile
@@ -152,30 +150,8 @@ fun BaStudentGuidePage(
     }
     val pageTitle = info?.title?.ifBlank { "学生图鉴" } ?: "学生图鉴"
     val voicePlayer = remember(context, sourceUrl) {
-        // GameKee CDN 对语音资源的防盗链策略更偏向根站 Referer，
-        // 使用详情页 Referer 容易返回 567（EdgeOne 拦截页）。
-        val referer = "https://www.gamekee.com/"
-        val desktopUa =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
-        val defaultHeaders = mapOf(
-            "Accept" to "*/*",
-            "Accept-Language" to "zh-CN",
-            "Referer" to referer,
-            "Origin" to "https://www.gamekee.com",
-            "User-Agent" to desktopUa,
-            "device-num" to "1",
-            "game-alias" to "ba",
-            "Connection" to "close"
-        )
-        val httpFactory = DefaultHttpDataSource.Factory()
-            .setAllowCrossProtocolRedirects(true)
-            .setUserAgent(desktopUa)
-            .setDefaultRequestProperties(defaultHeaders)
-        val mediaSourceFactory = DefaultMediaSourceFactory(
-            DefaultDataSource.Factory(context, httpFactory)
-        )
         ExoPlayer.Builder(context)
-            .setMediaSourceFactory(mediaSourceFactory)
+            .setMediaSourceFactory(createGameKeeMediaSourceFactory(context))
             .build()
     }
 

@@ -83,6 +83,7 @@ object GameKeeFetchHelper {
         .readTimeout(1500, TimeUnit.MILLISECONDS)
         .writeTimeout(1500, TimeUnit.MILLISECONDS)
         .retryOnConnectionFailure(false)
+        .fastFallback(true)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
@@ -237,6 +238,7 @@ object GameKeeFetchHelper {
         .readTimeout(10, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
+        .fastFallback(true)
         .followRedirects(true)
         .followSslRedirects(true)
         .dns(smartDns)
@@ -274,7 +276,6 @@ object GameKeeFetchHelper {
             .header("Accept-Language", ACCEPT_LANGUAGE)
             .header("Referer", referer)
             .header("User-Agent", ua)
-            .header("Connection", "close")
             .header("Cache-Control", "no-cache")
         extraHeaders.forEach { (k, v) -> builder.header(k, v) }
 
@@ -319,8 +320,6 @@ object GameKeeFetchHelper {
             "Referer: $referer",
             "-H",
             "User-Agent: $ua",
-            "-H",
-            "Connection: close",
             "-H",
             "Cache-Control: no-cache"
         )
@@ -493,7 +492,6 @@ object GameKeeFetchHelper {
                         .header("Accept-Language", ACCEPT_LANGUAGE)
                         .header("Referer", referer)
                         .header("User-Agent", ua)
-                        .header("Connection", "close")
                         .build()
                     val result = runCatching {
                         client.newCall(req).execute().use { resp: Response ->
@@ -554,7 +552,6 @@ object GameKeeFetchHelper {
                         .header("Accept-Language", ACCEPT_LANGUAGE)
                         .header("Referer", referer)
                         .header("User-Agent", ua)
-                        .header("Connection", "close")
                         .build()
 
                     val result = runCatching {

@@ -1283,7 +1283,7 @@ fun SystemPage(
         topBar = {
             Column {
                 TopAppBar(
-                    title = "System",
+                    title = "OS",
                     scrollBehavior = scrollBehavior,
                     color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     actions = {
@@ -1349,7 +1349,6 @@ fun SystemPage(
                 end = 12.dp
             )
         ) {
-            item { SmallTitle("系统参数与属性") }
             item { Spacer(modifier = Modifier.height(10.dp)) }
             item {
             Card(
@@ -1380,7 +1379,7 @@ fun SystemPage(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Overview", color = titleColor)
+                        Text("系统参数与属性", color = titleColor)
                         Spacer(modifier = Modifier.weight(1f))
                         StatusPill(label = statusLabel, color = statusColor)
                         StatusPill(label = "Shizuku", color = if (shizukuReady) syncedColor else inactive)

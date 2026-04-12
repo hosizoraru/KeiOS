@@ -701,7 +701,6 @@ fun GitHubPage(
                 end = 12.dp
             )
         ) {
-            item { SmallTitle("项目版本跟踪") }
             item { Spacer(modifier = Modifier.height(8.dp)) }
             item { Spacer(modifier = Modifier.height(2.dp)) }
             item {
@@ -753,7 +752,7 @@ fun GitHubPage(
                             OverviewRefreshState.Cached -> Color(0xFFF59E0B)
                             OverviewRefreshState.Idle -> MiuixTheme.colorScheme.onBackgroundVariant
                         }
-                        Text("Overview", color = MiuixTheme.colorScheme.onBackground)
+                        Text("项目版本跟踪", color = MiuixTheme.colorScheme.onBackground)
                         Text(
                             text = formatRefreshAgo(lastRefreshMs),
                             color = refreshColor,

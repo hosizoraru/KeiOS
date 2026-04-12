@@ -7,15 +7,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import com.tencent.mmkv.MMKV
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
-import java.net.HttpURLConnection
 import java.net.URI
-import java.net.URL
 import java.net.URLDecoder
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 data class GitHubTrackedApp(
     val repoUrl: String,
@@ -212,8 +213,27 @@ private data class CachedValue<T>(
 
 object GitHubVersionUtils {
     private const val CACHE_TTL_MS = 90_000L
+    private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
     private val stableCache = mutableMapOf<String, CachedValue<Result<GitHubReleaseVersionSignals>>>()
     private val atomCache = mutableMapOf<String, CachedValue<Result<List<GitHubAtomReleaseEntry>>>>()
+    private val githubClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .callTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(8, TimeUnit.SECONDS)
+            .readTimeout(8, TimeUnit.SECONDS)
+            .writeTimeout(8, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .fastFallback(true)
+            .build()
+    }
+    private val githubNoRedirectClient: OkHttpClient by lazy {
+        githubClient.newBuilder()
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .build()
+    }
 
     fun buildReleaseUrl(owner: String, repo: String): String {
         return "https://github.com/$owner/$repo/releases"
@@ -425,40 +445,17 @@ object GitHubVersionUtils {
         return info.longVersionCode
     }
 
-    private fun request(url: String, followRedirects: Boolean = true): Pair<Int, String> {
-        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 8000
-            readTimeout = 8000
-            instanceFollowRedirects = followRedirects
-            setRequestProperty("Accept", "text/html,application/atom+xml,*/*")
-            setRequestProperty("User-Agent", "KeiOS-App")
-        }
-        return try {
-            val code = conn.responseCode
-            val text = runCatching {
-                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-                stream?.bufferedReader()?.use { it.readText() }.orEmpty()
-            }.getOrDefault("")
-            code to text
-        } finally {
-            conn.disconnect()
-        }
-    }
-
     private fun resolveLatestTagFromRedirect(latestUrl: String): String {
         return runCatching {
-            val conn = (URL(latestUrl).openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 6000
-                readTimeout = 6000
-                instanceFollowRedirects = false
-                setRequestProperty("Accept", "text/html,*/*")
-                setRequestProperty("User-Agent", "KeiOS-App")
-            }
-            try {
-                val code = conn.responseCode
-                val location = conn.getHeaderField("Location").orEmpty()
+            val request = Request.Builder()
+                .url(latestUrl)
+                .get()
+                .header("Accept", "text/html,*/*")
+                .header("User-Agent", GITHUB_USER_AGENT)
+                .build()
+            githubNoRedirectClient.newCall(request).execute().use { response ->
+                val code = response.code
+                val location = response.header("Location").orEmpty()
                 if (code !in 300..399 || location.isBlank()) return@runCatching ""
 
                 val rawTag = Regex("/releases/tag/([^?#]+)")
@@ -467,8 +464,6 @@ object GitHubVersionUtils {
                     ?.getOrNull(1)
                     .orEmpty()
                 URLDecoder.decode(rawTag, Charsets.UTF_8.name()).trim()
-            } finally {
-                conn.disconnect()
             }
         }.getOrDefault("")
     }
@@ -512,19 +507,20 @@ object GitHubVersionUtils {
     }
 
     private fun parseAtomEntriesStream(url: String, limit: Int): List<GitHubAtomReleaseEntry> {
-        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 8000
-            readTimeout = 8000
-            setRequestProperty("Accept", "application/atom+xml")
-            setRequestProperty("User-Agent", "KeiOS-App")
-        }
-        return try {
-            val code = conn.responseCode
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .header("Accept", "application/atom+xml")
+            .header("User-Agent", GITHUB_USER_AGENT)
+            .build()
+        githubClient.newCall(request).execute().use { response ->
+            val code = response.code
             if (code !in 200..299) return emptyList()
+            val body = response.body.string()
+            if (body.isBlank()) return emptyList()
 
             val parser = XmlPullParserFactory.newInstance().newPullParser()
-            parser.setInput(conn.inputStream.bufferedReader())
+            parser.setInput(body.reader())
 
             val result = mutableListOf<GitHubAtomReleaseEntry>()
             var inEntry = false
@@ -606,9 +602,7 @@ object GitHubVersionUtils {
                 }
                 eventType = parser.next()
             }
-            result
-        } finally {
-            conn.disconnect()
+            return result
         }
     }
 
