@@ -7,6 +7,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -44,11 +45,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Shadow as ComposeTextShadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -59,6 +62,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -123,6 +127,14 @@ private const val HOME_BA_DEFAULT_FRIEND_CODE = "ARISUKEI"
 private const val HOME_BA_AP_LIMIT_MAX = 240
 private const val HOME_BA_AP_MAX = 999
 private val HOME_BA_CAFE_DAILY_AP_BY_LEVEL = intArrayOf(92, 152, 222, 302, 390, 460, 530, 600, 570, 740)
+private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
+    Color(0xFFFFD2DE),
+    Color(0xFFFFCAD9),
+    Color(0xFFFF99BB),
+    Color(0xFFFF76A5),
+    Color(0xFFFF6098),
+    Color(0xFFFF5893)
+)
 
 private data class HomeBaOverview(
     val activated: Boolean,
@@ -163,6 +175,44 @@ private fun loadHomeBaOverview(): HomeBaOverview {
         cafeStored = cafeStored,
         cafeCap = cafeCap
     )
+}
+
+private fun Modifier.homeKeiHdrAccent(
+    enabled: Boolean,
+    sweepProgress: Float,
+    radialAlpha: Float = 0.30f,
+    radialRadiusScale: Float = 0.72f
+): Modifier {
+    if (!enabled) return this
+    return this
+        .graphicsLayer {
+            compositingStrategy = CompositingStrategy.Offscreen
+        }
+        .drawWithContent {
+            drawContent()
+            drawRect(
+                brush = Brush.linearGradient(
+                    colorStops = arrayOf(
+                        0f to Color.Transparent,
+                        (sweepProgress - 0.16f).coerceIn(0f, 1f) to Color.Transparent,
+                        sweepProgress.coerceIn(0f, 1f) to Color.White.copy(alpha = 0.82f),
+                        (sweepProgress + 0.16f).coerceIn(0f, 1f) to Color.Transparent,
+                        1f to Color.Transparent
+                    )
+                ),
+                blendMode = BlendMode.SrcAtop
+            )
+            drawRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = radialAlpha),
+                        Color.Transparent
+                    ),
+                    radius = size.minDimension * radialRadiusScale
+                ),
+                blendMode = BlendMode.SrcAtop
+            )
+        }
 }
 
 @Composable
@@ -602,46 +652,28 @@ fun HomePage(
                             .size(96.dp)
                             .graphicsLayer {
                                 alpha = (1f - iconProgress) * 0.95f
-                                compositingStrategy = CompositingStrategy.Offscreen
                             }
-                            .then(
-                                if (homeIconHdrEnabled) {
-                                    Modifier.drawWithContent {
-                                        drawContent()
-                                        drawRect(
-                                            brush = Brush.linearGradient(
-                                                colorStops = arrayOf(
-                                                    0f to Color.Transparent,
-                                                    (hdrSweepProgress - 0.16f).coerceIn(0f, 1f) to Color.Transparent,
-                                                    hdrSweepProgress.coerceIn(0f, 1f) to Color.White.copy(alpha = 0.82f),
-                                                    (hdrSweepProgress + 0.16f).coerceIn(0f, 1f) to Color.Transparent,
-                                                    1f to Color.Transparent
-                                                )
-                                            ),
-                                            blendMode = BlendMode.SrcAtop
-                                        )
-                                        drawRect(
-                                            brush = Brush.radialGradient(
-                                                colors = listOf(
-                                                    Color.White.copy(alpha = 0.30f),
-                                                    Color.Transparent
-                                                ),
-                                                radius = size.minDimension * 0.72f
-                                            ),
-                                            blendMode = BlendMode.SrcAtop
-                                        )
-                                    }
-                                } else {
-                                    Modifier
-                                }
+                            .homeKeiHdrAccent(
+                                enabled = homeIconHdrEnabled,
+                                sweepProgress = hdrSweepProgress,
+                                radialAlpha = 0.30f,
+                                radialRadiusScale = 0.72f
                             )
                     )
                 }
 
-                Text(
+                BasicText(
                     text = "KeiOS",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 33.sp,
+                    style = TextStyle(
+                        brush = Brush.linearGradient(HOME_KEI_TITLE_GRADIENT_COLORS),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 33.sp,
+                        shadow = ComposeTextShadow(
+                            color = Color(0x55FF74A6),
+                            offset = Offset(0f, 3f),
+                            blurRadius = 16f
+                        )
+                    ),
                     modifier = Modifier
                         .padding(top = 14.dp, bottom = 6.dp)
                         .onGloballyPositioned { coordinates ->
@@ -653,6 +685,12 @@ fun HomePage(
                             scaleX = 1f - (titleProgress * 0.05f)
                             scaleY = 1f - (titleProgress * 0.05f)
                         }
+                        .homeKeiHdrAccent(
+                            enabled = homeIconHdrEnabled,
+                            sweepProgress = hdrSweepProgress,
+                            radialAlpha = 0.22f,
+                            radialRadiusScale = 0.92f
+                        )
                 )
 
                 Column(
