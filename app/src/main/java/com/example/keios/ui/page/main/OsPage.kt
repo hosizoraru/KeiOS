@@ -1401,70 +1401,70 @@ fun OsPage(
         ) {
             item { Spacer(modifier = Modifier.height(10.dp)) }
             item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = when (overviewState) {
-                        SystemOverviewState.Cached -> if (isDark) Color(0x55F59E0B) else Color(0x33F59E0B)
-                        SystemOverviewState.Refreshing -> if (isDark) Color(0x553B82F6) else Color(0x333B82F6)
-                        SystemOverviewState.Completed -> if (isDark) Color(0x5522C55E) else Color(0x3322C55E)
-                        SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
-                    },
-                    contentColor = titleColor
-                ),
-                showIndication = cardPressFeedbackEnabled,
-                onClick = {
-                    if (refreshing) return@Card
-                    scope.launch { refreshAllSections() }
-                }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("系统参数与属性", color = titleColor)
-                        Spacer(modifier = Modifier.weight(1f))
-                        StatusPill(label = statusLabel, color = statusColor)
-                        StatusPill(label = "Shizuku", color = if (shizukuReady) syncedColor else inactive)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = when (overviewState) {
+                            SystemOverviewState.Cached -> if (isDark) Color(0x55F59E0B) else Color(0x33F59E0B)
+                            SystemOverviewState.Refreshing -> if (isDark) Color(0x553B82F6) else Color(0x333B82F6)
+                            SystemOverviewState.Completed -> if (isDark) Color(0x5522C55E) else Color(0x3322C55E)
+                            SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
+                        },
+                        contentColor = titleColor
+                    ),
+                    showIndication = cardPressFeedbackEnabled,
+                    onClick = {
+                        if (refreshing) return@Card
+                        scope.launch { refreshAllSections() }
                     }
-                    Text(
-                        text = "TopInfo ${topInfoRows.size} 条 · 查询 ${if (q.isBlank()) "（空）" else q}",
-                        color = subtitleColor
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("系统参数与属性", color = titleColor)
+                            Spacer(modifier = Modifier.weight(1f))
+                            StatusPill(label = statusLabel, color = statusColor)
+                            StatusPill(label = "Shizuku", color = if (shizukuReady) syncedColor else inactive)
+                        }
                         Text(
-                            text = if (!cacheLoaded) {
-                                "读取缓存中... · Fresh $loadedFreshCount / $sectionCount"
-                            } else {
-                                "缓存分区 $cachedSectionCount · Fresh $loadedFreshCount / $sectionCount"
-                            },
+                            text = "TopInfo ${topInfoRows.size} 条 · 查询 ${if (q.isBlank()) "（空）" else q}",
                             color = subtitleColor
                         )
-                        if (overviewState != SystemOverviewState.Idle) {
-                            CircularProgressIndicator(
-                                progress = indicatorProgress,
-                                size = 18.dp,
-                                strokeWidth = 2.dp,
-                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                    foregroundColor = statusColor,
-                                    backgroundColor = indicatorBg
-                                )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (!cacheLoaded) {
+                                    "读取缓存中... · Fresh $loadedFreshCount / $sectionCount"
+                                } else {
+                                    "缓存分区 $cachedSectionCount · Fresh $loadedFreshCount / $sectionCount"
+                                },
+                                color = subtitleColor
                             )
+                            if (overviewState != SystemOverviewState.Idle) {
+                                CircularProgressIndicator(
+                                    progress = indicatorProgress,
+                                    size = 18.dp,
+                                    strokeWidth = 2.dp,
+                                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                        foregroundColor = statusColor,
+                                        backgroundColor = indicatorBg
+                                    )
+                                )
+                            }
                         }
                     }
                 }
-            }
             }
 
             item { Spacer(modifier = Modifier.height(12.dp)) }

@@ -197,45 +197,45 @@ fun McpPage(
 
             item {
                 Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = if (uiState.running) overviewGreen else overviewRed,
-                    contentColor = titleColor
-                ),
-                showIndication = cardPressFeedbackEnabled,
-                onClick = toggleServer,
-                onLongPress = { showEditSheet = true }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = if (uiState.running) overviewGreen else overviewRed,
+                        contentColor = titleColor
+                    ),
+                    showIndication = cardPressFeedbackEnabled,
+                    onClick = toggleServer,
+                    onLongPress = { showEditSheet = true }
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text("MCP Server", color = titleColor)
-                        StatusPill(
-                            label = if (uiState.running) "Server Running" else "Server Stopped",
-                            color = if (uiState.running) runningColor else stoppedColor
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("MCP Server", color = titleColor)
+                            StatusPill(
+                                label = if (uiState.running) "Server Running" else "Server Stopped",
+                                color = if (uiState.running) runningColor else stoppedColor
+                            )
+                        }
+                        Text(
+                            text = "${if (uiState.running) "运行中" else "未运行"} · 在线客户端 ${uiState.connectedClients}",
+                            color = subtitleColor
+                        )
+                        Text(
+                            text = "${uiState.port} 端口 · MCP 协议",
+                            color = subtitleColor
+                        )
+                        Text(
+                            text = if (uiState.allowExternal) "网络模式: 局域网可访问" else "网络模式: 仅本机访问",
+                            color = subtitleColor
                         )
                     }
-                    Text(
-                        text = "${if (uiState.running) "运行中" else "未运行"} · 在线客户端 ${uiState.connectedClients}",
-                        color = subtitleColor
-                    )
-                    Text(
-                        text = "${uiState.port} 端口 · MCP 协议",
-                        color = subtitleColor
-                    )
-                    Text(
-                        text = if (uiState.allowExternal) "网络模式: 局域网可访问" else "网络模式: 仅本机访问",
-                        color = subtitleColor
-                    )
                 }
-            }
             }
 
             item { Spacer(modifier = Modifier.height(10.dp)) }

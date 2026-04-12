@@ -42,6 +42,20 @@ val miuixVersion =
     providers.gradleProperty("miuix.version").orNull
         ?: readLocalPropertyOrNull("miuix.version")
         ?: "0.9.0"
+val composeVersion = "1.10.6"
+val navigation3Version = "1.1.0"
+val navigationCommonVersion = "2.9.7"
+val backdropVersion = "1.0.6"
+val capsuleVersion = "2.1.3"
+val shapesVersion = "1.2.0"
+val shizukuVersion = "13.1.5"
+val mmkvVersion = "2.4.0"
+val mcpKotlinSdkVersion = "0.11.0"
+val ktorVersion = "3.4.2"
+val okhttpVersion = "5.3.2"
+val media3Version = "1.10.0"
+val zoomImageVersion = "1.4.0"
+val focusApiVersion = "1.4"
 
 plugins {
     id("com.android.application")
@@ -58,6 +72,17 @@ android {
         targetSdk = 37
         versionCode = autoVersionCode
         versionName = autoVersionName
+        buildConfigField("String", "MIUIX_VERSION", "\"$miuixVersion\"")
+        buildConfigField("String", "COMPOSE_VERSION", "\"$composeVersion\"")
+        buildConfigField("String", "NAVIGATION3_VERSION", "\"$navigation3Version\"")
+        buildConfigField("String", "BACKDROP_VERSION", "\"$backdropVersion\"")
+        buildConfigField("String", "CAPSULE_VERSION", "\"$capsuleVersion\"")
+        buildConfigField("String", "MMKV_VERSION", "\"$mmkvVersion\"")
+        buildConfigField("String", "MCP_KOTLIN_SDK_VERSION", "\"$mcpKotlinSdkVersion\"")
+        buildConfigField("String", "KTOR_VERSION", "\"$ktorVersion\"")
+        buildConfigField("String", "OKHTTP_VERSION", "\"$okhttpVersion\"")
+        buildConfigField("String", "MEDIA3_VERSION", "\"$media3Version\"")
+        buildConfigField("String", "ZOOMIMAGE_VERSION", "\"$zoomImageVersion\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -78,6 +103,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     compileSdkMinor = 0
@@ -94,11 +120,11 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("com.google.android.material:material:1.13.0")
 
-    implementation("androidx.compose.ui:ui:1.10.6")
-    implementation("androidx.compose.foundation:foundation:1.10.6")
-    implementation("androidx.navigation3:navigation3-runtime:1.1.0")
-    implementation("androidx.navigation:navigation-common-ktx:2.9.7")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.10.6")
+    implementation("androidx.compose.ui:ui:$composeVersion")
+    implementation("androidx.compose.foundation:foundation:$composeVersion")
+    implementation("androidx.navigation3:navigation3-runtime:$navigation3Version")
+    implementation("androidx.navigation:navigation-common-ktx:$navigationCommonVersion")
+    debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
 
     implementation("top.yukonga.miuix.kmp:miuix-ui-android:$miuixVersion")
     implementation("top.yukonga.miuix.kmp:miuix-preference-android:$miuixVersion")
@@ -106,19 +132,19 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-shapes-android:$miuixVersion")
     implementation("top.yukonga.miuix.kmp:miuix-blur-android:$miuixVersion")
     implementation("top.yukonga.miuix.kmp:miuix-navigation3-ui-android:$miuixVersion")
-    implementation("io.github.kyant0:backdrop:1.0.6")
-    implementation("io.github.kyant0:capsule:2.1.3")
-    implementation("io.github.kyant0:shapes:1.2.0")
+    implementation("io.github.kyant0:backdrop:$backdropVersion")
+    implementation("io.github.kyant0:capsule:$capsuleVersion")
+    implementation("io.github.kyant0:shapes:$shapesVersion")
 
-    implementation("dev.rikka.shizuku:api:13.1.5")
-    implementation("dev.rikka.shizuku:provider:13.1.5")
-    implementation("com.tencent:mmkv:2.4.0")
-    implementation("io.modelcontextprotocol:kotlin-sdk:0.11.0")
-    implementation("io.ktor:ktor-server-cio:3.4.2")
-    implementation("com.squareup.okhttp3:okhttp:5.3.2")
-    implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:5.3.2")
-    implementation("androidx.media3:media3-exoplayer:1.10.0")
-    implementation("androidx.media3:media3-ui:1.10.0")
-    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3:1.4.0")
-    implementation("com.xzakota.hyper.notification:focus-api:1.4")
+    implementation("dev.rikka.shizuku:api:$shizukuVersion")
+    implementation("dev.rikka.shizuku:provider:$shizukuVersion")
+    implementation("com.tencent:mmkv:$mmkvVersion")
+    implementation("io.modelcontextprotocol:kotlin-sdk:$mcpKotlinSdkVersion")
+    implementation("io.ktor:ktor-server-cio:$ktorVersion")
+    implementation("com.squareup.okhttp3:okhttp:$okhttpVersion")
+    implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:$okhttpVersion")
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
+    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3:$zoomImageVersion")
+    implementation("com.xzakota.hyper.notification:focus-api:$focusApiVersion")
 }

@@ -1,11 +1,20 @@
 package com.example.keios.ui.page.main.widget
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun MiuixInfoItem(
@@ -18,9 +27,29 @@ fun MiuixInfoItem(
     } else {
         Modifier
     }
-    BasicComponent(
-        title = key,
-        summary = value.ifBlank { "N/A" },
-        modifier = clickableModifier.padding(vertical = 2.dp)
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(clickableModifier)
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = key,
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            modifier = Modifier.weight(0.42f),
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip
+        )
+        Text(
+            text = value.ifBlank { "N/A" },
+            color = MiuixTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(0.58f),
+            textAlign = TextAlign.End,
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip,
+            fontWeight = FontWeight.Medium
+        )
+    }
 }

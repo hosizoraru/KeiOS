@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow.Companion.Clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.keios.BuildConfig
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.ui.page.main.widget.StatusPill
 import java.text.SimpleDateFormat
@@ -75,13 +77,17 @@ private fun AboutCompactRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            text = title,
-            color = MiuixTheme.colorScheme.onBackgroundVariant,
-            maxLines = Int.MAX_VALUE,
-            overflow = Clip,
-            modifier = Modifier.width(92.dp)
-        )
+        Box(
+            modifier = Modifier.width(104.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = title,
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                maxLines = Int.MAX_VALUE,
+                overflow = Clip
+            )
+        }
         Row(
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.End,
@@ -109,6 +115,7 @@ private fun AboutCompactInfoRow(
             color = valueColor,
             maxLines = Int.MAX_VALUE,
             overflow = Clip,
+            modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.End
         )
     }
@@ -175,15 +182,15 @@ fun AboutPage(
     }
     val frameworkRows = remember {
         listOf(
-            "UI 主框架" to "Miuix UI 0.9.0",
-            "Compose" to "Jetpack Compose 1.10.6",
-            "导航框架" to "Navigation3 1.1.0",
-            "玻璃效果" to "Backdrop 1.0.6 · Capsule 2.1.3",
-            "权限框架" to "Shizuku API ${ShizukuApiUtils.API_VERSION}",
-            "MCP 协议" to "kotlin-sdk 0.11.0 · Ktor 3.4.2",
-            "网络请求" to "OkHttp 5.3.2",
-            "多媒体" to "Media3 1.10.0 · ZoomImage 1.4.0",
-            "本地存储" to "MMKV 2.4.0"
+            "UI 框架" to "Miuix UI ${BuildConfig.MIUIX_VERSION}",
+            "声明式界面" to "Jetpack Compose ${BuildConfig.COMPOSE_VERSION}",
+            "页面导航" to "Navigation3 ${BuildConfig.NAVIGATION3_VERSION}",
+            "玻璃材质" to "Backdrop ${BuildConfig.BACKDROP_VERSION} · Capsule ${BuildConfig.CAPSULE_VERSION}",
+            "权限桥接" to "Shizuku API ${ShizukuApiUtils.API_VERSION}",
+            "MCP 服务栈" to "kotlin-sdk ${BuildConfig.MCP_KOTLIN_SDK_VERSION} · Ktor ${BuildConfig.KTOR_VERSION}",
+            "网络请求" to "OkHttp ${BuildConfig.OKHTTP_VERSION}",
+            "多媒体" to "Media3 ${BuildConfig.MEDIA3_VERSION} · ZoomImage ${BuildConfig.ZOOMIMAGE_VERSION}",
+            "本地存储" to "MMKV ${BuildConfig.MMKV_VERSION}"
         )
     }
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
@@ -267,8 +274,12 @@ fun AboutPage(
                                 (((appInfo?.flags ?: 0) and ApplicationInfo.FLAG_DEBUGGABLE) != 0).toString()
                             )
                             AboutCompactInfoRow(
-                                "运行时",
-                                "API ${Build.VERSION.SDK_INT} · Security Patch ${Build.VERSION.SECURITY_PATCH ?: "unknown"}"
+                                "API Level",
+                                Build.VERSION.SDK_INT.toString()
+                            )
+                            AboutCompactInfoRow(
+                                "安全补丁",
+                                Build.VERSION.SECURITY_PATCH ?: "unknown"
                             )
                         }
                     }
