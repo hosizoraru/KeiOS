@@ -681,14 +681,14 @@ fun GitHubPage(
                                         onClick = { openStrategySheet() }
                                     ),
                                     LiquidActionItem(
-                                        icon = MiuixIcons.Regular.Sort,
-                                        contentDescription = "排序",
-                                        onClick = { showSortPopup = !showSortPopup }
-                                    ),
-                                    LiquidActionItem(
                                         icon = MiuixIcons.Regular.Tune,
                                         contentDescription = "检查逻辑",
                                         onClick = { openCheckLogicSheet() }
+                                    ),
+                                    LiquidActionItem(
+                                        icon = MiuixIcons.Regular.Sort,
+                                        contentDescription = "排序",
+                                        onClick = { showSortPopup = !showSortPopup }
                                     ),
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Refresh,
@@ -706,7 +706,7 @@ fun GitHubPage(
 
                             LiquidActionBarPopupAnchors(itemCount = 5) { slotIndex, popupAnchorBounds ->
                                 when (slotIndex) {
-                                    1 -> if (showSortPopup) {
+                                    2 -> if (showSortPopup) {
                                         SnapshotWindowListPopup(
                                             show = showSortPopup,
                                             alignment = PopupPositionProvider.Align.BottomStart,
