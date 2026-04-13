@@ -599,6 +599,7 @@ fun HomePage(
 
                 SheetDescriptionText(
                     text = "Home 固定显示，其他板块可按需隐藏或重新显示。",
+                    modifier = Modifier.padding(start = 16.dp)
                 )
             }
         }
