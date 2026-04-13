@@ -94,6 +94,7 @@ import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.capsule.ContinuousCapsule
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -183,6 +184,8 @@ fun GitHubPage(
     var credentialCheckError by remember { mutableStateOf<String?>(null) }
     var credentialCheckStatus by remember { mutableStateOf<GitHubApiCredentialStatus?>(null) }
     var recommendedTokenGuideExpanded by remember { mutableStateOf(false) }
+    var refreshAllJob by remember { mutableStateOf<Job?>(null) }
+    var deleteInProgress by remember { mutableStateOf(false) }
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
@@ -268,6 +271,24 @@ fun GitHubPage(
         GitHubTrackStore.saveCheckCache(states, refreshTimestamp)
     }
 
+    fun cancelRefreshAll(reason: String? = null) {
+        if (refreshAllJob?.isActive == true) {
+            refreshAllJob?.cancel()
+            refreshAllJob = null
+            overviewRefreshState = if (trackedItems.isEmpty()) {
+                OverviewRefreshState.Idle
+            } else if (checkStates.isNotEmpty()) {
+                OverviewRefreshState.Cached
+            } else {
+                OverviewRefreshState.Idle
+            }
+            refreshProgress = 0f
+            reason?.let {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     fun activeStrategyId(): String = lookupConfig.selectedStrategy.storageId
 
     fun cacheMatchesCurrentStrategy(state: GitHubCheckCacheEntry): Boolean {
@@ -331,6 +352,7 @@ fun GitHubPage(
         scope.launch {
             checkStates[item.id] = VersionCheckUi(loading = true)
             val state = resolveItemState(item)
+            if (trackedItems.none { it.id == item.id }) return@launch
             if (showToastOnError && state.message.startsWith("检查失败")) {
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
             }
@@ -340,34 +362,39 @@ fun GitHubPage(
     }
 
     fun refreshAllTracked(showToast: Boolean = true) {
-        if (trackedItems.isEmpty()) {
+        val snapshot = trackedItems.toList()
+        if (snapshot.isEmpty()) {
             if (showToast) Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
             overviewRefreshState = OverviewRefreshState.Idle
             refreshProgress = 0f
             return
         }
-        scope.launch {
+        refreshAllJob?.cancel()
+        refreshAllJob = scope.launch {
             GitHubTrackStore.clearCheckCache()
             lastRefreshMs = 0L
             overviewRefreshState = OverviewRefreshState.Refreshing
             refreshProgress = 0f
-            trackedItems.forEach { item ->
+            snapshot.forEach { item ->
                 checkStates[item.id] = VersionCheckUi(loading = true, message = "检查中...")
             }
-            trackedItems.forEachIndexed { index, item ->
+            snapshot.forEachIndexed { index, item ->
                 val state = resolveItemState(item)
-                checkStates[item.id] = state
-                refreshProgress = (index + 1).toFloat() / trackedItems.size.toFloat()
+                if (trackedItems.any { it.id == item.id }) {
+                    checkStates[item.id] = state
+                }
+                refreshProgress = (index + 1).toFloat() / snapshot.size.toFloat()
                 if (showToast && state.message.startsWith("检查失败")) {
                     Toast.makeText(context, "${item.owner}/${item.repo}: ${state.message}", Toast.LENGTH_SHORT).show()
                 }
-                if (index < trackedItems.lastIndex) delay(120)
+                if (index < snapshot.lastIndex) delay(120)
             }
             overviewRefreshState = OverviewRefreshState.Completed
             lastRefreshMs = System.currentTimeMillis()
             refreshProgress = 1f
             persistCheckCache(lastRefreshMs)
             if (showToast) Toast.makeText(context, "检查完成", Toast.LENGTH_SHORT).show()
+            refreshAllJob = null
         }
     }
 
@@ -705,7 +732,8 @@ fun GitHubPage(
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Refresh,
                                         contentDescription = "检查",
-                                        onClick = { refreshAllTracked(showToast = true) }
+                                        onClick = { refreshAllTracked(showToast = true) },
+                                        enabled = !deleteInProgress
                                     ),
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.AddCircle,
@@ -1467,7 +1495,7 @@ fun GitHubPage(
                 )
                 SheetControlRow(
                     label = "已选应用",
-                    summary = selectedApp?.let { "${it.label} · ${it.packageName}" } ?: "未选择"
+                    summary = if (selectedApp == null) "未选择" else null
                 ) {
                     GlassTextButton(
                         backdrop = backdrop,
@@ -1475,6 +1503,9 @@ fun GitHubPage(
                         text = if (pickerExpanded) "收起列表" else "选择应用",
                         onClick = { pickerExpanded = !pickerExpanded }
                     )
+                }
+                selectedApp?.let { app ->
+                    GitHubSelectedAppCard(selectedApp = app)
                 }
             }
             SheetSectionTitle("检查选项")
@@ -1501,25 +1532,14 @@ fun GitHubPage(
                         MiuixInfoItem("应用列表", "没有匹配结果")
                     } else {
                         filteredApps.forEach { app ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        selectedApp = app
-                                        pickerExpanded = false
-                                    }
-                                    .padding(vertical = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                AppIcon(packageName = app.packageName, size = 30.dp)
-                                Text(
-                                    text = "${app.label} · ${app.packageName}",
-                                    color = Color(0xFF3A8DFF),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+                            GitHubAppCandidateRow(
+                                app = app,
+                                selected = selectedApp?.packageName == app.packageName,
+                                onClick = {
+                                    selectedApp = app
+                                    pickerExpanded = false
+                                }
+                            )
                         }
                     }
                 }
@@ -1563,22 +1583,31 @@ fun GitHubPage(
                 TextButton(
                     modifier = Modifier.weight(1f),
                     text = "取消",
-                    onClick = { pendingDeleteItem = null }
+                    onClick = {
+                        if (!deleteInProgress) pendingDeleteItem = null
+                    }
                 )
                 TextButton(
                     modifier = Modifier.weight(1f),
-                    text = "删除",
+                    text = if (deleteInProgress) "删除中..." else "删除",
                     colors = ButtonDefaults.textButtonColors(
                         color = MiuixTheme.colorScheme.error,
                         textColor = MiuixTheme.colorScheme.onError
                     ),
                     onClick = {
+                        if (deleteInProgress) return@TextButton
                         pendingDeleteItem?.let { deleting ->
-                            trackedItems.remove(deleting)
-                            checkStates.remove(deleting.id)
-                            saveTracked()
-                            persistCheckCache()
-                            Toast.makeText(context, "已删除 ${deleting.appLabel}", Toast.LENGTH_SHORT).show()
+                            deleteInProgress = true
+                            try {
+                                cancelRefreshAll()
+                                trackedItems.remove(deleting)
+                                checkStates.remove(deleting.id)
+                                saveTracked()
+                                persistCheckCache()
+                                Toast.makeText(context, "已删除 ${deleting.appLabel}", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                deleteInProgress = false
+                            }
                         }
                         pendingDeleteItem = null
                     }

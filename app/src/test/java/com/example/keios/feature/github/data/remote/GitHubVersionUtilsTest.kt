@@ -130,4 +130,17 @@ class GitHubVersionUtilsTest {
         assertEquals(false, GitHubVersionUtils.referToSameReleaseVersion(preCandidates, stableCandidates))
         assertTrue(GitHubVersionUtils.referToSameReleaseVersion(duplicateCandidates, duplicateCandidates))
     }
+
+    @Test
+    fun `same release detection ignores content noise from changelog ranges`() {
+        val stableCandidates = GitHubVersionUtils.buildVersionCandidates(
+            GitHubVersionCandidateSource.Tag to "3.8.0"
+        )
+        val preCandidates = GitHubVersionUtils.buildVersionCandidates(
+            GitHubVersionCandidateSource.Tag to "3.8.0-rc04",
+            GitHubVersionCandidateSource.Content to "Full Changelog 3.8.0-rc03...3.8.0-rc04"
+        )
+
+        assertEquals(false, GitHubVersionUtils.referToSameReleaseVersion(preCandidates, stableCandidates))
+    }
 }

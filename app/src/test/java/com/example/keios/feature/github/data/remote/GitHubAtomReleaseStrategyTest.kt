@@ -96,6 +96,118 @@ class GitHubAtomReleaseStrategyTest {
         }
     }
 
+    @Test
+    fun `atom latest redirect matches exact stable tag instead of newer alpha entry`() {
+        MockWebServer().use { server ->
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <?xml version="1.0" encoding="utf-8"?>
+                            <feed xmlns="http://www.w3.org/2005/Atom">
+                              <title>demo/app releases</title>
+                              <updated>2026-04-13T10:00:00Z</updated>
+                              <entry>
+                                <id>tag:github.com,2008:Repository/1/Version.26.4.Alpha2_C384</id>
+                                <updated>2026-04-13T09:00:00Z</updated>
+                                <title>Version.26.4.Alpha2_C384</title>
+                                <link rel="alternate" href="https://github.com/demo/app/releases/tag/Version.26.4.Alpha2_C384" />
+                                <content type="html">Alpha preview build</content>
+                                <author><name>demo</name></author>
+                              </entry>
+                              <entry>
+                                <id>tag:github.com,2008:Repository/1/Canary.Version_C384</id>
+                                <updated>2026-04-13T08:59:00Z</updated>
+                                <title>Canary Build Version.26.4.Canary_C384</title>
+                                <link rel="alternate" href="https://github.com/demo/app/releases/tag/Canary.Version_C384" />
+                                <content type="html">Canary build</content>
+                                <author><name>demo</name></author>
+                              </entry>
+                              <entry>
+                                <id>tag:github.com,2008:Repository/1/Version.1.3.Fix2_C359</id>
+                                <updated>2026-04-12T09:00:00Z</updated>
+                                <title>Version.1.3.Fix2_C359</title>
+                                <link rel="alternate" href="https://github.com/demo/app/releases/tag/Version.1.3.Fix2_C359" />
+                                <content type="html">Stable build</content>
+                                <author><name>demo</name></author>
+                              </entry>
+                            </feed>
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(302)
+                    .addHeader("Location", "https://github.com/demo/app/releases/tag/Version.1.3.Fix2_C359")
+            )
+
+            val trace = GitHubAtomReleaseStrategy.loadSnapshotTrace(
+                owner = "demo",
+                repo = "app",
+                atomFeedUrl = server.url("/demo/app/releases.atom").toString(),
+                latestReleaseUrl = server.url("/demo/app/releases/latest").toString()
+            )
+            val snapshot = trace.result.getOrThrow()
+
+            assertTrue(snapshot.hasStableRelease)
+            assertEquals("Version.1.3.Fix2_C359", snapshot.latestStable.rawTag)
+            assertEquals("Version.26.4.Alpha2_C384", snapshot.latestPreRelease?.rawTag)
+        }
+    }
+
+    @Test
+    fun `atom keeps rc prerelease visible when stable redirect points to same base final release`() {
+        MockWebServer().use { server ->
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <?xml version="1.0" encoding="utf-8"?>
+                            <feed xmlns="http://www.w3.org/2005/Atom">
+                              <title>demo/app releases</title>
+                              <updated>2026-04-13T10:00:00Z</updated>
+                              <entry>
+                                <id>tag:github.com,2008:Repository/1/3.8.0</id>
+                                <updated>2026-04-12T09:00:00Z</updated>
+                                <title>3.8.0</title>
+                                <link rel="alternate" href="https://github.com/demo/app/releases/tag/3.8.0" />
+                                <content type="html">Full Changelog 3.7.2-alpha02...3.8.0</content>
+                                <author><name>demo</name></author>
+                              </entry>
+                              <entry>
+                                <id>tag:github.com,2008:Repository/1/3.8.0-rc04</id>
+                                <updated>2026-04-13T09:00:00Z</updated>
+                                <title>3.8.0-rc04</title>
+                                <link rel="alternate" href="https://github.com/demo/app/releases/tag/3.8.0-rc04" />
+                                <content type="html">Full Changelog 3.8.0-rc03...3.8.0-rc04</content>
+                                <author><name>demo</name></author>
+                              </entry>
+                            </feed>
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(302)
+                    .addHeader("Location", "https://github.com/demo/app/releases/tag/3.8.0")
+            )
+
+            val trace = GitHubAtomReleaseStrategy.loadSnapshotTrace(
+                owner = "demo",
+                repo = "app",
+                atomFeedUrl = server.url("/demo/app/releases.atom").toString(),
+                latestReleaseUrl = server.url("/demo/app/releases/latest").toString()
+            )
+            val snapshot = trace.result.getOrThrow()
+
+            assertTrue(snapshot.hasStableRelease)
+            assertEquals("3.8.0", snapshot.latestStable.rawTag)
+            assertEquals("3.8.0-rc04", snapshot.latestPreRelease?.rawTag)
+        }
+    }
+
 
     @Test
     fun `atom snapshot keeps prerelease only repos explicit instead of faking stable channel`() {

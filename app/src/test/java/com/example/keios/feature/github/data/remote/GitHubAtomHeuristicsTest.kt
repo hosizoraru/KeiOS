@@ -54,6 +54,18 @@ class GitHubAtomHeuristicsTest {
     }
 
     @Test
+    fun `channel detection does not let changelog prerelease noise override stable tag`() {
+        assertEquals(
+            GitHubReleaseChannel.STABLE,
+            GitHubAtomHeuristics.detectReleaseChannel(
+                tag = "3.8.0",
+                title = "3.8.0",
+                contentPreview = "Full Changelog 3.7.2-alpha02...3.8.0"
+            )
+        )
+    }
+
+    @Test
     fun `content preview keeps release note headings for generic titles`() {
         val content = """
             Release notes

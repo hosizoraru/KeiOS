@@ -70,7 +70,8 @@ import kotlinx.coroutines.launch
 data class LiquidActionItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val contentDescription: String,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
+    val enabled: Boolean = true
 )
 
 @Composable
@@ -134,7 +135,7 @@ private fun RowScope.LiquidActionItemSlot(
     tint: Color,
     onClick: (() -> Unit)? = null
 ) {
-    val clickModifier = if (onClick != null) {
+    val clickModifier = if (onClick != null && item.enabled) {
         Modifier.clickable(
             interactionSource = null,
             indication = null,
@@ -154,7 +155,7 @@ private fun RowScope.LiquidActionItemSlot(
         Icon(
             imageVector = item.icon,
             contentDescription = item.contentDescription,
-            tint = tint
+            tint = if (item.enabled) tint else tint.copy(alpha = 0.38f)
         )
     }
 }
@@ -222,7 +223,7 @@ fun LiquidActionBar(
                 onInteractionChanged(false)
                 val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
                 animateToValue(targetIndex.toFloat())
-                items.getOrNull(targetIndex)?.onClick?.invoke()
+                items.getOrNull(targetIndex)?.takeIf { it.enabled }?.onClick?.invoke()
                 animationScope.launch {
                     offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
                 }

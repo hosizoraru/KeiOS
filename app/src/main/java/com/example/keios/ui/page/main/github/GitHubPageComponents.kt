@@ -29,9 +29,12 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
+import com.example.keios.feature.github.model.InstalledAppItem
 import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetExpandableCard
+import com.example.keios.ui.page.main.widget.SheetSurfaceCard
 import com.example.keios.ui.page.main.widget.SheetSummaryCard
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -354,6 +357,108 @@ private fun GitHubLookupStrategyOption.accentColor(): Color {
     return when (this) {
         GitHubLookupStrategyOption.AtomFeed -> GitHubStatusPalette.Active
         GitHubLookupStrategyOption.GitHubApiToken -> GitHubStatusPalette.Update
+    }
+}
+
+@Composable
+internal fun GitHubSelectedAppCard(
+    selectedApp: InstalledAppItem
+) {
+    SheetSurfaceCard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = GitHubStatusPalette.tonedSurface(
+            GitHubStatusPalette.Update,
+            isDark = androidx.compose.foundation.isSystemInDarkTheme()
+        ),
+        borderColor = GitHubStatusPalette.Update.copy(alpha = 0.28f),
+        verticalSpacing = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppIcon(packageName = selectedApp.packageName, size = 38.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = selectedApp.label,
+                    color = MiuixTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = selectedApp.packageName,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            StatusPill(
+                label = "已选",
+                color = GitHubStatusPalette.Update
+            )
+        }
+    }
+}
+
+@Composable
+internal fun GitHubAppCandidateRow(
+    app: InstalledAppItem,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val accent = if (selected) GitHubStatusPalette.Update else MiuixTheme.colorScheme.primary
+    SheetSurfaceCard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = if (selected) {
+            GitHubStatusPalette.tonedSurface(GitHubStatusPalette.Update, isDark)
+        } else {
+            MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.48f)
+        },
+        borderColor = if (selected) {
+            GitHubStatusPalette.Update.copy(alpha = 0.3f)
+        } else {
+            MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.12f)
+        },
+        verticalSpacing = 0.dp,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppIcon(packageName = app.packageName, size = 32.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = app.label,
+                    color = accent,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = app.packageName,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (selected) {
+                StatusPill(
+                    label = "当前",
+                    color = GitHubStatusPalette.Update
+                )
+            }
+        }
     }
 }
 

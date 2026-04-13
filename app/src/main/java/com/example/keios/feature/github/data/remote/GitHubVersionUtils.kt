@@ -183,15 +183,18 @@ object GitHubVersionUtils {
 
     internal fun referToSameReleaseVersion(
         leftCandidates: List<GitHubVersionCandidate>,
-        rightCandidates: List<GitHubVersionCandidate>
+        rightCandidates: List<GitHubVersionCandidate>,
+        maxSourcePriority: Int = GitHubVersionCandidateSource.Link.priority
     ): Boolean {
         val left = leftCandidates
+            .filter { it.source.priority <= maxSourcePriority }
             .flatMap { normalizeVersionCandidates(it.value) }
             .mapNotNull(::parseVersionParts)
             .filter(::isMeaningfulReleaseIdentity)
             .map(::releaseIdentityKey)
             .toSet()
         val right = rightCandidates
+            .filter { it.source.priority <= maxSourcePriority }
             .flatMap { normalizeVersionCandidates(it.value) }
             .mapNotNull(::parseVersionParts)
             .filter(::isMeaningfulReleaseIdentity)

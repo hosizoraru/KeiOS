@@ -20,6 +20,11 @@ private data class CachedValue<T>(
     val timestamp: Long
 )
 
+private data class GitHubAtomLatestStableLookup(
+    val effectiveLatest: GitHubReleaseVersionSignals,
+    val hasStableRelease: Boolean
+)
+
 object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
     override val id: String = "atom_feed"
 
@@ -27,7 +32,7 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
     private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
 
     private val feedCache = mutableMapOf<String, CachedValue<Result<GitHubAtomFeed>>>()
-    private val stableCache = mutableMapOf<String, CachedValue<Result<GitHubReleaseVersionSignals>>>()
+    private val stableCache = mutableMapOf<String, CachedValue<Result<GitHubAtomLatestStableLookup>>>()
 
     private val githubClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -75,16 +80,6 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
                 elapsedMs = System.currentTimeMillis() - startedAt
             )
         }
-        val fallbackStableEntry = pickLatestStableEntry(feed.entries.filter { !it.isLikelyPreRelease })
-        val latestPreEntry = pickLatestPreReleaseEntry(
-            feed.entries.filter { entry ->
-                entry.isLikelyPreRelease &&
-                    GitHubVersionUtils.hasMeaningfulPreReleaseVersionCandidates(
-                        entry.versionCandidates,
-                        GitHubVersionCandidateSource.Link.priority
-                    )
-            }
-        )
         val latestStableTrace = fetchLatestStableSignalTrace(
             owner = owner,
             repo = repo,
@@ -92,24 +87,34 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
             latestReleaseUrl = latestReleaseUrl,
             noRedirectRequestClient = noRedirectRequestClient
         )
-        val latestStable = latestStableTrace.result.getOrElse { error ->
+        val latestStableLookup = latestStableTrace.result.getOrElse { error ->
             return GitHubStrategyLoadTrace(
                 result = Result.failure(error),
                 fromCache = feedTrace.fromCache && latestStableTrace.fromCache,
                 elapsedMs = System.currentTimeMillis() - startedAt
             )
         }
+        val latestStable = latestStableLookup.effectiveLatest
+        val hasStableRelease = latestStableLookup.hasStableRelease
+        val latestPreEntry = pickLatestPreReleaseEntry(
+            feed.entries.filter { entry ->
+                val isEligiblePreCandidate = if (hasStableRelease) entry.isLikelyPreRelease else true
+                isEligiblePreCandidate &&
+                    GitHubVersionUtils.hasMeaningfulPreReleaseVersionCandidates(
+                        entry.versionCandidates,
+                        GitHubVersionCandidateSource.Link.priority
+                    )
+            }
+        )
         val latestPre = latestPreEntry
             ?.toReleaseSignal(GitHubReleaseSignalSource.AtomEntry)
             ?.takeUnless { preReleaseSignal ->
-                (fallbackStableEntry != null || latestStable.source == GitHubReleaseSignalSource.LatestRedirect) &&
+                hasStableRelease &&
                     GitHubVersionUtils.referToSameReleaseVersion(
                         preReleaseSignal.versionCandidates,
                         latestStable.versionCandidates
                     )
             }
-        val hasStableRelease = fallbackStableEntry != null ||
-            latestStable.source == GitHubReleaseSignalSource.LatestRedirect
 
         return GitHubStrategyLoadTrace(
             result = Result.success(
@@ -168,7 +173,7 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
         feed: GitHubAtomFeed,
         latestReleaseUrl: String = buildLatestReleaseUrl(owner, repo),
         noRedirectRequestClient: OkHttpClient = githubNoRedirectClient
-    ): GitHubStrategyLoadTrace<GitHubReleaseVersionSignals> {
+    ): GitHubStrategyLoadTrace<GitHubAtomLatestStableLookup> {
         val startedAt = System.currentTimeMillis()
         val key = "$owner/$repo|$latestReleaseUrl"
         val now = System.currentTimeMillis()
@@ -202,41 +207,48 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
                     )
                     val matchedEntry = feed.entries.firstOrNull { entry ->
                         entry.tag.equals(rawTag, ignoreCase = true) ||
-                            GitHubVersionUtils.compareCandidateSetsWithSources(
-                                GitHubVersionUtils.normalizeVersionCandidates(rawTag),
+                            GitHubVersionUtils.referToSameReleaseVersion(
+                                GitHubVersionUtils.buildVersionCandidates(
+                                    GitHubVersionCandidateSource.Tag to rawTag
+                                ),
                                 entry.versionCandidates
-                            ) == 0
+                            )
                     }
-                    matchedEntry?.toReleaseSignal(
-                        source = GitHubReleaseSignalSource.LatestRedirect,
-                        linkOverride = finalUrl
-                    ) ?: GitHubReleaseVersionSignals(
-                        displayVersion = rawTag,
-                        rawTag = rawTag,
-                        rawName = rawTag,
-                        link = finalUrl,
-                        updatedAtMillis = feed.updatedAtMillis,
-                        versionCandidates = GitHubVersionUtils.buildVersionCandidates(
-                            GitHubVersionCandidateSource.Tag to rawTag
+                    GitHubAtomLatestStableLookup(
+                        effectiveLatest = matchedEntry?.toReleaseSignal(
+                            source = GitHubReleaseSignalSource.LatestRedirect,
+                            linkOverride = finalUrl
+                        ) ?: GitHubReleaseVersionSignals(
+                            displayVersion = rawTag,
+                            rawTag = rawTag,
+                            rawName = rawTag,
+                            link = finalUrl,
+                            updatedAtMillis = feed.updatedAtMillis,
+                            versionCandidates = GitHubVersionUtils.buildVersionCandidates(
+                                GitHubVersionCandidateSource.Tag to rawTag
+                            ),
+                            source = GitHubReleaseSignalSource.LatestRedirect,
+                            channel = GitHubAtomHeuristics.detectReleaseChannel(rawTag, rawTag, ""),
+                            authorName = ""
                         ),
-                        source = GitHubReleaseSignalSource.LatestRedirect,
-                        channel = GitHubAtomHeuristics.detectReleaseChannel(rawTag, rawTag, ""),
-                        authorName = ""
+                        hasStableRelease = true
                     )
                 } else {
                     val fallbackStableEntry = pickLatestStableEntry(feed.entries.filter { !it.isLikelyPreRelease })
-                    val fallbackPreEntry = pickLatestPreReleaseEntry(
+                    val fallbackAnyEntry = pickLatestPreReleaseEntry(
                         feed.entries.filter { entry ->
-                            entry.isLikelyPreRelease &&
-                                GitHubVersionUtils.hasMeaningfulPreReleaseVersionCandidates(
-                                    entry.versionCandidates,
-                                    GitHubVersionCandidateSource.Link.priority
-                                )
+                            GitHubVersionUtils.hasMeaningfulPreReleaseVersionCandidates(
+                                entry.versionCandidates,
+                                GitHubVersionCandidateSource.Link.priority
+                            )
                         }
                     )
-                    fallbackStableEntry?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
-                        ?: fallbackPreEntry?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
-                        ?: error("no release entries")
+                    GitHubAtomLatestStableLookup(
+                        effectiveLatest = fallbackStableEntry?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
+                            ?: fallbackAnyEntry?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
+                            ?: error("no release entries"),
+                        hasStableRelease = false
+                    )
                 }
             }
         }

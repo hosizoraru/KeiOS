@@ -66,8 +66,19 @@ internal object GitHubAtomHeuristics {
     }
 
     fun detectReleaseChannel(tag: String, title: String, contentPreview: String): GitHubReleaseChannel {
-        val hints = listOf(tag, title, contentPreview)
-            .joinToString(" ")
+        detectFieldChannel(tag)?.let { return it }
+        detectFieldChannel(title)?.let { return it }
+        detectKeywordChannel(contentPreview)?.let { return it }
+        return GitHubReleaseChannel.STABLE
+    }
+
+    private fun detectFieldChannel(text: String): GitHubReleaseChannel? {
+        GitHubVersionUtils.classifyVersionChannel(text)?.let { return it }
+        return detectKeywordChannel(text)
+    }
+
+    private fun detectKeywordChannel(text: String): GitHubReleaseChannel? {
+        val hints = text
             .lowercase(Locale.ROOT)
             .replace('_', ' ')
 
@@ -78,7 +89,7 @@ internal object GitHubAtomHeuristics {
             Regex("""(^|[^a-z])rc([^a-z]|$)""").containsMatchIn(hints) -> GitHubReleaseChannel.RC
             Regex("""(^|[^a-z])(preview|pre-release|prerelease)([^a-z]|$)""").containsMatchIn(hints) -> GitHubReleaseChannel.PREVIEW
             strongStableHints.any { it in hints } -> GitHubReleaseChannel.STABLE
-            else -> GitHubReleaseChannel.STABLE
+            else -> null
         }
     }
 
