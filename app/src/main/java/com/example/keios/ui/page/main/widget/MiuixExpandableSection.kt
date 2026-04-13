@@ -8,13 +8,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.Alignment
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -28,10 +26,10 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ExpandLess
 import top.yukonga.miuix.kmp.icon.extended.ExpandMore
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -44,10 +42,12 @@ fun MiuixExpandableSection(
     headerStartAction: (@Composable () -> Unit)? = null,
     headerActions: (@Composable () -> Unit)? = null,
     onHeaderLongClick: (() -> Unit)? = null,
+    containerColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val sectionSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+    val sectionSurface = containerColor ?: MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+    val shouldDrawSurface = sectionSurface.alpha > 0f
     val shadowColor = if (isDark) {
         Color.Black.copy(alpha = 0.20f)
     } else {
@@ -70,10 +70,12 @@ fun MiuixExpandableSection(
                         },
                         highlight = { Highlight.Default.copy(alpha = 1f) },
                         shadow = { Shadow.Default.copy(color = shadowColor) },
-                        onDrawSurface = { drawRect(sectionSurface) }
+                        onDrawSurface = {
+                            if (shouldDrawSurface) drawRect(sectionSurface)
+                        }
                     )
                 } else {
-                    Modifier.background(sectionSurface)
+                    if (shouldDrawSurface) Modifier.background(sectionSurface) else Modifier
                 }
             )
     ) {

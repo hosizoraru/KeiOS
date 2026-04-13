@@ -20,12 +20,14 @@ fun StatusPill(
     label: String,
     color: Color,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 10.dp, vertical = 5.dp)
+    contentPadding: PaddingValues = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+    backgroundAlphaOverride: Float? = null,
+    borderAlphaOverride: Float? = null
 ) {
     val shape = RoundedCornerShape(999.dp)
     val isDark = isSystemInDarkTheme()
-    val backgroundAlpha = if (isDark) 0.18f else 0.24f
-    val borderAlpha = if (isDark) 0.35f else 0.42f
+    val backgroundAlpha = backgroundAlphaOverride ?: if (isDark) 0.18f else 0.24f
+    val borderAlpha = borderAlphaOverride ?: if (isDark) 0.35f else 0.42f
     val textColor = if (isDark) color else color.copy(alpha = 0.96f)
     Box(
         modifier = Modifier

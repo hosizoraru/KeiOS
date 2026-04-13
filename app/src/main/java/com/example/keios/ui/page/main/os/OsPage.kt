@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -43,6 +44,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -51,8 +54,7 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
-import com.example.keios.ui.page.main.widget.MiuixExpandableSection
-import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -109,7 +111,6 @@ fun OsPage(
     val isDark = isSystemInDarkTheme()
     val inactive = MiuixTheme.colorScheme.onBackgroundVariant
     val titleColor = MiuixTheme.colorScheme.onBackground
-    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
     val cachedColor = Color(0xFFF59E0B)
     val refreshingColor = Color(0xFF3B82F6)
     val syncedColor = Color(0xFF22C55E)
@@ -471,16 +472,8 @@ fun OsPage(
         SystemOverviewState.Completed -> syncedColor
         SystemOverviewState.Idle -> inactive
     }
-    val overviewCardColor = if (overviewState == SystemOverviewState.Idle) {
-        MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
-    } else {
-        statusColor.copy(alpha = if (isDark) 0.24f else 0.16f)
-    }
-    val overviewItemColor = if (overviewState == SystemOverviewState.Idle) {
-        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
-    } else {
-        statusColor.copy(alpha = if (isDark) 0.20f else 0.12f)
-    }
+    val overviewBaseColor = MiuixTheme.colorScheme.surface.copy(alpha = 0.66f)
+    val overviewCardColor = overviewBaseColor
     val indicatorProgress = when (overviewState) {
         SystemOverviewState.Refreshing -> refreshProgress.coerceIn(0f, 1f)
         SystemOverviewState.Completed,
@@ -696,26 +689,30 @@ fun OsPage(
                                     )
                                 )
                             }
-                            StatusPill(label = statusLabel, color = statusColor)
+                            StatusPill(
+                                label = statusLabel,
+                                color = statusColor,
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+                                backgroundAlphaOverride = if (isDark) 0.24f else 0.34f,
+                                borderAlphaOverride = if (isDark) 0.42f else 0.52f
+                            )
                         }
                         overviewMetrics.chunked(2).forEach { pair ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
-                                OsOverviewMetricItem(
-                                    metric = pair[0],
-                                    cardColor = overviewItemColor,
-                                    labelColor = subtitleColor,
-                                    defaultValueColor = titleColor,
+                                GitHubOverviewMetricItem(
+                                    label = pair[0].label,
+                                    value = pair[0].value,
+                                    valueColor = pair[0].valueColor ?: MiuixTheme.colorScheme.onBackground,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (pair.size > 1) {
-                                    OsOverviewMetricItem(
-                                        metric = pair[1],
-                                        cardColor = overviewItemColor,
-                                        labelColor = subtitleColor,
-                                        defaultValueColor = titleColor,
+                                    GitHubOverviewMetricItem(
+                                        label = pair[1].label,
+                                        value = pair[1].value,
+                                        valueColor = pair[1].valueColor ?: MiuixTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f)
                                     )
                                 } else {
@@ -731,7 +728,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.TOP_INFO)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "TopInfo",
                     subtitle = "${displayedTopInfoRows.size} 条",
@@ -743,7 +740,7 @@ fun OsPage(
                     } else {
                         if (q.isBlank() && !topInfoExpanded) {
                             displayedTopInfoRows.forEach { row ->
-                                MiuixInfoItem(row.key, row.value)
+                                OsSectionInfoRow(label = row.key, value = row.value)
                             }
                         } else {
                             groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
@@ -753,7 +750,7 @@ fun OsPage(
                                     modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
                                 )
                                 rows.forEach { row ->
-                                    MiuixInfoItem(row.key, row.value)
+                                    OsSectionInfoRow(label = row.key, value = row.value)
                                 }
                             }
                         }
@@ -766,7 +763,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.SYSTEM)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "System Table",
                     subtitle = sectionSubtitle(SectionKind.SYSTEM, if (q.isBlank()) prunedSystemRows.size else displayedSystemRows.size),
@@ -774,7 +771,7 @@ fun OsPage(
                     onExpandedChange = { systemTableExpanded = it }
                 ) {
                     if (displayedSystemRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                    else displayedSystemRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                    else displayedSystemRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
 
@@ -783,7 +780,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.SECURE)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "Secure Table",
                     subtitle = sectionSubtitle(SectionKind.SECURE, if (q.isBlank()) prunedSecureRows.size else displayedSecureRows.size),
@@ -791,7 +788,7 @@ fun OsPage(
                     onExpandedChange = { secureTableExpanded = it }
                 ) {
                     if (displayedSecureRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                    else displayedSecureRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                    else displayedSecureRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
 
@@ -800,7 +797,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.GLOBAL)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "Global Table",
                     subtitle = sectionSubtitle(SectionKind.GLOBAL, if (q.isBlank()) prunedGlobalRows.size else displayedGlobalRows.size),
@@ -808,7 +805,7 @@ fun OsPage(
                     onExpandedChange = { globalTableExpanded = it }
                 ) {
                     if (displayedGlobalRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                    else displayedGlobalRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                    else displayedGlobalRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
 
@@ -817,7 +814,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.ANDROID)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "Android Properties",
                     subtitle = sectionSubtitle(SectionKind.ANDROID, if (q.isBlank()) prunedAndroidRows.size else displayedAndroidRows.size),
@@ -825,7 +822,7 @@ fun OsPage(
                     onExpandedChange = { androidPropsExpanded = it }
                 ) {
                     if (displayedAndroidRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                    else displayedAndroidRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                    else displayedAndroidRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
 
@@ -834,7 +831,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.JAVA)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "Java Properties",
                     subtitle = sectionSubtitle(SectionKind.JAVA, if (q.isBlank()) prunedJavaRows.size else displayedJavaRows.size),
@@ -842,7 +839,7 @@ fun OsPage(
                     onExpandedChange = { javaPropsExpanded = it }
                 ) {
                     if (displayedJavaRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                    else displayedJavaRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                    else displayedJavaRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
 
@@ -851,7 +848,7 @@ fun OsPage(
 
             if (isCardVisible(OsSectionCard.LINUX)) {
                 item {
-                MiuixExpandableSection(
+                MiuixAccordionCard(
                     backdrop = backdrop,
                     title = "Linux environment",
                     subtitle = sectionSubtitle(SectionKind.LINUX, if (q.isBlank()) prunedLinuxRows.size else displayedLinuxRows.size),
@@ -859,7 +856,7 @@ fun OsPage(
                     onExpandedChange = { linuxEnvExpanded = it }
                 ) {
                     if (displayedLinuxRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                    else displayedLinuxRows.forEach { row -> MiuixInfoItem(row.key, row.value) }
+                    else displayedLinuxRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
                 item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -875,42 +872,33 @@ private data class OsOverviewMetric(
 )
 
 @Composable
-private fun OsOverviewMetricItem(
-    metric: OsOverviewMetric,
-    cardColor: Color,
-    labelColor: Color,
-    defaultValueColor: Color,
+private fun OsSectionInfoRow(
+    label: String,
+    value: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        colors = CardDefaults.defaultColors(
-            color = cardColor,
-            contentColor = defaultValueColor
-        ),
-        showIndication = false,
-        onClick = {}
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = metric.label,
-                color = labelColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = metric.value.ifBlank { "N/A" },
-                color = metric.valueColor ?: defaultValueColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Text(
+            text = label,
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.widthIn(min = 108.dp, max = 136.dp),
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip
+        )
+        Text(
+            text = value.ifBlank { "N/A" },
+            color = MiuixTheme.colorScheme.onBackground,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip
+        )
     }
 }
