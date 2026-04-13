@@ -89,7 +89,21 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
                 elapsedMs = System.currentTimeMillis() - startedAt
             )
         }
-        val latestPre = pickPreferredEntry(feed.entries.filter { it.isLikelyPreRelease })
+        val latestPre = pickPreferredEntry(
+            feed.entries.filter { entry ->
+                entry.isLikelyPreRelease &&
+                    GitHubVersionUtils.hasComparableVersionCandidates(
+                        entry.versionCandidates,
+                        GitHubVersionCandidateSource.Link.priority
+                    ) &&
+                    GitHubVersionUtils.isRelevantPreRelease(
+                        preReleaseCandidates = entry.versionCandidates,
+                        stableCandidates = latestStable.versionCandidates,
+                        preReleaseUpdatedAtMillis = entry.updatedAtMillis,
+                        stableUpdatedAtMillis = latestStable.updatedAtMillis
+                    )
+            }
+        )
             ?.toReleaseSignal(GitHubReleaseSignalSource.AtomEntry)
 
         return GitHubStrategyLoadTrace(
@@ -204,11 +218,7 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
                         authorName = ""
                     )
                 } else {
-                    pickPreferredEntry(feed.entries.filter { !it.isLikelyPreRelease })
-                        ?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
-                        ?: pickPreferredEntry(feed.entries)
-                            ?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
-                        ?: error("no release entries")
+                    selectEffectiveLatestSignal(feed.entries)
                 }
             }
         }
@@ -219,6 +229,18 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
             fromCache = false,
             elapsedMs = System.currentTimeMillis() - startedAt
         )
+    }
+
+    private fun selectEffectiveLatestSignal(
+        entries: List<GitHubAtomReleaseEntry>
+    ): GitHubReleaseVersionSignals {
+        // Some young projects only publish prereleases for a long time. In that case we still need
+        // a usable "latest" signal instead of treating the repository as invalid.
+        return pickPreferredEntry(entries.filter { !it.isLikelyPreRelease })
+            ?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
+            ?: pickPreferredEntry(entries)
+                ?.toReleaseSignal(GitHubReleaseSignalSource.AtomFallback)
+            ?: error("no release entries")
     }
 
     override fun clearCaches() {
@@ -346,7 +368,7 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
                                     title = entryTitle,
                                     contentPreview = contentPreview
                                 )
-                                entries += GitHubAtomReleaseEntry(
+                                val releaseEntry = GitHubAtomReleaseEntry(
                                     entryId = entryId,
                                     tag = derivedTag,
                                     title = entryTitle.ifBlank { derivedTag },
@@ -366,6 +388,14 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
                                     channel = channel,
                                     isLikelyPreRelease = channel.isPreRelease
                                 )
+                                if (!releaseEntry.isLikelyPreRelease ||
+                                    GitHubVersionUtils.hasComparableVersionCandidates(
+                                        releaseEntry.versionCandidates,
+                                        GitHubVersionCandidateSource.Link.priority
+                                    )
+                                ) {
+                                    entries += releaseEntry
+                                }
                             }
                             inEntry = false
                         }

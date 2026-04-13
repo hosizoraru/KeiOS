@@ -151,6 +151,12 @@ object GitHubVersionUtils {
 
         addCandidate(base)
 
+        Regex("""^(?:20\d{4}|\d{6,8})[._-]+([vV]?\d+(?:[._-]\d+)+.*)$""")
+            .matchEntire(base)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.let(::addCandidate)
+
         val versionRegex = Regex(
             """[vV]?\d+(?:[._-]\d+)*(?:\s*[-._ ]?\s*(?:dev|nightly|canary|snapshot|alpha|beta|rc|preview|pre(?:-release)?)(?:\s*[-._ ]?\s*\d+)?)?(?:\+[0-9A-Za-z.-]+)?"""
         )
@@ -173,6 +179,31 @@ object GitHubVersionUtils {
     ): Int? {
         val left = leftCandidates.map { it.value }
         return compareCandidateSetsWithSources(left, rightCandidates)
+    }
+
+    internal fun hasComparableVersionCandidates(
+        candidates: List<GitHubVersionCandidate>,
+        maxSourcePriority: Int = GitHubVersionCandidateSource.Link.priority
+    ): Boolean {
+        return candidates.any { candidate ->
+            candidate.source.priority <= maxSourcePriority &&
+                normalizeVersionCandidates(candidate.value).any { normalized ->
+                    parseVersionParts(normalized) != null
+                }
+        }
+    }
+
+    internal fun isRelevantPreRelease(
+        preReleaseCandidates: List<GitHubVersionCandidate>,
+        stableCandidates: List<GitHubVersionCandidate>,
+        preReleaseUpdatedAtMillis: Long? = null,
+        stableUpdatedAtMillis: Long? = null
+    ): Boolean {
+        val compare = compareStructuredCandidateSets(preReleaseCandidates, stableCandidates)
+        return when {
+            compare != null -> compare > 0
+            else -> (preReleaseUpdatedAtMillis ?: Long.MIN_VALUE) > (stableUpdatedAtMillis ?: Long.MIN_VALUE)
+        }
     }
 
     fun classifyVersionChannel(text: String): GitHubReleaseChannel? {

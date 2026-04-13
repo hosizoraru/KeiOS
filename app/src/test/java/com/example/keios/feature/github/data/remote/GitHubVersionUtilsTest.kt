@@ -80,6 +80,17 @@ class GitHubVersionUtilsTest {
     }
 
     @Test
+    fun `date prefixed release names still expose semantic version candidate`() {
+        val candidates = GitHubVersionUtils.normalizeVersionCandidates("260412_1.22")
+        assertTrue("1.22".lowercase() in candidates)
+        val compare = GitHubVersionUtils.compareVersionToCandidates(
+            localVersion = "1.22",
+            candidates = listOf("260412_1.22")
+        )
+        assertEquals(0, compare)
+    }
+
+    @Test
     fun `structured comparison returns exact match when title carries current version`() {
         val candidates = GitHubVersionUtils.buildVersionCandidates(
             GitHubVersionCandidateSource.Tag to "r20260410",

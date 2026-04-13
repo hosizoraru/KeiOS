@@ -43,11 +43,34 @@ class GitHubApiTokenReleaseStrategy(
     fun loadSnapshotTrace(owner: String, repo: String): GitHubStrategyLoadTrace<GitHubRepositoryReleaseSnapshot> {
         val startedAt = System.currentTimeMillis()
         val entriesTrace = fetchReleaseEntriesTrace(owner, repo)
-        val result = entriesTrace.result.mapCatching { entries ->
-            val latestStableEntry = pickPreferredEntry(entries.filter { !it.isLikelyPreRelease })
-                ?: pickPreferredEntry(entries)
-                ?: error("no release entries")
-            val latestPreEntry = pickPreferredEntry(entries.filter { it.isLikelyPreRelease })
+        val entries = entriesTrace.result.getOrElse { error ->
+            return GitHubStrategyLoadTrace(
+                result = Result.failure(error),
+                fromCache = entriesTrace.fromCache,
+                elapsedMs = System.currentTimeMillis() - startedAt,
+                authMode = authMode
+            )
+        }
+        val latestStableTrace = fetchLatestStableSignalTrace(owner, repo)
+        val result = runCatching {
+            val latestStableSignal = latestStableTrace.result.getOrElse {
+                selectEffectiveLatestSignal(entries)
+            }
+            val latestPreEntry = pickPreferredEntry(
+                entries.filter { entry ->
+                    entry.isLikelyPreRelease &&
+                        GitHubVersionUtils.hasComparableVersionCandidates(
+                            entry.versionCandidates,
+                            GitHubVersionCandidateSource.Link.priority
+                        ) &&
+                        GitHubVersionUtils.isRelevantPreRelease(
+                            preReleaseCandidates = entry.versionCandidates,
+                            stableCandidates = latestStableSignal.versionCandidates,
+                            preReleaseUpdatedAtMillis = entry.updatedAtMillis,
+                            stableUpdatedAtMillis = latestStableSignal.updatedAtMillis
+                        )
+                }
+            )
             val updatedAt = entries.maxOfOrNull { it.updatedAtMillis ?: Long.MIN_VALUE }
                 ?.takeIf { it > Long.MIN_VALUE }
 
@@ -59,13 +82,13 @@ class GitHubApiTokenReleaseStrategy(
                     updatedAtMillis = updatedAt,
                     entries = entries
                 ),
-                latestStable = latestStableEntry.toReleaseSignal(),
+                latestStable = latestStableSignal,
                 latestPreRelease = latestPreEntry?.toReleaseSignal()
             )
         }
         return GitHubStrategyLoadTrace(
             result = result,
-            fromCache = entriesTrace.fromCache,
+            fromCache = entriesTrace.fromCache && latestStableTrace.fromCache,
             elapsedMs = System.currentTimeMillis() - startedAt,
             authMode = authMode
         )
@@ -110,6 +133,41 @@ class GitHubApiTokenReleaseStrategy(
 
     override fun clearCaches() {
         clearSharedCaches()
+    }
+
+    private fun fetchLatestStableSignalTrace(
+        owner: String,
+        repo: String
+    ): GitHubStrategyLoadTrace<GitHubReleaseVersionSignals> {
+        val startedAt = System.currentTimeMillis()
+        val key = cacheKey(owner, repo) + "|latest"
+        val now = System.currentTimeMillis()
+        stableCache[key]?.takeIf { now - it.timestamp < CACHE_TTL_MS }?.let {
+            return GitHubStrategyLoadTrace(
+                result = it.value,
+                fromCache = true,
+                elapsedMs = System.currentTimeMillis() - startedAt,
+                authMode = authMode
+            )
+        }
+
+        val result = fetch(buildLatestApiUrl(owner, repo)).mapCatching { body ->
+            val release = JSONObject(body)
+            val entry = parseReleaseEntry(
+                release = release,
+                owner = owner,
+                repo = repo
+            ) ?: error("latest release missing")
+            check(!entry.isLikelyPreRelease) { "latest release is not stable" }
+            entry.toReleaseSignal()
+        }
+        stableCache[key] = GitHubApiCachedValue(result, now)
+        return GitHubStrategyLoadTrace(
+            result = result,
+            fromCache = false,
+            elapsedMs = System.currentTimeMillis() - startedAt,
+            authMode = authMode
+        )
     }
 
     fun checkCredential(): Result<GitHubApiCredentialStatus> {
@@ -171,54 +229,8 @@ class GitHubApiTokenReleaseStrategy(
         val entries = buildList {
             for (index in 0 until array.length()) {
                 val release = array.optJSONObject(index) ?: continue
-                if (release.optBoolean("draft", false)) continue
-
-                val rawTag = release.optString("tag_name").trim()
-                val name = release.optString("name").trim().ifBlank { rawTag }
-                val htmlUrl = release.optString("html_url").trim().ifBlank {
-                    GitHubVersionUtils.buildReleaseUrl(owner, repo)
-                }
-                val releaseId = release.opt("id")?.toString().orEmpty()
-                val body = release.optString("body")
-                val contentPreview = GitHubAtomHeuristics.buildContentPreview(body)
-                val heuristicsChannel = GitHubAtomHeuristics.detectReleaseChannel(
-                    tag = rawTag,
-                    title = name,
-                    contentPreview = contentPreview
-                )
-                val prereleaseFlag = release.optBoolean("prerelease", false)
-                val channel = when {
-                    prereleaseFlag && !heuristicsChannel.isPreRelease -> GitHubReleaseChannel.PREVIEW
-                    else -> heuristicsChannel
-                }
-                val author = release.optJSONObject("author")
-                val authorName = author?.optString("login").orEmpty().trim()
-                val authorAvatarUrl = author?.optString("avatar_url").orEmpty().trim()
-                val publishedAtMillis = release.optString("published_at").parseIsoInstantOrNull()
-                    ?: release.optString("created_at").parseIsoInstantOrNull()
-
-                add(
-                    GitHubAtomReleaseEntry(
-                        entryId = release.optString("node_id").ifBlank { releaseId },
-                        tag = rawTag.ifBlank { name },
-                        title = name,
-                        link = htmlUrl,
-                        updatedAtMillis = publishedAtMillis,
-                        contentHtml = "",
-                        contentText = body,
-                        authorName = authorName,
-                        authorAvatarUrl = authorAvatarUrl,
-                        versionCandidates = GitHubVersionUtils.buildVersionCandidates(
-                            GitHubVersionCandidateSource.Tag to rawTag,
-                            GitHubVersionCandidateSource.Title to name,
-                            GitHubVersionCandidateSource.Link to htmlUrl,
-                            GitHubVersionCandidateSource.Id to releaseId,
-                            GitHubVersionCandidateSource.Content to contentPreview
-                        ),
-                        channel = channel,
-                        isLikelyPreRelease = prereleaseFlag || channel.isPreRelease
-                    )
-                )
+                val entry = parseReleaseEntry(release, owner, repo) ?: continue
+                add(entry)
             }
         }
 
@@ -232,8 +244,83 @@ class GitHubApiTokenReleaseStrategy(
         return "${apiBaseUrl.trimEnd('/')}/repos/$owner/$repo/releases?per_page=30"
     }
 
+    private fun buildLatestApiUrl(owner: String, repo: String): String {
+        return "${apiBaseUrl.trimEnd('/')}/repos/$owner/$repo/releases/latest"
+    }
+
     private fun buildRateLimitUrl(): String {
         return "${apiBaseUrl.trimEnd('/')}/rate_limit"
+    }
+
+    private fun parseReleaseEntry(
+        release: JSONObject,
+        owner: String,
+        repo: String
+    ): GitHubAtomReleaseEntry? {
+        if (release.optBoolean("draft", false)) return null
+
+        val rawTag = release.optString("tag_name").trim()
+        val name = release.optString("name").trim().ifBlank { rawTag }
+        if (rawTag.isBlank() && name.isBlank()) return null
+
+        val htmlUrl = release.optString("html_url").trim().ifBlank {
+            GitHubVersionUtils.buildReleaseUrl(owner, repo)
+        }
+        val releaseId = release.opt("id")?.toString().orEmpty()
+        val body = release.optString("body")
+        val contentPreview = GitHubAtomHeuristics.buildContentPreview(body)
+        val heuristicsChannel = GitHubAtomHeuristics.detectReleaseChannel(
+            tag = rawTag,
+            title = name,
+            contentPreview = contentPreview
+        )
+        val prereleaseFlag = release.optBoolean("prerelease", false)
+        val channel = when {
+            prereleaseFlag && !heuristicsChannel.isPreRelease -> GitHubReleaseChannel.PREVIEW
+            else -> heuristicsChannel
+        }
+        val author = release.optJSONObject("author")
+        val authorName = author?.optString("login").orEmpty().trim()
+        val authorAvatarUrl = author?.optString("avatar_url").orEmpty().trim()
+        val publishedAtMillis = release.optString("published_at").parseIsoInstantOrNull()
+            ?: release.optString("created_at").parseIsoInstantOrNull()
+        val versionCandidates = GitHubVersionUtils.buildVersionCandidates(
+            GitHubVersionCandidateSource.Tag to rawTag,
+            GitHubVersionCandidateSource.Title to name,
+            GitHubVersionCandidateSource.Link to htmlUrl,
+            GitHubVersionCandidateSource.Id to releaseId,
+            GitHubVersionCandidateSource.Content to contentPreview
+        )
+        if (prereleaseFlag && !GitHubVersionUtils.hasComparableVersionCandidates(versionCandidates, GitHubVersionCandidateSource.Link.priority)) {
+            return null
+        }
+
+        return GitHubAtomReleaseEntry(
+            entryId = release.optString("node_id").ifBlank { releaseId },
+            tag = rawTag.ifBlank { name },
+            title = name,
+            link = htmlUrl,
+            updatedAtMillis = publishedAtMillis,
+            contentHtml = "",
+            contentText = body,
+            authorName = authorName,
+            authorAvatarUrl = authorAvatarUrl,
+            versionCandidates = versionCandidates,
+            channel = channel,
+            isLikelyPreRelease = prereleaseFlag || channel.isPreRelease
+        )
+    }
+
+    private fun selectEffectiveLatestSignal(
+        entries: List<GitHubAtomReleaseEntry>
+    ): GitHubReleaseVersionSignals {
+        // Some young projects only publish prereleases for a long time. In that case we still need
+        // a usable "latest" signal instead of treating the repository as invalid.
+        return pickPreferredEntry(entries.filter { !it.isLikelyPreRelease })
+            ?.toReleaseSignal()
+            ?: pickPreferredEntry(entries)
+                ?.toReleaseSignal()
+            ?: error("no release entries")
     }
 
     private fun cacheKey(owner: String, repo: String): String {
@@ -338,6 +425,7 @@ class GitHubApiTokenReleaseStrategy(
         private const val DEFAULT_GITHUB_API_BASE_URL = "https://api.github.com"
 
         private val releaseCache = mutableMapOf<String, GitHubApiCachedValue<Result<List<GitHubAtomReleaseEntry>>>>()
+        private val stableCache = mutableMapOf<String, GitHubApiCachedValue<Result<GitHubReleaseVersionSignals>>>()
         private val credentialCache = mutableMapOf<String, GitHubApiCachedValue<Result<GitHubApiCredentialStatus>>>()
 
         private val githubClient: OkHttpClient by lazy {
@@ -355,6 +443,7 @@ class GitHubApiTokenReleaseStrategy(
 
         fun clearSharedCaches() {
             releaseCache.clear()
+            stableCache.clear()
             credentialCache.clear()
         }
     }
