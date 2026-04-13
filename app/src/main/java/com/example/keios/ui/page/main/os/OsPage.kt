@@ -715,6 +715,7 @@ fun OsPage(
                                 GitHubOverviewMetricItem(
                                     label = pair[0].label,
                                     value = pair[0].value,
+                                    titleColor = if (isDark) Color.White else MiuixTheme.colorScheme.onBackgroundVariant,
                                     valueColor = pair[0].valueColor ?: MiuixTheme.colorScheme.onBackground,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -722,6 +723,7 @@ fun OsPage(
                                     GitHubOverviewMetricItem(
                                         label = pair[1].label,
                                         value = pair[1].value,
+                                        titleColor = if (isDark) Color.White else MiuixTheme.colorScheme.onBackgroundVariant,
                                         valueColor = pair[1].valueColor ?: MiuixTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f)
                                     )

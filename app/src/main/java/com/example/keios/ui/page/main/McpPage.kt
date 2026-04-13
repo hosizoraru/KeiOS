@@ -4,6 +4,12 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +43,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -132,7 +141,7 @@ fun McpPage(
     }
     val runtimeText = remember(uiState.running, uiState.runningSinceEpochMs, runtimeNowMs) {
         if (!uiState.running || uiState.runningSinceEpochMs <= 0L) {
-            "未运行"
+            "待运行"
         } else {
             formatMcpUptime(runtimeNowMs - uiState.runningSinceEpochMs)
         }
@@ -145,47 +154,46 @@ fun McpPage(
         }
     }
     val overviewMetrics = remember(
-        uiState.running,
         uiState.connectedClients,
-        runtimeText,
         uiState.serverName,
         bindAddress,
         uiState.port,
         uiState.endpointPath,
-        uiState.allowExternal,
-        uiState.tools.size,
-        runningColor,
-        stoppedColor
+        uiState.allowExternal
     ) {
         listOf(
-            McpOverviewMetric(
-                label = "状态",
-                value = if (uiState.running) {
-                    "运行中 · ${uiState.connectedClients} 客户端"
-                } else {
-                    "未运行 · 0 客户端"
-                },
-                valueColor = if (uiState.running) runningColor else stoppedColor
-            ),
-            McpOverviewMetric(label = "运行时间", value = runtimeText),
             McpOverviewMetric(
                 label = "服务名称",
                 value = uiState.serverName.ifBlank { "KeiOS MCP" }
             ),
+            McpOverviewMetric(label = "入口路径", value = uiState.endpointPath),
             McpOverviewMetric(label = "绑定地址", value = bindAddress),
             McpOverviewMetric(label = "端口", value = uiState.port.toString()),
-            McpOverviewMetric(label = "入口路径", value = uiState.endpointPath),
             McpOverviewMetric(
                 label = "网络模式",
                 value = if (uiState.allowExternal) "局域网可访问" else "仅本机访问"
             ),
-            McpOverviewMetric(label = "工具数量", value = "${uiState.tools.size} 个")
+            McpOverviewMetric(
+                label = "客户端数量",
+                value = "${uiState.connectedClients} 个",
+                valueColor = if (uiState.connectedClients > 0) runningColor else subtitleColor
+            )
         )
     }
     var portText by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
     var allowExternal by remember(uiState.allowExternal) { mutableStateOf(uiState.allowExternal) }
     var serverName by remember(uiState.serverName) { mutableStateOf(uiState.serverName) }
     var showEditSheet by remember { mutableStateOf(false) }
+    var showFloatingToggleButton by remember { mutableStateOf(true) }
+    val toggleButtonScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -1f) showFloatingToggleButton = false
+                if (available.y > 1f) showFloatingToggleButton = true
+                return Offset.Zero
+            }
+        }
+    }
     var controlExpanded by remember { mutableStateOf(true) }
     var configExpanded by remember { mutableStateOf(false) }
     var logsExpanded by remember { mutableStateOf(false) }
@@ -277,11 +285,6 @@ fun McpPage(
                                     mcpServerManager.refreshNow()
                                     Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
                                 }
-                            ),
-                            LiquidActionItem(
-                                icon = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
-                                contentDescription = if (uiState.running) "停止服务" else "启动服务",
-                                onClick = toggleServer
                             )
                         ),
                         onInteractionChanged = onActionBarInteractingChanged
@@ -290,18 +293,23 @@ fun McpPage(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            state = listState,
-            contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + 16.dp,
-                start = 12.dp,
-                end = 12.dp
-            )
+                .nestedScroll(toggleButtonScrollConnection)
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                state = listState,
+                contentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding() + contentBottomPadding + 64.dp,
+                    start = 12.dp,
+                    end = 12.dp
+                )
+            ) {
             item { SmallTitle("本地 MCP 服务") }
             item { Spacer(modifier = Modifier.height(10.dp)) }
 
@@ -329,10 +337,17 @@ fun McpPage(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("MCP Server", color = titleColor)
+                            Spacer(modifier = Modifier.weight(1f))
+                            StatusPill(
+                                label = runtimeText,
+                                color = overviewAccentColor,
+                                backgroundAlphaOverride = if (isDark) 0.18f else 0.24f,
+                                borderAlphaOverride = if (isDark) 0.35f else 0.42f
+                            )
                             StatusPill(
                                 label = if (uiState.running) StatusLabelText.Running else StatusLabelText.NotRunning,
                                 color = overviewAccentColor
@@ -389,14 +404,6 @@ fun McpPage(
                                 .onFailure { Toast.makeText(context, "发送失败: ${it.message}", Toast.LENGTH_SHORT).show() }
                         }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        variant = GlassVariant.Content,
-                        text = "查看 SKILL.md",
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenSkill
-                    )
                 }
             }
             }
@@ -442,6 +449,31 @@ fun McpPage(
                     onClick = { mcpServerManager.clearLogs() }
                 )
             }
+            }
+            }
+
+            AnimatedVisibility(
+                visible = showFloatingToggleButton,
+                enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
+                    animationSpec = tween(220),
+                    initialOffsetY = { it / 2 }
+                ),
+                exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
+                    animationSpec = tween(180),
+                    targetOffsetY = { it / 2 }
+                ),
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
+                    contentDescription = if (uiState.running) "停止服务" else "启动服务",
+                    onClick = toggleServer,
+                    modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
+                    width = 60.dp,
+                    height = 44.dp,
+                    variant = GlassVariant.Bar
+                )
             }
         }
     }
