@@ -1202,7 +1202,6 @@ fun GitHubPage(
                 SheetSectionTitle("推荐新建")
                 GitHubRecommendedTokenGuideCard(
                     guide = githubRecommendedTokenGuide,
-                    backdrop = backdrop,
                     expanded = recommendedTokenGuideExpanded,
                     onExpandedChange = { recommendedTokenGuideExpanded = it }
                 )

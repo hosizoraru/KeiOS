@@ -1,8 +1,11 @@
 package com.example.keios.ui.page.main
 
-import com.kyant.backdrop.Backdrop
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,15 +35,19 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
-import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.shape.RoundedCornerShape
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.ExpandLess
+import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -287,47 +295,113 @@ internal fun GitHubStrategyDraftSummaryCard(
 @Composable
 internal fun GitHubRecommendedTokenGuideCard(
     guide: GitHubRecommendedTokenGuide,
-    backdrop: Backdrop?,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit
 ) {
-    MiuixAccordionCard(
-        backdrop = backdrop,
-        title = "推荐新建方案",
-        subtitle = guide.collapsedSummary,
-        expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        headerActions = {
-            StatusPill(
-                label = "最小权限",
-                color = GitHubStatusPalette.Update
-            )
-        }
+    val accent = GitHubStatusPalette.Update
+    val shape = RoundedCornerShape(18.dp)
+    val borderColor = if (expanded) {
+        accent.copy(alpha = 0.5f)
+    } else {
+        MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.22f)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(width = 1.dp, color = borderColor, shape = shape),
+        colors = CardDefaults.defaultColors(
+            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (expanded) 0.78f else 0.68f),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = guide.summary,
-                color = MiuixTheme.colorScheme.onBackgroundVariant
-            )
-            guide.fields.forEach { field ->
-                GitHubCompactInfoRow(
-                    label = field.label,
-                    value = field.value,
-                    valueColor = if (field.emphasized) GitHubStatusPalette.Update else MiuixTheme.colorScheme.onBackground,
-                    emphasized = field.emphasized,
-                    titleMinWidth = 52.dp
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onExpandedChange(!expanded) }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "推荐新建方案",
+                            color = accent,
+                            fontWeight = FontWeight.Bold
+                        )
+                        StatusPill(
+                            label = "最小权限",
+                            color = accent
+                        )
+                    }
+                    Text(
+                        text = if (expanded) guide.summary else guide.collapsedSummary,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        maxLines = if (expanded) 3 else 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = if (expanded) "点按收起详细说明" else "点按展开详细说明",
+                        color = accent,
+                        fontWeight = FontWeight.Medium,
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatusPill(
+                        label = if (expanded) "收起" else "展开",
+                        color = accent
+                    )
+                    Icon(
+                        imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
+                        contentDescription = if (expanded) "收起" else "展开",
+                        tint = accent,
+                        modifier = Modifier.padding(end = 2.dp)
+                    )
+                }
             }
-            guide.notes.forEach { note ->
-                Text(
-                    text = note,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
-                )
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    guide.fields.forEach { field ->
+                        GitHubCompactInfoRow(
+                            label = field.label,
+                            value = field.value,
+                            valueColor = if (field.emphasized) accent else MiuixTheme.colorScheme.onBackground,
+                            emphasized = field.emphasized,
+                            titleMinWidth = 52.dp
+                        )
+                    }
+                    guide.notes.forEach { note ->
+                        Text(
+                            text = note,
+                            color = MiuixTheme.colorScheme.onBackgroundVariant
+                        )
+                    }
+                }
             }
         }
     }
