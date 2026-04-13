@@ -51,7 +51,7 @@ val autoVersionName = buildString {
 val miuixVersion =
     providers.gradleProperty("miuix.version").orNull
         ?: readLocalPropertyOrNull("miuix.version")
-        ?: "0.9.0"
+        ?: "0.9.0-d9dc35b5-SNAPSHOT"
 val composeVersion = "1.10.6"
 val navigation3Version = "1.1.0"
 val navigationCommonVersion = "2.9.7"
@@ -135,6 +135,23 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(projectJvmTarget)
+    }
+}
+
+configurations.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("top.yukonga.miuix.kmp:miuix-ui"))
+            .using(module("top.yukonga.miuix.kmp:miuix-ui-android:$miuixVersion"))
+        substitute(module("top.yukonga.miuix.kmp:miuix-preference"))
+            .using(module("top.yukonga.miuix.kmp:miuix-preference-android:$miuixVersion"))
+        substitute(module("top.yukonga.miuix.kmp:miuix-icons"))
+            .using(module("top.yukonga.miuix.kmp:miuix-icons-android:$miuixVersion"))
+        substitute(module("top.yukonga.miuix.kmp:miuix-shapes"))
+            .using(module("top.yukonga.miuix.kmp:miuix-shapes-android:$miuixVersion"))
+        substitute(module("top.yukonga.miuix.kmp:miuix-blur"))
+            .using(module("top.yukonga.miuix.kmp:miuix-blur-android:$miuixVersion"))
+        substitute(module("top.yukonga.miuix.kmp:miuix-navigation3-ui"))
+            .using(module("top.yukonga.miuix.kmp:miuix-navigation3-ui-android:$miuixVersion"))
     }
 }
 
