@@ -1879,9 +1879,9 @@ fun GitHubPage(
             SheetSectionCard {
                 SheetDescriptionText(
                     text = if (trackedItems.isEmpty()) {
-                        "对比测试会使用当前已追踪仓库，最多抽取 6 个样本。当前还没有可用样本。"
+                        "会用当前已追踪仓库做对比，最多抽 6 个样本；当前还没有可用样本。"
                     } else {
-                        "对比测试会使用当前已追踪仓库做一轮冷启动和一轮缓存复测，便于直接观察 Atom、游客 API、Token API 的耗时与缓存命中差异。"
+                        "会跑一轮冷启动和一轮缓存复测，直接对比 Atom、游客 API、Token API 的耗时与命中率。"
                     }
                 )
                 if (trackedItems.isNotEmpty()) {
@@ -1908,7 +1908,7 @@ fun GitHubPage(
         }
 
         SheetContentColumn(
-            verticalSpacing = 10.dp
+            verticalSpacing = 8.dp
         ) {
             SheetSectionTitle("配置摘要")
             GitHubStrategyDraftSummaryCard(
@@ -1945,9 +1945,9 @@ fun GitHubPage(
                     SheetFieldBlock(
                         title = "GitHub API Token",
                         summary = if (sanitizedTokenInput.isBlank()) {
-                            "当前使用游客 API，可随时补充 token"
+                            "当前走游客 API，可随时补 token"
                         } else {
-                            "当前已填写 token，可在此替换"
+                            "当前已填 token，可在此替换"
                         },
                         trailing = {
                             GlassTextButton(
@@ -1990,10 +1990,10 @@ fun GitHubPage(
                         )
                     }
                     SheetDescriptionText(
-                        text = "未填写 token 时会自动走游客 API；适合刚开始少量追踪。若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
+                        text = "留空时自动走游客 API，适合少量追踪；若项目变多或遇到限流，再补本地 token 即可。token 仅保存在当前设备 MMKV。"
                     )
                     SheetDescriptionText(
-                        text = "对于当前这套 GitHub API 检查和 API 资产下载，Fine-grained PAT 的 `Contents: Read` 权限就够用；它可以读取 release 元数据，也可以通过 assets API 下载 APK 二进制，不需要额外写权限。若目标是 private 仓库，还需要该 token 对对应仓库本身具备访问权限。"
+                        text = "当前这套 GitHub API 检查与资源下载只需 Fine-grained PAT 的 `Contents: Read`。它既能读 release 元数据，也能走 assets API 下载 APK；若是 private 仓库，还需 token 本身有该仓库访问权。"
                     )
                     credentialCheckError?.let { error ->
                         SheetDescriptionText(
@@ -2005,15 +2005,15 @@ fun GitHubPage(
                     GitHubCredentialStatusCard(status = status)
                     SheetDescriptionText(
                         text = if (status.authMode == GitHubApiAuthMode.Guest) {
-                            "当前结果表明游客 API 可访问，但额度较低。若后续追踪仓库数量增加，建议补充本地 token。"
+                            "当前游客 API 可用，但额度较低；追踪项目变多后建议补 token。"
                         } else {
-                            "当前 token 已被 GitHub API 接受。此结果仅表示凭证本身可用，不代表对所有私有仓库都具备访问权限。"
+                            "当前 token 已被 GitHub API 接受，但这不等于它对所有 private 仓库都有权限。"
                         }
                     )
                 }
                 StrategyBenchmarkSection()
                 SheetDescriptionText(
-                    text = "API 方案会直接调用 Releases API。若你只是首次体验，可先用游客 API；若你要长期追踪更多仓库，再补充专用 token 会更稳。"
+                    text = "API 方案直接走 Releases API。首次体验可先用游客模式；长期追踪较多仓库时，补专用 token 会更稳。"
                 )
                 SheetSectionTitle("推荐新建")
                 GitHubRecommendedTokenGuideCard(
@@ -2048,13 +2048,13 @@ fun GitHubPage(
                     )
                 }
                 SheetDescriptionText(
-                    text = "推荐单独创建一个 KeiOS 专用 Fine-grained token，不要复用现有 classic token。这样即使 token 泄露，暴露面也更小。"
+                    text = "建议单独创建 KeiOS 专用 Fine-grained token，不要复用 classic token，这样权限面更小。"
                 )
             } else {
                 SheetSectionTitle("方案说明")
                 SheetSectionCard {
                     SheetDescriptionText(
-                        text = "Atom Feed 方案无需 Token，适合公开仓库与轻量检查。若后续需要更稳定的 release 元数据或私有仓库支持，可切换到 GitHub API Token。"
+                        text = "Atom 方案无需 Token，适合公开仓库和轻量检查；若你更看重稳定性、资源读取或 private 仓库支持，可切到 API。"
                     )
                 }
                 StrategyBenchmarkSection()
@@ -2091,10 +2091,10 @@ fun GitHubPage(
             aggressiveApkFilteringInput != lookupConfig.aggressiveApkFiltering ||
             installerXRevivedOnlineLinkingInput != lookupConfig.installerXRevivedOnlineLinking
 
-        SheetContentColumn(verticalSpacing = 10.dp) {
+        SheetContentColumn(verticalSpacing = 8.dp) {
             SheetSectionTitle("当前摘要")
             SheetSectionCard {
-                SheetControlRow(label = "更新间隔", summary = "超过这个时间会自动视为缓存过期") {
+                SheetControlRow(label = "更新间隔", summary = "超时后自动视为过期") {
                     Box(
                         modifier = Modifier.capturePopupAnchor { checkLogicIntervalPopupAnchorBounds = it }
                     ) {
@@ -2134,7 +2134,7 @@ fun GitHubPage(
                 }
                 SheetControlRow(
                     label = "检查所有追踪项的预发行最新版",
-                    summary = "开启后会额外展示每个项目的最新预发版本，但不会自动等于推荐安装预发行"
+                    summary = "额外检查每个项目的最新预发，但不代表自动推荐安装"
                 ) {
                     Switch(
                         checked = checkAllTrackedPreReleasesInput,
@@ -2143,7 +2143,7 @@ fun GitHubPage(
                 }
                 SheetControlRow(
                     label = "更激进的过滤方式",
-                    summary = "开启后会直接忽略 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`，且有 arm64-v8a 时也会忽略 universal"
+                    summary = "忽略 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；若有 arm64-v8a 也忽略 universal"
                 ) {
                     Switch(
                         checked = aggressiveApkFilteringInput,
@@ -2153,9 +2153,9 @@ fun GitHubPage(
                 SheetControlRow(
                     label = "InstallerX Revived Online 联动",
                     summary = if (isInstallerXRevivedInstalled) {
-                        "开启后，直链/API 分享会直接分享到 InstallerX Revived 的 Online 通道"
+                        "直链/API 分享直接发到 InstallerX Revived 的 Online 通道"
                     } else {
-                        "未检测到 com.rosan.installer.x.revived，当前不可开启"
+                        "未检测到 InstallerX Revived，当前不可开启"
                     }
                 ) {
                     Switch(
@@ -2179,16 +2179,16 @@ fun GitHubPage(
             SheetSectionTitle("说明")
             SheetSectionCard {
                 SheetDescriptionText(
-                    text = "全局开关只负责“要不要为所有项目顺手检查最新预发行”；单条目里的“优先预发行版本”只负责决定这个项目在推荐更新时是否偏向预发行。"
+                    text = "全局开关只决定是否顺手检查最新预发；单条目的“优先预发行版本”才决定推荐更新时是否偏向预发。"
                 )
                 SheetDescriptionText(
-                    text = "这样就不会再把“我想知道有没有新的预发行”和“我真的想装预发行”混成同一个开关。"
+                    text = "这样就把“想知道有没有新预发”和“真的想装预发”拆开了。"
                 )
                 SheetDescriptionText(
-                    text = "若你的设备主要只关心 arm64 版本，可以开启“更激进的过滤方式”；它会直接排除文件名明确写着 `armeabi-v7a`、`armeabi`、`x86_64`、`x86` 的 APK，且仅当同一 release 已存在 `arm64-v8a` 时才会连带排除 universal。"
+                    text = "若设备主要只关心 arm64，可开启“更激进的过滤方式”。它会过滤 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；只有同一 release 已存在 `arm64-v8a` 时，才会连带过滤 universal。"
                 )
                 SheetDescriptionText(
-                    text = "InstallerX Revived Online 联动只会影响“分享”动作；若设备未安装 `com.rosan.installer.x.revived`，该开关会保持关闭且不可开启。"
+                    text = "InstallerX Revived Online 联动只影响“分享”；若未安装 `com.rosan.installer.x.revived`，开关会保持关闭且不可开启。"
                 )
             }
         }
@@ -2229,7 +2229,7 @@ fun GitHubPage(
             )
         }
     ) {
-        SheetContentColumn(verticalSpacing = 10.dp) {
+        SheetContentColumn(verticalSpacing = 8.dp) {
             SheetSectionTitle("仓库与应用")
             SheetSectionCard {
                 SheetInputTitle("GitHub 项目地址")

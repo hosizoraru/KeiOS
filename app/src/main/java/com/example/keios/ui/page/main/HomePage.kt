@@ -122,11 +122,11 @@ private fun formatGitHubCacheAgo(lastRefreshMs: Long, nowMs: Long = System.curre
     if (lastRefreshMs <= 0L) return "未刷新"
     val deltaMs = (nowMs - lastRefreshMs).coerceAtLeast(0L)
     val minutes = TimeUnit.MILLISECONDS.toMinutes(deltaMs)
-    if (minutes <= 0L) return "just now"
-    if (minutes < 60L) return "${minutes}min ago"
+    if (minutes <= 0L) return "刚刚"
+    if (minutes < 60L) return "${minutes}m"
     val hours = minutes / 60L
     val remainMinutes = minutes % 60L
-    return if (remainMinutes == 0L) "${hours}h ago" else "${hours}h ${remainMinutes}min ago"
+    return if (remainMinutes == 0L) "${hours}h" else "${hours}h ${remainMinutes}m"
 }
 
 private const val HOME_BA_KV_ID = "ba_page_settings"

@@ -218,8 +218,8 @@ internal fun buildGitHubFineGrainedTokenTemplateUrl(): String {
 }
 
 internal val githubRecommendedTokenGuide = GitHubRecommendedTokenGuide(
-    collapsedSummary = "Fine-grained PAT · Contents: Read · public repo 可追踪",
-    summary = "推荐为 KeiOS 单独创建一个 Fine-grained PAT；读取 Releases API 的最小权限可收敛到只读仓库内容，公开仓库追踪不受选仓限制。",
+    collapsedSummary = "Fine-grained PAT · Contents: Read",
+    summary = "建议为 KeiOS 单独建一个 Fine-grained PAT。当前这套 Releases API 与资源下载只需 `Contents: Read`；公开仓库也能正常追踪。",
     fields = listOf(
         GitHubTokenGuideField(
             label = "类型",
@@ -249,39 +249,38 @@ internal val githubRecommendedTokenGuide = GitHubRecommendedTokenGuide(
         )
     ),
     notes = listOf(
-        "`Only select repositories` 仅限制当前 owner 下额外授权的仓库；公开仓库仍可正常追踪，不会挡住别人的 public repo。",
-        "`MAX 50 repositories` 指 `Selected repositories` 里手动勾选的仓库上限，只算当前 owner 下所选仓库，不是 GitHub 全站上限，也不是全部可访问仓库总数。",
-        "若资源 owner 选组织且组织要求审批，token 可能先处于 pending；批准前通常只能读取 public 资源。",
-        "若组织启用 SSO，创建或首次使用时可能需要先完成组织 SSO。",
-        "Classic token 只建议作为兼容兜底；它通常覆盖你可访问的更多仓库，权限面更大。"
+        "`Only select repositories` 只限制当前 owner 下额外授权的私有仓库，公开仓库不受影响。",
+        "`Selected repositories` 最多 50 个，只统计当前 owner 下手动勾选的仓库。",
+        "若组织要求审批或启用 SSO，token 可能要先完成批准或 SSO 后才可用。",
+        "Classic token 仅建议兜底使用，权限面通常更大。"
     )
 )
 
 internal val githubStrategyGuides: List<GitHubStrategyGuide> = listOf(
     GitHubStrategyGuide(
         option = GitHubLookupStrategyOption.AtomFeed,
-        summary = "通过仓库 releases.atom 和 latest 跳转推断稳定版/预发行。",
+        summary = "走 Atom feed 与 release 页面，轻量但更依赖网页结构。",
         pros = listOf(
-            "无需 Token，开箱即用，适合公开仓库。",
-            "配置最少，切换成本低。"
+            "无需 Token，适合公开仓库",
+            "配置最少，上手最快"
         ),
         cons = listOf(
-            "依赖 Atom feed 和页面跳转，结构变化时更容易受影响。",
-            "对私有仓库和更精细的 release 元数据支持较弱。"
+            "更依赖页面结构，变动时更脆弱",
+            "私有仓库与细粒度元数据支持较弱"
         ),
-        requirement = "无需额外凭证。"
+        requirement = "无需额外凭证"
     ),
     GitHubStrategyGuide(
         option = GitHubLookupStrategyOption.GitHubApiToken,
-        summary = "通过 GitHub Releases API 直接读取 release 列表和 prerelease 标记。",
+        summary = "走 Releases API，结构更稳，也更适合资源读取与私有仓库。",
         pros = listOf(
-            "数据结构更稳定，能直接识别 GitHub 的 prerelease 标记。",
-            "空 token 时也可先走游客 API，适合少量追踪快速体验。"
+            "元数据更稳定，可直接识别 prerelease",
+            "可解析更多 release 细节，资源下载更稳"
         ),
         cons = listOf(
-            "游客 API 额度很低，追踪项目较多时更容易遇到限流。",
-            "token 失效、权限不足或被撤销时会退回错误或访问受限。"
+            "游客额度很低，项目多时更易限流",
+            "token 失效或权限不足时会访问受限"
         ),
-        requirement = "token 选填；未填写时自动使用游客 API。"
+        requirement = "token 选填；留空时自动走游客 API"
     )
 )

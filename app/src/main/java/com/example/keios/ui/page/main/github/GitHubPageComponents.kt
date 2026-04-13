@@ -48,7 +48,7 @@ internal fun GitHubCompactInfoRow(
     valueColor: Color = MiuixTheme.colorScheme.onBackground,
     titleColor: Color = MiuixTheme.colorScheme.onBackgroundVariant,
     emphasized: Boolean = false,
-    titleMinWidth: Dp = 72.dp,
+    titleMinWidth: Dp = 64.dp,
     onClick: (() -> Unit)? = null
 ) {
     val clickableModifier = if (onClick != null) {
@@ -61,8 +61,8 @@ internal fun GitHubCompactInfoRow(
         modifier = Modifier
             .fillMaxWidth()
             .then(clickableModifier)
-            .padding(vertical = 3.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -209,9 +209,9 @@ internal fun GitHubStrategyDraftSummaryCard(
         GitHubCompactInfoRow(
             label = "影响",
             value = if (trackedCount > 0) {
-                "保存后将重新检查 $trackedCount 个跟踪项目"
+                "保存后重检 $trackedCount 项"
             } else {
-                "当前还没有已跟踪项目"
+                "暂无已跟踪项目"
             },
             valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
             titleMinWidth = 44.dp

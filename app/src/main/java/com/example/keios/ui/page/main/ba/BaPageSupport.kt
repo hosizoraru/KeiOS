@@ -287,7 +287,7 @@ internal fun formatBaRemainingTime(targetMs: Long, nowMs: Long = System.currentT
     val parts = mutableListOf<String>()
     if (days > 0L) parts += "${days}d"
     if (hours > 0L) parts += "${hours}h"
-    if (minutes > 0L) parts += "${minutes}min"
+    if (minutes > 0L) parts += "${minutes}m"
     if (seconds > 0L || parts.isEmpty()) parts += "${seconds}s"
     return parts.joinToString(" ")
 }
