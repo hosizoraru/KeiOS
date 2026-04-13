@@ -680,15 +680,16 @@ private data class McpOverviewMetric(
 )
 
 private fun formatMcpUptime(durationMs: Long): String {
-    val totalSeconds = (durationMs.coerceAtLeast(0L) / 1000L)
-    val days = totalSeconds / 86_400L
-    val hours = (totalSeconds % 86_400L) / 3_600L
-    val minutes = (totalSeconds % 3_600L) / 60L
-    val seconds = totalSeconds % 60L
-    return if (days > 0L) {
-        "%d天 %02d:%02d:%02d".format(days, hours, minutes, seconds)
-    } else {
-        "%02d:%02d:%02d".format(hours, minutes, seconds)
+    val totalMinutes = (durationMs.coerceAtLeast(0L) / 60_000L)
+    val days = totalMinutes / 1_440L
+    val hours = (totalMinutes % 1_440L) / 60L
+    val minutes = totalMinutes % 60L
+    return when {
+        days > 0L && minutes == 0L -> "${days}d ${hours}h"
+        days > 0L -> "${days}d ${hours}h ${minutes}m"
+        hours > 0L && minutes == 0L -> "${hours}h"
+        hours > 0L -> "${hours}h ${minutes}m"
+        else -> "${minutes}m"
     }
 }
 

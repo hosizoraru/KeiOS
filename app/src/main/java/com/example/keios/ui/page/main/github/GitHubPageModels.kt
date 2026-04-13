@@ -80,10 +80,17 @@ internal fun formatRefreshAgo(lastRefreshMs: Long, nowMs: Long = System.currentT
     val deltaMs = max(0L, nowMs - lastRefreshMs)
     val minutes = deltaMs / 60_000L
     if (minutes <= 0L) return "刚刚"
-    if (minutes < 60L) return "$minutes 分钟前"
+    if (minutes < 60L) return "${minutes}m"
     val hours = minutes / 60L
     val mins = minutes % 60L
-    return if (mins == 0L) "$hours 小时前" else "$hours 小时 $mins 分钟前"
+    val days = hours / 24L
+    val remainHours = hours % 24L
+    return when {
+        days > 0L && mins == 0L -> "${days}d ${remainHours}h"
+        days > 0L -> "${days}d ${remainHours}h ${mins}m"
+        mins == 0L -> "${hours}h"
+        else -> "${hours}h ${mins}m"
+    }
 }
 
 internal fun formatFutureEta(targetMs: Long?, nowMs: Long = System.currentTimeMillis()): String {
