@@ -192,6 +192,71 @@ fun GitHubPage(
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
+    val initialLookupConfig = remember { GitHubTrackStore.loadLookupConfig() }
+    val initialTrackedItems = remember { GitHubTrackStore.load() }
+    val initialCheckCache = remember { GitHubTrackStore.loadCheckCache() }
+    val initialRefreshIntervalHours = remember { GitHubTrackStore.loadRefreshIntervalHours() }
+
+    LaunchedEffect(initialLookupConfig, initialTrackedItems, initialCheckCache, initialRefreshIntervalHours) {
+        val activeStrategyId = initialLookupConfig.selectedStrategy.storageId
+        lookupConfig = initialLookupConfig
+        selectedStrategyInput = initialLookupConfig.selectedStrategy
+        githubApiTokenInput = initialLookupConfig.apiToken
+        checkAllTrackedPreReleasesInput = initialLookupConfig.checkAllTrackedPreReleases
+        refreshIntervalHours = initialRefreshIntervalHours
+        refreshIntervalHoursInput = initialRefreshIntervalHours
+
+        trackedItems.clear()
+        trackedItems.addAll(initialTrackedItems)
+
+        val (cachedStates, cachedRefreshMs) = initialCheckCache
+        checkStates.clear()
+        initialTrackedItems.forEach { item ->
+            cachedStates[item.id]
+                ?.takeIf { cache ->
+                    val sourceId = cache.sourceStrategyId.ifBlank { GitHubLookupStrategyOption.AtomFeed.storageId }
+                    sourceId == activeStrategyId
+                }
+                ?.let { cached ->
+                    checkStates[item.id] = VersionCheckUi(
+                        loading = false,
+                        localVersion = cached.localVersion,
+                        localVersionCode = cached.localVersionCode,
+                        latestTag = cached.latestTag,
+                        latestStableName = cached.latestStableName,
+                        latestStableRawTag = cached.latestStableRawTag,
+                        latestStableUrl = cached.latestStableUrl,
+                        latestPreName = cached.latestPreName,
+                        latestPreRawTag = cached.latestPreRawTag,
+                        latestPreUrl = cached.latestPreUrl,
+                        hasStableRelease = cached.hasStableRelease,
+                        hasUpdate = cached.hasUpdate,
+                        message = cached.message,
+                        isPreRelease = cached.isPreRelease,
+                        preReleaseInfo = cached.preReleaseInfo,
+                        showPreReleaseInfo = cached.showPreReleaseInfo,
+                        hasPreReleaseUpdate = cached.hasPreReleaseUpdate,
+                        recommendsPreRelease = cached.recommendsPreRelease,
+                        releaseHint = cached.releaseHint,
+                        sourceStrategyId = cached.sourceStrategyId
+                    )
+                }
+        }
+        lastRefreshMs = cachedRefreshMs
+
+        val hasTracked = initialTrackedItems.isNotEmpty()
+        val hasCachedForTracked = initialTrackedItems.any { item ->
+            cachedStates[item.id]?.let { cache ->
+                val sourceId = cache.sourceStrategyId.ifBlank { GitHubLookupStrategyOption.AtomFeed.storageId }
+                sourceId == activeStrategyId
+            } == true
+        }
+        overviewRefreshState = when {
+            hasCachedForTracked -> OverviewRefreshState.Cached
+            hasTracked -> OverviewRefreshState.Refreshing
+            else -> OverviewRefreshState.Idle
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
@@ -624,26 +689,10 @@ fun GitHubPage(
         }
 
     LaunchedEffect(Unit) {
-        lookupConfig = GitHubTrackStore.loadLookupConfig()
-        selectedStrategyInput = lookupConfig.selectedStrategy
-        githubApiTokenInput = lookupConfig.apiToken
-        checkAllTrackedPreReleasesInput = lookupConfig.checkAllTrackedPreReleases
-        trackedItems.clear()
-        trackedItems.addAll(GitHubTrackStore.load())
         reloadApps()
-        val (cachedStates, cachedRefreshMs) = GitHubTrackStore.loadCheckCache()
-        checkStates.clear()
-        trackedItems.forEach { item ->
-            cachedStates[item.id]
-                ?.takeIf(::cacheMatchesCurrentStrategy)
-                ?.let { cached -> checkStates[item.id] = cached.toUi() }
-        }
-        lastRefreshMs = cachedRefreshMs
-        refreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
-        refreshIntervalHoursInput = refreshIntervalHours
         val hasTracked = trackedItems.isNotEmpty()
         val hasCachedForTracked = trackedItems.any { item ->
-            cachedStates[item.id]?.let(::cacheMatchesCurrentStrategy) == true
+            checkStates.containsKey(item.id)
         }
         val stale = hasTracked && lastRefreshMs > 0L &&
             (System.currentTimeMillis() - lastRefreshMs) >= refreshIntervalHours * 60L * 60L * 1000L
@@ -811,7 +860,7 @@ fun GitHubPage(
             item { Spacer(modifier = Modifier.height(2.dp)) }
             item {
                 val overviewShape = RoundedCornerShape(16.dp)
-                val overviewTitleColor = Color.White
+                val overviewTitleColor = if (isDark) Color.White else MiuixTheme.colorScheme.onBackgroundVariant
                 Card(
                 modifier = Modifier
                     .fillMaxWidth()
