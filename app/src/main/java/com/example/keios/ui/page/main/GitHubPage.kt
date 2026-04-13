@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -71,6 +72,7 @@ import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
+import com.example.keios.ui.page.main.widget.capturePopupAnchor
 import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubApiTokenReleaseStrategy
@@ -121,7 +123,7 @@ import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Report
 import top.yukonga.miuix.kmp.icon.extended.Sort
-import top.yukonga.miuix.kmp.icon.extended.Timer
+import top.yukonga.miuix.kmp.icon.extended.Tune
 import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
@@ -152,6 +154,7 @@ fun GitHubPage(
     var pickerExpanded by remember { mutableStateOf(false) }
     var showAddSheet by remember { mutableStateOf(false) }
     var showStrategySheet by remember { mutableStateOf(false) }
+    var showCheckLogicSheet by remember { mutableStateOf(false) }
     var editingTrackedItem by remember { mutableStateOf<GitHubTrackedApp?>(null) }
     var preferPreReleaseInput by remember { mutableStateOf(false) }
     var selectedApp by remember { mutableStateOf<InstalledAppItem?>(null) }
@@ -159,7 +162,8 @@ fun GitHubPage(
     var appListLoaded by remember { mutableStateOf(false) }
     var hasAutoRequestedPermission by remember { mutableStateOf(false) }
     var showSortPopup by remember { mutableStateOf(false) }
-    var showIntervalPopup by remember { mutableStateOf(false) }
+    var showCheckLogicIntervalPopup by remember { mutableStateOf(false) }
+    var checkLogicIntervalPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
     var sortMode by remember { mutableStateOf(GitHubSortMode.UpdateFirst) }
     var pendingDeleteItem by remember { mutableStateOf<GitHubTrackedApp?>(null) }
     var overviewRefreshState by remember { mutableStateOf(OverviewRefreshState.Idle) }
@@ -169,6 +173,8 @@ fun GitHubPage(
     var lookupConfig by remember { mutableStateOf(GitHubTrackStore.loadLookupConfig()) }
     var selectedStrategyInput by remember { mutableStateOf(lookupConfig.selectedStrategy) }
     var githubApiTokenInput by remember { mutableStateOf(lookupConfig.apiToken) }
+    var checkAllTrackedPreReleasesInput by remember { mutableStateOf(lookupConfig.checkAllTrackedPreReleases) }
+    var refreshIntervalHoursInput by remember { mutableStateOf(refreshIntervalHours) }
     var showApiTokenPlainText by remember { mutableStateOf(false) }
     var strategyBenchmarkRunning by remember { mutableStateOf(false) }
     var strategyBenchmarkError by remember { mutableStateOf<String?>(null) }
@@ -279,6 +285,20 @@ fun GitHubPage(
         recommendedTokenGuideExpanded = false
     }
 
+    fun openCheckLogicSheet() {
+        val config = GitHubTrackStore.loadLookupConfig()
+        lookupConfig = config
+        checkAllTrackedPreReleasesInput = config.checkAllTrackedPreReleases
+        refreshIntervalHoursInput = GitHubTrackStore.loadRefreshIntervalHours()
+        showCheckLogicIntervalPopup = false
+        showCheckLogicSheet = true
+    }
+
+    fun closeCheckLogicSheet() {
+        showCheckLogicIntervalPopup = false
+        showCheckLogicSheet = false
+    }
+
     suspend fun reloadApps() {
         appList = withContext(Dispatchers.IO) {
             GitHubVersionUtils.queryInstalledLaunchableApps(context)
@@ -382,6 +402,44 @@ fun GitHubPage(
             }
             else -> {
                 Toast.makeText(context, "抓取方案未变化", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun applyCheckLogicSheet() {
+        val previousConfig = GitHubTrackStore.loadLookupConfig()
+        val previousRefreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
+        val newConfig = previousConfig.copy(
+            checkAllTrackedPreReleases = checkAllTrackedPreReleasesInput
+        )
+        GitHubTrackStore.saveLookupConfig(newConfig)
+        GitHubTrackStore.saveRefreshIntervalHours(refreshIntervalHoursInput)
+        lookupConfig = newConfig
+        refreshIntervalHours = refreshIntervalHoursInput
+        closeCheckLogicSheet()
+
+        val checkScopeChanged =
+            previousConfig.checkAllTrackedPreReleases != newConfig.checkAllTrackedPreReleases
+        val intervalChanged = previousRefreshIntervalHours != refreshIntervalHoursInput
+        when {
+            checkScopeChanged -> {
+                GitHubTrackStore.clearCheckCache()
+                checkStates.clear()
+                lastRefreshMs = 0L
+                refreshProgress = 0f
+                overviewRefreshState = OverviewRefreshState.Idle
+                if (trackedItems.isNotEmpty()) {
+                    Toast.makeText(context, "已更新检查逻辑，正在重新检查", Toast.LENGTH_SHORT).show()
+                    refreshAllTracked(showToast = true)
+                } else {
+                    Toast.makeText(context, "已保存检查逻辑", Toast.LENGTH_SHORT).show()
+                }
+            }
+            intervalChanged -> {
+                Toast.makeText(context, "已保存更新间隔", Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                Toast.makeText(context, "检查逻辑未变化", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -527,6 +585,7 @@ fun GitHubPage(
         lookupConfig = GitHubTrackStore.loadLookupConfig()
         selectedStrategyInput = lookupConfig.selectedStrategy
         githubApiTokenInput = lookupConfig.apiToken
+        checkAllTrackedPreReleasesInput = lookupConfig.checkAllTrackedPreReleases
         trackedItems.clear()
         trackedItems.addAll(GitHubTrackStore.load())
         reloadApps()
@@ -539,6 +598,7 @@ fun GitHubPage(
         }
         lastRefreshMs = cachedRefreshMs
         refreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
+        refreshIntervalHoursInput = refreshIntervalHours
         val hasTracked = trackedItems.isNotEmpty()
         val hasCachedForTracked = trackedItems.any { item ->
             cachedStates[item.id]?.let(::cacheMatchesCurrentStrategy) == true
@@ -626,9 +686,9 @@ fun GitHubPage(
                                         onClick = { showSortPopup = !showSortPopup }
                                     ),
                                     LiquidActionItem(
-                                        icon = MiuixIcons.Regular.Timer,
-                                        contentDescription = "刷新间隔",
-                                        onClick = { showIntervalPopup = !showIntervalPopup }
+                                        icon = MiuixIcons.Regular.Tune,
+                                        contentDescription = "检查逻辑",
+                                        onClick = { openCheckLogicSheet() }
                                     ),
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Refresh,
@@ -666,36 +726,6 @@ fun GitHubPage(
                                                         onSelectedIndexChange = { selectedIndex ->
                                                             sortMode = modes[selectedIndex]
                                                             showSortPopup = false
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    2 -> if (showIntervalPopup) {
-                                        SnapshotWindowListPopup(
-                                            show = showIntervalPopup,
-                                            alignment = PopupPositionProvider.Align.BottomStart,
-                                            anchorBounds = popupAnchorBounds,
-                                            placement = SnapshotPopupPlacement.ActionBarCenter,
-                                            onDismissRequest = { showIntervalPopup = false },
-                                            enableWindowDim = false
-                                        ) {
-                                            LiquidDropdownColumn {
-                                                val options = RefreshIntervalOption.entries
-                                                val selected = RefreshIntervalOption.fromHours(refreshIntervalHours)
-                                                options.forEachIndexed { index, option ->
-                                                    LiquidDropdownImpl(
-                                                        text = option.label,
-                                                        optionSize = options.size,
-                                                        isSelected = selected == option,
-                                                        index = index,
-                                                        onSelectedIndexChange = { selectedIndex ->
-                                                            val picked = options[selectedIndex]
-                                                            refreshIntervalHours = picked.hours
-                                                            GitHubTrackStore.saveRefreshIntervalHours(picked.hours)
-                                                            showIntervalPopup = false
                                                         }
                                                     )
                                                 }
@@ -1261,6 +1291,103 @@ fun GitHubPage(
                     )
                 }
                 StrategyBenchmarkSection()
+            }
+        }
+    }
+
+    SnapshotWindowBottomSheet(
+        show = showCheckLogicSheet,
+        title = "检查逻辑",
+        onDismissRequest = { closeCheckLogicSheet() },
+        startAction = {
+            GlassIconButton(
+                backdrop = backdrop,
+                variant = GlassVariant.Bar,
+                icon = MiuixIcons.Regular.Close,
+                contentDescription = "关闭",
+                onClick = { closeCheckLogicSheet() }
+            )
+        },
+        endAction = {
+            GlassIconButton(
+                backdrop = backdrop,
+                variant = GlassVariant.Bar,
+                icon = MiuixIcons.Regular.Ok,
+                contentDescription = "保存检查逻辑",
+                onClick = { applyCheckLogicSheet() }
+            )
+        }
+    ) {
+        val selectedRefreshOption = RefreshIntervalOption.fromHours(refreshIntervalHoursInput)
+        val logicChanged = refreshIntervalHoursInput != refreshIntervalHours ||
+            checkAllTrackedPreReleasesInput != lookupConfig.checkAllTrackedPreReleases
+
+        SheetContentColumn(verticalSpacing = 10.dp) {
+            SheetSectionTitle("当前摘要")
+            SheetSectionCard {
+                SheetControlRow(label = "更新间隔", summary = "超过这个时间会自动视为缓存过期") {
+                    Box(
+                        modifier = Modifier.capturePopupAnchor { checkLogicIntervalPopupAnchorBounds = it }
+                    ) {
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            variant = GlassVariant.SheetAction,
+                            text = selectedRefreshOption.label,
+                            onClick = { showCheckLogicIntervalPopup = !showCheckLogicIntervalPopup }
+                        )
+                        if (showCheckLogicIntervalPopup) {
+                            SnapshotWindowListPopup(
+                                show = showCheckLogicIntervalPopup,
+                                alignment = PopupPositionProvider.Align.BottomEnd,
+                                anchorBounds = checkLogicIntervalPopupAnchorBounds,
+                                placement = SnapshotPopupPlacement.ButtonEnd,
+                                onDismissRequest = { showCheckLogicIntervalPopup = false },
+                                enableWindowDim = false
+                            ) {
+                                LiquidDropdownColumn {
+                                    val options = RefreshIntervalOption.entries
+                                    options.forEachIndexed { index, option ->
+                                        LiquidDropdownImpl(
+                                            text = option.label,
+                                            optionSize = options.size,
+                                            isSelected = selectedRefreshOption == option,
+                                            index = index,
+                                            onSelectedIndexChange = { selectedIndex ->
+                                                refreshIntervalHoursInput = options[selectedIndex].hours
+                                                showCheckLogicIntervalPopup = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                SheetControlRow(
+                    label = "检查所有追踪项的预发行最新版",
+                    summary = "开启后会额外展示每个项目的最新预发版本，但不会自动等于推荐安装预发行"
+                ) {
+                    Switch(
+                        checked = checkAllTrackedPreReleasesInput,
+                        onCheckedChange = { checked -> checkAllTrackedPreReleasesInput = checked }
+                    )
+                }
+                SheetControlRow(label = "保存状态") {
+                    StatusPill(
+                        label = if (logicChanged) "待保存" else "已同步",
+                        color = if (logicChanged) GitHubStatusPalette.PreRelease else MiuixTheme.colorScheme.onBackgroundVariant
+                    )
+                }
+            }
+
+            SheetSectionTitle("说明")
+            SheetSectionCard {
+                SheetDescriptionText(
+                    text = "全局开关只负责“要不要为所有项目顺手检查最新预发行”；单条目里的“优先预发行版本”只负责决定这个项目在推荐更新时是否偏向预发行。"
+                )
+                SheetDescriptionText(
+                    text = "这样就不会再把“我想知道有没有新的预发行”和“我真的想装预发行”混成同一个开关。"
+                )
             }
         }
     }
