@@ -659,17 +659,17 @@ fun GitHubPage(
             recommendsPreRelease && preTag.isNotBlank() -> ApkAssetTarget(
                 rawTag = preTag,
                 releaseUrl = latestPreUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, preTag) },
-                label = "预发 APK"
+                label = "预发资源"
             )
             hasUpdate == true && stableTag.isNotBlank() -> ApkAssetTarget(
                 rawTag = stableTag,
                 releaseUrl = latestStableUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, stableTag) },
-                label = "稳定 APK"
+                label = "稳定资源"
             )
             hasPreReleaseUpdate && preTag.isNotBlank() -> ApkAssetTarget(
                 rawTag = preTag,
                 releaseUrl = latestPreUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, preTag) },
-                label = "预发 APK"
+                label = "预发资源"
             )
             else -> null
         }
@@ -742,7 +742,12 @@ fun GitHubPage(
         }
     }
 
-    fun loadApkAssets(item: GitHubTrackedApp, state: VersionCheckUi, toggleOnlyWhenCached: Boolean = true) {
+    fun loadApkAssets(
+        item: GitHubTrackedApp,
+        state: VersionCheckUi,
+        toggleOnlyWhenCached: Boolean = true,
+        includeAllAssets: Boolean = false
+    ) {
         val target = state.apkAssetTarget(item.owner, item.repo)
         if (target == null) {
             val fallbackUrl = state.statusActionUrl(item.owner, item.repo)
@@ -755,7 +760,12 @@ fun GitHubPage(
         }
 
         val cachedBundle = apkAssetBundles[item.id]
-        if (toggleOnlyWhenCached && cachedBundle != null && cachedBundle.tagName.equals(target.rawTag, ignoreCase = true)) {
+        if (
+            toggleOnlyWhenCached &&
+            cachedBundle != null &&
+            cachedBundle.tagName.equals(target.rawTag, ignoreCase = true) &&
+            cachedBundle.showingAllAssets == includeAllAssets
+        ) {
             apkAssetExpanded[item.id] = !(apkAssetExpanded[item.id] ?: false)
             apkAssetErrors.remove(item.id)
             return
@@ -774,6 +784,7 @@ fun GitHubPage(
                     releaseUrl = target.releaseUrl,
                     preferHtml = preferHtml,
                     aggressiveFiltering = lookupConfig.aggressiveApkFiltering,
+                    includeAllAssets = includeAllAssets,
                     apiToken = lookupConfig.apiToken
                 )
             }
@@ -781,7 +792,11 @@ fun GitHubPage(
             result.onSuccess { bundle ->
                 apkAssetBundles[item.id] = bundle
                 apkAssetErrors[item.id] = if (bundle.assets.isEmpty()) {
-                    "${target.label} 当前没有可直接下载的 APK 资产"
+                    if (includeAllAssets) {
+                        "${target.label} 当前除了 Source code 外没有其它可下载资源"
+                    } else {
+                        "${target.label} 当前没有可直接下载的资源"
+                    }
                 } else {
                     ""
                 }
@@ -1376,22 +1391,96 @@ fun GitHubPage(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     val target = state.apkAssetTarget(item.owner, item.repo)
-                                    GitHubCompactInfoRow(
-                                        label = "更新资源",
-                                        value = target?.label ?: "APK",
-                                        valueColor = MiuixTheme.colorScheme.primary,
-                                        titleColor = MiuixTheme.colorScheme.primary,
-                                        emphasized = true,
-                                        onClick = {
-                                            val releaseUrl = assetBundle?.htmlUrl
-                                                ?.takeIf { it.isNotBlank() }
-                                                ?: target?.releaseUrl
-                                                .orEmpty()
-                                            if (releaseUrl.isNotBlank()) {
-                                                openExternalUrl(releaseUrl)
+                                    val targetAccent = when {
+                                        state.recommendsPreRelease || state.hasPreReleaseUpdate -> GitHubStatusPalette.PreRelease
+                                        else -> GitHubStatusPalette.Update
+                                    }
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = GitHubStatusPalette.tonedSurface(
+                                                targetAccent,
+                                                isDark = isDark
+                                            ).copy(alpha = if (isDark) 0.58f else 0.78f)
+                                        )
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        val releaseUrl = assetBundle?.htmlUrl
+                                                            ?.takeIf { it.isNotBlank() }
+                                                            ?: target?.releaseUrl
+                                                            .orEmpty()
+                                                        if (releaseUrl.isNotBlank()) {
+                                                            openExternalUrl(releaseUrl)
+                                                        }
+                                                    },
+                                                    onLongClick = {
+                                                        loadApkAssets(
+                                                            item = item,
+                                                            state = state,
+                                                            toggleOnlyWhenCached = false,
+                                                            includeAllAssets = true
+                                                        )
+                                                    }
+                                                )
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .width(28.dp)
+                                                    .height(28.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(targetAccent.copy(alpha = if (isDark) 0.24f else 0.14f)),
+                                                contentAlignment = androidx.compose.ui.Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (assetBundle?.showingAllAssets == true) MiuixIcons.Regular.More else MiuixIcons.Regular.Update,
+                                                    contentDescription = null,
+                                                    tint = targetAccent
+                                                )
                                             }
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                Text(
+                                                    text = target?.label ?: "更新资源",
+                                                    color = targetAccent,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = when {
+                                                        assetLoading -> "正在准备可下载文件"
+                                                        assetBundle?.showingAllAssets == true -> "未找到 APK 或已手动全加载；单击进 Release、长按全加载"
+                                                        assetError.isNotBlank() -> "资源读取失败；单击进 Release、长按全加载"
+                                                        else -> "单击进 Release、长按全加载"
+                                                    },
+                                                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            StatusPill(
+                                                label = when {
+                                                    assetLoading -> "加载中"
+                                                    assetBundle?.showingAllAssets == true -> "全资源"
+                                                    assetBundle != null -> "${assetBundle.assets.size} 项"
+                                                    assetError.isNotBlank() -> "异常"
+                                                    else -> "待展开"
+                                                },
+                                                color = when {
+                                                    assetLoading -> GitHubStatusPalette.Active
+                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error
+                                                    else -> targetAccent
+                                                }
+                                            )
                                         }
-                                    )
+                                    }
                                     when {
                                         assetLoading -> {
                                             Card(
@@ -1421,12 +1510,12 @@ fun GitHubPage(
                                                         verticalArrangement = Arrangement.spacedBy(2.dp)
                                                     ) {
                                                         Text(
-                                                            text = "正在读取 release 里的 APK 文件",
+                                                            text = "正在读取 release 里的可下载文件",
                                                             color = MiuixTheme.colorScheme.onBackground,
                                                             fontWeight = FontWeight.Medium
                                                         )
                                                         Text(
-                                                            text = "会优先筛出 .apk，并把 arm64 资源排在前面",
+                                                            text = "会优先筛出 .apk；若找不到 APK，会自动回退显示其它资源",
                                                             color = MiuixTheme.colorScheme.onBackgroundVariant
                                                         )
                                                     }
@@ -1434,55 +1523,112 @@ fun GitHubPage(
                                             }
                                         }
                                         assetError.isNotBlank() -> {
-                                            GitHubCompactInfoRow(
-                                                label = "APK",
-                                                value = assetError,
-                                                valueColor = GitHubStatusPalette.Error,
-                                                titleColor = GitHubStatusPalette.Error,
-                                                titleMinWidth = 40.dp
-                                            )
+                                            Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = CardDefaults.defaultColors(
+                                                    color = GitHubStatusPalette.tonedSurface(
+                                                        GitHubStatusPalette.Error,
+                                                        isDark = isDark
+                                                    ).copy(alpha = if (isDark) 0.84f else 0.96f)
+                                                )
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "资源读取失败",
+                                                        color = GitHubStatusPalette.Error,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                    Text(
+                                                        text = assetError,
+                                                        color = MiuixTheme.colorScheme.onBackgroundVariant
+                                                    )
+                                                }
+                                            }
                                         }
                                         assetBundle != null -> {
                                             assetBundle.assets.forEach { asset ->
+                                                val actionLabels = assetActionLabels(asset)
+                                                val actionAccent = when {
+                                                    actionLabels.first.startsWith("API") -> GitHubStatusPalette.Active
+                                                    else -> GitHubStatusPalette.Update
+                                                }
                                                 Card(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     colors = CardDefaults.defaultColors(
-                                                        color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
+                                                        color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
                                                     )
                                                 ) {
                                                     Column(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
                                                             .padding(horizontal = 12.dp, vertical = 10.dp),
-                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                        verticalArrangement = Arrangement.spacedBy(8.dp)
                                                     ) {
-                                                        GitHubCompactInfoRow(
-                                                            label = "文件",
-                                                            value = asset.name,
-                                                            valueColor = MiuixTheme.colorScheme.onBackground,
-                                                            titleColor = MiuixTheme.colorScheme.onBackgroundVariant,
-                                                            titleMinWidth = 40.dp
-                                                        )
-                                                        GitHubCompactInfoRow(
-                                                            label = "信息",
-                                                            value = "${formatAssetSize(asset.sizeBytes)} · ${asset.downloadCount} 次下载",
-                                                            valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
-                                                            titleColor = MiuixTheme.colorScheme.onBackgroundVariant,
-                                                            titleMinWidth = 40.dp
-                                                        )
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                                        ) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .width(28.dp)
+                                                                    .height(28.dp)
+                                                                    .clip(RoundedCornerShape(10.dp))
+                                                                    .background(actionAccent.copy(alpha = if (isDark) 0.24f else 0.14f)),
+                                                                contentAlignment = androidx.compose.ui.Alignment.Center
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = MiuixIcons.Regular.Update,
+                                                                    contentDescription = null,
+                                                                    tint = actionAccent
+                                                                )
+                                                            }
+                                                            Column(
+                                                                modifier = Modifier.weight(1f),
+                                                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                            ) {
+                                                                Text(
+                                                                    text = asset.name,
+                                                                    color = MiuixTheme.colorScheme.onBackground,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    maxLines = 2,
+                                                                    overflow = TextOverflow.Ellipsis
+                                                                )
+                                                                Text(
+                                                                    text = "${formatAssetSize(asset.sizeBytes)} · ${asset.downloadCount} 次下载",
+                                                                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                                                                )
+                                                            }
+                                                            StatusPill(
+                                                                label = actionLabels.first.substringBefore(' '),
+                                                                color = actionAccent
+                                                            )
+                                                        }
                                                         Row(
                                                             modifier = Modifier.fillMaxWidth(),
                                                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                         ) {
-                                                            val actionLabels = assetActionLabels(asset)
-                                                            TextButton(
+                                                            GlassTextButton(
+                                                                backdrop = backdrop,
+                                                                variant = GlassVariant.SheetAction,
                                                                 modifier = Modifier.weight(1f),
                                                                 text = actionLabels.first,
+                                                                containerColor = actionAccent,
+                                                                textColor = actionAccent,
                                                                 onClick = { openApkInDownloader(asset) }
                                                             )
-                                                            TextButton(
+                                                            GlassTextButton(
+                                                                backdrop = backdrop,
+                                                                variant = GlassVariant.SheetAction,
                                                                 modifier = Modifier.weight(1f),
                                                                 text = actionLabels.second,
+                                                                containerColor = MiuixTheme.colorScheme.primary,
+                                                                textColor = MiuixTheme.colorScheme.primary,
                                                                 onClick = { shareApkLink(asset) }
                                                             )
                                                         }
@@ -1844,7 +1990,7 @@ fun GitHubPage(
                 }
                 SheetControlRow(
                     label = "更激进的过滤方式",
-                    summary = "开启后会直接忽略文件名包含 `armeabi-v7a`、`x86_64` 的 APK 资源"
+                    summary = "开启后会直接忽略 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`，且有 arm64-v8a 时也会忽略 universal"
                 ) {
                     Switch(
                         checked = aggressiveApkFilteringInput,
@@ -1868,7 +2014,7 @@ fun GitHubPage(
                     text = "这样就不会再把“我想知道有没有新的预发行”和“我真的想装预发行”混成同一个开关。"
                 )
                 SheetDescriptionText(
-                    text = "若你的设备主要只关心 arm64 版本，可以开启“更激进的过滤方式”；它会继续保留 universal，但会把文件名明确写着 `armeabi-v7a`、`x86_64` 的 APK 直接排除。"
+                    text = "若你的设备主要只关心 arm64 版本，可以开启“更激进的过滤方式”；它会直接排除文件名明确写着 `armeabi-v7a`、`armeabi`、`x86_64`、`x86` 的 APK，且仅当同一 release 已存在 `arm64-v8a` 时才会连带排除 universal。"
                 )
             }
         }

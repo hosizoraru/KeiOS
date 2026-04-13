@@ -25,7 +25,8 @@ data class GitHubReleaseAssetBundle(
     val releaseName: String,
     val tagName: String,
     val htmlUrl: String,
-    val assets: List<GitHubReleaseAssetFile>
+    val assets: List<GitHubReleaseAssetFile>,
+    val showingAllAssets: Boolean = false
 )
 
 object GitHubReleaseAssetRepository {
@@ -53,6 +54,7 @@ object GitHubReleaseAssetRepository {
         releaseUrl: String = "",
         preferHtml: Boolean = false,
         aggressiveFiltering: Boolean = false,
+        includeAllAssets: Boolean = false,
         apiToken: String = ""
     ): Result<GitHubReleaseAssetBundle> {
         val normalizedTag = rawTag.trim()
@@ -75,8 +77,10 @@ object GitHubReleaseAssetRepository {
         }
 
         return (primary.takeIf { it.isSuccess } ?: fallback).mapCatching { release ->
-            val bundle = parseReleaseBundle(release)
-            bundle.copy(assets = bundle.assets.filterRelevantApks(aggressiveFiltering))
+            parseReleaseBundle(release).selectDisplayAssets(
+                aggressiveFiltering = aggressiveFiltering,
+                includeAllAssets = includeAllAssets
+            )
         }
     }
 
@@ -111,20 +115,75 @@ object GitHubReleaseAssetRepository {
     }
 
     internal fun List<GitHubReleaseAssetFile>.filterRelevantApks(aggressiveFiltering: Boolean): List<GitHubReleaseAssetFile> {
-        return asSequence()
+        val apkCandidates = filterNonSourceAssets()
+            .asSequence()
             .filter { asset ->
                 val lowerName = asset.name.lowercase(Locale.ROOT)
-                lowerName.endsWith(".apk") &&
-                    !lowerName.contains("source code") &&
-                    !lowerName.contains("metadata") &&
-                    (!aggressiveFiltering || !isAggressivelyIgnoredApk(lowerName))
+                lowerName.endsWith(".apk") && !lowerName.contains("metadata")
             }
-            .sortedWith(compareBy<GitHubReleaseAssetFile> { apkAssetPriority(it.name) }.thenBy { it.name.lowercase(Locale.ROOT) })
+            .toList()
+
+        val hasExplicitArm64 = apkCandidates.any { asset ->
+            val lowerName = asset.name.lowercase(Locale.ROOT)
+            "arm64-v8a" in lowerName
+        }
+
+        return apkCandidates
+            .asSequence()
+            .filter { asset ->
+                val lowerName = asset.name.lowercase(Locale.ROOT)
+                !aggressiveFiltering || !isAggressivelyIgnoredApk(
+                    lowerName = lowerName,
+                    hasExplicitArm64 = hasExplicitArm64
+                )
+            }
+            .sortForDisplay()
+    }
+
+    private fun List<GitHubReleaseAssetFile>.filterNonSourceAssets(): List<GitHubReleaseAssetFile> {
+        return asSequence()
+            .filter { asset -> !isSourceCodeArchive(asset.name) }
             .toList()
     }
 
-    private fun isAggressivelyIgnoredApk(lowerName: String): Boolean {
-        return "armeabi-v7a" in lowerName || "x86_64" in lowerName
+    private fun GitHubReleaseAssetBundle.selectDisplayAssets(
+        aggressiveFiltering: Boolean,
+        includeAllAssets: Boolean
+    ): GitHubReleaseAssetBundle {
+        val allAssets = assets.filterNonSourceAssets().sortForDisplay()
+        val apkAssets = allAssets.filterRelevantApks(aggressiveFiltering)
+        val showingAllAssets = includeAllAssets || apkAssets.isEmpty()
+        return copy(
+            assets = if (showingAllAssets) allAssets else apkAssets,
+            showingAllAssets = showingAllAssets
+        )
+    }
+
+    private fun Sequence<GitHubReleaseAssetFile>.sortForDisplay(): List<GitHubReleaseAssetFile> {
+        return sortedWith(
+            compareBy<GitHubReleaseAssetFile> { assetDisplayPriority(it.name) }
+                .thenBy { it.name.lowercase(Locale.ROOT) }
+        ).toList()
+    }
+
+    private fun List<GitHubReleaseAssetFile>.sortForDisplay(): List<GitHubReleaseAssetFile> {
+        return asSequence().sortForDisplay()
+    }
+
+    private fun isAggressivelyIgnoredApk(
+        lowerName: String,
+        hasExplicitArm64: Boolean
+    ): Boolean {
+        return "armeabi-v7a" in lowerName ||
+            "x86_64" in lowerName ||
+            Regex("(^|[^a-z0-9])armeabi([^a-z0-9]|$)").containsMatchIn(lowerName) ||
+            Regex("(^|[^a-z0-9])x86([^a-z0-9]|$)").containsMatchIn(lowerName) ||
+            (hasExplicitArm64 && ("universal" in lowerName || "fat" in lowerName))
+    }
+
+    private fun isSourceCodeArchive(fileName: String): Boolean {
+        return fileName.equals("Source code.zip", ignoreCase = true) ||
+            fileName.equals("Source code.tar.gz", ignoreCase = true)
     }
 
     private fun fetchReleaseByTagWithFallback(
@@ -312,7 +371,6 @@ object GitHubReleaseAssetRepository {
             }
             if (normalizedUrl.isBlank()) return@forEach
             if (!normalizedUrl.contains("/$owner/$repo/releases/download/")) return@forEach
-            if (!normalizedUrl.lowercase(Locale.ROOT).endsWith(".apk")) return@forEach
             val fileName = normalizedUrl.substringAfterLast('/').substringBefore('?')
             val decodedName = runCatching { URLDecoder.decode(fileName, Charsets.UTF_8.name()) }.getOrDefault(fileName)
             unique.putIfAbsent(
@@ -327,7 +385,7 @@ object GitHubReleaseAssetRepository {
             )
         }
         return unique.values.toList().ifEmpty {
-            error("未在 release 页面中找到 APK 资产: $rawTag")
+            error("未在 release 页面中找到可下载资源: $rawTag")
         }
     }
 
@@ -407,6 +465,11 @@ object GitHubReleaseAssetRepository {
             htmlUrl = htmlUrl,
             assets = assets
         )
+    }
+
+    private fun assetDisplayPriority(fileName: String): Int {
+        val lower = fileName.lowercase(Locale.ROOT)
+        return if (lower.endsWith(".apk")) apkAssetPriority(fileName) else 10
     }
 
     private fun apkAssetPriority(fileName: String): Int {
