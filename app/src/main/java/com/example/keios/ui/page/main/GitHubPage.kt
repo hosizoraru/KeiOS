@@ -682,15 +682,15 @@ fun GitHubPage(
     }
 
     fun formatAssetSize(sizeBytes: Long): String {
-        if (sizeBytes <= 0L) return "大小未知"
+        if (sizeBytes <= 0L) return "未知"
         val kb = 1024L
         val mb = kb * 1024L
         val gb = mb * 1024L
         return when {
-            sizeBytes >= gb -> String.format("%.1f GB", sizeBytes.toDouble() / gb.toDouble())
-            sizeBytes >= mb -> String.format("%.1f MB", sizeBytes.toDouble() / mb.toDouble())
-            sizeBytes >= kb -> String.format("%.0f KB", sizeBytes.toDouble() / kb.toDouble())
-            else -> "$sizeBytes B"
+            sizeBytes >= gb -> String.format("%.1fG", sizeBytes.toDouble() / gb.toDouble())
+            sizeBytes >= mb -> String.format("%.1fM", sizeBytes.toDouble() / mb.toDouble())
+            sizeBytes >= kb -> String.format("%.0fK", sizeBytes.toDouble() / kb.toDouble())
+            else -> "${sizeBytes}B"
         }
     }
 
@@ -1648,6 +1648,7 @@ fun GitHubPage(
                                                 val displayName = assetDisplayName(asset.name)
                                                 val sizeLabel = formatAssetSize(asset.sizeBytes)
                                                 val relativeTimeLabel = assetRelativeTimeLabel(asset.updatedAtMillis)
+                                                val usesApiTransport = assetTransportLabel(asset) == "API"
                                                 Card(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     colors = CardDefaults.defaultColors(
@@ -1660,40 +1661,15 @@ fun GitHubPage(
                                                             .padding(horizontal = 12.dp, vertical = 10.dp),
                                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                                     ) {
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                                            verticalAlignment = androidx.compose.ui.Alignment.Top
-                                                        ) {
-                                                            Box(
-                                                                modifier = Modifier
-                                                                    .width(28.dp)
-                                                                    .height(28.dp)
-                                                                    .clip(RoundedCornerShape(10.dp))
-                                                                    .background(actionAccent.copy(alpha = if (isDark) 0.24f else 0.14f)),
-                                                                contentAlignment = androidx.compose.ui.Alignment.Center
-                                                            ) {
-                                                                Icon(
-                                                                    imageVector = MiuixIcons.Regular.Update,
-                                                                    contentDescription = null,
-                                                                    tint = actionAccent
-                                                                )
-                                                            }
-                                                            Column(
-                                                                modifier = Modifier.weight(1f),
-                                                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                                                            ) {
-                                                                Text(
-                                                                    text = displayName,
-                                                                    color = MiuixTheme.colorScheme.onBackground,
-                                                                    fontWeight = FontWeight.Bold
-                                                                )
-                                                            }
-                                                        }
+                                                        Text(
+                                                            text = displayName,
+                                                            color = MiuixTheme.colorScheme.onBackground,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
                                                         FlowRow(
                                                             modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                            horizontalArrangement = Arrangement.spacedBy(if (relativeTimeLabel != null) 8.dp else 6.dp),
+                                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                                         ) {
                                                             extensionLabel?.let { label ->
                                                                 StatusPill(
@@ -1712,35 +1688,73 @@ fun GitHubPage(
                                                                 )
                                                             }
                                                         }
-                                                        FlowRow(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                                        ) {
-                                                            abiLabel?.let { label ->
-                                                                StatusPill(
-                                                                    label = label,
-                                                                    color = actionAccent
+                                                        if (usesApiTransport) {
+                                                            Row(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalArrangement = Arrangement.Center,
+                                                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                                            ) {
+                                                                Row(
+                                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                                                ) {
+                                                                    abiLabel?.let { label ->
+                                                                        StatusPill(
+                                                                            label = label,
+                                                                            color = actionAccent
+                                                                        )
+                                                                    }
+                                                                    GlassIconButton(
+                                                                        backdrop = backdrop,
+                                                                        icon = MiuixIcons.Regular.Download,
+                                                                        contentDescription = "下载 ${asset.name}",
+                                                                        onClick = { openApkInDownloader(asset) },
+                                                                        width = 40.dp,
+                                                                        height = 40.dp,
+                                                                        variant = GlassVariant.SheetAction
+                                                                    )
+                                                                    GlassIconButton(
+                                                                        backdrop = backdrop,
+                                                                        icon = MiuixIcons.Regular.Share,
+                                                                        contentDescription = "分享 ${asset.name}",
+                                                                        onClick = { shareApkLink(asset) },
+                                                                        width = 40.dp,
+                                                                        height = 40.dp,
+                                                                        variant = GlassVariant.SheetAction
+                                                                    )
+                                                                }
+                                                            }
+                                                        } else {
+                                                            FlowRow(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                            ) {
+                                                                abiLabel?.let { label ->
+                                                                    StatusPill(
+                                                                        label = label,
+                                                                        color = actionAccent
+                                                                    )
+                                                                }
+                                                                GlassIconButton(
+                                                                    backdrop = backdrop,
+                                                                    icon = MiuixIcons.Regular.Download,
+                                                                    contentDescription = "下载 ${asset.name}",
+                                                                    onClick = { openApkInDownloader(asset) },
+                                                                    width = 40.dp,
+                                                                    height = 40.dp,
+                                                                    variant = GlassVariant.SheetAction
+                                                                )
+                                                                GlassIconButton(
+                                                                    backdrop = backdrop,
+                                                                    icon = MiuixIcons.Regular.Share,
+                                                                    contentDescription = "分享 ${asset.name}",
+                                                                    onClick = { shareApkLink(asset) },
+                                                                    width = 40.dp,
+                                                                    height = 40.dp,
+                                                                    variant = GlassVariant.SheetAction
                                                                 )
                                                             }
-                                                            GlassIconButton(
-                                                                backdrop = backdrop,
-                                                                icon = MiuixIcons.Regular.Download,
-                                                                contentDescription = "下载 ${asset.name}",
-                                                                onClick = { openApkInDownloader(asset) },
-                                                                width = 40.dp,
-                                                                height = 40.dp,
-                                                                variant = GlassVariant.SheetAction
-                                                            )
-                                                            GlassIconButton(
-                                                                backdrop = backdrop,
-                                                                icon = MiuixIcons.Regular.Share,
-                                                                contentDescription = "分享 ${asset.name}",
-                                                                onClick = { shareApkLink(asset) },
-                                                                width = 40.dp,
-                                                                height = 40.dp,
-                                                                variant = GlassVariant.SheetAction
-                                                            )
                                                         }
                                                     }
                                                 }
