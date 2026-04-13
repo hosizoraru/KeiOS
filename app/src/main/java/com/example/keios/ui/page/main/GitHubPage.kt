@@ -58,11 +58,12 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.SheetActionGroup
 import com.example.keios.ui.page.main.widget.SheetContentColumn
 import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
+import com.example.keios.ui.page.main.widget.SheetFieldBlock
 import com.example.keios.ui.page.main.widget.SheetInputTitle
-import com.example.keios.ui.page.main.widget.SheetRow
 import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
@@ -1071,27 +1072,31 @@ fun GitHubPage(
         @Composable
         fun StrategyBenchmarkSection() {
             SheetSectionTitle("本地对比")
-            SheetDescriptionText(
-                text = if (trackedItems.isEmpty()) {
-                    "对比测试会使用当前已追踪仓库，最多抽取 6 个样本。当前还没有可用样本。"
-                } else {
-                    "对比测试会使用当前已追踪仓库做一轮冷启动和一轮缓存复测，便于直接观察 Atom、游客 API、Token API 的耗时与缓存命中差异。"
-                }
-            )
-            if (trackedItems.isNotEmpty()) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = if (strategyBenchmarkRunning) "对比中..." else "运行双策略对比",
-                    enabled = !strategyBenchmarkRunning,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { runStrategyBenchmark() }
-                )
-            }
-            strategyBenchmarkError?.let { error ->
+            SheetSectionCard {
                 SheetDescriptionText(
-                    text = "对比测试失败：$error"
+                    text = if (trackedItems.isEmpty()) {
+                        "对比测试会使用当前已追踪仓库，最多抽取 6 个样本。当前还没有可用样本。"
+                    } else {
+                        "对比测试会使用当前已追踪仓库做一轮冷启动和一轮缓存复测，便于直接观察 Atom、游客 API、Token API 的耗时与缓存命中差异。"
+                    }
                 )
+                if (trackedItems.isNotEmpty()) {
+                    SheetActionGroup {
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            variant = GlassVariant.SheetAction,
+                            text = if (strategyBenchmarkRunning) "对比中..." else "运行双策略对比",
+                            enabled = !strategyBenchmarkRunning,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { runStrategyBenchmark() }
+                        )
+                    }
+                }
+                strategyBenchmarkError?.let { error ->
+                    SheetDescriptionText(
+                        text = "对比测试失败：$error"
+                    )
+                }
             }
             strategyBenchmarkReport?.results?.forEach { result ->
                 GitHubStrategyBenchmarkCard(result = result)
@@ -1120,72 +1125,74 @@ fun GitHubPage(
 
             if (selectedStrategyInput == GitHubLookupStrategyOption.GitHubApiToken) {
                 SheetSectionTitle("凭证设置")
-                SheetRow {
-                    SheetInputTitle("Token 状态")
-                    Spacer(modifier = Modifier.weight(1f))
-                    StatusPill(
-                        label = tokenStatusLabel,
-                        color = tokenStatusColor
-                    )
-                }
-                SheetRow {
-                    SheetInputTitle("可用性")
-                    Spacer(modifier = Modifier.weight(1f))
-                    StatusPill(
-                        label = credentialAvailabilityLabel,
-                        color = credentialAvailabilityColor
-                    )
-                }
-                SheetInputTitle("GitHub API Token")
-                GlassSearchField(
-                    value = githubApiTokenInput,
-                    onValueChange = {
-                        githubApiTokenInput = it
-                        credentialCheckError = null
-                        credentialCheckStatus = null
-                    },
-                    label = "GitHub API token（选填）",
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetInput,
-                    singleLine = true,
-                    visualTransformation = if (showApiTokenPlainText) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
+                SheetSectionCard {
+                    SheetControlRow(label = "Token 状态") {
+                        StatusPill(
+                            label = tokenStatusLabel,
+                            color = tokenStatusColor
+                        )
                     }
-                )
-                SheetRow {
-                    SheetInputTitle(
-                        text = if (sanitizedTokenInput.isBlank()) {
+                    SheetControlRow(label = "可用性") {
+                        StatusPill(
+                            label = credentialAvailabilityLabel,
+                            color = credentialAvailabilityColor
+                        )
+                    }
+                    SheetFieldBlock(
+                        title = "GitHub API Token",
+                        summary = if (sanitizedTokenInput.isBlank()) {
                             "当前使用游客 API，可随时补充 token"
                         } else {
                             "当前已填写 token，可在此替换"
                         },
-                        modifier = Modifier.weight(1f)
-                    )
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        variant = GlassVariant.SheetAction,
-                        text = if (showApiTokenPlainText) "隐藏 Token" else "显示 Token",
-                        onClick = { showApiTokenPlainText = !showApiTokenPlainText }
-                    )
+                        trailing = {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                variant = GlassVariant.SheetAction,
+                                text = if (showApiTokenPlainText) "隐藏 Token" else "显示 Token",
+                                onClick = { showApiTokenPlainText = !showApiTokenPlainText }
+                            )
+                        }
+                    ) {
+                        GlassSearchField(
+                            value = githubApiTokenInput,
+                            onValueChange = {
+                                githubApiTokenInput = it
+                                credentialCheckError = null
+                                credentialCheckStatus = null
+                            },
+                            label = "GitHub API token（选填）",
+                            backdrop = backdrop,
+                            variant = GlassVariant.SheetInput,
+                            singleLine = true,
+                            visualTransformation = if (showApiTokenPlainText) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            }
+                        )
+                    }
                 }
                 SheetSectionTitle("立即验证")
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = if (credentialCheckRunning) "检测中..." else "检测当前凭证",
-                    enabled = !credentialCheckRunning,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { runCredentialCheck() }
-                )
-                SheetDescriptionText(
-                    text = "未填写 token 时会自动走游客 API；适合刚开始少量追踪。若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
-                )
-                credentialCheckError?.let { error ->
+                SheetSectionCard {
+                    SheetActionGroup {
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            variant = GlassVariant.SheetAction,
+                            text = if (credentialCheckRunning) "检测中..." else "检测当前凭证",
+                            enabled = !credentialCheckRunning,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { runCredentialCheck() }
+                        )
+                    }
                     SheetDescriptionText(
-                        text = "凭证检测失败：$error"
+                        text = "未填写 token 时会自动走游客 API；适合刚开始少量追踪。若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
                     )
+                    credentialCheckError?.let { error ->
+                        SheetDescriptionText(
+                            text = "凭证检测失败：$error"
+                        )
+                    }
                 }
                 credentialCheckStatus?.let { status ->
                     GitHubCredentialStatusCard(status = status)
@@ -1207,38 +1214,42 @@ fun GitHubPage(
                     expanded = recommendedTokenGuideExpanded,
                     onExpandedChange = { recommendedTokenGuideExpanded = it }
                 )
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = "打开预填创建页",
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        openExternalUrl(
-                            url = buildGitHubFineGrainedTokenTemplateUrl(),
-                            failureMessage = "无法打开 GitHub 创建页"
-                        )
-                    }
-                )
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = "查看官方说明",
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        openExternalUrl(
-                            url = githubFineGrainedPatDocsUrl,
-                            failureMessage = "无法打开官方说明"
-                        )
-                    }
-                )
+                SheetActionGroup {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        variant = GlassVariant.SheetAction,
+                        text = "打开预填创建页",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            openExternalUrl(
+                                url = buildGitHubFineGrainedTokenTemplateUrl(),
+                                failureMessage = "无法打开 GitHub 创建页"
+                            )
+                        }
+                    )
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        variant = GlassVariant.SheetAction,
+                        text = "查看官方说明",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            openExternalUrl(
+                                url = githubFineGrainedPatDocsUrl,
+                                failureMessage = "无法打开官方说明"
+                            )
+                        }
+                    )
+                }
                 SheetDescriptionText(
                     text = "推荐单独创建一个 KeiOS 专用 Fine-grained token，不要复用现有 classic token。这样即使 token 泄露，暴露面也更小。"
                 )
             } else {
                 SheetSectionTitle("方案说明")
-                SheetDescriptionText(
-                    text = "Atom Feed 方案无需 Token，适合公开仓库与轻量检查。若后续需要更稳定的 release 元数据或私有仓库支持，可切换到 GitHub API Token。"
-                )
+                SheetSectionCard {
+                    SheetDescriptionText(
+                        text = "Atom Feed 方案无需 Token，适合公开仓库与轻量检查。若后续需要更稳定的 release 元数据或私有仓库支持，可切换到 GitHub API Token。"
+                    )
+                }
                 StrategyBenchmarkSection()
             }
         }

@@ -48,6 +48,8 @@ import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.SheetActionGroup
+import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetContentColumn
 import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetSectionCard
@@ -492,22 +494,20 @@ fun McpPage(
                 }
             }
             SheetSectionTitle("网络访问范围")
-            McpNetworkModeOption(
-                backdrop = backdrop,
-                title = "仅本机",
-                summary = "仅允许本机客户端通过 127.0.0.1 访问",
-                selected = !allowExternal,
-                onClick = { allowExternal = false }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            McpNetworkModeOption(
-                backdrop = backdrop,
-                title = "局域网",
-                summary = "允许同一局域网设备接入，请注意网络安全",
-                selected = allowExternal,
-                onClick = { allowExternal = true }
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            SheetActionGroup {
+                McpNetworkModeOption(
+                    title = "仅本机",
+                    summary = "仅允许本机客户端通过 127.0.0.1 访问",
+                    selected = !allowExternal,
+                    onClick = { allowExternal = false }
+                )
+                McpNetworkModeOption(
+                    title = "局域网",
+                    summary = "允许同一局域网设备接入，请注意网络安全",
+                    selected = allowExternal,
+                    onClick = { allowExternal = true }
+                )
+            }
             SheetSectionTitle(
                 text = "危险操作",
                 danger = true
@@ -562,61 +562,20 @@ fun McpPage(
 
 @Composable
 private fun McpNetworkModeOption(
-    backdrop: Backdrop?,
     title: String,
     summary: String,
     selected: Boolean,
     onClick: () -> Unit
 ) {
     val selectedColor = Color(0xFF22C55E)
-    val cardColor = if (selected) selectedColor.copy(alpha = 0.12f) else MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        colors = CardDefaults.defaultColors(
-            color = cardColor,
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = title,
-                        color = MiuixTheme.colorScheme.onBackground
-                    )
-                    if (selected) {
-                        StatusPill(
-                            label = StatusLabelText.Activated,
-                            color = selectedColor
-                        )
-                    }
-                }
-                Text(
-                    text = summary,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
-                )
-            }
-            RadioButton(
-                selected = selected,
-                onClick = onClick
-            )
-        }
-    }
+    SheetChoiceCard(
+        title = title,
+        summary = summary,
+        selected = selected,
+        onSelect = onClick,
+        accentColor = selectedColor,
+        selectedLabel = StatusLabelText.Activated
+    )
 }
 
 @Composable

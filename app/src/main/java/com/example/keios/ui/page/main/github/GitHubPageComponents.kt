@@ -1,17 +1,12 @@
 package com.example.keios.ui.page.main
 
 import android.graphics.Bitmap
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,19 +29,13 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
-import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.SheetChoiceCard
+import com.example.keios.ui.page.main.widget.SheetExpandableCard
+import com.example.keios.ui.page.main.widget.SheetSummaryCard
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.foundation.shape.RoundedCornerShape
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.ExpandLess
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -149,69 +137,29 @@ internal fun GitHubStrategyGuideCard(
     onSelect: () -> Unit
 ) {
     val accent = guide.option.accentColor()
-    Card(
+    SheetChoiceCard(
+        title = guide.option.label,
+        summary = guide.summary,
+        selected = selected,
+        onSelect = onSelect,
+        accentColor = accent,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = if (selected) {
-                accent.copy(alpha = 0.12f)
-            } else {
-                MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.68f)
-            },
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        onClick = onSelect
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = guide.option.label,
-                        color = if (selected) accent else MiuixTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (selected) {
-                        StatusPill(
-                            label = "已选择",
-                            color = accent
-                        )
-                    }
-                }
-                Text(
-                    text = guide.summary,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
-                )
-                Text(
-                    text = "优点：${guide.pros.joinToString("；")}",
-                    color = MiuixTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "注意：${guide.cons.joinToString("；")}",
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
-                )
-                Text(
-                    text = "要求：${guide.requirement}",
-                    color = accent,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            RadioButton(
-                selected = selected,
-                onClick = onSelect
+        details = {
+            Text(
+                text = "优点：${guide.pros.joinToString("；")}",
+                color = MiuixTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "注意：${guide.cons.joinToString("；")}",
+                color = MiuixTheme.colorScheme.onBackgroundVariant
+            )
+            Text(
+                text = "要求：${guide.requirement}",
+                color = accent,
+                fontWeight = FontWeight.Medium
             )
         }
-    }
+    )
 }
 
 @Composable
@@ -233,62 +181,38 @@ internal fun GitHubStrategyDraftSummaryCard(
         else -> GitHubStatusPalette.PreRelease
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (changed) 0.82f else 0.66f),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        showIndication = false,
-        onClick = {}
+    SheetSummaryCard(
+        title = "当前待保存配置",
+        accentColor = MiuixTheme.colorScheme.onBackground,
+        badgeLabel = if (changed) "待保存" else "与当前一致",
+        badgeColor = if (changed) accent else MiuixTheme.colorScheme.onBackgroundVariant,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (changed) 0.82f else 0.66f),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "当前待保存配置",
-                    color = MiuixTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                StatusPill(
-                    label = if (changed) "待保存" else "与当前一致",
-                    color = if (changed) accent else MiuixTheme.colorScheme.onBackgroundVariant
-                )
-            }
-            GitHubCompactInfoRow(
-                label = "方案",
-                value = selectedStrategy.label,
-                valueColor = accent,
-                emphasized = true,
-                titleMinWidth = 44.dp
-            )
-            GitHubCompactInfoRow(
-                label = "Token",
-                value = tokenStatusLabel,
-                valueColor = tokenStatusColor,
-                emphasized = selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken,
-                titleMinWidth = 44.dp
-            )
-            GitHubCompactInfoRow(
-                label = "影响",
-                value = if (trackedCount > 0) {
-                    "保存后将重新检查 $trackedCount 个跟踪项目"
-                } else {
-                    "当前还没有已跟踪项目"
-                },
-                valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
-                titleMinWidth = 44.dp
-            )
-        }
+        GitHubCompactInfoRow(
+            label = "方案",
+            value = selectedStrategy.label,
+            valueColor = accent,
+            emphasized = true,
+            titleMinWidth = 44.dp
+        )
+        GitHubCompactInfoRow(
+            label = "Token",
+            value = tokenStatusLabel,
+            valueColor = tokenStatusColor,
+            emphasized = selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken,
+            titleMinWidth = 44.dp
+        )
+        GitHubCompactInfoRow(
+            label = "影响",
+            value = if (trackedCount > 0) {
+                "保存后将重新检查 $trackedCount 个跟踪项目"
+            } else {
+                "当前还没有已跟踪项目"
+            },
+            valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
+            titleMinWidth = 44.dp
+        )
     }
 }
 
@@ -298,111 +222,31 @@ internal fun GitHubRecommendedTokenGuideCard(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit
 ) {
-    val accent = GitHubStatusPalette.Update
-    val shape = RoundedCornerShape(18.dp)
-    val borderColor = if (expanded) {
-        accent.copy(alpha = 0.5f)
-    } else {
-        MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.22f)
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .border(width = 1.dp, color = borderColor, shape = shape),
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (expanded) 0.78f else 0.68f),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        )
+    SheetExpandableCard(
+        title = "推荐新建方案",
+        collapsedSummary = guide.collapsedSummary,
+        expandedSummary = guide.summary,
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        accentColor = GitHubStatusPalette.Update,
+        badgeLabel = "最小权限",
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onExpandedChange(!expanded) }
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "推荐新建方案",
-                            color = accent,
-                            fontWeight = FontWeight.Bold
-                        )
-                        StatusPill(
-                            label = "最小权限",
-                            color = accent
-                        )
-                    }
-                    Text(
-                        text = if (expanded) guide.summary else guide.collapsedSummary,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        maxLines = if (expanded) 3 else 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = if (expanded) "点按收起详细说明" else "点按展开详细说明",
-                        color = accent,
-                        fontWeight = FontWeight.Medium,
-                        fontStyle = FontStyle.Italic
-                    )
-                }
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    StatusPill(
-                        label = if (expanded) "收起" else "展开",
-                        color = accent
-                    )
-                    Icon(
-                        imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
-                        contentDescription = if (expanded) "收起" else "展开",
-                        tint = accent,
-                        modifier = Modifier.padding(end = 2.dp)
-                    )
-                }
-            }
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    guide.fields.forEach { field ->
-                        GitHubCompactInfoRow(
-                            label = field.label,
-                            value = field.value,
-                            valueColor = if (field.emphasized) accent else MiuixTheme.colorScheme.onBackground,
-                            emphasized = field.emphasized,
-                            titleMinWidth = 52.dp
-                        )
-                    }
-                    guide.notes.forEach { note ->
-                        Text(
-                            text = note,
-                            color = MiuixTheme.colorScheme.onBackgroundVariant
-                        )
-                    }
-                }
-            }
+        val accent = GitHubStatusPalette.Update
+        guide.fields.forEach { field ->
+            GitHubCompactInfoRow(
+                label = field.label,
+                value = field.value,
+                valueColor = if (field.emphasized) accent else MiuixTheme.colorScheme.onBackground,
+                emphasized = field.emphasized,
+                titleMinWidth = 52.dp
+            )
+        }
+        guide.notes.forEach { note ->
+            Text(
+                text = note,
+                color = MiuixTheme.colorScheme.onBackgroundVariant
+            )
         }
     }
 }
@@ -415,73 +259,48 @@ internal fun GitHubStrategyBenchmarkCard(
         "API" -> GitHubStatusPalette.Update
         else -> GitHubStatusPalette.Active
     }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        showIndication = false,
-        onClick = {}
+    SheetSummaryCard(
+        title = result.summaryLabel,
+        accentColor = accent,
+        badgeLabel = "${result.coldSuccessCount}/${result.totalTargets}",
+        badgeColor = if (result.failures.isEmpty()) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = result.summaryLabel,
-                    color = accent,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                StatusPill(
-                    label = "${result.coldSuccessCount}/${result.totalTargets}",
-                    color = if (result.failures.isEmpty()) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease
-                )
+        GitHubOverviewMetricItem(
+            label = "首轮均时",
+            value = "${result.coldAverageMs} ms",
+            valueColor = accent
+        )
+        GitHubOverviewMetricItem(
+            label = "缓存均时",
+            value = "${result.warmAverageMs} ms",
+            valueColor = GitHubStatusPalette.Stable
+        )
+        GitHubOverviewMetricItem(
+            label = "缓存命中",
+            value = "${result.cacheHitCount}/${result.warmSamples.size}",
+            valueColor = if (result.cacheHitCount == result.warmSamples.size) {
+                GitHubStatusPalette.Update
+            } else {
+                GitHubStatusPalette.PreRelease
             }
-            GitHubOverviewMetricItem(
-                label = "首轮均时",
-                value = "${result.coldAverageMs} ms",
-                valueColor = accent
-            )
-            GitHubOverviewMetricItem(
-                label = "缓存均时",
-                value = "${result.warmAverageMs} ms",
-                valueColor = GitHubStatusPalette.Stable
-            )
-            GitHubOverviewMetricItem(
-                label = "缓存命中",
-                value = "${result.cacheHitCount}/${result.warmSamples.size}",
-                valueColor = if (result.cacheHitCount == result.warmSamples.size) {
-                    GitHubStatusPalette.Update
-                } else {
-                    GitHubStatusPalette.PreRelease
-                }
-            )
-            GitHubOverviewMetricItem(
-                label = "失败",
-                value = "${result.failures.size}",
-                valueColor = if (result.failures.isEmpty()) {
-                    MiuixTheme.colorScheme.onBackgroundVariant
-                } else {
-                    GitHubStatusPalette.Error
-                }
-            )
-            if (result.failures.isNotEmpty()) {
-                Text(
-                    text = result.failures.take(2).joinToString("\n"),
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis
-                )
+        )
+        GitHubOverviewMetricItem(
+            label = "失败",
+            value = "${result.failures.size}",
+            valueColor = if (result.failures.isEmpty()) {
+                MiuixTheme.colorScheme.onBackgroundVariant
+            } else {
+                GitHubStatusPalette.Error
             }
+        )
+        if (result.failures.isNotEmpty()) {
+            Text(
+                text = result.failures.take(2).joinToString("\n"),
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -494,64 +313,40 @@ internal fun GitHubCredentialStatusCard(
         com.example.keios.feature.github.model.GitHubApiAuthMode.Token -> GitHubStatusPalette.Update
         com.example.keios.feature.github.model.GitHubApiAuthMode.Guest -> GitHubStatusPalette.PreRelease
     }
-    Card(
+    SheetSummaryCard(
+        title = "凭证检测",
+        accentColor = accent,
+        badgeLabel = status.summaryLabel,
+        badgeColor = accent,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        showIndication = false,
-        onClick = {}
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "凭证检测",
-                    color = accent,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                StatusPill(
-                    label = status.summaryLabel,
-                    color = accent
-                )
-            }
-            GitHubCompactInfoRow(
-                label = "模式",
-                value = status.authMode.label,
-                valueColor = accent,
-                emphasized = true,
-                titleMinWidth = 44.dp
-            )
-            GitHubCompactInfoRow(
-                label = "配额",
-                value = "${status.coreRemaining} / ${status.coreLimit}",
-                valueColor = if (status.coreRemaining > 0) accent else GitHubStatusPalette.Error,
-                emphasized = true,
-                titleMinWidth = 44.dp
-            )
-            GitHubCompactInfoRow(
-                label = "已用",
-                value = status.coreUsed.toString(),
-                valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
-                titleMinWidth = 44.dp
-            )
-            GitHubCompactInfoRow(
-                label = "恢复",
-                value = formatFutureEta(status.resetAtMillis),
-                valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
-                titleMinWidth = 44.dp
-            )
-        }
+        GitHubCompactInfoRow(
+            label = "模式",
+            value = status.authMode.label,
+            valueColor = accent,
+            emphasized = true,
+            titleMinWidth = 44.dp
+        )
+        GitHubCompactInfoRow(
+            label = "配额",
+            value = "${status.coreRemaining} / ${status.coreLimit}",
+            valueColor = if (status.coreRemaining > 0) accent else GitHubStatusPalette.Error,
+            emphasized = true,
+            titleMinWidth = 44.dp
+        )
+        GitHubCompactInfoRow(
+            label = "已用",
+            value = status.coreUsed.toString(),
+            valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
+            titleMinWidth = 44.dp
+        )
+        GitHubCompactInfoRow(
+            label = "恢复",
+            value = formatFutureEta(status.resetAtMillis),
+            valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
+            titleMinWidth = 44.dp
+        )
     }
 }
 
