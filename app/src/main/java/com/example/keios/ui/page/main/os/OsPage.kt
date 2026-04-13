@@ -481,14 +481,14 @@ fun OsPage(
         SystemOverviewState.Idle -> inactive
     }
     val overviewCardColor = if (isDark) {
-        statusColor.copy(alpha = 0.24f)
+        statusColor.copy(alpha = 0.16f)
     } else {
-        statusColor.copy(alpha = 0.14f)
+        statusColor.copy(alpha = 0.09f)
     }
     val overviewBorderColor = if (isDark) {
-        statusColor.copy(alpha = 0.40f)
+        statusColor.copy(alpha = 0.32f)
     } else {
-        statusColor.copy(alpha = 0.34f)
+        statusColor.copy(alpha = 0.26f)
     }
     val indicatorProgress = when (overviewState) {
         SystemOverviewState.Refreshing -> refreshProgress.coerceIn(0f, 1f)

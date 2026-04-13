@@ -6,6 +6,12 @@ import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,6 +47,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -119,6 +128,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.AddCircle
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
@@ -188,6 +198,16 @@ fun GitHubPage(
     var recommendedTokenGuideExpanded by remember { mutableStateOf(false) }
     var refreshAllJob by remember { mutableStateOf<Job?>(null) }
     var deleteInProgress by remember { mutableStateOf(false) }
+    var showFloatingAddButton by remember { mutableStateOf(true) }
+    val addButtonScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -1f) showFloatingAddButton = false
+                if (available.y > 1f) showFloatingAddButton = true
+                return Offset.Zero
+            }
+        }
+    }
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
@@ -838,7 +858,11 @@ fun GitHubPage(
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(addButtonScrollConnection)
+        ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1178,16 +1202,29 @@ fun GitHubPage(
             }
             }
 
-            GlassIconButton(
-                backdrop = backdrop,
-                icon = MiuixIcons.Regular.Edit,
-                contentDescription = "新增跟踪",
-                onClick = { openTrackSheetForAdd() },
-                modifier = Modifier
-                    .align(androidx.compose.ui.Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = contentBottomPadding - 16.dp),
-                variant = GlassVariant.Bar
-            )
+            AnimatedVisibility(
+                visible = showFloatingAddButton,
+                enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
+                    animationSpec = tween(220),
+                    initialOffsetY = { it / 2 }
+                ),
+                exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
+                    animationSpec = tween(180),
+                    targetOffsetY = { it / 2 }
+                ),
+                modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
+            ) {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.AddCircle,
+                    contentDescription = "新增跟踪",
+                    onClick = { openTrackSheetForAdd() },
+                    modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
+                    width = 60.dp,
+                    height = 44.dp,
+                    variant = GlassVariant.Bar
+                )
+            }
         }
     }
 

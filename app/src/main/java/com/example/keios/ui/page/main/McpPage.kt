@@ -109,16 +109,16 @@ fun McpPage(
     val overviewAccentColor = if (uiState.running) runningColor else stoppedColor
     val isDark = isSystemInDarkTheme()
     val overviewCardColor = if (isDark) {
-        overviewAccentColor.copy(alpha = 0.24f)
-    } else {
         overviewAccentColor.copy(alpha = 0.16f)
+    } else {
+        overviewAccentColor.copy(alpha = 0.10f)
     }
     val overviewBorderColor = if (isDark) {
-        overviewAccentColor.copy(alpha = 0.40f)
+        overviewAccentColor.copy(alpha = 0.32f)
     } else {
-        overviewAccentColor.copy(alpha = 0.34f)
+        overviewAccentColor.copy(alpha = 0.26f)
     }
-    val overviewItemColor = overviewAccentColor.copy(alpha = 0.12f)
+    val overviewItemColor = overviewAccentColor.copy(alpha = 0.08f)
     val runtimeNowMs by produceState(
         initialValue = System.currentTimeMillis(),
         key1 = uiState.running,

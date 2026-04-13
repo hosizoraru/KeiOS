@@ -17,7 +17,7 @@ internal object GitHubStatusPalette {
     val Error = Color(0xFFEF4444)
 
     fun tonedSurface(color: Color, isDark: Boolean): Color {
-        return color.copy(alpha = if (isDark) 0.33f else 0.20f)
+        return color.copy(alpha = if (isDark) 0.20f else 0.11f)
     }
 }
 

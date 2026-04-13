@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,9 @@ fun GlassIconButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    width: Dp = 40.dp,
+    height: Dp = 40.dp,
+    shape: Shape = ContinuousCapsule,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content
 ) {
@@ -60,9 +64,9 @@ fun GlassIconButton(
     val showBorder = glass.showBorder
     Box(
         modifier = modifier
-            .width(40.dp)
-            .height(40.dp)
-            .clip(ContinuousCapsule)
+            .width(width)
+            .height(height)
+            .clip(shape)
             .clickable(onClick = onClick)
             .then(
                 if (backdrop != null) {
