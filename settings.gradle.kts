@@ -5,6 +5,9 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+// Cross-platform Gradle daemon JVM resolution is handled by Foojay + gradle/gradle-daemon-jvm.properties.
+// Do not commit a machine-specific org.gradle.java.home path; keep that as a local override only when
+// Android Studio / Gradle automatic JDK resolution is unavailable on the developer machine.
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }

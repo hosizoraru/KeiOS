@@ -38,6 +38,16 @@ val autoVersionName = buildString {
     append(gitShortHash)
     if (gitDirty) append("-dirty")
 }
+// Machine-local overrides should live in ~/.gradle/gradle.properties (preferred) or local.properties.
+// JDK resolution itself is intentionally not hardcoded here: the project already tracks a cross-platform
+// Gradle daemon JVM (JetBrains Java 21) for macOS/Windows/Linux. Use org.gradle.java.home only as a
+// developer-local fallback when Android Studio or Gradle cannot auto-resolve a suitable JDK.
+// Useful local-only keys include:
+// - miuix.version
+// - keios.github.liveBenchmark
+// - keios.github.api.token
+// - keios.github.liveTargets
+// - keios.github.forceGuest
 val miuixVersion =
     providers.gradleProperty("miuix.version").orNull
         ?: readLocalPropertyOrNull("miuix.version")
@@ -56,6 +66,8 @@ val okhttpVersion = "5.3.2"
 val media3Version = "1.10.0"
 val zoomImageVersion = "1.4.0"
 val focusApiVersion = "1.4"
+val projectJavaVersion = JavaVersion.VERSION_21
+val projectJvmTarget = JvmTarget.JVM_21
 
 plugins {
     id("com.android.application")
@@ -98,8 +110,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = projectJavaVersion
+        targetCompatibility = projectJavaVersion
     }
 
     buildFeatures {
@@ -107,11 +119,19 @@ android {
         compose = true
     }
     compileSdkMinor = 0
+
+    testOptions {
+        unitTests.all {
+            // Keep unit tests on the desktop OkHttp platform. Live GitHub tests read secrets from
+            // JVM properties, env vars, or ~/.gradle/gradle.properties; see README.md.
+            it.systemProperty("okhttp.platform", "jdk9")
+        }
+    }
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
+        jvmTarget.set(projectJvmTarget)
     }
 }
 
@@ -151,4 +171,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+    testImplementation("com.squareup.okhttp3:mockwebserver:$okhttpVersion")
+    testImplementation("xmlpull:xmlpull:1.1.3.1")
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
 }
