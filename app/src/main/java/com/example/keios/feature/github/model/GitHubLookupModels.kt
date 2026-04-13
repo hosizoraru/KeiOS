@@ -2,18 +2,15 @@ package com.example.keios.feature.github.model
 
 enum class GitHubLookupStrategyOption(
     val storageId: String,
-    val label: String,
-    val requiresToken: Boolean
+    val label: String
 ) {
     AtomFeed(
         storageId = "atom_feed",
-        label = "Atom Feed",
-        requiresToken = false
+        label = "Atom Feed"
     ),
     GitHubApiToken(
         storageId = "github_api_token",
-        label = "GitHub API Token",
-        requiresToken = true
+        label = "GitHub API Token"
     );
 
     companion object {
