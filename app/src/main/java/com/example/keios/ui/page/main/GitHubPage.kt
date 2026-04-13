@@ -59,9 +59,11 @@ import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SheetInputTitle
 import com.example.keios.ui.page.main.widget.SheetRow
+import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
@@ -1275,46 +1277,47 @@ fun GitHubPage(
             )
         }
     ) {
-        SheetContentColumn {
-            GlassSearchField(
-                value = repoUrlInput,
-                onValueChange = { repoUrlInput = it },
-                label = "GitHub 项目地址",
-                backdrop = backdrop,
-                variant = GlassVariant.SheetInput,
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            GlassSearchField(
-                value = appSearch,
-                onValueChange = { appSearch = it },
-                label = "筛选本机 App（名称或包名）",
-                backdrop = backdrop,
-                variant = GlassVariant.SheetInput,
-                singleLine = true
-            )
-            SheetRow {
-                Text(
-                    text = "已选应用: ${selectedApp?.label ?: "未选择"}",
-                    color = Color(0xFF3A8DFF)
-                )
-                GlassTextButton(
+        SheetContentColumn(verticalSpacing = 10.dp) {
+            SheetSectionTitle("仓库与应用")
+            SheetSectionCard {
+                SheetInputTitle("GitHub 项目地址")
+                GlassSearchField(
+                    value = repoUrlInput,
+                    onValueChange = { repoUrlInput = it },
+                    label = "GitHub 项目地址",
                     backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = if (pickerExpanded) "收起列表" else "选择应用",
-                    onClick = { pickerExpanded = !pickerExpanded }
+                    variant = GlassVariant.SheetInput,
+                    singleLine = true
                 )
+                SheetInputTitle("筛选本机 App")
+                GlassSearchField(
+                    value = appSearch,
+                    onValueChange = { appSearch = it },
+                    label = "名称或包名",
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetInput,
+                    singleLine = true
+                )
+                SheetControlRow(
+                    label = "已选应用",
+                    summary = selectedApp?.let { "${it.label} · ${it.packageName}" } ?: "未选择"
+                ) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        variant = GlassVariant.SheetAction,
+                        text = if (pickerExpanded) "收起列表" else "选择应用",
+                        onClick = { pickerExpanded = !pickerExpanded }
+                    )
+                }
             }
-            SheetRow {
-                Text(
-                    text = "检查预发行版本",
-                    color = MiuixTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = checkPreReleaseInput,
-                    onCheckedChange = { checked -> checkPreReleaseInput = checked }
-                )
+            SheetSectionTitle("检查选项")
+            SheetSectionCard {
+                SheetControlRow(label = "检查预发行版本") {
+                    Switch(
+                        checked = checkPreReleaseInput,
+                        onCheckedChange = { checked -> checkPreReleaseInput = checked }
+                    )
+                }
             }
             if (pickerExpanded) {
                 val filteredApps = appList.filter { app ->
@@ -1322,46 +1325,55 @@ fun GitHubPage(
                         app.label.contains(appSearch, ignoreCase = true) ||
                         app.packageName.contains(appSearch, ignoreCase = true)
                 }.take(80)
-                if (filteredApps.isEmpty()) {
-                    MiuixInfoItem("应用列表", "没有匹配结果")
-                } else {
-                    filteredApps.forEach { app ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedApp = app
-                                    pickerExpanded = false
-                                }
-                                .padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            AppIcon(packageName = app.packageName, size = 30.dp)
-                            Text(
-                                text = "${app.label} · ${app.packageName}",
-                                color = Color(0xFF3A8DFF),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                SheetSectionTitle("应用候选")
+                SheetSectionCard(verticalSpacing = 6.dp) {
+                    if (filteredApps.isEmpty()) {
+                        MiuixInfoItem("应用列表", "没有匹配结果")
+                    } else {
+                        filteredApps.forEach { app ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedApp = app
+                                        pickerExpanded = false
+                                    }
+                                    .padding(vertical = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                AppIcon(packageName = app.packageName, size = 30.dp)
+                                Text(
+                                    text = "${app.label} · ${app.packageName}",
+                                    color = Color(0xFF3A8DFF),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
             }
             if (editingTrackedItem != null) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetDangerAction,
-                    text = "删除跟踪",
-                    textColor = MiuixTheme.colorScheme.error,
-                    onClick = {
-                        pendingDeleteItem = editingTrackedItem
-                        showAddSheet = false
-                        pickerExpanded = false
-                        appSearch = ""
-                        editingTrackedItem = null
-                    }
+                SheetSectionTitle(
+                    text = "危险操作",
+                    danger = true
                 )
+                SheetSectionCard {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        variant = GlassVariant.SheetDangerAction,
+                        text = "删除跟踪",
+                        textColor = MiuixTheme.colorScheme.error,
+                        onClick = {
+                            pendingDeleteItem = editingTrackedItem
+                            showAddSheet = false
+                            pickerExpanded = false
+                            appSearch = ""
+                            editingTrackedItem = null
+                        }
+                    )
+                }
             }
         }
     }

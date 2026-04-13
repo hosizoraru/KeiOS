@@ -59,7 +59,11 @@ import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
+import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
+import com.example.keios.ui.page.main.widget.SheetSectionCard
+import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
@@ -591,13 +595,9 @@ fun OsPage(
                 )
             }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding()
-                    .padding(bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+            SheetContentColumn(
+                scrollable = false,
+                verticalSpacing = 10.dp
             ) {
                 @Composable
                 fun CardLabel(card: OsSectionCard, modifier: Modifier = Modifier) {
@@ -620,21 +620,21 @@ fun OsPage(
                     }
                 }
 
-                OsSectionCard.entries.forEach { card ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CardLabel(card = card, modifier = Modifier.defaultMinSize(minHeight = 24.dp))
-                        Switch(
-                            checked = isCardVisible(card),
-                            onCheckedChange = { checked ->
-                                scope.launch { applyCardVisibility(card, checked) }
+                SheetSectionTitle("显示控制")
+                SheetSectionCard(verticalSpacing = 10.dp) {
+                    OsSectionCard.entries.forEach { card ->
+                        SheetControlRow(
+                            labelContent = {
+                                CardLabel(card = card, modifier = Modifier.defaultMinSize(minHeight = 24.dp))
                             }
-                        )
+                        ) {
+                            Switch(
+                                checked = isCardVisible(card),
+                                onCheckedChange = { checked ->
+                                    scope.launch { applyCardVisibility(card, checked) }
+                                }
+                            )
+                        }
                     }
                 }
 

@@ -75,8 +75,10 @@ import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
-import com.example.keios.ui.page.main.widget.SheetRow
+import com.example.keios.ui.page.main.widget.SheetSectionCard
+import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
@@ -567,39 +569,46 @@ fun HomePage(
         ) {
             SheetContentColumn(
                 scrollable = false,
-                verticalSpacing = 14.dp
+                verticalSpacing = 10.dp
             ) {
-                SheetRow {
-                    HomeBottomPageLabel(
-                        page = BottomPage.Home,
-                        modifier = Modifier.defaultMinSize(minHeight = 24.dp)
-                    )
-                    StatusPill(
-                        label = StatusLabelText.FixedVisible,
-                        color = Color(0xFF2563EB)
-                    )
-                }
-
-                BottomPage.entries
-                    .filter { it != BottomPage.Home }
-                    .forEach { page ->
-                        SheetRow {
+                SheetSectionTitle("显示板块")
+                SheetSectionCard(verticalSpacing = 10.dp) {
+                    SheetControlRow(
+                        labelContent = {
                             HomeBottomPageLabel(
-                                page = page,
+                                page = BottomPage.Home,
                                 modifier = Modifier.defaultMinSize(minHeight = 24.dp)
                             )
-                            Switch(
-                                checked = visibleBottomPages.contains(page),
-                                onCheckedChange = { checked ->
-                                    onBottomPageVisibilityChange(page, checked)
-                                }
-                            )
                         }
+                    ) {
+                        StatusPill(
+                            label = StatusLabelText.FixedVisible,
+                            color = Color(0xFF2563EB)
+                        )
                     }
 
+                    BottomPage.entries
+                        .filter { it != BottomPage.Home }
+                        .forEach { page ->
+                            SheetControlRow(
+                                labelContent = {
+                                    HomeBottomPageLabel(
+                                        page = page,
+                                        modifier = Modifier.defaultMinSize(minHeight = 24.dp)
+                                    )
+                                }
+                            ) {
+                                Switch(
+                                    checked = visibleBottomPages.contains(page),
+                                    onCheckedChange = { checked ->
+                                        onBottomPageVisibilityChange(page, checked)
+                                    }
+                                )
+                            }
+                        }
+                }
                 SheetDescriptionText(
-                    text = "Home 固定显示，其他板块可按需隐藏或重新显示。",
-                    modifier = Modifier.padding(start = 16.dp)
+                    text = "Home 固定显示，其他板块可按需隐藏或重新显示。"
                 )
             }
         }

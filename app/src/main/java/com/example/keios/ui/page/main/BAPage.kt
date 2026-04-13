@@ -63,7 +63,10 @@ import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
+import com.example.keios.ui.page.main.widget.SheetSectionCard
+import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
@@ -1840,190 +1843,108 @@ fun BAPage(
         }
     ) {
         SheetContentColumn(
-            verticalSpacing = 8.dp
+            verticalSpacing = 10.dp
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "咖啡厅等级",
-                        color = MiuixTheme.colorScheme.onBackground
-                    )
-                }
-                Box(
-                    modifier = Modifier.capturePopupAnchor { cafeLevelPopupAnchorBounds = it }
-                ) {
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        text = "${sheetCafeLevel}级",
-                        blurRadius = baGlassBlur,
-                                                variant = GlassVariant.SheetAction,
-                        onClick = { showCafeLevelPopup = !showCafeLevelPopup }
-                    )
-                    if (showCafeLevelPopup) {
-                        SnapshotWindowListPopup(
-                            show = showCafeLevelPopup,
-                            alignment = PopupPositionProvider.Align.BottomEnd,
-                            anchorBounds = cafeLevelPopupAnchorBounds,
-                            placement = SnapshotPopupPlacement.ButtonEnd,
-                            onDismissRequest = { showCafeLevelPopup = false },
-                            enableWindowDim = false
-                        ) {
-                            LiquidDropdownColumn {
-                                cafeLevelOptions.forEachIndexed { index, level ->
-                                    LiquidDropdownImpl(
-                                        text = "${level}级",
-                                        optionSize = cafeLevelOptions.size,
-                                        isSelected = sheetCafeLevel == level,
-                                        index = index,
-                                        onSelectedIndexChange = { selected ->
-                                            sheetCafeLevel = cafeLevelOptions[selected]
-                                            showCafeLevelPopup = false
-                                        }
-                                    )
+            SheetSectionTitle("基础设置")
+            SheetSectionCard {
+                SheetControlRow(label = "咖啡厅等级") {
+                    Box(
+                        modifier = Modifier.capturePopupAnchor { cafeLevelPopupAnchorBounds = it }
+                    ) {
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            text = "${sheetCafeLevel}级",
+                            blurRadius = baGlassBlur,
+                            variant = GlassVariant.SheetAction,
+                            onClick = { showCafeLevelPopup = !showCafeLevelPopup }
+                        )
+                        if (showCafeLevelPopup) {
+                            SnapshotWindowListPopup(
+                                show = showCafeLevelPopup,
+                                alignment = PopupPositionProvider.Align.BottomEnd,
+                                anchorBounds = cafeLevelPopupAnchorBounds,
+                                placement = SnapshotPopupPlacement.ButtonEnd,
+                                onDismissRequest = { showCafeLevelPopup = false },
+                                enableWindowDim = false
+                            ) {
+                                LiquidDropdownColumn {
+                                    cafeLevelOptions.forEachIndexed { index, level ->
+                                        LiquidDropdownImpl(
+                                            text = "${level}级",
+                                            optionSize = cafeLevelOptions.size,
+                                            isSelected = sheetCafeLevel == level,
+                                            index = index,
+                                            onSelectedIndexChange = { selected ->
+                                                sheetCafeLevel = cafeLevelOptions[selected]
+                                                showCafeLevelPopup = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "AP通知",
-                        color = MiuixTheme.colorScheme.onBackground
+                SheetControlRow(label = "AP 通知") {
+                    Switch(
+                        checked = sheetApNotifyEnabled,
+                        onCheckedChange = { checked -> sheetApNotifyEnabled = checked }
                     )
                 }
-                Switch(
-                    checked = sheetApNotifyEnabled,
-                    onCheckedChange = { checked -> sheetApNotifyEnabled = checked }
-                )
+                if (sheetApNotifyEnabled) {
+                    SheetControlRow(
+                        label = "AP 提醒阈值",
+                        summary = "建议 0-$BA_AP_MAX"
+                    ) {
+                        GlassSearchField(
+                            modifier = Modifier.width(70.dp),
+                            value = sheetApNotifyThresholdText,
+                            onValueChange = { input ->
+                                val digits = input.filter { it.isDigit() }.take(3)
+                                if (digits.isBlank()) {
+                                    sheetApNotifyThresholdText = ""
+                                } else {
+                                    val normalized = digits.toIntOrNull()?.coerceIn(0, BA_AP_MAX)
+                                    sheetApNotifyThresholdText = normalized?.toString() ?: ""
+                                }
+                            },
+                            onImeActionDone = {
+                                val normalized = sheetApNotifyThresholdText.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 120
+                                sheetApNotifyThresholdText = normalized.toString()
+                            },
+                            label = "120",
+                            backdrop = backdrop,
+                            blurRadius = baGlassBlur,
+                            variant = GlassVariant.SheetInput,
+                            singleLine = true,
+                            textAlign = TextAlign.Center,
+                            fontSize = 18.sp,
+                            textColor = Color(0xFF22C55E)
+                        )
+                    }
+                }
             }
-
-            if (sheetApNotifyEnabled) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "AP提醒阈值",
-                        color = MiuixTheme.colorScheme.onBackground
+            SheetSectionTitle("显示内容")
+            SheetSectionCard {
+                SheetControlRow(label = "显示已结束活动") {
+                    Switch(
+                        checked = sheetShowEndedActivities,
+                        onCheckedChange = { checked -> sheetShowEndedActivities = checked }
                     )
-                    GlassSearchField(
-                        modifier = Modifier.width(70.dp),
-                        value = sheetApNotifyThresholdText,
-                        onValueChange = { input ->
-                            val digits = input.filter { it.isDigit() }.take(3)
-                            if (digits.isBlank()) {
-                                sheetApNotifyThresholdText = ""
-                            } else {
-                                val normalized = digits.toIntOrNull()?.coerceIn(0, BA_AP_MAX)
-                                sheetApNotifyThresholdText = normalized?.toString() ?: ""
-                            }
-                        },
-                        onImeActionDone = {
-                            val normalized = sheetApNotifyThresholdText.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 120
-                            sheetApNotifyThresholdText = normalized.toString()
-                        },
-                        label = "120",
-                        backdrop = backdrop,
-                        blurRadius = baGlassBlur,
-                                                variant = GlassVariant.SheetInput,
-                        singleLine = true,
-                        textAlign = TextAlign.Center,
-                        fontSize = 18.sp,
-                        textColor = Color(0xFF22C55E)
+                }
+                SheetControlRow(label = "显示已结束卡池") {
+                    Switch(
+                        checked = sheetShowEndedPools,
+                        onCheckedChange = { checked -> sheetShowEndedPools = checked }
+                    )
+                }
+                SheetControlRow(label = "显示活动/卡池图片") {
+                    Switch(
+                        checked = sheetShowCalendarPoolImages,
+                        onCheckedChange = { checked -> sheetShowCalendarPoolImages = checked }
                     )
                 }
             }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "显示已结束活动",
-                        color = MiuixTheme.colorScheme.onBackground
-                    )
-                }
-                Switch(
-                    checked = sheetShowEndedActivities,
-                    onCheckedChange = { checked -> sheetShowEndedActivities = checked }
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "显示已结束卡池",
-                        color = MiuixTheme.colorScheme.onBackground
-                    )
-                }
-                Switch(
-                    checked = sheetShowEndedPools,
-                    onCheckedChange = { checked -> sheetShowEndedPools = checked }
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier.heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "显示活动/卡池图片",
-                        color = MiuixTheme.colorScheme.onBackground
-                    )
-                }
-                Switch(
-                    checked = sheetShowCalendarPoolImages,
-                    onCheckedChange = { checked -> sheetShowCalendarPoolImages = checked }
-                )
-            }
-
             SheetDescriptionText(
                 text = "不同服务器时区不同，建议按实际游玩服务器设置。",
                 maxLines = 2,

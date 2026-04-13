@@ -49,8 +49,8 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.MiuixExpandableSection
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.SheetContentColumn
-import com.example.keios.ui.page.main.widget.SheetInputTitle
-import com.example.keios.ui.page.main.widget.SheetRow
+import com.example.keios.ui.page.main.widget.SheetControlRow
+import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
@@ -464,53 +464,32 @@ fun McpPage(
         }
     ) {
         SheetContentColumn {
-            SheetRow(
-                modifier = Modifier
-                    .padding(end = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    SheetInputTitle("服务名称")
+            SheetSectionTitle("基础设置")
+            SheetSectionCard {
+                SheetControlRow(label = "服务名称") {
+                    GlassSearchField(
+                        value = serverName,
+                        onValueChange = { serverName = it },
+                        label = "输入服务名称",
+                        backdrop = backdrop,
+                        variant = GlassVariant.SheetInput,
+                        singleLine = true,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(serverNameFieldWidth)
+                    )
                 }
-                GlassSearchField(
-                    value = serverName,
-                    onValueChange = { serverName = it },
-                    label = "输入服务名称",
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetInput,
-                    singleLine = true,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(serverNameFieldWidth)
-                )
-            }
-            SheetRow(
-                modifier = Modifier
-                    .padding(end = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 40.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    SheetInputTitle("服务端口")
+                SheetControlRow(label = "服务端口") {
+                    GlassSearchField(
+                        value = portText,
+                        onValueChange = { portText = it.filter(Char::isDigit).take(5) },
+                        label = "输入端口",
+                        backdrop = backdrop,
+                        variant = GlassVariant.SheetInput,
+                        singleLine = true,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(portFieldWidth)
+                    )
                 }
-                GlassSearchField(
-                    value = portText,
-                    onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-                    label = "输入端口",
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetInput,
-                    singleLine = true,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(portFieldWidth)
-                )
             }
             SheetSectionTitle("网络访问范围")
             McpNetworkModeOption(
@@ -533,14 +512,16 @@ fun McpPage(
                 text = "危险操作",
                 danger = true
             )
-            GlassTextButton(
-                backdrop = backdrop,
-                variant = GlassVariant.SheetDangerAction,
-                text = "重置 Token",
-                textColor = MiuixTheme.colorScheme.error,
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { showResetTokenConfirm = true }
-            )
+            SheetSectionCard {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetDangerAction,
+                    text = "重置 Token",
+                    textColor = MiuixTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showResetTokenConfirm = true }
+                )
+            }
         }
     }
 
