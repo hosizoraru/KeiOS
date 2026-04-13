@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -74,7 +75,9 @@ import com.example.keios.core.prefs.UiPrefs
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -104,9 +107,15 @@ fun MainScreen(
     val currentOnRequestNotificationPermission by rememberUpdatedState(onRequestNotificationPermission)
     val currentOnAppThemeModeChanged by rememberUpdatedState(onAppThemeModeChanged)
 
-    var liquidBottomBarEnabled by remember { mutableStateOf(UiPrefs.isLiquidBottomBarEnabled()) }
-    var cardPressFeedbackEnabled by remember { mutableStateOf(UiPrefs.isCardPressFeedbackEnabled()) }
-    var homeIconHdrEnabled by remember { mutableStateOf(UiPrefs.isHomeIconHdrEnabled()) }
+    val uiPrefsSnapshot by produceState(
+        initialValue = UiPrefs.defaultSnapshot(currentAppThemeMode)
+    ) {
+        value = withContext(Dispatchers.IO) { UiPrefs.loadSnapshot() }
+    }
+    var liquidBottomBarEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.liquidBottomBarEnabled) }
+    var cardPressFeedbackEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.cardPressFeedbackEnabled) }
+    var homeIconHdrEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.homeIconHdrEnabled) }
+    var visibleBottomPageNames by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.visibleBottomPageNames) }
     val view = LocalView.current
 
     if (!view.isInEditMode) {
@@ -131,6 +140,11 @@ fun MainScreen(
                     liquidBottomBarEnabled = liquidBottomBarEnabled,
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     homeIconHdrEnabled = homeIconHdrEnabled,
+                    visibleBottomPageNames = visibleBottomPageNames,
+                    onVisibleBottomPageNamesChange = { names ->
+                        visibleBottomPageNames = names
+                        UiPrefs.saveVisibleBottomPageNames(names)
+                    },
                     appLabel = currentAppLabel,
                     packageInfo = currentPackageInfo,
                     shizukuStatus = currentShizukuStatus,
@@ -204,6 +218,8 @@ private fun MainPagerLayout(
     liquidBottomBarEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
+    visibleBottomPageNames: Set<String>,
+    onVisibleBottomPageNamesChange: (Set<String>) -> Unit,
     appLabel: String,
     packageInfo: PackageInfo?,
     shizukuStatus: String,
@@ -212,7 +228,6 @@ private fun MainPagerLayout(
     shizukuApiUtils: ShizukuApiUtils,
     mcpServerManager: McpServerManager
 ) {
-    var visibleBottomPageNames by remember { mutableStateOf(UiPrefs.loadVisibleBottomPageNames()) }
     val tabs = remember(visibleBottomPageNames) {
         BottomPage.entries.filter { page ->
             page == BottomPage.Home || visibleBottomPageNames.contains(page.name)
@@ -428,13 +443,13 @@ private fun MainPagerLayout(
                             visibleBottomPages = tabs.toSet(),
                             onBottomPageVisibilityChange = { page, visible ->
                                 if (page == BottomPage.Home) return@HomePage
-                                visibleBottomPageNames = visibleBottomPageNames
+                                val updated = visibleBottomPageNames
                                     .toMutableSet()
                                     .apply {
                                         if (visible) add(page.name) else remove(page.name)
                                     }
                                     .toSet()
-                                UiPrefs.saveVisibleBottomPageNames(visibleBottomPageNames)
+                                onVisibleBottomPageNamesChange(updated)
                             },
                             onOpenSettings = { navigator.push(KeiosRoute.Settings) },
                             onOpenAbout = { navigator.push(KeiosRoute.About) },

@@ -155,59 +155,44 @@ fun BAPage(
         }
     }
 
-    val initialServerIndex = remember { BASettingsStore.loadServerIndex() }
-    val initialSnapshotNowMs = remember { System.currentTimeMillis() }
-    val initialCalendarCache = remember(initialServerIndex) {
-        BASettingsStore.loadCalendarCache(initialServerIndex)
-    }
-    val initialPoolCache = remember(initialServerIndex) {
-        BASettingsStore.loadPoolCache(initialServerIndex)
-    }
-    val initialCalendarEntries = remember(initialCalendarCache, initialSnapshotNowMs) {
-        runCatching {
-            decodeBaCalendarEntries(initialCalendarCache.first, initialSnapshotNowMs)
-        }.getOrElse { emptyList() }
-    }
-    val initialPoolEntries = remember(initialPoolCache, initialSnapshotNowMs) {
-        runCatching {
-            decodeBaPoolEntries(initialPoolCache.first, initialSnapshotNowMs)
-        }.getOrElse { emptyList() }
-    }
+    val initialSnapshot = remember { BASettingsStore.loadSnapshot() }
 
-    var serverIndex by remember { mutableIntStateOf(initialServerIndex) }
-    var cafeLevel by remember { mutableIntStateOf(BASettingsStore.loadCafeLevel()) }
-    var cafeStoredAp by remember { mutableStateOf(BASettingsStore.loadCafeStoredAp()) }
-    var cafeLastHourMs by remember { mutableLongStateOf(BASettingsStore.loadCafeLastHourMs()) }
-    var idNickname by remember { mutableStateOf(BASettingsStore.loadIdNickname()) }
-    var idFriendCode by remember { mutableStateOf(BASettingsStore.loadIdFriendCode()) }
-    var apLimit by remember { mutableIntStateOf(BASettingsStore.loadApLimit()) }
+    var serverIndex by remember { mutableIntStateOf(initialSnapshot.serverIndex) }
+    var cafeLevel by remember { mutableIntStateOf(initialSnapshot.cafeLevel) }
+    var cafeStoredAp by remember { mutableStateOf(initialSnapshot.cafeStoredAp) }
+    var cafeLastHourMs by remember { mutableLongStateOf(initialSnapshot.cafeLastHourMs) }
+    var idNickname by remember { mutableStateOf(initialSnapshot.idNickname) }
+    var idFriendCode by remember { mutableStateOf(initialSnapshot.idFriendCode) }
+    var apLimit by remember { mutableIntStateOf(initialSnapshot.apLimit) }
     var apCurrent by remember {
-        mutableStateOf(BASettingsStore.loadApCurrent().coerceAtLeast(0.0))
+        mutableStateOf(initialSnapshot.apCurrent.coerceAtLeast(0.0))
     }
-    var apRegenBaseMs by remember { mutableLongStateOf(BASettingsStore.loadApRegenBaseMs()) }
-    var apSyncMs by remember { mutableLongStateOf(BASettingsStore.loadApSyncMs()) }
-    var apNotifyEnabled by remember { mutableStateOf(BASettingsStore.loadApNotifyEnabled()) }
-    var apNotifyThreshold by remember { mutableIntStateOf(BASettingsStore.loadApNotifyThreshold()) }
-    var coffeeHeadpatMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeHeadpatMs()) }
-    var coffeeInvite1UsedMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeInvite1UsedMs()) }
-    var coffeeInvite2UsedMs by remember { mutableLongStateOf(BASettingsStore.loadCoffeeInvite2UsedMs()) }
+    var apRegenBaseMs by remember { mutableLongStateOf(initialSnapshot.apRegenBaseMs) }
+    var apSyncMs by remember { mutableLongStateOf(initialSnapshot.apSyncMs) }
+    var apNotifyEnabled by remember { mutableStateOf(initialSnapshot.apNotifyEnabled) }
+    var apNotifyThreshold by remember { mutableIntStateOf(initialSnapshot.apNotifyThreshold) }
+    var coffeeHeadpatMs by remember { mutableLongStateOf(initialSnapshot.coffeeHeadpatMs) }
+    var coffeeInvite1UsedMs by remember { mutableLongStateOf(initialSnapshot.coffeeInvite1UsedMs) }
+    var coffeeInvite2UsedMs by remember { mutableLongStateOf(initialSnapshot.coffeeInvite2UsedMs) }
     var uiNowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var baCalendarEntries by remember { mutableStateOf(initialCalendarEntries) }
-    var baCalendarLoading by remember { mutableStateOf(false) }
+    var baCalendarEntries by remember { mutableStateOf(emptyList<BaCalendarEntry>()) }
+    var baCalendarLoading by remember { mutableStateOf(true) }
     var baCalendarError by remember { mutableStateOf<String?>(null) }
-    var baCalendarLastSyncMs by remember { mutableLongStateOf(initialCalendarCache.second) }
+    var baCalendarLastSyncMs by remember { mutableLongStateOf(0L) }
     var baCalendarReloadSignal by remember { mutableIntStateOf(0) }
-    var baPoolEntries by remember { mutableStateOf(initialPoolEntries) }
-    var baPoolLoading by remember { mutableStateOf(false) }
+    var baPoolEntries by remember { mutableStateOf(emptyList<BaPoolEntry>()) }
+    var baPoolLoading by remember { mutableStateOf(true) }
     var baPoolError by remember { mutableStateOf<String?>(null) }
-    var baPoolLastSyncMs by remember { mutableLongStateOf(initialPoolCache.second) }
+    var baPoolLastSyncMs by remember { mutableLongStateOf(0L) }
     var baPoolReloadSignal by remember { mutableIntStateOf(0) }
-    var showEndedPools by remember { mutableStateOf(BASettingsStore.loadPoolShowEnded()) }
-    var showEndedActivities by remember { mutableStateOf(BASettingsStore.loadActivityShowEnded()) }
-    var showCalendarPoolImages by remember { mutableStateOf(BASettingsStore.loadShowCalendarPoolImages()) }
+    var showEndedPools by remember { mutableStateOf(initialSnapshot.showEndedPools) }
+    var showEndedActivities by remember { mutableStateOf(initialSnapshot.showEndedActivities) }
+    var showCalendarPoolImages by remember { mutableStateOf(initialSnapshot.showCalendarPoolImages) }
     var calendarRefreshIntervalHours by remember {
-        mutableIntStateOf(BASettingsStore.loadCalendarRefreshIntervalHours())
+        mutableIntStateOf(initialSnapshot.calendarRefreshIntervalHours)
     }
+    var calendarHydrationReady by remember { mutableStateOf(false) }
+    var poolHydrationReady by remember { mutableStateOf(false) }
 
     var sheetCafeLevel by remember { mutableIntStateOf(cafeLevel) }
     var sheetApNotifyEnabled by remember { mutableStateOf(apNotifyEnabled) }
@@ -685,30 +670,44 @@ fun BAPage(
         if (idFriendCodeInput != idFriendCode) idFriendCodeInput = idFriendCode
     }
 
+    LaunchedEffect(serverIndex) {
+        baCalendarLoading = true
+        baPoolLoading = true
+        baCalendarError = null
+        baPoolError = null
+        calendarHydrationReady = false
+        poolHydrationReady = false
+        calendarHydrationReady = true
+        delay(96)
+        poolHydrationReady = true
+    }
+
     LaunchedEffect(apCurrent, apNotifyEnabled, apNotifyThreshold) {
         tryApThresholdNotification()
     }
 
-    LaunchedEffect(serverIndex, baCalendarReloadSignal, calendarRefreshIntervalHours) {
+    LaunchedEffect(serverIndex, baCalendarReloadSignal, calendarRefreshIntervalHours, calendarHydrationReady) {
+        if (!calendarHydrationReady) return@LaunchedEffect
         val now = System.currentTimeMillis()
-        val (cachedRaw, cachedSyncMs) = BASettingsStore.loadCalendarCache(serverIndex)
-        val cachedVersion = BASettingsStore.loadCalendarCacheVersion(serverIndex)
-        val hasCache = cachedRaw.isNotBlank()
+        val cacheSnapshot = withContext(Dispatchers.IO) {
+            BASettingsStore.loadCalendarCacheSnapshot(serverIndex)
+        }
+        val hasCache = cacheSnapshot.raw.isNotBlank()
         val cachedEntries = if (hasCache) {
-            runCatching { decodeBaCalendarEntries(cachedRaw, now) }.getOrElse { emptyList() }
+            runCatching { decodeBaCalendarEntries(cacheSnapshot.raw, now) }.getOrElse { emptyList() }
         } else {
             emptyList()
         }
         val networkAvailable = isNetworkAvailable(context)
         val intervalMs = calendarRefreshIntervalHours.coerceAtLeast(1) * 60L * 60L * 1000L
-        val cacheExpired = !hasCache || cachedSyncMs <= 0L || (now - cachedSyncMs).coerceAtLeast(0L) >= intervalMs
-        val cacheSchemaExpired = cachedVersion < BA_CALENDAR_CACHE_SCHEMA_VERSION
+        val cacheExpired = !hasCache || cacheSnapshot.syncMs <= 0L || (now - cacheSnapshot.syncMs).coerceAtLeast(0L) >= intervalMs
+        val cacheSchemaExpired = cacheSnapshot.version < BA_CALENDAR_CACHE_SCHEMA_VERSION
         val forceRefresh = baCalendarReloadSignal > 0
         val shouldRequestNetwork = forceRefresh || cacheExpired || cacheSchemaExpired
 
         if (hasCache) {
             baCalendarEntries = cachedEntries
-            baCalendarLastSyncMs = cachedSyncMs
+            baCalendarLastSyncMs = cacheSnapshot.syncMs
         } else {
             baCalendarEntries = emptyList()
             baCalendarLastSyncMs = 0L
@@ -744,7 +743,7 @@ fun BAPage(
                 .onSuccess { entries ->
                     val effective = if (entries.isNotEmpty()) entries else cachedEntries
                     baCalendarEntries = effective
-                    baCalendarLastSyncMs = if (entries.isNotEmpty()) now else cachedSyncMs
+                    baCalendarLastSyncMs = if (entries.isNotEmpty()) now else cacheSnapshot.syncMs
                     baCalendarError = if (entries.isNotEmpty() || !hasCache) null else "本次返回空数据，已保留本地缓存"
                     if (entries.isNotEmpty()) {
                         BASettingsStore.saveCalendarCache(serverIndex, encodeBaCalendarEntries(entries), now)
@@ -753,7 +752,7 @@ fun BAPage(
                 .onFailure {
                     if (hasCache) {
                         baCalendarEntries = cachedEntries
-                        baCalendarLastSyncMs = cachedSyncMs
+                        baCalendarLastSyncMs = cacheSnapshot.syncMs
                         baCalendarError = "同步超时或网络失败，已显示本地缓存"
                     } else {
                         baCalendarError = "活动日历同步失败（超时或网络异常）"
@@ -764,26 +763,28 @@ fun BAPage(
         }
     }
 
-    LaunchedEffect(serverIndex, baPoolReloadSignal, calendarRefreshIntervalHours) {
+    LaunchedEffect(serverIndex, baPoolReloadSignal, calendarRefreshIntervalHours, poolHydrationReady) {
+        if (!poolHydrationReady) return@LaunchedEffect
         val now = System.currentTimeMillis()
-        val (cachedRaw, cachedSyncMs) = BASettingsStore.loadPoolCache(serverIndex)
-        val cachedVersion = BASettingsStore.loadPoolCacheVersion(serverIndex)
-        val hasCache = cachedRaw.isNotBlank()
+        val cacheSnapshot = withContext(Dispatchers.IO) {
+            BASettingsStore.loadPoolCacheSnapshot(serverIndex)
+        }
+        val hasCache = cacheSnapshot.raw.isNotBlank()
         val cachedEntries = if (hasCache) {
-            runCatching { decodeBaPoolEntries(cachedRaw, now) }.getOrElse { emptyList() }
+            runCatching { decodeBaPoolEntries(cacheSnapshot.raw, now) }.getOrElse { emptyList() }
         } else {
             emptyList()
         }
         val networkAvailable = isNetworkAvailable(context)
         val intervalMs = calendarRefreshIntervalHours.coerceAtLeast(1) * 60L * 60L * 1000L
-        val cacheExpired = !hasCache || cachedSyncMs <= 0L || (now - cachedSyncMs).coerceAtLeast(0L) >= intervalMs
-        val cacheSchemaExpired = cachedVersion < BA_POOL_CACHE_SCHEMA_VERSION
+        val cacheExpired = !hasCache || cacheSnapshot.syncMs <= 0L || (now - cacheSnapshot.syncMs).coerceAtLeast(0L) >= intervalMs
+        val cacheSchemaExpired = cacheSnapshot.version < BA_POOL_CACHE_SCHEMA_VERSION
         val forceRefresh = baPoolReloadSignal > 0
         val shouldRequestNetwork = forceRefresh || cacheExpired || cacheSchemaExpired
 
         if (hasCache) {
             baPoolEntries = cachedEntries
-            baPoolLastSyncMs = cachedSyncMs
+            baPoolLastSyncMs = cacheSnapshot.syncMs
         } else {
             baPoolEntries = emptyList()
             baPoolLastSyncMs = 0L
@@ -819,7 +820,7 @@ fun BAPage(
                 .onSuccess { entries ->
                     val effective = if (entries.isNotEmpty()) entries else cachedEntries
                     baPoolEntries = effective
-                    baPoolLastSyncMs = if (entries.isNotEmpty()) now else cachedSyncMs
+                    baPoolLastSyncMs = if (entries.isNotEmpty()) now else cacheSnapshot.syncMs
                     baPoolError = if (entries.isNotEmpty() || !hasCache) null else "本次返回空数据，已保留本地缓存"
                     if (entries.isNotEmpty()) {
                         BASettingsStore.savePoolCache(serverIndex, encodeBaPoolEntries(entries), now)
@@ -828,7 +829,7 @@ fun BAPage(
                 .onFailure {
                     if (hasCache) {
                         baPoolEntries = cachedEntries
-                        baPoolLastSyncMs = cachedSyncMs
+                        baPoolLastSyncMs = cacheSnapshot.syncMs
                         baPoolError = "同步超时或网络失败，已显示本地缓存"
                     } else {
                         baPoolError = "卡池同步失败（超时或网络异常）"

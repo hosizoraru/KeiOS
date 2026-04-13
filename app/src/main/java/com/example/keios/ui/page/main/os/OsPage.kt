@@ -74,7 +74,6 @@ import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -127,18 +126,20 @@ fun OsPage(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
+    val initialUiSnapshot = remember { OsUiStateStore.loadSnapshot() }
     var cacheLoaded by remember { mutableStateOf(false) }
     var cachePersisted by remember { mutableStateOf(false) }
     var queryInput by remember { mutableStateOf("") }
     var queryApplied by remember { mutableStateOf("") }
-    var topInfoExpanded by remember { mutableStateOf(OsUiStateStore.topInfoExpanded(defaultValue = true)) }
-    var systemTableExpanded by remember { mutableStateOf(OsUiStateStore.osSystemTableExpanded(defaultValue = false)) }
-    var secureTableExpanded by remember { mutableStateOf(OsUiStateStore.secureTableExpanded(defaultValue = false)) }
-    var globalTableExpanded by remember { mutableStateOf(OsUiStateStore.globalTableExpanded(defaultValue = false)) }
-    var androidPropsExpanded by remember { mutableStateOf(OsUiStateStore.androidPropsExpanded(defaultValue = false)) }
-    var javaPropsExpanded by remember { mutableStateOf(OsUiStateStore.javaPropsExpanded(defaultValue = false)) }
-    var linuxEnvExpanded by remember { mutableStateOf(OsUiStateStore.linuxEnvExpanded(defaultValue = false)) }
-    var visibleCards by remember { mutableStateOf(OsCardVisibilityStore.loadVisibleCards()) }
+    var topInfoExpanded by remember { mutableStateOf(initialUiSnapshot.topInfoExpanded) }
+    var systemTableExpanded by remember { mutableStateOf(initialUiSnapshot.systemTableExpanded) }
+    var secureTableExpanded by remember { mutableStateOf(initialUiSnapshot.secureTableExpanded) }
+    var globalTableExpanded by remember { mutableStateOf(initialUiSnapshot.globalTableExpanded) }
+    var androidPropsExpanded by remember { mutableStateOf(initialUiSnapshot.androidPropsExpanded) }
+    var javaPropsExpanded by remember { mutableStateOf(initialUiSnapshot.javaPropsExpanded) }
+    var linuxEnvExpanded by remember { mutableStateOf(initialUiSnapshot.linuxEnvExpanded) }
+    var visibleCards by remember { mutableStateOf(initialUiSnapshot.visibleCards) }
+    var uiStatePersistenceReady by remember { mutableStateOf(false) }
     var showCardManager by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
@@ -217,7 +218,7 @@ fun OsPage(
         updateSection(section) { it.copy(rows = fresh, loading = false, loadedFresh = true) }
         cachePersisted = withContext(Dispatchers.IO) {
             OsInfoCache.write(section, fresh)
-            OsInfoCache.hasPersistedCache(visibleSectionKinds())
+            OsInfoCache.readSnapshot(visibleSectionKinds()).hasPersistedCache
         }
     }
 
@@ -274,7 +275,9 @@ fun OsPage(
                 } else ensureLoad(SectionKind.LINUX, forceRefresh = true)
             }
         }
-        cachePersisted = withContext(Dispatchers.IO) { OsInfoCache.hasPersistedCache(visibleSectionKinds()) }
+        cachePersisted = withContext(Dispatchers.IO) {
+            OsInfoCache.readSnapshot(visibleSectionKinds()).hasPersistedCache
+        }
     }
 
     suspend fun refreshAllSections() {
@@ -304,9 +307,10 @@ fun OsPage(
 
     LaunchedEffect(Unit) {
         val visibleSections = visibleSectionKinds()
-        val (cached, persisted) = withContext(Dispatchers.IO) {
-            OsInfoCache.read(visibleSections) to OsInfoCache.hasPersistedCache(visibleSections)
+        val snapshot = withContext(Dispatchers.IO) {
+            OsInfoCache.readSnapshot(visibleSections)
         }
+        val cached = snapshot.cached
         sectionStates = mapOf(
             SectionKind.SYSTEM to SectionState(rows = if (visibleSections.contains(SectionKind.SYSTEM)) cached.system else emptyList()),
             SectionKind.SECURE to SectionState(rows = if (visibleSections.contains(SectionKind.SECURE)) cached.secure else emptyList()),
@@ -315,10 +319,13 @@ fun OsPage(
             SectionKind.JAVA to SectionState(rows = if (visibleSections.contains(SectionKind.JAVA)) cached.java else emptyList()),
             SectionKind.LINUX to SectionState(rows = if (visibleSections.contains(SectionKind.LINUX)) cached.linux else emptyList())
         )
-        cachePersisted = persisted
+        cachePersisted = snapshot.hasPersistedCache
         cacheLoaded = true
+        uiStatePersistenceReady = true
+        delay(48)
         visibleSections.forEach { section ->
             ensureLoad(section, forceRefresh = false)
+            delay(16)
         }
     }
 
@@ -330,43 +337,56 @@ fun OsPage(
     }
 
     LaunchedEffect(topInfoExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setTopInfoExpanded(topInfoExpanded) }
     }
     LaunchedEffect(systemTableExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setOsSystemTableExpanded(systemTableExpanded) }
     }
     LaunchedEffect(secureTableExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setSecureTableExpanded(secureTableExpanded) }
     }
     LaunchedEffect(globalTableExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setGlobalTableExpanded(globalTableExpanded) }
     }
     LaunchedEffect(androidPropsExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setAndroidPropsExpanded(androidPropsExpanded) }
     }
     LaunchedEffect(javaPropsExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setJavaPropsExpanded(javaPropsExpanded) }
     }
     LaunchedEffect(linuxEnvExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setLinuxEnvExpanded(linuxEnvExpanded) }
     }
 
-    LaunchedEffect(systemTableExpanded, visibleCards) {
+    LaunchedEffect(systemTableExpanded, visibleCards, cacheLoaded) {
+        if (!cacheLoaded) return@LaunchedEffect
         if (systemTableExpanded && isCardVisible(OsSectionCard.SYSTEM)) ensureLoad(SectionKind.SYSTEM)
     }
-    LaunchedEffect(secureTableExpanded, visibleCards) {
+    LaunchedEffect(secureTableExpanded, visibleCards, cacheLoaded) {
+        if (!cacheLoaded) return@LaunchedEffect
         if (secureTableExpanded && isCardVisible(OsSectionCard.SECURE)) ensureLoad(SectionKind.SECURE)
     }
-    LaunchedEffect(globalTableExpanded, visibleCards) {
+    LaunchedEffect(globalTableExpanded, visibleCards, cacheLoaded) {
+        if (!cacheLoaded) return@LaunchedEffect
         if (globalTableExpanded && isCardVisible(OsSectionCard.GLOBAL)) ensureLoad(SectionKind.GLOBAL)
     }
-    LaunchedEffect(androidPropsExpanded, visibleCards) {
+    LaunchedEffect(androidPropsExpanded, visibleCards, cacheLoaded) {
+        if (!cacheLoaded) return@LaunchedEffect
         if (androidPropsExpanded && isCardVisible(OsSectionCard.ANDROID)) ensureLoad(SectionKind.ANDROID)
     }
-    LaunchedEffect(javaPropsExpanded, visibleCards) {
+    LaunchedEffect(javaPropsExpanded, visibleCards, cacheLoaded) {
+        if (!cacheLoaded) return@LaunchedEffect
         if (javaPropsExpanded && isCardVisible(OsSectionCard.JAVA)) ensureLoad(SectionKind.JAVA)
     }
-    LaunchedEffect(linuxEnvExpanded, visibleCards) {
+    LaunchedEffect(linuxEnvExpanded, visibleCards, cacheLoaded) {
+        if (!cacheLoaded) return@LaunchedEffect
         if (linuxEnvExpanded && isCardVisible(OsSectionCard.LINUX)) ensureLoad(SectionKind.LINUX)
     }
 

@@ -86,6 +86,7 @@ import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.ui.page.main.widget.capturePopupAnchor
 import com.example.keios.feature.github.data.local.AppIconCache
+import com.example.keios.feature.github.data.local.GitHubTrackSnapshot
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubApiTokenReleaseStrategy
 import com.example.keios.feature.github.data.remote.GitHubReleaseStrategyRegistry
@@ -181,12 +182,12 @@ fun GitHubPage(
     var pendingDeleteItem by remember { mutableStateOf<GitHubTrackedApp?>(null) }
     var overviewRefreshState by remember { mutableStateOf(OverviewRefreshState.Idle) }
     var lastRefreshMs by remember { mutableStateOf(0L) }
-    var refreshIntervalHours by remember { mutableStateOf(GitHubTrackStore.loadRefreshIntervalHours()) }
+    var refreshIntervalHours by remember { mutableStateOf(3) }
     var refreshProgress by remember { mutableStateOf(0f) }
-    var lookupConfig by remember { mutableStateOf(GitHubTrackStore.loadLookupConfig()) }
-    var selectedStrategyInput by remember { mutableStateOf(lookupConfig.selectedStrategy) }
-    var githubApiTokenInput by remember { mutableStateOf(lookupConfig.apiToken) }
-    var checkAllTrackedPreReleasesInput by remember { mutableStateOf(lookupConfig.checkAllTrackedPreReleases) }
+    var lookupConfig by remember { mutableStateOf(GitHubLookupConfig()) }
+    var selectedStrategyInput by remember { mutableStateOf(GitHubLookupStrategyOption.AtomFeed) }
+    var githubApiTokenInput by remember { mutableStateOf("") }
+    var checkAllTrackedPreReleasesInput by remember { mutableStateOf(false) }
     var refreshIntervalHoursInput by remember { mutableStateOf(refreshIntervalHours) }
     var showApiTokenPlainText by remember { mutableStateOf(false) }
     var strategyBenchmarkRunning by remember { mutableStateOf(false) }
@@ -211,26 +212,26 @@ fun GitHubPage(
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
-    val initialLookupConfig = remember { GitHubTrackStore.loadLookupConfig() }
-    val initialTrackedItems = remember { GitHubTrackStore.load() }
-    val initialCheckCache = remember { GitHubTrackStore.loadCheckCache() }
-    val initialRefreshIntervalHours = remember { GitHubTrackStore.loadRefreshIntervalHours() }
+    val trackSnapshot by produceState(initialValue = GitHubTrackSnapshot()) {
+        value = withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
+    }
 
-    LaunchedEffect(initialLookupConfig, initialTrackedItems, initialCheckCache, initialRefreshIntervalHours) {
-        val activeStrategyId = initialLookupConfig.selectedStrategy.storageId
-        lookupConfig = initialLookupConfig
-        selectedStrategyInput = initialLookupConfig.selectedStrategy
-        githubApiTokenInput = initialLookupConfig.apiToken
-        checkAllTrackedPreReleasesInput = initialLookupConfig.checkAllTrackedPreReleases
-        refreshIntervalHours = initialRefreshIntervalHours
-        refreshIntervalHoursInput = initialRefreshIntervalHours
+    LaunchedEffect(trackSnapshot) {
+        val activeStrategyId = trackSnapshot.lookupConfig.selectedStrategy.storageId
+        lookupConfig = trackSnapshot.lookupConfig
+        selectedStrategyInput = trackSnapshot.lookupConfig.selectedStrategy
+        githubApiTokenInput = trackSnapshot.lookupConfig.apiToken
+        checkAllTrackedPreReleasesInput = trackSnapshot.lookupConfig.checkAllTrackedPreReleases
+        refreshIntervalHours = trackSnapshot.refreshIntervalHours
+        refreshIntervalHoursInput = trackSnapshot.refreshIntervalHours
 
         trackedItems.clear()
-        trackedItems.addAll(initialTrackedItems)
+        trackedItems.addAll(trackSnapshot.items)
 
-        val (cachedStates, cachedRefreshMs) = initialCheckCache
+        val cachedStates = trackSnapshot.checkCache
+        val cachedRefreshMs = trackSnapshot.lastRefreshMs
         checkStates.clear()
-        initialTrackedItems.forEach { item ->
+        trackSnapshot.items.forEach { item ->
             cachedStates[item.id]
                 ?.takeIf { cache ->
                     val sourceId = cache.sourceStrategyId.ifBlank { GitHubLookupStrategyOption.AtomFeed.storageId }
@@ -263,8 +264,8 @@ fun GitHubPage(
         }
         lastRefreshMs = cachedRefreshMs
 
-        val hasTracked = initialTrackedItems.isNotEmpty()
-        val hasCachedForTracked = initialTrackedItems.any { item ->
+        val hasTracked = trackSnapshot.items.isNotEmpty()
+        val hasCachedForTracked = trackSnapshot.items.any { item ->
             cachedStates[item.id]?.let { cache ->
                 val sourceId = cache.sourceStrategyId.ifBlank { GitHubLookupStrategyOption.AtomFeed.storageId }
                 sourceId == activeStrategyId

@@ -95,7 +95,10 @@ import com.kyant.shapes.RoundedRectangle
 import com.tencent.mmkv.MMKV
 import java.util.concurrent.TimeUnit
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 import com.rosan.installer.ui.library.effect.BgEffectBackground
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -140,13 +143,33 @@ private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
     Color(0xFFFF5893)
 )
 
-private data class HomeBaOverview(
-    val activated: Boolean,
-    val apCurrent: Int,
-    val apLimit: Int,
-    val cafeStored: Int,
-    val cafeCap: Int
+private data class HomeGitHubOverview(
+    val trackedCount: Int = 0,
+    val cacheHitCount: Int = 0,
+    val updatableCount: Int = 0,
+    val cachedRefreshMs: Long = 0L,
+    val loaded: Boolean = false
 )
+
+private data class HomeBaOverview(
+    val activated: Boolean = false,
+    val apCurrent: Int = 0,
+    val apLimit: Int = HOME_BA_AP_LIMIT_MAX,
+    val cafeStored: Int = 0,
+    val cafeCap: Int = HOME_BA_CAFE_DAILY_AP_BY_LEVEL.last(),
+    val loaded: Boolean = false
+)
+
+private fun loadHomeGitHubOverview(): HomeGitHubOverview {
+    val snapshot = GitHubTrackStore.loadSnapshot()
+    return HomeGitHubOverview(
+        trackedCount = snapshot.items.size,
+        cacheHitCount = snapshot.items.count { snapshot.checkCache.containsKey(it.id) },
+        updatableCount = snapshot.items.count { snapshot.checkCache[it.id]?.hasUpdate == true },
+        cachedRefreshMs = snapshot.lastRefreshMs,
+        loaded = true
+    )
+}
 
 private fun loadHomeBaOverview(): HomeBaOverview {
     val kv = MMKV.mmkvWithID(HOME_BA_KV_ID)
@@ -177,7 +200,8 @@ private fun loadHomeBaOverview(): HomeBaOverview {
         apCurrent = apCurrent,
         apLimit = apLimit,
         cafeStored = cafeStored,
-        cafeCap = cafeCap
+        cafeCap = cafeCap,
+        loaded = true
     )
 }
 
@@ -407,26 +431,36 @@ fun HomePage(
         }.getOrDefault("版本未知")
     }
 
-    val trackedItems = GitHubTrackStore.load()
-    val (cachedStates, cachedRefreshMs) = GitHubTrackStore.loadCheckCache()
-    val trackedCount = trackedItems.size
-    val cacheHitCount = trackedItems.count { cachedStates.containsKey(it.id) }
-    val updatableCount = trackedItems.count { cachedStates[it.id]?.hasUpdate == true }
-    val cacheStateColor = if (cacheHitCount > 0) githubCacheColor else inactiveColor
+    var githubOverview by remember { mutableStateOf(HomeGitHubOverview()) }
+    var baOverview by remember { mutableStateOf(HomeBaOverview()) }
+    LaunchedEffect(Unit) {
+        baOverview = withContext(Dispatchers.IO) { loadHomeBaOverview() }
+        delay(72)
+        githubOverview = withContext(Dispatchers.IO) { loadHomeGitHubOverview() }
+    }
+    val trackedCount = githubOverview.trackedCount
+    val cacheHitCount = githubOverview.cacheHitCount
+    val updatableCount = githubOverview.updatableCount
+    val cacheStateColor = when {
+        !githubOverview.loaded -> inactiveColor
+        cacheHitCount > 0 -> githubCacheColor
+        else -> inactiveColor
+    }
 
     val networkModeText = if (mcpAllowExternal) "局域网可访问" else "仅本机"
-    val cacheRefreshLine = if (cachedRefreshMs > 0L) formatGitHubCacheAgo(cachedRefreshMs) else "未刷新"
+    val cacheRefreshLine = if (githubOverview.cachedRefreshMs > 0L) formatGitHubCacheAgo(githubOverview.cachedRefreshMs) else "未刷新"
     val githubLastUpdateLine = when {
+        !githubOverview.loaded -> "读取中"
         trackedCount == 0 -> "未配置"
         cacheHitCount == 0 -> "暂无缓存"
         else -> cacheRefreshLine
     }
     val githubUpdatableLine = when {
+        !githubOverview.loaded -> "读取中"
         trackedCount == 0 -> "0 项"
         cacheHitCount == 0 -> "待刷新"
         else -> "$updatableCount 项"
     }
-    val baOverview = loadHomeBaOverview()
 
     var logoHeightPx by remember { mutableIntStateOf(0) }
     val scrollProgress by remember {
@@ -761,7 +795,11 @@ fun HomePage(
                         )
                         StatusPill(
                             label = "BA",
-                            color = if (baOverview.activated) runningColor else stoppedColor,
+                            color = when {
+                                !baOverview.loaded -> inactiveColor
+                                baOverview.activated -> runningColor
+                                else -> stoppedColor
+                            },
                             modifier = Modifier.defaultMinSize(minWidth = 68.dp)
                         )
                         StatusPill(
@@ -833,7 +871,11 @@ fun HomePage(
                         ) {
                             HomeInlineInfoItem(
                                 "BA",
-                                "AP：${baOverview.apCurrent}/${baOverview.apLimit}   咖啡厅AP：${baOverview.cafeStored}/${baOverview.cafeCap}"
+                                if (baOverview.loaded) {
+                                    "AP：${baOverview.apCurrent}/${baOverview.apLimit}   咖啡厅AP：${baOverview.cafeStored}/${baOverview.cafeCap}"
+                                } else {
+                                    "读取中"
+                                }
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
