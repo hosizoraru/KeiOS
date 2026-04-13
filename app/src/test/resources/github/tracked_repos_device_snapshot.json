@@ -1,0 +1,202 @@
+[
+  {
+    "repoUrl": "https://github.com/jay3-yy/BiliPai",
+    "owner": "jay3-yy",
+    "repo": "BiliPai",
+    "packageName": "com.android.purebilibili",
+    "appLabel": "BiliPai",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/bggRGjQaUbCoE/PiliPlus",
+    "owner": "bggRGjQaUbCoE",
+    "repo": "PiliPlus",
+    "packageName": "com.example.piliplus",
+    "appLabel": "PiliPlus",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/AChep/keyguard-app",
+    "owner": "AChep",
+    "repo": "keyguard-app",
+    "packageName": "com.artemchep.keyguard",
+    "appLabel": "Keyguard",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/Itosang/BatteryRecorder",
+    "owner": "Itosang",
+    "repo": "BatteryRecorder",
+    "packageName": "yangfentuozi.batteryrecorder",
+    "appLabel": "BatteryRecorder",
+    "checkPreRelease": true
+  },
+  {
+    "repoUrl": "https://github.com/FrancoGiudans/Capsulyric",
+    "owner": "FrancoGiudans",
+    "repo": "Capsulyric",
+    "packageName": "com.franco.capsulyric",
+    "appLabel": "Capsulyric",
+    "checkPreRelease": true
+  },
+  {
+    "repoUrl": "https://github.com/xororz/local-dream",
+    "owner": "xororz",
+    "repo": "local-dream",
+    "packageName": "io.github.xororz.localdream",
+    "appLabel": "Local Dream",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/LanRhyme/MicYou",
+    "owner": "LanRhyme",
+    "repo": "MicYou",
+    "packageName": "com.lanrhyme.micyou",
+    "appLabel": "MicYou",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/YumeLira/YumeBox",
+    "owner": "YumeLira",
+    "repo": "YumeBox",
+    "packageName": "com.github.yumelira.yumebox",
+    "appLabel": "YumeBox",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/YuKongA/Updater-KMP",
+    "owner": "YuKongA",
+    "repo": "Updater-KMP",
+    "packageName": "top.yukonga.updater.kmp",
+    "appLabel": "Updater",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/amir1376/ab-download-manager",
+    "owner": "amir1376",
+    "repo": "ab-download-manager",
+    "packageName": "com.abdownloadmanager",
+    "appLabel": "AB DM",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/AhmetCanArslan/ShizuWall",
+    "owner": "AhmetCanArslan",
+    "repo": "ShizuWall",
+    "packageName": "com.arslan.shizuwall",
+    "appLabel": "ShizuWall",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/DimensionDev/Flare",
+    "owner": "DimensionDev",
+    "repo": "Flare",
+    "packageName": "dev.dimension.flare",
+    "appLabel": "Flare",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/open-ani/animeko",
+    "owner": "open-ani",
+    "repo": "animeko",
+    "packageName": "me.him188.ani",
+    "appLabel": "Animeko",
+    "checkPreRelease": true
+  },
+  {
+    "repoUrl": "https://github.com/anilbeesetti/nextplayer",
+    "owner": "anilbeesetti",
+    "repo": "nextplayer",
+    "packageName": "dev.anilbeesetti.nextplayer",
+    "appLabel": "Next Player",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/mihonapp/mihon",
+    "owner": "mihonapp",
+    "repo": "mihon",
+    "packageName": "app.mihon",
+    "appLabel": "Mihon",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/Notsfsssf/pixez-flutter",
+    "owner": "Notsfsssf",
+    "repo": "pixez-flutter",
+    "packageName": "com.perol.pixez",
+    "appLabel": "PixEz",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/CeuiLiSA/Pixiv-Shaft",
+    "owner": "CeuiLiSA",
+    "repo": "Pixiv-Shaft",
+    "packageName": "ceui.pixiv.shaft",
+    "appLabel": "Shaft2",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/rikkahub/rikkahub",
+    "owner": "rikkahub",
+    "repo": "rikkahub",
+    "packageName": "me.rerere.rikkahub",
+    "appLabel": "RikkaHub",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/T8RIN/ImageToolbox",
+    "owner": "T8RIN",
+    "repo": "ImageToolbox",
+    "packageName": "ru.tech.imageresizershrinker",
+    "appLabel": "Image Toolbox",
+    "checkPreRelease": true
+  },
+  {
+    "repoUrl": "https://github.com/JanYoStudio/WhatAnime",
+    "owner": "JanYoStudio",
+    "repo": "WhatAnime",
+    "packageName": "pw.janyo.whatanime",
+    "appLabel": "WhatAnime",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/venera-app/venera",
+    "owner": "venera-app",
+    "repo": "venera",
+    "packageName": "com.github.wgh136.venera",
+    "appLabel": "venera",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/badnng/Hyper-pick-up-code",
+    "owner": "badnng",
+    "repo": "Hyper-pick-up-code",
+    "packageName": "com.Badnng.moe",
+    "appLabel": "æ¾æ¹è®°",
+    "checkPreRelease": true
+  },
+  {
+    "repoUrl": "https://github.com/Moriafly/SaltPlayerSource",
+    "owner": "Moriafly",
+    "repo": "SaltPlayerSource",
+    "packageName": "com.salt.music",
+    "appLabel": "Salt Player",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/NEORUAA/WeType_UI_Enhanced",
+    "owner": "NEORUAA",
+    "repo": "WeType_UI_Enhanced",
+    "packageName": "com.xposed.wetypehook",
+    "appLabel": "WeType ç¾å",
+    "checkPreRelease": false
+  },
+  {
+    "repoUrl": "https://github.com/monogram-android/monogram",
+    "owner": "monogram-android",
+    "repo": "monogram",
+    "packageName": "org.monogram",
+    "appLabel": "MonoGram",
+    "checkPreRelease": true
+  }
+]
