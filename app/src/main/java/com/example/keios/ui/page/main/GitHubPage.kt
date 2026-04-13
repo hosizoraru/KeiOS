@@ -422,6 +422,14 @@ fun GitHubPage(
         }
     }
 
+    fun openExternalUrl(url: String, failureMessage: String = "无法打开链接") {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }.onFailure {
+            Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun saveTracked() {
         GitHubTrackStore.save(trackedItems.toList())
     }
@@ -1129,6 +1137,37 @@ fun GitHubPage(
                 }
                 SheetDescriptionText(
                     text = "API 方案会直接调用 Releases API。未填写 token 时自动走游客 API，适合刚开始少量追踪；若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
+                )
+                SheetSectionTitle("推荐新建")
+                GitHubRecommendedTokenGuideCard(
+                    guide = githubRecommendedTokenGuide
+                )
+                GlassTextButton(
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetAction,
+                    text = "打开预填创建页",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        openExternalUrl(
+                            url = buildGitHubFineGrainedTokenTemplateUrl(),
+                            failureMessage = "无法打开 GitHub 创建页"
+                        )
+                    }
+                )
+                GlassTextButton(
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetAction,
+                    text = "查看官方说明",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        openExternalUrl(
+                            url = githubFineGrainedPatDocsUrl,
+                            failureMessage = "无法打开官方说明"
+                        )
+                    }
+                )
+                SheetDescriptionText(
+                    text = "推荐单独创建一个 KeiOS 专用 Fine-grained token，不要复用现有 classic token。这样即使 token 泄露，暴露面也更小。"
                 )
                 GlassTextButton(
                     backdrop = backdrop,

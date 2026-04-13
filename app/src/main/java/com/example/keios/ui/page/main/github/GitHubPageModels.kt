@@ -30,6 +30,18 @@ internal data class GitHubStrategyGuide(
     val requirement: String
 )
 
+internal data class GitHubTokenGuideField(
+    val label: String,
+    val value: String,
+    val emphasized: Boolean = false
+)
+
+internal data class GitHubRecommendedTokenGuide(
+    val summary: String,
+    val fields: List<GitHubTokenGuideField>,
+    val notes: List<String>
+)
+
 internal enum class GitHubSortMode(val label: String) {
     UpdateFirst("更新优先"),
     NameAsc("名称 A-Z"),
@@ -101,32 +113,102 @@ private fun String.maskedApiPreview(): String {
     val token = trim()
     if (token.isBlank()) return "游客"
 
-    val prefix = when {
-        token.startsWith("github_pat_") -> "PAT"
-        token.startsWith("ghp_") -> "GHP"
-        token.startsWith("gho_") -> "GHO"
-        token.startsWith("ghu_") -> "GHU"
-        token.startsWith("ghs_") -> "GHS"
-        token.startsWith("ghr_") -> "GHR"
-        else -> "KEY"
-    }
-    val body = token.substringAfterLast('_', token)
-    val head = when {
-        body.length >= 10 -> body.take(4)
-        body.length >= 6 -> body.take(3)
-        else -> body.take(2)
-    }
-    val tail = when {
-        body.length >= 10 -> body.takeLast(4)
-        body.length >= 6 -> body.takeLast(3)
-        else -> body.takeLast(2)
-    }
-    return if (body.length <= 4) {
-        "$prefix $body"
-    } else {
-        "$prefix $head…$tail"
+    return when {
+        token.startsWith("github_pat_") -> "FG ${token.fineGrainedMarker()}"
+        token.startsWith("ghp_") -> "CL ${token.compactMarker(prefix = "ghp_")}"
+        token.startsWith("gho_") -> "OA ${token.compactMarker(prefix = "gho_")}"
+        token.startsWith("ghu_") -> "US ${token.compactMarker(prefix = "ghu_")}"
+        token.startsWith("ghs_") -> "SV ${token.compactMarker(prefix = "ghs_")}"
+        token.startsWith("ghr_") -> "RF ${token.compactMarker(prefix = "ghr_")}"
+        else -> "KEY ${token.compactMarker()}"
     }
 }
+
+private fun String.fineGrainedMarker(): String {
+    val payload = removePrefix("github_pat_")
+    val segmentA = payload.substringBefore('_', "").tokenFingerprintSource()
+    val segmentB = payload.substringAfterLast('_', "").tokenFingerprintSource()
+    return buildCompactMarker(
+        headSource = segmentA.ifBlank { payload.tokenFingerprintSource() },
+        tailSource = segmentB.ifBlank { payload.tokenFingerprintSource() }
+    )
+}
+
+private fun String.compactMarker(prefix: String = ""): String {
+    return buildCompactMarker(
+        headSource = removePrefix(prefix).tokenFingerprintSource(),
+        tailSource = removePrefix(prefix).tokenFingerprintSource()
+    )
+}
+
+private fun buildCompactMarker(
+    headSource: String,
+    tailSource: String
+): String {
+    val head = headSource.take(2)
+    val tail = tailSource.takeLast(2)
+    return when {
+        head.isBlank() && tail.isBlank() -> "--"
+        head.isBlank() -> tail
+        tail.isBlank() -> head
+        head == tail -> head
+        else -> "$head…$tail"
+    }
+}
+
+private fun String.tokenFingerprintSource(): String {
+    return filter { it.isLetterOrDigit() }
+}
+
+internal const val githubFineGrainedPatDocsUrl =
+    "https://docs.github.com/en/enterprise-cloud@latest/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens?apiVersion=2022-11-28"
+
+internal fun buildGitHubFineGrainedTokenTemplateUrl(): String {
+    return "https://github.com/settings/personal-access-tokens/new" +
+        "?name=KeiOS%20Release%20Read" +
+        "&description=Read-only%20release%20check%20token%20for%20KeiOS" +
+        "&expires_in=90" +
+        "&contents=read"
+}
+
+internal val githubRecommendedTokenGuide = GitHubRecommendedTokenGuide(
+    summary = "推荐为 KeiOS 单独创建一个 Fine-grained PAT；读取 Releases API 的最小权限可收敛到只读仓库内容，公开仓库追踪不受选仓限制。",
+    fields = listOf(
+        GitHubTokenGuideField(
+            label = "类型",
+            value = "Fine-grained PAT",
+            emphasized = true
+        ),
+        GitHubTokenGuideField(
+            label = "Owner",
+            value = "单用户 / 单组织"
+        ),
+        GitHubTokenGuideField(
+            label = "仓库",
+            value = "Only select repositories"
+        ),
+        GitHubTokenGuideField(
+            label = "上限",
+            value = "Selected repos 最多 50"
+        ),
+        GitHubTokenGuideField(
+            label = "权限",
+            value = "Contents: Read",
+            emphasized = true
+        ),
+        GitHubTokenGuideField(
+            label = "过期",
+            value = "90 天"
+        )
+    ),
+    notes = listOf(
+        "`Only select repositories` 仅限制当前 owner 下额外授权的仓库；公开仓库仍可正常追踪，不会挡住别人的 public repo。",
+        "`MAX 50 repositories` 指 `Selected repositories` 里手动勾选的仓库上限，只算当前 owner 下所选仓库，不是 GitHub 全站上限，也不是全部可访问仓库总数。",
+        "若资源 owner 选组织且组织要求审批，token 可能先处于 pending；批准前通常只能读取 public 资源。",
+        "若组织启用 SSO，创建或首次使用时可能需要先完成组织 SSO。",
+        "Classic token 只建议作为兼容兜底；它通常覆盖你可访问的更多仓库，权限面更大。"
+    )
+)
 
 internal val githubStrategyGuides: List<GitHubStrategyGuide> = listOf(
     GitHubStrategyGuide(

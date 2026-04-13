@@ -283,6 +283,64 @@ internal fun GitHubStrategyDraftSummaryCard(
 }
 
 @Composable
+internal fun GitHubRecommendedTokenGuideCard(
+    guide: GitHubRecommendedTokenGuide
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        showIndication = false,
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "推荐新建方案",
+                    color = GitHubStatusPalette.Update,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                StatusPill(
+                    label = "最小权限",
+                    color = GitHubStatusPalette.Update
+                )
+            }
+            Text(
+                text = guide.summary,
+                color = MiuixTheme.colorScheme.onBackgroundVariant
+            )
+            guide.fields.forEach { field ->
+                GitHubCompactInfoRow(
+                    label = field.label,
+                    value = field.value,
+                    valueColor = if (field.emphasized) GitHubStatusPalette.Update else MiuixTheme.colorScheme.onBackground,
+                    emphasized = field.emphasized,
+                    titleMinWidth = 52.dp
+                )
+            }
+            guide.notes.forEach { note ->
+                Text(
+                    text = note,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
 internal fun GitHubStrategyBenchmarkCard(
     result: GitHubStrategyBenchmarkResult
 ) {
