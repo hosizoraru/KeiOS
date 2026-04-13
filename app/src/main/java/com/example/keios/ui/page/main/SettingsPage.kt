@@ -36,6 +36,9 @@ import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.capturePopupAnchor
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import com.example.keios.ui.page.main.widget.LiquidDropdownImpl
@@ -52,9 +55,6 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun SettingsPage(
@@ -64,6 +64,8 @@ fun SettingsPage(
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     homeIconHdrEnabled: Boolean,
     onHomeIconHdrChanged: (Boolean) -> Unit,
+    cacheDiagnosticsEnabled: Boolean,
+    onCacheDiagnosticsChanged: (Boolean) -> Unit,
     appThemeMode: AppThemeMode,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     onBack: () -> Unit
@@ -87,7 +89,16 @@ fun SettingsPage(
         )
     }
     val currentThemeLabel = themeModeOptions.firstOrNull { it.first == appThemeMode }?.second ?: "跟随系统"
-    val cacheEntries by produceState<List<CacheEntrySummary>?>(initialValue = null, cacheReloadSignal) {
+    val cacheEntries by produceState<List<CacheEntrySummary>?>(
+        initialValue = if (cacheDiagnosticsEnabled) null else emptyList(),
+        cacheDiagnosticsEnabled,
+        cacheReloadSignal
+    ) {
+        if (!cacheDiagnosticsEnabled) {
+            value = emptyList()
+            return@produceState
+        }
+        value = null
         value = withContext(Dispatchers.IO) { CacheStores.list(context) }
     }
 
@@ -276,7 +287,7 @@ fun SettingsPage(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.defaultColors(
-                        color = enabledCardColor,
+                        color = if (cacheDiagnosticsEnabled) enabledCardColor else disabledCardColor,
                         contentColor = titleColor
                     ),
                     onClick = {}
@@ -287,11 +298,36 @@ fun SettingsPage(
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "缓存",
-                            color = titleColor
+                        SettingsSectionCard(
+                            header = "Cache",
+                            title = "缓存诊断",
+                            summary = if (cacheDiagnosticsEnabled) {
+                                "统计各页面缓存条数、占用空间与最近活动时间"
+                            } else {
+                                "关闭后不再遍历缓存目录与存储项，减少设置页额外统计开销"
+                            },
+                            infoKey = "作用范围",
+                            infoValue = if (cacheDiagnosticsEnabled) {
+                                "设置页会读取 GitHub / MCP / 系统 / BA 等页面缓存摘要"
+                            } else {
+                                "仅关闭设置页缓存诊断统计，不影响各页面实际缓存与正常使用"
+                            },
+                            trailing = {
+                                Switch(
+                                    checked = cacheDiagnosticsEnabled,
+                                    onCheckedChange = { checked -> onCacheDiagnosticsChanged(checked) }
+                                )
+                            },
+                            onClick = { onCacheDiagnosticsChanged(!cacheDiagnosticsEnabled) }
                         )
                         when {
+                            !cacheDiagnosticsEnabled -> {
+                                Text(
+                                    text = "已关闭缓存诊断统计。设置页不会再读取缓存大小、更新时间或清理记录。",
+                                    color = subtitleColor
+                                )
+                            }
+
                             cacheEntries == null -> {
                                 Text(
                                     text = "正在读取各页面缓存摘要",

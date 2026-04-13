@@ -115,6 +115,7 @@ fun MainScreen(
     var liquidBottomBarEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.liquidBottomBarEnabled) }
     var cardPressFeedbackEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.cardPressFeedbackEnabled) }
     var homeIconHdrEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.homeIconHdrEnabled) }
+    var cacheDiagnosticsEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.cacheDiagnosticsEnabled) }
     var visibleBottomPageNames by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.visibleBottomPageNames) }
     val view = LocalView.current
 
@@ -170,6 +171,11 @@ fun MainScreen(
                     onHomeIconHdrChanged = {
                         homeIconHdrEnabled = it
                         UiPrefs.setHomeIconHdrEnabled(it)
+                    },
+                    cacheDiagnosticsEnabled = cacheDiagnosticsEnabled,
+                    onCacheDiagnosticsChanged = {
+                        cacheDiagnosticsEnabled = it
+                        UiPrefs.setCacheDiagnosticsEnabled(it)
                     },
                     appThemeMode = currentAppThemeMode,
                     onAppThemeModeChanged = currentOnAppThemeModeChanged,
