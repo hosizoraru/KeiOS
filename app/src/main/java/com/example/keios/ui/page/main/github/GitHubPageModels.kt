@@ -37,6 +37,7 @@ internal data class GitHubTokenGuideField(
 )
 
 internal data class GitHubRecommendedTokenGuide(
+    val collapsedSummary: String,
     val summary: String,
     val fields: List<GitHubTokenGuideField>,
     val notes: List<String>
@@ -172,6 +173,7 @@ internal fun buildGitHubFineGrainedTokenTemplateUrl(): String {
 }
 
 internal val githubRecommendedTokenGuide = GitHubRecommendedTokenGuide(
+    collapsedSummary = "Fine-grained PAT · Contents: Read · public repo 可追踪",
     summary = "推荐为 KeiOS 单独创建一个 Fine-grained PAT；读取 Releases API 的最小权限可收敛到只读仓库内容，公开仓库追踪不受选仓限制。",
     fields = listOf(
         GitHubTokenGuideField(

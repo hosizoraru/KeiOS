@@ -173,6 +173,7 @@ fun GitHubPage(
     var credentialCheckRunning by remember { mutableStateOf(false) }
     var credentialCheckError by remember { mutableStateOf<String?>(null) }
     var credentialCheckStatus by remember { mutableStateOf<GitHubApiCredentialStatus?>(null) }
+    var recommendedTokenGuideExpanded by remember { mutableStateOf(false) }
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
@@ -261,6 +262,7 @@ fun GitHubPage(
         credentialCheckStatus = null
         strategyBenchmarkError = null
         strategyBenchmarkReport = null
+        recommendedTokenGuideExpanded = false
         showStrategySheet = true
     }
 
@@ -268,6 +270,7 @@ fun GitHubPage(
         showStrategySheet = false
         showApiTokenPlainText = false
         credentialCheckRunning = false
+        recommendedTokenGuideExpanded = false
     }
 
     suspend fun reloadApps() {
@@ -1198,7 +1201,10 @@ fun GitHubPage(
                 )
                 SheetSectionTitle("推荐新建")
                 GitHubRecommendedTokenGuideCard(
-                    guide = githubRecommendedTokenGuide
+                    guide = githubRecommendedTokenGuide,
+                    backdrop = backdrop,
+                    expanded = recommendedTokenGuideExpanded,
+                    onExpandedChange = { recommendedTokenGuideExpanded = it }
                 )
                 GlassTextButton(
                     backdrop = backdrop,

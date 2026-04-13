@@ -1,5 +1,6 @@
 package com.example.keios.ui.page.main
 
+import com.kyant.backdrop.Backdrop
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -30,6 +31,7 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
+import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.Dispatchers
@@ -284,39 +286,30 @@ internal fun GitHubStrategyDraftSummaryCard(
 
 @Composable
 internal fun GitHubRecommendedTokenGuideCard(
-    guide: GitHubRecommendedTokenGuide
+    guide: GitHubRecommendedTokenGuide,
+    backdrop: Backdrop?,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        showIndication = false,
-        onClick = {}
+    MiuixAccordionCard(
+        backdrop = backdrop,
+        title = "推荐新建方案",
+        subtitle = guide.collapsedSummary,
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        headerActions = {
+            StatusPill(
+                label = "最小权限",
+                color = GitHubStatusPalette.Update
+            )
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(vertical = 2.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "推荐新建方案",
-                    color = GitHubStatusPalette.Update,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                StatusPill(
-                    label = "最小权限",
-                    color = GitHubStatusPalette.Update
-                )
-            }
             Text(
                 text = guide.summary,
                 color = MiuixTheme.colorScheme.onBackgroundVariant

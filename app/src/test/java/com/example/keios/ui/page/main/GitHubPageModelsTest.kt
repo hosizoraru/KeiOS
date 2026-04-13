@@ -59,6 +59,9 @@ class GitHubPageModelsTest {
     @Test
     fun `recommended token guide clarifies public access and selected repo cap`() {
         assertTrue(
+            githubRecommendedTokenGuide.collapsedSummary.contains("Fine-grained PAT")
+        )
+        assertTrue(
             githubRecommendedTokenGuide.summary.contains("公开仓库追踪不受选仓限制")
         )
         assertTrue(
