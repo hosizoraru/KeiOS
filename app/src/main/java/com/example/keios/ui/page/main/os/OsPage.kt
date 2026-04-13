@@ -56,6 +56,7 @@ import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.system.getAllJavaPropString
 import com.example.keios.core.system.getAllSystemProperties
@@ -459,10 +460,10 @@ fun OsPage(
         else -> SystemOverviewState.Idle
     }
     val statusLabel = when (overviewState) {
-        SystemOverviewState.Cached -> "Cached"
-        SystemOverviewState.Refreshing -> "Refreshing"
-        SystemOverviewState.Completed -> "Synced"
-        SystemOverviewState.Idle -> "Idle"
+        SystemOverviewState.Cached -> StatusLabelText.Cached
+        SystemOverviewState.Refreshing -> StatusLabelText.Syncing
+        SystemOverviewState.Completed -> StatusLabelText.Synced
+        SystemOverviewState.Idle -> StatusLabelText.PendingSync
     }
     val statusColor = when (overviewState) {
         SystemOverviewState.Cached -> cachedColor

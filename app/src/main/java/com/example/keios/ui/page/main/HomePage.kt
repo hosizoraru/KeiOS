@@ -79,6 +79,7 @@ import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SheetRow
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop as rememberActionBarBackdrop
@@ -574,7 +575,7 @@ fun HomePage(
                         modifier = Modifier.defaultMinSize(minHeight = 24.dp)
                     )
                     StatusPill(
-                        label = "固定显示",
+                        label = StatusLabelText.FixedVisible,
                         color = Color(0xFF2563EB)
                     )
                 }

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.BuildConfig
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.StatusLabelText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -165,6 +166,16 @@ private fun selinuxStatusColor(selinuxState: String): Color {
         "disabled" -> Color(0xFFC62828)
         "n/a", "", "unknown" -> Color(0xFF6B7280)
         else -> Color(0xFF2563EB)
+    }
+}
+
+private fun selinuxStatusLabel(selinuxState: String): String {
+    return when (normalizeLower(selinuxState)) {
+        "enforcing" -> "强制"
+        "permissive" -> "宽容"
+        "disabled" -> "关闭"
+        "n/a", "", "unknown" -> "未知"
+        else -> selinuxState.ifBlank { "未知" }
     }
 }
 
@@ -389,12 +400,12 @@ fun AboutPage(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             AboutCompactPillRow(
                                 "通知权限",
-                                label = if (notificationPermissionGranted) "Granted" else "Not Granted",
+                                label = if (notificationPermissionGranted) StatusLabelText.Authorized else StatusLabelText.Unauthorized,
                                 color = if (notificationPermissionGranted) readyColor else notReadyColor
                             )
                             AboutCompactPillRow(
                                 "SELinux",
-                                label = shizukuDetailMap["Shizuku getenforce"] ?: "N/A",
+                                label = StatusLabelText.selinux(shizukuDetailMap["Shizuku getenforce"] ?: "N/A"),
                                 color = selinuxStatusColor(shizukuDetailMap["Shizuku getenforce"] ?: "N/A"),
                                 onClick = onCheckShizuku
                             )

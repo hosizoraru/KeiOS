@@ -53,6 +53,7 @@ import com.example.keios.ui.page.main.widget.SheetInputTitle
 import com.example.keios.ui.page.main.widget.SheetRow
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.Backdrop
@@ -310,7 +311,7 @@ fun McpPage(
                         ) {
                             Text("MCP Server", color = titleColor)
                             StatusPill(
-                                label = if (uiState.running) "Server Running" else "Server Stopped",
+                                label = if (uiState.running) StatusLabelText.Running else StatusLabelText.NotRunning,
                                 color = overviewAccentColor
                             )
                         }
@@ -619,7 +620,7 @@ private fun McpNetworkModeOption(
                     )
                     if (selected) {
                         StatusPill(
-                            label = "已激活",
+                            label = StatusLabelText.Activated,
                             color = selectedColor
                         )
                     }

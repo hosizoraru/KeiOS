@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -94,6 +95,14 @@ fun MainScreen(
 ) {
     val backStack = remember { mutableStateListOf<NavKey>().apply { add(KeiosRoute.Main) } }
     val navigator = remember { Navigator(backStack) }
+    val currentAppLabel by rememberUpdatedState(appLabel)
+    val currentPackageInfo by rememberUpdatedState(packageInfo)
+    val currentShizukuStatus by rememberUpdatedState(shizukuStatus)
+    val currentNotificationPermissionGranted by rememberUpdatedState(notificationPermissionGranted)
+    val currentAppThemeMode by rememberUpdatedState(appThemeMode)
+    val currentOnCheckOrRequestShizuku by rememberUpdatedState(onCheckOrRequestShizuku)
+    val currentOnRequestNotificationPermission by rememberUpdatedState(onRequestNotificationPermission)
+    val currentOnAppThemeModeChanged by rememberUpdatedState(onAppThemeModeChanged)
 
     var liquidBottomBarEnabled by remember { mutableStateOf(UiPrefs.isLiquidBottomBarEnabled()) }
     var cardPressFeedbackEnabled by remember { mutableStateOf(UiPrefs.isCardPressFeedbackEnabled()) }
@@ -114,18 +123,7 @@ fun MainScreen(
         }
     }
 
-    val entryProvider = remember(
-        backStack,
-        appLabel,
-        packageInfo,
-        shizukuStatus,
-        notificationPermissionGranted,
-        appThemeMode,
-        onCheckOrRequestShizuku,
-        onRequestNotificationPermission,
-        onAppThemeModeChanged
-    ) {
-        entryProvider<NavKey> {
+    val entryProvider = entryProvider<NavKey> {
             entry<KeiosRoute.Main> {
                 // Removed the dangerous isTopRoute check. The route should manage its own state naturally.
                 MainPagerLayout(
@@ -133,11 +131,11 @@ fun MainScreen(
                     liquidBottomBarEnabled = liquidBottomBarEnabled,
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     homeIconHdrEnabled = homeIconHdrEnabled,
-                    appLabel = appLabel,
-                    packageInfo = packageInfo,
-                    shizukuStatus = shizukuStatus,
-                    onCheckOrRequestShizuku = onCheckOrRequestShizuku,
-                    notificationPermissionGranted = notificationPermissionGranted,
+                    appLabel = currentAppLabel,
+                    packageInfo = currentPackageInfo,
+                    shizukuStatus = currentShizukuStatus,
+                    onCheckOrRequestShizuku = currentOnCheckOrRequestShizuku,
+                    notificationPermissionGranted = currentNotificationPermissionGranted,
                     shizukuApiUtils = shizukuApiUtils,
                     mcpServerManager = mcpServerManager
                 )
@@ -159,8 +157,8 @@ fun MainScreen(
                         homeIconHdrEnabled = it
                         UiPrefs.setHomeIconHdrEnabled(it)
                     },
-                    appThemeMode = appThemeMode,
-                    onAppThemeModeChanged = onAppThemeModeChanged,
+                    appThemeMode = currentAppThemeMode,
+                    onAppThemeModeChanged = currentOnAppThemeModeChanged,
                     onBack = { navigator.pop() }
                 )
             }
@@ -172,12 +170,12 @@ fun MainScreen(
             }
             entry<KeiosRoute.About> {
                 AboutPage(
-                    appLabel = appLabel,
-                    packageInfo = packageInfo,
-                    notificationPermissionGranted = notificationPermissionGranted,
-                    shizukuStatus = shizukuStatus,
+                    appLabel = currentAppLabel,
+                    packageInfo = currentPackageInfo,
+                    notificationPermissionGranted = currentNotificationPermissionGranted,
+                    shizukuStatus = currentShizukuStatus,
                     shizukuApiUtils = shizukuApiUtils,
-                    onCheckShizuku = onCheckOrRequestShizuku,
+                    onCheckShizuku = currentOnCheckOrRequestShizuku,
                     onBack = { navigator.pop() }
                 )
             }
@@ -187,8 +185,6 @@ fun MainScreen(
                 )
             }
         }
-    }
-
     val entries = rememberDecoratedNavEntries(
         backStack = backStack,
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),

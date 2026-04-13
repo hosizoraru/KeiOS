@@ -61,6 +61,7 @@ import com.example.keios.ui.page.main.widget.SheetRow
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
@@ -612,10 +613,10 @@ fun GitHubPage(
                         }
                         StatusPill(
                             label = when (overviewRefreshState) {
-                                OverviewRefreshState.Cached -> "缓存"
-                                OverviewRefreshState.Refreshing -> "检查中"
-                                OverviewRefreshState.Completed -> "已检查"
-                                OverviewRefreshState.Idle -> "待检查"
+                                OverviewRefreshState.Cached -> StatusLabelText.Cached
+                                OverviewRefreshState.Refreshing -> StatusLabelText.Checking
+                                OverviewRefreshState.Completed -> StatusLabelText.Checked
+                                OverviewRefreshState.Idle -> StatusLabelText.PendingCheck
                             },
                             color = overviewRefreshState.color(
                                 neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
