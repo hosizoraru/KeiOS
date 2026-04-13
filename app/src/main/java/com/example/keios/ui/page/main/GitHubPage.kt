@@ -1063,6 +1063,36 @@ fun GitHubPage(
             else -> MiuixTheme.colorScheme.onBackgroundVariant
         }
 
+        @Composable
+        fun StrategyBenchmarkSection() {
+            SheetSectionTitle("本地对比")
+            SheetDescriptionText(
+                text = if (trackedItems.isEmpty()) {
+                    "对比测试会使用当前已追踪仓库，最多抽取 6 个样本。当前还没有可用样本。"
+                } else {
+                    "对比测试会使用当前已追踪仓库做一轮冷启动和一轮缓存复测，便于直接观察 Atom、游客 API、Token API 的耗时与缓存命中差异。"
+                }
+            )
+            if (trackedItems.isNotEmpty()) {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetAction,
+                    text = if (strategyBenchmarkRunning) "对比中..." else "运行双策略对比",
+                    enabled = !strategyBenchmarkRunning,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { runStrategyBenchmark() }
+                )
+            }
+            strategyBenchmarkError?.let { error ->
+                SheetDescriptionText(
+                    text = "对比测试失败：$error"
+                )
+            }
+            strategyBenchmarkReport?.results?.forEach { result ->
+                GitHubStrategyBenchmarkCard(result = result)
+            }
+        }
+
         SheetContentColumn(
             verticalSpacing = 10.dp
         ) {
@@ -1135,8 +1165,36 @@ fun GitHubPage(
                         onClick = { showApiTokenPlainText = !showApiTokenPlainText }
                     )
                 }
+                SheetSectionTitle("立即验证")
+                GlassTextButton(
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetAction,
+                    text = if (credentialCheckRunning) "检测中..." else "检测当前凭证",
+                    enabled = !credentialCheckRunning,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { runCredentialCheck() }
+                )
                 SheetDescriptionText(
-                    text = "API 方案会直接调用 Releases API。未填写 token 时自动走游客 API，适合刚开始少量追踪；若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
+                    text = "未填写 token 时会自动走游客 API；适合刚开始少量追踪。若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
+                )
+                credentialCheckError?.let { error ->
+                    SheetDescriptionText(
+                        text = "凭证检测失败：$error"
+                    )
+                }
+                credentialCheckStatus?.let { status ->
+                    GitHubCredentialStatusCard(status = status)
+                    SheetDescriptionText(
+                        text = if (status.authMode == GitHubApiAuthMode.Guest) {
+                            "当前结果表明游客 API 可访问，但额度较低。若后续追踪仓库数量增加，建议补充本地 token。"
+                        } else {
+                            "当前 token 已被 GitHub API 接受。此结果仅表示凭证本身可用，不代表对所有私有仓库都具备访问权限。"
+                        }
+                    )
+                }
+                StrategyBenchmarkSection()
+                SheetDescriptionText(
+                    text = "API 方案会直接调用 Releases API。若你只是首次体验，可先用游客 API；若你要长期追踪更多仓库，再补充专用 token 会更稳。"
                 )
                 SheetSectionTitle("推荐新建")
                 GitHubRecommendedTokenGuideCard(
@@ -1169,61 +1227,12 @@ fun GitHubPage(
                 SheetDescriptionText(
                     text = "推荐单独创建一个 KeiOS 专用 Fine-grained token，不要复用现有 classic token。这样即使 token 泄露，暴露面也更小。"
                 )
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = if (credentialCheckRunning) "检测中..." else "检测当前凭证",
-                    enabled = !credentialCheckRunning,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { runCredentialCheck() }
-                )
-                credentialCheckError?.let { error ->
-                    SheetDescriptionText(
-                        text = "凭证检测失败：$error"
-                    )
-                }
-                credentialCheckStatus?.let { status ->
-                    GitHubCredentialStatusCard(status = status)
-                    SheetDescriptionText(
-                        text = if (status.authMode == GitHubApiAuthMode.Guest) {
-                            "当前结果表明游客 API 可访问，但额度较低。若后续追踪仓库数量增加，建议补充本地 token。"
-                        } else {
-                            "当前 token 已被 GitHub API 接受。此结果仅表示凭证本身可用，不代表对所有私有仓库都具备访问权限。"
-                        }
-                    )
-                }
             } else {
                 SheetSectionTitle("方案说明")
                 SheetDescriptionText(
                     text = "Atom Feed 方案无需 Token，适合公开仓库与轻量检查。若后续需要更稳定的 release 元数据或私有仓库支持，可切换到 GitHub API Token。"
                 )
-            }
-
-            SheetSectionTitle("本地对比")
-            SheetDescriptionText(
-                text = if (trackedItems.isEmpty()) {
-                    "对比测试会使用当前已追踪仓库，最多抽取 6 个样本。当前还没有可用样本。"
-                } else {
-                    "对比测试会使用当前已追踪仓库做一轮冷启动和一轮缓存复测，便于直接观察 Atom、游客 API、Token API 的耗时与缓存命中差异。"
-                }
-            )
-            if (trackedItems.isNotEmpty()) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetAction,
-                    text = if (strategyBenchmarkRunning) "对比中..." else "运行双策略对比",
-                    enabled = !strategyBenchmarkRunning,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { runStrategyBenchmark() }
-                )
-            }
-            strategyBenchmarkError?.let { error ->
-                SheetDescriptionText(
-                    text = "对比测试失败：$error"
-                )
-            }
-            strategyBenchmarkReport?.results?.forEach { result ->
-                GitHubStrategyBenchmarkCard(result = result)
+                StrategyBenchmarkSection()
             }
         }
     }
