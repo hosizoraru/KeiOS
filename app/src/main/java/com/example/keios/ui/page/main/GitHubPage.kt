@@ -89,6 +89,9 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.data.local.GitHubTrackSnapshot
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubApiTokenReleaseStrategy
+import com.example.keios.feature.github.data.remote.GitHubReleaseAssetBundle
+import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
+import com.example.keios.feature.github.data.remote.GitHubReleaseAssetRepository
 import com.example.keios.feature.github.data.remote.GitHubReleaseStrategyRegistry
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.feature.github.domain.GitHubReleaseCheckService
@@ -188,6 +191,7 @@ fun GitHubPage(
     var selectedStrategyInput by remember { mutableStateOf(GitHubLookupStrategyOption.AtomFeed) }
     var githubApiTokenInput by remember { mutableStateOf("") }
     var checkAllTrackedPreReleasesInput by remember { mutableStateOf(false) }
+    var aggressiveApkFilteringInput by remember { mutableStateOf(false) }
     var refreshIntervalHoursInput by remember { mutableStateOf(refreshIntervalHours) }
     var showApiTokenPlainText by remember { mutableStateOf(false) }
     var strategyBenchmarkRunning by remember { mutableStateOf(false) }
@@ -212,6 +216,10 @@ fun GitHubPage(
 
     val trackedItems = remember { mutableStateListOf<GitHubTrackedApp>() }
     val checkStates = remember { mutableStateMapOf<String, VersionCheckUi>() }
+    val apkAssetBundles = remember { mutableStateMapOf<String, GitHubReleaseAssetBundle>() }
+    val apkAssetLoading = remember { mutableStateMapOf<String, Boolean>() }
+    val apkAssetErrors = remember { mutableStateMapOf<String, String>() }
+    val apkAssetExpanded = remember { mutableStateMapOf<String, Boolean>() }
     val trackSnapshot by produceState(initialValue = GitHubTrackSnapshot()) {
         value = withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
     }
@@ -222,6 +230,7 @@ fun GitHubPage(
         selectedStrategyInput = trackSnapshot.lookupConfig.selectedStrategy
         githubApiTokenInput = trackSnapshot.lookupConfig.apiToken
         checkAllTrackedPreReleasesInput = trackSnapshot.lookupConfig.checkAllTrackedPreReleases
+        aggressiveApkFilteringInput = trackSnapshot.lookupConfig.aggressiveApkFiltering
         refreshIntervalHours = trackSnapshot.refreshIntervalHours
         refreshIntervalHoursInput = trackSnapshot.refreshIntervalHours
 
@@ -410,6 +419,7 @@ fun GitHubPage(
         val config = GitHubTrackStore.loadLookupConfig()
         lookupConfig = config
         checkAllTrackedPreReleasesInput = config.checkAllTrackedPreReleases
+        aggressiveApkFilteringInput = config.aggressiveApkFiltering
         refreshIntervalHoursInput = GitHubTrackStore.loadRefreshIntervalHours()
         showCheckLogicIntervalPopup = false
         showCheckLogicSheet = true
@@ -492,7 +502,8 @@ fun GitHubPage(
         val newConfig = GitHubLookupConfig(
             selectedStrategy = selectedStrategyInput,
             apiToken = sanitizedToken,
-            checkAllTrackedPreReleases = previousConfig.checkAllTrackedPreReleases
+            checkAllTrackedPreReleases = previousConfig.checkAllTrackedPreReleases,
+            aggressiveApkFiltering = previousConfig.aggressiveApkFiltering
         )
         GitHubTrackStore.saveLookupConfig(newConfig)
         lookupConfig = newConfig
@@ -537,7 +548,8 @@ fun GitHubPage(
         val previousConfig = GitHubTrackStore.loadLookupConfig()
         val previousRefreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
         val newConfig = previousConfig.copy(
-            checkAllTrackedPreReleases = checkAllTrackedPreReleasesInput
+            checkAllTrackedPreReleases = checkAllTrackedPreReleasesInput,
+            aggressiveApkFiltering = aggressiveApkFilteringInput
         )
         GitHubTrackStore.saveLookupConfig(newConfig)
         GitHubTrackStore.saveRefreshIntervalHours(refreshIntervalHoursInput)
@@ -547,11 +559,16 @@ fun GitHubPage(
 
         val checkScopeChanged =
             previousConfig.checkAllTrackedPreReleases != newConfig.checkAllTrackedPreReleases
+        val filteringChanged = previousConfig.aggressiveApkFiltering != newConfig.aggressiveApkFiltering
         val intervalChanged = previousRefreshIntervalHours != refreshIntervalHoursInput
         when {
-            checkScopeChanged -> {
+            checkScopeChanged || filteringChanged -> {
                 GitHubTrackStore.clearCheckCache()
                 checkStates.clear()
+                apkAssetBundles.clear()
+                apkAssetLoading.clear()
+                apkAssetErrors.clear()
+                apkAssetExpanded.clear()
                 lastRefreshMs = 0L
                 refreshProgress = 0f
                 overviewRefreshState = OverviewRefreshState.Idle
@@ -622,6 +639,155 @@ fun GitHubPage(
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }.onFailure {
             Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    data class ApkAssetTarget(
+        val rawTag: String,
+        val releaseUrl: String,
+        val label: String
+    )
+
+    fun VersionCheckUi.apkAssetTarget(owner: String, repo: String): ApkAssetTarget? {
+        val stableTag = latestStableRawTag.ifBlank {
+            GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestStableUrl)
+        }
+        val preTag = latestPreRawTag.ifBlank {
+            GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestPreUrl)
+        }
+        return when {
+            recommendsPreRelease && preTag.isNotBlank() -> ApkAssetTarget(
+                rawTag = preTag,
+                releaseUrl = latestPreUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, preTag) },
+                label = "预发 APK"
+            )
+            hasUpdate == true && stableTag.isNotBlank() -> ApkAssetTarget(
+                rawTag = stableTag,
+                releaseUrl = latestStableUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, stableTag) },
+                label = "稳定 APK"
+            )
+            hasPreReleaseUpdate && preTag.isNotBlank() -> ApkAssetTarget(
+                rawTag = preTag,
+                releaseUrl = latestPreUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, preTag) },
+                label = "预发 APK"
+            )
+            else -> null
+        }
+    }
+
+    fun formatAssetSize(sizeBytes: Long): String {
+        if (sizeBytes <= 0L) return "大小未知"
+        val kb = 1024L
+        val mb = kb * 1024L
+        val gb = mb * 1024L
+        return when {
+            sizeBytes >= gb -> String.format("%.1f GB", sizeBytes.toDouble() / gb.toDouble())
+            sizeBytes >= mb -> String.format("%.1f MB", sizeBytes.toDouble() / mb.toDouble())
+            sizeBytes >= kb -> String.format("%.0f KB", sizeBytes.toDouble() / kb.toDouble())
+            else -> "$sizeBytes B"
+        }
+    }
+
+    suspend fun resolvePreferredAssetUrl(asset: GitHubReleaseAssetFile): String {
+        val token = lookupConfig.apiToken.trim()
+        val preferApiAsset = lookupConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken
+        return withContext(Dispatchers.IO) {
+            GitHubReleaseAssetRepository.resolvePreferredDownloadUrl(
+                asset = asset,
+                useApiAssetUrl = preferApiAsset,
+                apiToken = token
+            ).getOrElse { asset.downloadUrl }
+        }
+    }
+
+    fun assetActionLabels(asset: GitHubReleaseAssetFile): Pair<String, String> {
+        val useApiAsset = lookupConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken &&
+            lookupConfig.apiToken.trim().isNotBlank() &&
+            asset.apiAssetUrl.isNotBlank()
+        return if (useApiAsset) {
+            "API 下载" to "API 分享"
+        } else {
+            "直链下载" to "直链分享"
+        }
+    }
+
+    fun shareApkLink(asset: GitHubReleaseAssetFile) {
+        scope.launch {
+            val resolvedUrl = resolvePreferredAssetUrl(asset)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, asset.name)
+                putExtra(Intent.EXTRA_TEXT, resolvedUrl)
+            }
+            runCatching {
+                context.startActivity(Intent.createChooser(intent, "分享 APK 下载链接"))
+            }.onFailure {
+                Toast.makeText(context, "无法分享链接", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun openApkInDownloader(asset: GitHubReleaseAssetFile) {
+        scope.launch {
+            val resolvedUrl = resolvePreferredAssetUrl(asset)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
+            runCatching {
+                context.startActivity(intent)
+                Toast.makeText(context, "已交给外部下载器处理", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, "无法打开下载器", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun loadApkAssets(item: GitHubTrackedApp, state: VersionCheckUi, toggleOnlyWhenCached: Boolean = true) {
+        val target = state.apkAssetTarget(item.owner, item.repo)
+        if (target == null) {
+            val fallbackUrl = state.statusActionUrl(item.owner, item.repo)
+            if (fallbackUrl.isNotBlank()) {
+                openExternalUrl(fallbackUrl)
+            } else {
+                Toast.makeText(context, "当前没有可加载的更新 APK", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        val cachedBundle = apkAssetBundles[item.id]
+        if (toggleOnlyWhenCached && cachedBundle != null && cachedBundle.tagName.equals(target.rawTag, ignoreCase = true)) {
+            apkAssetExpanded[item.id] = !(apkAssetExpanded[item.id] ?: false)
+            apkAssetErrors.remove(item.id)
+            return
+        }
+
+        apkAssetExpanded[item.id] = true
+        apkAssetLoading[item.id] = true
+        apkAssetErrors.remove(item.id)
+        scope.launch {
+            val preferHtml = lookupConfig.selectedStrategy == GitHubLookupStrategyOption.AtomFeed
+            val result = withContext(Dispatchers.IO) {
+                GitHubReleaseAssetRepository.fetchApkAssets(
+                    owner = item.owner,
+                    repo = item.repo,
+                    rawTag = target.rawTag,
+                    releaseUrl = target.releaseUrl,
+                    preferHtml = preferHtml,
+                    aggressiveFiltering = lookupConfig.aggressiveApkFiltering,
+                    apiToken = lookupConfig.apiToken
+                )
+            }
+            apkAssetLoading[item.id] = false
+            result.onSuccess { bundle ->
+                apkAssetBundles[item.id] = bundle
+                apkAssetErrors[item.id] = if (bundle.assets.isEmpty()) {
+                    "${target.label} 当前没有可直接下载的 APK 资产"
+                } else {
+                    ""
+                }
+            }.onFailure { error ->
+                apkAssetErrors[item.id] = error.message ?: "加载 APK 资产失败"
+            }
         }
     }
 
@@ -1080,7 +1246,6 @@ fun GitHubPage(
                         onHeaderLongClick = { openTrackSheetForEdit(item) },
                         headerActions = {
                             val state = checkStates[item.id] ?: VersionCheckUi()
-                            val statusIcon = state.statusIcon()
                             val statusColor = state.statusColor(
                                 neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
                             )
@@ -1088,12 +1253,26 @@ fun GitHubPage(
                                 owner = item.owner,
                                 repo = item.repo
                             )
+                            val canLoadApkAssets = state.hasUpdate == true ||
+                                state.recommendsPreRelease ||
+                                state.hasPreReleaseUpdate
+                            val isAssetPanelExpanded = apkAssetExpanded[item.id] == true
+                            val isAssetPanelLoading = apkAssetLoading[item.id] == true
+                            val statusIcon = when {
+                                isAssetPanelLoading -> MiuixIcons.Regular.Refresh
+                                canLoadApkAssets && isAssetPanelExpanded -> MiuixIcons.Regular.Close
+                                else -> state.statusIcon()
+                            }
                             val clickableModifier = if (statusReleaseUrl.isNotBlank()) {
                                 Modifier.clickable {
-                                    runCatching {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(statusReleaseUrl)))
-                                    }.onFailure {
-                                        Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                                    if (canLoadApkAssets) {
+                                        loadApkAssets(item, state)
+                                    } else {
+                                        runCatching {
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(statusReleaseUrl)))
+                                        }.onFailure {
+                                            Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
                             } else {
@@ -1181,6 +1360,138 @@ fun GitHubPage(
                                     valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
                                     titleColor = MiuixTheme.colorScheme.onBackgroundVariant
                                 )
+                            }
+
+                            val assetBundle = apkAssetBundles[item.id]
+                            val assetLoading = apkAssetLoading[item.id] == true
+                            val assetError = apkAssetErrors[item.id].orEmpty()
+                            val assetExpanded = apkAssetExpanded[item.id] == true
+                            AnimatedVisibility(
+                                visible = assetExpanded || assetLoading || assetError.isNotBlank()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val target = state.apkAssetTarget(item.owner, item.repo)
+                                    GitHubCompactInfoRow(
+                                        label = "更新资源",
+                                        value = target?.label ?: "APK",
+                                        valueColor = MiuixTheme.colorScheme.primary,
+                                        titleColor = MiuixTheme.colorScheme.primary,
+                                        emphasized = true,
+                                        onClick = {
+                                            val releaseUrl = assetBundle?.htmlUrl
+                                                ?.takeIf { it.isNotBlank() }
+                                                ?: target?.releaseUrl
+                                                .orEmpty()
+                                            if (releaseUrl.isNotBlank()) {
+                                                openExternalUrl(releaseUrl)
+                                            }
+                                        }
+                                    )
+                                    when {
+                                        assetLoading -> {
+                                            Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = CardDefaults.defaultColors(
+                                                    color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
+                                                )
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                                ) {
+                                                    CircularProgressIndicator(
+                                                        progress = 0f,
+                                                        size = 18.dp,
+                                                        strokeWidth = 2.dp,
+                                                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                                            foregroundColor = MiuixTheme.colorScheme.primary,
+                                                            backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.18f)
+                                                        )
+                                                    )
+                                                    Column(
+                                                        modifier = Modifier.weight(1f),
+                                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "正在读取 release 里的 APK 文件",
+                                                            color = MiuixTheme.colorScheme.onBackground,
+                                                            fontWeight = FontWeight.Medium
+                                                        )
+                                                        Text(
+                                                            text = "会优先筛出 .apk，并把 arm64 资源排在前面",
+                                                            color = MiuixTheme.colorScheme.onBackgroundVariant
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        assetError.isNotBlank() -> {
+                                            GitHubCompactInfoRow(
+                                                label = "APK",
+                                                value = assetError,
+                                                valueColor = GitHubStatusPalette.Error,
+                                                titleColor = GitHubStatusPalette.Error,
+                                                titleMinWidth = 40.dp
+                                            )
+                                        }
+                                        assetBundle != null -> {
+                                            assetBundle.assets.forEach { asset ->
+                                                Card(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    colors = CardDefaults.defaultColors(
+                                                        color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
+                                                    )
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        GitHubCompactInfoRow(
+                                                            label = "文件",
+                                                            value = asset.name,
+                                                            valueColor = MiuixTheme.colorScheme.onBackground,
+                                                            titleColor = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                            titleMinWidth = 40.dp
+                                                        )
+                                                        GitHubCompactInfoRow(
+                                                            label = "信息",
+                                                            value = "${formatAssetSize(asset.sizeBytes)} · ${asset.downloadCount} 次下载",
+                                                            valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                            titleColor = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                            titleMinWidth = 40.dp
+                                                        )
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                        ) {
+                                                            val actionLabels = assetActionLabels(asset)
+                                                            TextButton(
+                                                                modifier = Modifier.weight(1f),
+                                                                text = actionLabels.first,
+                                                                onClick = { openApkInDownloader(asset) }
+                                                            )
+                                                            TextButton(
+                                                                modifier = Modifier.weight(1f),
+                                                                text = actionLabels.second,
+                                                                onClick = { shareApkLink(asset) }
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1383,6 +1694,9 @@ fun GitHubPage(
                     SheetDescriptionText(
                         text = "未填写 token 时会自动走游客 API；适合刚开始少量追踪。若追踪项目增多或遇到限流，再补充本地 token 即可。token 仅保存在当前设备 MMKV。"
                     )
+                    SheetDescriptionText(
+                        text = "对于当前这套 GitHub API 检查和 API 资产下载，Fine-grained PAT 的 `Contents: Read` 权限就够用；它可以读取 release 元数据，也可以通过 assets API 下载 APK 二进制，不需要额外写权限。若目标是 private 仓库，还需要该 token 对对应仓库本身具备访问权限。"
+                    )
                     credentialCheckError?.let { error ->
                         SheetDescriptionText(
                             text = "凭证检测失败：$error"
@@ -1475,7 +1789,8 @@ fun GitHubPage(
     ) {
         val selectedRefreshOption = RefreshIntervalOption.fromHours(refreshIntervalHoursInput)
         val logicChanged = refreshIntervalHoursInput != refreshIntervalHours ||
-            checkAllTrackedPreReleasesInput != lookupConfig.checkAllTrackedPreReleases
+            checkAllTrackedPreReleasesInput != lookupConfig.checkAllTrackedPreReleases ||
+            aggressiveApkFilteringInput != lookupConfig.aggressiveApkFiltering
 
         SheetContentColumn(verticalSpacing = 10.dp) {
             SheetSectionTitle("当前摘要")
@@ -1527,6 +1842,15 @@ fun GitHubPage(
                         onCheckedChange = { checked -> checkAllTrackedPreReleasesInput = checked }
                     )
                 }
+                SheetControlRow(
+                    label = "更激进的过滤方式",
+                    summary = "开启后会直接忽略文件名包含 `armeabi-v7a`、`x86_64` 的 APK 资源"
+                ) {
+                    Switch(
+                        checked = aggressiveApkFilteringInput,
+                        onCheckedChange = { checked -> aggressiveApkFilteringInput = checked }
+                    )
+                }
                 SheetControlRow(label = "保存状态") {
                     StatusPill(
                         label = if (logicChanged) "待保存" else "已同步",
@@ -1542,6 +1866,9 @@ fun GitHubPage(
                 )
                 SheetDescriptionText(
                     text = "这样就不会再把“我想知道有没有新的预发行”和“我真的想装预发行”混成同一个开关。"
+                )
+                SheetDescriptionText(
+                    text = "若你的设备主要只关心 arm64 版本，可以开启“更激进的过滤方式”；它会继续保留 universal，但会把文件名明确写着 `armeabi-v7a`、`x86_64` 的 APK 直接排除。"
                 )
             }
         }
