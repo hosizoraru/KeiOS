@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -57,6 +58,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -162,6 +164,7 @@ fun GitHubPage(
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
@@ -212,11 +215,27 @@ fun GitHubPage(
     var refreshAllJob by remember { mutableStateOf<Job?>(null) }
     var deleteInProgress by remember { mutableStateOf(false) }
     var showFloatingAddButton by remember { mutableStateOf(true) }
-    val addButtonScrollConnection = remember {
+    var showSearchBar by remember { mutableStateOf(true) }
+    var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
+    val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
+    val addButtonScrollConnection = remember(searchBarHideThresholdPx) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) showFloatingAddButton = false
-                if (available.y > 1f) showFloatingAddButton = true
+                if (available.y < -1f) {
+                    showFloatingAddButton = false
+                    if (showSearchBar) {
+                        searchBarHideOffsetPx = (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
+                        if (searchBarHideOffsetPx >= searchBarHideThresholdPx) {
+                            showSearchBar = false
+                            searchBarHideOffsetPx = 0f
+                        }
+                    }
+                }
+                if (available.y > 1f) {
+                    showFloatingAddButton = true
+                    showSearchBar = true
+                    searchBarHideOffsetPx = 0f
+                }
                 return Offset.Zero
             }
         }
@@ -1136,18 +1155,26 @@ fun GitHubPage(
                         }
                     }
                 )
-                GlassSearchField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                    value = trackedSearch,
-                    onValueChange = { trackedSearch = it },
-                    label = "搜索已跟踪项目（仓库/应用/包名）",
-                    backdrop = backdrop,
-                    variant = GlassVariant.Bar,
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                AnimatedVisibility(
+                    visible = showSearchBar,
+                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(animationSpec = tween(220)) { -it / 3 },
+                    exit = fadeOut(animationSpec = tween(140)) + slideOutVertically(animationSpec = tween(180)) { -it / 3 }
+                ) {
+                    Column {
+                        GlassSearchField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp),
+                            value = trackedSearch,
+                            onValueChange = { trackedSearch = it },
+                            label = "搜索已跟踪项目（仓库/应用/包名）",
+                            backdrop = backdrop,
+                            variant = GlassVariant.Bar,
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -1520,7 +1547,7 @@ fun GitHubPage(
                                             color = GitHubStatusPalette.tonedSurface(
                                                 targetAccent,
                                                 isDark = isDark
-                                            ).copy(alpha = if (isDark) 0.58f else 0.78f)
+                                            ).copy(alpha = if (isDark) 0.30f else 0.18f)
                                         )
                                     ) {
                                         Row(
@@ -1569,7 +1596,7 @@ fun GitHubPage(
                                             ) {
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                                                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                                 ) {
                                                     Text(
@@ -1580,34 +1607,67 @@ fun GitHubPage(
                                                         maxLines = 1,
                                                         overflow = TextOverflow.Ellipsis
                                                     )
-                                                    val commitLabel = bundleCommitLabel(assetBundle)
-                                                    if (commitLabel != null && !assetLoading && assetError.isBlank()) {
-                                                        StatusPill(
-                                                            label = commitLabel,
-                                                            color = MiuixTheme.colorScheme.onBackgroundVariant
-                                                        )
-                                                    }
-                                                    val transportLabel = bundleTransportLabel(assetBundle)
-                                                    if (transportLabel != null && !assetLoading && assetError.isBlank()) {
-                                                        StatusPill(
-                                                            label = transportLabel,
-                                                            color = GitHubStatusPalette.Active
-                                                        )
-                                                    }
-                                                    StatusPill(
-                                                        label = when {
-                                                            assetLoading -> "加载中"
-                                                            assetBundle?.showingAllAssets == true -> "All"
-                                                            assetBundle != null -> assetBundle.assets.size.toString()
-                                                            assetError.isNotBlank() -> "异常"
-                                                            else -> "待展开"
-                                                        },
-                                                        color = when {
-                                                            assetLoading -> GitHubStatusPalette.Active
-                                                            assetError.isNotBlank() -> GitHubStatusPalette.Error
-                                                            else -> targetAccent
+                                                    Row(
+                                                        modifier = Modifier.padding(start = 2.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                                    ) {
+                                                        val commitLabel = bundleCommitLabel(assetBundle)
+                                                        if (commitLabel != null && !assetLoading && assetError.isBlank()) {
+                                                            StatusPill(
+                                                                label = commitLabel,
+                                                                color = GitHubStatusPalette.Active.copy(alpha = 0.92f),
+                                                                contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
+                                                            )
                                                         }
-                                                    )
+                                                        val transportLabel = bundleTransportLabel(assetBundle)
+                                                        if (transportLabel != null && !assetLoading && assetError.isBlank()) {
+                                                            StatusPill(
+                                                                label = transportLabel,
+                                                                color = GitHubStatusPalette.Active,
+                                                                contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .width(28.dp)
+                                                            .height(28.dp)
+                                                            .clip(RoundedCornerShape(999.dp))
+                                                            .background(
+                                                                when {
+                                                                    assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.22f else 0.16f)
+                                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.22f else 0.16f)
+                                                                    else -> targetAccent.copy(alpha = if (isDark) 0.22f else 0.16f)
+                                                                }
+                                                            )
+                                                            .border(
+                                                                width = 0.8.dp,
+                                                                color = when {
+                                                                    assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.36f else 0.30f)
+                                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.36f else 0.30f)
+                                                                    else -> targetAccent.copy(alpha = if (isDark) 0.36f else 0.30f)
+                                                                },
+                                                                shape = RoundedCornerShape(999.dp)
+                                                            ),
+                                                        contentAlignment = androidx.compose.ui.Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = when {
+                                                                assetLoading -> "…"
+                                                                assetBundle != null -> assetBundle.assets.size.toString()
+                                                                assetError.isNotBlank() -> "!"
+                                                                else -> "·"
+                                                            },
+                                                            color = when {
+                                                                assetLoading -> GitHubStatusPalette.Active
+                                                                assetError.isNotBlank() -> GitHubStatusPalette.Error
+                                                                else -> targetAccent
+                                                            },
+                                                            fontWeight = FontWeight.Bold,
+                                                            maxLines = 1
+                                                        )
+                                                    }
                                                 }
                                                 Text(
                                                     text = when {
@@ -1736,15 +1796,17 @@ fun GitHubPage(
                                                                         color = MiuixTheme.colorScheme.primary
                                                                     )
                                                                 }
-                                                                StatusPill(
-                                                                    label = sizeLabel,
-                                                                    color = MiuixTheme.colorScheme.onBackgroundVariant
-                                                                )
+                                                                abiLabel?.let { label ->
+                                                                    StatusPill(
+                                                                        label = label,
+                                                                        color = actionAccent
+                                                                    )
+                                                                }
                                                             }
                                                             relativeTimeLabel?.let { label ->
                                                                 StatusPill(
                                                                     label = label,
-                                                                    color = MiuixTheme.colorScheme.secondary
+                                                                    color = MiuixTheme.colorScheme.onBackgroundVariant
                                                                 )
                                                             }
                                                         }
@@ -1753,24 +1815,18 @@ fun GitHubPage(
                                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                                         ) {
-                                                            abiLabel?.let { label ->
-                                                                StatusPill(
-                                                                    label = label,
-                                                                    color = actionAccent
-                                                                )
-                                                            }
                                                             Spacer(modifier = Modifier.weight(1f))
                                                             Row(
+                                                                modifier = Modifier.wrapContentWidth(androidx.compose.ui.Alignment.End),
                                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                                             ) {
-                                                                GlassIconButton(
+                                                                GlassTextButton(
                                                                     backdrop = backdrop,
-                                                                    icon = MiuixIcons.Regular.Download,
-                                                                    contentDescription = "下载 ${asset.name}",
+                                                                    text = sizeLabel,
+                                                                    leadingIcon = MiuixIcons.Regular.Download,
                                                                     onClick = { openApkInDownloader(asset) },
-                                                                    width = 40.dp,
-                                                                    height = 40.dp,
+                                                                    modifier = Modifier,
                                                                     variant = GlassVariant.SheetAction
                                                                 )
                                                                 GlassIconButton(

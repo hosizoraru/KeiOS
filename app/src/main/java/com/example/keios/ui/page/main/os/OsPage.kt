@@ -7,6 +7,12 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -43,10 +49,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -147,12 +156,35 @@ fun OsPage(
     var exportPreparing by remember { mutableStateOf(false) }
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }
+    var showSearchBar by remember { mutableStateOf(true) }
+    var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val surfaceColor = MiuixTheme.colorScheme.surface
     val backdrop: LayerBackdrop = rememberLayerBackdrop {
         drawRect(surfaceColor)
         drawContent()
     }
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
+    val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
+    val searchBarScrollConnection = remember(searchBarHideThresholdPx) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -1f) {
+                    if (showSearchBar) {
+                        searchBarHideOffsetPx = (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
+                        if (searchBarHideOffsetPx >= searchBarHideThresholdPx) {
+                            showSearchBar = false
+                            searchBarHideOffsetPx = 0f
+                        }
+                    }
+                }
+                if (available.y > 1f) {
+                    showSearchBar = true
+                    searchBarHideOffsetPx = 0f
+                }
+                return Offset.Zero
+            }
+        }
+    }
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
     }
@@ -587,18 +619,26 @@ fun OsPage(
                         )
                     }
                 )
-                GlassSearchField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                    value = queryInput,
-                    onValueChange = { queryInput = it },
-                    label = "搜索OS参数",
-                    backdrop = backdrop,
-                    variant = GlassVariant.Bar,
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                AnimatedVisibility(
+                    visible = showSearchBar,
+                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(animationSpec = tween(220)) { -it / 3 },
+                    exit = fadeOut(animationSpec = tween(140)) + slideOutVertically(animationSpec = tween(180)) { -it / 3 }
+                ) {
+                    Column {
+                        GlassSearchField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp),
+                            value = queryInput,
+                            onValueChange = { queryInput = it },
+                            label = "搜索OS参数",
+                            backdrop = backdrop,
+                            variant = GlassVariant.Bar,
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
         }
     ) { innerPadding ->
