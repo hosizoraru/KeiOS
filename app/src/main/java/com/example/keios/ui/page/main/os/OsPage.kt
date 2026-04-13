@@ -7,12 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -68,6 +63,7 @@ import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
+import com.example.keios.ui.page.main.widget.SearchBarHost
 import com.example.keios.ui.page.main.widget.SheetContentColumn
 import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
@@ -619,10 +615,9 @@ fun OsPage(
                         )
                     }
                 )
-                AnimatedVisibility(
+                SearchBarHost(
                     visible = showSearchBar,
-                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(animationSpec = tween(220)) { -it / 3 },
-                    exit = fadeOut(animationSpec = tween(140)) + slideOutVertically(animationSpec = tween(180)) { -it / 3 }
+                    animationLabelPrefix = "osSearchBar"
                 ) {
                     Column {
                         GlassSearchField(

@@ -123,16 +123,23 @@ internal fun GitHubLookupConfig.overviewApiLabel(): String {
     }
 }
 
+private fun String.normalizeVersionPrefix(): String {
+    return trim().removePrefix("v").removePrefix("V")
+}
+
 internal fun formatReleaseValue(
     releaseName: String,
     rawTag: String
 ): String {
     val name = releaseName.trim()
     val tag = rawTag.trim()
+    val normalizedName = name.normalizeVersionPrefix()
+    val normalizedTag = tag.normalizeVersionPrefix()
     return when {
-        name.isBlank() -> tag
-        tag.isBlank() -> name
-        name.equals(tag, ignoreCase = true) -> name
+        name.isBlank() -> normalizedTag.ifBlank { tag }
+        tag.isBlank() -> normalizedName.ifBlank { name }
+        normalizedName.equals(normalizedTag, ignoreCase = true) -> normalizedName.ifBlank { normalizedTag }
+        name.equals(tag, ignoreCase = true) -> normalizedName.ifBlank { name }
         else -> "$name · $tag"
     }
 }

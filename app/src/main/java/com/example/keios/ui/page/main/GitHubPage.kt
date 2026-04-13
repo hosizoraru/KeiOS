@@ -5,14 +5,14 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.graphics.Bitmap
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -76,6 +76,7 @@ import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.SearchBarHost
 import com.example.keios.ui.page.main.widget.SheetActionGroup
 import com.example.keios.ui.page.main.widget.SheetContentColumn
 import com.example.keios.ui.page.main.widget.SheetControlRow
@@ -1155,10 +1156,9 @@ fun GitHubPage(
                         }
                     }
                 )
-                AnimatedVisibility(
+                SearchBarHost(
                     visible = showSearchBar,
-                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(animationSpec = tween(220)) { -it / 3 },
-                    exit = fadeOut(animationSpec = tween(140)) + slideOutVertically(animationSpec = tween(180)) { -it / 3 }
+                    animationLabelPrefix = "githubSearchBar"
                 ) {
                     Column {
                         GlassSearchField(
@@ -1467,10 +1467,14 @@ fun GitHubPage(
                                 }
                             )
                             if (state.localVersion.isNotBlank()) {
+                                val normalizedLocalVersion = formatReleaseValue(
+                                    releaseName = state.localVersion,
+                                    rawTag = state.localVersion
+                                )
                                 val localText = if (state.localVersionCode >= 0L) {
-                                    "${state.localVersion} (${state.localVersionCode})"
+                                    "$normalizedLocalVersion (${state.localVersionCode})"
                                 } else {
-                                    state.localVersion
+                                    normalizedLocalVersion
                                 }
                                 VersionValueRow(
                                     label = "本地版本",
