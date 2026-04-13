@@ -811,6 +811,7 @@ fun GitHubPage(
             item { Spacer(modifier = Modifier.height(2.dp)) }
             item {
                 val overviewShape = RoundedCornerShape(16.dp)
+                val overviewTitleColor = Color.White
                 Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -895,6 +896,7 @@ fun GitHubPage(
                     GitHubOverviewMetricItem(
                         label = "上次检查",
                         value = formatRefreshAgo(lastRefreshMs),
+                        titleColor = overviewTitleColor,
                         valueColor = overviewRefreshState.color(
                             neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
                         )
@@ -906,12 +908,14 @@ fun GitHubPage(
                         GitHubOverviewMetricItem(
                             label = "策略",
                             value = lookupConfig.selectedStrategy.overviewLabel(),
+                            titleColor = overviewTitleColor,
                             valueColor = MiuixTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                         GitHubOverviewMetricItem(
                             label = "API",
                             value = lookupConfig.overviewApiLabel(),
+                            titleColor = overviewTitleColor,
                             valueColor = if (lookupConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken) {
                                 if (lookupConfig.apiToken.isBlank()) {
                                     GitHubStatusPalette.PreRelease
@@ -931,12 +935,14 @@ fun GitHubPage(
                         GitHubOverviewMetricItem(
                             label = "已追踪",
                             value = "$trackedCount 项",
+                            titleColor = overviewTitleColor,
                             valueColor = if (trackedCount > 0) GitHubStatusPalette.Stable else MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f)
                         )
                         GitHubOverviewMetricItem(
                             label = "稳定可更新",
                             value = "$updatableCount 项",
+                            titleColor = overviewTitleColor,
                             valueColor = if (updatableCount > 0) GitHubStatusPalette.Update else MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f)
                         )
@@ -948,12 +954,14 @@ fun GitHubPage(
                         GitHubOverviewMetricItem(
                             label = "稳定已最新",
                             value = "$stableLatestCount 项",
+                            titleColor = overviewTitleColor,
                             valueColor = if (stableLatestCount > 0) GitHubStatusPalette.Stable else MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f)
                         )
                         GitHubOverviewMetricItem(
                             label = "预发跟踪",
                             value = "$preReleaseCount 项",
+                            titleColor = overviewTitleColor,
                             valueColor = if (preReleaseCount > 0) GitHubStatusPalette.PreRelease else MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f)
                         )
@@ -965,12 +973,14 @@ fun GitHubPage(
                         GitHubOverviewMetricItem(
                             label = "预发可更新",
                             value = "$preReleaseUpdateCount 项",
+                            titleColor = overviewTitleColor,
                             valueColor = if (preReleaseUpdateCount > 0) GitHubStatusPalette.PreRelease else MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f)
                         )
                         GitHubOverviewMetricItem(
                             label = "检查失败",
                             value = "$failedCount 项",
+                            titleColor = overviewTitleColor,
                             valueColor = if (failedCount > 0) GitHubStatusPalette.Error else MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f)
                         )
