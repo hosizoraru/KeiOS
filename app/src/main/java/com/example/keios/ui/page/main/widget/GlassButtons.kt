@@ -105,7 +105,7 @@ fun GlassIconButton(
                     .fillMaxSize()
                     .clip(ContinuousCapsule)
                     .border(
-                        width = 1.dp,
+                        width = glass.borderWidth,
                         color = glass.borderColor,
                         shape = ContinuousCapsule
                     )
@@ -146,14 +146,15 @@ fun GlassTextButton(
     val containerOverlay = containerColor?.copy(
         alpha = when (variant) {
             GlassVariant.Bar -> 0.34f
-            GlassVariant.Sheet -> if (isDark) 0.24f else 0.30f
+            GlassVariant.SheetInput -> if (isDark) 0.20f else 0.20f
+            GlassVariant.SheetAction -> if (isDark) 0.24f else 0.34f
             GlassVariant.Compact -> if (isDark) 0.22f else 0.28f
             GlassVariant.Content -> if (isDark) 0.26f else 0.32f
         }
     )
     val borderModifier = if (glass.showBorder) {
         Modifier.border(
-            width = 1.dp,
+            width = glass.borderWidth,
             color = glass.borderColor,
             shape = ContinuousCapsule
         )

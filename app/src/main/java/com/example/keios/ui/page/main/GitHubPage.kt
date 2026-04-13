@@ -851,7 +851,7 @@ fun GitHubPage(
                 onValueChange = { repoUrlInput = it },
                 label = "GitHub 项目地址",
                 backdrop = backdrop,
-                variant = GlassVariant.Sheet,
+                variant = GlassVariant.SheetInput,
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -860,7 +860,7 @@ fun GitHubPage(
                 onValueChange = { appSearch = it },
                 label = "筛选本机 App（名称或包名）",
                 backdrop = backdrop,
-                variant = GlassVariant.Sheet,
+                variant = GlassVariant.SheetInput,
                 singleLine = true
             )
             SheetRow {
@@ -870,7 +870,7 @@ fun GitHubPage(
                 )
                 GlassTextButton(
                     backdrop = backdrop,
-                    variant = GlassVariant.Sheet,
+                    variant = GlassVariant.SheetAction,
                     text = if (pickerExpanded) "收起列表" else "选择应用",
                     onClick = { pickerExpanded = !pickerExpanded }
                 )
@@ -921,7 +921,7 @@ fun GitHubPage(
             if (editingTrackedItem != null) {
                 GlassTextButton(
                     backdrop = backdrop,
-                    variant = GlassVariant.Sheet,
+                    variant = GlassVariant.SheetAction,
                     text = "删除跟踪",
                     textColor = MiuixTheme.colorScheme.error,
                     onClick = {

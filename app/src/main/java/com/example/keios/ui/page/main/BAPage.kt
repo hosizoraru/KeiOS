@@ -1852,7 +1852,7 @@ fun BAPage(
                         backdrop = backdrop,
                         text = "${sheetCafeLevel}级",
                         blurRadius = baGlassBlur,
-                                                variant = GlassVariant.Sheet,
+                                                variant = GlassVariant.SheetAction,
                         onClick = { showCafeLevelPopup = !showCafeLevelPopup }
                     )
                     if (showCafeLevelPopup) {
@@ -1934,7 +1934,7 @@ fun BAPage(
                         label = "120",
                         backdrop = backdrop,
                         blurRadius = baGlassBlur,
-                                                variant = GlassVariant.Sheet,
+                                                variant = GlassVariant.SheetInput,
                         singleLine = true,
                         textAlign = TextAlign.Center,
                         fontSize = 18.sp,

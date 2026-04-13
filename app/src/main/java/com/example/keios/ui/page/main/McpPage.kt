@@ -481,7 +481,7 @@ fun McpPage(
                     onValueChange = { serverName = it },
                     label = "输入服务名称",
                     backdrop = backdrop,
-                    variant = GlassVariant.Sheet,
+                    variant = GlassVariant.SheetInput,
                     singleLine = true,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(serverNameFieldWidth)
@@ -505,7 +505,7 @@ fun McpPage(
                     onValueChange = { portText = it.filter(Char::isDigit).take(5) },
                     label = "输入端口",
                     backdrop = backdrop,
-                    variant = GlassVariant.Sheet,
+                    variant = GlassVariant.SheetInput,
                     singleLine = true,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(portFieldWidth)
@@ -534,7 +534,7 @@ fun McpPage(
             )
             GlassTextButton(
                 backdrop = backdrop,
-                variant = GlassVariant.Sheet,
+                variant = GlassVariant.SheetAction,
                 text = "重置 Token",
                 textColor = MiuixTheme.colorScheme.error,
                 modifier = Modifier.fillMaxWidth(),

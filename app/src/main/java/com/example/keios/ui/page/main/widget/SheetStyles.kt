@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -103,6 +104,7 @@ fun SheetDescriptionText(
         color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.96f),
         fontSize = 14.sp,
         lineHeight = 20.sp,
+        textAlign = TextAlign.Justify,
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))

@@ -64,7 +64,7 @@ fun GlassSearchField(
         Modifier
     } else {
         Modifier.border(
-            width = 1.dp,
+            width = glass.borderWidth,
             color = glass.borderColor,
             shape = ContinuousCapsule
         )
