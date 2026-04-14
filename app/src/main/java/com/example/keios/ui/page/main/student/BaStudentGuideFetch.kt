@@ -2104,7 +2104,9 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
 
             if (isWeaponBlockEnd) {
                 inWeaponBlock = false
-                inGrowthBlock = false
+                if (!isGrowthBlockStartKey(normalizedGuideKey)) {
+                    inGrowthBlock = false
+                }
             }
             if (isSkillBlockEnd) {
                 inSkillBlock = false

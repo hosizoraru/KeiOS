@@ -1540,14 +1540,43 @@ private data class GuideSimulateData(
 
 private fun sanitizeSimulateFavorRows(rows: List<BaGuideRow>): List<BaGuideRow> {
     if (rows.isEmpty()) return emptyList()
-    return rows.filterNot { row ->
-        val normalizedKey = normalizeProfileFieldKey(row.key)
-        val isTierLabel = Regex("""^T\d+$""", RegexOption.IGNORE_CASE).matches(normalizedKey)
-        isTierLabel &&
-            row.value.isBlank() &&
-            row.imageUrl.isBlank() &&
-            row.imageUrls.isEmpty()
-    }
+    return rows
+        .filterNot { row ->
+            row.key.isBlank() &&
+                row.value.isBlank() &&
+                row.imageUrl.isBlank() &&
+                row.imageUrls.isEmpty()
+        }
+        .filterNot { row ->
+            val normalizedKey = normalizeProfileFieldKey(row.key)
+            val hasMedia = row.imageUrl.isNotBlank() || row.imageUrls.isNotEmpty()
+            val isTierMetaKey = Regex(
+                """^t\d+(效果|所需升级材料|技能图标)$""",
+                RegexOption.IGNORE_CASE
+            ).matches(normalizedKey)
+            isTierMetaKey && row.value.isBlank() && !hasMedia
+        }
+        .filterNot { row ->
+            val normalizedKey = normalizeProfileFieldKey(row.key)
+            val normalizedValue = normalizeProfileFieldKey(row.value)
+            val hasMedia = row.imageUrl.isNotBlank() || row.imageUrls.isNotEmpty()
+            val hasNumericValue = Regex("""\d""").containsMatchIn(row.value)
+            val isBrokenStatPair =
+                isLikelySimulateStatLabel(row.key) &&
+                    isLikelySimulateStatLabel(row.value) &&
+                    !hasNumericValue &&
+                    !hasMedia
+            val isTierLabel = Regex("""^T\d+$""", RegexOption.IGNORE_CASE).matches(normalizedKey)
+            val isTierOnlyPlaceholder =
+                isTierLabel &&
+                    normalizedValue.isBlank() &&
+                    !hasMedia
+            isBrokenStatPair || isTierOnlyPlaceholder
+        }
+        .distinctBy { row ->
+            val packedImages = row.imageUrls.joinToString("|")
+            "${normalizeProfileFieldKey(row.key)}|${row.value.trim()}|${row.imageUrl.trim()}|$packedImages"
+        }
 }
 
 private fun sanitizeSimulateBondRows(rows: List<BaGuideRow>): List<BaGuideRow> {
@@ -3242,10 +3271,20 @@ private fun isSkillMigratedProfileRow(
     hasInitialDataHeader: Boolean
 ): Boolean {
     val key = normalizeProfileFieldKey(row.key)
+    val value = normalizeProfileFieldKey(row.value)
     if (Regex("""^附加属性\d+$""").matches(key)) return true
     if (key == normalizeProfileFieldKey("初始数据")) return true
     if (key == normalizeProfileFieldKey("顶级数据")) return true
     if (key == normalizeProfileFieldKey("25级")) return true
+    if (Regex("""^t\d+$""", RegexOption.IGNORE_CASE).matches(key)) return true
+    if (Regex("""^t\d+(效果|所需升级材料|技能图标)$""", RegexOption.IGNORE_CASE).matches(key)) return true
+    if (
+        isLikelySimulateStatLabel(row.key) &&
+        isLikelySimulateStatLabel(row.value) &&
+        !Regex("""\d""").containsMatchIn(value)
+    ) {
+        return true
+    }
     if ((hasTopDataHeader || hasInitialDataHeader) && key in normalizedTopDataStatKeys) return true
     return false
 }
