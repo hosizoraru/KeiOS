@@ -101,6 +101,8 @@ private data class GuideDetailExtract(
     val galleryItems: List<BaGuideGalleryItem> = emptyList(),
     val growthRows: List<BaGuideRow> = emptyList(),
     val voiceRows: List<BaGuideRow> = emptyList(),
+    val voiceCvJp: String = "",
+    val voiceCvCn: String = "",
     val voiceLanguageHeaders: List<String> = emptyList(),
     val voiceEntries: List<BaGuideVoiceEntry> = emptyList(),
     val tabSkillIconUrl: String = "",
@@ -644,6 +646,112 @@ private fun parseVoiceDataFromBaseData(
     return languageHeaders to entries
 }
 
+private fun parseVoiceCvFromBaseData(baseData: JSONArray): Pair<String, String> {
+    fun isJapaneseLabel(label: String): Boolean {
+        val text = label.replace(" ", "").lowercase()
+        return text.contains("日") || text.contains("jp") || text.contains("jpn")
+    }
+
+    fun isChineseLabel(label: String): Boolean {
+        val text = label.replace(" ", "").lowercase()
+        return text.contains("中") || text.contains("cn") || text.contains("国语") || text.contains("国配")
+    }
+
+    var jpCv = ""
+    var cnCv = ""
+    val candidateBlocks = mutableListOf<String>()
+
+    fun cleanCvRawText(raw: String): String {
+        if (raw.isBlank()) return ""
+        return decodeBasicHtmlEntity(raw)
+            .replace(Regex("(?i)<br\\s*/?>"), "\n")
+            .replace(Regex("(?i)</p>"), "\n")
+            .replace(Regex("(?i)</div>"), "\n")
+            .replace(Regex("<[^>]+>"), " ")
+            .replace("\r\n", "\n")
+            .replace('\r', '\n')
+            .split('\n')
+            .map { it.trim() }
+            .joinToString("\n")
+            .replace(Regex("[ \t]+"), " ")
+            .trim()
+    }
+
+    for (i in 0 until baseData.length()) {
+        val row = baseData.optJSONArray(i) ?: continue
+        if (row.length() == 0) continue
+        val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+        if (!(key.contains("声优") || key.equals("cv", ignoreCase = true) || key.contains("CV", ignoreCase = true))) {
+            continue
+        }
+        for (j in 1 until row.length()) {
+            val text = cleanCvRawText(row.optJSONObject(j)?.optString("value").orEmpty())
+            if (text.isNotBlank()) {
+                candidateBlocks += text
+            }
+        }
+    }
+
+    fun assignByLabel(rawLabel: String, rawValue: String) {
+        val value = rawValue.trim()
+        if (value.isBlank()) return
+        when {
+            jpCv.isBlank() && isJapaneseLabel(rawLabel) -> jpCv = value
+            cnCv.isBlank() && isChineseLabel(rawLabel) -> cnCv = value
+        }
+    }
+
+    val pairRegex = Regex(
+        """(?i)(日配|日|jp|jpn|中配|中|cn|国语|国配)\s*[\|:：]\s*([\s\S]*?)(?=(?:\s*(?:日配|日|jp|jpn|中配|中|cn|国语|国配)\s*[\|:：])|$)"""
+    )
+
+    candidateBlocks.forEach { block ->
+        val normalizedBlock = block
+            .replace('｜', '|')
+            .replace('：', ':')
+            .replace('，', ',')
+            .replace('；', ';')
+            .replace('\u3000', ' ')
+            .trim()
+
+        var matchedByRegex = false
+        pairRegex.findAll(normalizedBlock).forEach { match ->
+            matchedByRegex = true
+            val label = match.groupValues.getOrNull(1).orEmpty().trim()
+            val value = match.groupValues.getOrNull(2).orEmpty()
+                .trim()
+                .trim(',', '，', '、', ';', '；')
+            if (label.isNotBlank() && value.isNotBlank()) {
+                assignByLabel(label, value)
+            }
+        }
+
+        if (!matchedByRegex) {
+            normalizedBlock
+                .split('\n')
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .forEach { line ->
+                    val delimiter = when {
+                        line.contains('|') -> '|'
+                        line.contains(':') -> ':'
+                        else -> null
+                    }
+                    if (delimiter != null) {
+                        val parts = line.split(delimiter, limit = 2)
+                        val label = parts.getOrNull(0).orEmpty().trim()
+                        val value = parts.getOrNull(1).orEmpty().trim()
+                        if (label.isNotBlank() && value.isNotBlank()) {
+                            assignByLabel(label, value)
+                        }
+                    }
+                }
+        }
+    }
+
+    return jpCv to cnCv
+}
+
 private fun firstImageFromAny(any: Any?, sourceUrl: String, depth: Int = 0): String {
     if (any == null || depth > 4) return ""
     return when (any) {
@@ -805,6 +913,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 tabSimulateIconUrl = tabIcons[GuideTab.Simulate].orEmpty()
             )
         val (voiceLanguageHeaders, voiceEntries) = parseVoiceDataFromBaseData(baseData, sourceUrl)
+        val (voiceCvJp, voiceCvCn) = parseVoiceCvFromBaseData(baseData)
         val galleryFromMediaTypes = parseGalleryItemsFromBaseData(baseData, sourceUrl)
         val baseRows = mutableListOf<GuideBaseRow>()
         var firstImage = ""
@@ -952,6 +1061,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         var inSkillGlossaryBlock = false
         var inWeaponBlock = false
         var inGalleryContext = false
+        var inVoiceContext = false
+        var currentVoiceSection = ""
         var lastGalleryTitle = ""
         baseRows.forEach { row ->
             val key = row.key
@@ -973,6 +1084,38 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 return@forEach
             }
             if (normalizedKey.replace(" ", "").startsWith("回忆大厅文件")) {
+                return@forEach
+            }
+            if (normalizedKey == "配音语言") {
+                inVoiceContext = true
+                currentVoiceSection = ""
+                return@forEach
+            }
+            if (normalizedKey == "配音" || normalizedKey == "配音大类") {
+                return@forEach
+            }
+            val isVoiceCategoryRow = isVoiceCategoryKey(normalizedKey)
+            if (isVoiceCategoryRow) {
+                inVoiceContext = true
+                currentVoiceSection = normalizedKey
+            } else if (inVoiceContext && isVoiceBlockTailKey(normalizedKey)) {
+                inVoiceContext = false
+                currentVoiceSection = ""
+            }
+            val normalizedVoiceTexts = row.textValues
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+            val hasMeaningfulVoicePayload = normalizedVoiceTexts.size >= 2
+            val isVoiceByContext = inVoiceContext && (
+                isVoiceCategoryRow || (currentVoiceSection.isNotBlank() && hasMeaningfulVoicePayload)
+            )
+            if (inVoiceContext &&
+                !isVoiceCategoryRow &&
+                !hasMeaningfulVoicePayload &&
+                row.imageValues.isEmpty() &&
+                row.videoValues.isEmpty()
+            ) {
+                // Skip placeholder rows such as "被CC5" that should not leak into profile.
                 return@forEach
             }
             val isWeaponBlockStart = normalizedKey == "专武"
@@ -1015,7 +1158,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 }
             }
 
-            val isVoice = containsAny(normalizedKey, voiceKeywords) || isGrowthTitleVoiceKey(normalizedKey)
+            val isVoice = containsAny(normalizedKey, voiceKeywords) || isGrowthTitleVoiceKey(normalizedKey) || isVoiceByContext
             val matchesSkillKeywords = containsAny(normalizedKey, skillKeywords)
             val matchesGrowthKeywords = containsAny(normalizedKey, growthKeywords)
             val isLevelRow = key.trim().matches(Regex("""(?i)^LV\.?\d{1,2}$"""))
@@ -1172,6 +1315,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             galleryItems = distinctGallery,
             growthRows = growthRows.take(160),
             voiceRows = voiceRows.take(160),
+            voiceCvJp = voiceCvJp,
+            voiceCvCn = voiceCvCn,
             voiceLanguageHeaders = voiceLanguageHeaders,
             voiceEntries = voiceEntries,
             tabSkillIconUrl = tabIcons[GuideTab.Skills].orEmpty(),
@@ -1270,6 +1415,8 @@ private fun fetchGuideInfoByApi(sourceUrl: String): BaStudentGuideInfo {
         galleryItems = detail.galleryItems,
         growthRows = detail.growthRows,
         voiceRows = detail.voiceRows,
+        voiceCvJp = detail.voiceCvJp,
+        voiceCvCn = detail.voiceCvCn,
         voiceLanguageHeaders = detail.voiceLanguageHeaders,
         voiceEntries = detail.voiceEntries,
         tabSkillIconUrl = detail.tabSkillIconUrl,

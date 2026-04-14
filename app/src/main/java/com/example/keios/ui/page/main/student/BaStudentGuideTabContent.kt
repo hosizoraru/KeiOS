@@ -252,6 +252,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                             val allProfileRows = guide.profileRowsForDisplay()
                                 .filterNot(::shouldHideMovedHeaderRow)
                                 .filterNot(::isGrowthTitleVoiceRow)
+                                .filterNot(::isVoicePlaceholderRow)
                             val chocolateInfoRows = allProfileRows.filter { row ->
                                 val key = row.key.trim()
                                 key.contains("巧克力", ignoreCase = true)
@@ -497,6 +498,32 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         normalizeGuideUrl(entry.audioUrl)
                                     ).joinToString("|")
                                 }
+                            val jpCv = guide.voiceCvJp.trim()
+                            val cnCv = guide.voiceCvCn.trim()
+
+                            if (jpCv.isNotBlank() || cnCv.isNotBlank()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            MiuixInfoItem("日配 CV", jpCv.ifBlank { "-" })
+                                            MiuixInfoItem("中配 CV", cnCv.ifBlank { "-" })
+                                        }
+                                    }
+                                }
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                            }
 
                             if (!error.isNullOrBlank()) {
                                 item {
@@ -1052,6 +1079,11 @@ private fun isGrowthTitleVoiceRow(row: BaGuideRow): Boolean {
             text.contains("growth_title")
     }
     return matches(key) || matches(value)
+}
+
+private fun isVoicePlaceholderRow(row: BaGuideRow): Boolean {
+    val merged = listOf(row.key.trim(), row.value.trim()).joinToString(" ").replace(" ", "")
+    return Regex("""被CC\d+""").containsMatchIn(merged)
 }
 
 private fun buildGrowthTitleVoiceEntries(rows: List<BaGuideRow>): List<BaGuideVoiceEntry> {

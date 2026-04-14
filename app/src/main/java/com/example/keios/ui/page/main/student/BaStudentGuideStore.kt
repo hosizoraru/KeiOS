@@ -190,6 +190,8 @@ object BaStudentGuideStore {
             put("galleryItems", encodeGalleryItems(info.galleryItems))
             put("growthRows", encodeGuideRows(info.growthRows))
             put("voiceRows", encodeGuideRows(info.voiceRows))
+            put("voiceCvJp", info.voiceCvJp)
+            put("voiceCvCn", info.voiceCvCn)
             put("voiceLanguageHeaders", JSONArray().apply { info.voiceLanguageHeaders.forEach { put(it) } })
             put("voiceEntries", encodeVoiceEntries(info.voiceEntries))
             put("tabSkillIconUrl", info.tabSkillIconUrl)
@@ -271,6 +273,8 @@ object BaStudentGuideStore {
                 galleryItems = decodeGalleryItems(obj, "galleryItems"),
                 growthRows = decodeGuideRows(obj, "growthRows"),
                 voiceRows = decodeGuideRows(obj, "voiceRows"),
+                voiceCvJp = obj.optString("voiceCvJp").trim(),
+                voiceCvCn = obj.optString("voiceCvCn").trim(),
                 voiceLanguageHeaders = buildList {
                     val headers = obj.optJSONArray("voiceLanguageHeaders")
                     if (headers != null) {
