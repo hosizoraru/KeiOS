@@ -118,7 +118,28 @@ private data class GuideBaseRow(
     val mediaTypes: Set<String> = emptySet()
 )
 
-private val voiceCategoryKeys = setOf("通常", "大厅及咖啡馆", "战斗", "活动", "事件", "好感度")
+private val voiceCategoryKeywords = listOf("通常", "大厅及咖啡馆", "战斗", "活动", "事件", "好感度", "成长")
+
+private fun isVoiceCategoryKey(raw: String): Boolean {
+    val key = stripHtml(raw)
+        .replace(Regex("\\s+"), "")
+        .trim()
+    if (key.isBlank()) return false
+    return voiceCategoryKeywords.any { keyword ->
+        key.contains(keyword)
+    }
+}
+
+private fun isVoiceBlockTailKey(raw: String): Boolean {
+    val key = stripHtml(raw).trim()
+    if (key.isBlank()) return false
+    return key.startsWith("官方介绍") ||
+        key.startsWith("角色表情") ||
+        key.contains("设定集") ||
+        key.contains("本家画") ||
+        key.contains("原画师") ||
+        key.contains("个人账号主页")
+}
 
 private fun isPlaceholderMediaToken(raw: String): Boolean {
     val value = raw.trim().lowercase()
@@ -513,6 +534,7 @@ private fun parseVoiceDataFromBaseData(
     val rawLanguageHeaders = mutableListOf<String>()
     val entries = mutableListOf<BaGuideVoiceEntry>()
     var inVoiceBlock = false
+    var currentVoiceSection = ""
 
     fun isJapaneseHeader(value: String): Boolean {
         val text = value.trim().lowercase()
@@ -530,6 +552,7 @@ private fun parseVoiceDataFromBaseData(
         val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
         if (key == "配音语言") {
             inVoiceBlock = true
+            currentVoiceSection = ""
             rawLanguageHeaders.clear()
             languageHeaders.clear()
             for (j in 1 until row.length()) {
@@ -548,18 +571,23 @@ private fun parseVoiceDataFromBaseData(
         if (!inVoiceBlock) continue
         if (key.isBlank() || key == "配音" || key == "配音大类") continue
 
-        if (key !in voiceCategoryKeys) {
-            if (entries.isNotEmpty() && (
-                    key.startsWith("官方介绍") ||
-                        key.startsWith("角色表情") ||
-                        key.contains("设定集") ||
-                        key.contains("本家画") ||
-                        key.contains("原画师") ||
-                        key.contains("个人账号主页")
-                    )
-            ) {
+        val isVoiceCategory = isVoiceCategoryKey(key)
+        if (isVoiceCategory) {
+            currentVoiceSection = key
+        } else {
+            if (entries.isNotEmpty() && isVoiceBlockTailKey(key)) {
                 break
             }
+            if (currentVoiceSection.isBlank()) {
+                continue
+            }
+        }
+        val section = if (isVoiceCategory) {
+            key
+        } else {
+            currentVoiceSection
+        }
+        if (section.isBlank()) {
             continue
         }
 
@@ -606,7 +634,7 @@ private fun parseVoiceDataFromBaseData(
         if (jpText.isBlank() && cnText.isBlank()) continue
 
         entries += BaGuideVoiceEntry(
-            section = key,
+            section = section,
             title = title,
             lines = listOf(jpText, cnText),
             audioUrl = audioUrl
@@ -862,6 +890,15 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             return keywords.any { key -> target.contains(key, ignoreCase = true) }
         }
 
+        fun isGrowthTitleVoiceKey(raw: String): Boolean {
+            val normalized = raw.replace(" ", "").lowercase()
+            if (normalized.isBlank()) return false
+            return (normalized.contains("成长") && normalized.contains("title")) ||
+                normalized.contains("成长标题") ||
+                normalized.contains("growthtitle") ||
+                normalized.contains("growth_title")
+        }
+
         val skillKeywords = listOf(
             "技能", "EX", "普通技能", "被动技能", "辅助技能", "固有", "技能COST", "技能图标", "技能描述", "技能名称",
             "技能类型", "技能名词", "LV"
@@ -892,7 +929,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             // 兼容专武面板使用“攻击力/生命值/治愈力”等简写字段
             "攻击力", "生命值", "防御力", "暴击", "爆伤", "命中", "闪避"
         )
-        val voiceKeywords = listOf("通常", "战斗", "活动", "大厅及咖啡馆", "事件", "好感度")
+        val voiceKeywords = listOf("通常", "战斗", "活动", "大厅及咖啡馆", "事件", "好感度", "成长")
 
         val skillRows = mutableListOf<BaGuideRow>()
         val profileRows = mutableListOf<BaGuideRow>()
@@ -978,7 +1015,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 }
             }
 
-            val isVoice = containsAny(normalizedKey, voiceKeywords)
+            val isVoice = containsAny(normalizedKey, voiceKeywords) || isGrowthTitleVoiceKey(normalizedKey)
             val matchesSkillKeywords = containsAny(normalizedKey, skillKeywords)
             val matchesGrowthKeywords = containsAny(normalizedKey, growthKeywords)
             val isLevelRow = key.trim().matches(Regex("""(?i)^LV\.?\d{1,2}$"""))

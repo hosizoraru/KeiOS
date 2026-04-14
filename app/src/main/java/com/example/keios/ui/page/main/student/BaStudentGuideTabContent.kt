@@ -251,6 +251,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                         } else {
                             val allProfileRows = guide.profileRowsForDisplay()
                                 .filterNot(::shouldHideMovedHeaderRow)
+                                .filterNot(::isGrowthTitleVoiceRow)
                             val chocolateInfoRows = allProfileRows.filter { row ->
                                 val key = row.key.trim()
                                 key.contains("巧克力", ignoreCase = true)
@@ -478,11 +479,24 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 )
                             }
                         } else {
-                            val voiceEntries = guide.voiceEntries.filter {
-                                val jp = it.lines.getOrNull(0).orEmpty().trim()
-                                val cn = it.lines.getOrNull(1).orEmpty().trim()
+                            val structuredVoiceEntries = guide.voiceEntries.filter { entry ->
+                                val jp = entry.lines.getOrNull(0).orEmpty().trim()
+                                val cn = entry.lines.getOrNull(1).orEmpty().trim()
                                 jp.isNotBlank() || cn.isNotBlank()
                             }
+                            val migratedVoiceEntries = buildGrowthTitleVoiceEntries(
+                                guide.profileRowsForDisplay()
+                                    .filter(::isGrowthTitleVoiceRow)
+                            )
+                            val voiceEntries = (structuredVoiceEntries + migratedVoiceEntries)
+                                .distinctBy { entry ->
+                                    listOf(
+                                        entry.section.trim(),
+                                        entry.title.trim(),
+                                        entry.lines.joinToString("|") { it.trim() },
+                                        normalizeGuideUrl(entry.audioUrl)
+                                    ).joinToString("|")
+                                }
 
                             if (!error.isNullOrBlank()) {
                                 item {
@@ -1024,4 +1038,54 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                         }
                     }
                 }
+}
+
+private fun isGrowthTitleVoiceRow(row: BaGuideRow): Boolean {
+    fun normalize(text: String): String = text.replace(" ", "").lowercase()
+    val key = normalize(row.key)
+    val value = normalize(row.value)
+    fun matches(text: String): Boolean {
+        if (text.isBlank()) return false
+        return (text.contains("成长") && text.contains("title")) ||
+            text.contains("成长标题") ||
+            text.contains("growthtitle") ||
+            text.contains("growth_title")
+    }
+    return matches(key) || matches(value)
+}
+
+private fun buildGrowthTitleVoiceEntries(rows: List<BaGuideRow>): List<BaGuideVoiceEntry> {
+    return rows.mapIndexedNotNull { index, row ->
+        val lines = parseGrowthTitleVoiceLines(row.value)
+        val jp = lines.getOrNull(0).orEmpty().trim()
+        val cn = lines.getOrNull(1).orEmpty().trim()
+        if (jp.isBlank() && cn.isBlank()) return@mapIndexedNotNull null
+        BaGuideVoiceEntry(
+            section = "成长",
+            title = row.key.trim().ifBlank { "成长台词 ${index + 1}" },
+            lines = listOf(jp, cn),
+            audioUrl = ""
+        )
+    }
+}
+
+private fun parseGrowthTitleVoiceLines(raw: String): List<String> {
+    val normalized = raw.trim()
+    if (normalized.isBlank()) return listOf("", "")
+    val lineBreakParts = normalized
+        .split('\n')
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    if (lineBreakParts.size >= 2) {
+        return listOf(lineBreakParts[0], lineBreakParts[1])
+    }
+    val slashParts = normalized
+        .split(Regex("""\s*(?:/|／|\|)\s*"""))
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    return when {
+        slashParts.size >= 2 -> listOf(slashParts[0], slashParts[1])
+        slashParts.size == 1 -> listOf(slashParts[0], "")
+        else -> listOf("", "")
+    }
 }
