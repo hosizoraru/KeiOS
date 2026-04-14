@@ -847,7 +847,9 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     listOf(
                                         entry.section.trim(),
                                         entry.title.trim(),
+                                        entry.lineHeaders.joinToString("|") { it.trim() },
                                         entry.lines.joinToString("|") { it.trim() },
+                                        entry.audioUrls.joinToString("|") { normalizeGuideUrl(it) },
                                         normalizeGuideUrl(entry.audioUrl)
                                     ).joinToString("|")
                                 }
@@ -863,7 +865,6 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                             val selectedDubbingHeader = dubbingHeaders.firstOrNull { header ->
                                 header.equals(selectedVoiceLanguage.trim(), ignoreCase = true)
                             } ?: dubbingHeaders.firstOrNull().orEmpty()
-                            val officialTranslationHeader = voiceLanguageHeaders.firstOrNull(::isOfficialTranslationHeader).orEmpty()
 
                             if (voiceCvByLanguage.isNotEmpty()) {
                                 item {
@@ -933,16 +934,22 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
 
                             if (voiceEntries.isNotEmpty()) {
                                 voiceEntries.forEachIndexed { index, entry ->
+                                    val playbackUrl = resolveVoicePlaybackUrl(
+                                        entry = entry,
+                                        headers = voiceLanguageHeaders,
+                                        selectedHeader = selectedDubbingHeader
+                                    )
+                                    val normalizedPlaybackUrl = normalizeGuideUrl(playbackUrl)
                                     item {
                                         GuideVoiceEntryCard(
                                             entry = entry,
                                             languageHeaders = voiceLanguageHeaders,
-                                            dubbingHeaders = dubbingHeaders,
-                                            selectedDubbingHeader = selectedDubbingHeader,
-                                            officialTranslationHeader = officialTranslationHeader,
                                             backdrop = backdrop,
-                                            isPlaying = normalizeGuideUrl(entry.audioUrl) == playingVoiceUrl && isVoicePlaying,
-                                            playProgress = if (normalizeGuideUrl(entry.audioUrl) == playingVoiceUrl) {
+                                            playbackUrl = normalizedPlaybackUrl,
+                                            isPlaying = normalizedPlaybackUrl.isNotBlank() &&
+                                                normalizedPlaybackUrl == playingVoiceUrl &&
+                                                isVoicePlaying,
+                                            playProgress = if (normalizedPlaybackUrl.isNotBlank() && normalizedPlaybackUrl == playingVoiceUrl) {
                                                 voicePlayProgress
                                             } else {
                                                 0f
@@ -2180,7 +2187,6 @@ private fun defaultVoiceLanguageHeaderForDisplay(index: Int): String {
         0 -> "日配"
         1 -> "中配"
         2 -> "韩配"
-        3 -> "官翻"
         else -> "语言${index + 1}"
     }
 }
@@ -2226,9 +2232,19 @@ private fun buildVoiceLanguageHeadersForDisplay(
     headers: List<String>,
     entries: List<BaGuideVoiceEntry>
 ): List<String> {
-    val merged = headers.map(::canonicalVoiceLanguageForDisplay).toMutableList()
-    val maxLineCount = entries.maxOfOrNull { entry -> entry.lines.size } ?: 0
-    while (merged.size < maxLineCount) {
+    val merged = mutableListOf<String>()
+    headers.forEach { raw ->
+        val normalized = canonicalVoiceLanguageForDisplay(raw)
+        if (normalized.isBlank()) return@forEach
+        if (isOfficialTranslationHeader(normalized)) return@forEach
+        if (normalized !in merged) {
+            merged += normalized
+        }
+    }
+    val maxAudioCount = entries.maxOfOrNull { entry ->
+        maxOf(entry.audioUrls.size, if (entry.audioUrl.trim().isNotBlank()) 1 else 0)
+    } ?: 0
+    while (merged.size < maxAudioCount) {
         val fallback = defaultVoiceLanguageHeaderForDisplay(merged.size)
         merged += fallback
     }
@@ -2241,9 +2257,11 @@ private fun isOfficialTranslationHeader(header: String): Boolean {
     return canonicalVoiceLanguageForDisplay(header) == "官翻"
 }
 
-private fun hasVoiceLineAtIndex(entries: List<BaGuideVoiceEntry>, index: Int): Boolean {
+private fun hasVoiceAudioAtIndex(entries: List<BaGuideVoiceEntry>, index: Int): Boolean {
     return entries.any { entry ->
-        entry.lines.getOrNull(index).orEmpty().trim().isNotBlank()
+        val directAudio = entry.audioUrls.getOrNull(index).orEmpty().trim()
+        directAudio.isNotBlank() ||
+            (index == 0 && entry.audioUrls.isEmpty() && entry.audioUrl.trim().isNotBlank())
     }
 }
 
@@ -2256,9 +2274,35 @@ private fun buildDubbingHeadersForVoiceCard(
         val normalized = canonicalVoiceLanguageForDisplay(header)
         if (normalized.isBlank()) return@mapIndexedNotNull null
         if (isOfficialTranslationHeader(normalized)) return@mapIndexedNotNull null
-        if (!hasVoiceLineAtIndex(entries, index)) return@mapIndexedNotNull null
+        if (!hasVoiceAudioAtIndex(entries, index)) return@mapIndexedNotNull null
         normalized
     }.distinct()
+}
+
+private fun resolveVoicePlaybackUrl(
+    entry: BaGuideVoiceEntry,
+    headers: List<String>,
+    selectedHeader: String
+): String {
+    val normalizedSelected = canonicalVoiceLanguageForDisplay(selectedHeader)
+    if (headers.isNotEmpty() && normalizedSelected.isNotBlank()) {
+        val selectedIndex = headers.indexOfFirst { header ->
+            canonicalVoiceLanguageForDisplay(header) == normalizedSelected
+        }
+        if (selectedIndex >= 0) {
+            val selectedAudio = normalizeGuideUrl(entry.audioUrls.getOrNull(selectedIndex).orEmpty())
+            if (selectedAudio.isNotBlank()) {
+                return selectedAudio
+            }
+        }
+    }
+    val fallbackAudio = entry.audioUrls
+        .asSequence()
+        .map(::normalizeGuideUrl)
+        .firstOrNull { it.isNotBlank() }
+        .orEmpty()
+    if (fallbackAudio.isNotBlank()) return fallbackAudio
+    return normalizeGuideUrl(entry.audioUrl)
 }
 
 private fun isGrowthTitleVoiceRow(row: BaGuideRow): Boolean {

@@ -804,7 +804,6 @@ private fun defaultVoiceLanguageLabelForIndex(index: Int): String {
         0 -> "日配"
         1 -> "中配"
         2 -> "韩配"
-        3 -> "官翻"
         else -> "语言${index + 1}"
     }
 }
@@ -815,6 +814,32 @@ private fun looksLikeVoiceLanguageLabel(raw: String): Boolean {
     if (canonical in setOf("日配", "中配", "韩配", "官翻")) return true
     val normalized = normalizeVoiceLanguageLabelRaw(canonical)
     return normalized.contains("配") || normalized.contains("翻")
+}
+
+private fun voiceLineDisplayPriority(label: String): Int {
+    return when (canonicalVoiceLanguageLabel(label)) {
+        "日配" -> 0
+        "中配" -> 1
+        "官翻" -> 2
+        "韩配" -> 3
+        else -> 4
+    }
+}
+
+private fun sortVoiceLinePairsForDisplay(
+    pairs: List<Pair<String, String>>
+): List<Pair<String, String>> {
+    return pairs.withIndex()
+        .sortedWith(
+            compareBy<IndexedValue<Pair<String, String>>> { indexed ->
+                voiceLineDisplayPriority(indexed.value.first)
+            }.thenBy { indexed ->
+                indexed.index
+            }
+        )
+        .map { indexed ->
+            canonicalVoiceLanguageLabel(indexed.value.first).ifBlank { indexed.value.first } to indexed.value.second
+        }
 }
 
 private fun parseVoiceDataFromBaseData(
@@ -837,7 +862,7 @@ private fun parseVoiceDataFromBaseData(
             for (j in 1 until row.length()) {
                 val cell = row.optJSONObject(j) ?: continue
                 val label = canonicalVoiceLanguageLabel(cell.optString("value"))
-                if (label.isNotBlank() && label !in languageHeaders) {
+                if (label.isNotBlank() && label != "官翻" && label !in languageHeaders) {
                     languageHeaders += label
                 }
             }
@@ -866,24 +891,35 @@ private fun parseVoiceDataFromBaseData(
             continue
         }
 
-        val languageTexts = mutableListOf<String>()
+        val textByAudioSegment = linkedMapOf<Int, MutableList<String>>()
+        val rowAudioUrls = mutableListOf<String>()
         var title = ""
         var titleAssigned = false
-        var audioUrl = ""
+        fun appendAudio(raw: String, type: String) {
+            val normalizedByRaw = extractAudioUrlsFromRaw(sourceUrl, raw)
+            val candidates = buildList {
+                addAll(normalizedByRaw)
+                if (type == "audio") {
+                    val fallback = normalizeMediaUrl(sourceUrl, raw)
+                    if (isAudioUrl(fallback)) add(fallback)
+                }
+            }
+            candidates.forEach { candidate ->
+                val normalized = candidate.trim()
+                if (normalized.isNotBlank() && isAudioUrl(normalized) && normalized !in rowAudioUrls) {
+                    rowAudioUrls += normalized
+                }
+            }
+        }
+
         for (j in 1 until row.length()) {
             val cell = row.optJSONObject(j) ?: continue
             val type = cell.optString("type").trim().lowercase()
             val rawValue = cell.optString("value").trim()
-            val audioFromRaw = extractAudioUrlsFromRaw(sourceUrl, rawValue).firstOrNull().orEmpty()
+            if (rawValue.isBlank()) continue
             if (type == "audio") {
-                val normalized = audioFromRaw.ifBlank { normalizeMediaUrl(sourceUrl, rawValue) }
-                if (audioUrl.isBlank() && isAudioUrl(normalized)) {
-                    audioUrl = normalized
-                }
+                appendAudio(rawValue, type)
                 continue
-            }
-            if (audioUrl.isBlank() && audioFromRaw.isNotBlank()) {
-                audioUrl = audioFromRaw
             }
             val text = stripHtml(rawValue)
             if (!titleAssigned) {
@@ -891,29 +927,72 @@ private fun parseVoiceDataFromBaseData(
                 title = text
                 titleAssigned = true
             } else {
-                languageTexts += text
+                if (text.isNotBlank()) {
+                    val segment = rowAudioUrls.size
+                    textByAudioSegment.getOrPut(segment) { mutableListOf() } += text
+                }
+                appendAudio(rawValue, type)
             }
         }
         if (!titleAssigned) {
             title = key
         }
-        val lineSize = maxOf(languageHeaders.size, languageTexts.size)
-        if (lineSize <= 0) continue
-        val lines = MutableList(lineSize) { index ->
-            languageTexts.getOrNull(index).orElse("")
-        }.map { it.trim() }
-        if (lines.all { it.isBlank() }) continue
+
+        val dubbingCount = maxOf(languageHeaders.size, rowAudioUrls.size)
+        val dubbingTexts = MutableList(dubbingCount) { "" }
+        val segmentZero = textByAudioSegment[0].orEmpty().toMutableList()
+        for (index in dubbingTexts.indices) {
+            if (segmentZero.isNotEmpty()) {
+                dubbingTexts[index] = segmentZero.removeAt(0).trim()
+            }
+        }
+        textByAudioSegment[0] = segmentZero
+        for (index in dubbingTexts.indices) {
+            if (dubbingTexts[index].isNotBlank()) continue
+            val bucket = textByAudioSegment[index].orEmpty().toMutableList()
+            if (bucket.isNotEmpty()) {
+                dubbingTexts[index] = bucket.removeAt(0).trim()
+                textByAudioSegment[index] = bucket
+            }
+        }
+        val officialTranslation = textByAudioSegment
+            .entries
+            .sortedBy { it.key }
+            .flatMap { it.value }
+            .map { it.trim() }
+            .firstOrNull { it.isNotBlank() }
+            .orEmpty()
+
+        val linePairs = buildList {
+            for (index in dubbingTexts.indices) {
+                val label = languageHeaders.getOrNull(index).orElse(defaultVoiceLanguageLabelForIndex(index))
+                val text = dubbingTexts[index].trim()
+                if (text.isNotBlank()) {
+                    add(label to text)
+                }
+            }
+            if (officialTranslation.isNotBlank()) {
+                add("官翻" to officialTranslation)
+            }
+        }
+        if (linePairs.isEmpty() && rowAudioUrls.none { it.isNotBlank() }) continue
+        val sortedLinePairs = sortVoiceLinePairsForDisplay(linePairs)
+        val lineHeaders = sortedLinePairs.map { it.first }
+        val lines = sortedLinePairs.map { it.second }
+        val legacyAudioUrl = rowAudioUrls.firstOrNull { it.isNotBlank() }.orEmpty()
 
         entries += BaGuideVoiceEntry(
             section = section,
             title = title,
+            lineHeaders = lineHeaders,
             lines = lines,
-            audioUrl = audioUrl
+            audioUrls = rowAudioUrls,
+            audioUrl = legacyAudioUrl
         )
     }
 
-    val maxLineCount = entries.maxOfOrNull { entry -> entry.lines.size } ?: 0
-    val headerCount = maxOf(languageHeaders.size, maxLineCount)
+    val maxAudioCount = entries.maxOfOrNull { entry -> entry.audioUrls.size } ?: 0
+    val headerCount = maxOf(languageHeaders.size, maxAudioCount)
     val normalizedHeaders = languageHeaders.toMutableList()
     while (normalizedHeaders.size < headerCount) {
         val fallback = defaultVoiceLanguageLabelForIndex(normalizedHeaders.size)
@@ -927,11 +1006,17 @@ private fun parseVoiceDataFromBaseData(
         entries
     } else {
         entries.map { entry ->
-            if (entry.lines.size >= headerCount) {
-                entry.copy(lines = entry.lines.take(headerCount))
+            val normalizedAudioUrls = if (entry.audioUrls.size >= headerCount) {
+                entry.audioUrls.take(headerCount)
             } else {
-                entry.copy(lines = entry.lines + List(headerCount - entry.lines.size) { "" })
+                entry.audioUrls + List(headerCount - entry.audioUrls.size) { "" }
             }
+            entry.copy(
+                audioUrls = normalizedAudioUrls,
+                audioUrl = entry.audioUrl.ifBlank {
+                    normalizedAudioUrls.firstOrNull { it.isNotBlank() }.orEmpty()
+                }
+            )
         }
     }
 
@@ -1086,18 +1171,20 @@ private fun mergeVoiceLanguageHeaders(
     val merged = mutableListOf<String>()
     rawHeaders.forEach { header ->
         val normalized = canonicalVoiceLanguageLabel(header)
-        if (normalized.isNotBlank() && normalized !in merged) {
+        if (normalized.isNotBlank() && normalized != "官翻" && normalized !in merged) {
             merged += normalized
         }
     }
     cvByLanguage.keys.forEach { label ->
         val normalized = canonicalVoiceLanguageLabel(label)
-        if (normalized.isNotBlank() && normalized !in merged) {
+        if (normalized.isNotBlank() && normalized != "官翻" && normalized !in merged) {
             merged += normalized
         }
     }
-    val maxLineCount = voiceEntries.maxOfOrNull { it.lines.size } ?: 0
-    while (merged.size < maxLineCount) {
+    val maxAudioCount = voiceEntries.maxOfOrNull { entry ->
+        maxOf(entry.audioUrls.size, if (entry.audioUrl.isNotBlank()) 1 else 0)
+    } ?: 0
+    while (merged.size < maxAudioCount) {
         val fallback = defaultVoiceLanguageLabelForIndex(merged.size)
         if (fallback in merged) {
             merged += "语言${merged.size + 1}"
@@ -1105,8 +1192,8 @@ private fun mergeVoiceLanguageHeaders(
             merged += fallback
         }
     }
-    if (merged.isEmpty() && maxLineCount > 0) {
-        repeat(maxLineCount) { index ->
+    if (merged.isEmpty() && maxAudioCount > 0) {
+        repeat(maxAudioCount) { index ->
             merged += defaultVoiceLanguageLabelForIndex(index)
         }
     }
@@ -1119,12 +1206,23 @@ private fun normalizeVoiceEntriesWithHeaderCount(
 ): List<BaGuideVoiceEntry> {
     if (headerCount <= 0) return entries
     return entries.map { entry ->
-        val normalizedLines = if (entry.lines.size >= headerCount) {
-            entry.lines.take(headerCount)
+        val rawAudioUrls = if (entry.audioUrls.isNotEmpty()) {
+            entry.audioUrls.map { it.trim() }
         } else {
-            entry.lines + List(headerCount - entry.lines.size) { "" }
+            listOf(entry.audioUrl.trim()).filter { it.isNotBlank() }
         }
-        entry.copy(lines = normalizedLines)
+        val normalizedAudioUrls = if (rawAudioUrls.size >= headerCount) {
+            rawAudioUrls.take(headerCount)
+        } else {
+            rawAudioUrls + List(headerCount - rawAudioUrls.size) { "" }
+        }
+        val legacyAudioUrl = entry.audioUrl.trim().ifBlank {
+            normalizedAudioUrls.firstOrNull { it.isNotBlank() }.orEmpty()
+        }
+        entry.copy(
+            audioUrls = normalizedAudioUrls,
+            audioUrl = legacyAudioUrl
+        )
     }
 }
 

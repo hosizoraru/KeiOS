@@ -1776,63 +1776,15 @@ fun GuideVoiceLanguageCard(
 fun GuideVoiceEntryCard(
     entry: BaGuideVoiceEntry,
     languageHeaders: List<String>,
-    dubbingHeaders: List<String>,
-    selectedDubbingHeader: String,
-    officialTranslationHeader: String,
     backdrop: Backdrop?,
+    playbackUrl: String,
     isPlaying: Boolean,
     playProgress: Float,
     onTogglePlay: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val labels = if (languageHeaders.isNotEmpty()) {
-        languageHeaders
-    } else {
-        listOf("日配", "中配")
-    }
-    val dubbingLines = buildList {
-        dubbingHeaders.forEach { header ->
-            val index = labels.indexOfFirst { label -> label.equals(header, ignoreCase = true) }
-            if (index < 0) return@forEach
-            val line = entry.lines.getOrNull(index).orEmpty().trim()
-            if (line.isNotBlank()) {
-                add(header to line)
-            }
-        }
-    }
-    val selectedLine = dubbingLines.firstOrNull { (label, _) ->
-        label.equals(selectedDubbingHeader.trim(), ignoreCase = true)
-    }
-    val orderedDubbingLines = buildList {
-        if (selectedLine != null) add(selectedLine)
-        dubbingLines.forEach { line ->
-            if (selectedLine == null || !line.first.equals(selectedLine.first, ignoreCase = true)) {
-                add(line)
-            }
-        }
-    }
-    val officialTranslationLine = if (officialTranslationHeader.isNotBlank()) {
-        val index = labels.indexOfFirst { label ->
-            label.equals(officialTranslationHeader, ignoreCase = true)
-        }
-        if (index >= 0) {
-            entry.lines.getOrNull(index).orEmpty().trim()
-                .takeIf { it.isNotBlank() }
-                ?.let { officialTranslationHeader to it }
-        } else {
-            null
-        }
-    } else {
-        null
-    }
-    val voiceLines = buildList {
-        addAll(orderedDubbingLines)
-        if (officialTranslationLine != null) {
-            add(officialTranslationLine)
-        }
-    }.ifEmpty {
-        listOf("台词" to "暂无台词文本")
-    }
+    val voiceLines = buildVoiceLinePairsForCard(entry, languageHeaders)
+    val normalizedPlaybackUrl = normalizeGuideUrl(playbackUrl)
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.defaultColors(
@@ -1867,7 +1819,7 @@ fun GuideVoiceEntryCard(
                     color = MiuixTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f)
                 )
-                if (entry.audioUrl.isNotBlank()) {
+                if (normalizedPlaybackUrl.isNotBlank()) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -1889,7 +1841,7 @@ fun GuideVoiceEntryCard(
                             leadingIcon = if (isPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
                             textColor = Color(0xFF3B82F6),
                             variant = GlassVariant.Compact,
-                            onClick = { onTogglePlay(entry.audioUrl) }
+                            onClick = { onTogglePlay(normalizedPlaybackUrl) }
                         )
                     }
                 }
@@ -1921,6 +1873,73 @@ fun GuideVoiceEntryCard(
             }
         }
     }
+}
+
+private fun canonicalVoiceLineLabelInCard(raw: String): String {
+    val normalized = raw
+        .replace(" ", "")
+        .replace("　", "")
+        .lowercase()
+        .trim()
+    if (normalized.isBlank()) return ""
+    return when {
+        normalized.contains("官翻") || normalized.contains("官方翻译") || normalized.contains("官方中文") || normalized.contains("官中") -> "官翻"
+        normalized.contains("韩") || normalized.contains("kr") || normalized.contains("kor") || normalized.contains("korean") -> "韩配"
+        normalized.contains("中") || normalized.contains("cn") || normalized.contains("国语") || normalized.contains("国配") || normalized.contains("中文") -> "中配"
+        normalized.contains("日") || normalized.contains("jp") || normalized.contains("jpn") || normalized.contains("日本") -> "日配"
+        else -> raw.trim()
+    }
+}
+
+private fun voiceLinePriorityForCard(label: String): Int {
+    return when (canonicalVoiceLineLabelInCard(label)) {
+        "日配" -> 0
+        "中配" -> 1
+        "官翻" -> 2
+        "韩配" -> 3
+        else -> 4
+    }
+}
+
+private fun buildVoiceLinePairsForCard(
+    entry: BaGuideVoiceEntry,
+    fallbackHeaders: List<String>
+): List<Pair<String, String>> {
+    val explicitPairs = if (
+        entry.lineHeaders.size == entry.lines.size &&
+        entry.lineHeaders.any { it.trim().isNotBlank() }
+    ) {
+        entry.lineHeaders.zip(entry.lines)
+    } else {
+        emptyList()
+    }
+    val rawPairs = if (explicitPairs.isNotEmpty()) {
+        explicitPairs
+    } else {
+        entry.lines.mapIndexed { index, line ->
+            val label = fallbackHeaders.getOrNull(index).orEmpty().ifBlank { "台词${index + 1}" }
+            label to line
+        }
+    }
+    return rawPairs.withIndex()
+        .mapNotNull { indexed ->
+            val label = indexed.value.first.trim()
+            val text = indexed.value.second.trim()
+            if (text.isBlank()) return@mapNotNull null
+            val normalizedLabel = canonicalVoiceLineLabelInCard(label).ifBlank {
+                label.ifBlank { "台词${indexed.index + 1}" }
+            }
+            Triple(normalizedLabel, text, indexed.index)
+        }
+        .sortedWith(
+            compareBy<Triple<String, String, Int>> { item ->
+                voiceLinePriorityForCard(item.first)
+            }.thenBy { item ->
+                item.third
+            }
+        )
+        .map { item -> item.first to item.second }
+        .ifEmpty { listOf("台词" to "暂无台词文本") }
 }
 
 @Composable

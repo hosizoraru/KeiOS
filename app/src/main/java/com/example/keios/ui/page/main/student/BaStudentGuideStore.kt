@@ -85,11 +85,27 @@ object BaStudentGuideStore {
                         put("t", item.title)
                         put("a", item.audioUrl)
                         put(
+                            "hs",
+                            JSONArray().apply {
+                                item.lineHeaders.forEach { header ->
+                                    put(header.trim())
+                                }
+                            }
+                        )
+                        put(
                             "ls",
                             JSONArray().apply {
                                 item.lines.forEach { line ->
                                     // 保留空字符串占位，避免多语言列在缓存后发生错位。
                                     put(line.trim())
+                                }
+                            }
+                        )
+                        put(
+                            "aus",
+                            JSONArray().apply {
+                                item.audioUrls.forEach { url ->
+                                    put(url.trim())
                                 }
                             }
                         )
@@ -145,6 +161,14 @@ object BaStudentGuideStore {
                 val section = item.optString("s").trim()
                 val title = item.optString("t").trim()
                 val audioUrl = item.optString("a").trim()
+                val lineHeaders = buildList {
+                    val headersArray = item.optJSONArray("hs")
+                    if (headersArray != null) {
+                        for (j in 0 until headersArray.length()) {
+                            add(headersArray.optString(j).trim())
+                        }
+                    }
+                }
                 val lines = buildList {
                     val lineArray = item.optJSONArray("ls")
                     if (lineArray != null) {
@@ -154,12 +178,30 @@ object BaStudentGuideStore {
                         }
                     }
                 }
-                if (section.isBlank() && title.isBlank() && audioUrl.isBlank() && lines.isEmpty()) continue
+                val audioUrls = buildList {
+                    val audioArray = item.optJSONArray("aus")
+                    if (audioArray != null) {
+                        for (j in 0 until audioArray.length()) {
+                            add(audioArray.optString(j).trim())
+                        }
+                    }
+                }.ifEmpty {
+                    if (audioUrl.isNotBlank()) listOf(audioUrl) else emptyList()
+                }
+                if (
+                    section.isBlank() &&
+                    title.isBlank() &&
+                    audioUrl.isBlank() &&
+                    lines.isEmpty() &&
+                    audioUrls.isEmpty()
+                ) continue
                 add(
                     BaGuideVoiceEntry(
                         section = section,
                         title = title,
+                        lineHeaders = lineHeaders,
                         lines = lines,
+                        audioUrls = audioUrls,
                         audioUrl = audioUrl
                     )
                 )

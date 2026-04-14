@@ -54,7 +54,9 @@ data class BaGuideGalleryItem(
 data class BaGuideVoiceEntry(
     val section: String,
     val title: String,
+    val lineHeaders: List<String> = emptyList(),
     val lines: List<String> = emptyList(),
+    val audioUrls: List<String> = emptyList(),
     val audioUrl: String = ""
 )
 
