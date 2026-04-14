@@ -269,6 +269,7 @@ object BaStudentGuideStore {
             put("profileRows", encodeGuideRows(info.profileRows))
             put("galleryItems", encodeGalleryItems(info.galleryItems))
             put("growthRows", encodeGuideRows(info.growthRows))
+            put("simulateRows", encodeGuideRows(info.simulateRows))
             put("voiceRows", encodeGuideRows(info.voiceRows))
             put("voiceCvJp", info.voiceCvJp)
             put("voiceCvCn", info.voiceCvCn)
@@ -360,6 +361,7 @@ object BaStudentGuideStore {
                 profileRows = decodeGuideRows(obj, "profileRows"),
                 galleryItems = decodeGalleryItems(obj, "galleryItems"),
                 growthRows = decodeGuideRows(obj, "growthRows"),
+                simulateRows = decodeGuideRows(obj, "simulateRows"),
                 voiceRows = decodeGuideRows(obj, "voiceRows"),
                 voiceCvJp = voiceCvJp,
                 voiceCvCn = voiceCvCn,

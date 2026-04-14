@@ -24,8 +24,11 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1394,45 +1397,465 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                     }
 
                     GuideBottomTab.Simulate -> {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.defaultColors(
-                                    color = Color(0x223B82F6),
-                                    contentColor = MiuixTheme.colorScheme.onBackground
-                                ),
-                                onClick = {}
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    error?.takeIf { it.isNotBlank() }?.let {
-                                        Text(
-                                            text = it,
-                                            color = MiuixTheme.colorScheme.error,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
+                        val guide = info
+                        if (guide == null) {
+                            item {
+                                FrostedBlock(
+                                    backdrop = backdrop,
+                                    title = activeBottomTab.label,
+                                    subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
+                                    accent = accent
+                                )
+                            }
+                        } else {
+                            val simulateData = buildGuideSimulateData(guide.simulateRowsForDisplay())
+
+                            if (!error.isNullOrBlank()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(
+                                                text = error.orEmpty(),
+                                                color = MiuixTheme.colorScheme.error,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                            }
+
+                            val hasAnySectionData = simulateData.initialRows.isNotEmpty() ||
+                                simulateData.maxRows.isNotEmpty() ||
+                                simulateData.weaponRows.isNotEmpty() ||
+                                simulateData.equipmentRows.isNotEmpty() ||
+                                simulateData.favorRows.isNotEmpty() ||
+                                simulateData.unlockRows.isNotEmpty() ||
+                                simulateData.bondRows.isNotEmpty()
+
+                            if (hasAnySectionData) {
+                                item {
+                                    GuideSimulateAbilityCard(
+                                        data = simulateData,
+                                        backdrop = backdrop
+                                    )
+                                }
+
+                                val sectionCards = listOf(
+                                    "专武" to simulateData.weaponRows,
+                                    "装备" to simulateData.equipmentRows,
+                                    "爱用品" to simulateData.favorRows,
+                                    "能力解放" to simulateData.unlockRows,
+                                    "羁绊等级奖励" to simulateData.bondRows
+                                )
+
+                                sectionCards.forEach { (title, rows) ->
+                                    item { Spacer(modifier = Modifier.height(10.dp)) }
+                                    item {
+                                        GuideSimulateSectionCard(
+                                            title = title,
+                                            rows = rows,
+                                            backdrop = backdrop
                                         )
                                     }
-                                    val guide = info
-                                    if (guide != null) {
-                                        Text(
-                                            text = guide.summary.ifBlank { guide.description },
-                                            color = MiuixTheme.colorScheme.onBackground
-                                        )
-                                        GuideRowsSection(
-                                            rows = guide.growthRowsForDisplay(),
-                                            emptyText = "暂未解析到养成模拟数据。"
-                                        )
+                                }
+                            } else {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                                        ) {
+                                            Text(
+                                                text = "暂未解析到养成模拟数据，点击右上角刷新后重试。",
+                                                color = MiuixTheme.colorScheme.onBackgroundVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+}
+
+private data class GuideSimulateData(
+    val initialHint: String = "",
+    val initialRows: List<BaGuideRow> = emptyList(),
+    val maxHint: String = "",
+    val maxRows: List<BaGuideRow> = emptyList(),
+    val weaponRows: List<BaGuideRow> = emptyList(),
+    val equipmentRows: List<BaGuideRow> = emptyList(),
+    val favorRows: List<BaGuideRow> = emptyList(),
+    val unlockRows: List<BaGuideRow> = emptyList(),
+    val bondRows: List<BaGuideRow> = emptyList()
+)
+
+@Composable
+private fun GuideSimulateAbilityCard(
+    data: GuideSimulateData,
+    backdrop: LayerBackdrop
+) {
+    var selectedAbility by rememberSaveable(
+        data.initialRows.size,
+        data.maxRows.size
+    ) { mutableStateOf("初始能力") }
+    val selectedRows = if (selectedAbility == "最大培养") data.maxRows else data.initialRows
+    val selectedHint = if (selectedAbility == "最大培养") data.maxHint else data.initialHint
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "角色能力",
+                    color = MiuixTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Medium
+                )
+                listOf("初始能力", "最大培养").forEach { option ->
+                    val selected = selectedAbility == option
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = option,
+                        textColor = if (selected) Color(0xFF2563EB) else MiuixTheme.colorScheme.onBackgroundVariant,
+                        containerColor = if (selected) Color(0x443B82F6) else null,
+                        variant = GlassVariant.Compact,
+                        onClick = { selectedAbility = option }
+                    )
+                }
+            }
+            selectedHint.takeIf { it.isNotBlank() }?.let { hint ->
+                Text(
+                    text = hint.trim('*').trim(),
+                    color = Color(0xFF60A5FA),
+                    style = MiuixTheme.textStyles.body2
+                )
+            }
+            if (selectedRows.isNotEmpty()) {
+                selectedRows.forEach { row ->
+                    GuideSimulateRowItem(row = row, backdrop = backdrop)
+                }
+            } else {
+                Text(
+                    text = "暂无能力数据。",
+                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuideSimulateSectionCard(
+    title: String,
+    rows: List<BaGuideRow>,
+    backdrop: LayerBackdrop
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = Color(0x223B82F6),
+            contentColor = MiuixTheme.colorScheme.onBackground
+        ),
+        onClick = {}
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = title,
+                color = MiuixTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Medium
+            )
+            if (rows.isNotEmpty()) {
+                rows.forEach { row ->
+                    GuideSimulateRowItem(
+                        row = row,
+                        backdrop = backdrop
+                    )
+                }
+            } else {
+                Text(
+                    text = "暂无${title}数据。",
+                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuideSimulateRowItem(
+    row: BaGuideRow,
+    backdrop: LayerBackdrop
+) {
+    val key = row.key.trim().ifBlank { "信息" }
+    val value = row.value.trim()
+    val iconUrl = row.imageUrl.trim().ifBlank { row.imageUrls.firstOrNull().orEmpty() }
+    if (isSimulateSubHeader(key)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (iconUrl.isNotBlank()) {
+                GuideRemoteIcon(
+                    imageUrl = iconUrl,
+                    iconWidth = 18.dp,
+                    iconHeight = 18.dp
+                )
+            }
+            GlassTextButton(
+                backdrop = backdrop,
+                text = key,
+                enabled = false,
+                textColor = Color(0xFF3B82F6),
+                variant = GlassVariant.Compact,
+                onClick = {}
+            )
+        }
+        return
+    }
+
+    val valueColor = when {
+        value.contains("%") -> Color(0xFF5FA8FF)
+        value.matches(Regex("""(?i)^T\d+.*$""")) -> Color(0xFF5FA8FF)
+        value.matches(Regex("""(?i)^Lv\d+.*$""")) -> Color(0xFF5FA8FF)
+        key.contains("COST", ignoreCase = true) -> Color(0xFF5FA8FF)
+        else -> MiuixTheme.colorScheme.onBackground
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(0.45f),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (iconUrl.isNotBlank()) {
+                GuideRemoteIcon(
+                    imageUrl = iconUrl,
+                    iconWidth = 18.dp,
+                    iconHeight = 18.dp
+                )
+            }
+            Text(
+                text = key,
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Text(
+            text = value.ifBlank { "-" },
+            color = valueColor,
+            modifier = Modifier.weight(0.55f),
+            textAlign = TextAlign.End,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun isSimulateSubHeader(key: String): Boolean {
+    val normalized = normalizeProfileFieldKey(key)
+    if (Regex("""^\d+号装备$""").matches(normalized)) return true
+    if (Regex("""^羁绊角色\d+$""").matches(normalized)) return true
+    if (Regex("""^\d+级$""").matches(normalized)) return true
+    return false
+}
+
+private fun buildGuideSimulateData(rows: List<BaGuideRow>): GuideSimulateData {
+    if (rows.isEmpty()) return GuideSimulateData()
+    val sections = linkedMapOf<String, MutableList<BaGuideRow>>()
+    val hints = mutableMapOf<String, String>()
+    var currentSection = ""
+
+    rows.forEach { row ->
+        val header = resolveSimulateSectionName(row.key)
+        if (header != null) {
+            currentSection = header
+            sections.getOrPut(header) { mutableListOf() }
+            val hint = row.value.trim().trim('*').trim()
+            if (hint.isNotBlank()) {
+                hints[header] = hint
+            }
+            return@forEach
+        }
+        if (currentSection.isBlank()) return@forEach
+
+        val cleaned = row.copy(
+            key = row.key.trim(),
+            value = row.value.trim(),
+            imageUrl = row.imageUrl.trim(),
+            imageUrls = row.imageUrls.map { it.trim() }.filter { it.isNotBlank() }.distinct()
+        )
+        if (
+            cleaned.key.isBlank() &&
+            cleaned.value.isBlank() &&
+            cleaned.imageUrl.isBlank() &&
+            cleaned.imageUrls.isEmpty()
+        ) return@forEach
+        sections.getOrPut(currentSection) { mutableListOf() } += cleaned
+    }
+
+    return GuideSimulateData(
+        initialHint = hints["初始数据"].orEmpty(),
+        initialRows = expandSimulateRows(sections["初始数据"].orEmpty()),
+        maxHint = hints["顶级数据"].orEmpty(),
+        maxRows = expandSimulateRows(sections["顶级数据"].orEmpty()),
+        weaponRows = expandSimulateRows(sections["专武"].orEmpty()),
+        equipmentRows = expandSimulateRows(sections["装备"].orEmpty()),
+        favorRows = expandSimulateRows(sections["爱用品"].orEmpty()),
+        unlockRows = expandSimulateRows(sections["能力解放"].orEmpty()),
+        bondRows = expandSimulateRows(sections["羁绊等级奖励"].orEmpty())
+    )
+}
+
+private fun resolveSimulateSectionName(rawKey: String): String? {
+    val normalized = normalizeProfileFieldKey(rawKey)
+    return when {
+        normalized == normalizeProfileFieldKey("初始数据") -> "初始数据"
+        normalized == normalizeProfileFieldKey("顶级数据") -> "顶级数据"
+        normalized == normalizeProfileFieldKey("专武") -> "专武"
+        normalized == normalizeProfileFieldKey("装备") -> "装备"
+        normalized == normalizeProfileFieldKey("爱用品") -> "爱用品"
+        normalized == normalizeProfileFieldKey("能力解放") -> "能力解放"
+        normalized == normalizeProfileFieldKey("羁绊等级奖励") -> "羁绊等级奖励"
+        else -> null
+    }
+}
+
+private fun isLikelySimulateStatLabel(raw: String): Boolean {
+    val normalized = normalizeProfileFieldKey(raw)
+    if (normalized in normalizedTopDataStatKeys) return true
+    val extraStatKeys = setOf(
+        "暴伤抵抗率",
+        "暴击抵抗值",
+        "暴伤抵抗值"
+    ).map(::normalizeProfileFieldKey).toSet()
+    if (normalized in extraStatKeys) return true
+    return normalized.endsWith("值") || normalized.endsWith("率")
+}
+
+private fun expandSimulateRows(rows: List<BaGuideRow>): List<BaGuideRow> {
+    if (rows.isEmpty()) return emptyList()
+    val expanded = mutableListOf<BaGuideRow>()
+    rows.forEach { row ->
+        val key = row.key.trim()
+        val value = row.value.trim()
+        val icon = row.imageUrl.trim().ifBlank { row.imageUrls.firstOrNull().orEmpty() }
+        val images = row.imageUrls.ifEmpty { listOfNotNull(icon.takeIf { it.isNotBlank() }) }
+        if (key.isBlank() && value.isBlank() && images.isEmpty()) return@forEach
+
+        if (value.isBlank()) {
+            if (key.isNotBlank() || icon.isNotBlank()) {
+                expanded += BaGuideRow(
+                    key = key.ifBlank { "信息" },
+                    value = "",
+                    imageUrl = icon,
+                    imageUrls = images
+                )
+            }
+            return@forEach
+        }
+
+        val tokens = splitGuideCompositeValues(value)
+        if (tokens.isEmpty()) {
+            expanded += BaGuideRow(
+                key = key.ifBlank { "信息" },
+                value = value,
+                imageUrl = icon,
+                imageUrls = images
+            )
+            return@forEach
+        }
+
+        val firstTokenLooksLikeStat = isLikelySimulateStatLabel(tokens.first())
+        var index = 0
+        if (!firstTokenLooksLikeStat) {
+            expanded += BaGuideRow(
+                key = key.ifBlank { "等级" },
+                value = tokens.first().trim(),
+                imageUrl = icon,
+                imageUrls = images
+            )
+            index = 1
+        } else if (key.isNotBlank() && !isLikelySimulateStatLabel(key) && !isSimulateSubHeader(key)) {
+            expanded += BaGuideRow(
+                key = key,
+                value = "",
+                imageUrl = icon,
+                imageUrls = images
+            )
+        } else if (icon.isNotBlank() && key.isNotBlank()) {
+            expanded += BaGuideRow(
+                key = key,
+                value = "",
+                imageUrl = icon,
+                imageUrls = images
+            )
+        }
+
+        while (index + 1 < tokens.size) {
+            val statKey = tokens[index].trim()
+            val statValue = tokens[index + 1].trim()
+            if (statKey.isNotBlank() && statValue.isNotBlank()) {
+                expanded += BaGuideRow(
+                    key = statKey,
+                    value = statValue
+                )
+            }
+            index += 2
+        }
+    }
+
+    return expanded.distinctBy { row ->
+        val packedImages = row.imageUrls.joinToString("|")
+        "${normalizeProfileFieldKey(row.key)}|${row.value.trim()}|${row.imageUrl.trim()}|$packedImages"
+    }
 }
 
 @Composable

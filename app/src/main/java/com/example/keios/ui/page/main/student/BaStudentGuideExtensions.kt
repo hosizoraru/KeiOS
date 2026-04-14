@@ -8,7 +8,7 @@ fun BaStudentGuideInfo.bottomTabIconUrl(tab: GuideBottomTab): String {
         GuideBottomTab.Profile -> tabProfileIconUrl.ifBlank { profileRowsForDisplay().firstImage() }
         GuideBottomTab.Voice -> tabVoiceIconUrl.ifBlank { voiceRows.firstImage() }
         GuideBottomTab.Gallery -> tabGalleryIconUrl.ifBlank { galleryItems.firstOrNull()?.imageUrl.orEmpty() }
-        GuideBottomTab.Simulate -> tabSimulateIconUrl.ifBlank { growthRowsForDisplay().firstImage() }
+        GuideBottomTab.Simulate -> tabSimulateIconUrl.ifBlank { simulateRowsForDisplay().firstImage() }
     }
 }
 
@@ -37,6 +37,10 @@ fun BaStudentGuideInfo.growthRowsForDisplay(): List<BaGuideRow> {
             }
         }
         .map { (k, v) -> BaGuideRow(k, v) }
+}
+
+fun BaStudentGuideInfo.simulateRowsForDisplay(): List<BaGuideRow> {
+    return simulateRows
 }
 
 private fun BaStudentGuideInfo.findFirstRowByKeywords(

@@ -21,6 +21,7 @@ data class BaStudentGuideInfo(
     val profileRows: List<BaGuideRow> = emptyList(),
     val galleryItems: List<BaGuideGalleryItem> = emptyList(),
     val growthRows: List<BaGuideRow> = emptyList(),
+    val simulateRows: List<BaGuideRow> = emptyList(),
     val voiceRows: List<BaGuideRow> = emptyList(),
     val voiceCvJp: String = "",
     val voiceCvCn: String = "",

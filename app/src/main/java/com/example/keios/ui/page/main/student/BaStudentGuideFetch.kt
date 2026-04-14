@@ -100,6 +100,7 @@ private data class GuideDetailExtract(
     val profileRows: List<BaGuideRow> = emptyList(),
     val galleryItems: List<BaGuideGalleryItem> = emptyList(),
     val growthRows: List<BaGuideRow> = emptyList(),
+    val simulateRows: List<BaGuideRow> = emptyList(),
     val voiceRows: List<BaGuideRow> = emptyList(),
     val voiceCvJp: String = "",
     val voiceCvCn: String = "",
@@ -548,6 +549,156 @@ private fun parseGiftPreferenceRowsFromBaseData(
             "${row.key.trim()}|${row.value.trim()}|${row.imageUrl.trim()}|$packedImages"
         }
         .take(80)
+}
+
+private val simulateSectionHeaders = listOf(
+    "初始数据",
+    "顶级数据",
+    "专武",
+    "装备",
+    "爱用品",
+    "能力解放",
+    "羁绊等级奖励"
+)
+
+private fun resolveSimulateSectionHeader(rawKey: String): String? {
+    val key = normalizeGuideRowKey(rawKey)
+    return simulateSectionHeaders.firstOrNull { header ->
+        key == normalizeGuideRowKey(header)
+    }
+}
+
+private fun parseSimulateRowsFromBaseData(
+    baseData: JSONArray,
+    sourceUrl: String
+): List<BaGuideRow> {
+    if (baseData.length() == 0) return emptyList()
+
+    fun rowToGuideRow(row: JSONArray): BaGuideRow {
+        val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+        val textValues = mutableListOf<String>()
+        val imageValues = linkedSetOf<String>()
+        for (j in 1 until row.length()) {
+            val cell = row.optJSONObject(j) ?: continue
+            val type = cell.optString("type").trim().lowercase()
+            val rawValueAny = cell.opt("value")
+            val rawValue = cell.optString("value").trim()
+            if (rawValue.isBlank()) continue
+
+            when (type) {
+                "image" -> {
+                    if (isPlaceholderMediaToken(rawValue)) continue
+                    val normalized = normalizeImageUrl(sourceUrl, rawValue)
+                    if (looksLikeImageUrl(normalized)) {
+                        imageValues += normalized
+                    }
+                }
+
+                "imageset", "live2d" -> {
+                    imageValues += extractImageUrlsFromAny(sourceUrl, rawValueAny)
+                }
+
+                else -> {
+                    imageValues += extractImageUrlsFromHtml(sourceUrl, rawValue)
+                    imageValues += extractImageUrlsFromAny(sourceUrl, rawValueAny)
+                    val text = stripHtml(rawValue)
+                    if (text.isNotBlank()) {
+                        textValues += text
+                    }
+                }
+            }
+        }
+        val dedupImages = imageValues
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+        return BaGuideRow(
+            key = key,
+            value = textValues.joinToString(" / ").trim(),
+            imageUrl = dedupImages.firstOrNull().orEmpty(),
+            imageUrls = dedupImages
+        )
+    }
+
+    var startIndex = -1
+    for (i in 0 until baseData.length()) {
+        val row = baseData.optJSONArray(i) ?: continue
+        if (row.length() == 0) continue
+        val key = stripHtml((row.optJSONObject(0)?.optString("value") ?: "").trim())
+        if (resolveSimulateSectionHeader(key) != "初始数据") continue
+        val hasTopData = (i + 1 until minOf(baseData.length(), i + 24)).any { next ->
+            val nextRow = baseData.optJSONArray(next) ?: return@any false
+            val nextKey = stripHtml((nextRow.optJSONObject(0)?.optString("value") ?: "").trim())
+            resolveSimulateSectionHeader(nextKey) == "顶级数据"
+        }
+        if (hasTopData) {
+            startIndex = i
+        }
+    }
+    if (startIndex < 0) return emptyList()
+
+    val stopKeys = listOf(
+        "学生信息", "介绍", "配音语言", "配音", "配音大类", "官方介绍", "角色表情",
+        "立绘", "本家画", "设定集", "TV动画设定图", "礼物偏好", "技能类型", "技能名词"
+    ).map(::normalizeGuideRowKey)
+
+    val out = mutableListOf<BaGuideRow>()
+    var inSimulateBlock = false
+    var seenBondRewardSection = false
+    var sectionHeaderCount = 0
+    var trailingEmptyRows = 0
+
+    for (i in startIndex until baseData.length()) {
+        val row = baseData.optJSONArray(i) ?: continue
+        if (row.length() == 0) continue
+        val guideRow = rowToGuideRow(row)
+        val normalizedKey = normalizeGuideRowKey(guideRow.key)
+        val header = resolveSimulateSectionHeader(guideRow.key)
+
+        if (header != null) {
+            inSimulateBlock = true
+            sectionHeaderCount += 1
+            trailingEmptyRows = 0
+            if (header == "羁绊等级奖励") {
+                seenBondRewardSection = true
+            }
+            out += guideRow.copy(key = header)
+            continue
+        }
+        if (!inSimulateBlock) continue
+        if (normalizedKey.isNotBlank() && normalizedKey in stopKeys) {
+            break
+        }
+
+        val hasRenderableContent =
+            guideRow.key.trim().isNotBlank() ||
+                guideRow.value.trim().isNotBlank() ||
+                guideRow.imageUrls.isNotEmpty() ||
+                guideRow.imageUrl.trim().isNotBlank()
+        if (!hasRenderableContent) {
+            trailingEmptyRows += 1
+            if (trailingEmptyRows >= 2 && (seenBondRewardSection || sectionHeaderCount >= 5)) {
+                break
+            }
+            continue
+        }
+        trailingEmptyRows = 0
+        out += guideRow
+    }
+
+    return out
+        .map { row ->
+            row.copy(
+                key = row.key.trim(),
+                value = row.value.trim(),
+                imageUrl = row.imageUrl.trim(),
+                imageUrls = row.imageUrls.map { it.trim() }.filter { it.isNotBlank() }.distinct()
+            )
+        }
+        .filterNot { row ->
+            row.key.isBlank() && row.value.isBlank() && row.imageUrls.isEmpty() && row.imageUrl.isBlank()
+        }
+        .take(260)
 }
 
 private fun parseGalleryItemsFromBaseData(baseData: JSONArray, sourceUrl: String): List<BaGuideGalleryItem> {
@@ -1400,6 +1551,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         val (voiceCvJp, voiceCvCn) = deriveVoiceCvLegacyFields(voiceCvByLanguage)
         val galleryFromMediaTypes = parseGalleryItemsFromBaseData(baseData, sourceUrl)
         val giftPreferenceRows = parseGiftPreferenceRowsFromBaseData(baseData, sourceUrl)
+        val simulateRows = parseSimulateRowsFromBaseData(baseData, sourceUrl)
         val baseRows = mutableListOf<GuideBaseRow>()
         var firstImage = ""
 
@@ -1865,6 +2017,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             profileRows = mergedProfileRows,
             galleryItems = distinctGallery,
             growthRows = growthRows.take(160),
+            simulateRows = simulateRows,
             voiceRows = voiceRows.take(160),
             voiceCvJp = voiceCvJp,
             voiceCvCn = voiceCvCn,
@@ -1966,6 +2119,7 @@ private fun fetchGuideInfoByApi(sourceUrl: String): BaStudentGuideInfo {
         profileRows = detail.profileRows,
         galleryItems = detail.galleryItems,
         growthRows = detail.growthRows,
+        simulateRows = detail.simulateRows,
         voiceRows = detail.voiceRows,
         voiceCvJp = detail.voiceCvJp,
         voiceCvCn = detail.voiceCvCn,
