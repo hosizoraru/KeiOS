@@ -1757,12 +1757,12 @@ fun GuideVoiceLanguageCard(
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "配音",
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
-                modifier = Modifier.padding(top = 6.dp)
+                modifier = Modifier.widthIn(min = 34.dp)
             )
             FlowRow(
                 modifier = Modifier.weight(1f),
