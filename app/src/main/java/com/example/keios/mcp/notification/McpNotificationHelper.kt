@@ -30,7 +30,7 @@ object McpNotificationHelper {
     const val LIVE_CHANNEL_ID = "mcp_live_update_channel_v1"
     private const val LEGACY_CHANNEL_ID = "mcp_keepalive_channel"
     const val KEEPALIVE_NOTIFICATION_ID = 38888
-    private const val BA_AP_NOTIFICATION_ID = 38889
+    const val BA_AP_NOTIFICATION_ID = 38889
     private const val TEST_NOTIFICATION_ID = KEEPALIVE_NOTIFICATION_ID
     private const val ACTION_STOP = "com.example.keios.mcp.keepalive.STOP"
     private const val ACTION_DISMISS = "com.example.keios.mcp.keepalive.DISMISS"
@@ -241,6 +241,7 @@ object McpNotificationHelper {
 
     fun refreshForegroundAsIsland(
         context: Context,
+        notificationId: Int = KEEPALIVE_NOTIFICATION_ID,
         serverName: String,
         running: Boolean,
         port: Int,
@@ -269,10 +270,10 @@ object McpNotificationHelper {
             style = buildResult.style,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )
-        cacheNotificationSnapshot(KEEPALIVE_NOTIFICATION_ID, snapshot)
+        cacheNotificationSnapshot(notificationId, snapshot)
         notifyWithResolvedDispatcher(
             context = context,
-            notificationId = KEEPALIVE_NOTIFICATION_ID,
+            notificationId = notificationId,
             notification = buildResult.notification,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )
@@ -280,6 +281,7 @@ object McpNotificationHelper {
 
     fun refreshForegroundPulse(
         context: Context,
+        notificationId: Int = KEEPALIVE_NOTIFICATION_ID,
         serverName: String,
         running: Boolean,
         port: Int,
@@ -308,10 +310,10 @@ object McpNotificationHelper {
             style = buildResult.style,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )
-        cacheNotificationSnapshot(KEEPALIVE_NOTIFICATION_ID, snapshot)
+        cacheNotificationSnapshot(notificationId, snapshot)
         notifyWithResolvedDispatcher(
             context = context,
-            notificationId = KEEPALIVE_NOTIFICATION_ID,
+            notificationId = notificationId,
             notification = buildResult.notification,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )

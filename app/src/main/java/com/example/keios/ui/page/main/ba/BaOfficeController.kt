@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.keios.mcp.McpNotificationHelper
+import com.example.keios.mcp.McpKeepAliveService
 import kotlin.math.roundToInt
 
 @Stable
@@ -296,14 +297,28 @@ internal class BaOfficeController(
         val currentDisplay = displayAp(apCurrent)
         val limitDisplay = apLimit.coerceIn(0, BA_AP_MAX)
         val thresholdDisplay = apNotifyThreshold.coerceIn(0, BA_AP_MAX)
-        McpNotificationHelper.notifyTest(
-            context = context,
-            serverName = "BlueArchive AP",
-            running = true,
-            port = currentDisplay,
-            path = thresholdDisplay.toString(),
-            clients = limitDisplay,
-        )
+        runCatching {
+            McpKeepAliveService.startOrUpdate(
+                context = context,
+                serverName = "BlueArchive AP",
+                running = true,
+                port = currentDisplay,
+                path = thresholdDisplay.toString(),
+                clients = limitDisplay,
+                forceStart = true,
+                notificationId = McpNotificationHelper.BA_AP_NOTIFICATION_ID,
+                heartbeatEnabled = false
+            )
+        }.onFailure {
+            McpNotificationHelper.notifyTest(
+                context = context,
+                serverName = "BlueArchive AP",
+                running = true,
+                port = currentDisplay,
+                path = thresholdDisplay.toString(),
+                clients = limitDisplay,
+            )
+        }
         if (showToast) {
             val notifyText = if (thresholdTriggered) "已发送AP阈值提醒" else "已发送AP通知"
             Toast.makeText(context, notifyText, Toast.LENGTH_SHORT).show()

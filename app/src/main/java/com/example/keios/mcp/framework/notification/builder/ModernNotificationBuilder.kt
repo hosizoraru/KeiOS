@@ -34,13 +34,13 @@ class ModernNotificationBuilder(
             .setCategory(if (state.running) NotificationCompat.CATEGORY_PROGRESS else NotificationCompat.CATEGORY_STATUS)
             .setColorized(true)
             .setColor(ACCENT_BLUE)
-            .setOngoing(state.ongoing)
-            .setOnlyAlertOnce(state.onlyAlertOnce)
-            .setSilent(state.onlyAlertOnce)
+            .setOngoing(state.running || state.ongoing)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setAutoCancel(false)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setUsesChronometer(state.running && !isBlueArchiveAp)
-            .setRequestPromotedOngoing(state.running)
+            .setRequestPromotedOngoing(state.running || state.ongoing)
 
         if (payload.environment.isHyperOS) {
             builder
@@ -103,4 +103,3 @@ class ModernNotificationBuilder(
         return LiveProgressState(current = normalized, indeterminate = indeterminate)
     }
 }
-
