@@ -4,6 +4,11 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -86,7 +91,6 @@ import com.example.keios.ui.page.main.student.normalizeGuideUrl
 import com.example.keios.ui.page.main.student.profileRowsForDisplay
 import com.example.keios.ui.page.main.student.renderBaStudentGuideTabContent
 import com.example.keios.ui.page.main.student.shouldHideMovedHeaderRow
-import com.example.keios.ui.page.main.student.showLoadingText
 import com.example.keios.ui.page.main.student.skillCardsForDisplay
 import com.example.keios.ui.page.main.student.weaponCardForDisplay
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
@@ -105,9 +109,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
@@ -497,7 +503,36 @@ fun BaStudentGuidePage(
             )
         ) {
             item { SmallTitle(activeBottomTab.label) }
-            item { Spacer(modifier = Modifier.height(14.dp)) }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (loading) {
+                        val progress = rememberGuideSyncProgress()
+                        val foregroundColor = guideSyncProgressColor(progress)
+                        CircularProgressIndicator(
+                            progress = progress,
+                            size = 18.dp,
+                            strokeWidth = 2.dp,
+                            colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                foregroundColor = foregroundColor,
+                                backgroundColor = foregroundColor.copy(alpha = 0.30f),
+                            ),
+                        )
+                    }
+                }
+            }
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
             if (sourceUrl.isBlank()) {
                 item {
@@ -512,7 +547,6 @@ fun BaStudentGuidePage(
                 renderBaStudentGuideTabContent(
                     activeBottomTab = activeBottomTab,
                     info = info,
-                    loading = loading,
                     error = error,
                     backdrop = backdrop,
                     accent = accent,
@@ -527,5 +561,30 @@ fun BaStudentGuidePage(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun rememberGuideSyncProgress(): Float {
+    val transition = rememberInfiniteTransition(label = "guideSyncProgress")
+    val progress by transition.animateFloat(
+        initialValue = 0.08f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1100, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "guideSyncProgressValue",
+    )
+    return progress
+}
+
+private fun guideSyncProgressColor(progress: Float): Color {
+    val value = progress.coerceIn(0f, 1f)
+    return when {
+        value < 0.35f -> Color(0xFF3B82F6)
+        value < 0.70f -> Color(0xFF06B6D4)
+        value < 0.92f -> Color(0xFFF59E0B)
+        else -> Color(0xFF22C55E)
     }
 }

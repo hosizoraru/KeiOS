@@ -27,7 +27,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun LazyListScope.renderBaStudentGuideTabContent(
     activeBottomTab: GuideBottomTab,
     info: BaStudentGuideInfo?,
-    loading: Boolean,
     error: String?,
     backdrop: LayerBackdrop,
     accent: Color,
@@ -53,13 +52,6 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 ),
                                 onClick = {}
                             ) {
-                                if (showLoadingText(loading = loading, hasInfo = guide != null)) {
-                                    Text(
-                                        text = "同步中...",
-                                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
-                                    )
-                                }
                                 if (guide != null) {
                                     Column(
                                         modifier = Modifier
@@ -112,13 +104,6 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 ),
                                 onClick = {}
                             ) {
-                                if (showLoadingText(loading = loading, hasInfo = guide != null)) {
-                                    Text(
-                                        text = "同步中...",
-                                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
-                                    )
-                                }
                                 if (guide != null) {
                                     Column(
                                         modifier = Modifier
@@ -148,9 +133,6 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
                                     accent = accent,
                                     content = {
-                                        if (loading) {
-                                            Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                        }
                                         error?.takeIf { it.isNotBlank() }?.let {
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Text(
@@ -167,7 +149,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                             val skillCards = guide.skillCardsForDisplay()
                             val weaponCard = guide.weaponCardForDisplay()
 
-                            if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
+                            if (!error.isNullOrBlank()) {
                                 item {
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
@@ -183,17 +165,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            if (showLoadingText(loading = loading, hasInfo = true)) {
-                                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                            }
-                                            error?.takeIf { it.isNotBlank() }?.let {
-                                                Text(
-                                                    text = it,
-                                                    color = MiuixTheme.colorScheme.error,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
+                                            Text(
+                                                text = error.orEmpty(),
+                                                color = MiuixTheme.colorScheme.error,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
                                 }
@@ -259,9 +236,6 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
                                     accent = accent,
                                     content = {
-                                        if (loading) {
-                                            Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                        }
                                         error?.takeIf { it.isNotBlank() }?.let {
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Text(
@@ -309,7 +283,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         ?: Int.MAX_VALUE
                                 }
 
-                            if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
+                            if (!error.isNullOrBlank()) {
                                 item {
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
@@ -325,17 +299,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            if (showLoadingText(loading = loading, hasInfo = true)) {
-                                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                            }
-                                            error?.takeIf { it.isNotBlank() }?.let {
-                                                Text(
-                                                    text = it,
-                                                    color = MiuixTheme.colorScheme.error,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
+                                            Text(
+                                                text = error.orEmpty(),
+                                                color = MiuixTheme.colorScheme.error,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
                                 }
@@ -515,7 +484,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 jp.isNotBlank() || cn.isNotBlank()
                             }
 
-                            if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
+                            if (!error.isNullOrBlank()) {
                                 item {
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
@@ -531,17 +500,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            if (showLoadingText(loading = loading, hasInfo = true)) {
-                                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                            }
-                                            error?.takeIf { it.isNotBlank() }?.let {
-                                                Text(
-                                                    text = it,
-                                                    color = MiuixTheme.colorScheme.error,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
+                                            Text(
+                                                text = error.orEmpty(),
+                                                color = MiuixTheme.colorScheme.error,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
                                 }
@@ -728,7 +692,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                             val firstMemoryHallIndex = displayGalleryItems.indexOfFirst(::isMemoryHallGalleryItem)
                             val lastOfficialIntroIndex = displayGalleryItems.indexOfLast(::isOfficialIntroGalleryItem)
 
-                            if (showLoadingText(loading = loading, hasInfo = true) || !error.isNullOrBlank()) {
+                            if (!error.isNullOrBlank()) {
                                 item {
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
@@ -744,17 +708,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            if (showLoadingText(loading = loading, hasInfo = true)) {
-                                                Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                            }
-                                            error?.takeIf { it.isNotBlank() }?.let {
-                                                Text(
-                                                    text = it,
-                                                    color = MiuixTheme.colorScheme.error,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
+                                            Text(
+                                                text = error.orEmpty(),
+                                                color = MiuixTheme.colorScheme.error,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
                                 }
@@ -1013,10 +972,6 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
                                 accent = accent,
                                 content = {
-                                    if (showLoadingText(loading = loading, hasInfo = info != null)) {
-                                        Text("同步中...", color = MiuixTheme.colorScheme.onBackgroundVariant)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                    }
                                     error?.takeIf { it.isNotBlank() }?.let {
                                         Text(
                                             text = it,
