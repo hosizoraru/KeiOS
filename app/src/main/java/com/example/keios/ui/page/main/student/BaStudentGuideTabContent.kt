@@ -3,6 +3,8 @@ package com.example.keios.ui.page.main.student
 import android.content.Context
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,14 +14,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
@@ -28,6 +35,7 @@ import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.capsule.ContinuousCapsule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Card
@@ -328,11 +336,11 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                             val chocolateInfoRows = allProfileRows.filter { row ->
                                 val key = row.key.trim()
                                 key.contains("巧克力", ignoreCase = true)
-                            }
+                            }.let(::sortProfileRowsByKeyNumbers)
                             val furnitureInfoRows = allProfileRows.filter { row ->
                                 val key = row.key.trim()
                                 key.contains("互动家具", ignoreCase = true)
-                            }
+                            }.let(::sortProfileRowsByKeyNumbers)
                             val normalProfileRows = allProfileRows.filterNot { row ->
                                 val key = row.key.trim()
                                 key.contains("巧克力", ignoreCase = true) ||
@@ -346,6 +354,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     val media = it.mediaUrl.ifBlank { it.imageUrl }
                                     "${it.mediaType}|$media"
                                 }
+                                .let(::sortGalleryItemsByTitleNumbers)
                             val furnitureGalleryItems = guide.galleryItems
                                 .filter(::isInteractiveFurnitureGalleryItem)
                                 .filter(::hasRenderableGalleryMedia)
@@ -353,10 +362,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     val media = it.mediaUrl.ifBlank { it.imageUrl }
                                     "${it.mediaType}|$media"
                                 }
-                                .sortedBy { item ->
-                                    Regex("""(\d+)(?!.*\d)""").find(item.title)?.groupValues?.getOrNull(1)?.toIntOrNull()
-                                        ?: Int.MAX_VALUE
-                                }
+                                .let(::sortGalleryItemsByTitleNumbers)
 
                             if (!error.isNullOrBlank()) {
                                 item {
@@ -371,8 +377,8 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             Text(
                                                 text = error.orEmpty(),
@@ -399,15 +405,14 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             GuideProfileSectionHeader(
-                                                title = "学生昵称",
-                                                itemCount = nicknameRows.size
+                                                title = "学生昵称"
                                             )
                                             GuideProfileInfoRows(rows = nicknameRows) { row ->
-                                                MiuixInfoItem(
+                                                GuideProfileInfoItem(
                                                     key = row.key.ifBlank { "信息" },
                                                     value = row.value.ifBlank { "-" }
                                                 )
@@ -431,12 +436,11 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             GuideProfileSectionHeader(
-                                                title = "学生信息",
-                                                itemCount = studentInfoRows.size
+                                                title = "学生信息"
                                             )
                                             GuideProfileInfoRows(rows = studentInfoRows) { row ->
                                                 val normalizedKey = normalizeProfileFieldKey(row.key)
@@ -465,7 +469,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                         resolvedTitle.isNotBlank() -> resolvedTitle
                                                         else -> fallbackProfileLinkTitle(externalLink)
                                                     }
-                                                    MiuixInfoItem(
+                                                    GuideProfileInfoItem(
                                                         key = row.key.ifBlank { "信息" },
                                                         value = displayValue,
                                                         onClick = externalLink.takeIf { it.isNotBlank() }?.let { link ->
@@ -475,10 +479,11 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                             Color(0xFF5FA8FF)
                                                         } else {
                                                             null
-                                                        }
+                                                        },
+                                                        preferCapsule = false
                                                     )
                                                 } else {
-                                                    MiuixInfoItem(
+                                                    GuideProfileInfoItem(
                                                         key = row.key.ifBlank { "信息" },
                                                         value = row.value.ifBlank { "-" }
                                                     )
@@ -503,17 +508,17 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             GuideProfileSectionHeader(
-                                                title = "学生爱好",
-                                                itemCount = hobbyRows.size
+                                                title = "学生爱好"
                                             )
                                             GuideProfileInfoRows(rows = hobbyRows) { row ->
-                                                MiuixInfoItem(
+                                                GuideProfileInfoItem(
                                                     key = row.key.ifBlank { "信息" },
-                                                    value = row.value.ifBlank { "-" }
+                                                    value = row.value.ifBlank { "-" },
+                                                    preferCapsule = false
                                                 )
                                             }
                                         }
@@ -534,12 +539,11 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         GuideProfileSectionHeader(
-                                            title = "相关同名角色",
-                                            itemCount = sameNameRoleItems.size
+                                            title = "相关同名角色"
                                         )
                                         sameNameRoleHint.takeIf { it.isNotBlank() }?.let { hint ->
                                             Text(
@@ -558,44 +562,54 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         } else {
                                             sameNameRoleItems.forEachIndexed { index, role ->
                                                 if (index > 0) {
-                                                    GuideProfileRowDivider()
+                                                    Spacer(modifier = Modifier.height(4.dp))
                                                 }
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
                                                     val previewImage = role.imageUrl.trim()
                                                     if (previewImage.isNotBlank()) {
                                                         GuideRemoteIcon(
                                                             imageUrl = previewImage,
-                                                            iconWidth = 82.dp,
-                                                            iconHeight = 82.dp
+                                                            iconWidth = 68.dp,
+                                                            iconHeight = 68.dp
                                                         )
                                                     }
                                                     Column(
                                                         modifier = Modifier.weight(1f),
-                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                                     ) {
-                                                        Text(
-                                                            text = role.name.ifBlank { "同名角色" },
-                                                            color = MiuixTheme.colorScheme.onBackground,
-                                                            maxLines = 2,
-                                                            overflow = TextOverflow.Ellipsis
-                                                        )
                                                         val link = role.linkUrl.trim()
-                                                        if (link.isNotBlank()) {
-                                                            GlassTextButton(
-                                                                backdrop = backdrop,
-                                                                text = "学生图鉴",
-                                                                textColor = Color(0xFF3B82F6),
-                                                                variant = GlassVariant.Compact,
-                                                                onClick = { onOpenGuide(link) }
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = role.name.ifBlank { "同名角色" },
+                                                                color = MiuixTheme.colorScheme.onBackground,
+                                                                modifier = Modifier.weight(1f),
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis
                                                             )
-                                                        } else {
+                                                            if (link.isNotBlank()) {
+                                                                GlassTextButton(
+                                                                    backdrop = backdrop,
+                                                                    text = "图鉴",
+                                                                    textColor = Color(0xFF3B82F6),
+                                                                    variant = GlassVariant.Compact,
+                                                                    onClick = { onOpenGuide(link) }
+                                                                )
+                                                            }
+                                                        }
+                                                        if (link.isBlank()) {
                                                             Text(
                                                                 text = "暂无可跳转链接",
-                                                                color = MiuixTheme.colorScheme.onBackgroundVariant
+                                                                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis
                                                             )
                                                         }
                                                     }
@@ -620,10 +634,10 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            GuideRowsSection(
+                                            GuideProfileRowsSection(
                                                 rows = normalProfileRows,
                                                 emptyText = "暂未解析到学生档案数据。"
                                             )
@@ -643,7 +657,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp)
                                         ) {
                                             Text(
                                                 text = "暂未解析到学生档案数据。",
@@ -668,16 +682,15 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             GuideProfileSectionHeader(
-                                                title = "巧克力",
-                                                itemCount = chocolateInfoRows.size + chocolateGalleryItems.size
+                                                title = "巧克力"
                                             )
                                             GuideProfileInfoRows(rows = chocolateInfoRows) { row ->
                                                 val value = row.value.ifBlank { "-" }
-                                                MiuixInfoItem(
+                                                GuideProfileInfoItem(
                                                     key = row.key.ifBlank { "信息" },
                                                     value = value
                                                 )
@@ -722,18 +735,18 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             GuideProfileSectionHeader(
-                                                title = "互动家具",
-                                                itemCount = furnitureInfoRows.size + furnitureGalleryItems.size
+                                                title = "互动家具"
                                             )
                                             GuideProfileInfoRows(rows = furnitureInfoRows) { row ->
                                                 val value = row.value.ifBlank { "-" }
-                                                MiuixInfoItem(
+                                                GuideProfileInfoItem(
                                                     key = row.key.ifBlank { "信息" },
-                                                    value = value
+                                                    value = value,
+                                                    preferCapsule = false
                                                 )
                                             }
                                             furnitureGalleryItems.forEachIndexed { index, furnitureItem ->
@@ -1365,37 +1378,18 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
 
 @Composable
 private fun GuideProfileSectionHeader(
-    title: String,
-    itemCount: Int? = null
+    title: String
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = title,
             color = MiuixTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        itemCount?.takeIf { it >= 0 }?.let { count ->
-            Text(
-                text = "${count}项",
-                color = Color(0xFF8EC5FF),
-                maxLines = 1
-            )
-        }
     }
-}
-
-@Composable
-private fun GuideProfileRowDivider() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(Color(0x143B82F6))
-    )
 }
 
 @Composable
@@ -1403,12 +1397,174 @@ private fun GuideProfileInfoRows(
     rows: List<BaGuideRow>,
     rowContent: @Composable (BaGuideRow) -> Unit
 ) {
-    rows.forEachIndexed { index, row ->
+    rows.forEach { row ->
         rowContent(row)
-        if (index < rows.lastIndex) {
-            GuideProfileRowDivider()
+    }
+}
+
+@Composable
+private fun GuideProfileInfoItem(
+    key: String,
+    value: String,
+    onClick: (() -> Unit)? = null,
+    valueColor: Color? = null,
+    preferCapsule: Boolean = true
+) {
+    val displayKey = key.ifBlank { "信息" }
+    val displayValue = value.ifBlank { "-" }
+    val showCapsule = preferCapsule && shouldUseProfileValueCapsule(displayKey, displayValue, onClick)
+    val keyWeight = adaptiveProfileKeyWeight(displayKey, displayValue)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 1.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = displayKey,
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            modifier = Modifier
+                .widthIn(min = 52.dp, max = 136.dp)
+                .weight(keyWeight, fill = false),
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip
+        )
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            if (showCapsule) {
+                GuideProfileValueCapsule(
+                    label = displayValue,
+                    tint = valueColor ?: Color(0xFF5FA8FF),
+                    onClick = onClick
+                )
+            } else {
+                val clickableModifier = if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+                Text(
+                    text = displayValue,
+                    color = valueColor ?: MiuixTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(clickableModifier),
+                    textAlign = TextAlign.End,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = Int.MAX_VALUE,
+                    overflow = TextOverflow.Clip
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun GuideProfileValueCapsule(
+    label: String,
+    tint: Color,
+    onClick: (() -> Unit)? = null
+) {
+    val isDark = isSystemInDarkTheme()
+    val clickModifier = if (onClick != null) {
+        Modifier.clickable(onClick = onClick)
+    } else {
+        Modifier
+    }
+    Box(
+        modifier = Modifier
+            .clip(ContinuousCapsule)
+            .then(clickModifier)
+            .background(tint.copy(alpha = if (isDark) 0.20f else 0.16f))
+            .border(
+                width = 0.8.dp,
+                color = tint.copy(alpha = if (isDark) 0.42f else 0.46f),
+                shape = ContinuousCapsule
+            )
+            .padding(horizontal = 9.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (isDark) tint else tint.copy(alpha = 0.92f),
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun GuideProfileRowsSection(
+    rows: List<BaGuideRow>,
+    emptyText: String,
+    imageHeight: androidx.compose.ui.unit.Dp = 96.dp
+) {
+    if (rows.isEmpty()) {
+        Text(emptyText, color = MiuixTheme.colorScheme.onBackgroundVariant)
+        return
+    }
+    val visibleRows = rows.take(120)
+    visibleRows.forEachIndexed { index, row ->
+        val hasImage = row.imageUrl.isNotBlank()
+        val value = row.value
+            .takeIf { it.isNotBlank() && it != "图片" }
+            ?: if (hasImage) "见下图" else "-"
+        GuideProfileInfoItem(
+            key = row.key.ifBlank { "信息" },
+            value = value,
+            preferCapsule = false
+        )
+        if (hasImage) {
+            Spacer(modifier = Modifier.height(6.dp))
+            GuideRemoteImage(
+                imageUrl = row.imageUrl,
+                imageHeight = imageHeight
+            )
+        }
+        if (index < visibleRows.lastIndex) {
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+    }
+}
+
+private fun extractOrderedNumbers(raw: String): List<Int> {
+    if (raw.isBlank()) return emptyList()
+    return Regex("""\d+""")
+        .findAll(raw)
+        .mapNotNull { it.value.toIntOrNull() }
+        .toList()
+}
+
+private fun sortKeyNumbers(raw: String): Pair<Int, Int> {
+    val numbers = extractOrderedNumbers(raw)
+    if (numbers.isEmpty()) return -1 to -1
+    val first = numbers.getOrElse(0) { -1 }
+    val second = numbers.getOrElse(1) { -1 }
+    return first to second
+}
+
+private fun sortProfileRowsByKeyNumbers(rows: List<BaGuideRow>): List<BaGuideRow> {
+    return rows.sortedWith(
+        compareBy<BaGuideRow>(
+            { sortKeyNumbers(it.key).first },
+            { sortKeyNumbers(it.key).second },
+            { normalizeProfileFieldKey(it.key) }
+        )
+    )
+}
+
+private fun sortGalleryItemsByTitleNumbers(items: List<BaGuideGalleryItem>): List<BaGuideGalleryItem> {
+    return items.sortedWith(
+        compareBy<BaGuideGalleryItem>(
+            { sortKeyNumbers(normalizeGalleryTitle(it.title)).first },
+            { sortKeyNumbers(normalizeGalleryTitle(it.title)).second },
+            { normalizeGalleryTitle(it.title) }
+        )
+    )
 }
 
 private data class ProfileFieldSpec(
@@ -1467,7 +1623,43 @@ private val sameNameRoleNameRowKey = normalizeProfileFieldKey("同名角色名�
 private val profileSectionHeaderKeys = setOf("介绍", "学生信息", "信息")
     .map(::normalizeProfileFieldKey)
     .toSet()
+private val profileCapsuleFieldKeys = setOf(
+    "角色名称", "年龄", "生日", "身高",
+    "实装日期", "MomoTalk解锁等级",
+    "繁中译名", "简中译名", "假名注音", "假名注明"
+).map(::normalizeProfileFieldKey).toSet()
+private val profileLongTextFieldKeys = setOf(
+    "全名", "个人简介", "兴趣爱好", "MomoTalk状态消息"
+).map(::normalizeProfileFieldKey).toSet()
 private val profileLinkTitleCache = ConcurrentHashMap<String, String>()
+
+private fun shouldUseProfileValueCapsule(
+    key: String,
+    value: String,
+    onClick: (() -> Unit)?
+): Boolean {
+    if (onClick != null) return false
+    if (isProfileValuePlaceholder(value)) return false
+    val normalizedKey = normalizeProfileFieldKey(key)
+    if (value.length > 12 || value.contains('\n')) return false
+    if (value.contains("http", ignoreCase = true)) return false
+    if (value.contains("/") || value.contains(" / ")) return false
+    if (value.contains("：") || value.contains(":")) return false
+    if (normalizedKey in profileLongTextFieldKeys) return false
+    if (normalizedKey in profileCapsuleFieldKeys) return true
+    return value.length <= 8 && !value.contains(" ")
+}
+
+private fun adaptiveProfileKeyWeight(key: String, value: String): Float {
+    val keyLength = key.trim().length
+    return when {
+        keyLength >= 10 -> 0.46f
+        keyLength >= 8 -> 0.42f
+        keyLength >= 6 -> 0.38f
+        value.length <= 8 -> 0.30f
+        else -> 0.34f
+    }
+}
 
 private fun isSameNameRoleRow(row: BaGuideRow): Boolean {
     val key = normalizeProfileFieldKey(row.key)
