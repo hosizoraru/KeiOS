@@ -1731,8 +1731,6 @@ fun GuideVoiceLanguageCard(
         .filter { it.isNotBlank() }
         .distinct()
         .ifEmpty { listOf("日配", "中配") }
-    val activeHeader = visibleHeaders.firstOrNull { it.equals(selectedHeader.trim(), ignoreCase = true) }
-        ?: visibleHeaders.firstOrNull().orEmpty()
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.defaultColors(
@@ -1759,7 +1757,7 @@ fun GuideVoiceLanguageCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 visibleHeaders.forEach { header ->
-                    val selected = header.equals(activeHeader, ignoreCase = true)
+                    val selected = header.equals(selectedHeader.trim(), ignoreCase = true)
                     GlassTextButton(
                         backdrop = backdrop,
                         text = header,
@@ -1778,8 +1776,9 @@ fun GuideVoiceLanguageCard(
 fun GuideVoiceEntryCard(
     entry: BaGuideVoiceEntry,
     languageHeaders: List<String>,
-    selectedLanguage: String,
-    selectedLanguageIndex: Int,
+    dubbingHeaders: List<String>,
+    selectedDubbingHeader: String,
+    officialTranslationHeader: String,
     backdrop: Backdrop?,
     isPlaying: Boolean,
     playProgress: Float,
@@ -1791,14 +1790,49 @@ fun GuideVoiceEntryCard(
     } else {
         listOf("日配", "中配")
     }
-    val activeIndex = selectedLanguageIndex.takeIf { index -> index in labels.indices }
-        ?: labels.indexOfFirst { label ->
-            label.equals(selectedLanguage.trim(), ignoreCase = true)
-        }.takeIf { index -> index >= 0 }
-        ?: 0
-    val activeLabel = labels.getOrNull(activeIndex).orEmpty().ifBlank { "台词" }
-    val activeText = entry.lines.getOrNull(activeIndex).orEmpty().trim()
-        .ifBlank { "暂无台词文本" }
+    val dubbingLines = buildList {
+        dubbingHeaders.forEach { header ->
+            val index = labels.indexOfFirst { label -> label.equals(header, ignoreCase = true) }
+            if (index < 0) return@forEach
+            val line = entry.lines.getOrNull(index).orEmpty().trim()
+            if (line.isNotBlank()) {
+                add(header to line)
+            }
+        }
+    }
+    val selectedLine = dubbingLines.firstOrNull { (label, _) ->
+        label.equals(selectedDubbingHeader.trim(), ignoreCase = true)
+    }
+    val orderedDubbingLines = buildList {
+        if (selectedLine != null) add(selectedLine)
+        dubbingLines.forEach { line ->
+            if (selectedLine == null || !line.first.equals(selectedLine.first, ignoreCase = true)) {
+                add(line)
+            }
+        }
+    }
+    val officialTranslationLine = if (officialTranslationHeader.isNotBlank()) {
+        val index = labels.indexOfFirst { label ->
+            label.equals(officialTranslationHeader, ignoreCase = true)
+        }
+        if (index >= 0) {
+            entry.lines.getOrNull(index).orEmpty().trim()
+                .takeIf { it.isNotBlank() }
+                ?.let { officialTranslationHeader to it }
+        } else {
+            null
+        }
+    } else {
+        null
+    }
+    val voiceLines = buildList {
+        addAll(orderedDubbingLines)
+        if (officialTranslationLine != null) {
+            add(officialTranslationLine)
+        }
+    }.ifEmpty {
+        listOf("台词" to "暂无台词文本")
+    }
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.defaultColors(
@@ -1861,30 +1895,28 @@ fun GuideVoiceEntryCard(
                 }
             }
 
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val labelMaxWidth = (maxWidth * 0.28f).coerceIn(52.dp, 92.dp)
-                val lineCharBudget = ((maxWidth - labelMaxWidth).value / 7f).toInt().coerceAtLeast(10)
-                val valueMaxLines = adaptiveValueMaxLines(activeText, lineCharBudget)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Text(
-                        text = activeLabel,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        modifier = Modifier.widthIn(max = labelMaxWidth),
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip
-                    )
-                    Text(
-                        text = activeText,
-                        color = MiuixTheme.colorScheme.onBackground,
-                        modifier = Modifier.weight(1f),
-                        maxLines = valueMaxLines,
-                        overflow = TextOverflow.Ellipsis
-                    )
+            voiceLines.forEach { (label, text) ->
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val labelMaxWidth = (maxWidth * 0.28f).coerceIn(52.dp, 92.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = label,
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            modifier = Modifier.widthIn(max = labelMaxWidth),
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip
+                        )
+                        Text(
+                            text = text,
+                            color = MiuixTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f),
+                            overflow = TextOverflow.Clip
+                        )
+                    }
                 }
             }
         }

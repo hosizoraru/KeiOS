@@ -854,15 +854,16 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                             val voiceCvByLanguage = buildVoiceCvDisplayMap(guide)
                             val voiceLanguageHeaders = buildVoiceLanguageHeadersForDisplay(
                                 headers = guide.voiceLanguageHeaders,
-                                entries = voiceEntries,
-                                voiceCvByLanguage = voiceCvByLanguage
+                                entries = voiceEntries
                             )
-                            val activeVoiceLanguage = voiceLanguageHeaders.firstOrNull { header ->
+                            val dubbingHeaders = buildDubbingHeadersForVoiceCard(
+                                headers = voiceLanguageHeaders,
+                                entries = voiceEntries
+                            )
+                            val selectedDubbingHeader = dubbingHeaders.firstOrNull { header ->
                                 header.equals(selectedVoiceLanguage.trim(), ignoreCase = true)
-                            } ?: voiceLanguageHeaders.firstOrNull().orEmpty()
-                            val activeVoiceLanguageIndex = voiceLanguageHeaders.indexOfFirst { header ->
-                                header.equals(activeVoiceLanguage, ignoreCase = true)
-                            }.takeIf { it >= 0 } ?: 0
+                            } ?: dubbingHeaders.firstOrNull().orEmpty()
+                            val officialTranslationHeader = voiceLanguageHeaders.firstOrNull(::isOfficialTranslationHeader).orEmpty()
 
                             if (voiceCvByLanguage.isNotEmpty()) {
                                 item {
@@ -882,7 +883,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         ) {
                                             voiceCvByLanguage.forEach { (label, value) ->
                                                 val title = if (label.contains("配")) "$label CV" else label
-                                                MiuixInfoItem(title, value.ifBlank { "-" })
+                                                MiuixInfoItem(title, value)
                                             }
                                         }
                                     }
@@ -890,11 +891,11 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 item { Spacer(modifier = Modifier.height(10.dp)) }
                             }
 
-                            if (voiceEntries.isNotEmpty() && voiceLanguageHeaders.isNotEmpty()) {
+                            if (voiceEntries.isNotEmpty() && dubbingHeaders.isNotEmpty()) {
                                 item {
                                     GuideVoiceLanguageCard(
-                                        headers = voiceLanguageHeaders,
-                                        selectedHeader = activeVoiceLanguage,
+                                        headers = dubbingHeaders,
+                                        selectedHeader = selectedDubbingHeader,
                                         backdrop = backdrop,
                                         onSelected = onSelectedVoiceLanguageChange
                                     )
@@ -936,8 +937,9 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         GuideVoiceEntryCard(
                                             entry = entry,
                                             languageHeaders = voiceLanguageHeaders,
-                                            selectedLanguage = activeVoiceLanguage,
-                                            selectedLanguageIndex = activeVoiceLanguageIndex,
+                                            dubbingHeaders = dubbingHeaders,
+                                            selectedDubbingHeader = selectedDubbingHeader,
+                                            officialTranslationHeader = officialTranslationHeader,
                                             backdrop = backdrop,
                                             isPlaying = normalizeGuideUrl(entry.audioUrl) == playingVoiceUrl && isVoicePlaying,
                                             playProgress = if (normalizeGuideUrl(entry.audioUrl) == playingVoiceUrl) {
@@ -2188,7 +2190,12 @@ private fun buildVoiceCvDisplayMap(info: BaStudentGuideInfo): Map<String, String
     info.voiceCvByLanguage.forEach { (rawKey, rawValue) ->
         val key = canonicalVoiceLanguageForDisplay(rawKey)
         val value = rawValue.trim()
-        if (key.isNotBlank() && value.isNotBlank() && merged[key].isNullOrBlank()) {
+        if (
+            key.isNotBlank() &&
+            value.isNotBlank() &&
+            !isOfficialTranslationHeader(key) &&
+            merged[key].isNullOrBlank()
+        ) {
             merged[key] = value
         }
     }
@@ -2202,7 +2209,7 @@ private fun buildVoiceCvDisplayMap(info: BaStudentGuideInfo): Map<String, String
     }
 
     val ordered = linkedMapOf<String, String>()
-    listOf("日配", "中配", "韩配", "官翻").forEach { label ->
+    listOf("日配", "中配", "韩配").forEach { label ->
         merged[label]?.takeIf { it.isNotBlank() }?.let { value ->
             ordered[label] = value
         }
@@ -2217,32 +2224,41 @@ private fun buildVoiceCvDisplayMap(info: BaStudentGuideInfo): Map<String, String
 
 private fun buildVoiceLanguageHeadersForDisplay(
     headers: List<String>,
-    entries: List<BaGuideVoiceEntry>,
-    voiceCvByLanguage: Map<String, String>
+    entries: List<BaGuideVoiceEntry>
 ): List<String> {
-    val merged = mutableListOf<String>()
-    headers.forEach { header ->
-        val normalized = canonicalVoiceLanguageForDisplay(header)
-        if (normalized.isNotBlank() && normalized !in merged) {
-            merged += normalized
-        }
-    }
-    voiceCvByLanguage.keys.forEach { key ->
-        val normalized = canonicalVoiceLanguageForDisplay(key)
-        if (normalized.isNotBlank() && normalized !in merged) {
-            merged += normalized
-        }
-    }
+    val merged = headers.map(::canonicalVoiceLanguageForDisplay).toMutableList()
     val maxLineCount = entries.maxOfOrNull { entry -> entry.lines.size } ?: 0
     while (merged.size < maxLineCount) {
         val fallback = defaultVoiceLanguageHeaderForDisplay(merged.size)
-        if (fallback in merged) {
-            merged += "语言${merged.size + 1}"
-        } else {
-            merged += fallback
-        }
+        merged += fallback
     }
-    return merged
+    return merged.mapIndexed { index, header ->
+        header.ifBlank { defaultVoiceLanguageHeaderForDisplay(index) }
+    }
+}
+
+private fun isOfficialTranslationHeader(header: String): Boolean {
+    return canonicalVoiceLanguageForDisplay(header) == "官翻"
+}
+
+private fun hasVoiceLineAtIndex(entries: List<BaGuideVoiceEntry>, index: Int): Boolean {
+    return entries.any { entry ->
+        entry.lines.getOrNull(index).orEmpty().trim().isNotBlank()
+    }
+}
+
+private fun buildDubbingHeadersForVoiceCard(
+    headers: List<String>,
+    entries: List<BaGuideVoiceEntry>
+): List<String> {
+    if (headers.isEmpty()) return emptyList()
+    return headers.mapIndexedNotNull { index, header ->
+        val normalized = canonicalVoiceLanguageForDisplay(header)
+        if (normalized.isBlank()) return@mapIndexedNotNull null
+        if (isOfficialTranslationHeader(normalized)) return@mapIndexedNotNull null
+        if (!hasVoiceLineAtIndex(entries, index)) return@mapIndexedNotNull null
+        normalized
+    }.distinct()
 }
 
 private fun isGrowthTitleVoiceRow(row: BaGuideRow): Boolean {
