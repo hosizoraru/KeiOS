@@ -1518,10 +1518,8 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             "战术作用", "攻击类型", "防御类型", "位置", "武器类型", "市街", "屋外", "屋内", "室内"
         )
         val growthKeywords = listOf(
-            "装备", "专武", "能力解放", "礼物偏好", "羁绊", "升级材料", "所需", "LV", "T1", "T2", "爱用品", "初始数据",
-            "攻击力增加", "生命值增加", "暴击值增加", "暴击伤害增加", "装弹数", "命中值", "治愈力", "稳定值",
-            // 兼容专武面板使用“攻击力/生命值/治愈力”等简写字段
-            "攻击力", "生命值", "防御力", "暴击", "爆伤", "命中", "闪避"
+            "装备", "专武", "能力解放", "羁绊", "羁绊奖励", "升级材料",
+            "所需", "爱用品", "羁绊等级奖励"
         )
         val voiceKeywords = listOf("通常", "战斗", "活动", "大厅及咖啡馆", "事件", "好感度", "成长")
 
@@ -1545,11 +1543,44 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         var inSkillBlock = false
         var inSkillGlossaryBlock = false
         var inWeaponBlock = false
+        var inGrowthBlock = false
         var inGalleryContext = false
         var inVoiceContext = false
         var currentVoiceSection = ""
         var inTopDataContext = false
         var lastGalleryTitle = ""
+
+        fun isGrowthBlockStartKey(raw: String): Boolean {
+            val key = normalizeGuideRowKey(raw)
+            if (key.isBlank()) return false
+            return key == "专武" ||
+                key == "装备" ||
+                key == "爱用品" ||
+                key == "能力解放" ||
+                key.contains("羁绊等级奖励") ||
+                key.contains("羁绊奖励")
+        }
+
+        fun isGrowthBlockStopKey(raw: String): Boolean {
+            val key = normalizeGuideRowKey(raw)
+            if (key.isBlank()) return false
+            if (isGrowthBlockStartKey(key)) return false
+            return key == "礼物偏好" ||
+                key == "技能类型" ||
+                key == "技能名词" ||
+                key == "学生信息" ||
+                key == "介绍" ||
+                key == "配音语言" ||
+                key == "配音" ||
+                key == "配音大类" ||
+                key == "初始数据" ||
+                key == "顶级数据" ||
+                isVoiceCategoryKey(key) ||
+                galleryContextStartKeywords.any { keyword ->
+                    key.contains(keyword, ignoreCase = true)
+                }
+        }
+
         baseRows.forEach { row ->
             val key = row.key
             val value = row.textValues.joinToString(" / ")
@@ -1631,8 +1662,14 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 normalizedKey == "初始数据"
             if (isWeaponBlockStart) {
                 inWeaponBlock = true
+                inGrowthBlock = true
                 inSkillBlock = false
                 inSkillGlossaryBlock = false
+            }
+            if (isGrowthBlockStartKey(normalizedGuideKey)) {
+                inGrowthBlock = true
+            } else if (inGrowthBlock && isGrowthBlockStopKey(normalizedGuideKey)) {
+                inGrowthBlock = false
             }
             if (isSkillBlockStart) {
                 inSkillBlock = true
@@ -1670,8 +1707,10 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
                 (inSkillGlossaryBlock && normalizedKey.isNotBlank() && !inWeaponBlock) ||
                 (matchesSkillKeywords && !inWeaponBlock) ||
                 isSkillMigratedRow
-            val isGrowth = inWeaponBlock || (matchesGrowthKeywords && !isSkill)
             val isProfile = containsAny(normalizedKey, profileKeywords)
+            val isGrowth = inWeaponBlock ||
+                inGrowthBlock ||
+                (matchesGrowthKeywords && !isSkill && !isVoice && !isProfile)
             val hasMedia = row.imageValues.isNotEmpty() || row.videoValues.isNotEmpty()
             val isFallbackGallery =
                 hasMedia &&
@@ -1744,6 +1783,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
 
             if (isWeaponBlockEnd) {
                 inWeaponBlock = false
+                inGrowthBlock = false
             }
             if (isSkillBlockEnd) {
                 inSkillBlock = false

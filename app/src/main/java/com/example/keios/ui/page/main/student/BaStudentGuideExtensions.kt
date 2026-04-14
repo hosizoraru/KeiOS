@@ -32,7 +32,7 @@ fun BaStudentGuideInfo.growthRowsForDisplay(): List<BaGuideRow> {
     if (growthRows.isNotEmpty()) return growthRows
     return stats
         .filter { (k, v) ->
-            listOf("装备", "专武", "羁绊", "等级", "升级", "材料", "LV").any {
+            listOf("装备", "专武", "爱用品", "能力解放", "羁绊", "升级材料", "所需").any {
                 k.contains(it, ignoreCase = true) || v.contains(it, ignoreCase = true)
             }
         }

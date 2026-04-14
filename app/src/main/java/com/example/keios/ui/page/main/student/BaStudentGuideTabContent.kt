@@ -1393,14 +1393,22 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                         }
                     }
 
-                    else -> {
+                    GuideBottomTab.Simulate -> {
                         item {
-                            FrostedBlock(
-                                backdrop = backdrop,
-                                title = activeBottomTab.label,
-                                subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
-                                accent = accent,
-                                content = {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.defaultColors(
+                                    color = Color(0x223B82F6),
+                                    contentColor = MiuixTheme.colorScheme.onBackground
+                                ),
+                                onClick = {}
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     error?.takeIf { it.isNotBlank() }?.let {
                                         Text(
                                             text = it,
@@ -1408,48 +1416,20 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Spacer(modifier = Modifier.height(8.dp))
                                     }
                                     val guide = info
                                     if (guide != null) {
-                                        val profileRows = guide.profileRowsForDisplay()
-                                        val visibleProfileRows = profileRows.filterNot { shouldHideMovedHeaderRow(it) }
-                                        val growthRows = guide.growthRowsForDisplay()
-                                        val activeGuideTab = activeBottomTab.guideTab
-
                                         Text(
                                             text = guide.summary.ifBlank { guide.description },
                                             color = MiuixTheme.colorScheme.onBackground
                                         )
-                                        Spacer(modifier = Modifier.height(10.dp))
-
-                                        when (activeGuideTab) {
-                                            GuideTab.Profile -> {
-                                                GuideRowsSection(
-                                                    rows = visibleProfileRows,
-                                                    emptyText = "暂未解析到学生档案数据。"
-                                                )
-                                            }
-
-                                            GuideTab.Voice -> {
-                                                GuideRowsSection(
-                                                    rows = guide.voiceRows,
-                                                    emptyText = "语音台词解析中，当前版本先完善其他栏目。"
-                                                )
-                                            }
-
-                                            GuideTab.Simulate -> {
-                                                GuideRowsSection(
-                                                    rows = growthRows,
-                                                    emptyText = "暂未解析到养成模拟数据。"
-                                                )
-                                            }
-
-                                            else -> {}
-                                        }
+                                        GuideRowsSection(
+                                            rows = guide.growthRowsForDisplay(),
+                                            emptyText = "暂未解析到养成模拟数据。"
+                                        )
                                     }
                                 }
-                            )
+                            }
                         }
                     }
                 }
