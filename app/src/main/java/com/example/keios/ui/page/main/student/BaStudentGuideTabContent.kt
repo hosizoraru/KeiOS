@@ -1481,6 +1481,18 @@ private data class GuideSimulateData(
     val bondRows: List<BaGuideRow> = emptyList()
 )
 
+private fun sanitizeSimulateFavorRows(rows: List<BaGuideRow>): List<BaGuideRow> {
+    if (rows.isEmpty()) return emptyList()
+    return rows.filterNot { row ->
+        val normalizedKey = normalizeProfileFieldKey(row.key)
+        val isTierLabel = Regex("""^T\d+$""", RegexOption.IGNORE_CASE).matches(normalizedKey)
+        isTierLabel &&
+            row.value.isBlank() &&
+            row.imageUrl.isBlank() &&
+            row.imageUrls.isEmpty()
+    }
+}
+
 @Composable
 private fun GuideSimulateAbilityCard(
     data: GuideSimulateData,
@@ -1585,7 +1597,7 @@ private fun GuideSimulateSectionCard(
                 }
             } else {
                 Text(
-                    text = "暂无${title}数据。",
+                    text = if (title == "爱用品") "此学生暂未佩戴爱用品。" else "暂无${title}数据。",
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }
@@ -1751,7 +1763,9 @@ private fun buildGuideSimulateData(rows: List<BaGuideRow>): GuideSimulateData {
         maxRows = expandSimulateRows(sections["顶级数据"].orEmpty()),
         weaponRows = expandSimulateRows(sections["专武"].orEmpty()),
         equipmentRows = expandSimulateRows(sections["装备"].orEmpty()),
-        favorRows = expandSimulateRows(sections["爱用品"].orEmpty()),
+        favorRows = sanitizeSimulateFavorRows(
+            expandSimulateRows(sections["爱用品"].orEmpty())
+        ),
         unlockRows = expandSimulateRows(sections["能力解放"].orEmpty()),
         bondRows = expandSimulateRows(sections["羁绊等级奖励"].orEmpty())
     )

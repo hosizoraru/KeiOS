@@ -736,7 +736,6 @@ private fun parseSimulateRowsFromBaseData(
     val out = mutableListOf<BaGuideRow>()
     var inSimulateBlock = false
     var seenBondRewardSection = false
-    var sectionHeaderCount = 0
     var trailingEmptyRows = 0
 
     for (i in startIndex until baseData.length()) {
@@ -748,7 +747,6 @@ private fun parseSimulateRowsFromBaseData(
 
         if (header != null) {
             inSimulateBlock = true
-            sectionHeaderCount += 1
             trailingEmptyRows = 0
             if (header == "羁绊等级奖励") {
                 seenBondRewardSection = true
@@ -767,8 +765,10 @@ private fun parseSimulateRowsFromBaseData(
                 guideRow.imageUrls.isNotEmpty() ||
                 guideRow.imageUrl.trim().isNotBlank()
         if (!hasRenderableContent) {
-            trailingEmptyRows += 1
-            if (trailingEmptyRows >= 2 && (seenBondRewardSection || sectionHeaderCount >= 5)) {
+            if (seenBondRewardSection) {
+                trailingEmptyRows += 1
+            }
+            if (trailingEmptyRows >= 2 && seenBondRewardSection) {
                 break
             }
             continue
