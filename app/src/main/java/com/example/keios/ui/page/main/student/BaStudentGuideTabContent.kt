@@ -9,15 +9,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -335,6 +339,10 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 rows = allProfileRows,
                                 specs = profileHobbyFieldSpecs
                             )
+                            val giftPreferenceRows = allProfileRows
+                                .filter(::isGiftPreferenceProfileRow)
+                                .let(::sortProfileRowsByKeyNumbers)
+                            val giftPreferenceItems = buildGiftPreferenceItems(giftPreferenceRows)
                             val chocolateInfoRows = allProfileRows.filter { row ->
                                 val key = row.key.trim()
                                 key.contains("巧克力", ignoreCase = true)
@@ -347,6 +355,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 val key = row.key.trim()
                                 key.contains("巧克力", ignoreCase = true) ||
                                     key.contains("互动家具", ignoreCase = true) ||
+                                    isGiftPreferenceProfileRow(row) ||
                                     isStructuredProfileCardRow(row)
                             }
                             val chocolateGalleryItems = guide.galleryItems
@@ -529,6 +538,34 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 item { Spacer(modifier = Modifier.height(10.dp)) }
                             }
 
+                            if (giftPreferenceItems.isNotEmpty()) {
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            GuideProfileSectionHeader(
+                                                title = "礼物偏好"
+                                            )
+                                            GuideGiftPreferenceGrid(
+                                                items = giftPreferenceItems
+                                            )
+                                        }
+                                    }
+                                }
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                            }
+
                             item {
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
@@ -646,7 +683,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         }
                                     }
                                 }
-                            } else if (nicknameRows.isEmpty() && studentInfoRows.isEmpty() && hobbyRows.isEmpty()) {
+                            } else if (
+                                nicknameRows.isEmpty() &&
+                                studentInfoRows.isEmpty() &&
+                                hobbyRows.isEmpty() &&
+                                giftPreferenceItems.isEmpty()
+                            ) {
                                 item {
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
@@ -1538,6 +1580,102 @@ private fun GuideProfileRowsSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun GuideGiftPreferenceGrid(
+    items: List<GiftPreferenceItem>
+) {
+    if (items.isEmpty()) {
+        Text(
+            text = "暂无礼物偏好条目。",
+            color = MiuixTheme.colorScheme.onBackgroundVariant
+        )
+        return
+    }
+    val isDark = isSystemInDarkTheme()
+    val horizontalSpacing = 4.dp
+    val minCardWidth = 78.dp
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val columns = when {
+            maxWidth >= (minCardWidth * 3 + horizontalSpacing * 2) -> 3
+            maxWidth >= (minCardWidth * 2 + horizontalSpacing) -> 2
+            else -> 1
+        }
+        val cardWidth = ((maxWidth - horizontalSpacing * (columns - 1)) / columns)
+            .coerceAtLeast(72.dp)
+        val giftBoxHeight = (cardWidth * 0.66f).coerceIn(56.dp, 76.dp)
+        val giftIconWidth = (cardWidth + 4.dp).coerceIn(74.dp, 122.dp)
+        val giftIconHeight = (giftBoxHeight + 2.dp).coerceAtLeast(48.dp)
+        val emojiIconSize = (cardWidth * 0.16f).coerceIn(13.dp, 18.dp)
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            maxItemsInEachRow = columns,
+            horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            items.forEach { item ->
+                Column(
+                    modifier = Modifier.width(cardWidth),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(cardWidth)
+                            .height(giftBoxHeight)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x163B82F6))
+                            .border(
+                                width = 0.8.dp,
+                                color = Color(0x243B82F6),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        GuideRemoteIcon(
+                            imageUrl = item.giftImageUrl,
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = (-3).dp),
+                            iconWidth = giftIconWidth,
+                            iconHeight = giftIconHeight
+                        )
+                        if (item.emojiImageUrl.isNotBlank()) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 3.dp, end = 3.dp)
+                                    .clip(ContinuousCapsule)
+                                    .background(
+                                        if (isDark) Color(0x663B82F6) else Color(0xCCEFF6FF)
+                                    )
+                                    .border(
+                                        width = 0.8.dp,
+                                        color = if (isDark) Color(0x553B82F6) else Color(0x553BA8FF),
+                                        shape = ContinuousCapsule
+                                    )
+                                    .padding(horizontal = 3.dp, vertical = 3.dp)
+                            ) {
+                                GuideRemoteIcon(
+                                    imageUrl = item.emojiImageUrl,
+                                    iconWidth = emojiIconSize,
+                                    iconHeight = emojiIconSize
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        text = item.label,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
 private fun extractOrderedNumbers(raw: String): List<Int> {
     if (raw.isBlank()) return emptyList()
     return Regex("""\d+""")
@@ -1586,6 +1724,12 @@ private data class SameNameRoleItem(
     val imageUrl: String
 )
 
+private data class GiftPreferenceItem(
+    val label: String,
+    val giftImageUrl: String,
+    val emojiImageUrl: String
+)
+
 private val profileNicknameFieldSpecs = listOf(
     ProfileFieldSpec("角色名称", listOf("角色名称")),
     ProfileFieldSpec("全名", listOf("全名")),
@@ -1627,6 +1771,7 @@ private fun normalizeProfileFieldKey(raw: String): String {
 private val profileRoleReferenceFieldKey = normalizeProfileFieldKey("角色考据")
 private val relatedSameNameRoleHeaderKey = normalizeProfileFieldKey("相关同名角色")
 private val sameNameRoleNameRowKey = normalizeProfileFieldKey("同名角色名称")
+private val giftPreferenceRowPrefixKey = normalizeProfileFieldKey("礼物偏好礼物")
 private val profileSectionHeaderKeys = setOf("介绍", "学生信息", "信息")
     .map(::normalizeProfileFieldKey)
     .toSet()
@@ -1684,6 +1829,40 @@ private fun adaptiveProfileKeyMaxWidth(
 private fun isSameNameRoleRow(row: BaGuideRow): Boolean {
     val key = normalizeProfileFieldKey(row.key)
     return key == relatedSameNameRoleHeaderKey || key == sameNameRoleNameRowKey
+}
+
+private fun isGiftPreferenceProfileRow(row: BaGuideRow): Boolean {
+    val key = normalizeProfileFieldKey(row.key)
+    return key.startsWith(giftPreferenceRowPrefixKey)
+}
+
+private fun buildGiftPreferenceItems(rows: List<BaGuideRow>): List<GiftPreferenceItem> {
+    if (rows.isEmpty()) return emptyList()
+    return rows.mapIndexedNotNull { index, row ->
+        val normalizedImages = buildList {
+            add(row.imageUrl.trim())
+            addAll(row.imageUrls.map { it.trim() })
+        }.filter { candidate ->
+            isRenderableGalleryImageUrl(candidate)
+        }.distinct()
+        val giftImage = normalizedImages.firstOrNull().orEmpty()
+        if (giftImage.isBlank()) return@mapIndexedNotNull null
+        val emojiImage = normalizedImages.firstOrNull { candidate ->
+            candidate != giftImage
+        }.orEmpty()
+        val fallbackIndex = extractOrderedNumbers(row.key).firstOrNull() ?: (index + 1)
+        val label = row.value
+            .trim()
+            .takeIf { it.isNotBlank() && !isProfileValuePlaceholder(it) }
+            ?: "礼物$fallbackIndex"
+        GiftPreferenceItem(
+            label = label,
+            giftImageUrl = giftImage,
+            emojiImageUrl = emojiImage
+        )
+    }.distinctBy { item ->
+        "${item.giftImageUrl}|${item.emojiImageUrl}|${item.label.trim()}"
+    }
 }
 
 private fun splitRoleRowTokens(raw: String): List<String> {
