@@ -19,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
@@ -58,18 +57,12 @@ private fun Modifier.baGlassSurface(
         blurRadius = null,
     )
     val fallbackSurface = accentColor
-        .copy(alpha = accentAlpha)
+        .copy(alpha = (accentAlpha * 0.25f).coerceIn(0f, 0.04f))
         .compositeOver(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = glass.fallbackAlpha))
     val borderColor = accentColor
-        .copy(alpha = if (isDark) accentAlpha * 1.8f else accentAlpha * 1.45f)
+        .copy(alpha = if (isDark) accentAlpha * 1.1f else accentAlpha * 0.95f)
         .compositeOver(glass.borderColor)
-    val sheenBrush = Brush.verticalGradient(
-        colors = listOf(
-            if (isDark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.30f),
-            if (isDark) Color.White.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.10f),
-            Color.Transparent,
-        ),
-    )
+    val accentTint = accentColor.copy(alpha = (accentAlpha * 0.35f).coerceIn(0f, 0.05f))
 
     val surfaceModifier = if (backdrop != null) {
         Modifier.drawBackdrop(
@@ -93,14 +86,13 @@ private fun Modifier.baGlassSurface(
                 if (glass.overlayColor != Color.Transparent) {
                     drawRect(glass.overlayColor)
                 }
-                drawRect(accentColor.copy(alpha = accentAlpha))
-                drawRect(sheenBrush)
+                if (accentTint.alpha > 0f) {
+                    drawRect(accentTint)
+                }
             },
         )
     } else {
-        Modifier
-            .background(fallbackSurface, shape)
-            .background(sheenBrush, shape)
+        Modifier.background(fallbackSurface, shape)
     }
 
     return this
@@ -118,9 +110,9 @@ internal fun BaGlassCard(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
-    accentAlpha: Float = 0.10f,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-    verticalSpacing: Dp = 12.dp,
+    accentAlpha: Float = 0.06f,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+    verticalSpacing: Dp = 8.dp,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -160,10 +152,10 @@ internal fun BaGlassPanel(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
-    accentAlpha: Float = 0.08f,
+    accentAlpha: Float = 0.05f,
     variant: GlassVariant = GlassVariant.Compact,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-    verticalSpacing: Dp = 8.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
+    verticalSpacing: Dp = 6.dp,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -243,31 +235,34 @@ internal fun BaGlassMetricPanel(
         modifier = modifier,
         accentColor = accentColor,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = label,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                )
-                Text(
-                    text = value,
-                    color = valueColor,
-                    fontWeight = FontWeight.Bold,
-                )
-                secondary?.takeIf { it.isNotBlank() }?.let { text ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(
-                        text = text,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.88f),
+                        text = label,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
+                        maxLines = 1,
                     )
+                    Text(
+                        text = value,
+                        color = valueColor,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    secondary?.takeIf { it.isNotBlank() }?.let { text ->
+                        Text(
+                            text = text,
+                            color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.88f),
+                            maxLines = 1,
+                        )
+                    }
                 }
-            }
             trailing?.invoke(this)
         }
     }

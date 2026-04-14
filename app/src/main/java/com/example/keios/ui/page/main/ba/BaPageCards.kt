@@ -1,6 +1,5 @@
 package com.example.keios.ui.page.main.ba
 
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,54 +59,44 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 private fun BaCardHeader(
     title: String,
-    subtitle: String,
-    accentColor: Color,
     modifier: Modifier = Modifier,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            BaGlassBadge(
-                text = title,
-                color = accentColor,
-            )
-            Text(
-                text = subtitle,
-                color = MiuixTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        trailing?.let { actions ->
+        Text(
+            text = title,
+            color = MiuixTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        trailing?.let {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                content = actions,
+                content = it,
             )
         }
     }
 }
 
 @Composable
-private fun BaActionStatusPanel(
+private fun BaInlineActionPanel(
     backdrop: Backdrop?,
     title: String,
-    accentColor: Color,
-    countdownText: String,
-    supportingText: String,
     buttonText: String,
-    buttonEnabled: Boolean,
+    countdownText: String,
+    timeText: String,
+    accentColor: Color,
+    enabled: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
+    val countdownBlue = Color(0xFF60A5FA)
     BaGlassPanel(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth(),
@@ -115,46 +104,37 @@ private fun BaActionStatusPanel(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = title,
-                    color = accentColor,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = supportingText,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = countdownText,
-                    color = Color(0xFF60A5FA),
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = buttonText,
-                    textColor = accentColor,
-                    enabled = buttonEnabled,
-                    variant = GlassVariant.Content,
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                )
-            }
+            GlassTextButton(
+                backdrop = backdrop,
+                text = buttonText,
+                textColor = accentColor,
+                enabled = enabled,
+                variant = GlassVariant.Content,
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
+            Text(
+                text = title,
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = countdownText,
+                color = countdownBlue,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = timeText,
+                color = accentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -207,35 +187,25 @@ internal fun BaOverviewCard(
     val accentBlue = Color(0xFF3B82F6)
     val accentGreen = Color(0xFF22C55E)
     val accentAmber = Color(0xFFF59E0B)
-    val countdownBlue = Color(0xFF60A5FA)
     val stateAccent = if (isWorkActivated) accentBlue else accentAmber
-    val activationSummary = if (isWorkActivated) {
-        "好友码已接入，办公室数据会持续参与 AP 与咖啡厅调度。"
-    } else {
-        "仍在使用默认好友码，点按卡片可快速恢复草稿状态。"
-    }
 
     BaGlassCard(
         backdrop = backdrop,
         accentColor = stateAccent,
-        accentAlpha = if (isWorkActivated) 0.13f else 0.11f,
+        accentAlpha = 0.05f,
         onClick = {
-            if (initState == BAInitState.Empty) {
-                onInitStateChange(BAInitState.Draft)
-            }
+            if (initState == BAInitState.Empty) onInitStateChange(BAInitState.Draft)
         },
         onLongClick = { onInitStateChange(BAInitState.Empty) },
     ) {
         BaCardHeader(
             title = "办公室总览",
-            subtitle = if (isWorkActivated) "AP 调度与咖啡厅储备已联动" else "等待初始化接管办公室状态",
-            accentColor = stateAccent,
             trailing = {
                 Text(
-                    text = if (initState == BAInitState.Empty) "点按启用" else "长按清空",
-                    color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.88f),
+                    text = if (isWorkActivated) "已激活" else "默认",
+                    color = stateAccent,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             },
         )
@@ -249,24 +219,13 @@ internal fun BaOverviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = "服务器",
-                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                    )
-                    Text(
-                        text = activationSummary,
-                        color = MiuixTheme.colorScheme.onBackground,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
                 Box(
-                    modifier = Modifier.capturePopupAnchor { onOverviewServerPopupAnchorBoundsChange(it) },
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
+                    Text("服务器", color = MiuixTheme.colorScheme.onBackground)
+                }
+                Box(modifier = Modifier.capturePopupAnchor { onOverviewServerPopupAnchorBoundsChange(it) }) {
                     GlassTextButton(
                         backdrop = backdrop,
                         text = serverOptions[serverIndex],
@@ -308,19 +267,11 @@ internal fun BaOverviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                Box(
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
-                    Text(
-                        text = "AP 调度",
-                        color = accentGreen,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = "当前值与上限会直接参与回满预测。",
-                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                    )
+                    Text("AP", color = accentGreen, fontWeight = FontWeight.Bold)
                 }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -355,20 +306,12 @@ internal fun BaOverviewCard(
                     )
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                BaGlassBadge(
-                    text = "下一个 $apNextPointRemain",
-                    color = countdownBlue,
-                )
-                BaGlassBadge(
-                    text = "回满 $apFullText",
-                    color = accentBlue,
-                )
-            }
+            Text(
+                text = "下一个 $apNextPointRemain · 回满 $apFullText",
+                color = Color(0xFF60A5FA),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
 
         BaGlassPanel(
@@ -380,19 +323,11 @@ internal fun BaOverviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                Box(
+                    modifier = Modifier.heightIn(min = 40.dp),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
-                    Text(
-                        text = "咖啡厅储备",
-                        color = accentGreen,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = "按当前咖啡厅等级自动累计，可随时手动领取。",
-                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                    )
+                    Text("咖啡厅AP", color = MiuixTheme.colorScheme.onBackground)
                 }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -419,14 +354,13 @@ internal fun BaOverviewCard(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top,
         ) {
             BaGlassMetricPanel(
                 backdrop = backdrop,
                 label = "AP Sync",
                 value = apSyncTimeText,
-                secondary = "下一个 $apNextPointRemain",
                 accentColor = accentBlue,
                 valueColor = accentBlue,
                 modifier = Modifier.weight(1f),
@@ -435,9 +369,8 @@ internal fun BaOverviewCard(
                 backdrop = backdrop,
                 label = "AP Full",
                 value = apFullTimeText,
-                secondary = "剩余 $apFullText",
-                accentColor = countdownBlue,
-                valueColor = countdownBlue,
+                accentColor = Color(0xFF60A5FA),
+                valueColor = Color(0xFF60A5FA),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -478,28 +411,24 @@ internal fun BaCafeCard(
     val invite2Text = if (invite2Ready) "0s" else formatBaRemainingTime(invite2AvailableAt, uiNowMs)
     val invite1TimeText = formatBaDateTimeNoSeconds(if (invite1Ready) uiNowMs else invite1AvailableAt)
     val invite2TimeText = formatBaDateTimeNoSeconds(if (invite2Ready) uiNowMs else invite2AvailableAt)
+    val headpatTimeText = if (coffeeHeadpatMs > 0L) formatBaDateTimeNoSeconds(coffeeHeadpatMs) else "-"
 
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentPink,
-        accentAlpha = 0.11f,
+        accentAlpha = 0.05f,
     ) {
-        BaCardHeader(
-            title = "咖啡厅循环",
-            subtitle = "竞技场刷新、学生访问与互动冷却一屏汇总",
-            accentColor = accentPink,
-        )
+        BaCardHeader(title = "咖啡厅")
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top,
         ) {
             BaGlassMetricPanel(
                 backdrop = backdrop,
                 label = "竞技场",
                 value = nextArenaRefreshText,
-                secondary = "下次刷新",
                 accentColor = accentPink,
                 valueColor = countdownBlue,
                 modifier = Modifier.weight(1f),
@@ -508,49 +437,44 @@ internal fun BaCafeCard(
                 backdrop = backdrop,
                 label = "学生访问",
                 value = nextStudentRefreshText,
-                secondary = "下次刷新",
                 accentColor = accentPink,
                 valueColor = countdownBlue,
                 modifier = Modifier.weight(1f),
             )
         }
 
-        BaActionStatusPanel(
+        BaInlineActionPanel(
             backdrop = backdrop,
             title = "摸摸头",
-            accentColor = accentPink,
-            countdownText = nextHeadpatText,
-            supportingText = if (coffeeHeadpatMs > 0L) {
-                "上次记录 ${formatBaDateTimeNoSeconds(coffeeHeadpatMs)}"
-            } else {
-                "尚未记录，当前可立即执行。"
-            },
             buttonText = "摸摸头",
-            buttonEnabled = coffeeHeadpatMs <= 0L || nextHeadpatAt <= uiNowMs,
+            countdownText = nextHeadpatText,
+            timeText = headpatTimeText,
+            accentColor = accentPink,
+            enabled = coffeeHeadpatMs <= 0L || nextHeadpatAt <= uiNowMs,
             onClick = onTouchHead,
             onLongClick = onForceResetHeadpatCooldown,
         )
 
-        BaActionStatusPanel(
+        BaInlineActionPanel(
             backdrop = backdrop,
-            title = "邀请券 1",
-            accentColor = invite1Color,
-            countdownText = invite1Text,
-            supportingText = "下次可用 $invite1TimeText",
+            title = "邀请券1",
             buttonText = "邀请券1",
-            buttonEnabled = invite1Ready,
+            countdownText = invite1Text,
+            timeText = invite1TimeText,
+            accentColor = invite1Color,
+            enabled = invite1Ready,
             onClick = onUseInviteTicket1,
             onLongClick = onForceResetInviteTicket1Cooldown,
         )
 
-        BaActionStatusPanel(
+        BaInlineActionPanel(
             backdrop = backdrop,
-            title = "邀请券 2",
-            accentColor = invite2Color,
-            countdownText = invite2Text,
-            supportingText = "下次可用 $invite2TimeText",
+            title = "邀请券2",
             buttonText = "邀请券2",
-            buttonEnabled = invite2Ready,
+            countdownText = invite2Text,
+            timeText = invite2TimeText,
+            accentColor = invite2Color,
+            enabled = invite2Ready,
             onClick = onUseInviteTicket2,
             onLongClick = onForceResetInviteTicket2Cooldown,
         )
@@ -577,28 +501,21 @@ internal fun BaCalendarCard(
     val accentAmber = Color(0xFFF59E0B)
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
-    val visibleCalendarEntries = if (showEndedActivities) {
-        baCalendarEntries
-    } else {
-        baCalendarEntries.filter { it.endAtMs > uiNowMs }
-    }
+    val visibleCalendarEntries = if (showEndedActivities) baCalendarEntries else baCalendarEntries.filter { it.endAtMs > uiNowMs }
 
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
-        accentAlpha = 0.11f,
+        accentAlpha = 0.05f,
     ) {
         BaCardHeader(
-            title = "活动日历",
-            subtitle = "GameKee · ${serverOptions[serverIndex]}",
-            accentColor = accentBlue,
+            title = "活动日历 · ${serverOptions[serverIndex]}",
             trailing = {
-                BaGlassBadge(
-                    text = if (baCalendarLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
-                        baCalendarLastSyncMs,
-                        serverTimeZone,
-                    ),
+                Text(
+                    text = if (baCalendarLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(baCalendarLastSyncMs, serverTimeZone),
                     color = countdownBlue,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 GlassIconButton(
                     backdrop = backdrop,
@@ -616,10 +533,7 @@ internal fun BaCalendarCard(
                     backdrop = backdrop,
                     accentColor = accentAmber,
                 ) {
-                    Text(
-                        text = baCalendarError.orEmpty(),
-                        color = accentAmber,
-                    )
+                    Text(text = baCalendarError.orEmpty(), color = accentAmber, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
 
@@ -663,23 +577,14 @@ internal fun BaCalendarCard(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            BaGlassBadge(
-                                text = statusText,
-                                color = statusColor,
-                            )
-                            Text(
-                                text = remainText,
-                                color = countdownBlue,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                            Text(text = statusText, color = statusColor, fontWeight = FontWeight.Medium)
+                            Text(text = remainText, color = countdownBlue, fontWeight = FontWeight.Bold, maxLines = 1)
                         }
                         Text(
                             text = "${activity.kindName} · ${activity.title}",
                             color = MiuixTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 3,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                         if (showCalendarPoolImages) {
@@ -697,7 +602,7 @@ internal fun BaCalendarCard(
                         LinearProgressIndicator(
                             progress = activityProgress(activity, uiNowMs),
                             modifier = Modifier.fillMaxWidth(),
-                            height = 6.dp,
+                            height = 5.dp,
                             colors = ProgressIndicatorDefaults.progressIndicatorColors(
                                 foregroundColor = if (activity.isRunning) accentGreen else accentBlue,
                                 backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f),
@@ -731,28 +636,21 @@ internal fun BaPoolCard(
     val accentAmber = Color(0xFFF59E0B)
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
-    val visiblePoolEntries = if (showEndedPools) {
-        baPoolEntries
-    } else {
-        baPoolEntries.filter { it.endAtMs > uiNowMs }
-    }
+    val visiblePoolEntries = if (showEndedPools) baPoolEntries else baPoolEntries.filter { it.endAtMs > uiNowMs }
 
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
-        accentAlpha = 0.11f,
+        accentAlpha = 0.05f,
     ) {
         BaCardHeader(
-            title = "卡池信息",
-            subtitle = "GameKee · ${serverOptions[serverIndex]} · 点按进入图鉴",
-            accentColor = accentBlue,
+            title = "卡池信息 · ${serverOptions[serverIndex]}",
             trailing = {
-                BaGlassBadge(
-                    text = if (baPoolLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
-                        baPoolLastSyncMs,
-                        serverTimeZone,
-                    ),
+                Text(
+                    text = if (baPoolLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(baPoolLastSyncMs, serverTimeZone),
                     color = countdownBlue,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 GlassIconButton(
                     backdrop = backdrop,
@@ -770,10 +668,7 @@ internal fun BaPoolCard(
                     backdrop = backdrop,
                     accentColor = accentAmber,
                 ) {
-                    Text(
-                        text = baPoolError.orEmpty(),
-                        color = accentAmber,
-                    )
+                    Text(text = baPoolError.orEmpty(), color = accentAmber, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
 
@@ -817,23 +712,14 @@ internal fun BaPoolCard(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            BaGlassBadge(
-                                text = statusText,
-                                color = statusColor,
-                            )
-                            Text(
-                                text = remainText,
-                                color = countdownBlue,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                            Text(text = statusText, color = statusColor, fontWeight = FontWeight.Medium)
+                            Text(text = remainText, color = countdownBlue, fontWeight = FontWeight.Bold, maxLines = 1)
                         }
                         Text(
                             text = "${pool.tagName} · ${pool.name}",
                             color = MiuixTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 3,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                         if (showCalendarPoolImages) {
@@ -851,7 +737,7 @@ internal fun BaPoolCard(
                         LinearProgressIndicator(
                             progress = poolProgress(pool, uiNowMs),
                             modifier = Modifier.fillMaxWidth(),
-                            height = 6.dp,
+                            height = 5.dp,
                             colors = ProgressIndicatorDefaults.progressIndicatorColors(
                                 foregroundColor = if (pool.isRunning) accentGreen else accentBlue,
                                 backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f),
@@ -883,13 +769,9 @@ internal fun BaIdCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
-        accentAlpha = 0.10f,
+        accentAlpha = 0.05f,
     ) {
-        BaCardHeader(
-            title = "ID 卡",
-            subtitle = "昵称与好友码会写入 BA 身份标识",
-            accentColor = accentBlue,
-        )
+        BaCardHeader(title = "ID 卡")
 
         BaGlassPanel(
             backdrop = backdrop,
@@ -900,19 +782,7 @@ internal fun BaIdCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = "昵称",
-                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                    )
-                    Text(
-                        text = "将自动拼接为老师称呼展示。",
-                        color = MiuixTheme.colorScheme.onBackground,
-                    )
-                }
+                Text("昵称", color = MiuixTheme.colorScheme.onBackground)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -928,9 +798,10 @@ internal fun BaIdCard(
                         singleLine = true,
                         textAlign = TextAlign.Center,
                     )
-                    BaGlassBadge(
+                    Text(
                         text = "老师",
                         color = accentBlue,
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             }
@@ -945,19 +816,7 @@ internal fun BaIdCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = "好友码",
-                        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-                    )
-                    Text(
-                        text = "仅保留大写字母并限制为 8 位。",
-                        color = MiuixTheme.colorScheme.onBackground,
-                    )
-                }
+                Text("好友码", color = MiuixTheme.colorScheme.onBackground)
                 GlassSearchField(
                     modifier = Modifier.width(friendCodeFieldWidth),
                     value = idFriendCodeInput,
@@ -985,13 +844,9 @@ internal fun BaDebugCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentAmber,
-        accentAlpha = 0.10f,
+        accentAlpha = 0.05f,
     ) {
-        BaCardHeader(
-            title = "Debug",
-            subtitle = "保留调试入口，但外观统一到新的玻璃卡片体系",
-            accentColor = accentAmber,
-        )
+        BaCardHeader(title = "Debug")
 
         BaGlassPanel(
             backdrop = backdrop,
