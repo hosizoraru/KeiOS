@@ -195,6 +195,43 @@ internal fun cafeStorageCap(level: Int): Double {
     return BA_CAFE_DAILY_AP_BY_LEVEL[safeLevel - 1].toDouble()
 }
 
+internal fun calculateApFullAtMs(
+    apLimit: Int,
+    apCurrent: Double,
+    apRegenBaseMs: Long,
+    nowMs: Long = System.currentTimeMillis(),
+): Long {
+    val limit = apLimit.coerceIn(0, BA_AP_LIMIT_MAX)
+    if (limit <= 0) return nowMs
+    val current = apCurrent.coerceAtLeast(0.0)
+    if (current >= limit.toDouble()) return nowMs
+
+    val base = apRegenBaseMs.takeIf { it > 0L } ?: nowMs
+    val elapsed = (nowMs - base).coerceAtLeast(0L)
+    val remainder = elapsed % BA_AP_REGEN_INTERVAL_MS
+    val pointsNeeded = ceil(limit.toDouble() - current).toLong().coerceAtLeast(0L)
+    if (pointsNeeded <= 0L) return nowMs
+
+    val untilNextPoint = if (remainder == 0L) BA_AP_REGEN_INTERVAL_MS else BA_AP_REGEN_INTERVAL_MS - remainder
+    return nowMs + untilNextPoint + (pointsNeeded - 1L) * BA_AP_REGEN_INTERVAL_MS
+}
+
+internal fun calculateApNextPointAtMs(
+    apLimit: Int,
+    apCurrent: Double,
+    apRegenBaseMs: Long,
+    nowMs: Long = System.currentTimeMillis(),
+): Long {
+    val limit = apLimit.coerceIn(0, BA_AP_LIMIT_MAX)
+    if (limit <= 0) return nowMs
+    if (apCurrent >= limit.toDouble()) return nowMs
+    val base = apRegenBaseMs.takeIf { it > 0L } ?: nowMs
+    val elapsed = (nowMs - base).coerceAtLeast(0L)
+    val remainder = elapsed % BA_AP_REGEN_INTERVAL_MS
+    val untilNextPoint = if (remainder == 0L) BA_AP_REGEN_INTERVAL_MS else BA_AP_REGEN_INTERVAL_MS - remainder
+    return nowMs + untilNextPoint
+}
+
 internal fun floorToHourMs(epochMs: Long): Long = epochMs - (epochMs % BA_CAFE_HOURLY_INTERVAL_MS)
 
 internal fun serverRefreshTimeZone(serverIndex: Int): TimeZone {
