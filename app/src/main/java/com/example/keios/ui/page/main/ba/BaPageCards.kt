@@ -87,7 +87,6 @@ private fun BaCardHeader(
 @Composable
 private fun BaInlineActionPanel(
     backdrop: Backdrop?,
-    title: String,
     buttonText: String,
     countdownText: String,
     timeText: String,
@@ -115,12 +114,6 @@ private fun BaInlineActionPanel(
                 variant = GlassVariant.Content,
                 onClick = onClick,
                 onLongClick = onLongClick,
-            )
-            Text(
-                text = title,
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = countdownText,
@@ -192,7 +185,7 @@ internal fun BaOverviewCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = stateAccent,
-        accentAlpha = 0.05f,
+        accentAlpha = 0f,
         onClick = {
             if (initState == BAInitState.Empty) onInitStateChange(BAInitState.Draft)
         },
@@ -307,7 +300,7 @@ internal fun BaOverviewCard(
                 }
             }
             Text(
-                text = "下一个 $apNextPointRemain · 回满 $apFullText",
+                text = "AP +1 $apNextPointRemain · Full AP $apFullText",
                 color = Color(0xFF60A5FA),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -416,7 +409,7 @@ internal fun BaCafeCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentPink,
-        accentAlpha = 0.05f,
+        accentAlpha = 0f,
     ) {
         BaCardHeader(title = "咖啡厅")
 
@@ -445,7 +438,6 @@ internal fun BaCafeCard(
 
         BaInlineActionPanel(
             backdrop = backdrop,
-            title = "摸摸头",
             buttonText = "摸摸头",
             countdownText = nextHeadpatText,
             timeText = headpatTimeText,
@@ -457,7 +449,6 @@ internal fun BaCafeCard(
 
         BaInlineActionPanel(
             backdrop = backdrop,
-            title = "邀请券1",
             buttonText = "邀请券1",
             countdownText = invite1Text,
             timeText = invite1TimeText,
@@ -469,7 +460,6 @@ internal fun BaCafeCard(
 
         BaInlineActionPanel(
             backdrop = backdrop,
-            title = "邀请券2",
             buttonText = "邀请券2",
             countdownText = invite2Text,
             timeText = invite2TimeText,
@@ -506,7 +496,7 @@ internal fun BaCalendarCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
-        accentAlpha = 0.05f,
+        accentAlpha = 0f,
     ) {
         BaCardHeader(
             title = "活动日历 · ${serverOptions[serverIndex]}",
@@ -641,7 +631,7 @@ internal fun BaPoolCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
-        accentAlpha = 0.05f,
+        accentAlpha = 0f,
     ) {
         BaCardHeader(
             title = "卡池信息 · ${serverOptions[serverIndex]}",
@@ -769,7 +759,7 @@ internal fun BaIdCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
-        accentAlpha = 0.05f,
+        accentAlpha = 0f,
     ) {
         BaCardHeader(title = "ID 卡")
 
@@ -844,7 +834,7 @@ internal fun BaDebugCard(
     BaGlassCard(
         backdrop = backdrop,
         accentColor = accentAmber,
-        accentAlpha = 0.05f,
+        accentAlpha = 0f,
     ) {
         BaCardHeader(title = "Debug")
 

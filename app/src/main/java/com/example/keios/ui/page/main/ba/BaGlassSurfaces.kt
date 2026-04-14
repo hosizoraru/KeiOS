@@ -110,7 +110,7 @@ internal fun BaGlassCard(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
-    accentAlpha: Float = 0.06f,
+    accentAlpha: Float = 0f,
     contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     verticalSpacing: Dp = 8.dp,
     onClick: (() -> Unit)? = null,
@@ -138,7 +138,7 @@ internal fun BaGlassCard(
                 cornerRadius = 24.dp,
                 accentColor = accentColor,
                 accentAlpha = accentAlpha,
-                variant = GlassVariant.Content,
+                variant = GlassVariant.Bar,
             )
             .then(interactionModifier)
             .padding(contentPadding),
