@@ -47,6 +47,7 @@ data class GuideWeaponCardModel(
     val description: String,
     val statHeaders: List<String>,
     val statRows: List<GuideWeaponStatRow>,
+    val extraStatRows: List<GuideWeaponStatRow> = emptyList(),
     val starEffects: List<GuideWeaponStarEffect>,
     val glossaryIcons: Map<String, String> = emptyMap()
 )

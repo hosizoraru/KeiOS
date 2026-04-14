@@ -148,6 +148,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                         } else {
                             val skillCards = guide.skillCardsForDisplay()
                             val weaponCard = guide.weaponCardForDisplay()
+                            val topDataRows = buildTopDataRowsForSkillPage(guide)
 
                             if (!error.isNullOrBlank()) {
                                 item {
@@ -223,6 +224,36 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                     )
                                 }
                             }
+
+                            if (topDataRows.isNotEmpty()) {
+                                item { Spacer(modifier = Modifier.height(10.dp)) }
+                                item {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.defaultColors(
+                                            color = Color(0x223B82F6),
+                                            contentColor = MiuixTheme.colorScheme.onBackground
+                                        ),
+                                        onClick = {}
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(
+                                                text = "顶级数据",
+                                                color = MiuixTheme.colorScheme.onBackground
+                                            )
+                                            GuideRowsSection(
+                                                rows = topDataRows,
+                                                emptyText = "暂无顶级数据。"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -249,10 +280,16 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 )
                             }
                         } else {
-                            val allProfileRows = guide.profileRowsForDisplay()
+                            val profileRowsBase = guide.profileRowsForDisplay()
                                 .filterNot(::shouldHideMovedHeaderRow)
                                 .filterNot(::isGrowthTitleVoiceRow)
                                 .filterNot(::isVoicePlaceholderRow)
+                            val hasTopDataHeader = profileRowsBase.any { row ->
+                                normalizeProfileFieldKey(row.key) == normalizeProfileFieldKey("顶级数据")
+                            }
+                            val allProfileRows = profileRowsBase.filterNot { row ->
+                                isSkillMigratedProfileRow(row, hasTopDataHeader)
+                            }
                             val nicknameRows = buildProfileCardRows(
                                 rows = allProfileRows,
                                 specs = profileNicknameFieldSpecs
@@ -1252,6 +1289,102 @@ private fun buildProfileCardRows(rows: List<BaGuideRow>, specs: List<ProfileFiel
 private fun isStructuredProfileCardRow(row: BaGuideRow): Boolean {
     return profileStructuredFieldSpecs.any { spec ->
         isProfileRowAliasMatch(row, spec.aliases)
+    }
+}
+
+private val topDataStatKeys = setOf(
+    "攻击力", "防御力", "生命值", "治愈力",
+    "命中值", "闪避值", "暴击值", "暴击伤害",
+    "稳定值", "射程", "群控强化力", "群控抵抗力",
+    "装弹数", "防御无视值", "受恢复率", "COST恢复力"
+)
+private val normalizedTopDataStatKeys = topDataStatKeys.map(::normalizeProfileFieldKey).toSet()
+
+private fun splitGuideCompositeValues(raw: String): List<String> {
+    if (raw.isBlank()) return emptyList()
+    return raw
+        .replace("／", "/")
+        .replace("|", "/")
+        .replace("｜", "/")
+        .split("/")
+        .map { it.trim() }
+        .filter { it.isNotBlank() && it != "-" && it != "—" }
+}
+
+private fun isSkillMigratedProfileRow(row: BaGuideRow, hasTopDataHeader: Boolean): Boolean {
+    val key = normalizeProfileFieldKey(row.key)
+    if (Regex("""^附加属性\d+$""").matches(key)) return true
+    if (key == normalizeProfileFieldKey("顶级数据")) return true
+    if (key == normalizeProfileFieldKey("25级")) return true
+    if (hasTopDataHeader && key in normalizedTopDataStatKeys) return true
+    return false
+}
+
+private fun buildTopDataRowsForSkillPage(info: BaStudentGuideInfo): List<BaGuideRow> {
+    val sourceRows = buildList {
+        addAll(info.skillRowsForDisplay())
+        addAll(info.growthRowsForDisplay())
+        addAll(info.profileRowsForDisplay())
+    }
+    if (sourceRows.isEmpty()) return emptyList()
+
+    val result = mutableListOf<BaGuideRow>()
+    var inTopDataBlock = false
+    sourceRows.forEach { row ->
+        val key = row.key.trim()
+        val value = row.value.trim()
+        val normalizedKey = normalizeProfileFieldKey(key)
+        if (normalizedKey == normalizeProfileFieldKey("顶级数据")) {
+            inTopDataBlock = true
+            if (value.isNotBlank()) {
+                result += BaGuideRow(
+                    key = "说明",
+                    value = value.trim('*')
+                )
+            }
+            return@forEach
+        }
+
+        if (inTopDataBlock && (
+                normalizedKey == normalizeProfileFieldKey("专武") ||
+                    normalizedKey == normalizeProfileFieldKey("装备") ||
+                    normalizedKey == normalizeProfileFieldKey("爱用品") ||
+                    normalizedKey == normalizeProfileFieldKey("能力解放") ||
+                    normalizedKey.contains(normalizeProfileFieldKey("羁绊等级奖励"))
+                )
+        ) {
+            inTopDataBlock = false
+        }
+        if (!inTopDataBlock) return@forEach
+
+        if (normalizedKey in normalizedTopDataStatKeys && value.isNotBlank()) {
+            val tokens = splitGuideCompositeValues(value)
+            if (tokens.isEmpty()) return@forEach
+
+            val firstTokenLooksLikeKey = normalizeProfileFieldKey(tokens.first()) in normalizedTopDataStatKeys
+            var index = if (firstTokenLooksLikeKey) 0 else 1
+            if (!firstTokenLooksLikeKey) {
+                result += BaGuideRow(
+                    key = key.ifBlank { "数据" },
+                    value = tokens.first()
+                )
+            }
+            while (index + 1 < tokens.size) {
+                val statKey = tokens[index].trim()
+                val statValue = tokens[index + 1].trim()
+                if (statKey.isNotBlank() && statValue.isNotBlank()) {
+                    result += BaGuideRow(
+                        key = statKey,
+                        value = statValue
+                    )
+                }
+                index += 2
+            }
+        }
+    }
+
+    return result.distinctBy { row ->
+        "${normalizeProfileFieldKey(row.key)}|${row.value.trim()}"
     }
 }
 

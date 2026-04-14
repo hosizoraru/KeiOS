@@ -3,6 +3,11 @@ package com.example.keios.ui.page.main.student
 fun BaStudentGuideInfo.weaponCardForDisplay(): GuideWeaponCardModel? {
     val growthRows = growthRowsForDisplay()
     val skillRows = skillRowsForDisplay()
+    val allRowsForExtraStats = buildList {
+        addAll(growthRows)
+        addAll(skillRows)
+        addAll(profileRowsForDisplay())
+    }
     val rows = if (growthRows.any { it.key.trim() == "专武" }) {
         growthRows
     } else {
@@ -167,6 +172,7 @@ fun BaStudentGuideInfo.weaponCardForDisplay(): GuideWeaponCardModel? {
     if (weaponName.isBlank() && weaponImage.isBlank() && weaponDescription.isBlank() && statRows.isEmpty() && starEffects.isEmpty()) {
         return null
     }
+    val extraStatRows = parseWeaponAdditionalAttributeRows(allRowsForExtraStats)
 
     return GuideWeaponCardModel(
         name = weaponName.ifBlank { "专属武器" },
@@ -174,6 +180,7 @@ fun BaStudentGuideInfo.weaponCardForDisplay(): GuideWeaponCardModel? {
         description = weaponDescription,
         statHeaders = statHeaders,
         statRows = statRows,
+        extraStatRows = extraStatRows,
         starEffects = starEffects,
         glossaryIcons = glossaryIcons
     )
@@ -199,6 +206,53 @@ private fun splitCompositeValues(raw: String): List<String> {
         .split("/")
         .map { it.trim() }
         .filter { it.isNotBlank() && it != "-" && it != "—" }
+}
+
+private fun parseKeyValuePairs(raw: String): List<Pair<String, String>> {
+    val tokens = splitCompositeValues(raw)
+    if (tokens.isEmpty()) return emptyList()
+    val result = mutableListOf<Pair<String, String>>()
+    var index = 0
+    while (index + 1 < tokens.size) {
+        val key = tokens[index].trim()
+        val value = tokens[index + 1].trim()
+        if (key.isNotBlank() && value.isNotBlank()) {
+            result += key to value
+        }
+        index += 2
+    }
+    return result
+}
+
+internal fun parseWeaponAdditionalAttributeRows(rows: List<BaGuideRow>): List<GuideWeaponStatRow> {
+    if (rows.isEmpty()) return emptyList()
+    val normalizedRows = rows.map { row ->
+        row.copy(key = row.key.trim(), value = row.value.trim())
+    }
+
+    val directPairs = normalizedRows
+        .filter { row -> Regex("""^附加属性\d+$""").matches(row.key.replace(" ", "")) }
+        .flatMap { row -> parseKeyValuePairs(row.value) }
+
+    val fromLv25Pairs = normalizedRows
+        .firstOrNull { row -> row.key.replace(" ", "") == "25级" }
+        ?.let { row -> parseKeyValuePairs(row.value) }
+        .orEmpty()
+
+    val merged = linkedMapOf<String, String>()
+    (directPairs + fromLv25Pairs).forEach { (title, value) ->
+        val key = title.trim()
+        val cleanValue = value.trim()
+        if (key.isBlank() || cleanValue.isBlank()) return@forEach
+        merged.putIfAbsent(key, cleanValue)
+    }
+
+    return merged.map { (title, value) ->
+        GuideWeaponStatRow(
+            title = title,
+            values = listOf(value)
+        )
+    }
 }
 
 private fun extractStarLabel(rawKey: String): String? {

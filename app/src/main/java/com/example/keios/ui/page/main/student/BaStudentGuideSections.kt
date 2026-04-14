@@ -1989,6 +1989,46 @@ fun GuideWeaponCardItem(
                 }
             }
 
+            if (card.extraStatRows.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "附加属性（25级）",
+                        color = MiuixTheme.colorScheme.onBackgroundVariant
+                    )
+                    card.extraStatRows.forEach { stat ->
+                        val valueText = stat.values.firstOrNull().orEmpty().ifBlank { "-" }
+                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                            val titleMaxWidth = (maxWidth * 0.34f).coerceIn(64.dp, 128.dp)
+                            val valueCharBudget = ((maxWidth - titleMaxWidth).value / 7f).toInt().coerceAtLeast(10)
+                            val valueMaxLines = adaptiveValueMaxLines(valueText, valueCharBudget)
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stat.title,
+                                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                    modifier = Modifier.widthIn(max = titleMaxWidth),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Clip
+                                )
+                                Text(
+                                    text = valueText,
+                                    color = MiuixTheme.colorScheme.onBackground,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = valueMaxLines,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             if (card.starEffects.isNotEmpty()) {
                 card.starEffects.forEachIndexed { index, effect ->
                     GuideWeaponStarEffectItem(

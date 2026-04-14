@@ -143,6 +143,31 @@ private fun isVoiceBlockTailKey(raw: String): Boolean {
         key.contains("个人账号主页")
 }
 
+private fun normalizeGuideRowKey(raw: String): String {
+    return stripHtml(raw)
+        .replace(" ", "")
+        .replace("　", "")
+        .replace("（", "(")
+        .replace("）", ")")
+        .trim()
+}
+
+private fun isWeaponExtraAttributeKey(rawKey: String): Boolean {
+    val key = normalizeGuideRowKey(rawKey)
+    return Regex("""^附加属性\d+$""").matches(key)
+}
+
+private fun isTopDataStatKey(rawKey: String): Boolean {
+    val key = normalizeGuideRowKey(rawKey)
+    val statKeys = setOf(
+        "攻击力", "防御力", "生命值", "治愈力",
+        "命中值", "闪避值", "暴击值", "暴击伤害",
+        "稳定值", "射程", "群控强化力", "群控抵抗力",
+        "装弹数", "防御无视值", "受恢复率", "COST恢复力"
+    )
+    return key in statKeys
+}
+
 private fun isPlaceholderMediaToken(raw: String): Boolean {
     val value = raw.trim().lowercase()
     if (value.isBlank()) return true
@@ -1063,6 +1088,7 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
         var inGalleryContext = false
         var inVoiceContext = false
         var currentVoiceSection = ""
+        var inTopDataContext = false
         var lastGalleryTitle = ""
         baseRows.forEach { row ->
             val key = row.key
@@ -1085,6 +1111,19 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             }
             if (normalizedKey.replace(" ", "").startsWith("回忆大厅文件")) {
                 return@forEach
+            }
+            val normalizedGuideKey = normalizeGuideRowKey(normalizedKey)
+            if (normalizedGuideKey == "顶级数据") {
+                inTopDataContext = true
+            } else if (inTopDataContext && (
+                    normalizedGuideKey == "专武" ||
+                        normalizedGuideKey == "装备" ||
+                        normalizedGuideKey == "爱用品" ||
+                        normalizedGuideKey == "能力解放" ||
+                        normalizedGuideKey.contains("羁绊等级奖励")
+                    )
+            ) {
+                inTopDataContext = false
             }
             if (normalizedKey == "配音语言") {
                 inVoiceContext = true
@@ -1161,10 +1200,16 @@ private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): Gui
             val isVoice = containsAny(normalizedKey, voiceKeywords) || isGrowthTitleVoiceKey(normalizedKey) || isVoiceByContext
             val matchesSkillKeywords = containsAny(normalizedKey, skillKeywords)
             val matchesGrowthKeywords = containsAny(normalizedKey, growthKeywords)
+            val isSkillMigratedRow =
+                isWeaponExtraAttributeKey(normalizedKey) ||
+                    normalizedGuideKey == "25级" ||
+                    normalizedGuideKey == "顶级数据" ||
+                    (inTopDataContext && isTopDataStatKey(normalizedKey))
             val isLevelRow = key.trim().matches(Regex("""(?i)^LV\.?\d{1,2}$"""))
             val isSkill = (inSkillBlock && (isLevelRow || normalizedKey == "技能COST" || normalizedKey == "技能描述" || normalizedKey == "技能图标" || normalizedKey == "技能名称" || normalizedKey == "技能类型")) ||
                 (inSkillGlossaryBlock && normalizedKey.isNotBlank() && !inWeaponBlock) ||
-                (matchesSkillKeywords && !inWeaponBlock)
+                (matchesSkillKeywords && !inWeaponBlock) ||
+                isSkillMigratedRow
             val isGrowth = inWeaponBlock || (matchesGrowthKeywords && !isSkill)
             val isProfile = containsAny(normalizedKey, profileKeywords)
             val hasMedia = row.imageValues.isNotEmpty() || row.videoValues.isNotEmpty()
