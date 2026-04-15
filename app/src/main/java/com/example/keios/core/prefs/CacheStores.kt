@@ -5,6 +5,7 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubReleaseStrategyRegistry
 import com.example.keios.mcp.McpServerManager
+import com.example.keios.ui.page.main.ba.BaCalendarPoolImageCache
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.example.keios.ui.page.main.OsCardVisibilityStore
 import com.example.keios.ui.page.main.OsInfoCache
@@ -63,7 +64,10 @@ internal object CacheStores {
                 AppIconCache.clear()
                 CacheEventStore.markCleared("app_icon")
             }
-            "ba_calendar" -> BASettingsStore.clearCalendarAndPoolCaches()
+            "ba_calendar" -> {
+                BASettingsStore.clearCalendarAndPoolCaches()
+                BaCalendarPoolImageCache.clearAll(context)
+            }
             "ba_student_guide" -> {
                 BaStudentGuideStore.clearAllCachedInfo()
                 clearBaGuideCatalogCache()
@@ -134,7 +138,11 @@ internal object CacheStores {
         val snapshot = BASettingsStore.loadSnapshot()
         val calendar = BASettingsStore.loadCalendarCacheSnapshot(snapshot.serverIndex)
         val pool = BASettingsStore.loadPoolCacheSnapshot(snapshot.serverIndex)
-        val updatedAtMs = maxOf(calendar.syncMs, pool.syncMs).takeIf { it > 0L }
+        val mediaBytes = BaCalendarPoolImageCache.cacheTotalBytes(context)
+        val mediaFiles = BaCalendarPoolImageCache.cacheFileCount(context)
+        val mediaUpdatedAtMs = BaCalendarPoolImageCache.latestModifiedAtMs(context)
+        val mergedCacheBytes = BASettingsStore.cacheBytesEstimated() + mediaBytes
+        val updatedAtMs = maxOf(calendar.syncMs, pool.syncMs, mediaUpdatedAtMs).takeIf { it > 0L }
             ?: mmkvLastModified(context, "ba_page_settings")
         val clearedAtMs = CacheEventStore.loadClearedAt("ba_calendar")
         val detail = buildString {
@@ -143,6 +151,7 @@ internal object CacheStores {
             append(if (calendar.raw.isNotBlank()) "已缓存" else "空")
             append(" · 池子缓存 ")
             append(if (pool.raw.isNotBlank()) "已缓存" else "空")
+            append(" · 图片 $mediaFiles 张")
         }
         return CacheEntrySummary(
             id = "ba_calendar",
@@ -150,11 +159,11 @@ internal object CacheStores {
             summary = "活动日程、卡池缓存与页面状态",
             detail = detail,
             activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(BASettingsStore.cacheBytesEstimated())} · 配置估算 ${formatBytes(BASettingsStore.configBytesEstimated())} · MMKV 已用 ${formatBytes(BASettingsStore.actualDataBytes())}",
+            storage = "缓存估算 ${formatBytes(mergedCacheBytes)} · 配置估算 ${formatBytes(BASettingsStore.configBytesEstimated())} · MMKV 已用 ${formatBytes(BASettingsStore.actualDataBytes())} · 媒体磁盘 ${formatBytes(mediaBytes)}",
             clearLabel = "清理",
-            cacheBytes = BASettingsStore.cacheBytesEstimated(),
+            cacheBytes = mergedCacheBytes,
             configBytes = BASettingsStore.configBytesEstimated(),
-            diskBytes = BASettingsStore.actualDataBytes(),
+            diskBytes = BASettingsStore.actualDataBytes() + mediaBytes,
             updatedAtMs = updatedAtMs,
             clearedAtMs = clearedAtMs
         )

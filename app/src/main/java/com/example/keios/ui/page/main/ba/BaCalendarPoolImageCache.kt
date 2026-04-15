@@ -3,6 +3,7 @@ package com.example.keios.ui.page.main.ba
 import android.content.Context
 import android.net.Uri
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
+import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -16,6 +17,11 @@ import java.security.MessageDigest
 internal object BaCalendarPoolImageCache {
     private const val ROOT_DIR = "ba_calendar_pool_media"
     private const val MAX_PARALLEL_DOWNLOADS = 3
+    private const val INDEX_KV_ID = "ba_calendar_pool_media_index"
+    private const val INDEX_VERSION = 1
+    private const val KEY_INDEX_VERSION = "index_version"
+
+    private val indexStore: MMKV by lazy { MMKV.mmkvWithID(INDEX_KV_ID) }
 
     private enum class Category(val folderName: String) {
         Calendar("calendar"),
@@ -117,6 +123,7 @@ internal object BaCalendarPoolImageCache {
                 }
             }.awaitAll()
         }
+        rebuildScopeIndex(context, category, serverIndex)
     }
 
     suspend fun pruneCalendarStale(
@@ -165,6 +172,7 @@ internal object BaCalendarPoolImageCache {
                 runCatching { file.delete() }
             }
         }
+        rebuildScopeIndex(context, category, serverIndex)
     }
 
     fun resolveCalendarImageUrl(
@@ -256,10 +264,164 @@ internal object BaCalendarPoolImageCache {
 
     fun clearCalendarCache(context: Context, serverIndex: Int) {
         runCatching { categoryDir(context, Category.Calendar, serverIndex).deleteRecursively() }
+        clearScopeIndex(Category.Calendar, serverIndex)
     }
 
     fun clearPoolCache(context: Context, serverIndex: Int) {
         runCatching { categoryDir(context, Category.Pool, serverIndex).deleteRecursively() }
+        clearScopeIndex(Category.Pool, serverIndex)
+    }
+
+    fun clearAll(context: Context) {
+        runCatching { rootDir(context).deleteRecursively() }
+        clearIndex()
+    }
+
+    fun cacheFileCount(context: Context): Int = loadIndexSummary(context).count
+
+    fun cacheTotalBytes(context: Context): Long = loadIndexSummary(context).bytes
+
+    fun latestModifiedAtMs(context: Context): Long = loadIndexSummary(context).latest
+
+    private data class ScopeSummary(
+        val count: Int,
+        val bytes: Long,
+        val latest: Long
+    )
+
+    private data class MediaSummary(
+        val count: Int,
+        val bytes: Long,
+        val latest: Long
+    )
+
+    private fun scopePrefix(category: Category, serverIndex: Int): String {
+        return "${category.folderName}_${serverIndex.coerceIn(0, 2)}"
+    }
+
+    private fun scopeCountKey(category: Category, serverIndex: Int): String = "${scopePrefix(category, serverIndex)}_count"
+
+    private fun scopeBytesKey(category: Category, serverIndex: Int): String = "${scopePrefix(category, serverIndex)}_bytes"
+
+    private fun scopeLatestKey(category: Category, serverIndex: Int): String = "${scopePrefix(category, serverIndex)}_latest"
+
+    private fun readScopeSummary(category: Category, serverIndex: Int, kv: MMKV = indexStore): ScopeSummary? {
+        val countKey = scopeCountKey(category, serverIndex)
+        val bytesKey = scopeBytesKey(category, serverIndex)
+        if (!kv.containsKey(countKey) || !kv.containsKey(bytesKey)) return null
+        val count = kv.decodeInt(countKey, -1)
+        val bytes = kv.decodeLong(bytesKey, -1L)
+        if (count < 0 || bytes < 0L) return null
+        return ScopeSummary(
+            count = count,
+            bytes = bytes,
+            latest = kv.decodeLong(scopeLatestKey(category, serverIndex), 0L).coerceAtLeast(0L)
+        )
+    }
+
+    private fun writeScopeSummary(
+        category: Category,
+        serverIndex: Int,
+        summary: ScopeSummary,
+        kv: MMKV = indexStore
+    ) {
+        val countKey = scopeCountKey(category, serverIndex)
+        val bytesKey = scopeBytesKey(category, serverIndex)
+        val latestKey = scopeLatestKey(category, serverIndex)
+        if (summary.count <= 0 || summary.bytes <= 0L) {
+            kv.removeValueForKey(countKey)
+            kv.removeValueForKey(bytesKey)
+            kv.removeValueForKey(latestKey)
+        } else {
+            kv.encode(countKey, summary.count)
+            kv.encode(bytesKey, summary.bytes)
+            kv.encode(latestKey, summary.latest.coerceAtLeast(0L))
+        }
+        kv.encode(KEY_INDEX_VERSION, INDEX_VERSION)
+    }
+
+    private fun scanScopeSummary(dir: File): ScopeSummary {
+        if (!dir.exists()) return ScopeSummary(count = 0, bytes = 0L, latest = 0L)
+        var count = 0
+        var bytes = 0L
+        var latest = 0L
+        dir.listFiles()
+            .orEmpty()
+            .filter { it.isFile }
+            .forEach { file ->
+                count += 1
+                bytes += file.length()
+                latest = maxOf(latest, file.lastModified())
+            }
+        return ScopeSummary(count = count, bytes = bytes, latest = latest)
+    }
+
+    private fun rebuildScopeIndex(context: Context, category: Category, serverIndex: Int) {
+        val summary = scanScopeSummary(categoryDir(context, category, serverIndex))
+        writeScopeSummary(category, serverIndex, summary)
+    }
+
+    private fun clearScopeIndex(category: Category, serverIndex: Int) {
+        writeScopeSummary(
+            category = category,
+            serverIndex = serverIndex,
+            summary = ScopeSummary(count = 0, bytes = 0L, latest = 0L)
+        )
+    }
+
+    private fun clearIndex() {
+        val kv = indexStore
+        Category.entries.forEach { category ->
+            for (server in 0..2) {
+                kv.removeValueForKey(scopeCountKey(category, server))
+                kv.removeValueForKey(scopeBytesKey(category, server))
+                kv.removeValueForKey(scopeLatestKey(category, server))
+            }
+        }
+        kv.removeValueForKey(KEY_INDEX_VERSION)
+        kv.trim()
+    }
+
+    private fun aggregateSummaryFromIndex(kv: MMKV = indexStore): MediaSummary {
+        var totalCount = 0
+        var totalBytes = 0L
+        var latest = 0L
+        Category.entries.forEach { category ->
+            for (server in 0..2) {
+                val summary = readScopeSummary(category, server, kv) ?: continue
+                totalCount += summary.count
+                totalBytes += summary.bytes
+                latest = maxOf(latest, summary.latest)
+            }
+        }
+        return MediaSummary(
+            count = totalCount.coerceAtLeast(0),
+            bytes = totalBytes.coerceAtLeast(0L),
+            latest = latest.coerceAtLeast(0L)
+        )
+    }
+
+    private fun rebuildAllIndex(context: Context): MediaSummary {
+        Category.entries.forEach { category ->
+            for (server in 0..2) {
+                rebuildScopeIndex(context, category, server)
+            }
+        }
+        return aggregateSummaryFromIndex()
+    }
+
+    private fun loadIndexSummary(context: Context): MediaSummary {
+        val root = rootDir(context)
+        val kv = indexStore
+        val hasIndex = kv.decodeInt(KEY_INDEX_VERSION, 0) == INDEX_VERSION
+        return when {
+            !root.exists() -> {
+                if (hasIndex) clearIndex()
+                MediaSummary(count = 0, bytes = 0L, latest = 0L)
+            }
+            !hasIndex -> rebuildAllIndex(context)
+            else -> aggregateSummaryFromIndex(kv)
+        }
     }
 
     private fun sha1(raw: String): String {
