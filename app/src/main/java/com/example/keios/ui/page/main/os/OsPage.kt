@@ -80,6 +80,7 @@ import com.example.keios.core.system.getAllSystemProperties
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -120,6 +121,7 @@ fun OsPage(
     shizukuApiUtils: ShizukuApiUtils,
     cardPressFeedbackEnabled: Boolean = true,
     contentBottomPadding: Dp = 72.dp,
+    enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val isDark = isSystemInDarkTheme()
@@ -589,7 +591,11 @@ fun OsPage(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .layerBackdrop(topBarBackdrop)
+            ) {
                 TopAppBar(
                     title = "",
                     largeTitle = "OS",
@@ -636,23 +642,26 @@ fun OsPage(
                         )
                     }
                 )
-                SearchBarHost(
-                    visible = showSearchBar,
-                    animationLabelPrefix = "osSearchBar"
-                ) {
-                    Column {
-                        GlassSearchField(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp),
-                            value = queryInput,
-                            onValueChange = { queryInput = it },
-                            label = "搜索OS参数",
-                            backdrop = topBarBackdrop,
-                            variant = GlassVariant.Bar,
-                            singleLine = true
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                if (enableSearchBar) {
+                    SearchBarHost(
+                        visible = showSearchBar,
+                        animationLabelPrefix = "osSearchBar",
+                        backdrop = topBarBackdrop,
+                    ) {
+                        Column {
+                            GlassSearchField(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
+                                value = queryInput,
+                                onValueChange = { queryInput = it },
+                                label = "搜索OS参数",
+                                backdrop = topBarBackdrop,
+                                variant = GlassVariant.Bar,
+                                singleLine = true
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }

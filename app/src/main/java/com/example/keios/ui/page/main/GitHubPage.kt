@@ -174,6 +174,7 @@ fun GitHubPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
+    enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -1171,6 +1172,7 @@ fun GitHubPage(
         topBarBackdrop = topBarBackdrop,
         contentBackdrop = contentBackdrop,
         topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
+        enableSearchBar = enableSearchBar,
         showSearchBar = showSearchBar,
         trackedSearch = trackedSearch,
         sortMode = sortMode,

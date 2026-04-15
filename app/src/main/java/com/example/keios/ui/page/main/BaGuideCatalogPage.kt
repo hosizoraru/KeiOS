@@ -120,7 +120,8 @@ private enum class BaGuideCatalogSortMode(val label: String) {
 @Composable
 fun BaGuideCatalogPage(
     onBack: () -> Unit,
-    onOpenGuide: (String) -> Unit
+    onOpenGuide: (String) -> Unit,
+    enableSearchBar: Boolean = true,
 ) {
     val pageTitle = "图鉴"
     val accent = MiuixTheme.colorScheme.primary
@@ -247,7 +248,11 @@ fun BaGuideCatalogPage(
             .background(MiuixTheme.colorScheme.background)
             .nestedScroll(bottomBarNestedScrollConnection),
         topBar = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .layerBackdrop(topBarBackdrop)
+            ) {
                 TopAppBar(
                     title = pageTitle,
                     largeTitle = pageTitle,
@@ -310,23 +315,26 @@ fun BaGuideCatalogPage(
                         }
                     }
                 )
-                SearchBarHost(
-                    visible = showSearchBar,
-                    animationLabelPrefix = "baGuideCatalogSearch"
-                ) {
-                    Column {
-                        GlassSearchField(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp),
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            label = "搜索名称 / 别名 / ID",
-                            backdrop = null,
-                            variant = GlassVariant.Bar,
-                            singleLine = true
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                if (enableSearchBar) {
+                    SearchBarHost(
+                        visible = showSearchBar,
+                        animationLabelPrefix = "baGuideCatalogSearch",
+                        backdrop = topBarBackdrop,
+                    ) {
+                        Column {
+                            GlassSearchField(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                label = "搜索名称 / 别名 / ID",
+                                backdrop = topBarBackdrop,
+                                variant = GlassVariant.Bar,
+                                singleLine = true
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }

@@ -24,6 +24,7 @@ import com.example.keios.ui.page.main.widget.SearchBarHost
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -38,6 +39,7 @@ internal fun GitHubTopBarSection(
     backdrop: LayerBackdrop,
     topBarColor: Color,
     scrollBehavior: ScrollBehavior,
+    enableSearchBar: Boolean,
     showSearchBar: Boolean,
     trackedSearch: String,
     sortMode: GitHubSortMode,
@@ -51,7 +53,11 @@ internal fun GitHubTopBarSection(
     onRefreshAllTracked: () -> Unit,
     onActionBarInteractingChanged: (Boolean) -> Unit
 ) {
-    Column {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .layerBackdrop(backdrop)
+    ) {
         TopAppBar(
             title = "",
             largeTitle = stringResource(R.string.github_page_title),
@@ -120,23 +126,26 @@ internal fun GitHubTopBarSection(
                 }
             }
         )
-        SearchBarHost(
-            visible = showSearchBar,
-            animationLabelPrefix = "githubSearchBar"
-        ) {
-            Column {
-                GlassSearchField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                    value = trackedSearch,
-                    onValueChange = onTrackedSearchChange,
-                    label = stringResource(R.string.github_topbar_search_label),
-                    backdrop = backdrop,
-                    variant = GlassVariant.Bar,
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+        if (enableSearchBar) {
+            SearchBarHost(
+                visible = showSearchBar,
+                animationLabelPrefix = "githubSearchBar",
+                backdrop = backdrop,
+            ) {
+                Column {
+                    GlassSearchField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
+                        value = trackedSearch,
+                        onValueChange = onTrackedSearchChange,
+                        label = stringResource(R.string.github_topbar_search_label),
+                        backdrop = backdrop,
+                        variant = GlassVariant.Bar,
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
     }

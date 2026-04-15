@@ -14,12 +14,15 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
 
 @Composable
 fun SearchBarHost(
     visible: Boolean,
     modifier: Modifier = Modifier,
     animationLabelPrefix: String,
+    backdrop: LayerBackdrop? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val density = LocalDensity.current
@@ -44,6 +47,13 @@ fun SearchBarHost(
             .fillMaxWidth()
             .height(searchBarHeight)
             .clipToBounds()
+            .then(
+                if (backdrop != null) {
+                    Modifier.layerBackdrop(backdrop)
+                } else {
+                    Modifier
+                }
+            )
             .graphicsLayer {
                 alpha = searchBarAlpha
                 translationY = with(density) { searchBarOffsetY.toPx() }
