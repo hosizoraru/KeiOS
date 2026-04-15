@@ -56,6 +56,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,6 +74,7 @@ import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
+import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.SearchBarHost
@@ -165,11 +167,28 @@ fun BaGuideCatalogPage(
     val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
     var showSearchBar by remember { mutableStateOf(true) }
-    val bottomBarNestedScrollConnection = remember {
+    val density = LocalDensity.current
+    var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
+    val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
+    val bottomBarNestedScrollConnection = remember(searchBarHideThresholdPx) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) showBottomBar = false
-                if (available.y > 1f) showBottomBar = true
+                if (available.y < -1f) {
+                    showBottomBar = false
+                    if (showSearchBar) {
+                        searchBarHideOffsetPx =
+                            (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
+                        if (searchBarHideOffsetPx >= searchBarHideThresholdPx) {
+                            showSearchBar = false
+                            searchBarHideOffsetPx = 0f
+                        }
+                    }
+                }
+                if (available.y > 1f) {
+                    showBottomBar = true
+                    showSearchBar = true
+                    searchBarHideOffsetPx = 0f
+                }
                 return Offset.Zero
             }
         }
@@ -398,6 +417,7 @@ fun BaGuideCatalogPage(
                 ) { entry ->
                     BaGuideCatalogEntryCard(
                         entry = entry,
+                        backdrop = backdrop,
                         onOpenGuide = onOpenGuide
                     )
                 }
@@ -435,6 +455,7 @@ fun BaGuideCatalogPage(
 @Composable
 private fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
+    backdrop: LayerBackdrop,
     onOpenGuide: (String) -> Unit
 ) {
     Card(
@@ -504,11 +525,15 @@ private fun BaGuideCatalogEntryCard(
                     )
                 }
             }
-            Text(
-                text = "进入",
-                color = MiuixTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1
+            GlassIconButton(
+                backdrop = backdrop,
+                icon = MiuixIcons.Regular.Back,
+                contentDescription = "进入图鉴",
+                onClick = { onOpenGuide(entry.detailUrl) },
+                modifier = Modifier.graphicsLayer { rotationZ = 180f },
+                width = 34.dp,
+                height = 34.dp,
+                variant = GlassVariant.Bar
             )
         }
     }
