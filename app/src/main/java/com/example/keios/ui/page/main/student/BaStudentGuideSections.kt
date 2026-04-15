@@ -1,10 +1,7 @@
 package com.example.keios.ui.page.main.student
 
 import com.example.keios.ui.page.main.widget.GlassVariant
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
-import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -49,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
@@ -168,17 +166,6 @@ private fun normalizeGalleryDisplayTitle(title: String, mediaType: String): Stri
     } else {
         raw
     }
-}
-
-private fun shouldForceLandscapeVideoTitle(title: String): Boolean {
-    val normalized = title.trim()
-        .replace(" ", "")
-        .replace("　", "")
-        .lowercase()
-    if (normalized.isBlank()) return false
-    return normalized.contains("回忆大厅") ||
-        normalized.contains("pv") ||
-        normalized.contains("角色演示")
 }
 
 @Composable
@@ -376,9 +363,6 @@ fun GuideGalleryCardItem(
     val noteText = item.note.trim()
     val displayTitle = remember(item.title, normalizedMediaType) {
         normalizeGalleryDisplayTitle(item.title, normalizedMediaType)
-    }
-    val forceLandscapeFullscreen = remember(displayTitle) {
-        shouldForceLandscapeVideoTitle(displayTitle)
     }
     val isImageType = normalizedMediaType != "video" && normalizedMediaType != "audio"
     val canOpenMedia = item.mediaUrl.isNotBlank() && item.mediaUrl != item.imageUrl
@@ -591,8 +575,7 @@ fun GuideGalleryCardItem(
                             mediaUrl = displayMediaUrl,
                             previewImageUrl = displayImageUrl,
                             backdrop = backdrop,
-                            onOpenExternal = onOpenMedia,
-                            forceLandscapeFullscreen = forceLandscapeFullscreen
+                            onOpenExternal = onOpenMedia
                         )
                     }
 
@@ -788,8 +771,7 @@ fun GuideGalleryExpressionCardItem(
                         mediaUrl = displayMediaUrl,
                         previewImageUrl = displayImageUrl,
                         backdrop = backdrop,
-                        onOpenExternal = onOpenMedia,
-                        forceLandscapeFullscreen = shouldForceLandscapeVideoTitle(title)
+                        onOpenExternal = onOpenMedia
                     )
                 } else {
                     GlassTextButton(
@@ -939,8 +921,7 @@ fun GuideGalleryVideoGroupCardItem(
                     mediaUrl = displayMediaUrl,
                     previewImageUrl = displayPreviewUrl,
                     backdrop = backdrop,
-                    onOpenExternal = onOpenMedia,
-                    forceLandscapeFullscreen = shouldForceLandscapeVideoTitle(title)
+                    onOpenExternal = onOpenMedia
                 )
             }
         }
@@ -993,38 +974,35 @@ private fun GuideInlineVideoPlayer(
     mediaUrl: String,
     previewImageUrl: String = "",
     backdrop: Backdrop?,
-    onOpenExternal: (String) -> Unit,
-    forceLandscapeFullscreen: Boolean = false
+    onOpenExternal: (String) -> Unit
 ) {
     val context = LocalContext.current
-    var expanded by rememberSaveable(mediaUrl) { mutableStateOf(false) }
-    var showFullscreen by rememberSaveable(mediaUrl) { mutableStateOf(false) }
+    var expanded by remember(mediaUrl) { mutableStateOf(false) }
     val normalizedUrl = remember(mediaUrl) { normalizeGuideMediaSource(mediaUrl) }
     val normalizedPreviewUrl = remember(previewImageUrl) { normalizeGuideMediaSource(previewImageUrl) }
     var videoRatio by remember(normalizedUrl) { mutableStateOf(16f / 9f) }
     var isBuffering by remember(normalizedUrl) { mutableStateOf(false) }
     var isPlaying by remember(normalizedUrl) { mutableStateOf(false) }
     var loadError by remember(normalizedUrl) { mutableStateOf<String?>(null) }
-
-    if (showFullscreen && normalizedUrl.isNotBlank()) {
-        GuideVideoFullscreenDialog(
-            mediaUrl = normalizedUrl,
-            forceLandscape = forceLandscapeFullscreen,
-            onDismiss = { showFullscreen = false }
-        )
-        return
+    val openFullscreen = remember(context, normalizedUrl) {
+        {
+            if (normalizedUrl.isBlank()) {
+                Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+            } else {
+                GuideVideoFullscreenActivity.launch(
+                    context = context,
+                    mediaUrl = normalizedUrl
+                )
+            }
+        }
     }
 
     if (!expanded) {
         if (normalizedPreviewUrl.isNotBlank()) {
             Box(
                 modifier = Modifier.clickable {
-                    if (normalizedUrl.isBlank()) {
-                        Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
-                    } else {
-                        expanded = false
-                        showFullscreen = true
-                    }
+                    expanded = false
+                    openFullscreen()
                 }
             ) {
                 GuideRemoteImageAdaptive(
@@ -1058,12 +1036,8 @@ private fun GuideInlineVideoPlayer(
                 textColor = Color(0xFF3B82F6),
                 variant = GlassVariant.Compact,
                 onClick = {
-                    if (normalizedUrl.isBlank()) {
-                        Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
-                        return@GlassTextButton
-                    }
                     expanded = false
-                    showFullscreen = true
+                    openFullscreen()
                 }
             )
         }
@@ -1174,7 +1148,7 @@ private fun GuideInlineVideoPlayer(
             variant = GlassVariant.Compact,
             onClick = {
                 expanded = false
-                showFullscreen = true
+                openFullscreen()
             }
         )
         GlassTextButton(
@@ -1223,40 +1197,6 @@ private fun GuideInlineVideoPlayer(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
-    }
-}
-
-private tailrec fun Context.findActivity(): Activity? {
-    return when (this) {
-        is Activity -> this
-        is ContextWrapper -> baseContext.findActivity()
-        else -> null
-    }
-}
-
-@Composable
-private fun GuideRequestedOrientationEffect(requestedOrientation: Int) {
-    val activity = LocalContext.current.findActivity()
-    DisposableEffect(activity, requestedOrientation) {
-        if (activity == null || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-            onDispose { }
-        } else {
-            val applied = runCatching {
-                if (activity.requestedOrientation != requestedOrientation) {
-                    activity.requestedOrientation = requestedOrientation
-                }
-            }.isSuccess
-            onDispose {
-                if (!applied) return@onDispose
-                // 配置变化重建过程中不要回写方向，避免 landscape/unspecified 循环抖动。
-                if (activity.isChangingConfigurations) return@onDispose
-                runCatching {
-                    if (activity.requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -1368,10 +1308,8 @@ private fun GuideVideoFullscreenDialog(
 ) {
     val context = LocalContext.current
     val normalizedUrl = remember(mediaUrl) { normalizeGuideMediaSource(mediaUrl) }
-    if (forceLandscape) {
-        GuideRequestedOrientationEffect(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
-    }
     var loadError by remember(normalizedUrl) { mutableStateOf<String?>(null) }
+    var videoRatio by remember(normalizedUrl) { mutableStateOf(16f / 9f) }
 
     val player = remember(context, normalizedUrl) {
         if (normalizedUrl.isBlank()) {
@@ -1388,6 +1326,12 @@ private fun GuideVideoFullscreenDialog(
     DisposableEffect(player) {
         val boundPlayer = player ?: return@DisposableEffect onDispose { }
         val listener = object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    videoRatio = videoSize.width.toFloat() / videoSize.height.toFloat()
+                }
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 loadError = error.errorCodeName
             }
@@ -1413,24 +1357,56 @@ private fun GuideVideoFullscreenDialog(
         ) {
             val activePlayer = player
             if (activePlayer != null) {
-                AndroidView(
+                BoxWithConstraints(
                     modifier = Modifier.fillMaxSize(),
-                    factory = { ctx ->
-                        PlayerView(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            useController = true
-                            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                            this.player = activePlayer
+                    contentAlignment = Alignment.Center
+                ) {
+                    val safeRatio = videoRatio.coerceAtLeast(0.2f)
+                    val shouldRotateLandscape = forceLandscape && maxHeight > maxWidth
+
+                    fun fitSize(targetRatio: Float): Pair<androidx.compose.ui.unit.Dp, androidx.compose.ui.unit.Dp> {
+                        val normalizedRatio = targetRatio.coerceAtLeast(0.2f)
+                        val viewportRatio = if (maxHeight.value > 0f) maxWidth.value / maxHeight.value else 1f
+                        return if (viewportRatio >= normalizedRatio) {
+                            val h = maxHeight
+                            (h * normalizedRatio) to h
+                        } else {
+                            val w = maxWidth
+                            w to (w / normalizedRatio)
                         }
-                    },
-                    update = { view ->
-                        view.player = activePlayer
-                        view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                     }
-                )
+
+                    val playerModifier = if (shouldRotateLandscape) {
+                        val rotatedFinal = fitSize((1f / safeRatio).coerceAtLeast(0.2f))
+                        val preRotate = rotatedFinal.second to rotatedFinal.first
+                        Modifier
+                            .width(preRotate.first)
+                            .height(preRotate.second)
+                            .rotate(90f)
+                            .align(Alignment.Center)
+                    } else {
+                        Modifier.fillMaxSize()
+                    }
+
+                    AndroidView(
+                        modifier = playerModifier,
+                        factory = { ctx ->
+                            PlayerView(ctx).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                useController = true
+                                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                                this.player = activePlayer
+                            }
+                        },
+                        update = { view ->
+                            view.player = activePlayer
+                            view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        }
+                    )
+                }
             } else {
                 Text(
                     text = "视频地址无效",
