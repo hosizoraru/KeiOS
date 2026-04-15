@@ -96,6 +96,8 @@ fun MainScreen(
     mcpServerManager: McpServerManager,
     appThemeMode: AppThemeMode,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
+    requestedBottomPage: String?,
+    requestedBottomPageToken: Int
 ) {
     val backStack = remember { mutableStateListOf<NavKey>().apply { add(KeiosRoute.Main) } }
     val navigator = remember { Navigator(backStack) }
@@ -107,6 +109,11 @@ fun MainScreen(
     val currentOnCheckOrRequestShizuku by rememberUpdatedState(onCheckOrRequestShizuku)
     val currentOnRequestNotificationPermission by rememberUpdatedState(onRequestNotificationPermission)
     val currentOnAppThemeModeChanged by rememberUpdatedState(onAppThemeModeChanged)
+
+    LaunchedEffect(requestedBottomPageToken, requestedBottomPage) {
+        if (requestedBottomPage.isNullOrBlank()) return@LaunchedEffect
+        navigator.popUntil { it == KeiosRoute.Main }
+    }
 
     val uiPrefsSnapshot by produceState(
         initialValue = UiPrefs.defaultSnapshot(currentAppThemeMode)
@@ -157,7 +164,9 @@ fun MainScreen(
                     onCheckOrRequestShizuku = currentOnCheckOrRequestShizuku,
                     notificationPermissionGranted = currentNotificationPermissionGranted,
                     shizukuApiUtils = shizukuApiUtils,
-                    mcpServerManager = mcpServerManager
+                    mcpServerManager = mcpServerManager,
+                    requestedBottomPage = requestedBottomPage,
+                    requestedBottomPageToken = requestedBottomPageToken
                 )
             }
             entry<KeiosRoute.Settings> {
@@ -251,7 +260,9 @@ private fun MainPagerLayout(
     onCheckOrRequestShizuku: () -> Unit,
     notificationPermissionGranted: Boolean,
     shizukuApiUtils: ShizukuApiUtils,
-    mcpServerManager: McpServerManager
+    mcpServerManager: McpServerManager,
+    requestedBottomPage: String?,
+    requestedBottomPageToken: Int
 ) {
     val tabs = remember(visibleBottomPageNames) {
         BottomPage.entries.filter { page ->
@@ -324,6 +335,15 @@ private fun MainPagerLayout(
             coroutineScope.launch {
                 pagerState.animateScrollToPage(index)
             }
+        }
+    }
+
+    LaunchedEffect(requestedBottomPageToken, requestedBottomPage, tabs) {
+        val target = requestedBottomPage ?: return@LaunchedEffect
+        val index = tabs.indexOfFirst { it.name == target }
+        if (index >= 0 && index != pagerState.currentPage) {
+            pagerState.animateScrollToPage(index)
+            showBottomBar = true
         }
     }
 

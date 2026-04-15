@@ -4,4 +4,6 @@
     <string name="mcp_keepalive_channel_desc">用于维持 MCP Server 前台保活并显示超级岛信息</string>
     <string name="mcp_live_update_channel_name">MCP Live Update</string>
     <string name="mcp_live_update_channel_desc">用于展示 AOSP Live Update 实时通知</string>
+    <string name="github_refresh_channel_name">GitHub 刷新</string>
+    <string name="github_refresh_channel_desc">用于展示 GitHub 版本跟踪刷新进度与结果</string>
 </resources>

@@ -103,6 +103,7 @@ import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetRepository
 import com.example.keios.feature.github.data.remote.GitHubReleaseStrategyRegistry
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
+import com.example.keios.feature.github.notification.GitHubRefreshNotificationHelper
 import com.example.keios.feature.github.domain.GitHubReleaseCheckService
 import com.example.keios.feature.github.domain.GitHubStrategyBenchmarkService
 import com.example.keios.feature.github.model.GitHubApiAuthMode
@@ -363,6 +364,25 @@ fun GitHubPage(
         if (refreshAllJob?.isActive == true) {
             refreshAllJob?.cancel()
             refreshAllJob = null
+            val trackedCount = trackedItems.size
+            if (trackedCount > 0) {
+                val checkedCount = (refreshProgress * trackedCount.toFloat()).toInt()
+                    .coerceIn(0, trackedCount)
+                val updatableCount = trackedItems.count { checkStates[it.id]?.hasUpdate == true }
+                val failedCount = trackedItems.count {
+                    checkStates[it.id]?.message?.startsWith("检查失败") == true
+                }
+                GitHubRefreshNotificationHelper.notifyCancelled(
+                    context = context,
+                    current = checkedCount,
+                    total = trackedCount,
+                    trackedCount = trackedCount,
+                    updatableCount = updatableCount,
+                    failedCount = failedCount
+                )
+            } else {
+                GitHubRefreshNotificationHelper.cancel(context)
+            }
             overviewRefreshState = if (trackedItems.isEmpty()) {
                 OverviewRefreshState.Idle
             } else if (checkStates.isNotEmpty()) {
@@ -462,6 +482,7 @@ fun GitHubPage(
             if (showToast) Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
             overviewRefreshState = OverviewRefreshState.Idle
             refreshProgress = 0f
+            GitHubRefreshNotificationHelper.cancel(context)
             return
         }
         refreshAllJob?.cancel()
@@ -470,6 +491,17 @@ fun GitHubPage(
             lastRefreshMs = 0L
             overviewRefreshState = OverviewRefreshState.Refreshing
             refreshProgress = 0f
+            val totalCount = snapshot.size
+            var updatableCount = 0
+            var failedCount = 0
+            GitHubRefreshNotificationHelper.notifyProgress(
+                context = context,
+                current = 0,
+                total = totalCount,
+                trackedCount = totalCount,
+                updatableCount = 0,
+                failedCount = 0
+            )
             snapshot.forEach { item ->
                 checkStates[item.id] = VersionCheckUi(loading = true, message = "检查中...")
             }
@@ -478,7 +510,21 @@ fun GitHubPage(
                 if (trackedItems.any { it.id == item.id }) {
                     checkStates[item.id] = state
                 }
+                if (state.hasUpdate == true) {
+                    updatableCount += 1
+                }
+                if (state.message.startsWith("检查失败")) {
+                    failedCount += 1
+                }
                 refreshProgress = (index + 1).toFloat() / snapshot.size.toFloat()
+                GitHubRefreshNotificationHelper.notifyProgress(
+                    context = context,
+                    current = index + 1,
+                    total = totalCount,
+                    trackedCount = totalCount,
+                    updatableCount = updatableCount,
+                    failedCount = failedCount
+                )
                 if (showToast && state.message.startsWith("检查失败")) {
                     Toast.makeText(context, "${item.owner}/${item.repo}: ${state.message}", Toast.LENGTH_SHORT).show()
                 }
@@ -488,6 +534,13 @@ fun GitHubPage(
             lastRefreshMs = System.currentTimeMillis()
             refreshProgress = 1f
             persistCheckCache(lastRefreshMs)
+            GitHubRefreshNotificationHelper.notifyCompleted(
+                context = context,
+                total = totalCount,
+                trackedCount = totalCount,
+                updatableCount = updatableCount,
+                failedCount = failedCount
+            )
             if (showToast) Toast.makeText(context, "检查完成", Toast.LENGTH_SHORT).show()
             refreshAllJob = null
         }

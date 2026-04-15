@@ -1,6 +1,7 @@
 package com.example.keios
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -32,10 +33,18 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val EXTRA_TARGET_BOTTOM_PAGE = "com.example.keios.extra.TARGET_BOTTOM_PAGE"
+        const val TARGET_BOTTOM_PAGE_GITHUB = "GitHub"
+        const val TARGET_BOTTOM_PAGE_MCP = "Mcp"
+        const val TARGET_BOTTOM_PAGE_BA = "Ba"
+    }
 
     private var shizukuStatus = mutableStateOf("Shizuku status: initializing...")
     private var appThemeModeState = mutableStateOf(UiPrefs.getAppThemeMode())
     private var notificationPermissionGranted by mutableStateOf(true)
+    private var requestedBottomPage by mutableStateOf<String?>(null)
+    private var requestedBottomPageToken by mutableStateOf(0)
     private val shizukuApiUtils = ShizukuApiUtils()
     private lateinit var localMcpService: LocalMcpService
     private lateinit var mcpServerManager: McpServerManager
@@ -53,6 +62,7 @@ class MainActivity : ComponentActivity() {
         if (!notificationPermissionGranted) {
             requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+        consumeIntentNavigation(intent)
 
         val appLabel = runCatching {
             packageManager.getApplicationLabel(applicationInfo).toString()
@@ -103,10 +113,18 @@ class MainActivity : ComponentActivity() {
                     onAppThemeModeChanged = { mode ->
                         appThemeModeState.value = mode
                         UiPrefs.setAppThemeMode(mode)
-                    }
+                    },
+                    requestedBottomPage = requestedBottomPage,
+                    requestedBottomPageToken = requestedBottomPageToken
                 )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        consumeIntentNavigation(intent)
     }
 
     override fun onDestroy() {
@@ -137,6 +155,15 @@ class MainActivity : ComponentActivity() {
                 ActivityInfo.COLOR_MODE_DEFAULT
             }
         }
+    }
+
+    private fun consumeIntentNavigation(intent: Intent?) {
+        val target = intent?.getStringExtra(EXTRA_TARGET_BOTTOM_PAGE)
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?: return
+        requestedBottomPage = target
+        requestedBottomPageToken += 1
     }
 }
 

@@ -57,6 +57,11 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="mcp_keepalive_realtime_notify" />
         </service>
+
+        <receiver
+            android:name=".feature.notification.NotificationActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
     </application>
 
 </manifest>

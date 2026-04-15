@@ -156,8 +156,17 @@ object McpNotificationHelper {
         ongoing: Boolean,
         onlyAlertOnce: Boolean
     ): SessionNotifier.NotificationBuildResult {
+        val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
         val openIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            putExtra(
+                MainActivity.EXTRA_TARGET_BOTTOM_PAGE,
+                if (isBlueArchiveAp) {
+                    MainActivity.TARGET_BOTTOM_PAGE_BA
+                } else {
+                    MainActivity.TARGET_BOTTOM_PAGE_MCP
+                }
+            )
         }
         val openPendingIntent = PendingIntent.getActivity(
             context,
@@ -165,7 +174,6 @@ object McpNotificationHelper {
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
         val actionForSecondaryButton = if (isBlueArchiveAp) ACTION_DISMISS else ACTION_STOP
         val stopIntent = Intent(context, McpKeepAliveService::class.java).apply {
             action = actionForSecondaryButton
