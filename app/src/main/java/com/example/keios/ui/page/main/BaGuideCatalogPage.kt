@@ -94,6 +94,7 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -403,6 +404,7 @@ fun BaGuideCatalogPage(
         }
         HorizontalPager(
             state = pagerState,
+            key = { index -> tabs[index].name },
             modifier = Modifier
                 .fillMaxSize()
                 .layerBackdrop(bottomBarBackdrop),
@@ -421,6 +423,7 @@ fun BaGuideCatalogPage(
                 accent = accent,
                 innerPadding = innerPadding,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                isPageActive = pageIndex == pagerState.currentPage,
                 onOpenGuide = onOpenGuide
             )
         }
@@ -440,6 +443,7 @@ private fun CatalogTabContent(
     accent: Color,
     innerPadding: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
+    isPageActive: Boolean,
     onOpenGuide: (String) -> Unit,
 ) {
     val currentEntries = remember(catalog, tab, sortMode) {
@@ -453,12 +457,15 @@ private fun CatalogTabContent(
     LaunchedEffect(filteredEntries.size) {
         visibleCount = minOf(filteredEntries.size, CATALOG_BATCH_SIZE)
     }
-    LaunchedEffect(listState, filteredEntries.size, loading) {
+    LaunchedEffect(isPageActive, listState, filteredEntries.size, loading) {
+        if (!isPageActive) return@LaunchedEffect
         snapshotFlow {
             val layoutInfo = listState.layoutInfo
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             lastVisible to layoutInfo.totalItemsCount
-        }.collect { (lastVisible, totalCount) ->
+        }
+            .distinctUntilChanged()
+            .collect { (lastVisible, totalCount) ->
             if (loading) return@collect
             if (visibleCount >= filteredEntries.size) return@collect
             if (totalCount <= 0) return@collect

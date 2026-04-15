@@ -177,6 +177,7 @@ fun BaStudentGuidePage(
     )
     val activeBottomTab = bottomTabs.getOrElse(pagerState.currentPage) { GuideBottomTab.Archive }
     val pageScope = rememberCoroutineScope()
+    val ignoreStringInput: (String) -> Unit = remember { { _: String -> } }
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
@@ -574,6 +575,7 @@ fun BaStudentGuidePage(
     ) { innerPadding ->
         HorizontalPager(
             state = pagerState,
+            key = { index -> bottomTabs[index].name },
             overscrollEffect = null,
             beyondViewportPageCount = 0,
             modifier = Modifier
@@ -581,6 +583,8 @@ fun BaStudentGuidePage(
                 .layerBackdrop(navBackdrop)
         ) { pageIndex ->
             val pageBottomTab = bottomTabs.getOrElse(pageIndex) { GuideBottomTab.Archive }
+            val isVoiceTab = pageBottomTab == GuideBottomTab.Voice
+            val isGalleryTab = pageBottomTab == GuideBottomTab.Gallery
             // Each guide page owns an isolated backdrop instance.
             val pageBackdrop: LayerBackdrop = key("page-$activationCount-$sourceUrl-$pageIndex") {
                 rememberLayerBackdrop {
@@ -649,16 +653,24 @@ fun BaStudentGuidePage(
                         accent = accent,
                         context = context,
                         sourceUrl = sourceUrl,
-                        galleryCacheRevision = galleryCacheRevision,
-                        playingVoiceUrl = playingVoiceUrl,
-                        isVoicePlaying = isVoicePlaying,
-                        voicePlayProgress = voicePlayProgress,
-                        selectedVoiceLanguage = selectedVoiceLanguage,
+                        galleryCacheRevision = if (isGalleryTab) galleryCacheRevision else 0,
+                        playingVoiceUrl = if (isVoiceTab) playingVoiceUrl else "",
+                        isVoicePlaying = isVoiceTab && isVoicePlaying,
+                        voicePlayProgress = if (isVoiceTab) voicePlayProgress else 0f,
+                        selectedVoiceLanguage = if (isVoiceTab) selectedVoiceLanguage else "",
                         onOpenExternal = ::openExternal,
                         onOpenGuide = ::openGuideInPage,
-                        onToggleVoicePlayback = ::toggleVoicePlayback,
-                        onSelectedVoiceLanguageChange = { selectedVoiceLanguage = it },
-                        onReloadInteractiveFurnitureGif = ::reloadInteractiveFurnitureGif
+                        onToggleVoicePlayback = if (isVoiceTab) ::toggleVoicePlayback else ignoreStringInput,
+                        onSelectedVoiceLanguageChange = if (isVoiceTab) {
+                            { selectedVoiceLanguage = it }
+                        } else {
+                            ignoreStringInput
+                        },
+                        onReloadInteractiveFurnitureGif = if (isGalleryTab) {
+                            ::reloadInteractiveFurnitureGif
+                        } else {
+                            ignoreStringInput
+                        }
                     )
                 }
             }

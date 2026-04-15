@@ -282,6 +282,7 @@ private fun MainPagerLayout(
             page == BottomPage.Home || visibleBottomPageNames.contains(page.name)
         }
     }
+    val visibleTabsSnapshot = remember(tabs) { tabs.toSet() }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
     val mcpUiState by mcpServerManager.uiState.collectAsState()
@@ -448,6 +449,7 @@ private fun MainPagerLayout(
     ) { _ ->
         HorizontalPager(
             state = pagerState,
+            key = { index -> tabs[index].name },
             userScrollEnabled = pagerScrollEnabled,
             overscrollEffect = null,
             beyondViewportPageCount = 0,
@@ -498,7 +500,7 @@ private fun MainPagerLayout(
                             mcpConnectedClients = mcpUiState.connectedClients,
                             mcpAllowExternal = mcpUiState.allowExternal,
                             homeIconHdrEnabled = homeIconHdrEnabled,
-                            visibleBottomPages = tabs.toSet(),
+                            visibleBottomPages = visibleTabsSnapshot,
                             onBottomPageVisibilityChange = { page, visible ->
                                 if (page == BottomPage.Home) return@HomePage
                                 val updated = visibleBottomPageNames
