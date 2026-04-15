@@ -1267,12 +1267,15 @@ private fun GuideImageFullscreenDialog(
 
                 val normalSize = fitSize(safeRatio)
                 val rotatedRatio = (1f / safeRatio).coerceAtLeast(0.1f)
-                val rotatedSize = fitSize(rotatedRatio)
+                // fitSize(rotatedRatio) 是“旋转后最终落在屏幕上的尺寸”。
+                // 由于我们是对容器做 rotate(90f)，因此旋转前容器需要交换宽高。
+                val rotatedFinalSize = fitSize(rotatedRatio)
+                val rotatedPreRotateSize = rotatedFinalSize.second to rotatedFinalSize.first
                 val normalArea = normalSize.first.value * normalSize.second.value
-                val rotatedArea = rotatedSize.first.value * rotatedSize.second.value
+                val rotatedArea = rotatedFinalSize.first.value * rotatedFinalSize.second.value
                 val shouldRotate90 =
                     safeRatio > 1.02f && rotatedArea > (normalArea * 1.12f)
-                val targetSize = if (shouldRotate90) rotatedSize else normalSize
+                val targetSize = if (shouldRotate90) rotatedPreRotateSize else normalSize
 
                 CoilZoomAsyncImage(
                     model = normalizedImageUrl,
