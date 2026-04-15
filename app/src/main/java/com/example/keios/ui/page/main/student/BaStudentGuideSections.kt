@@ -46,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onSizeChanged
@@ -87,6 +86,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import com.github.panpf.zoomimage.CoilZoomAsyncImage
+import com.github.panpf.zoomimage.rememberCoilZoomState
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -1211,6 +1211,7 @@ private fun GuideImageFullscreenDialog(
 ) {
     val normalizedImageUrl = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
     if (normalizedImageUrl.isBlank()) return
+    val zoomState = rememberCoilZoomState()
     val sampledBitmap by produceState<Bitmap?>(initialValue = null, normalizedImageUrl) {
         value = withContext(Dispatchers.IO) {
             runCatching {
@@ -1271,20 +1272,19 @@ private fun GuideImageFullscreenDialog(
                 val shouldRotate90 =
                     safeRatio > 1.02f && rotatedArea > (normalArea * 1.12f)
 
+                LaunchedEffect(normalizedImageUrl, shouldRotate90) {
+                    zoomState.zoomable.reset()
+                    zoomState.zoomable.rotate(if (shouldRotate90) 90 else 0)
+                }
+
                 CoilZoomAsyncImage(
                     model = normalizedImageUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .let { base ->
-                            if (shouldRotate90) {
-                                base.rotate(90f)
-                            } else {
-                                base
-                            }
-                        }
                         .align(Alignment.Center),
                     contentScale = ContentScale.Fit,
+                    zoomState = zoomState,
                     scrollBar = null,
                     onTap = { onDismiss() }
                 )
