@@ -1,7 +1,10 @@
 package com.example.keios.ui.page.main.student
 
 import com.example.keios.ui.page.main.widget.GlassVariant
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -165,6 +168,17 @@ private fun normalizeGalleryDisplayTitle(title: String, mediaType: String): Stri
     } else {
         raw
     }
+}
+
+private fun shouldForceLandscapeVideoTitle(title: String): Boolean {
+    val normalized = title.trim()
+        .replace(" ", "")
+        .replace("　", "")
+        .lowercase()
+    if (normalized.isBlank()) return false
+    return normalized.contains("回忆大厅") ||
+        normalized.contains("pv") ||
+        normalized.contains("角色演示")
 }
 
 @Composable
@@ -362,6 +376,9 @@ fun GuideGalleryCardItem(
     val noteText = item.note.trim()
     val displayTitle = remember(item.title, normalizedMediaType) {
         normalizeGalleryDisplayTitle(item.title, normalizedMediaType)
+    }
+    val forceLandscapeFullscreen = remember(displayTitle) {
+        shouldForceLandscapeVideoTitle(displayTitle)
     }
     val isImageType = normalizedMediaType != "video" && normalizedMediaType != "audio"
     val canOpenMedia = item.mediaUrl.isNotBlank() && item.mediaUrl != item.imageUrl
@@ -574,7 +591,8 @@ fun GuideGalleryCardItem(
                             mediaUrl = displayMediaUrl,
                             previewImageUrl = displayImageUrl,
                             backdrop = backdrop,
-                            onOpenExternal = onOpenMedia
+                            onOpenExternal = onOpenMedia,
+                            forceLandscapeFullscreen = forceLandscapeFullscreen
                         )
                     }
 
@@ -770,7 +788,8 @@ fun GuideGalleryExpressionCardItem(
                         mediaUrl = displayMediaUrl,
                         previewImageUrl = displayImageUrl,
                         backdrop = backdrop,
-                        onOpenExternal = onOpenMedia
+                        onOpenExternal = onOpenMedia,
+                        forceLandscapeFullscreen = shouldForceLandscapeVideoTitle(title)
                     )
                 } else {
                     GlassTextButton(
@@ -920,7 +939,8 @@ fun GuideGalleryVideoGroupCardItem(
                     mediaUrl = displayMediaUrl,
                     previewImageUrl = displayPreviewUrl,
                     backdrop = backdrop,
-                    onOpenExternal = onOpenMedia
+                    onOpenExternal = onOpenMedia,
+                    forceLandscapeFullscreen = shouldForceLandscapeVideoTitle(title)
                 )
             }
         }
@@ -973,7 +993,8 @@ private fun GuideInlineVideoPlayer(
     mediaUrl: String,
     previewImageUrl: String = "",
     backdrop: Backdrop?,
-    onOpenExternal: (String) -> Unit
+    onOpenExternal: (String) -> Unit,
+    forceLandscapeFullscreen: Boolean = false
 ) {
     val context = LocalContext.current
     var expanded by rememberSaveable(mediaUrl) { mutableStateOf(false) }
@@ -988,6 +1009,7 @@ private fun GuideInlineVideoPlayer(
     if (showFullscreen && normalizedUrl.isNotBlank()) {
         GuideVideoFullscreenDialog(
             mediaUrl = normalizedUrl,
+            forceLandscape = forceLandscapeFullscreen,
             onDismiss = { showFullscreen = false }
         )
         return
@@ -1204,6 +1226,36 @@ private fun GuideInlineVideoPlayer(
     }
 }
 
+private tailrec fun Context.findActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
+}
+
+@Composable
+private fun GuideRequestedOrientationEffect(requestedOrientation: Int) {
+    val activity = LocalContext.current.findActivity()
+    DisposableEffect(activity, requestedOrientation) {
+        if (activity == null || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+            onDispose { }
+        } else {
+            val previousOrientation = activity.requestedOrientation
+            val applied = runCatching {
+                activity.requestedOrientation = requestedOrientation
+            }.isSuccess
+            onDispose {
+                if (applied) {
+                    runCatching {
+                        activity.requestedOrientation = previousOrientation
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun GuideImageFullscreenDialog(
     imageUrl: String,
@@ -1307,10 +1359,14 @@ private fun GuideImageFullscreenDialog(
 @Composable
 private fun GuideVideoFullscreenDialog(
     mediaUrl: String,
+    forceLandscape: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val normalizedUrl = remember(mediaUrl) { normalizeGuideMediaSource(mediaUrl) }
+    if (forceLandscape) {
+        GuideRequestedOrientationEffect(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+    }
     var loadError by remember(normalizedUrl) { mutableStateOf<String?>(null) }
 
     val player = remember(context, normalizedUrl) {
