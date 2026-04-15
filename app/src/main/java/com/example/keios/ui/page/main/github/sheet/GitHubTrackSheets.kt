@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.feature.github.model.GitHubLookupConfig
 import com.example.keios.feature.github.model.GitHubTrackedApp
 import com.example.keios.feature.github.model.InstalledAppItem
@@ -85,16 +88,17 @@ internal fun GitHubCheckLogicSheet(
     onDownloaderPopupAnchorBoundsChange: (IntRect?) -> Unit,
     onOnlineShareTargetPopupAnchorBoundsChange: (IntRect?) -> Unit
 ) {
+    val context = LocalContext.current
     SnapshotWindowBottomSheet(
         show = show,
-        title = "检查与下载",
+        title = stringResource(R.string.github_check_sheet_title),
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Close,
-                contentDescription = "关闭",
+                contentDescription = stringResource(R.string.common_close),
                 onClick = onDismissRequest
             )
         },
@@ -103,24 +107,24 @@ internal fun GitHubCheckLogicSheet(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Ok,
-                contentDescription = "保存检查逻辑",
+                contentDescription = stringResource(R.string.github_check_sheet_cd_save),
                 onClick = onApply
             )
         }
     ) {
         val selectedRefreshOption = RefreshIntervalOption.fromHours(refreshIntervalHoursInput)
         val allDownloaderOptions = remember(downloaderOptions) {
-            listOf(systemDefaultDownloaderOption, systemDownloadManagerOption) + downloaderOptions
+            listOf(systemDefaultDownloaderOption(context), systemDownloadManagerOption(context)) + downloaderOptions
         }
         val onlineShareTargetOptions = remember(installedOnlineShareTargets) {
-            listOf(noOnlineShareTargetOption) + installedOnlineShareTargets
+            listOf(noOnlineShareTargetOption(context)) + installedOnlineShareTargets
         }
         val selectedDownloaderLabel = allDownloaderOptions.firstOrNull {
             it.packageName == preferredDownloaderPackageInput
-        }?.label ?: systemDefaultDownloaderOption.label
+        }?.label ?: systemDefaultDownloaderOption(context).label
         val selectedOnlineShareTargetLabel = onlineShareTargetOptions.firstOrNull {
             it.packageName == onlineShareTargetPackageInput
-        }?.label ?: noOnlineShareTargetOption.label
+        }?.label ?: noOnlineShareTargetOption(context).label
         val logicChanged = refreshIntervalHoursInput != refreshIntervalHours ||
             checkAllTrackedPreReleasesInput != lookupConfig.checkAllTrackedPreReleases ||
             aggressiveApkFilteringInput != lookupConfig.aggressiveApkFiltering ||
@@ -128,16 +132,19 @@ internal fun GitHubCheckLogicSheet(
             preferredDownloaderPackageInput != lookupConfig.preferredDownloaderPackage
 
         SheetContentColumn(verticalSpacing = 8.dp) {
-            SheetSectionTitle("当前摘要")
+            SheetSectionTitle(stringResource(R.string.github_check_sheet_section_summary))
             SheetSectionCard {
-                SheetControlRow(label = "更新间隔", summary = "超时后自动视为过期") {
+                SheetControlRow(
+                    label = stringResource(R.string.github_check_sheet_label_refresh_interval),
+                    summary = stringResource(R.string.github_check_sheet_summary_refresh_interval)
+                ) {
                     Box(
                         modifier = Modifier.capturePopupAnchor { onCheckLogicIntervalPopupAnchorBoundsChange(it) }
                     ) {
                         GlassTextButton(
                             backdrop = backdrop,
                             variant = GlassVariant.SheetAction,
-                            text = selectedRefreshOption.label,
+                            text = stringResource(selectedRefreshOption.labelRes),
                             onClick = { onShowCheckLogicIntervalPopupChange(!showCheckLogicIntervalPopup) }
                         )
                         if (showCheckLogicIntervalPopup) {
@@ -153,7 +160,7 @@ internal fun GitHubCheckLogicSheet(
                                     val options = RefreshIntervalOption.entries
                                     options.forEachIndexed { index, option ->
                                         LiquidDropdownImpl(
-                                            text = option.label,
+                                            text = stringResource(option.labelRes),
                                             optionSize = options.size,
                                             isSelected = selectedRefreshOption == option,
                                             index = index,
@@ -169,8 +176,8 @@ internal fun GitHubCheckLogicSheet(
                     }
                 }
                 SheetControlRow(
-                    label = "检查所有追踪项的预发行最新版",
-                    summary = "额外检查每个项目的最新预发，但不代表自动推荐安装"
+                    label = stringResource(R.string.github_check_sheet_label_prerelease_check),
+                    summary = stringResource(R.string.github_check_sheet_summary_prerelease_check)
                 ) {
                     Switch(
                         checked = checkAllTrackedPreReleasesInput,
@@ -178,15 +185,18 @@ internal fun GitHubCheckLogicSheet(
                     )
                 }
                 SheetControlRow(
-                    label = "更激进的过滤方式",
-                    summary = "忽略 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；若有 arm64-v8a 也忽略 universal"
+                    label = stringResource(R.string.github_check_sheet_label_aggressive_filter),
+                    summary = stringResource(R.string.github_check_sheet_summary_aggressive_filter)
                 ) {
                     Switch(
                         checked = aggressiveApkFilteringInput,
                         onCheckedChange = onAggressiveApkFilteringInputChange
                     )
                 }
-                SheetControlRow(label = "下载器", summary = "用于直链下载跳转；默认跟随系统") {
+                SheetControlRow(
+                    label = stringResource(R.string.github_check_sheet_label_downloader),
+                    summary = stringResource(R.string.github_check_sheet_summary_downloader)
+                ) {
                     Box(
                         modifier = Modifier.capturePopupAnchor { onDownloaderPopupAnchorBoundsChange(it) }
                     ) {
@@ -226,11 +236,11 @@ internal fun GitHubCheckLogicSheet(
                     }
                 }
                 SheetControlRow(
-                    label = "分享到安装器",
+                    label = stringResource(R.string.github_check_sheet_label_share_to_installer),
                     summary = if (installedOnlineShareTargets.isNotEmpty()) {
-                        "分享时可直接发送到支持直接边下载边安装的安装器"
+                        stringResource(R.string.github_check_sheet_summary_share_available)
                     } else {
-                        "未检测到支持的安装器，默认不联动"
+                        stringResource(R.string.github_check_sheet_summary_share_unavailable)
                     }
                 ) {
                     Box(
@@ -273,9 +283,13 @@ internal fun GitHubCheckLogicSheet(
                         }
                     }
                 }
-                SheetControlRow(label = "保存状态") {
+                SheetControlRow(label = stringResource(R.string.github_check_sheet_label_save_state)) {
                     StatusPill(
-                        label = if (logicChanged) "待保存" else "已同步",
+                        label = if (logicChanged) {
+                            stringResource(R.string.common_pending_save)
+                        } else {
+                            stringResource(R.string.common_synced)
+                        },
                         color = if (logicChanged) {
                             GitHubStatusPalette.PreRelease
                         } else {
@@ -285,22 +299,22 @@ internal fun GitHubCheckLogicSheet(
                 }
             }
 
-            SheetSectionTitle("说明")
+            SheetSectionTitle(stringResource(R.string.github_check_sheet_section_notes))
             SheetSectionCard {
                 SheetDescriptionText(
-                    text = "全局开关只决定是否顺手检查最新预发；单条目的“优先预发行版本”才决定推荐更新时是否偏向预发。"
+                    text = stringResource(R.string.github_check_sheet_note_1)
                 )
                 SheetDescriptionText(
-                    text = "这样就把“想知道有没有新预发”和“真的想装预发”拆开了。"
+                    text = stringResource(R.string.github_check_sheet_note_2)
                 )
                 SheetDescriptionText(
-                    text = "若设备主要只关心 arm64，可开启“更激进的过滤方式”。它会过滤 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；只有同一 release 已存在 `arm64-v8a` 时，才会连带过滤 universal。"
+                    text = stringResource(R.string.github_check_sheet_note_3)
                 )
                 SheetDescriptionText(
-                    text = "该选项只影响“分享”动作，默认不联动。目前仅识别 `com.rosan.installer.x.revived` 与 `io.github.vvb2060.packageinstaller`，可将分享直接发送到支持边下载边安装的安装器。"
+                    text = stringResource(R.string.github_check_sheet_note_4)
                 )
                 SheetDescriptionText(
-                    text = "下载器列表会先扫描支持 `ACTION_VIEW` + `CATEGORY_BROWSABLE` 的候选应用，再优先标记更像下载器的条目；“系统内置下载器”会直接走 Android DownloadManager。"
+                    text = stringResource(R.string.github_check_sheet_note_5)
                 )
             }
         }
@@ -329,14 +343,18 @@ internal fun GitHubTrackEditSheet(
 ) {
     SnapshotWindowBottomSheet(
         show = show,
-        title = if (editingTrackedItem == null) "新增跟踪" else "编辑跟踪",
+        title = if (editingTrackedItem == null) {
+            stringResource(R.string.github_track_sheet_title_add)
+        } else {
+            stringResource(R.string.github_track_sheet_title_edit)
+        },
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Close,
-                contentDescription = "关闭",
+                contentDescription = stringResource(R.string.common_close),
                 onClick = onDismissRequest
             )
         },
@@ -345,40 +363,52 @@ internal fun GitHubTrackEditSheet(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Ok,
-                contentDescription = if (editingTrackedItem == null) "确认新增" else "确认保存",
+                contentDescription = if (editingTrackedItem == null) {
+                    stringResource(R.string.github_track_sheet_cd_confirm_add)
+                } else {
+                    stringResource(R.string.github_track_sheet_cd_confirm_save)
+                },
                 onClick = onApply
             )
         }
     ) {
         SheetContentColumn(verticalSpacing = 8.dp) {
-            SheetSectionTitle("仓库与应用")
+            SheetSectionTitle(stringResource(R.string.github_track_sheet_section_repo_app))
             SheetSectionCard {
-                SheetInputTitle("GitHub 项目地址")
+                SheetInputTitle(stringResource(R.string.github_track_sheet_input_repo))
                 GlassSearchField(
                     value = repoUrlInput,
                     onValueChange = onRepoUrlInputChange,
-                    label = "GitHub 项目地址",
+                    label = stringResource(R.string.github_track_sheet_input_repo),
                     backdrop = backdrop,
                     variant = GlassVariant.SheetInput,
                     singleLine = true
                 )
-                SheetInputTitle("筛选本机 App")
+                SheetInputTitle(stringResource(R.string.github_track_sheet_input_app_filter_title))
                 GlassSearchField(
                     value = appSearch,
                     onValueChange = onAppSearchChange,
-                    label = "名称或包名",
+                    label = stringResource(R.string.github_track_sheet_input_app_filter),
                     backdrop = backdrop,
                     variant = GlassVariant.SheetInput,
                     singleLine = true
                 )
                 SheetControlRow(
-                    label = "已选应用",
-                    summary = if (selectedApp == null) "未选择" else null
+                    label = stringResource(R.string.github_track_sheet_label_selected_app),
+                    summary = if (selectedApp == null) {
+                        stringResource(R.string.github_track_sheet_selected_none)
+                    } else {
+                        null
+                    }
                 ) {
                     GlassTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetAction,
-                        text = if (pickerExpanded) "收起列表" else "选择应用",
+                        text = if (pickerExpanded) {
+                            stringResource(R.string.github_track_sheet_btn_collapse)
+                        } else {
+                            stringResource(R.string.github_track_sheet_btn_select_app)
+                        },
                         onClick = { onPickerExpandedChange(!pickerExpanded) }
                     )
                 }
@@ -386,11 +416,11 @@ internal fun GitHubTrackEditSheet(
                     GitHubSelectedAppCard(selectedApp = app)
                 }
             }
-            SheetSectionTitle("检查选项")
+            SheetSectionTitle(stringResource(R.string.github_track_sheet_section_check_option))
             SheetSectionCard {
                 SheetControlRow(
-                    label = "优先预发行版本",
-                    summary = "仅影响这个项目的推荐更新目标，不影响全局是否检查预发行"
+                    label = stringResource(R.string.github_track_sheet_label_prefer_prerelease),
+                    summary = stringResource(R.string.github_track_sheet_summary_prefer_prerelease)
                 ) {
                     Switch(
                         checked = preferPreReleaseInput,
@@ -401,13 +431,16 @@ internal fun GitHubTrackEditSheet(
             if (pickerExpanded) {
                 val filteredApps = appList.filter { app ->
                     appSearch.isBlank() ||
-                        app.label.contains(appSearch, ignoreCase = true) ||
+                    app.label.contains(appSearch, ignoreCase = true) ||
                         app.packageName.contains(appSearch, ignoreCase = true)
                 }.take(80)
-                SheetSectionTitle("应用候选")
+                SheetSectionTitle(stringResource(R.string.github_track_sheet_section_app_candidates))
                 SheetSectionCard(verticalSpacing = 6.dp) {
                     if (filteredApps.isEmpty()) {
-                        MiuixInfoItem("应用列表", "没有匹配结果")
+                        MiuixInfoItem(
+                            stringResource(R.string.github_track_sheet_label_app_list),
+                            stringResource(R.string.github_track_sheet_msg_app_no_match)
+                        )
                     } else {
                         filteredApps.forEach { app ->
                             GitHubAppCandidateRow(
@@ -424,14 +457,14 @@ internal fun GitHubTrackEditSheet(
             }
             if (editingTrackedItem != null) {
                 SheetSectionTitle(
-                    text = "危险操作",
+                    text = stringResource(R.string.github_track_sheet_danger_title),
                     danger = true
                 )
                 SheetSectionCard {
                     GlassTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetDangerAction,
-                        text = "删除跟踪",
+                        text = stringResource(R.string.github_track_sheet_btn_delete),
                         textColor = MiuixTheme.colorScheme.error,
                         onClick = onRequestDelete
                     )
@@ -451,8 +484,15 @@ internal fun GitHubDeleteTrackDialog(
 ) {
     WindowDialog(
         show = pendingDeleteItem != null,
-        title = "删除跟踪",
-        summary = pendingDeleteItem?.let { "确定删除 ${it.appLabel} (${it.owner}/${it.repo}) 吗？" },
+        title = stringResource(R.string.github_delete_dialog_title),
+        summary = pendingDeleteItem?.let {
+            stringResource(
+                R.string.github_delete_dialog_summary,
+                it.appLabel,
+                it.owner,
+                it.repo
+            )
+        },
         onDismissRequest = onDismissRequest
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -463,12 +503,16 @@ internal fun GitHubDeleteTrackDialog(
             ) {
                 TextButton(
                     modifier = Modifier.weight(1f),
-                    text = "取消",
+                    text = stringResource(R.string.common_cancel),
                     onClick = onCancel
                 )
                 TextButton(
                     modifier = Modifier.weight(1f),
-                    text = if (deleteInProgress) "删除中..." else "删除",
+                    text = if (deleteInProgress) {
+                        stringResource(R.string.github_delete_dialog_deleting)
+                    } else {
+                        stringResource(R.string.common_delete)
+                    },
                     colors = ButtonDefaults.textButtonColors(
                         color = MiuixTheme.colorScheme.error,
                         textColor = MiuixTheme.colorScheme.onError

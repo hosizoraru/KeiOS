@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.keios.R
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -47,13 +49,13 @@ internal fun BaSettingsSheet(
 ) {
     SnapshotWindowBottomSheet(
         show = show,
-        title = "BA 配置",
+        title = stringResource(R.string.ba_settings_title),
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
                 backdrop = backdrop,
                 icon = MiuixIcons.Regular.Close,
-                contentDescription = "关闭",
+                contentDescription = stringResource(R.string.common_close),
                 variant = GlassVariant.Bar,
                 onClick = onDismissRequest,
             )
@@ -62,20 +64,20 @@ internal fun BaSettingsSheet(
             GlassIconButton(
                 backdrop = backdrop,
                 icon = MiuixIcons.Regular.Ok,
-                contentDescription = "保存",
+                contentDescription = stringResource(R.string.common_save),
                 variant = GlassVariant.Bar,
                 onClick = onSaveRequest,
             )
         },
     ) {
         SheetContentColumn(verticalSpacing = 10.dp) {
-            SheetSectionTitle("基础设置")
+            SheetSectionTitle(stringResource(R.string.ba_settings_section_basic))
             BaGlassPanel(
                 backdrop = backdrop,
                 accentColor = Color(0xFF3B82F6),
                 variant = GlassVariant.SheetAction,
             ) {
-                SheetControlRow(label = "AP 通知") {
+                SheetControlRow(label = stringResource(R.string.ba_settings_label_ap_notify)) {
                     Switch(
                         checked = state.apNotifyEnabled,
                         onCheckedChange = onApNotifyEnabledChange,
@@ -83,8 +85,8 @@ internal fun BaSettingsSheet(
                 }
                 if (state.apNotifyEnabled) {
                     SheetControlRow(
-                        label = "AP 提醒阈值",
-                        summary = "建议 0-$BA_AP_MAX",
+                        label = stringResource(R.string.ba_settings_label_ap_threshold),
+                        summary = stringResource(R.string.ba_settings_summary_ap_threshold, BA_AP_MAX),
                     ) {
                         GlassSearchField(
                             modifier = Modifier.width(70.dp),
@@ -110,25 +112,25 @@ internal fun BaSettingsSheet(
                     }
                 }
             }
-            SheetSectionTitle("显示内容")
+            SheetSectionTitle(stringResource(R.string.ba_settings_section_content))
             BaGlassPanel(
                 backdrop = backdrop,
                 accentColor = Color(0xFF60A5FA),
                 variant = GlassVariant.SheetAction,
             ) {
-                SheetControlRow(label = "显示已结束活动") {
+                SheetControlRow(label = stringResource(R.string.ba_settings_label_show_ended_activity)) {
                     Switch(
                         checked = state.showEndedActivities,
                         onCheckedChange = onShowEndedActivitiesChange,
                     )
                 }
-                SheetControlRow(label = "显示已结束卡池") {
+                SheetControlRow(label = stringResource(R.string.ba_settings_label_show_ended_pool)) {
                     Switch(
                         checked = state.showEndedPools,
                         onCheckedChange = onShowEndedPoolsChange,
                     )
                 }
-                SheetControlRow(label = "显示活动/卡池图片") {
+                SheetControlRow(label = stringResource(R.string.ba_settings_label_show_images)) {
                     Switch(
                         checked = state.showCalendarPoolImages,
                         onCheckedChange = onShowCalendarPoolImagesChange,
@@ -141,7 +143,7 @@ internal fun BaSettingsSheet(
                 variant = GlassVariant.SheetAction,
             ) {
                 Text(
-                    text = "不同服务器时区不同，建议按实际游玩服务器设置。",
+                    text = stringResource(R.string.ba_settings_note_timezone),
                     color = Color(0xFFF59E0B),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

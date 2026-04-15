@@ -1,5 +1,6 @@
 package com.example.keios.ui.page.main.github.section
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -39,10 +40,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetBundle
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
@@ -76,6 +80,7 @@ import com.example.keios.ui.page.main.github.asset.assetTransportLabel
 import com.example.keios.ui.page.main.github.asset.bundleCommitLabel
 import com.example.keios.ui.page.main.github.asset.bundleTransportLabel
 import com.example.keios.ui.page.main.github.asset.formatAssetSize
+import com.example.keios.ui.page.main.github.asset.prefersApiAssetTransport
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -139,6 +144,7 @@ internal fun GitHubMainContent(
     onShareApkLink: (GitHubReleaseAssetFile) -> Unit,
     onActionBarInteractingChanged: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -210,7 +216,8 @@ internal fun GitHubMainContent(
                     onLoadApkAssets = onLoadApkAssets,
                     onOpenExternalUrl = onOpenExternalUrl,
                     onOpenApkInDownloader = onOpenApkInDownloader,
-                    onShareApkLink = onShareApkLink
+                    onShareApkLink = onShareApkLink,
+                    context = context
                 )
             }
 
@@ -229,7 +236,7 @@ internal fun GitHubMainContent(
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.AddCircle,
-                    contentDescription = "新增跟踪",
+                    contentDescription = stringResource(R.string.github_cd_add_track),
                     onClick = onOpenTrackSheetForAdd,
                     modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
                     width = 60.dp,
@@ -258,12 +265,23 @@ private fun LazyListScope.GitHubTrackedItemsSection(
     onLoadApkAssets: (GitHubTrackedApp, VersionCheckUi, Boolean, Boolean) -> Unit,
     onOpenExternalUrl: (String) -> Unit,
     onOpenApkInDownloader: (GitHubReleaseAssetFile) -> Unit,
-    onShareApkLink: (GitHubReleaseAssetFile) -> Unit
+    onShareApkLink: (GitHubReleaseAssetFile) -> Unit,
+    context: Context
 ) {
     if (trackedItems.isEmpty()) {
-        item { MiuixInfoItem("跟踪列表", "暂无条目，请先新增") }
+        item {
+            MiuixInfoItem(
+                stringResource(R.string.github_list_label_track_list),
+                stringResource(R.string.github_list_msg_empty)
+            )
+        }
     } else if (filteredTracked.isEmpty()) {
-        item { MiuixInfoItem("搜索结果", "没有匹配的跟踪项目") }
+        item {
+            MiuixInfoItem(
+                stringResource(R.string.github_list_label_search_result),
+                stringResource(R.string.github_list_msg_no_match)
+            )
+        }
     } else {
         items(sortedTracked, key = { it.id }) { item ->
             var expanded by remember(item.id) { mutableStateOf(false) }
@@ -318,7 +336,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     }
                     top.yukonga.miuix.kmp.basic.Icon(
                         imageVector = statusIcon,
-                        contentDescription = state.message.ifBlank { "状态" },
+                        contentDescription = state.message.ifBlank { stringResource(R.string.github_cd_status) },
                         tint = statusColor,
                         modifier = clickableModifier
                     )
@@ -330,7 +348,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     GitHubCompactInfoRow(
-                        label = "仓库地址",
+                        label = stringResource(R.string.github_item_label_repo),
                         value = "${item.owner}/${item.repo}",
                         valueColor = MiuixTheme.colorScheme.primary,
                         titleColor = MiuixTheme.colorScheme.primary,
@@ -349,7 +367,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                             normalizedLocalVersion
                         }
                         VersionValueRow(
-                            label = "本地版本",
+                            label = stringResource(R.string.github_item_label_local_version),
                             value = localText,
                             valueColor = MiuixTheme.colorScheme.primary
                         )
@@ -363,7 +381,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                             neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
                         )
                         VersionValueRow(
-                            label = "稳定版本",
+                            label = stringResource(R.string.github_item_label_stable_version),
                             value = formatReleaseValue(
                                 releaseName = state.latestStableName.ifBlank { state.latestTag },
                                 rawTag = state.latestStableRawTag
@@ -381,7 +399,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                             neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
                         )
                         VersionValueRow(
-                            label = "预发版本",
+                            label = stringResource(R.string.github_item_label_prerelease_version),
                             value = formatReleaseValue(
                                 releaseName = state.latestPreName.ifBlank { state.preReleaseInfo },
                                 rawTag = state.latestPreRawTag
@@ -392,7 +410,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     }
                     if (state.releaseHint.isNotBlank()) {
                         GitHubCompactInfoRow(
-                            label = "提示",
+                            label = stringResource(R.string.github_item_label_hint),
                             value = state.releaseHint,
                             valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
                             titleColor = MiuixTheme.colorScheme.onBackgroundVariant
@@ -412,7 +430,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 .padding(top = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            val target = state.apkAssetTarget(item.owner, item.repo)
+                            val target = state.apkAssetTarget(item.owner, item.repo, context)
                             val targetAccent = when {
                                 state.recommendsPreRelease || state.hasPreReleaseUpdate -> GitHubStatusPalette.PreRelease
                                 else -> GitHubStatusPalette.Update
@@ -471,7 +489,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                         ) {
                                             Text(
-                                                text = target?.label ?: "更新资源",
+                                                text = target?.label
+                                                    ?: stringResource(R.string.github_item_label_update_assets),
                                                 color = targetAccent,
                                                 fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.weight(1f),
@@ -491,7 +510,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
                                                     )
                                                 }
-                                                val transportLabel = bundleTransportLabel(assetBundle)
+                                                val transportLabel = bundleTransportLabel(assetBundle, context)
                                                 if (transportLabel != null && !assetLoading && assetError.isBlank()) {
                                                     StatusPill(
                                                         label = transportLabel,
@@ -525,10 +544,10 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                             ) {
                                                 Text(
                                                     text = when {
-                                                        assetLoading -> "…"
+                                                        assetLoading -> stringResource(R.string.github_asset_count_loading)
                                                         assetBundle != null -> assetBundle.assets.size.toString()
-                                                        assetError.isNotBlank() -> "!"
-                                                        else -> "·"
+                                                        assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
+                                                        else -> stringResource(R.string.github_asset_count_pending)
                                                     },
                                                     color = when {
                                                         assetLoading -> GitHubStatusPalette.Active
@@ -542,10 +561,10 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         }
                                         Text(
                                             text = when {
-                                                assetLoading -> "正在准备可下载文件"
-                                                assetBundle?.showingAllAssets == true -> "未找到 APK 或已手动全加载"
-                                                assetError.isNotBlank() -> "资源读取失败"
-                                                else -> "进 Release / 长按全载"
+                                                assetLoading -> stringResource(R.string.github_asset_hint_loading)
+                                                assetBundle?.showingAllAssets == true -> stringResource(R.string.github_asset_hint_all_loaded)
+                                                assetError.isNotBlank() -> stringResource(R.string.github_asset_hint_error)
+                                                else -> stringResource(R.string.github_asset_hint_open_release_or_load_all)
                                             },
                                             color = MiuixTheme.colorScheme.onBackgroundVariant,
                                             maxLines = 1,
@@ -583,12 +602,12 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                                             ) {
                                                 Text(
-                                                    text = "正在读取 release 里的可下载文件",
+                                                    text = stringResource(R.string.github_asset_loading_title),
                                                     color = MiuixTheme.colorScheme.onBackground,
                                                     fontWeight = FontWeight.Medium
                                                 )
                                                 Text(
-                                                    text = "会优先筛出 .apk；若找不到 APK，会自动回退显示其它资源",
+                                                    text = stringResource(R.string.github_asset_loading_summary),
                                                     color = MiuixTheme.colorScheme.onBackgroundVariant
                                                 )
                                             }
@@ -612,7 +631,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                             verticalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Text(
-                                                text = "资源读取失败",
+                                                text = stringResource(R.string.github_asset_error_title),
                                                 color = GitHubStatusPalette.Error,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -626,14 +645,14 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 assetBundle != null -> {
                                     assetBundle.assets.forEach { asset ->
                                         val actionAccent = when {
-                                            assetTransportLabel(asset) == "API" -> GitHubStatusPalette.Active
+                                            prefersApiAssetTransport(asset) -> GitHubStatusPalette.Active
                                             else -> GitHubStatusPalette.Update
                                         }
                                         val abiLabel = assetAbiLabel(asset.name)
                                         val extensionLabel = assetFileExtensionLabel(asset.name)
                                         val displayName = assetDisplayName(asset.name)
-                                        val sizeLabel = formatAssetSize(asset.sizeBytes)
-                                        val relativeTimeLabel = assetRelativeTimeLabel(asset.updatedAtMillis)
+                                        val sizeLabel = formatAssetSize(asset.sizeBytes, context)
+                                        val relativeTimeLabel = assetRelativeTimeLabel(asset.updatedAtMillis, context)
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
                                             colors = CardDefaults.defaultColors(
@@ -705,7 +724,10 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         GlassIconButton(
                                                             backdrop = backdrop,
                                                             icon = MiuixIcons.Regular.Share,
-                                                            contentDescription = "分享 ${asset.name}",
+                                                            contentDescription = stringResource(
+                                                                R.string.github_cd_share_asset,
+                                                                asset.name
+                                                            ),
                                                             onClick = { onShareApkLink(asset) },
                                                             width = 40.dp,
                                                             height = 40.dp,

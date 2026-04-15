@@ -35,8 +35,8 @@ class MiIslandNotificationBuilder(
         val islandIconResId = if (isBlueArchiveAp) ISLAND_ICON_RES_ID_AP else ISLAND_ICON_RES_ID_DEFAULT
         val builder = NotificationCompat.Builder(context, payload.environment.channelId)
             .setSmallIcon(islandIconResId)
-            .setContentTitle(state.title)
-            .setContentText(state.content.ifBlank { " " })
+            .setContentTitle(state.title(context))
+            .setContentText(state.content(context).ifBlank { " " })
             .setContentIntent(state.openPendingIntent)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -65,12 +65,12 @@ class MiIslandNotificationBuilder(
         val rightTitle = if (isBlueArchiveAp && state.running) {
             "${state.port.coerceAtLeast(0)}/${state.clients.coerceAtLeast(0)}"
         } else {
-            state.shortText.ifEmpty { state.title }
+            state.shortText.ifEmpty { state.title(context) }
         }
         val actions = mutableListOf(
             IslandAction(
                 key = "mcp_action_open",
-                title = "打开",
+                title = context.getString(R.string.common_open),
                 pendingIntent = state.openPendingIntent,
                 isHighlighted = true
             )
@@ -79,7 +79,7 @@ class MiIslandNotificationBuilder(
                 add(
                     IslandAction(
                         key = "mcp_action_stop",
-                        title = state.stopActionTitle,
+                        title = state.stopActionTitle(context),
                         pendingIntent = state.stopPendingIntent
                     )
                 )
@@ -95,7 +95,7 @@ class MiIslandNotificationBuilder(
             islandFirstFloat = true
             enableFloat = !state.ongoing
             updatable = true
-            ticker = state.title
+            ticker = state.title(context)
             tickerPic = lightLogoKey
             if (payload.settings.miIslandOuterGlow) {
                 outEffectSrc = "outer_glow"
@@ -129,13 +129,13 @@ class MiIslandNotificationBuilder(
             if (!showAppIcon) {
                 baseInfo {
                     type = 2
-                    title = state.title
-                    content = state.content.ifBlank { " " }
+                    title = state.title(context)
+                    content = state.content(context).ifBlank { " " }
                 }
             } else {
                 iconTextInfo {
-                    title = state.title
-                    content = state.content.ifBlank { " " }
+                    title = state.title(context)
+                    content = state.content(context).ifBlank { " " }
                     animIconInfo {
                         type = 0
                         src = displayIconKey

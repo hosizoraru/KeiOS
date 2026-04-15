@@ -1,6 +1,7 @@
 package com.example.keios.ui.page.main.github.state
 
 import com.example.keios.feature.github.model.GitHubCheckCacheEntry
+import com.example.keios.feature.github.model.GitHubTrackedReleaseStatus
 import com.example.keios.feature.github.model.GitHubTrackedReleaseCheck
 import com.example.keios.ui.page.main.VersionCheckUi
 
@@ -47,6 +48,7 @@ internal fun GitHubCheckCacheEntry.toUi(): VersionCheckUi = VersionCheckUi(
     hasPreReleaseUpdate = hasPreReleaseUpdate,
     recommendsPreRelease = recommendsPreRelease,
     releaseHint = releaseHint,
+    failed = message.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage),
     sourceStrategyId = sourceStrategyId
 )
 
@@ -70,5 +72,6 @@ internal fun GitHubTrackedReleaseCheck.toUi(): VersionCheckUi = VersionCheckUi(
     hasPreReleaseUpdate = hasPreReleaseUpdate,
     recommendsPreRelease = recommendsPreRelease,
     releaseHint = releaseHint,
+    failed = status == GitHubTrackedReleaseStatus.Failed,
     sourceStrategyId = strategyId
 )

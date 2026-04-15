@@ -40,21 +40,6 @@ object GitHubRefreshNotificationHelper {
         val progressPercent: Int =
             ((safeCurrent.toFloat() / safeTotal.toFloat()) * 100f).roundToInt().coerceIn(0, 100)
 
-        val title: String
-            get() = when {
-                running -> "GitHub 刷新中"
-                cancelled -> "GitHub 刷新已取消"
-                else -> "GitHub 刷新完成"
-            }
-
-        val content: String
-            get() = buildString {
-                append("已检查 $safeCurrent/$safeTotal")
-                append(" · 追踪 $trackedCount")
-                append(" · 可更新 $updatableCount")
-                if (failedCount > 0) append(" · 失败 $failedCount")
-            }
-
         val shortText: String
             get() = "$safeCurrent/$safeTotal"
 
@@ -156,6 +141,35 @@ object GitHubRefreshNotificationHelper {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 
+    private fun resolveTitle(context: Context, state: RefreshState): String {
+        return when {
+            state.running -> context.getString(R.string.github_refresh_title_running)
+            state.cancelled -> context.getString(R.string.github_refresh_title_cancelled)
+            else -> context.getString(R.string.github_refresh_title_completed)
+        }
+    }
+
+    private fun resolveContent(context: Context, state: RefreshState): String {
+        return if (state.failedCount > 0) {
+            context.getString(
+                R.string.github_refresh_content_with_failed,
+                state.safeCurrent,
+                state.safeTotal,
+                state.trackedCount,
+                state.updatableCount,
+                state.failedCount
+            )
+        } else {
+            context.getString(
+                R.string.github_refresh_content,
+                state.safeCurrent,
+                state.safeTotal,
+                state.trackedCount,
+                state.updatableCount
+            )
+        }
+    }
+
     private fun notifyInternal(
         context: Context,
         state: RefreshState,
@@ -199,6 +213,8 @@ object GitHubRefreshNotificationHelper {
         state: RefreshState,
         onlyAlertOnce: Boolean
     ): Notification {
+        val title = resolveTitle(context, state)
+        val content = resolveContent(context, state)
         val openPendingIntent = buildOpenPendingIntent(context)
         val readPendingIntent = buildMarkReadPendingIntent(context)
         val progressColor = if (state.running) 0xFF2E7D32.toInt() else 0xFF64748B.toInt()
@@ -210,8 +226,8 @@ object GitHubRefreshNotificationHelper {
             .setProgress(state.progressPercent)
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(ISLAND_ICON_RES_ID)
-            .setContentTitle(state.title)
-            .setContentText(state.content)
+            .setContentTitle(title)
+            .setContentText(content)
             .setContentIntent(openPendingIntent)
             .setOnlyAlertOnce(onlyAlertOnce)
             .setSilent(true)
@@ -219,8 +235,8 @@ object GitHubRefreshNotificationHelper {
             .setRequestPromotedOngoing(state.running || state.keepUntilRead)
             .setStyle(progressStyle)
             .setShortCriticalText(state.shortText)
-            .addAction(0, "打开", openPendingIntent)
-            .addAction(0, "已读", readPendingIntent)
+            .addAction(0, context.getString(R.string.common_open), openPendingIntent)
+            .addAction(0, context.getString(R.string.common_mark_read), readPendingIntent)
             .build()
     }
 
@@ -229,13 +245,15 @@ object GitHubRefreshNotificationHelper {
         state: RefreshState,
         onlyAlertOnce: Boolean
     ): Notification {
+        val title = resolveTitle(context, state)
+        val content = resolveContent(context, state)
         val openPendingIntent = buildOpenPendingIntent(context)
         val readPendingIntent = buildMarkReadPendingIntent(context)
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(ISLAND_ICON_RES_ID)
-            .setContentTitle(state.title)
-            .setContentText(state.content)
-            .setSubText("进度 ${state.shortText}")
+            .setContentTitle(title)
+            .setContentText(content)
+            .setSubText(context.getString(R.string.common_progress_with_value, state.shortText))
             .setContentIntent(openPendingIntent)
             .setCategory(
                 if (state.running) NotificationCompat.CATEGORY_PROGRESS
@@ -249,8 +267,8 @@ object GitHubRefreshNotificationHelper {
             .setSilent(onlyAlertOnce)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setProgress(100, state.progressPercent, false)
-            .addAction(0, "打开", openPendingIntent)
-            .addAction(0, "已读", readPendingIntent)
+            .addAction(0, context.getString(R.string.common_open), openPendingIntent)
+            .addAction(0, context.getString(R.string.common_mark_read), readPendingIntent)
             .build()
     }
 
@@ -260,12 +278,14 @@ object GitHubRefreshNotificationHelper {
         onlyAlertOnce: Boolean
     ): Notification {
         val iconResId = ISLAND_ICON_RES_ID
+        val title = resolveTitle(context, state)
+        val content = resolveContent(context, state)
         val openPendingIntent = buildOpenPendingIntent(context)
         val readPendingIntent = buildMarkReadPendingIntent(context)
         val baseBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconResId)
-            .setContentTitle(state.title)
-            .setContentText(state.content.ifBlank { " " })
+            .setContentTitle(title)
+            .setContentText(content.ifBlank { " " })
             .setContentIntent(openPendingIntent)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -277,8 +297,8 @@ object GitHubRefreshNotificationHelper {
         buildMiIslandFocusExtras(
             context = context,
             iconResId = iconResId,
-            title = state.title,
-            content = state.content,
+            title = title,
+            content = content,
             rightTitle = state.shortText,
             ongoing = state.running,
             openPendingIntent = openPendingIntent,
@@ -350,11 +370,11 @@ object GitHubRefreshNotificationHelper {
                 addActionInfo {
                     val nativeAction = Notification.Action.Builder(
                         Icon.createWithResource(context, iconResId),
-                        "打开",
+                        context.getString(R.string.common_open),
                         openPendingIntent
                     ).build()
                     action = createAction("github_action_open", nativeAction)
-                    actionTitle = "打开"
+                    actionTitle = context.getString(R.string.common_open)
                     actionBgColor = "#006EFF"
                     actionBgColorDark = "#006EFF"
                     actionTitleColor = "#FFFFFF"
@@ -363,11 +383,11 @@ object GitHubRefreshNotificationHelper {
                 addActionInfo {
                     val nativeAction = Notification.Action.Builder(
                         Icon.createWithResource(context, iconResId),
-                        "已读",
+                        context.getString(R.string.common_mark_read),
                         readPendingIntent
                     ).build()
                     action = createAction("github_action_read", nativeAction)
-                    actionTitle = "已读"
+                    actionTitle = context.getString(R.string.common_mark_read)
                 }
             }
         }

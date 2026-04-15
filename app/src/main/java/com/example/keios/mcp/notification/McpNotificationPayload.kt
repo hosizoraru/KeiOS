@@ -1,6 +1,8 @@
 package com.example.keios.mcp
 
 import android.app.PendingIntent
+import android.content.Context
+import com.example.keios.R
 
 data class McpNotificationPayload(
     val serverName: String,
@@ -20,25 +22,41 @@ data class McpNotificationPayload(
     private val isBlueArchiveAp: Boolean
         get() = normalizedServerName == "BlueArchive AP"
 
-    val title: String
-        get() = if (running) normalizedServerName else "$normalizedServerName 已停止"
+    fun title(context: Context): String {
+        return if (running) {
+            normalizedServerName
+        } else {
+            context.getString(R.string.mcp_notification_title_stopped, normalizedServerName)
+        }
+    }
 
-    val content: String
-        get() = if (running) {
+    fun content(context: Context): String {
+        return if (running) {
             if (isBlueArchiveAp) {
-                "AP $port · 阈值 $path · 上限 $clients"
+                context.getString(R.string.mcp_notification_content_ap, port, path, clients)
             } else {
-                "端口 $port · 路径 $path · 在线 $clients"
+                context.getString(R.string.mcp_notification_content_default, port, path, clients)
             }
         } else {
-            "点击返回应用重新启动服务"
+            context.getString(R.string.mcp_notification_content_tap_restart)
         }
+    }
 
-    val statusText: String
-        get() = if (running) "运行中" else "已停止"
+    fun statusText(context: Context): String {
+        return if (running) {
+            context.getString(R.string.mcp_status_running)
+        } else {
+            context.getString(R.string.mcp_status_stopped)
+        }
+    }
 
-    val onlineText: String
-        get() = if (isBlueArchiveAp) "上限 $clients" else "在线 $clients"
+    fun onlineText(context: Context): String {
+        return if (isBlueArchiveAp) {
+            context.getString(R.string.mcp_online_text_ap_limit, clients)
+        } else {
+            context.getString(R.string.mcp_online_text_clients, clients)
+        }
+    }
 
     val shortText: String
         get() = if (running) {
@@ -58,20 +76,26 @@ data class McpNotificationPayload(
             else -> "◐"
         }
 
-    val stopActionTitle: String
-        get() = if (isBlueArchiveAp) "已读" else "停止"
+    fun stopActionTitle(context: Context): String {
+        return if (isBlueArchiveAp) {
+            context.getString(R.string.common_mark_read)
+        } else {
+            context.getString(R.string.common_stop)
+        }
+    }
 
     val expandedTitle: String
         get() = normalizedServerName
 
-    val expandedContent: String
-        get() = if (running) {
+    fun expandedContent(context: Context): String {
+        return if (running) {
             if (isBlueArchiveAp) {
-                "AP $port · 阈值 $path · 上限 $clients"
+                context.getString(R.string.mcp_notification_content_ap, port, path, clients)
             } else {
-                "端口 $port · 路径 $path · 在线 $clients"
+                context.getString(R.string.mcp_notification_content_default, port, path, clients)
             }
         } else {
-            "服务未运行"
+            context.getString(R.string.mcp_notification_service_not_running)
         }
+    }
 }

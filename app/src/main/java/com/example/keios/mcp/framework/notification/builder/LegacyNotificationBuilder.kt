@@ -26,9 +26,15 @@ class LegacyNotificationBuilder(
         val iconRes = if (isBlueArchiveAp) ICON_AP else ICON_DEFAULT
         val builder = NotificationCompat.Builder(context, payload.environment.channelId)
             .setSmallIcon(iconRes)
-            .setContentTitle(state.title)
-            .setContentText(state.content.ifBlank { " " })
-            .setSubText(if (state.running) state.onlineText else "点击返回应用重新启动服务")
+            .setContentTitle(state.title(context))
+            .setContentText(state.content(context).ifBlank { " " })
+            .setSubText(
+                if (state.running) {
+                    state.onlineText(context)
+                } else {
+                    context.getString(R.string.mcp_notification_content_tap_restart)
+                }
+            )
             .setContentIntent(state.openPendingIntent)
             .setCategory(if (state.running) NotificationCompat.CATEGORY_PROGRESS else NotificationCompat.CATEGORY_STATUS)
             .setColorized(true)
@@ -40,9 +46,9 @@ class LegacyNotificationBuilder(
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setProgress(100, progressState.current, progressState.indeterminate)
 
-        builder.addAction(0, "打开", state.openPendingIntent)
+        builder.addAction(0, context.getString(R.string.common_open), state.openPendingIntent)
         if (state.running) {
-            builder.addAction(0, state.stopActionTitle, state.stopPendingIntent)
+            builder.addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
         }
         return builder.build()
     }

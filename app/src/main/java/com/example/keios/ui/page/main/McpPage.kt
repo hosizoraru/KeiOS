@@ -52,10 +52,12 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -113,6 +115,9 @@ fun McpPage(
     onOpenSkill: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
+    val mcpTitle = stringResource(R.string.page_mcp_title)
+    val unknownText = stringResource(R.string.common_unknown)
+    val runtimePendingText = stringResource(R.string.mcp_runtime_pending)
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
     val runningColor = Color(0xFF2E7D32)
@@ -144,12 +149,10 @@ fun McpPage(
             value = System.currentTimeMillis()
         }
     }
-    val runtimeText = remember(uiState.running, uiState.runningSinceEpochMs, runtimeNowMs) {
-        if (!uiState.running || uiState.runningSinceEpochMs <= 0L) {
-            "待运行"
-        } else {
-            formatMcpUptime(runtimeNowMs - uiState.runningSinceEpochMs)
-        }
+    val runtimeText = if (!uiState.running || uiState.runningSinceEpochMs <= 0L) {
+        runtimePendingText
+    } else {
+        formatMcpUptimeText(runtimeNowMs - uiState.runningSinceEpochMs)
     }
     val bindAddress = remember(uiState.allowExternal, uiState.addresses) {
         when {
@@ -158,33 +161,37 @@ fun McpPage(
             else -> "0.0.0.0"
         }
     }
-    val overviewMetrics = remember(
-        uiState.connectedClients,
-        uiState.serverName,
-        bindAddress,
-        uiState.port,
-        uiState.endpointPath,
-        uiState.allowExternal
-    ) {
-        listOf(
-            McpOverviewMetric(
-                label = "服务名称",
-                value = uiState.serverName.ifBlank { "KeiOS MCP" }
-            ),
-            McpOverviewMetric(label = "入口路径", value = uiState.endpointPath),
-            McpOverviewMetric(label = "绑定地址", value = bindAddress),
-            McpOverviewMetric(label = "端口", value = uiState.port.toString()),
-            McpOverviewMetric(
-                label = "网络模式",
-                value = if (uiState.allowExternal) "局域网可访问" else "仅本机访问"
-            ),
-            McpOverviewMetric(
-                label = "客户端数量",
-                value = "${uiState.connectedClients} 个",
-                valueColor = if (uiState.connectedClients > 0) runningColor else subtitleColor
-            )
+    val overviewMetrics = listOf(
+        McpOverviewMetric(
+            label = context.getString(R.string.mcp_overview_label_service_name),
+            value = uiState.serverName.ifBlank { context.getString(R.string.mcp_default_service_name) }
+        ),
+        McpOverviewMetric(
+            label = context.getString(R.string.mcp_overview_label_endpoint_path),
+            value = uiState.endpointPath
+        ),
+        McpOverviewMetric(
+            label = context.getString(R.string.mcp_overview_label_bind_address),
+            value = bindAddress
+        ),
+        McpOverviewMetric(
+            label = context.getString(R.string.mcp_overview_label_port),
+            value = uiState.port.toString()
+        ),
+        McpOverviewMetric(
+            label = context.getString(R.string.mcp_overview_label_network_mode),
+            value = if (uiState.allowExternal) {
+                context.getString(R.string.mcp_network_mode_lan_accessible)
+            } else {
+                context.getString(R.string.mcp_network_mode_local_only_access)
+            }
+        ),
+        McpOverviewMetric(
+            label = context.getString(R.string.mcp_overview_label_clients),
+            value = context.getString(R.string.mcp_clients_count, uiState.connectedClients),
+            valueColor = if (uiState.connectedClients > 0) runningColor else subtitleColor
         )
-    }
+    )
     var portText by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
     var allowExternal by remember(uiState.allowExternal) { mutableStateOf(uiState.allowExternal) }
     var serverName by remember(uiState.serverName) { mutableStateOf(uiState.serverName) }
@@ -205,8 +212,9 @@ fun McpPage(
     var showResetTokenConfirm by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
-    val serverNameFieldWidth = remember(serverName) {
-        val visibleChars = serverName.trim().ifBlank { "输入服务名称" }.length.coerceIn(6, 18)
+    val serverNameHint = context.getString(R.string.mcp_input_service_name_hint)
+    val serverNameFieldWidth = remember(serverName, serverNameHint) {
+        val visibleChars = serverName.trim().ifBlank { serverNameHint }.length.coerceIn(6, 18)
         (visibleChars * 11 + 36).dp
     }
     val portFieldWidth = remember(portText) {
@@ -216,20 +224,24 @@ fun McpPage(
     val toggleServer: () -> Unit = {
         if (uiState.running) {
             mcpServerManager.stop()
-            Toast.makeText(context, "MCP 服务已停止", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.mcp_toast_service_stopped), Toast.LENGTH_SHORT).show()
         } else {
             val port = portText.toIntOrNull()
             if (port == null) {
-                Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.common_port_invalid), Toast.LENGTH_SHORT).show()
             } else {
                 mcpServerManager.updateServerName(serverName)
                 mcpServerManager.start(port = port, allowExternal = allowExternal)
                     .onSuccess {
                         mcpServerManager.refreshAddresses()
-                        Toast.makeText(context, "MCP 服务已启动", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.mcp_toast_service_started), Toast.LENGTH_SHORT).show()
                     }
                     .onFailure {
-                        Toast.makeText(context, "启动失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.mcp_toast_start_failed, it.message ?: unknownText),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
             }
         }
@@ -252,7 +264,7 @@ fun McpPage(
         topBar = {
             TopAppBar(
                 title = "",
-                largeTitle = "MCP",
+                largeTitle = mcpTitle,
                 scrollBehavior = scrollBehavior,
                 color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 actions = {
@@ -261,17 +273,17 @@ fun McpPage(
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Edit,
-                                contentDescription = "编辑服务参数",
+                                contentDescription = stringResource(R.string.mcp_action_edit_service_params),
                                 onClick = { showEditSheet = true }
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Notes,
-                                contentDescription = "查看 SKILL.md",
+                                contentDescription = stringResource(R.string.mcp_action_open_skill_md),
                                 onClick = onOpenSkill
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Copy,
-                                contentDescription = "复制当前配置",
+                                contentDescription = stringResource(R.string.mcp_action_copy_current_config),
                                 onClick = {
                                     val endpoint = if (allowExternal && uiState.addresses.isNotEmpty()) {
                                         "http://${uiState.addresses.first()}:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
@@ -280,15 +292,23 @@ fun McpPage(
                                     }
                                     val json = mcpServerManager.buildConfigJson(endpoint)
                                     copyToClipboard(context, "mcp-config", json)
-                                    Toast.makeText(context, "MCP 配置已复制", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.mcp_toast_config_copied),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Refresh,
-                                contentDescription = "刷新",
+                                contentDescription = stringResource(R.string.common_refresh),
                                 onClick = {
                                     mcpServerManager.refreshNow()
-                                    Toast.makeText(context, "已刷新", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.common_refreshed),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             )
                         ),
@@ -315,7 +335,7 @@ fun McpPage(
                     end = 12.dp
                 )
             ) {
-            item { SmallTitle("本地 MCP 服务") }
+            item { SmallTitle(stringResource(R.string.mcp_page_local_service_title)) }
             item { Spacer(modifier = Modifier.height(10.dp)) }
 
             item {
@@ -345,7 +365,7 @@ fun McpPage(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("MCP Server", color = titleColor)
+                            Text(stringResource(R.string.mcp_overview_title), color = titleColor)
                             Spacer(modifier = Modifier.weight(1f))
                             StatusPill(
                                 label = runtimeText,
@@ -392,14 +412,14 @@ fun McpPage(
             item {
                 MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "服务控制",
-                subtitle = "通知与连接调试",
+                title = stringResource(R.string.mcp_section_service_control_title),
+                subtitle = stringResource(R.string.mcp_section_service_control_subtitle),
                 expanded = controlExpanded,
                 onExpandedChange = { controlExpanded = it },
                 headerStartAction = {
                     McpSectionHeaderIcon(
                         icon = MiuixIcons.Regular.Tune,
-                        contentDescription = "服务控制"
+                        contentDescription = stringResource(R.string.mcp_section_service_control_title)
                     )
                 }
             ) {
@@ -407,12 +427,27 @@ fun McpPage(
                     GlassTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.Content,
-                        text = "发送测试通知",
+                        text = stringResource(R.string.mcp_action_send_test_notification),
                         modifier = Modifier.weight(1f),
                         onClick = {
                             mcpServerManager.sendTestNotification()
-                                .onSuccess { Toast.makeText(context, "已发送 MCP 测试通知", Toast.LENGTH_SHORT).show() }
-                                .onFailure { Toast.makeText(context, "发送失败: ${it.message}", Toast.LENGTH_SHORT).show() }
+                                .onSuccess {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.mcp_toast_test_notification_sent),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                .onFailure {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(
+                                            R.string.common_send_failed_with_reason,
+                                            it.message ?: unknownText
+                                        ),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                         }
                     )
                 }
@@ -424,14 +459,14 @@ fun McpPage(
             item {
                 MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "工具",
-                subtitle = "${uiState.tools.size} 个工具",
+                title = stringResource(R.string.mcp_section_tools_title),
+                subtitle = stringResource(R.string.mcp_section_tools_subtitle, uiState.tools.size),
                 expanded = configExpanded,
                 onExpandedChange = { configExpanded = it },
                 headerStartAction = {
                     McpSectionHeaderIcon(
                         icon = MiuixIcons.Regular.GridView,
-                        contentDescription = "工具"
+                        contentDescription = stringResource(R.string.mcp_section_tools_title)
                     )
                 }
             ) {
@@ -446,19 +481,19 @@ fun McpPage(
             item {
                 MiuixExpandableSection(
                 backdrop = backdrop,
-                title = "MCP Logs",
-                subtitle = "${uiState.logs.size} 条",
+                title = stringResource(R.string.mcp_section_logs_title),
+                subtitle = stringResource(R.string.mcp_section_logs_subtitle, uiState.logs.size),
                 expanded = logsExpanded,
                 onExpandedChange = { logsExpanded = it },
                 headerStartAction = {
                     McpSectionHeaderIcon(
                         icon = MiuixIcons.Regular.Notes,
-                        contentDescription = "MCP Logs"
+                        contentDescription = stringResource(R.string.mcp_section_logs_title)
                     )
                 }
             ) {
                 if (uiState.logs.isEmpty()) {
-                    MiuixInfoItem("Log", "暂无日志")
+                    MiuixInfoItem(stringResource(R.string.mcp_log_label), stringResource(R.string.mcp_log_empty))
                 } else {
                     uiState.logs.asReversed().forEach { log ->
                         MiuixInfoItem("${log.time} [${log.level}]", log.message)
@@ -468,7 +503,7 @@ fun McpPage(
                 GlassTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.Content,
-                    text = "清空日志",
+                    text = stringResource(R.string.mcp_action_clear_logs),
                     onClick = { mcpServerManager.clearLogs() }
                 )
             }
@@ -490,7 +525,11 @@ fun McpPage(
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
-                    contentDescription = if (uiState.running) "停止服务" else "启动服务",
+                    contentDescription = if (uiState.running) {
+                        stringResource(R.string.mcp_action_stop_service)
+                    } else {
+                        stringResource(R.string.mcp_action_start_service)
+                    },
                     onClick = toggleServer,
                     modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
                     width = 60.dp,
@@ -503,14 +542,14 @@ fun McpPage(
 
     SnapshotWindowBottomSheet(
         show = showEditSheet,
-        title = "编辑 MCP 服务",
+        title = stringResource(R.string.mcp_sheet_edit_service_title),
         onDismissRequest = { showEditSheet = false },
         startAction = {
             GlassIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Close,
-                contentDescription = "关闭",
+                contentDescription = stringResource(R.string.common_close),
                 onClick = { showEditSheet = false }
             )
         },
@@ -519,36 +558,54 @@ fun McpPage(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Ok,
-                contentDescription = "保存",
+                contentDescription = stringResource(R.string.common_save),
                 onClick = {
                     val port = portText.toIntOrNull()
                     if (port == null) {
-                        Toast.makeText(context, "端口无效", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_port_invalid), Toast.LENGTH_SHORT).show()
                         return@GlassIconButton
                     }
                     mcpServerManager.updateServerName(serverName)
                     mcpServerManager.updatePort(port).onFailure {
-                        Toast.makeText(context, "保存失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.common_save_failed_with_reason,
+                                it.message ?: unknownText
+                            ),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return@GlassIconButton
                     }
                     mcpServerManager.updateAllowExternal(allowExternal).onFailure {
-                        Toast.makeText(context, "保存失败: ${it.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.common_save_failed_with_reason,
+                                it.message ?: unknownText
+                            ),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return@GlassIconButton
                     }
-                    Toast.makeText(context, "已保存，修改将在下次启动或重启服务后生效", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.mcp_toast_saved_requires_restart),
+                        Toast.LENGTH_SHORT
+                    ).show()
                     showEditSheet = false
                 }
             )
         }
     ) {
         SheetContentColumn {
-            SheetSectionTitle("基础设置")
+            SheetSectionTitle(stringResource(R.string.mcp_sheet_section_basic))
             SheetSectionCard {
-                SheetControlRow(label = "服务名称") {
+                SheetControlRow(label = stringResource(R.string.mcp_overview_label_service_name)) {
                     GlassSearchField(
                         value = serverName,
                         onValueChange = { serverName = it },
-                        label = "输入服务名称",
+                        label = stringResource(R.string.mcp_input_service_name_hint),
                         backdrop = backdrop,
                         variant = GlassVariant.SheetInput,
                         singleLine = true,
@@ -556,11 +613,11 @@ fun McpPage(
                         modifier = Modifier.width(serverNameFieldWidth)
                     )
                 }
-                SheetControlRow(label = "服务端口") {
+                SheetControlRow(label = stringResource(R.string.mcp_sheet_label_service_port)) {
                     GlassSearchField(
                         value = portText,
                         onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-                        label = "输入端口",
+                        label = stringResource(R.string.mcp_input_port_hint),
                         backdrop = backdrop,
                         variant = GlassVariant.SheetInput,
                         singleLine = true,
@@ -569,30 +626,30 @@ fun McpPage(
                     )
                 }
             }
-            SheetSectionTitle("网络访问范围")
+            SheetSectionTitle(stringResource(R.string.mcp_sheet_section_network_access))
             SheetActionGroup {
                 McpNetworkModeOption(
-                    title = "仅本机",
-                    summary = "仅允许本机客户端通过 127.0.0.1 访问",
+                    title = stringResource(R.string.mcp_network_mode_local_only_short),
+                    summary = stringResource(R.string.mcp_network_mode_local_only_summary),
                     selected = !allowExternal,
                     onClick = { allowExternal = false }
                 )
                 McpNetworkModeOption(
-                    title = "局域网",
-                    summary = "允许同一局域网设备接入，请注意网络安全",
+                    title = stringResource(R.string.mcp_network_mode_lan_short),
+                    summary = stringResource(R.string.mcp_network_mode_lan_summary),
                     selected = allowExternal,
                     onClick = { allowExternal = true }
                 )
             }
             SheetSectionTitle(
-                text = "危险操作",
+                text = stringResource(R.string.common_danger_zone),
                 danger = true
             )
             SheetSectionCard {
                 GlassTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.SheetDangerAction,
-                    text = "重置 Token",
+                    text = stringResource(R.string.mcp_action_reset_token),
                     textColor = MiuixTheme.colorScheme.error,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { showResetTokenConfirm = true }
@@ -603,8 +660,8 @@ fun McpPage(
 
     WindowDialog(
         show = showResetTokenConfirm,
-        title = "重置 Token",
-        summary = "重置后，现有客户端需要重新配置或重新连接。确定继续吗？",
+        title = stringResource(R.string.mcp_action_reset_token),
+        summary = stringResource(R.string.mcp_reset_token_confirm_summary),
         onDismissRequest = { showResetTokenConfirm = false }
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -615,19 +672,23 @@ fun McpPage(
             ) {
                 TextButton(
                     modifier = Modifier.weight(1f),
-                    text = "取消",
+                    text = stringResource(R.string.common_cancel),
                     onClick = { showResetTokenConfirm = false }
                 )
                 TextButton(
                     modifier = Modifier.weight(1f),
-                    text = "重置",
+                    text = stringResource(R.string.common_reset),
                     colors = ButtonDefaults.textButtonColors(
                         color = MiuixTheme.colorScheme.error,
                         textColor = MiuixTheme.colorScheme.onError
                     ),
                     onClick = {
                         mcpServerManager.regenerateAuthToken()
-                        Toast.makeText(context, "Token 已重置，需重连客户端", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.mcp_toast_token_reset_reconnect),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         showResetTokenConfirm = false
                     }
                 )
@@ -686,7 +747,7 @@ private fun McpOverviewMetricItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = metric.value.ifBlank { "N/A" },
+                text = metric.value.ifBlank { stringResource(R.string.common_na) },
                 color = metric.valueColor ?: defaultValueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -718,17 +779,18 @@ private fun McpSectionHeaderIcon(
     )
 }
 
-private fun formatMcpUptime(durationMs: Long): String {
+@Composable
+private fun formatMcpUptimeText(durationMs: Long): String {
     val totalMinutes = (durationMs.coerceAtLeast(0L) / 60_000L)
     val days = totalMinutes / 1_440L
     val hours = (totalMinutes % 1_440L) / 60L
     val minutes = totalMinutes % 60L
     return when {
-        days > 0L && minutes == 0L -> "${days}d ${hours}h"
-        days > 0L -> "${days}d ${hours}h ${minutes}m"
-        hours > 0L && minutes == 0L -> "${hours}h"
-        hours > 0L -> "${hours}h ${minutes}m"
-        else -> "${minutes}m"
+        days > 0L && minutes == 0L -> stringResource(R.string.mcp_uptime_days_hours, days, hours)
+        days > 0L -> stringResource(R.string.mcp_uptime_days_hours_minutes, days, hours, minutes)
+        hours > 0L && minutes == 0L -> stringResource(R.string.mcp_uptime_hours, hours)
+        hours > 0L -> stringResource(R.string.mcp_uptime_hours_minutes, hours, minutes)
+        else -> stringResource(R.string.mcp_uptime_minutes, minutes)
     }
 }
 

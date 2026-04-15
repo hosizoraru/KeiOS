@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.ui.page.main.GitHubSortMode
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -52,7 +54,7 @@ internal fun GitHubTopBarSection(
     Column {
         TopAppBar(
             title = "",
-            largeTitle = "GitHub",
+            largeTitle = stringResource(R.string.github_page_title),
             scrollBehavior = scrollBehavior,
             color = topBarColor,
             actions = {
@@ -62,22 +64,22 @@ internal fun GitHubTopBarSection(
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Edit,
-                                contentDescription = "编辑抓取方案",
+                                contentDescription = stringResource(R.string.github_topbar_cd_edit_strategy),
                                 onClick = onOpenStrategySheet
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Tune,
-                                contentDescription = "检查逻辑",
+                                contentDescription = stringResource(R.string.github_topbar_cd_check_logic),
                                 onClick = onOpenCheckLogicSheet
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Sort,
-                                contentDescription = "排序",
+                                contentDescription = stringResource(R.string.github_topbar_cd_sort),
                                 onClick = { onShowSortPopupChange(!showSortPopup) }
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Refresh,
-                                contentDescription = "检查",
+                                contentDescription = stringResource(R.string.github_topbar_cd_check),
                                 onClick = onRefreshAllTracked,
                                 enabled = !deleteInProgress
                             )
@@ -100,7 +102,7 @@ internal fun GitHubTopBarSection(
                                         val modes = GitHubSortMode.entries
                                         modes.forEachIndexed { index, mode ->
                                             LiquidDropdownImpl(
-                                                text = mode.label,
+                                                text = stringResource(mode.labelRes),
                                                 optionSize = modes.size,
                                                 isSelected = sortMode == mode,
                                                 index = index,
@@ -129,7 +131,7 @@ internal fun GitHubTopBarSection(
                         .padding(horizontal = 12.dp),
                     value = trackedSearch,
                     onValueChange = onTrackedSearchChange,
-                    label = "搜索已跟踪项目（仓库/应用/包名）",
+                    label = stringResource(R.string.github_topbar_search_label),
                     backdrop = backdrop,
                     variant = GlassVariant.Bar,
                     singleLine = true

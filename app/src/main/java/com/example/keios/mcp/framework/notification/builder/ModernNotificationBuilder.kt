@@ -33,9 +33,9 @@ class ModernNotificationBuilder(
     override fun build(payload: NotificationPayload): Notification {
         val state = payload.state
         val builder = createBaseBuilder(state)
-        builder.addAction(0, "打开", state.openPendingIntent)
+        builder.addAction(0, context.getString(R.string.common_open), state.openPendingIntent)
         if (state.running) {
-            builder.addAction(0, state.stopActionTitle, state.stopPendingIntent)
+            builder.addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
         }
         return builder.build()
     }
@@ -65,8 +65,8 @@ class ModernNotificationBuilder(
             .setStyledByProgress(true)
             .setProgress(progress)
 
-        baseBuilder.setContentTitle(state.title)
-        baseBuilder.setContentText(state.content.ifBlank { " " })
+        baseBuilder.setContentTitle(state.title(context))
+        baseBuilder.setContentText(state.content(context).ifBlank { " " })
         if (state.running) {
             baseBuilder.setShortCriticalText(state.shortText)
         }

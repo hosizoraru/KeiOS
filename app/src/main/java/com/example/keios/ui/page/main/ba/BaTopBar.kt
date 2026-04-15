@@ -3,6 +3,8 @@ package com.example.keios.ui.page.main.ba
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.keios.R
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
@@ -36,7 +38,7 @@ internal fun BaTopBar(
 ) {
     TopAppBar(
         title = "",
-        largeTitle = "BlueArchive",
+        largeTitle = stringResource(R.string.ba_topbar_title),
         scrollBehavior = scrollBehavior,
         color = topBarColor,
         actions = {
@@ -46,22 +48,22 @@ internal fun BaTopBar(
                     items = listOf(
                         LiquidActionItem(
                             icon = MiuixIcons.Regular.Edit,
-                            contentDescription = "编辑",
+                            contentDescription = stringResource(R.string.ba_cd_edit),
                             onClick = onShowSettings,
                         ),
                         LiquidActionItem(
                             icon = MiuixIcons.Regular.Timer,
-                            contentDescription = "刷新间隔",
+                            contentDescription = stringResource(R.string.ba_cd_refresh_interval),
                             onClick = { onShowCalendarIntervalPopupChange(!showCalendarIntervalPopup) },
                         ),
                         LiquidActionItem(
                             icon = MiuixIcons.Regular.Copy,
-                            contentDescription = "复制好友码",
+                            contentDescription = stringResource(R.string.ba_cd_copy_friend_code),
                             onClick = onCopyFriendCode,
                         ),
                         LiquidActionItem(
                             icon = MiuixIcons.Regular.Refresh,
-                            contentDescription = "刷新",
+                            contentDescription = stringResource(R.string.ba_cd_refresh),
                             onClick = onRefreshAll,
                         ),
                     ),

@@ -1,5 +1,8 @@
 package com.example.keios.ui.page.main
 
+import android.content.Context
+import androidx.annotation.StringRes
+import com.example.keios.R
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.feature.github.model.GitHubLookupConfig
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
@@ -25,6 +28,7 @@ internal data class VersionCheckUi(
     val hasPreReleaseUpdate: Boolean = false,
     val recommendsPreRelease: Boolean = false,
     val releaseHint: String = "",
+    val failed: Boolean = false,
     val sourceStrategyId: String = ""
 )
 
@@ -49,10 +53,12 @@ internal data class GitHubRecommendedTokenGuide(
     val notes: List<String>
 )
 
-internal enum class GitHubSortMode(val label: String) {
-    UpdateFirst("更新优先"),
-    NameAsc("名称 A-Z"),
-    PreReleaseFirst("预发行优先")
+internal enum class GitHubSortMode(
+    @StringRes val labelRes: Int
+) {
+    UpdateFirst(R.string.github_sort_update_first),
+    NameAsc(R.string.github_sort_name_asc),
+    PreReleaseFirst(R.string.github_sort_prerelease_first)
 }
 
 internal enum class OverviewRefreshState {
@@ -62,11 +68,14 @@ internal enum class OverviewRefreshState {
     Completed
 }
 
-internal enum class RefreshIntervalOption(val hours: Int, val label: String) {
-    Hour1(1, "1 小时"),
-    Hour3(3, "3 小时"),
-    Hour6(6, "6 小时"),
-    Hour12(12, "12 小时");
+internal enum class RefreshIntervalOption(
+    val hours: Int,
+    @StringRes val labelRes: Int
+) {
+    Hour1(1, R.string.github_refresh_interval_1h),
+    Hour3(3, R.string.github_refresh_interval_3h),
+    Hour6(6, R.string.github_refresh_interval_6h),
+    Hour12(12, R.string.github_refresh_interval_12h);
 
     companion object {
         fun fromHours(hours: Int): RefreshIntervalOption {
@@ -75,11 +84,15 @@ internal enum class RefreshIntervalOption(val hours: Int, val label: String) {
     }
 }
 
-internal fun formatRefreshAgo(lastRefreshMs: Long, nowMs: Long = System.currentTimeMillis()): String {
-    if (lastRefreshMs <= 0L) return "未刷新"
+internal fun formatRefreshAgo(
+    context: Context,
+    lastRefreshMs: Long,
+    nowMs: Long = System.currentTimeMillis()
+): String {
+    if (lastRefreshMs <= 0L) return context.getString(R.string.github_refresh_ago_not_refreshed)
     val deltaMs = max(0L, nowMs - lastRefreshMs)
     val minutes = deltaMs / 60_000L
-    if (minutes <= 0L) return "刚刚"
+    if (minutes <= 0L) return context.getString(R.string.common_just_now)
     if (minutes < 60L) return "${minutes}m"
     val hours = minutes / 60L
     val mins = minutes % 60L
@@ -93,33 +106,42 @@ internal fun formatRefreshAgo(lastRefreshMs: Long, nowMs: Long = System.currentT
     }
 }
 
-internal fun formatFutureEta(targetMs: Long?, nowMs: Long = System.currentTimeMillis()): String {
-    if (targetMs == null || targetMs <= 0L) return "未知"
+internal fun formatFutureEta(
+    context: Context,
+    targetMs: Long?,
+    nowMs: Long = System.currentTimeMillis()
+): String {
+    if (targetMs == null || targetMs <= 0L) return context.getString(R.string.common_unknown)
     val deltaMs = (targetMs - nowMs).coerceAtLeast(0L)
     val minutes = deltaMs / 60_000L
-    if (minutes <= 0L) return "即将恢复"
-    if (minutes < 60L) return "$minutes 分钟后"
+    if (minutes <= 0L) return context.getString(R.string.github_eta_soon_recover)
+    if (minutes < 60L) return context.getString(R.string.github_eta_after_minutes, minutes)
     val hours = minutes / 60L
     val mins = minutes % 60L
-    return if (mins == 0L) "$hours 小时后" else "$hours 小时 $mins 分钟后"
+    return if (mins == 0L) {
+        context.getString(R.string.github_eta_after_hours, hours)
+    } else {
+        context.getString(R.string.github_eta_after_hours_minutes, hours, mins)
+    }
 }
 
 internal fun strategyLabelForId(id: String): String {
     return GitHubLookupStrategyOption.fromStorageId(id).label
 }
 
-internal fun GitHubLookupStrategyOption.overviewLabel(): String {
+internal fun GitHubLookupStrategyOption.overviewLabel(context: Context): String {
     return when (this) {
-        GitHubLookupStrategyOption.AtomFeed -> "Atom"
-        GitHubLookupStrategyOption.GitHubApiToken -> "API"
+        GitHubLookupStrategyOption.AtomFeed -> context.getString(R.string.github_overview_strategy_atom)
+        GitHubLookupStrategyOption.GitHubApiToken -> context.getString(R.string.github_overview_strategy_api)
     }
 }
 
-internal fun GitHubLookupConfig.overviewApiLabel(): String {
+internal fun GitHubLookupConfig.overviewApiLabel(context: Context): String {
     return when {
-        selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken -> "未使用"
-        apiToken.isBlank() -> "游客"
-        else -> apiToken.maskedApiPreview()
+        selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken ->
+            context.getString(R.string.common_not_used)
+        apiToken.isBlank() -> context.getString(R.string.common_guest)
+        else -> apiToken.maskedApiPreview(context)
     }
 }
 
@@ -162,9 +184,9 @@ internal fun VersionCheckUi.statusActionUrl(
     }
 }
 
-private fun String.maskedApiPreview(): String {
+private fun String.maskedApiPreview(context: Context): String {
     val token = trim()
-    if (token.isBlank()) return "游客"
+    if (token.isBlank()) return context.getString(R.string.common_guest)
 
     return when {
         token.startsWith("github_pat_") -> "FG ${token.fineGrainedMarker()}"
@@ -224,70 +246,72 @@ internal fun buildGitHubFineGrainedTokenTemplateUrl(): String {
         "&contents=read"
 }
 
-internal val githubRecommendedTokenGuide = GitHubRecommendedTokenGuide(
-    collapsedSummary = "Fine-grained PAT · Contents: Read",
-    summary = "建议为 KeiOS 单独建一个 Fine-grained PAT。当前这套 Releases API 与资源下载只需 `Contents: Read`；公开仓库也能正常追踪。",
-    fields = listOf(
-        GitHubTokenGuideField(
-            label = "类型",
-            value = "Fine-grained PAT",
-            emphasized = true
+internal fun githubRecommendedTokenGuide(context: Context): GitHubRecommendedTokenGuide {
+    return GitHubRecommendedTokenGuide(
+        collapsedSummary = context.getString(R.string.github_token_guide_collapsed),
+        summary = context.getString(R.string.github_token_guide_summary),
+        fields = listOf(
+            GitHubTokenGuideField(
+                label = context.getString(R.string.github_token_guide_field_type),
+                value = context.getString(R.string.github_token_guide_field_type_value),
+                emphasized = true
+            ),
+            GitHubTokenGuideField(
+                label = context.getString(R.string.github_token_guide_field_owner),
+                value = context.getString(R.string.github_token_guide_field_owner_value)
+            ),
+            GitHubTokenGuideField(
+                label = context.getString(R.string.github_token_guide_field_repo),
+                value = context.getString(R.string.github_token_guide_field_repo_value)
+            ),
+            GitHubTokenGuideField(
+                label = context.getString(R.string.github_token_guide_field_limit),
+                value = context.getString(R.string.github_token_guide_field_limit_value)
+            ),
+            GitHubTokenGuideField(
+                label = context.getString(R.string.github_token_guide_field_permission),
+                value = context.getString(R.string.github_token_guide_field_permission_value),
+                emphasized = true
+            ),
+            GitHubTokenGuideField(
+                label = context.getString(R.string.github_token_guide_field_expire),
+                value = context.getString(R.string.github_token_guide_field_expire_value)
+            )
         ),
-        GitHubTokenGuideField(
-            label = "Owner",
-            value = "单用户 / 单组织"
-        ),
-        GitHubTokenGuideField(
-            label = "仓库",
-            value = "Only select repositories"
-        ),
-        GitHubTokenGuideField(
-            label = "上限",
-            value = "Selected repos 最多 50"
-        ),
-        GitHubTokenGuideField(
-            label = "权限",
-            value = "Contents: Read",
-            emphasized = true
-        ),
-        GitHubTokenGuideField(
-            label = "过期",
-            value = "90 天"
+        notes = listOf(
+            context.getString(R.string.github_token_guide_note_1),
+            context.getString(R.string.github_token_guide_note_2),
+            context.getString(R.string.github_token_guide_note_3),
+            context.getString(R.string.github_token_guide_note_4)
         )
-    ),
-    notes = listOf(
-        "`Only select repositories` 只限制当前 owner 下额外授权的私有仓库，公开仓库不受影响。",
-        "`Selected repositories` 最多 50 个，只统计当前 owner 下手动勾选的仓库。",
-        "若组织要求审批或启用 SSO，token 可能要先完成批准或 SSO 后才可用。",
-        "Classic token 仅建议兜底使用，权限面通常更大。"
     )
-)
+}
 
-internal val githubStrategyGuides: List<GitHubStrategyGuide> = listOf(
+internal fun githubStrategyGuides(context: Context): List<GitHubStrategyGuide> = listOf(
     GitHubStrategyGuide(
         option = GitHubLookupStrategyOption.AtomFeed,
-        summary = "走 Atom feed 与 release 页面，轻量但更依赖网页结构。",
+        summary = context.getString(R.string.github_strategy_guide_atom_summary),
         pros = listOf(
-            "无需 Token，适合公开仓库",
-            "配置最少，上手最快"
+            context.getString(R.string.github_strategy_guide_atom_pro_1),
+            context.getString(R.string.github_strategy_guide_atom_pro_2)
         ),
         cons = listOf(
-            "更依赖页面结构，变动时更脆弱",
-            "私有仓库与细粒度元数据支持较弱"
+            context.getString(R.string.github_strategy_guide_atom_con_1),
+            context.getString(R.string.github_strategy_guide_atom_con_2)
         ),
-        requirement = "无需额外凭证"
+        requirement = context.getString(R.string.github_strategy_guide_atom_requirement)
     ),
     GitHubStrategyGuide(
         option = GitHubLookupStrategyOption.GitHubApiToken,
-        summary = "走 Releases API，结构更稳，也更适合资源读取与私有仓库。",
+        summary = context.getString(R.string.github_strategy_guide_api_summary),
         pros = listOf(
-            "元数据更稳定，可直接识别 prerelease",
-            "可解析更多 release 细节，资源下载更稳"
+            context.getString(R.string.github_strategy_guide_api_pro_1),
+            context.getString(R.string.github_strategy_guide_api_pro_2)
         ),
         cons = listOf(
-            "游客额度很低，项目多时更易限流",
-            "token 失效或权限不足时会访问受限"
+            context.getString(R.string.github_strategy_guide_api_con_1),
+            context.getString(R.string.github_strategy_guide_api_con_2)
         ),
-        requirement = "token 选填；留空时自动走游客 API"
+        requirement = context.getString(R.string.github_strategy_guide_api_requirement)
     )
 )

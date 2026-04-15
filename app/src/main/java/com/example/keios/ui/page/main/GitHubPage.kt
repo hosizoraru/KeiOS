@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.keios.R
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -172,6 +173,8 @@ fun GitHubPage(
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val openLinkFailureMessage = context.getString(R.string.github_error_open_link)
+    val systemDmOption = remember(context) { systemDownloadManagerOption(context) }
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -370,7 +373,7 @@ fun GitHubPage(
                     .coerceIn(0, trackedCount)
                 val updatableCount = trackedItems.count { checkStates[it.id]?.hasUpdate == true }
                 val failedCount = trackedItems.count {
-                    checkStates[it.id]?.message?.startsWith("检查失败") == true
+                    checkStates[it.id]?.failed == true
                 }
                 GitHubRefreshNotificationHelper.notifyCancelled(
                     context = context,
@@ -468,7 +471,7 @@ fun GitHubPage(
             checkStates[item.id] = VersionCheckUi(loading = true)
             val state = resolveItemState(item)
             if (trackedItems.none { it.id == item.id }) return@launch
-            if (showToastOnError && state.message.startsWith("检查失败")) {
+            if (showToastOnError && state.failed) {
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
             }
             checkStates[item.id] = state
@@ -479,7 +482,13 @@ fun GitHubPage(
     fun refreshAllTracked(showToast: Boolean = true) {
         val snapshot = trackedItems.toList()
         if (snapshot.isEmpty()) {
-            if (showToast) Toast.makeText(context, "暂无可检查条目", Toast.LENGTH_SHORT).show()
+            if (showToast) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_no_checkable_item),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             overviewRefreshState = OverviewRefreshState.Idle
             refreshProgress = 0f
             GitHubRefreshNotificationHelper.cancel(context)
@@ -503,7 +512,10 @@ fun GitHubPage(
                 failedCount = 0
             )
             snapshot.forEach { item ->
-                checkStates[item.id] = VersionCheckUi(loading = true, message = "检查中...")
+                checkStates[item.id] = VersionCheckUi(
+                    loading = true,
+                    message = context.getString(R.string.github_msg_checking)
+                )
             }
             snapshot.forEachIndexed { index, item ->
                 val state = resolveItemState(item)
@@ -513,7 +525,7 @@ fun GitHubPage(
                 if (state.hasUpdate == true) {
                     updatableCount += 1
                 }
-                if (state.message.startsWith("检查失败")) {
+                if (state.failed) {
                     failedCount += 1
                 }
                 refreshProgress = (index + 1).toFloat() / snapshot.size.toFloat()
@@ -525,8 +537,17 @@ fun GitHubPage(
                     updatableCount = updatableCount,
                     failedCount = failedCount
                 )
-                if (showToast && state.message.startsWith("检查失败")) {
-                    Toast.makeText(context, "${item.owner}/${item.repo}: ${state.message}", Toast.LENGTH_SHORT).show()
+                if (showToast && state.failed) {
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.github_toast_repo_message,
+                            item.owner,
+                            item.repo,
+                            state.message
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 if (index < snapshot.lastIndex) delay(120)
             }
@@ -541,7 +562,13 @@ fun GitHubPage(
                 updatableCount = updatableCount,
                 failedCount = failedCount
             )
-            if (showToast) Toast.makeText(context, "检查完成", Toast.LENGTH_SHORT).show()
+            if (showToast) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_check_completed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             refreshAllJob = null
         }
     }
@@ -574,23 +601,37 @@ fun GitHubPage(
                 if (trackedItems.isNotEmpty()) {
                     Toast.makeText(
                         context,
-                        "已切换为 ${newConfig.selectedStrategy.label}，正在重新检查",
+                        context.getString(
+                            R.string.github_toast_strategy_switched_recheck,
+                            newConfig.selectedStrategy.label
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                     refreshAllTracked(showToast = true)
                 } else {
                     Toast.makeText(
                         context,
-                        "已切换为 ${newConfig.selectedStrategy.label}",
+                        context.getString(
+                            R.string.github_toast_strategy_switched,
+                            newConfig.selectedStrategy.label
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
             previousConfig.apiToken != newConfig.apiToken -> {
-                Toast.makeText(context, "已保存 API 凭证设置", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_api_credential_saved),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             else -> {
-                Toast.makeText(context, "抓取方案未变化", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_strategy_unchanged),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -628,17 +669,33 @@ fun GitHubPage(
                 refreshProgress = 0f
                 overviewRefreshState = OverviewRefreshState.Idle
                 if (trackedItems.isNotEmpty()) {
-                    Toast.makeText(context, "已更新检查逻辑，正在重新检查", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.github_toast_check_logic_updated_recheck),
+                        Toast.LENGTH_SHORT
+                    ).show()
                     refreshAllTracked(showToast = true)
                 } else {
-                    Toast.makeText(context, "已保存检查逻辑", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.github_toast_check_logic_saved),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             intervalChanged -> {
-                Toast.makeText(context, "已保存更新间隔", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_refresh_interval_saved),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             else -> {
-                Toast.makeText(context, "检查逻辑未变化", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_check_logic_unchanged),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -647,7 +704,11 @@ fun GitHubPage(
         if (strategyBenchmarkRunning) return
         val targets = GitHubStrategyBenchmarkService.buildTargets(trackedItems.toList())
         if (targets.isEmpty()) {
-            Toast.makeText(context, "请先新增至少一个跟踪项目", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.github_toast_require_track_item),
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
         scope.launch {
@@ -689,7 +750,7 @@ fun GitHubPage(
         }
     }
 
-    fun openExternalUrl(url: String, failureMessage: String = "无法打开链接") {
+    fun openExternalUrl(url: String, failureMessage: String = openLinkFailureMessage) {
         runCatching {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }.onFailure {
@@ -728,10 +789,16 @@ fun GitHubPage(
                 if (onlineSharePackage.isNotBlank()) {
                     context.startActivity(intent)
                 } else {
-                    context.startActivity(Intent.createChooser(intent, "分享 APK 下载链接"))
+                    context.startActivity(
+                        Intent.createChooser(intent, context.getString(R.string.github_share_apk_link_title))
+                    )
                 }
             }.onFailure {
-                Toast.makeText(context, "无法分享链接", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_share_link_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -757,9 +824,13 @@ fun GitHubPage(
             val preferredPackage = lookupConfig.preferredDownloaderPackage.trim()
             runCatching {
                 when (preferredPackage) {
-                    systemDownloadManagerOption.packageName -> {
+                    systemDmOption.packageName -> {
                         enqueueWithSystemDownloadManager(resolvedUrl, asset.name)
-                        Toast.makeText(context, "已交给系统内置下载器处理", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.github_toast_downloader_system_builtin),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     "" -> {
                         context.startActivity(
@@ -767,7 +838,11 @@ fun GitHubPage(
                                 addCategory(Intent.CATEGORY_BROWSABLE)
                             }
                         )
-                        Toast.makeText(context, "已交给系统默认值处理", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.github_toast_downloader_system_default),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     else -> {
                         context.startActivity(
@@ -776,22 +851,34 @@ fun GitHubPage(
                                 setPackage(preferredPackage)
                             }
                         )
-                        Toast.makeText(context, "已交给所选下载器处理", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.github_toast_downloader_selected),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }.recoverCatching {
-                if (preferredPackage.isNotBlank() && preferredPackage != systemDownloadManagerOption.packageName) {
+                if (preferredPackage.isNotBlank() && preferredPackage != systemDmOption.packageName) {
                     context.startActivity(
                         Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
                             addCategory(Intent.CATEGORY_BROWSABLE)
                         }
                     )
-                    Toast.makeText(context, "所选下载器不可用，已回退系统默认值", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.github_toast_downloader_fallback_system),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     throw it
                 }
             }.onFailure {
-                Toast.makeText(context, "无法打开下载器", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_open_downloader_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -809,13 +896,17 @@ fun GitHubPage(
         toggleOnlyWhenCached: Boolean = true,
         includeAllAssets: Boolean = false
     ) {
-        val target = state.apkAssetTarget(item.owner, item.repo)
+        val target = state.apkAssetTarget(item.owner, item.repo, context)
         if (target == null) {
             val fallbackUrl = state.statusActionUrl(item.owner, item.repo)
             if (fallbackUrl.isNotBlank()) {
                 openExternalUrl(fallbackUrl)
             } else {
-                Toast.makeText(context, "当前没有可加载的更新 APK", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_no_apk_to_load),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             return
         }
@@ -854,15 +945,22 @@ fun GitHubPage(
                 apkAssetBundles[item.id] = bundle
                 apkAssetErrors[item.id] = if (bundle.assets.isEmpty()) {
                     if (includeAllAssets) {
-                        "${target.label} 当前除了 Source code 外没有其它可下载资源"
+                        context.getString(
+                            R.string.github_msg_assets_no_downloadable_except_source,
+                            target.label
+                        )
                     } else {
-                        "${target.label} 当前没有可直接下载的资源"
+                        context.getString(
+                            R.string.github_msg_assets_no_downloadable,
+                            target.label
+                        )
                     }
                 } else {
                     ""
                 }
             }.onFailure { error ->
-                apkAssetErrors[item.id] = error.message ?: "加载 APK 资产失败"
+                apkAssetErrors[item.id] = error.message
+                    ?: context.getString(R.string.github_error_load_apk_assets_failed)
             }
         }
     }
@@ -896,7 +994,11 @@ fun GitHubPage(
         val app = selectedApp
         val parsed = GitHubVersionUtils.parseOwnerRepo(repoUrlInput)
         if (app == null || parsed == null) {
-            Toast.makeText(context, "请填写正确仓库并选择 App", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.github_toast_fill_repo_and_select_app),
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
         val newItem = GitHubTrackedApp(
@@ -910,17 +1012,29 @@ fun GitHubPage(
         val editing = editingTrackedItem
         if (editing == null) {
             if (trackedItems.any { it.id == newItem.id }) {
-                Toast.makeText(context, "该条目已存在", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_track_exists),
+                    Toast.LENGTH_SHORT
+                ).show()
                 return
             }
             trackedItems.add(newItem)
             saveTracked()
             refreshItem(newItem, showToastOnError = true)
-            Toast.makeText(context, "已新增跟踪", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.github_toast_track_added),
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
             val duplicate = trackedItems.any { it.id == newItem.id && it.id != editing.id }
             if (duplicate) {
-                Toast.makeText(context, "该条目已存在", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_track_exists),
+                    Toast.LENGTH_SHORT
+                ).show()
                 return
             }
             val index = trackedItems.indexOfFirst { it.id == editing.id }
@@ -934,7 +1048,11 @@ fun GitHubPage(
             }
             saveTracked()
             refreshItem(newItem, showToastOnError = true)
-            Toast.makeText(context, "已更新跟踪", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.github_toast_track_updated),
+                Toast.LENGTH_SHORT
+            ).show()
         }
         editingTrackedItem = null
         repoUrlInput = ""
@@ -980,7 +1098,11 @@ fun GitHubPage(
             if (intent != null) {
                 appListPermissionLauncher.launch(intent)
             } else {
-                Toast.makeText(context, "无法打开权限页面，请手动到系统设置授权", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.github_toast_open_permission_page_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -1009,7 +1131,7 @@ fun GitHubPage(
     val updatableCount = trackedItems.count { checkStates[it.id]?.hasUpdate == true }
     val preReleaseCount = trackedItems.count { checkStates[it.id]?.isPreRelease == true }
     val preReleaseUpdateCount = trackedItems.count { checkStates[it.id]?.hasPreReleaseUpdate == true }
-    val failedCount = trackedItems.count { checkStates[it.id]?.message?.startsWith("检查失败") == true }
+    val failedCount = trackedItems.count { checkStates[it.id]?.failed == true }
     val stableLatestCount = trackedItems.count {
         val s = checkStates[it.id]
         s?.hasUpdate == false && s.isPreRelease.not()
@@ -1190,7 +1312,11 @@ fun GitHubPage(
                     checkStates.remove(deleting.id)
                     saveTracked()
                     persistCheckCache()
-                    Toast.makeText(context, "已删除 ${deleting.appLabel}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.github_toast_track_deleted, deleting.appLabel),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } finally {
                     deleteInProgress = false
                 }

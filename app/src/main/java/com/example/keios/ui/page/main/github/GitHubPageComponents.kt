@@ -20,11 +20,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
@@ -123,7 +125,7 @@ internal fun GitHubOverviewMetricItem(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = value.ifBlank { "N/A" },
+            text = value.ifBlank { stringResource(R.string.common_na) },
             color = valueColor,
             fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
@@ -149,15 +151,15 @@ internal fun GitHubStrategyGuideCard(
         modifier = Modifier.fillMaxWidth(),
         details = {
             Text(
-                text = "优点：${guide.pros.joinToString("；")}",
+                text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString("；")),
                 color = MiuixTheme.colorScheme.onBackground
             )
             Text(
-                text = "注意：${guide.cons.joinToString("；")}",
+                text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString("；")),
                 color = MiuixTheme.colorScheme.onBackgroundVariant
             )
             Text(
-                text = "要求：${guide.requirement}",
+                text = stringResource(R.string.github_strategy_guide_requirement, guide.requirement),
                 color = accent,
                 fontWeight = FontWeight.Medium
             )
@@ -174,9 +176,9 @@ internal fun GitHubStrategyDraftSummaryCard(
 ) {
     val accent = selectedStrategy.accentColor()
     val tokenStatusLabel = when {
-        selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken -> "未使用"
-        tokenInput.isNotBlank() -> "已填写"
-        else -> "游客"
+        selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken -> stringResource(R.string.common_not_used)
+        tokenInput.isNotBlank() -> stringResource(R.string.common_filled)
+        else -> stringResource(R.string.common_guest)
     }
     val tokenStatusColor = when {
         selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken -> MiuixTheme.colorScheme.onBackgroundVariant
@@ -185,33 +187,37 @@ internal fun GitHubStrategyDraftSummaryCard(
     }
 
     SheetSummaryCard(
-        title = "当前待保存配置",
+        title = stringResource(R.string.github_strategy_card_title_draft),
         accentColor = MiuixTheme.colorScheme.onBackground,
-        badgeLabel = if (changed) "待保存" else "与当前一致",
+        badgeLabel = if (changed) {
+            stringResource(R.string.common_pending_save)
+        } else {
+            stringResource(R.string.github_strategy_badge_same)
+        },
         badgeColor = if (changed) accent else MiuixTheme.colorScheme.onBackgroundVariant,
         containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (changed) 0.82f else 0.66f),
         modifier = Modifier.fillMaxWidth()
     ) {
         GitHubCompactInfoRow(
-            label = "方案",
+            label = stringResource(R.string.github_strategy_label_option),
             value = selectedStrategy.label,
             valueColor = accent,
             emphasized = true,
             titleMinWidth = 44.dp
         )
         GitHubCompactInfoRow(
-            label = "Token",
+            label = stringResource(R.string.github_strategy_label_token),
             value = tokenStatusLabel,
             valueColor = tokenStatusColor,
             emphasized = selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken,
             titleMinWidth = 44.dp
         )
         GitHubCompactInfoRow(
-            label = "影响",
+            label = stringResource(R.string.github_strategy_label_impact),
             value = if (trackedCount > 0) {
-                "保存后重检 $trackedCount 项"
+                stringResource(R.string.github_strategy_impact_recheck_count, trackedCount)
             } else {
-                "暂无已跟踪项目"
+                stringResource(R.string.github_strategy_impact_no_track)
             },
             valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
             titleMinWidth = 44.dp
@@ -226,13 +232,13 @@ internal fun GitHubRecommendedTokenGuideCard(
     onExpandedChange: (Boolean) -> Unit
 ) {
     SheetExpandableCard(
-        title = "推荐新建方案",
+        title = stringResource(R.string.github_strategy_card_title_recommended),
         collapsedSummary = guide.collapsedSummary,
         expandedSummary = guide.summary,
         expanded = expanded,
         onExpandedChange = onExpandedChange,
         accentColor = GitHubStatusPalette.Update,
-        badgeLabel = "最小权限",
+        badgeLabel = stringResource(R.string.github_strategy_badge_least_privilege),
         modifier = Modifier.fillMaxWidth()
     ) {
         val accent = GitHubStatusPalette.Update
@@ -270,17 +276,17 @@ internal fun GitHubStrategyBenchmarkCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         GitHubOverviewMetricItem(
-            label = "首轮均时",
+            label = stringResource(R.string.github_strategy_metric_cold_avg),
             value = "${result.coldAverageMs} ms",
             valueColor = accent
         )
         GitHubOverviewMetricItem(
-            label = "缓存均时",
+            label = stringResource(R.string.github_strategy_metric_warm_avg),
             value = "${result.warmAverageMs} ms",
             valueColor = GitHubStatusPalette.Stable
         )
         GitHubOverviewMetricItem(
-            label = "缓存命中",
+            label = stringResource(R.string.github_strategy_metric_cache_hit),
             value = "${result.cacheHitCount}/${result.warmSamples.size}",
             valueColor = if (result.cacheHitCount == result.warmSamples.size) {
                 GitHubStatusPalette.Update
@@ -289,7 +295,7 @@ internal fun GitHubStrategyBenchmarkCard(
             }
         )
         GitHubOverviewMetricItem(
-            label = "失败",
+            label = stringResource(R.string.github_strategy_metric_failed),
             value = "${result.failures.size}",
             valueColor = if (result.failures.isEmpty()) {
                 MiuixTheme.colorScheme.onBackgroundVariant
@@ -312,12 +318,13 @@ internal fun GitHubStrategyBenchmarkCard(
 internal fun GitHubCredentialStatusCard(
     status: GitHubApiCredentialStatus
 ) {
+    val context = LocalContext.current
     val accent = when (status.authMode) {
         com.example.keios.feature.github.model.GitHubApiAuthMode.Token -> GitHubStatusPalette.Update
         com.example.keios.feature.github.model.GitHubApiAuthMode.Guest -> GitHubStatusPalette.PreRelease
     }
     SheetSummaryCard(
-        title = "凭证检测",
+        title = stringResource(R.string.github_strategy_card_title_credential_status),
         accentColor = accent,
         badgeLabel = status.summaryLabel,
         badgeColor = accent,
@@ -325,28 +332,28 @@ internal fun GitHubCredentialStatusCard(
         containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
     ) {
         GitHubCompactInfoRow(
-            label = "模式",
+            label = stringResource(R.string.github_strategy_label_mode),
             value = status.authMode.label,
             valueColor = accent,
             emphasized = true,
             titleMinWidth = 44.dp
         )
         GitHubCompactInfoRow(
-            label = "配额",
+            label = stringResource(R.string.github_strategy_label_quota),
             value = "${status.coreRemaining} / ${status.coreLimit}",
             valueColor = if (status.coreRemaining > 0) accent else GitHubStatusPalette.Error,
             emphasized = true,
             titleMinWidth = 44.dp
         )
         GitHubCompactInfoRow(
-            label = "已用",
+            label = stringResource(R.string.github_strategy_label_used),
             value = status.coreUsed.toString(),
             valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
             titleMinWidth = 44.dp
         )
         GitHubCompactInfoRow(
-            label = "恢复",
-            value = formatFutureEta(status.resetAtMillis),
+            label = stringResource(R.string.github_strategy_label_reset),
+            value = formatFutureEta(context, status.resetAtMillis),
             valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
             titleMinWidth = 44.dp
         )
@@ -398,7 +405,7 @@ internal fun GitHubSelectedAppCard(
                 )
             }
             StatusPill(
-                label = "已选",
+                label = stringResource(R.string.github_strategy_status_selected),
                 color = GitHubStatusPalette.Update
             )
         }
@@ -454,7 +461,7 @@ internal fun GitHubAppCandidateRow(
             }
             if (selected) {
                 StatusPill(
-                    label = "当前",
+                    label = stringResource(R.string.github_strategy_status_current),
                     color = GitHubStatusPalette.Update
                 )
             }
@@ -489,7 +496,7 @@ internal fun AppIcon(
                 .clip(ContinuousCapsule),
             contentAlignment = Alignment.Center
         ) {
-            Text("App", color = MiuixTheme.colorScheme.primary)
+            Text(stringResource(R.string.github_strategy_app_fallback), color = MiuixTheme.colorScheme.primary)
         }
     }
 }

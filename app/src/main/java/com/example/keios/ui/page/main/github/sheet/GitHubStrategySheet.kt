@@ -2,10 +2,14 @@ package com.example.keios.ui.page.main.github.sheet
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.feature.github.model.GitHubApiAuthMode
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubLookupConfig
@@ -66,16 +70,19 @@ internal fun GitHubStrategySheet(
     onRecommendedTokenGuideExpandedChange: (Boolean) -> Unit,
     onOpenExternalUrl: (String, String) -> Unit
 ) {
+    val context = LocalContext.current
+    val guides = remember(context) { githubStrategyGuides(context) }
+    val tokenGuide = remember(context) { githubRecommendedTokenGuide(context) }
     SnapshotWindowBottomSheet(
         show = show,
-        title = "GitHub 抓取方案",
+        title = stringResource(R.string.github_strategy_sheet_title),
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Close,
-                contentDescription = "关闭",
+                contentDescription = stringResource(R.string.common_close),
                 onClick = onDismissRequest
             )
         },
@@ -84,7 +91,7 @@ internal fun GitHubStrategySheet(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Ok,
-                contentDescription = "保存方案",
+                contentDescription = stringResource(R.string.github_strategy_sheet_cd_save),
                 onClick = onApply
             )
         }
@@ -93,9 +100,10 @@ internal fun GitHubStrategySheet(
         val draftChanged = selectedStrategyInput != lookupConfig.selectedStrategy ||
             sanitizedTokenInput != lookupConfig.apiToken
         val tokenStatusLabel = when {
-            selectedStrategyInput != GitHubLookupStrategyOption.GitHubApiToken -> "未使用"
-            sanitizedTokenInput.isBlank() -> "游客"
-            else -> "已填写"
+            selectedStrategyInput != GitHubLookupStrategyOption.GitHubApiToken ->
+                context.getString(R.string.common_not_used)
+            sanitizedTokenInput.isBlank() -> context.getString(R.string.common_guest)
+            else -> context.getString(R.string.common_filled)
         }
         val tokenStatusColor = when {
             selectedStrategyInput != GitHubLookupStrategyOption.GitHubApiToken ->
@@ -104,10 +112,10 @@ internal fun GitHubStrategySheet(
             else -> GitHubStatusPalette.Update
         }
         val credentialAvailabilityLabel = when {
-            credentialCheckRunning -> "检测中"
-            credentialCheckStatus != null -> "可用"
-            credentialCheckError != null -> "不可用"
-            else -> "未检测"
+            credentialCheckRunning -> context.getString(R.string.common_checking)
+            credentialCheckStatus != null -> context.getString(R.string.common_available)
+            credentialCheckError != null -> context.getString(R.string.common_unavailable)
+            else -> context.getString(R.string.common_not_checked)
         }
         val credentialAvailabilityColor = when {
             credentialCheckRunning -> MiuixTheme.colorScheme.primary
@@ -117,7 +125,7 @@ internal fun GitHubStrategySheet(
         }
 
         SheetContentColumn(verticalSpacing = 8.dp) {
-            SheetSectionTitle("配置摘要")
+            SheetSectionTitle(stringResource(R.string.github_strategy_section_draft_summary))
             GitHubStrategyDraftSummaryCard(
                 selectedStrategy = selectedStrategyInput,
                 tokenInput = sanitizedTokenInput,
@@ -125,8 +133,8 @@ internal fun GitHubStrategySheet(
                 changed = draftChanged
             )
 
-            SheetSectionTitle("抓取方案")
-            githubStrategyGuides.forEach { guide ->
+            SheetSectionTitle(stringResource(R.string.github_strategy_section_strategy))
+            guides.forEach { guide ->
                 GitHubStrategyGuideCard(
                     guide = guide,
                     selected = selectedStrategyInput == guide.option,
@@ -135,32 +143,36 @@ internal fun GitHubStrategySheet(
             }
 
             if (selectedStrategyInput == GitHubLookupStrategyOption.GitHubApiToken) {
-                SheetSectionTitle("凭证设置")
+                SheetSectionTitle(stringResource(R.string.github_strategy_section_credential))
                 SheetSectionCard {
-                    SheetControlRow(label = "Token 状态") {
+                    SheetControlRow(label = stringResource(R.string.github_strategy_label_token_status)) {
                         StatusPill(
                             label = tokenStatusLabel,
                             color = tokenStatusColor
                         )
                     }
-                    SheetControlRow(label = "可用性") {
+                    SheetControlRow(label = stringResource(R.string.github_strategy_label_availability)) {
                         StatusPill(
                             label = credentialAvailabilityLabel,
                             color = credentialAvailabilityColor
                         )
                     }
                     SheetFieldBlock(
-                        title = "GitHub API Token",
+                        title = stringResource(R.string.github_strategy_field_token_title),
                         summary = if (sanitizedTokenInput.isBlank()) {
-                            "当前走游客 API，可随时补 token"
+                            stringResource(R.string.github_strategy_field_token_summary_guest)
                         } else {
-                            "当前已填 token，可在此替换"
+                            stringResource(R.string.github_strategy_field_token_summary_filled)
                         },
                         trailing = {
                             GlassTextButton(
                                 backdrop = backdrop,
                                 variant = GlassVariant.SheetAction,
-                                text = if (showApiTokenPlainText) "隐藏 Token" else "显示 Token",
+                                text = if (showApiTokenPlainText) {
+                                    stringResource(R.string.github_strategy_btn_hide_token)
+                                } else {
+                                    stringResource(R.string.github_strategy_btn_show_token)
+                                },
                                 onClick = onToggleTokenVisibility
                             )
                         }
@@ -168,7 +180,7 @@ internal fun GitHubStrategySheet(
                         GlassSearchField(
                             value = githubApiTokenInput,
                             onValueChange = onTokenInputChange,
-                            label = "GitHub API token（选填）",
+                            label = stringResource(R.string.github_strategy_token_input_label),
                             backdrop = backdrop,
                             variant = GlassVariant.SheetInput,
                             singleLine = true,
@@ -180,27 +192,31 @@ internal fun GitHubStrategySheet(
                         )
                     }
                 }
-                SheetSectionTitle("立即验证")
+                SheetSectionTitle(stringResource(R.string.github_strategy_section_verify_now))
                 SheetSectionCard {
                     SheetActionGroup {
                         GlassTextButton(
                             backdrop = backdrop,
                             variant = GlassVariant.SheetAction,
-                            text = if (credentialCheckRunning) "检测中..." else "检测当前凭证",
+                            text = if (credentialCheckRunning) {
+                                stringResource(R.string.github_strategy_btn_check_running)
+                            } else {
+                                stringResource(R.string.github_strategy_btn_check_now)
+                            },
                             enabled = !credentialCheckRunning,
                             modifier = Modifier.fillMaxWidth(),
                             onClick = onRunCredentialCheck
                         )
                     }
                     SheetDescriptionText(
-                        text = "留空时自动走游客 API，适合少量追踪；若项目变多或遇到限流，再补本地 token 即可。token 仅保存在当前设备 MMKV。"
+                        text = stringResource(R.string.github_strategy_desc_guest_api)
                     )
                     SheetDescriptionText(
-                        text = "当前这套 GitHub API 检查与资源下载只需 Fine-grained PAT 的 `Contents: Read`。它既能读 release 元数据，也能走 assets API 下载 APK；若是 private 仓库，还需 token 本身有该仓库访问权。"
+                        text = stringResource(R.string.github_strategy_desc_pat_scope)
                     )
                     credentialCheckError?.let { error ->
                         SheetDescriptionText(
-                            text = "凭证检测失败：$error"
+                            text = stringResource(R.string.github_strategy_desc_check_failed, error)
                         )
                     }
                 }
@@ -208,9 +224,9 @@ internal fun GitHubStrategySheet(
                     GitHubCredentialStatusCard(status = status)
                     SheetDescriptionText(
                         text = if (status.authMode == GitHubApiAuthMode.Guest) {
-                            "当前游客 API 可用，但额度较低；追踪项目变多后建议补 token。"
+                            stringResource(R.string.github_strategy_desc_guest_ok)
                         } else {
-                            "当前 token 已被 GitHub API 接受，但这不等于它对所有 private 仓库都有权限。"
+                            stringResource(R.string.github_strategy_desc_token_ok)
                         }
                     )
                 }
@@ -223,11 +239,11 @@ internal fun GitHubStrategySheet(
                     onRunStrategyBenchmark = onRunStrategyBenchmark
                 )
                 SheetDescriptionText(
-                    text = "API 方案直接走 Releases API。首次体验可先用游客模式；长期追踪较多仓库时，补专用 token 会更稳。"
+                    text = stringResource(R.string.github_strategy_desc_api_recommendation)
                 )
-                SheetSectionTitle("推荐新建")
+                SheetSectionTitle(stringResource(R.string.github_strategy_section_recommended_create))
                 GitHubRecommendedTokenGuideCard(
-                    guide = githubRecommendedTokenGuide,
+                    guide = tokenGuide,
                     expanded = recommendedTokenGuideExpanded,
                     onExpandedChange = onRecommendedTokenGuideExpandedChange
                 )
@@ -235,36 +251,36 @@ internal fun GitHubStrategySheet(
                     GlassTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetAction,
-                        text = "打开预填创建页",
+                        text = stringResource(R.string.github_strategy_btn_open_prefilled_create),
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             onOpenExternalUrl(
                                 buildGitHubFineGrainedTokenTemplateUrl(),
-                                "无法打开 GitHub 创建页"
+                                context.getString(R.string.github_strategy_error_open_create_page)
                             )
                         }
                     )
                     GlassTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetAction,
-                        text = "查看官方说明",
+                        text = stringResource(R.string.github_strategy_btn_open_docs),
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             onOpenExternalUrl(
                                 githubFineGrainedPatDocsUrl,
-                                "无法打开官方说明"
+                                context.getString(R.string.github_strategy_error_open_docs)
                             )
                         }
                     )
                 }
                 SheetDescriptionText(
-                    text = "建议单独创建 KeiOS 专用 Fine-grained token，不要复用 classic token，这样权限面更小。"
+                    text = stringResource(R.string.github_strategy_desc_dedicated_token)
                 )
             } else {
-                SheetSectionTitle("方案说明")
+                SheetSectionTitle(stringResource(R.string.github_strategy_section_strategy_note))
                 SheetSectionCard {
                     SheetDescriptionText(
-                        text = "Atom 方案无需 Token，适合公开仓库和轻量检查；若你更看重稳定性、资源读取或 private 仓库支持，可切到 API。"
+                        text = stringResource(R.string.github_strategy_desc_atom_note)
                     )
                 }
                 GitHubStrategyBenchmarkSection(
@@ -289,13 +305,13 @@ private fun GitHubStrategyBenchmarkSection(
     strategyBenchmarkReport: GitHubStrategyBenchmarkReport?,
     onRunStrategyBenchmark: () -> Unit
 ) {
-    SheetSectionTitle("本地对比")
+    SheetSectionTitle(stringResource(R.string.github_strategy_section_local_benchmark))
     SheetSectionCard {
         SheetDescriptionText(
             text = if (trackedCount == 0) {
-                "会用当前已追踪仓库做对比，最多抽 6 个样本；当前还没有可用样本。"
+                stringResource(R.string.github_strategy_benchmark_desc_no_target)
             } else {
-                "会跑一轮冷启动和一轮缓存复测，直接对比 Atom、游客 API、Token API 的耗时与命中率。"
+                stringResource(R.string.github_strategy_benchmark_desc_with_target)
             }
         )
         if (trackedCount > 0) {
@@ -303,7 +319,11 @@ private fun GitHubStrategyBenchmarkSection(
                 GlassTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.SheetAction,
-                    text = if (strategyBenchmarkRunning) "对比中..." else "运行双策略对比",
+                    text = if (strategyBenchmarkRunning) {
+                        stringResource(R.string.github_strategy_benchmark_btn_running)
+                    } else {
+                        stringResource(R.string.github_strategy_benchmark_btn_run)
+                    },
                     enabled = !strategyBenchmarkRunning,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onRunStrategyBenchmark
@@ -312,7 +332,7 @@ private fun GitHubStrategyBenchmarkSection(
         }
         strategyBenchmarkError?.let { error ->
             SheetDescriptionText(
-                text = "对比测试失败：$error"
+                text = stringResource(R.string.github_strategy_benchmark_error, error)
             )
         }
     }

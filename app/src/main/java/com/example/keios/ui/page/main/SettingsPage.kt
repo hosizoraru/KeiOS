@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.CacheEntrySummary
 import com.example.keios.core.prefs.CacheStores
@@ -77,6 +79,7 @@ fun SettingsPage(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val settingsTitle = stringResource(R.string.settings_title)
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
     val enabledCardColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
@@ -86,14 +89,19 @@ fun SettingsPage(
     var themePopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
     var cacheReloadSignal by remember { mutableIntStateOf(0) }
     var clearingCacheId by remember { mutableStateOf<String?>(null) }
-    val themeModeOptions = remember {
-        listOf(
-            AppThemeMode.FOLLOW_SYSTEM to "跟随系统",
-            AppThemeMode.LIGHT to "浅色模式",
-            AppThemeMode.DARK to "深色模式"
-        )
+    val themeModeOptions = listOf(
+        AppThemeMode.FOLLOW_SYSTEM to stringResource(R.string.settings_theme_follow_system),
+        AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light_mode),
+        AppThemeMode.DARK to stringResource(R.string.settings_theme_dark_mode)
+    )
+    val currentThemeLabel =
+        themeModeOptions.firstOrNull { it.first == appThemeMode }?.second
+            ?: stringResource(R.string.settings_theme_follow_system)
+    val themeSummary = when (appThemeMode) {
+        AppThemeMode.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_summary_follow_system)
+        AppThemeMode.LIGHT -> stringResource(R.string.settings_theme_summary_light)
+        AppThemeMode.DARK -> stringResource(R.string.settings_theme_summary_dark)
     }
-    val currentThemeLabel = themeModeOptions.firstOrNull { it.first == appThemeMode }?.second ?: "跟随系统"
     val cacheEntries by produceState<List<CacheEntrySummary>?>(
         initialValue = if (cacheDiagnosticsEnabled) null else emptyList(),
         cacheDiagnosticsEnabled,
@@ -113,7 +121,7 @@ fun SettingsPage(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = "Settings",
+                title = settingsTitle,
                 scrollBehavior = scrollBehavior,
                 color = MiuixTheme.colorScheme.surface,
                 navigationIcon = {
@@ -139,7 +147,7 @@ fun SettingsPage(
                 end = 16.dp
             )
         ) {
-            item { SmallTitle("界面与样式") }
+            item { SmallTitle(stringResource(R.string.settings_section_ui_style)) }
             item { Spacer(modifier = Modifier.height(14.dp)) }
 
             item {
@@ -152,9 +160,9 @@ fun SettingsPage(
                     onClick = {}
                 ) {
                     SettingsSectionCard(
-                        header = "Theme Mode",
-                        title = "应用主题",
-                        summary = themeModeSummary(appThemeMode)
+                        header = stringResource(R.string.settings_theme_mode_header),
+                        title = stringResource(R.string.settings_theme_mode_title),
+                        summary = themeSummary
                     ) {
                         Box(
                             modifier = Modifier.capturePopupAnchor { themePopupAnchorBounds = it }
@@ -208,9 +216,9 @@ fun SettingsPage(
                     onClick = {}
                 ) {
                     SettingsSectionCard(
-                        header = "Bottom Bar",
-                        title = "液态玻璃底栏",
-                        summary = "胶囊底栏 + 选中态高亮 + 轻量玻璃质感",
+                        header = stringResource(R.string.settings_bottom_bar_header),
+                        title = stringResource(R.string.settings_bottom_bar_title),
+                        summary = stringResource(R.string.settings_bottom_bar_summary),
                         trailing = {
                             Switch(
                                 checked = liquidBottomBarEnabled,
@@ -234,15 +242,15 @@ fun SettingsPage(
                     onClick = {}
                 ) {
                     SettingsSectionCard(
-                        header = "Card Feedback",
-                        title = "卡片按压反馈",
+                        header = stringResource(R.string.settings_card_feedback_header),
+                        title = stringResource(R.string.settings_card_feedback_title),
                         summary = if (cardPressFeedbackEnabled) {
-                            "启用所有支持 PressFeedback 的卡片反馈"
+                            stringResource(R.string.settings_card_feedback_summary_enabled)
                         } else {
-                            "全局禁用 Sink / Tilt 等卡片按压反馈"
+                            stringResource(R.string.settings_card_feedback_summary_disabled)
                         },
-                        infoKey = "作用范围",
-                        infoValue = "System / MCP / GitHub / BA 等支持按压反馈的卡片",
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_card_feedback_scope),
                         trailing = {
                             Switch(
                                 checked = cardPressFeedbackEnabled,
@@ -266,15 +274,15 @@ fun SettingsPage(
                     onClick = {}
                 ) {
                     SettingsSectionCard(
-                        header = "Home Shine",
-                        title = "主页图标与标题 HDR 高光",
+                        header = stringResource(R.string.settings_home_shine_header),
+                        title = stringResource(R.string.settings_home_shine_title),
                         summary = if (homeIconHdrEnabled) {
-                            "启用主页 Kei 图标与 KeiOS 标题联动高光（亮屏时更明显）"
+                            stringResource(R.string.settings_home_shine_summary_enabled)
                         } else {
-                            "关闭主页图标与标题高光，减少夜间眩光感"
+                            stringResource(R.string.settings_home_shine_summary_disabled)
                         },
-                        infoKey = "作用范围",
-                        infoValue = "影响主页 Kei 图标与 KeiOS 标题的联动高光效果",
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_home_shine_scope),
                         trailing = {
                             Switch(
                                 checked = homeIconHdrEnabled,
@@ -298,15 +306,15 @@ fun SettingsPage(
                     onClick = {}
                 ) {
                     SettingsSectionCard(
-                        header = "MCP Notify",
-                        title = "超级岛兼容绕过",
+                        header = stringResource(R.string.settings_mcp_notify_header),
+                        title = stringResource(R.string.settings_super_island_bypass_title),
                         summary = if (superIslandBypassRestrictionEnabled) {
-                            "已启用兼容绕过（高风险）：会临时改动系统网络规则以强触发超级岛。"
+                            stringResource(R.string.settings_super_island_bypass_summary_enabled)
                         } else {
-                            "默认关闭（推荐）：降低 HyperOS 状态栏/系统界面异常风险。"
+                            stringResource(R.string.settings_super_island_bypass_summary_disabled)
                         },
-                        infoKey = "说明",
-                        infoValue = "仅超级岛样式生效；Live Update 不会使用该绕过。",
+                        infoKey = stringResource(R.string.common_note),
+                        infoValue = stringResource(R.string.settings_super_island_bypass_note),
                         trailing = {
                             Switch(
                                 checked = superIslandBypassRestrictionEnabled,
@@ -330,15 +338,15 @@ fun SettingsPage(
                     onClick = {}
                 ) {
                     SettingsSectionCard(
-                        header = "MCP Notify",
-                        title = "超级岛通知样式",
+                        header = stringResource(R.string.settings_mcp_notify_header),
+                        title = stringResource(R.string.settings_super_island_style_title),
                         summary = if (superIslandNotificationEnabled) {
-                            "启用超级岛模板（Hyper Focus）。关闭后改用 AOSP Live Update 实时通知。"
+                            stringResource(R.string.settings_super_island_style_summary_enabled)
                         } else {
-                            "当前使用 AOSP Live Update 实时通知样式。开启后恢复超级岛模板。"
+                            stringResource(R.string.settings_super_island_style_summary_disabled)
                         },
-                        infoKey = "作用范围",
-                        infoValue = "影响 MCP 常驻通知与 BA AP 通知的样式呈现",
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_super_island_style_scope),
                         trailing = {
                             Switch(
                                 checked = superIslandNotificationEnabled,
@@ -367,7 +375,7 @@ fun SettingsPage(
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(text = "Cache", color = titleColor)
+                        Text(text = stringResource(R.string.settings_cache_header), color = titleColor)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -376,7 +384,7 @@ fun SettingsPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "缓存诊断",
+                                text = stringResource(R.string.settings_cache_diagnostics_title),
                                 color = titleColor,
                                 modifier = Modifier.weight(1f)
                             )
@@ -387,38 +395,38 @@ fun SettingsPage(
                         }
                         Text(
                             text = if (cacheDiagnosticsEnabled) {
-                                "统计各页面缓存条数、占用空间与最近活动时间。"
+                                stringResource(R.string.settings_cache_diagnostics_summary_enabled)
                             } else {
-                                "关闭后不再遍历缓存目录与存储项，减少设置页额外统计开销。"
+                                stringResource(R.string.settings_cache_diagnostics_summary_disabled)
                             },
                             color = subtitleColor
                         )
                         SettingsInfoItem(
-                            key = "作用范围",
+                            key = stringResource(R.string.common_scope),
                             value = if (cacheDiagnosticsEnabled) {
-                                "设置页会读取 GitHub / MCP / 系统 / BA 等页面缓存摘要"
+                                stringResource(R.string.settings_cache_scope_enabled)
                             } else {
-                                "仅关闭设置页缓存诊断统计，不影响各页面实际缓存与正常使用"
+                                stringResource(R.string.settings_cache_scope_disabled)
                             }
                         )
                         when {
                             !cacheDiagnosticsEnabled -> {
                                 Text(
-                                    text = "已关闭缓存诊断统计。设置页不会再读取缓存大小、更新时间或清理记录。",
+                                    text = stringResource(R.string.settings_cache_disabled_desc),
                                     color = subtitleColor
                                 )
                             }
 
                             cacheEntries == null -> {
                                 Text(
-                                    text = "正在读取各页面缓存摘要",
+                                    text = stringResource(R.string.settings_cache_loading_desc),
                                     color = subtitleColor
                                 )
                             }
 
                             cacheEntries!!.isEmpty() -> {
                                 Text(
-                                    text = "暂无可管理缓存",
+                                    text = stringResource(R.string.settings_cache_empty_desc),
                                     color = subtitleColor
                                 )
                             }
@@ -527,7 +535,7 @@ private fun SettingsInfoItem(
             modifier = Modifier.wrapContentWidth()
         )
         Text(
-            text = value.ifBlank { "N/A" },
+            text = value.ifBlank { stringResource(R.string.common_na) },
             color = valueColor,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f)
@@ -543,7 +551,8 @@ private fun SettingsCacheRow(
 ) {
     val titleColor = MiuixTheme.colorScheme.onBackground
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
-    val actionColor = if (entry.clearLabel == "重置") {
+    val resetLabel = stringResource(R.string.common_reset)
+    val actionColor = if (entry.clearLabel == resetLabel) {
         MiuixTheme.colorScheme.error
     } else {
         MiuixTheme.colorScheme.primary
@@ -567,7 +576,7 @@ private fun SettingsCacheRow(
                 GlassTextButton(
                     backdrop = null,
                     variant = GlassVariant.Compact,
-                    text = if (clearing) "处理中" else entry.clearLabel,
+                    text = if (clearing) stringResource(R.string.common_processing) else entry.clearLabel,
                     textColor = actionColor,
                     containerColor = actionColor,
                     enabled = !clearing,
@@ -592,10 +601,4 @@ private fun SettingsCacheRow(
             color = subtitleColor
         )
     }
-}
-
-private fun themeModeSummary(mode: AppThemeMode): String = when (mode) {
-    AppThemeMode.FOLLOW_SYSTEM -> "使用系统当前深浅色"
-    AppThemeMode.LIGHT -> "始终使用浅色主题"
-    AppThemeMode.DARK -> "始终使用深色主题"
 }

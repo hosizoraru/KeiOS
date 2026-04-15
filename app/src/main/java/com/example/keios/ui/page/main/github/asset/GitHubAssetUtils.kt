@@ -1,5 +1,7 @@
 package com.example.keios.ui.page.main.github.asset
 
+import android.content.Context
+import com.example.keios.R
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetBundle
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetRepository
@@ -13,7 +15,11 @@ internal data class ApkAssetTarget(
     val label: String
 )
 
-internal fun VersionCheckUi.apkAssetTarget(owner: String, repo: String): ApkAssetTarget? {
+internal fun VersionCheckUi.apkAssetTarget(
+    owner: String,
+    repo: String,
+    context: Context
+): ApkAssetTarget? {
     val stableTag = latestStableRawTag.ifBlank {
         GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestStableUrl)
     }
@@ -24,24 +30,24 @@ internal fun VersionCheckUi.apkAssetTarget(owner: String, repo: String): ApkAsse
         recommendsPreRelease && preTag.isNotBlank() -> ApkAssetTarget(
             rawTag = preTag,
             releaseUrl = latestPreUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, preTag) },
-            label = "预发资源"
+            label = context.getString(R.string.github_asset_target_prerelease)
         )
         hasUpdate == true && stableTag.isNotBlank() -> ApkAssetTarget(
             rawTag = stableTag,
             releaseUrl = latestStableUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, stableTag) },
-            label = "稳定资源"
+            label = context.getString(R.string.github_asset_target_stable)
         )
         hasPreReleaseUpdate && preTag.isNotBlank() -> ApkAssetTarget(
             rawTag = preTag,
             releaseUrl = latestPreUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, preTag) },
-            label = "预发资源"
+            label = context.getString(R.string.github_asset_target_prerelease)
         )
         else -> null
     }
 }
 
-internal fun formatAssetSize(sizeBytes: Long): String {
-    if (sizeBytes <= 0L) return "未知"
+internal fun formatAssetSize(sizeBytes: Long, context: Context): String {
+    if (sizeBytes <= 0L) return context.getString(R.string.common_unknown)
     val kb = 1024L
     val mb = kb * 1024L
     val gb = mb * 1024L
@@ -57,13 +63,17 @@ internal fun prefersApiAssetTransport(asset: GitHubReleaseAssetFile): Boolean {
     return asset.apiAssetUrl.isNotBlank()
 }
 
-internal fun assetTransportLabel(asset: GitHubReleaseAssetFile): String {
-    return if (prefersApiAssetTransport(asset)) "API" else "直链"
+internal fun assetTransportLabel(asset: GitHubReleaseAssetFile, context: Context): String {
+    return if (prefersApiAssetTransport(asset)) "API" else context.getString(R.string.github_asset_transport_direct)
 }
 
-internal fun bundleTransportLabel(bundle: GitHubReleaseAssetBundle?): String? {
+internal fun bundleTransportLabel(bundle: GitHubReleaseAssetBundle?, context: Context): String? {
     bundle ?: return null
-    return if (bundle.assets.any { prefersApiAssetTransport(it) }) "API" else "直链"
+    return if (bundle.assets.any { prefersApiAssetTransport(it) }) {
+        "API"
+    } else {
+        context.getString(R.string.github_asset_transport_direct)
+    }
 }
 
 internal fun bundleCommitLabel(bundle: GitHubReleaseAssetBundle?): String? {
@@ -99,19 +109,23 @@ internal fun assetDisplayName(fileName: String): String {
     return trimmedName.removeSuffix(".$extension")
 }
 
-internal fun assetRelativeTimeLabel(updatedAtMillis: Long?): String? {
+internal fun assetRelativeTimeLabel(
+    updatedAtMillis: Long?,
+    context: Context
+): String? {
     val updatedAt = updatedAtMillis ?: return null
     val diffMillis = (System.currentTimeMillis() - updatedAt).coerceAtLeast(0L)
     val minutes = TimeUnit.MILLISECONDS.toMinutes(diffMillis)
     val hours = TimeUnit.MILLISECONDS.toHours(diffMillis)
     val days = TimeUnit.MILLISECONDS.toDays(diffMillis)
     return when {
-        minutes < 1L -> "just now"
-        minutes < 60L -> "$minutes min ago"
-        hours < 24L -> "$hours hr ago"
-        days < 7L -> "$days day${if (days == 1L) "" else "s"} ago"
-        days < 30L -> "last week"
-        days < 60L -> "last month"
-        else -> "${days / 30L} mo ago"
+        minutes < 1L -> context.getString(R.string.github_asset_relative_just_now)
+        minutes < 60L -> context.getString(R.string.github_asset_relative_min_ago, minutes)
+        hours < 24L -> context.getString(R.string.github_asset_relative_hr_ago, hours)
+        days < 7L && days == 1L -> context.getString(R.string.github_asset_relative_day_ago, days)
+        days < 7L -> context.getString(R.string.github_asset_relative_days_ago, days)
+        days < 30L -> context.getString(R.string.github_asset_relative_last_week)
+        days < 60L -> context.getString(R.string.github_asset_relative_last_month)
+        else -> context.getString(R.string.github_asset_relative_months_ago, days / 30L)
     }
 }

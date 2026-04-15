@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.keios.feature.github.model.GitHubTrackedReleaseStatus
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Ok
@@ -21,7 +22,8 @@ internal object GitHubStatusPalette {
     }
 }
 
-internal fun VersionCheckUi.isFailed(): Boolean = message.startsWith("检查失败")
+internal fun VersionCheckUi.isFailed(): Boolean = failed ||
+    message.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage)
 
 internal fun OverviewRefreshState.color(neutralColor: Color): Color {
     return when (this) {

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import com.example.keios.R
 import org.json.JSONArray
 import kotlin.math.roundToInt
 
@@ -24,14 +25,16 @@ internal fun copyBaFriendCodeToClipboard(
     friendCode: String,
 ) {
     val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
-    clipboard.setPrimaryClip(ClipData.newPlainText("BA Friend Code", friendCode))
-    Toast.makeText(context, "好友码已复制", Toast.LENGTH_SHORT).show()
+    clipboard.setPrimaryClip(
+        ClipData.newPlainText(context.getString(R.string.ba_friend_code_clipboard_label), friendCode)
+    )
+    Toast.makeText(context, context.getString(R.string.ba_toast_friend_code_copied), Toast.LENGTH_SHORT).show()
 }
 
 internal fun openBaExternalLink(
     context: Context,
     url: String,
-    failureMessage: String = "无法打开活动链接",
+    failureMessage: String = context.getString(R.string.ba_error_open_activity_link),
 ) {
     runCatching {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {

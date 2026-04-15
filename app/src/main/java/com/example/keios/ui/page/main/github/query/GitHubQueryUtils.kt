@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.net.Uri
+import com.example.keios.R
 import com.example.keios.feature.github.model.InstalledAppItem
 
 internal const val installerXRevivedPackageName = "com.rosan.installer.x.revived"
@@ -12,7 +13,8 @@ internal const val packageInstallerOnlinePackageName = "io.github.vvb2060.packag
 
 internal data class DownloaderOption(
     val packageName: String,
-    val label: String
+    val label: String,
+    val isRecommended: Boolean = false
 )
 
 internal data class OnlineShareTargetOption(
@@ -20,19 +22,19 @@ internal data class OnlineShareTargetOption(
     val label: String
 )
 
-internal val systemDefaultDownloaderOption = DownloaderOption(
+internal fun systemDefaultDownloaderOption(context: Context): DownloaderOption = DownloaderOption(
     packageName = "",
-    label = "系统默认值"
+    label = context.getString(R.string.github_downloader_system_default)
 )
 
-internal val systemDownloadManagerOption = DownloaderOption(
+internal fun systemDownloadManagerOption(context: Context): DownloaderOption = DownloaderOption(
     packageName = "__system_download_manager__",
-    label = "系统内置下载器"
+    label = context.getString(R.string.github_downloader_system_builtin)
 )
 
-internal val noOnlineShareTargetOption = OnlineShareTargetOption(
+internal fun noOnlineShareTargetOption(context: Context): OnlineShareTargetOption = OnlineShareTargetOption(
     packageName = "",
-    label = "不联动"
+    label = context.getString(R.string.github_online_share_none)
 )
 
 internal fun queryOnlineShareTargetOptions(
@@ -40,8 +42,14 @@ internal fun queryOnlineShareTargetOptions(
     appList: List<InstalledAppItem>
 ): List<OnlineShareTargetOption> {
     val knownTargets = listOf(
-        OnlineShareTargetOption(installerXRevivedPackageName, "InstallerX Revived"),
-        OnlineShareTargetOption(packageInstallerOnlinePackageName, "Package Installer")
+        OnlineShareTargetOption(
+            installerXRevivedPackageName,
+            context.getString(R.string.github_online_share_target_installerx)
+        ),
+        OnlineShareTargetOption(
+            packageInstallerOnlinePackageName,
+            context.getString(R.string.github_online_share_target_package_installer)
+        )
     )
     return knownTargets.filter { target ->
         appList.any { it.packageName == target.packageName } || runCatching {
@@ -76,7 +84,7 @@ internal fun queryDownloaderOptions(context: Context): List<DownloaderOption> {
         .filterNot { it.packageName == context.packageName }
         .distinctBy { it.packageName }
         .sortedWith(
-            compareByDescending<DownloaderOption> { it.label.contains("推荐") }
+            compareByDescending<DownloaderOption> { it.isRecommended }
                 .thenBy { it.label.lowercase() }
         )
 }
@@ -117,12 +125,17 @@ private fun ResolveInfo.toDownloaderOptionOrNull(context: Context): DownloaderOp
     )
     if (excludedKeywords.any { combined == it || combined.contains(" $it") }) return null
 
+    val isRecommended = positiveKeywords.any { combined.contains(it) } ||
+        knownDownloaderPackages.any {
+            normalizedPackage == it || normalizedPackage.startsWith("$it.")
+        }
     val decoratedLabel = when {
-        positiveKeywords.any { combined.contains(it) } ||
-            knownDownloaderPackages.any {
-                normalizedPackage == it || normalizedPackage.startsWith("$it.")
-            } -> "$label · 推荐"
+        isRecommended -> context.getString(R.string.github_downloader_recommended_format, label)
         else -> label
     }
-    return DownloaderOption(packageName = packageName, label = decoratedLabel)
+    return DownloaderOption(
+        packageName = packageName,
+        label = decoratedLabel,
+        isRecommended = isRecommended
+    )
 }
