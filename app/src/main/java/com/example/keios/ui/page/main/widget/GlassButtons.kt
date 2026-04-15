@@ -47,6 +47,7 @@ fun GlassIconButton(
     icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     width: Dp = 40.dp,
     height: Dp = 40.dp,
@@ -59,6 +60,7 @@ fun GlassIconButton(
     GlassIconButtonContainer(
         backdrop = backdrop,
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier,
         width = width,
         height = height,
@@ -81,6 +83,7 @@ fun GlassIconButton(
     painter: Painter,
     contentDescription: String,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     width: Dp = 40.dp,
     height: Dp = 40.dp,
@@ -93,6 +96,7 @@ fun GlassIconButton(
     GlassIconButtonContainer(
         backdrop = backdrop,
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier,
         width = width,
         height = height,
@@ -113,6 +117,7 @@ fun GlassIconButton(
 private fun GlassIconButtonContainer(
     backdrop: Backdrop?,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
     modifier: Modifier,
     width: Dp,
     height: Dp,
@@ -134,7 +139,16 @@ private fun GlassIconButtonContainer(
             .width(width)
             .height(height)
             .clip(shape)
-            .clickable(onClick = onClick)
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
+                } else {
+                    Modifier.clickable(onClick = onClick)
+                }
+            )
             .then(
                 if (backdrop != null) {
                     Modifier.drawBackdrop(

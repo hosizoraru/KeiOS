@@ -36,7 +36,6 @@ import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.ContactsBook
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -44,6 +43,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 private fun BaCardHeader(
     title: String,
     modifier: Modifier = Modifier,
+    titleIconRes: Int? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Row(
@@ -51,13 +51,25 @@ private fun BaCardHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = title,
-            color = MiuixTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                color = MiuixTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            titleIconRes?.let { iconRes ->
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = title,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
         trailing?.let {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -72,6 +84,7 @@ private fun BaCardHeader(
 private fun BaInlineActionPanel(
     backdrop: Backdrop?,
     buttonText: String,
+    buttonIconRes: Int? = null,
     countdownText: String,
     timeText: String,
     accentColor: Color,
@@ -90,15 +103,29 @@ private fun BaInlineActionPanel(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GlassTextButton(
-                backdrop = backdrop,
-                text = buttonText,
-                textColor = accentColor,
-                enabled = enabled,
-                variant = GlassVariant.Content,
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
+            if (buttonIconRes != null) {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    painter = painterResource(id = buttonIconRes),
+                    contentDescription = buttonText,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    variant = GlassVariant.Content,
+                    width = 34.dp,
+                    height = 34.dp,
+                    iconTint = Color.Unspecified
+                )
+            } else {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = buttonText,
+                    textColor = accentColor,
+                    enabled = enabled,
+                    variant = GlassVariant.Content,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                )
+            }
             Text(
                 text = countdownText,
                 color = countdownBlue,
@@ -181,12 +208,13 @@ internal fun BaOverviewCard(
             trailing = {
                 GlassIconButton(
                     backdrop = backdrop,
-                    icon = MiuixIcons.Regular.ContactsBook,
+                    painter = painterResource(id = R.drawable.mp_student),
                     contentDescription = "打开图鉴",
                     variant = GlassVariant.Content,
                     onClick = onOpenGuideCatalog,
                     width = 34.dp,
-                    height = 34.dp
+                    height = 34.dp,
+                    iconTint = Color.Unspecified
                 )
                 Text(
                     text = if (isWorkActivated) "已激活" else "默认",
@@ -425,6 +453,7 @@ internal fun BaCafeCard(
     ) {
         BaCardHeader(
             title = "咖啡厅",
+            titleIconRes = R.drawable.mp_cafe,
             trailing = {
                 Box(modifier = Modifier.capturePopupAnchor { onCafeLevelPopupAnchorBoundsChange(it) }) {
                     GlassTextButton(
@@ -489,6 +518,7 @@ internal fun BaCafeCard(
         BaInlineActionPanel(
             backdrop = backdrop,
             buttonText = "摸摸头",
+            buttonIconRes = R.drawable.mp_bond,
             countdownText = nextHeadpatText,
             timeText = headpatTimeText,
             accentColor = accentPink,
