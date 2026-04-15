@@ -28,6 +28,7 @@ object GameKeeFetchHelper {
     private const val ACCEPT_LANGUAGE = "zh-CN"
     private const val DEFAULT_MAX_DECODE_EDGE = 2560
     private const val REFERER_HOME_PATH = "/"
+    private const val REFERER_BA_PATH = "/ba"
     private const val REFERER_ACTIVITY_PATH = "/ba/huodong/15"
     private const val REFERER_POOL_PATH = "/ba/kachi/15"
     private const val FIREFOX_ANDROID_UA =
@@ -116,6 +117,7 @@ object GameKeeFetchHelper {
         val raw = pathOrUrl.trim()
         if (raw.isBlank()) return ""
         val fromUrl = raw.toHttpUrlOrNull()
+            ?: raw.takeIf { it.startsWith("//") }?.let { "https:$it".toHttpUrlOrNull() }
         if (fromUrl != null) {
             val query = fromUrl.query
             return buildString {
@@ -126,18 +128,50 @@ object GameKeeFetchHelper {
         return if (raw.startsWith("/")) raw else "/$raw"
     }
 
+    private fun extractHostHint(pathOrUrl: String): String {
+        val raw = pathOrUrl.trim()
+        if (raw.isBlank()) return ""
+        val fromUrl = raw.toHttpUrlOrNull()
+            ?: raw.takeIf { it.startsWith("//") }?.let { "https:$it".toHttpUrlOrNull() }
+        return fromUrl?.host.orEmpty().lowercase()
+    }
+
+    private fun extractContentDetailId(pathHint: String): String? {
+        val normalized = pathHint.trim()
+        if (normalized.isBlank()) return null
+        val fromApi = Regex("/v1/content/detail/(\\d+)").find(normalized)?.groupValues?.getOrNull(1)
+        if (!fromApi.isNullOrBlank()) return fromApi
+        val fromGuidePage = Regex("/ba/tj/(\\d+)\\.html").find(normalized)?.groupValues?.getOrNull(1)
+        if (!fromGuidePage.isNullOrBlank()) return fromGuidePage
+        return null
+    }
+
     private fun resolveReferer(pathOrUrl: String, refererPath: String): String {
-        val refererHint = extractPathHint(refererPath)
-        val requestHint = extractPathHint(pathOrUrl)
-        val mergedHint = "${refererHint.lowercase()} ${requestHint.lowercase()}"
+        val refererHint = extractPathHint(refererPath).lowercase()
+        val requestHint = extractPathHint(pathOrUrl).lowercase()
+        val mergedHint = "$refererHint $requestHint"
+        val requestHost = extractHostHint(pathOrUrl)
+        val refererHost = extractHostHint(refererPath)
+        val effectiveHost = when {
+            requestHost.isNotBlank() -> requestHost
+            refererHost.isNotBlank() -> refererHost
+            else -> "www.gamekee.com"
+        }
+
+        // cdn / 非 www 子域名请求统一挂主页 referer，避免跨域资源请求被拒。
+        if (effectiveHost.endsWith("gamekee.com") && effectiveHost != "www.gamekee.com") {
+            return normalizeUrl(BASE_WWW, REFERER_HOME_PATH)
+        }
+
+        val detailId = extractContentDetailId(requestHint) ?: extractContentDetailId(refererHint)
+        if (!detailId.isNullOrBlank()) {
+            return normalizeUrl(BASE_WWW, "/ba/tj/$detailId.html")
+        }
+
         val selectedPath = when {
-            mergedHint.contains("/ba/huodong") -> {
-                if (refererHint.lowercase().contains("/ba/huodong")) refererHint else REFERER_ACTIVITY_PATH
-            }
-            mergedHint.contains("/ba/kachi") -> {
-                if (refererHint.lowercase().contains("/ba/kachi")) refererHint else REFERER_POOL_PATH
-            }
-            else -> REFERER_HOME_PATH
+            mergedHint.contains("/ba/huodong") -> REFERER_ACTIVITY_PATH
+            mergedHint.contains("/ba/kachi") -> REFERER_POOL_PATH
+            else -> REFERER_BA_PATH
         }
         return normalizeUrl(BASE_WWW, selectedPath)
     }

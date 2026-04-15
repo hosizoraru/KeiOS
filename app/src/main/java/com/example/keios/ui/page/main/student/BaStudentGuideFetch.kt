@@ -2250,8 +2250,8 @@ private fun fetchGuideInfoByApi(sourceUrl: String): BaStudentGuideInfo {
         ?: error("unable to resolve content_id")
 
     val refererPath = runCatching { Uri.parse(target).path.orEmpty() }
-        .getOrDefault("/ba/$contentId.html")
-        .ifBlank { "/ba/$contentId.html" }
+        .getOrDefault("/ba/tj/$contentId.html")
+        .ifBlank { "/ba/tj/$contentId.html" }
 
     val body = GameKeeFetchHelper.fetchJson(
         pathOrUrl = "/v1/content/detail/$contentId",
