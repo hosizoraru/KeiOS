@@ -1,5 +1,6 @@
 package com.example.keios.ui.page.main
 
+import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -11,6 +12,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -48,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -58,9 +62,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
+import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogIconCache
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.filterByQuery
@@ -515,20 +519,11 @@ private fun BaGuideCatalogEntryCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (entry.iconUrl.isBlank()) {
-                    Icon(
-                        painter = painterResource(id = entry.tab.iconRes),
-                        contentDescription = null,
-                        tint = MiuixTheme.colorScheme.onBackgroundVariant,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    CatalogAvatarFallback(iconRes = entry.tab.iconRes)
                 } else {
-                    AsyncImage(
-                        model = entry.iconUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                    CatalogAvatarImage(
+                        imageUrl = entry.iconUrl,
+                        fallbackRes = entry.tab.iconRes
                     )
                 }
             }
@@ -603,6 +598,47 @@ private fun rememberCatalogSyncProgress(loading: Boolean): Float {
         }
     }
     return progress.value
+}
+
+@Composable
+private fun CatalogAvatarImage(
+    imageUrl: String,
+    fallbackRes: Int
+) {
+    val bitmap by produceState<Bitmap?>(initialValue = BaGuideCatalogIconCache.get(imageUrl), imageUrl) {
+        value = withContext(Dispatchers.IO) { BaGuideCatalogIconCache.getOrLoad(imageUrl) }
+    }
+    val rendered = bitmap
+    if (rendered == null) {
+        CatalogAvatarFallback(iconRes = fallbackRes)
+        return
+    }
+    Image(
+        bitmap = rendered.asImageBitmap(),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+    )
+}
+
+@Composable
+private fun CatalogAvatarFallback(iconRes: Int) {
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.42f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = MiuixTheme.colorScheme.onBackgroundVariant,
+            modifier = Modifier.size(28.dp)
+        )
+    }
 }
 
 private fun List<BaGuideCatalogEntry>.sortedByMode(
