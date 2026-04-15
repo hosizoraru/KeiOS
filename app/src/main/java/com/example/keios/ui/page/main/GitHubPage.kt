@@ -174,6 +174,7 @@ fun GitHubPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -1173,6 +1174,7 @@ fun GitHubPage(
         contentBackdrop = contentBackdrop,
         topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
         enableSearchBar = enableSearchBar,
+        liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
         showSearchBar = showSearchBar,
         trackedSearch = trackedSearch,
         sortMode = sortMode,

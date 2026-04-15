@@ -131,6 +131,7 @@ private enum class BaGuideCatalogSortMode(val label: String) {
 fun BaGuideCatalogPage(
     onBack: () -> Unit,
     onOpenGuide: (String) -> Unit,
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     enableSearchBar: Boolean = true,
 ) {
     val pageTitle = "图鉴"
@@ -274,6 +275,7 @@ fun BaGuideCatalogPage(
                         Box {
                             LiquidActionBar(
                                 backdrop = topBarBackdrop,
+                                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                                 items = listOf(
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Sort,

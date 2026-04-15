@@ -119,6 +119,7 @@ fun OsPage(
     shizukuStatus: String,
     shizukuApiUtils: ShizukuApiUtils,
     cardPressFeedbackEnabled: Boolean = true,
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     contentBottomPadding: Dp = 72.dp,
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
@@ -599,6 +600,7 @@ fun OsPage(
                     actions = {
                         LiquidActionBar(
                             backdrop = topBarBackdrop,
+                            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             items = listOf(
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Edit,

@@ -50,6 +50,7 @@ fun BAPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     onOpenPoolStudentGuide: (String) -> Unit = {},
     onOpenGuideCatalog: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
@@ -209,6 +210,7 @@ fun BAPage(
         topBar = {
             BaTopBar(
                 backdrop = topBarBackdrop,
+                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                 topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 scrollBehavior = scrollBehavior,
                 showCalendarIntervalPopup = ui.showCalendarIntervalPopup,

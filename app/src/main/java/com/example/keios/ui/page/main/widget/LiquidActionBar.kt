@@ -166,6 +166,7 @@ fun LiquidActionBar(
     backdrop: Backdrop,
     items: List<LiquidActionItem>,
     isBlurEnabled: Boolean = true,
+    layeredStyleEnabled: Boolean = true,
     compactSingleItem: Boolean = false,
     selectedIndex: Int = 0,
     onInteractionChanged: (Boolean) -> Unit = {}
@@ -201,8 +202,10 @@ fun LiquidActionBar(
             }
         }
     }
+    val effectivePanelOffset = if (layeredStyleEnabled) panelOffset else 0f
 
     var gestureActive by remember { mutableStateOf(false) }
+    var dragMoved by remember { mutableStateOf(false) }
 
     val dampedDragAnimation = remember(animationScope, items.size, density, isLtr) {
         DampedDragAnimation(
@@ -215,12 +218,19 @@ fun LiquidActionBar(
             canDrag = { true },
             onDragStarted = {
                 gestureActive = true
+                dragMoved = false
                 onInteractionChanged(true)
             },
             onDragStopped = {
                 if (!gestureActive) return@DampedDragAnimation
                 gestureActive = false
                 onInteractionChanged(false)
+                if (!dragMoved) {
+                    animationScope.launch {
+                        offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
+                    }
+                    return@DampedDragAnimation
+                }
                 val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
                 animateToValue(targetIndex.toFloat())
                 items.getOrNull(targetIndex)?.takeIf { it.enabled }?.onClick?.invoke()
@@ -230,6 +240,9 @@ fun LiquidActionBar(
             },
             onDrag = { _, dragAmount ->
                 if (tabWidthPx > 0) {
+                    if (!dragMoved && abs(dragAmount.x) > 0.01f) {
+                        dragMoved = true
+                    }
                     val raw = (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
                         .fastCoerceIn(0f, items.lastIndex.toFloat())
                     updateValue(raw)
@@ -253,8 +266,8 @@ fun LiquidActionBar(
                 animationScope = animationScope,
                 position = { size, _ ->
                     Offset(
-                        if (isLtr) (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset
-                        else size.width - (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset,
+                        if (isLtr) (dampedDragAnimation.value + 0.5f) * tabWidthPx + effectivePanelOffset
+                        else size.width - (dampedDragAnimation.value + 0.5f) * tabWidthPx + effectivePanelOffset,
                         size.height / 2f
                     )
                 }
@@ -286,38 +299,48 @@ fun LiquidActionBar(
             .then(interactionLockModifier),
         contentAlignment = Alignment.CenterStart
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coords ->
-                    totalWidthPx = coords.size.width.toFloat()
-                    val contentWidthPx = totalWidthPx - with(density) { 8.dp.toPx() }
-                    tabWidthPx = contentWidthPx / items.size
+        val primaryRowModifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coords ->
+                totalWidthPx = coords.size.width.toFloat()
+                val contentWidthPx = totalWidthPx - with(density) { 8.dp.toPx() }
+                tabWidthPx = contentWidthPx / items.size
+            }
+            .graphicsLayer { translationX = effectivePanelOffset }
+            .drawBackdrop(
+                backdrop = backdrop,
+                shape = { ContinuousCapsule },
+                effects = {
+                    if (isBlurEnabled) {
+                        vibrancy()
+                        blur(8f.dp.toPx())
+                        lens(20f.dp.toPx(), 22f.dp.toPx())
+                    }
+                },
+                highlight = {
+                    Highlight.Default.copy(alpha = if (isBlurEnabled) 1f else 0f)
+                },
+                shadow = {
+                    Shadow.Default.copy(
+                        color = Color.Black.copy(if (isInLightTheme) 0.1f else 0.2f),
+                    )
+                },
+                onDrawSurface = { drawRect(containerColor) }
+            )
+            .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
+            .then(
+                if (!layeredStyleEnabled && isBlurEnabled && interactiveHighlight != null) {
+                    interactiveHighlight.gestureModifier
+                } else {
+                    Modifier
                 }
-                .graphicsLayer { translationX = panelOffset }
-                .drawBackdrop(
-                    backdrop = backdrop,
-                    shape = { ContinuousCapsule },
-                    effects = {
-                        if (isBlurEnabled) {
-                            vibrancy()
-                            blur(8f.dp.toPx())
-                            lens(20f.dp.toPx(), 22f.dp.toPx())
-                        }
-                    },
-                    highlight = {
-                        Highlight.Default.copy(alpha = if (isBlurEnabled) 1f else 0f)
-                    },
-                    shadow = {
-                        Shadow.Default.copy(
-                            color = Color.Black.copy(if (isInLightTheme) 0.1f else 0.2f),
-                        )
-                    },
-                    onDrawSurface = { drawRect(containerColor) }
-                )
-                .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
-                .height(50.dp)
-                .padding(4.dp),
+            )
+            .then(if (!layeredStyleEnabled) dampedDragAnimation.modifier else Modifier)
+            .height(50.dp)
+            .padding(4.dp)
+
+        Row(
+            primaryRowModifier,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEachIndexed { index, item ->
@@ -335,100 +358,102 @@ fun LiquidActionBar(
             }
         }
 
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clearAndSetSemantics {}
-                .alpha(0f)
-                .layerBackdrop(tabsBackdrop)
-                .graphicsLayer { translationX = panelOffset }
-                .drawBackdrop(
-                    backdrop = backdrop,
-                    shape = { ContinuousCapsule },
-                    effects = {
-                        if (isBlurEnabled) {
-                            val progress = dampedDragAnimation.pressProgress
-                            vibrancy()
-                            blur(8f.dp.toPx())
-                            lens(20f.dp.toPx() * progress, 22f.dp.toPx() * progress)
-                        }
-                    },
-                    highlight = {
-                        Highlight.Default.copy(alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f)
-                    },
-                    onDrawSurface = { drawRect(containerColor) }
-                )
-                .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
-                .height(42.dp)
-                .padding(horizontal = 4.dp)
-                .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                LiquidActionItemSlot(item = item, tint = accentColor)
-            }
-        }
-
-        if (tabWidthPx > 0f) {
-            Box(
+        if (layeredStyleEnabled) {
+            Row(
                 Modifier
-                    .padding(horizontal = 4.dp)
-                    .graphicsLayer {
-                        val contentWidth = totalWidthPx - with(density) { 8.dp.toPx() }
-                        val singleTabWidth = contentWidth / items.size
-                        val progressOffset = dampedDragAnimation.value * singleTabWidth
-                        translationX = if (isLtr) {
-                            progressOffset + panelOffset
-                        } else {
-                            -progressOffset + panelOffset
-                        }
-                    }
-                    .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
-                    .then(dampedDragAnimation.modifier)
+                    .fillMaxWidth()
+                    .clearAndSetSemantics {}
+                    .alpha(0f)
+                    .layerBackdrop(tabsBackdrop)
+                    .graphicsLayer { translationX = effectivePanelOffset }
                     .drawBackdrop(
-                        backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                        backdrop = backdrop,
                         shape = { ContinuousCapsule },
                         effects = {
                             if (isBlurEnabled) {
                                 val progress = dampedDragAnimation.pressProgress
-                                lens(9f.dp.toPx() * progress, 12f.dp.toPx() * progress, true)
+                                vibrancy()
+                                blur(8f.dp.toPx())
+                                lens(20f.dp.toPx() * progress, 22f.dp.toPx() * progress)
                             }
                         },
                         highlight = {
                             Highlight.Default.copy(alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f)
                         },
-                        shadow = { Shadow(alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f) },
-                        innerShadow = {
-                            InnerShadow(
-                                radius = 7f.dp * dampedDragAnimation.pressProgress,
-                                alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f
-                            )
-                        },
-                        layerBlock = {
-                            if (isBlurEnabled) {
-                                scaleX = dampedDragAnimation.scaleX
-                                scaleY = dampedDragAnimation.scaleY
-                                val velocity = dampedDragAnimation.velocity / 10f
-                                scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                                scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
-                            }
-                        },
-                        onDrawSurface = {
-                            val progress = dampedDragAnimation.pressProgress
-                            drawRect(
-                                color = if (isInLightTheme) {
-                                    Color.Black.copy(0.1f)
-                                } else {
-                                    Color.White.copy(0.1f)
-                                },
-                                alpha = progress * (1f - progress)
-                            )
-                            drawRect(Color.Black.copy(alpha = 0.03f * progress))
-                        }
+                        onDrawSurface = { drawRect(containerColor) }
                     )
+                    .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .height(42.dp)
-                    .width(with(density) { ((totalWidthPx - 8.dp.toPx()) / items.size).toDp() })
-            )
+                    .padding(horizontal = 4.dp)
+                    .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEach { item ->
+                    LiquidActionItemSlot(item = item, tint = accentColor)
+                }
+            }
+
+            if (tabWidthPx > 0f) {
+                Box(
+                    Modifier
+                        .padding(horizontal = 4.dp)
+                        .graphicsLayer {
+                            val contentWidth = totalWidthPx - with(density) { 8.dp.toPx() }
+                            val singleTabWidth = contentWidth / items.size
+                            val progressOffset = dampedDragAnimation.value * singleTabWidth
+                            translationX = if (isLtr) {
+                                progressOffset + effectivePanelOffset
+                            } else {
+                                -progressOffset + effectivePanelOffset
+                            }
+                        }
+                        .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
+                        .then(dampedDragAnimation.modifier)
+                        .drawBackdrop(
+                            backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                            shape = { ContinuousCapsule },
+                            effects = {
+                                if (isBlurEnabled) {
+                                    val progress = dampedDragAnimation.pressProgress
+                                    lens(9f.dp.toPx() * progress, 12f.dp.toPx() * progress, true)
+                                }
+                            },
+                            highlight = {
+                                Highlight.Default.copy(alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f)
+                            },
+                            shadow = { Shadow(alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f) },
+                            innerShadow = {
+                                InnerShadow(
+                                    radius = 7f.dp * dampedDragAnimation.pressProgress,
+                                    alpha = if (isBlurEnabled) dampedDragAnimation.pressProgress else 0f
+                                )
+                            },
+                            layerBlock = {
+                                if (isBlurEnabled) {
+                                    scaleX = dampedDragAnimation.scaleX
+                                    scaleY = dampedDragAnimation.scaleY
+                                    val velocity = dampedDragAnimation.velocity / 10f
+                                    scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
+                                    scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
+                                }
+                            },
+                            onDrawSurface = {
+                                val progress = dampedDragAnimation.pressProgress
+                                drawRect(
+                                    color = if (isInLightTheme) {
+                                        Color.Black.copy(0.1f)
+                                    } else {
+                                        Color.White.copy(0.1f)
+                                    },
+                                    alpha = progress * (1f - progress)
+                                )
+                                drawRect(Color.Black.copy(alpha = 0.03f * progress))
+                            }
+                        )
+                        .height(42.dp)
+                        .width(with(density) { ((totalWidthPx - 8.dp.toPx()) / items.size).toDp() })
+                )
+            }
         }
     }
 }

@@ -124,6 +124,9 @@ fun MainScreen(
         value = withContext(Dispatchers.IO) { UiPrefs.loadSnapshot() }
     }
     var liquidBottomBarEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.liquidBottomBarEnabled) }
+    var liquidActionBarLayeredStyleEnabled by remember(uiPrefsSnapshot) {
+        mutableStateOf(uiPrefsSnapshot.liquidActionBarLayeredStyleEnabled)
+    }
     var cardPressFeedbackEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.cardPressFeedbackEnabled) }
     var homeIconHdrEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.homeIconHdrEnabled) }
     var superIslandNotificationEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.superIslandNotificationEnabled) }
@@ -154,6 +157,7 @@ fun MainScreen(
                 MainPagerLayout(
                     navigator = navigator,
                     liquidBottomBarEnabled = liquidBottomBarEnabled,
+                    liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     homeIconHdrEnabled = homeIconHdrEnabled,
                     visibleBottomPageNames = visibleBottomPageNames,
@@ -178,6 +182,11 @@ fun MainScreen(
                     onLiquidBottomBarChanged = {
                         liquidBottomBarEnabled = it
                         UiPrefs.setLiquidBottomBarEnabled(it)
+                    },
+                    liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                    onLiquidActionBarLayeredStyleChanged = {
+                        liquidActionBarLayeredStyleEnabled = it
+                        UiPrefs.setLiquidActionBarLayeredStyleEnabled(it)
                     },
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     onCardPressFeedbackChanged = {
@@ -232,11 +241,13 @@ fun MainScreen(
             }
             entry<KeiosRoute.BaStudentGuide> {
                 BaStudentGuidePage(
+                    liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     onBack = { navigator.pop() }
                 )
             }
             entry<KeiosRoute.BaGuideCatalog> {
                 BaGuideCatalogPage(
+                    liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     onBack = { navigator.pop() },
                     onOpenGuide = { sourceUrl ->
                         val target = sourceUrl.trim()
@@ -265,6 +276,7 @@ fun MainScreen(
 private fun MainPagerLayout(
     navigator: Navigator,
     liquidBottomBarEnabled: Boolean,
+    liquidActionBarLayeredStyleEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
     visibleBottomPageNames: Set<String>,
@@ -525,6 +537,7 @@ private fun MainPagerLayout(
                             mcpConnectedClients = mcpUiState.connectedClients,
                             mcpAllowExternal = mcpUiState.allowExternal,
                             homeIconHdrEnabled = homeIconHdrEnabled,
+                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             visibleBottomPages = visibleTabsSnapshot,
                             onBottomPageVisibilityChange = { page, visible ->
                                 if (page == BottomPage.Home) return@HomePage
@@ -551,6 +564,7 @@ private fun MainPagerLayout(
                             shizukuStatus = shizukuStatus,
                             shizukuApiUtils = shizukuApiUtils,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             contentBottomPadding = bottomOverlayPadding,
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
@@ -562,6 +576,7 @@ private fun MainPagerLayout(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = baScrollToTopSignal,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onOpenPoolStudentGuide = { sourceUrl ->
                                 val target = sourceUrl.trim()
                                 if (target.isNotBlank()) {
@@ -583,6 +598,7 @@ private fun MainPagerLayout(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = mcpScrollToTopSignal,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onOpenSkill = { navigator.push(KeiosRoute.McpSkill) },
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
@@ -594,6 +610,7 @@ private fun MainPagerLayout(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = githubScrollToTopSignal,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
                             }

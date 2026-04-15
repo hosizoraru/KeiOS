@@ -390,6 +390,7 @@ fun HomePage(
     mcpConnectedClients: Int,
     mcpAllowExternal: Boolean,
     homeIconHdrEnabled: Boolean,
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     visibleBottomPages: Set<BottomPage>,
     onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit,
     onOpenSettings: () -> Unit,
@@ -554,6 +555,7 @@ fun HomePage(
                 actions = {
                     LiquidActionBar(
                         backdrop = actionBarBackdrop,
+                        layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Edit,

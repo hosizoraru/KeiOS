@@ -115,6 +115,7 @@ fun McpPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     onOpenSkill: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -292,6 +293,7 @@ fun McpPage(
                 actions = {
                     LiquidActionBar(
                         backdrop = topBarBackdrop,
+                        layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Edit,

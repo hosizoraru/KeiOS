@@ -63,6 +63,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun SettingsPage(
     liquidBottomBarEnabled: Boolean,
     onLiquidBottomBarChanged: (Boolean) -> Unit,
+    liquidActionBarLayeredStyleEnabled: Boolean,
+    onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
     cardPressFeedbackEnabled: Boolean,
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     homeIconHdrEnabled: Boolean,
@@ -201,6 +203,38 @@ fun SettingsPage(
                             }
                         }
                     }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = if (liquidActionBarLayeredStyleEnabled) enabledCardColor else disabledCardColor,
+                        contentColor = titleColor
+                    ),
+                    onClick = {}
+                ) {
+                    SettingsSectionCard(
+                        header = stringResource(R.string.settings_actionbar_style_header),
+                        title = stringResource(R.string.settings_actionbar_style_title),
+                        summary = if (liquidActionBarLayeredStyleEnabled) {
+                            stringResource(R.string.settings_actionbar_style_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_actionbar_style_summary_disabled)
+                        },
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_actionbar_style_scope),
+                        trailing = {
+                            Switch(
+                                checked = liquidActionBarLayeredStyleEnabled,
+                                onCheckedChange = { checked -> onLiquidActionBarLayeredStyleChanged(checked) }
+                            )
+                        },
+                        onClick = { onLiquidActionBarLayeredStyleChanged(!liquidActionBarLayeredStyleEnabled) }
+                    )
                 }
             }
 

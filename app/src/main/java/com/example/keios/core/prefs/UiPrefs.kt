@@ -10,6 +10,7 @@ enum class AppThemeMode {
 
 data class UiPrefsSnapshot(
     val liquidBottomBarEnabled: Boolean,
+    val liquidActionBarLayeredStyleEnabled: Boolean,
     val cardPressFeedbackEnabled: Boolean,
     val homeIconHdrEnabled: Boolean,
     val superIslandNotificationEnabled: Boolean,
@@ -22,6 +23,7 @@ data class UiPrefsSnapshot(
 object UiPrefs {
     private const val KV_ID = "ui_prefs"
     private const val KEY_LIQUID_BOTTOM_BAR = "liquid_bottom_bar"
+    private const val KEY_LIQUID_ACTION_BAR_LAYERED_STYLE = "liquid_action_bar_layered_style"
     private const val KEY_CARD_PRESS_FEEDBACK = "card_press_feedback"
     private const val KEY_HOME_ICON_HDR = "home_icon_hdr"
     private const val KEY_SUPER_ISLAND_NOTIFICATION = "super_island_notification"
@@ -40,6 +42,14 @@ object UiPrefs {
 
     fun setLiquidBottomBarEnabled(value: Boolean) {
         kv().encode(KEY_LIQUID_BOTTOM_BAR, value)
+    }
+
+    fun isLiquidActionBarLayeredStyleEnabled(defaultValue: Boolean = true): Boolean {
+        return kv().decodeBool(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, defaultValue)
+    }
+
+    fun setLiquidActionBarLayeredStyleEnabled(value: Boolean) {
+        kv().encode(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, value)
     }
 
     fun isCardPressFeedbackEnabled(defaultValue: Boolean = true): Boolean {
@@ -113,6 +123,7 @@ object UiPrefs {
     fun defaultSnapshot(appThemeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM): UiPrefsSnapshot {
         return UiPrefsSnapshot(
             liquidBottomBarEnabled = true,
+            liquidActionBarLayeredStyleEnabled = true,
             cardPressFeedbackEnabled = true,
             homeIconHdrEnabled = false,
             superIslandNotificationEnabled = false,
@@ -127,6 +138,7 @@ object UiPrefs {
         val store = kv()
         return UiPrefsSnapshot(
             liquidBottomBarEnabled = store.decodeBool(KEY_LIQUID_BOTTOM_BAR, true),
+            liquidActionBarLayeredStyleEnabled = store.decodeBool(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, true),
             cardPressFeedbackEnabled = store.decodeBool(KEY_CARD_PRESS_FEEDBACK, true),
             homeIconHdrEnabled = store.decodeBool(KEY_HOME_ICON_HDR, false),
             superIslandNotificationEnabled = store.decodeBool(KEY_SUPER_ISLAND_NOTIFICATION, false),

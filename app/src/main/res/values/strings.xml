@@ -46,6 +46,11 @@
     <string name="settings_bottom_bar_header">Bottom Bar</string>
     <string name="settings_bottom_bar_title">液态玻璃底栏</string>
     <string name="settings_bottom_bar_summary">胶囊底栏 + 选中态高亮 + 轻量玻璃质感</string>
+    <string name="settings_actionbar_style_header">Action Bar</string>
+    <string name="settings_actionbar_style_title">ActionBar 分层样式</string>
+    <string name="settings_actionbar_style_summary_enabled">启用多层液态样式：胶囊基底 + 滑动高光 + 选中层动效。</string>
+    <string name="settings_actionbar_style_summary_disabled">关闭后仅保留滑动高光：松手触发高光按钮，直接点按立即触发。</string>
+    <string name="settings_actionbar_style_scope">Home / OS / MCP / GitHub / BA / 图鉴等页面顶部 ActionBar</string>
     <string name="settings_card_feedback_header">Card Feedback</string>
     <string name="settings_card_feedback_title">卡片按压反馈</string>
     <string name="settings_card_feedback_summary_enabled">启用所有支持 PressFeedback 的卡片反馈</string>

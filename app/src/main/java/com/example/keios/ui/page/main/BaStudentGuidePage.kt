@@ -131,6 +131,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun BaStudentGuidePage(
+    liquidActionBarLayeredStyleEnabled: Boolean = true,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -483,6 +484,7 @@ fun BaStudentGuidePage(
                     Box {
                             LiquidActionBar(
                                 backdrop = topBarBackdrop,
+                                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                                 items = listOf(
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Share,

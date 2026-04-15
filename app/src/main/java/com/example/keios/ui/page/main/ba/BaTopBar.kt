@@ -25,6 +25,7 @@ import top.yukonga.miuix.kmp.icon.extended.Timer
 @Composable
 internal fun BaTopBar(
     backdrop: LayerBackdrop,
+    liquidActionBarLayeredStyleEnabled: Boolean,
     topBarColor: Color,
     scrollBehavior: ScrollBehavior?,
     showCalendarIntervalPopup: Boolean,
@@ -45,6 +46,7 @@ internal fun BaTopBar(
             Box {
                 LiquidActionBar(
                     backdrop = backdrop,
+                    layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     items = listOf(
                         LiquidActionItem(
                             icon = MiuixIcons.Regular.Edit,

@@ -39,6 +39,7 @@ internal fun GitHubTopBarSection(
     topBarColor: Color,
     scrollBehavior: ScrollBehavior,
     enableSearchBar: Boolean,
+    liquidActionBarLayeredStyleEnabled: Boolean,
     showSearchBar: Boolean,
     trackedSearch: String,
     sortMode: GitHubSortMode,
@@ -62,6 +63,7 @@ internal fun GitHubTopBarSection(
                 Box {
                     LiquidActionBar(
                         backdrop = backdrop,
+                        layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Edit,
