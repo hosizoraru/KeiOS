@@ -113,7 +113,7 @@ private fun BaInlineActionPanel(
                     },
                     onLongClick = onLongClick,
                     variant = GlassVariant.Content,
-                    width = 40.dp,
+                    width = 52.dp,
                     height = 40.dp,
                     iconTint = Color.Unspecified
                 )
@@ -455,8 +455,17 @@ internal fun BaCafeCard(
     ) {
         BaCardHeader(
             title = "咖啡厅",
-            titleIconRes = R.drawable.mp_cafe,
             trailing = {
+                GlassIconButton(
+                    backdrop = backdrop,
+                    painter = painterResource(id = R.drawable.mp_cafe),
+                    contentDescription = "咖啡厅",
+                    onClick = {},
+                    variant = GlassVariant.Content,
+                    width = 52.dp,
+                    height = 40.dp,
+                    iconTint = Color.Unspecified
+                )
                 Box(modifier = Modifier.capturePopupAnchor { onCafeLevelPopupAnchorBoundsChange(it) }) {
                     GlassTextButton(
                         backdrop = backdrop,
