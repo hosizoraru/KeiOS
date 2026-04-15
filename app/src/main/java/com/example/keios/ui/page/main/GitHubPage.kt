@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
+import com.example.keios.core.background.AppBackgroundScheduler
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -651,6 +652,7 @@ fun GitHubPage(
         GitHubTrackStore.saveRefreshIntervalHours(refreshIntervalHoursInput)
         lookupConfig = newConfig
         refreshIntervalHours = refreshIntervalHoursInput
+        AppBackgroundScheduler.scheduleGitHubRefresh(context)
         closeCheckLogicSheet()
 
         val checkScopeChanged =
@@ -967,6 +969,7 @@ fun GitHubPage(
 
     fun saveTracked() {
         GitHubTrackStore.save(trackedItems.toList())
+        AppBackgroundScheduler.scheduleGitHubRefresh(context)
     }
 
     fun openTrackSheetForAdd() {
@@ -1069,6 +1072,7 @@ fun GitHubPage(
         }
 
     LaunchedEffect(Unit) {
+        AppBackgroundScheduler.scheduleGitHubRefresh(context)
         reloadApps()
         val hasTracked = trackedItems.isNotEmpty()
         val hasCachedForTracked = trackedItems.any { item ->

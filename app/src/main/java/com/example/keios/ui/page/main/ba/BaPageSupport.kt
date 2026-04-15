@@ -53,6 +53,7 @@ internal data class BaPageSnapshot(
     val apSyncMs: Long = 0L,
     val apNotifyEnabled: Boolean = false,
     val apNotifyThreshold: Int = 120,
+    val apLastNotifiedLevel: Int = -1,
     val coffeeHeadpatMs: Long = 0L,
     val coffeeInvite1UsedMs: Long = 0L,
     val coffeeInvite2UsedMs: Long = 0L,
@@ -881,6 +882,7 @@ internal object BASettingsStore {
     private const val KEY_AP_LIMIT = "ap_limit"
     private const val KEY_AP_NOTIFY_ENABLED = "ap_notify_enabled"
     private const val KEY_AP_NOTIFY_THRESHOLD = "ap_notify_threshold"
+    private const val KEY_AP_LAST_NOTIFIED_LEVEL = "ap_last_notified_level"
     private const val KEY_AP_CURRENT = "ap_current"
     private const val KEY_AP_CURRENT_EXACT = "ap_current_exact"
     private const val KEY_AP_REGEN_BASE_MS = "ap_regen_base_ms"
@@ -1035,6 +1037,7 @@ internal object BASettingsStore {
             apSyncMs = store.decodeLong(KEY_AP_SYNC_MS, 0L),
             apNotifyEnabled = store.decodeBool(KEY_AP_NOTIFY_ENABLED, false),
             apNotifyThreshold = store.decodeInt(KEY_AP_NOTIFY_THRESHOLD, DEFAULT_AP_NOTIFY_THRESHOLD).coerceIn(0, BA_AP_MAX),
+            apLastNotifiedLevel = store.decodeInt(KEY_AP_LAST_NOTIFIED_LEVEL, -1).coerceIn(-1, BA_AP_MAX),
             coffeeHeadpatMs = store.decodeLong(KEY_COFFEE_HEADPAT_MS, 0L),
             coffeeInvite1UsedMs = store.decodeLong(KEY_COFFEE_INVITE1_USED_MS, 0L),
             coffeeInvite2UsedMs = store.decodeLong(KEY_COFFEE_INVITE2_USED_MS, 0L),
@@ -1134,6 +1137,13 @@ internal object BASettingsStore {
 
     fun saveApNotifyThreshold(threshold: Int) {
         kv().encode(KEY_AP_NOTIFY_THRESHOLD, threshold.coerceIn(0, BA_AP_MAX))
+    }
+
+    fun loadApLastNotifiedLevel(): Int =
+        kv().decodeInt(KEY_AP_LAST_NOTIFIED_LEVEL, -1).coerceIn(-1, BA_AP_MAX)
+
+    fun saveApLastNotifiedLevel(level: Int) {
+        kv().encode(KEY_AP_LAST_NOTIFIED_LEVEL, level.coerceIn(-1, BA_AP_MAX))
     }
 
     fun loadApCurrent(): Double {

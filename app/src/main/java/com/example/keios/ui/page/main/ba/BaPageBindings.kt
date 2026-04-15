@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main.ba
 
 import android.content.Context
 import androidx.compose.foundation.layout.PaddingValues
+import com.example.keios.core.background.AppBackgroundScheduler
 
 internal fun buildBaSettingsSheetState(
     ui: BaPageUiController,
@@ -54,6 +55,7 @@ internal fun buildBaPageContentState(
 }
 
 internal fun saveBaPageSettings(
+    context: Context,
     office: BaOfficeController,
     ui: BaPageUiController,
     settingsSheetState: BaSettingsSheetState,
@@ -90,6 +92,7 @@ internal fun saveBaPageSettings(
     }
 
     office.applyApRegen()
+    AppBackgroundScheduler.scheduleBaApThreshold(context)
     ui.closeSettingsSheet(office)
 }
 

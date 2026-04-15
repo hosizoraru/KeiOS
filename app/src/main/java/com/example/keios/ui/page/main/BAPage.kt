@@ -112,6 +112,7 @@ fun BAPage(
 
     fun saveSettings() {
         saveBaPageSettings(
+            context = context,
             office = office,
             ui = ui,
             settingsSheetState = settingsSheetState,

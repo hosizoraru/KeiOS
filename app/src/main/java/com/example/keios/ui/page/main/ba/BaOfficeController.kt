@@ -1,7 +1,6 @@
 package com.example.keios.ui.page.main.ba
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -11,8 +10,6 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.example.keios.mcp.McpNotificationHelper
-import com.example.keios.mcp.McpKeepAliveService
 import kotlin.math.roundToInt
 
 @Stable
@@ -61,7 +58,7 @@ internal class BaOfficeController(
     var apLimitInput by mutableStateOf(apLimit.toString())
     var idNicknameInput by mutableStateOf(idNickname)
     var idFriendCodeInput by mutableStateOf(idFriendCode)
-    var apLastNotifiedLevel by mutableIntStateOf(-1)
+    var apLastNotifiedLevel by mutableIntStateOf(snapshot.apLastNotifiedLevel)
 
     fun displayApInputText(): String = displayAp(apCurrent).toString()
 
@@ -285,39 +282,18 @@ internal class BaOfficeController(
         showToast: Boolean = true,
         thresholdTriggered: Boolean = false,
     ): Boolean {
-        val notificationsGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-        if (!notificationsGranted) {
-            if (showToast) Toast.makeText(context, "请先授予通知权限", Toast.LENGTH_SHORT).show()
-            return false
-        }
         val currentDisplay = displayAp(apCurrent)
         val limitDisplay = apLimit.coerceIn(0, BA_AP_MAX)
         val thresholdDisplay = apNotifyThreshold.coerceIn(0, BA_AP_MAX)
-        runCatching {
-            McpKeepAliveService.startOrUpdate(
-                context = context,
-                serverName = "BlueArchive AP",
-                running = true,
-                port = currentDisplay,
-                path = thresholdDisplay.toString(),
-                clients = limitDisplay,
-                forceStart = true,
-                notificationId = McpNotificationHelper.BA_AP_NOTIFICATION_ID,
-                heartbeatEnabled = false
-            )
-        }.onFailure {
-            McpNotificationHelper.notifyTest(
-                context = context,
-                serverName = "BlueArchive AP",
-                running = true,
-                port = currentDisplay,
-                path = thresholdDisplay.toString(),
-                clients = limitDisplay,
-            )
+        val sent = BaApNotificationDispatcher.send(
+            context = context,
+            currentDisplay = currentDisplay,
+            limitDisplay = limitDisplay,
+            thresholdDisplay = thresholdDisplay
+        )
+        if (!sent) {
+            if (showToast) Toast.makeText(context, "请先授予通知权限", Toast.LENGTH_SHORT).show()
+            return false
         }
         if (showToast) {
             val notifyText = if (thresholdTriggered) "已发送AP阈值提醒" else "已发送AP通知"
@@ -329,17 +305,20 @@ internal class BaOfficeController(
     fun tryApThresholdNotification(context: Context) {
         if (!apNotifyEnabled) {
             apLastNotifiedLevel = -1
+            BASettingsStore.saveApLastNotifiedLevel(-1)
             return
         }
         val threshold = apNotifyThreshold.coerceIn(0, BA_AP_MAX)
         val currentDisplay = displayAp(apCurrent)
         if (currentDisplay < threshold) {
             apLastNotifiedLevel = -1
+            BASettingsStore.saveApLastNotifiedLevel(-1)
             return
         }
         if (currentDisplay == apLastNotifiedLevel) return
         if (sendApTestNotification(context = context, showToast = false, thresholdTriggered = true)) {
             apLastNotifiedLevel = currentDisplay
+            BASettingsStore.saveApLastNotifiedLevel(currentDisplay)
         }
     }
 }

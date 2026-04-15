@@ -4,6 +4,7 @@ import android.app.Application
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.gif.AnimatedImageDecoder
+import com.example.keios.core.background.AppBackgroundScheduler
 import com.tencent.mmkv.MMKV
 
 class KeiOSApp : Application() {
@@ -17,5 +18,6 @@ class KeiOSApp : Application() {
                 .build()
         }
         MMKV.initialize(this)
+        AppBackgroundScheduler.scheduleAll(this)
     }
 }
