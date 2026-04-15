@@ -3,18 +3,12 @@ package com.example.keios.ui.page.main
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,10 +23,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,37 +36,26 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.keios.ui.page.main.student.GuideRemoteIcon
+import coil3.compose.AsyncImage
 import com.example.keios.ui.page.main.student.catalog.BA_GUIDE_INDEX_URL
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.filterByQuery
-import com.example.keios.ui.page.main.widget.FloatingBottomBar
-import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.GlassSearchField
-import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
-import com.example.keios.ui.page.main.widget.LiquidActionBar
-import com.example.keios.ui.page.main.widget.LiquidActionItem
-import com.example.keios.core.prefs.UiPrefs
-import com.kyant.backdrop.backdrops.LayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.Dispatchers
@@ -92,6 +77,8 @@ import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Share
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+private const val CATALOG_BATCH_SIZE = 60
+
 @Composable
 fun BaGuideCatalogPage(
     onBack: () -> Unit,
@@ -100,19 +87,6 @@ fun BaGuideCatalogPage(
     val context = LocalContext.current
     val pageTitle = "学生/NPC/卫星图鉴"
     val accent = MiuixTheme.colorScheme.primary
-    val surfaceColor = MiuixTheme.colorScheme.surface
-
-    var activationCount by rememberSaveable { mutableIntStateOf(0) }
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        activationCount++
-        onDispose { }
-    }
-    val backdrop: LayerBackdrop = key(activationCount) {
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
-    }
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val scrollBehavior = MiuixScrollBehavior()
 
@@ -130,18 +104,28 @@ fun BaGuideCatalogPage(
         currentEntries.filterByQuery(searchQuery)
     }
 
-    val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
-    val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    var showBottomBar by remember { mutableStateOf(true) }
-    val bottomBarNestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) showBottomBar = false
-                if (available.y > 1f) showBottomBar = true
-                return Offset.Zero
-            }
+    val listState = rememberLazyListState()
+    var visibleCount by rememberSaveable(activeTab, searchQuery) { mutableIntStateOf(0) }
+    LaunchedEffect(filteredEntries.size) {
+        visibleCount = minOf(filteredEntries.size, CATALOG_BATCH_SIZE)
+    }
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            visibleCount < filteredEntries.size &&
+                lastVisible >= (listState.layoutInfo.totalItemsCount - 4)
         }
     }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) {
+            visibleCount = minOf(visibleCount + CATALOG_BATCH_SIZE, filteredEntries.size)
+        }
+    }
+    val displayedEntries = remember(filteredEntries, visibleCount) {
+        filteredEntries.take(visibleCount)
+    }
+
+    val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     fun openSourceIndex() {
         runCatching {
@@ -173,8 +157,7 @@ fun BaGuideCatalogPage(
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(MiuixTheme.colorScheme.background)
-            .nestedScroll(bottomBarNestedScrollConnection),
+            .background(MiuixTheme.colorScheme.background),
         topBar = {
             TopAppBar(
                 title = pageTitle,
@@ -191,85 +174,33 @@ fun BaGuideCatalogPage(
                     }
                 },
                 actions = {
-                    LiquidActionBar(
-                        backdrop = backdrop,
-                        items = listOf(
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Share,
-                                contentDescription = "打开来源",
-                                onClick = ::openSourceIndex
-                            ),
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Refresh,
-                                contentDescription = "刷新列表",
-                                onClick = { refreshSignal += 1 }
-                            )
+                    IconButton(onClick = ::openSourceIndex) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Share,
+                            contentDescription = "打开来源",
+                            tint = MiuixTheme.colorScheme.onSurface
                         )
-                    )
+                    }
+                    IconButton(onClick = { refreshSignal += 1 }) {
+                        Icon(
+                            imageVector = MiuixIcons.Regular.Refresh,
+                            contentDescription = "刷新列表",
+                            tint = MiuixTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             )
         },
         bottomBar = {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                AnimatedVisibility(
-                    visible = showBottomBar,
-                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
-                        animationSpec = tween(220),
-                        initialOffsetY = { it / 2 }
-                    ),
-                    exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
-                        animationSpec = tween(180),
-                        targetOffsetY = { it / 2 }
-                    ),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    FloatingBottomBar(
-                        modifier = Modifier
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {}
-                            )
-                            .padding(
-                                horizontal = 12.dp,
-                                vertical = 12.dp + navigationBarBottom
-                            ),
-                        selectedIndex = { selectedTabIndex },
-                        onSelected = { index -> selectedTabIndex = index },
-                        backdrop = backdrop,
-                        tabsCount = tabs.size,
-                        isBlurEnabled = liquidBottomBarEnabled
-                    ) {
-                        tabs.forEachIndexed { index, tab ->
-                            FloatingBottomBarItem(
-                                onClick = { selectedTabIndex = index },
-                                modifier = Modifier.defaultMinSize(minWidth = 76.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = tab.iconRes),
-                                    contentDescription = tab.label,
-                                    tint = MiuixTheme.colorScheme.onSurface,
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                        .graphicsLayer {
-                                            scaleX = 1f
-                                            scaleY = 1f
-                                        }
-                                )
-                                Text(
-                                    text = tab.label,
-                                    fontSize = 11.sp,
-                                    lineHeight = 14.sp,
-                                    color = MiuixTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Visible
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            CatalogBottomTabBar(
+                tabs = tabs,
+                selectedTabIndex = selectedTabIndex,
+                onTabSelected = { selectedTabIndex = it },
+                modifier = Modifier.padding(
+                    horizontal = 12.dp,
+                    vertical = 10.dp + navigationBarBottom
+                )
+            )
         }
     ) { innerPadding ->
         val progress = rememberCatalogSyncProgress(loading = loading)
@@ -279,13 +210,12 @@ fun BaGuideCatalogPage(
             else -> Color(0xFF22C55E)
         }
         LazyColumn(
+            state = listState,
             modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(backdrop)
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .fillMaxSize(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                bottom = innerPadding.calculateBottomPadding() + 10.dp,
                 start = 16.dp,
                 end = 16.dp
             ),
@@ -316,7 +246,7 @@ fun BaGuideCatalogPage(
 
             item {
                 FrostedBlock(
-                    backdrop = backdrop,
+                    backdrop = null,
                     title = "筛选",
                     subtitle = "共 ${currentEntries.size} 项 · 显示 ${filteredEntries.size} 项",
                     accent = accent,
@@ -325,7 +255,7 @@ fun BaGuideCatalogPage(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             label = "搜索名称 / 别名 / ID",
-                            backdrop = backdrop,
+                            backdrop = null,
                             variant = GlassVariant.Content
                         )
                     }
@@ -335,7 +265,7 @@ fun BaGuideCatalogPage(
             if (!error.isNullOrBlank()) {
                 item {
                     FrostedBlock(
-                        backdrop = backdrop,
+                        backdrop = null,
                         title = "同步状态",
                         subtitle = error.orEmpty(),
                         body = "可通过右上角刷新按钮重试",
@@ -347,7 +277,7 @@ fun BaGuideCatalogPage(
             if (!loading && filteredEntries.isEmpty()) {
                 item {
                     FrostedBlock(
-                        backdrop = backdrop,
+                        backdrop = null,
                         title = "暂无结果",
                         subtitle = if (searchQuery.isBlank()) "当前分类没有可显示条目" else "未匹配到相关条目",
                         accent = accent
@@ -355,14 +285,107 @@ fun BaGuideCatalogPage(
                 }
             } else {
                 items(
-                    items = filteredEntries,
+                    items = displayedEntries,
                     key = { "${it.tab.name}-${it.entryId}-${it.contentId}" }
                 ) { entry ->
                     BaGuideCatalogEntryCard(
                         entry = entry,
-                        backdrop = backdrop,
                         onOpenGuide = onOpenGuide
                     )
+                }
+                if (visibleCount < filteredEntries.size) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                progress = 0.3f,
+                                size = 16.dp,
+                                strokeWidth = 2.dp,
+                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                    foregroundColor = accent,
+                                    backgroundColor = accent.copy(alpha = 0.30f),
+                                ),
+                            )
+                            Text(
+                                text = " 继续加载更多条目…",
+                                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CatalogBottomTabBar(
+    tabs: List<BaGuideCatalogTab>,
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        cornerRadius = 22.dp,
+        colors = CardDefaults.defaultColors(
+            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                val selected = index == selectedTabIndex
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            if (selected) {
+                                MiuixTheme.colorScheme.primary.copy(alpha = 0.16f)
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                        .clickable { onTabSelected(index) }
+                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = tab.iconRes),
+                            contentDescription = tab.label,
+                            tint = if (selected) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .graphicsLayer {
+                                    scaleX = 1f
+                                    scaleY = 1f
+                                }
+                        )
+                        Text(
+                            text = tab.label,
+                            color = if (selected) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
@@ -372,7 +395,6 @@ fun BaGuideCatalogPage(
 @Composable
 private fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
-    backdrop: LayerBackdrop,
     onOpenGuide: (String) -> Unit
 ) {
     Card(
@@ -403,11 +425,13 @@ private fun BaGuideCatalogEntryCard(
                         modifier = Modifier.size(28.dp)
                     )
                 } else {
-                    GuideRemoteIcon(
-                        imageUrl = entry.iconUrl,
-                        modifier = Modifier,
-                        iconWidth = 56.dp,
-                        iconHeight = 56.dp
+                    AsyncImage(
+                        model = entry.iconUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(12.dp))
                     )
                 }
             }
@@ -440,12 +464,11 @@ private fun BaGuideCatalogEntryCard(
                     )
                 }
             }
-
-            GlassTextButton(
-                backdrop = backdrop,
+            Text(
                 text = "进入",
-                variant = GlassVariant.Content,
-                onClick = { onOpenGuide(entry.detailUrl) }
+                color = MiuixTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
             )
         }
     }

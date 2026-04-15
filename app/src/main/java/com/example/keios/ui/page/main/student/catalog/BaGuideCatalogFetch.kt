@@ -15,9 +15,8 @@ internal enum class BaGuideCatalogTab(
     val label: String,
     val iconRes: Int
 ) {
-    Student(label = "学生", iconRes = R.drawable.ba_tab_profile),
-    Npc(label = "NPC", iconRes = R.drawable.ba_tab_skill),
-    Satellite(label = "卫星", iconRes = R.drawable.ba_tab_simulate),
+    Student(label = "实装学生", iconRes = R.drawable.ba_tab_profile),
+    NpcSatellite(label = "NPC及卫星", iconRes = R.drawable.ba_tab_skill),
 }
 
 internal data class BaGuideCatalogEntry(
@@ -77,20 +76,14 @@ internal fun fetchBaGuideCatalogBundle(): BaGuideCatalogBundle {
         raw.toCatalogEntry(tab = BaGuideCatalogTab.Student)
     }
 
-    val npcEntries = mutableListOf<BaGuideCatalogEntry>()
-    val satelliteEntries = mutableListOf<BaGuideCatalogEntry>()
-    npcSatelliteRaw.forEach { raw ->
-        when (classifyNpcOrSatellite(raw)) {
-            BaGuideCatalogTab.Satellite -> satelliteEntries += raw.toCatalogEntry(BaGuideCatalogTab.Satellite)
-            else -> npcEntries += raw.toCatalogEntry(BaGuideCatalogTab.Npc)
-        }
+    val npcSatelliteEntries = npcSatelliteRaw.map { raw ->
+        raw.toCatalogEntry(tab = BaGuideCatalogTab.NpcSatellite)
     }
 
     return BaGuideCatalogBundle(
         entriesByTab = mapOf(
             BaGuideCatalogTab.Student to studentEntries.sortedBy { it.order },
-            BaGuideCatalogTab.Npc to npcEntries.sortedBy { it.order },
-            BaGuideCatalogTab.Satellite to satelliteEntries.sortedBy { it.order },
+            BaGuideCatalogTab.NpcSatellite to npcSatelliteEntries.sortedBy { it.order },
         ),
         syncedAtMs = System.currentTimeMillis()
     )
@@ -141,26 +134,6 @@ private fun fetchRawEntriesByPid(pid: Int): List<RawEntry> {
         )
     }
     return out
-}
-
-private fun classifyNpcOrSatellite(raw: RawEntry): BaGuideCatalogTab {
-    val name = raw.name
-    val alias = raw.alias
-
-    if (alias.contains("学生") || alias.contains("换皮")) {
-        return BaGuideCatalogTab.Satellite
-    }
-    val satelliteHints = listOf(
-        "临战", "早期", "恐怖", "偶像", "学园祭", "睡衣", "礼服", "冬装",
-        "泳装", "巫女", "导游", "兔女郎", "玩偶", "魔法", "制服", "AMAS", "十字神明"
-    )
-    if (satelliteHints.any { hint ->
-            name.contains(hint, ignoreCase = true) || alias.contains(hint, ignoreCase = true)
-        }
-    ) {
-        return BaGuideCatalogTab.Satellite
-    }
-    return BaGuideCatalogTab.Npc
 }
 
 private fun RawEntry.toCatalogEntry(tab: BaGuideCatalogTab): BaGuideCatalogEntry {
