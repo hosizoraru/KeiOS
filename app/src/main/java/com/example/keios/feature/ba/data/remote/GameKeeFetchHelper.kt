@@ -164,7 +164,6 @@ object GameKeeFetchHelper {
             .header("Accept-Language", ACCEPT_LANGUAGE)
             .header("Referer", referer)
             .header("User-Agent", ua)
-            .header("Cache-Control", "no-cache")
         extraHeaders.forEach { (k, v) -> builder.header(k, v) }
 
         client.newCall(builder.build()).execute().use { resp ->
