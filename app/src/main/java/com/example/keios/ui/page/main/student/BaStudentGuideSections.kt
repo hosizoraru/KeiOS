@@ -1649,13 +1649,16 @@ fun GuideSkillCardItem(
                     if (card.iconUrl.isNotBlank()) {
                         GuideRemoteIcon(
                             imageUrl = card.iconUrl,
+                            modifier = Modifier.alignBy { it.measuredHeight / 2 },
                             iconWidth = 34.dp,
                             iconHeight = 34.dp
                         )
                     }
                     Text(
                         text = card.name,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .alignBy { it.measuredHeight / 2 },
                         color = MiuixTheme.colorScheme.onBackground,
                         maxLines = if (isExSkill) 2 else 1,
                         overflow = TextOverflow.Ellipsis
