@@ -19,7 +19,7 @@ class LegacyNotificationBuilder(
         val isBlueArchiveAp = state.serverName.trim() == "BlueArchive AP"
         val progressState = computeProgressState(state = state, isBlueArchiveAp = isBlueArchiveAp)
         val builder = NotificationCompat.Builder(context, payload.environment.channelId)
-            .setSmallIcon(R.drawable.ic_notification_logo)
+            .setSmallIcon(R.drawable.ic_kei_logo_color)
             .setContentTitle(state.title)
             .setContentText(state.content.ifBlank { " " })
             .setSubText(if (state.running) state.onlineText else "点击返回应用重新启动服务")

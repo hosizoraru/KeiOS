@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2025-2026 InstallerX Revived contributors
 package com.example.keios.mcp.framework.notification.builder
 
+import android.app.Notification
 import android.content.Context
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.keios.R
+import com.example.keios.mcp.McpNotificationHelper
+import com.example.keios.mcp.McpNotificationPayload
 import kotlin.math.roundToInt
 
 class ModernNotificationBuilder(
@@ -13,93 +17,68 @@ class ModernNotificationBuilder(
     private companion object {
         private const val PROGRESS_ACTIVE_COLOR = 0xFF2E7D32.toInt()
         private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
-        private const val ACCENT_BLUE = 0xFF2563EB.toInt()
     }
 
-    private data class LiveProgressState(
-        val current: Int,
-        val indeterminate: Boolean
-    )
-
-    override fun build(payload: NotificationPayload): android.app.Notification {
-        val state = payload.state
-        val isBlueArchiveAp = state.serverName.trim() == "BlueArchive AP"
-        val progressState = computeProgressState(state = state, isBlueArchiveAp = isBlueArchiveAp)
-        val builder = NotificationCompat.Builder(context, payload.environment.channelId)
-            .setSmallIcon(R.drawable.ic_notification_logo)
-            .setContentTitle(state.title)
-            .setContentText(state.content.ifBlank { " " })
-            .setSubText(if (state.running) state.onlineText else "点击返回应用重新启动服务")
-            .setContentIntent(state.openPendingIntent)
-            .setCategory(if (state.running) NotificationCompat.CATEGORY_PROGRESS else NotificationCompat.CATEGORY_STATUS)
-            .setColorized(true)
-            .setColor(ACCENT_BLUE)
-            .setOngoing(state.running || state.ongoing)
-            .setOnlyAlertOnce(true)
+    private val baseNotificationBuilder by lazy {
+        NotificationCompat.Builder(context, McpNotificationHelper.LIVE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_kei_logo_color)
             .setSilent(true)
-            .setAutoCancel(false)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .setUsesChronometer(state.running && !isBlueArchiveAp)
-            .setRequestPromotedOngoing(state.running || state.ongoing)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setRequestPromotedOngoing(true)
+    }
 
-        if (payload.environment.isHyperOS) {
-            builder
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setShortCriticalText(if (state.running) state.shortText else state.statusText)
-        }
-
+    override fun build(payload: NotificationPayload): Notification {
+        val state = payload.state
+        val builder = createBaseBuilder(state)
         builder.addAction(0, "打开", state.openPendingIntent)
         if (state.running) {
             builder.addAction(0, state.stopActionTitle, state.stopPendingIntent)
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-            val segmentColor = if (state.running) PROGRESS_ACTIVE_COLOR else PROGRESS_IDLE_COLOR
-            builder.setStyle(
-                NotificationCompat.ProgressStyle()
-                    .setStyledByProgress(true)
-                    .setProgress(progressState.current)
-                    .setProgressSegments(
-                        listOf(
-                            NotificationCompat.ProgressStyle.Segment(100).setColor(segmentColor)
-                        )
-                    )
-                    .setProgressPoints(
-                        listOf(
-                            NotificationCompat.ProgressStyle.Point(progressState.current)
-                                .setColor(0xFFFFFFFF.toInt())
-                        )
-                    )
-            )
-            if (progressState.indeterminate) {
-                builder.setProgress(100, progressState.current, true)
-            }
-        } else {
-            builder.setProgress(100, progressState.current, progressState.indeterminate)
-        }
-
         return builder.build()
     }
 
-    private fun computeProgressState(
-        state: com.example.keios.mcp.McpNotificationPayload,
-        isBlueArchiveAp: Boolean
-    ): LiveProgressState {
-        if (!state.running) {
-            return LiveProgressState(current = 0, indeterminate = false)
+    private fun createBaseBuilder(state: McpNotificationPayload): NotificationCompat.Builder {
+        val progress = computeProgress(state)
+        val baseBuilder = baseNotificationBuilder
+        baseBuilder
+            .clearActions()
+            // Prevent state leakage from previous state
+            .setContentText(null)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setOngoing(state.running || state.ongoing)
+            .setContentIntent(state.openPendingIntent)
+
+        val segmentColor = if (state.running) PROGRESS_ACTIVE_COLOR else PROGRESS_IDLE_COLOR
+        val progressStyle = NotificationCompat.ProgressStyle()
+            .setProgressSegments(
+                listOf(
+                    NotificationCompat.ProgressStyle.Segment(100).setColor(segmentColor)
+                )
+            )
+            .setStyledByProgress(true)
+            .setProgress(progress)
+
+        baseBuilder.setContentTitle(state.title)
+        baseBuilder.setContentText(state.content.ifBlank { " " })
+        if (state.running) {
+            baseBuilder.setShortCriticalText(state.shortText)
         }
+        baseBuilder.setStyle(progressStyle)
+        return baseBuilder
+    }
+
+    private fun computeProgress(state: McpNotificationPayload): Int {
+        if (!state.running) return 0
+        val isBlueArchiveAp = state.serverName.trim() == "BlueArchive AP"
         if (isBlueArchiveAp) {
             val apLimit = state.clients.coerceAtLeast(1)
             val apCurrent = state.port.coerceAtLeast(0).coerceAtMost(apLimit)
-            val normalized = ((apCurrent.toFloat() / apLimit.toFloat()) * 100f)
+            return ((apCurrent.toFloat() / apLimit.toFloat()) * 100f)
                 .roundToInt()
                 .coerceIn(0, 100)
-            return LiveProgressState(current = normalized, indeterminate = false)
         }
-        val onlineClients = state.clients.coerceAtLeast(0)
-        val indeterminate = onlineClients <= 0
-        val normalized = (onlineClients * 24).coerceIn(8, 100)
-        return LiveProgressState(current = normalized, indeterminate = indeterminate)
+        return (state.clients.coerceAtLeast(0) * 24).coerceIn(8, 100)
     }
 }

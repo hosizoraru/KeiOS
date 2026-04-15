@@ -25,12 +25,13 @@ class MiIslandNotificationBuilder(
         private const val TAG = "McpMiIslandBuilder"
         private const val HIGHLIGHT_BG_COLOR = "#006EFF"
         private const val HIGHLIGHT_TITLE_COLOR = "#FFFFFF"
+        private const val ISLAND_ICON_RES_ID = R.drawable.ic_kei_logo_color
     }
 
     override fun build(payload: NotificationPayload): Notification {
         val state = payload.state
         val builder = NotificationCompat.Builder(context, payload.environment.channelId)
-            .setSmallIcon(R.drawable.ic_notification_logo)
+            .setSmallIcon(ISLAND_ICON_RES_ID)
             .setContentTitle(state.title)
             .setContentText(state.content.ifBlank { " " })
             .setContentIntent(state.openPendingIntent)
@@ -47,8 +48,8 @@ class MiIslandNotificationBuilder(
 
     private fun buildFocusExtras(payload: NotificationPayload) = runCatching {
         val state = payload.state
-        val lightLogoIcon = Icon.createWithResource(context, R.drawable.ic_notification_logo).setTint(Color.BLACK)
-        val darkLogoIcon = Icon.createWithResource(context, R.drawable.ic_notification_logo).setTint(Color.WHITE)
+        val lightLogoIcon = Icon.createWithResource(context, ISLAND_ICON_RES_ID).setTint(Color.BLACK)
+        val darkLogoIcon = Icon.createWithResource(context, ISLAND_ICON_RES_ID).setTint(Color.WHITE)
         val actions = mutableListOf(
             IslandAction(
                 key = "mcp_action_open",
@@ -136,7 +137,7 @@ class MiIslandNotificationBuilder(
                     actions.take(2).forEach { actionItem ->
                         addActionInfo {
                             val nativeAction = Notification.Action.Builder(
-                                Icon.createWithResource(context, R.drawable.ic_notification_logo),
+                                Icon.createWithResource(context, ISLAND_ICON_RES_ID),
                                 actionItem.title,
                                 actionItem.pendingIntent
                             ).build()
@@ -157,4 +158,3 @@ class MiIslandNotificationBuilder(
         Log.e(TAG, "Build FocusNotification extras failed", it)
     }.getOrNull()
 }
-
