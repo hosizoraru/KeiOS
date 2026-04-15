@@ -35,6 +35,7 @@ internal data class BaGuideCatalogEntry(
     val iconUrl: String,
     val type: Int,
     val order: Int,
+    val createdAtSec: Long,
     val detailUrl: String,
     val tab: BaGuideCatalogTab
 )
@@ -63,7 +64,8 @@ private data class RawEntry(
     val alias: String,
     val iconUrl: String,
     val type: Int,
-    val order: Int
+    val order: Int,
+    val createdAtSec: Long
 )
 
 internal suspend fun fetchBaGuideCatalogBundle(forceRefresh: Boolean = false): BaGuideCatalogBundle {
@@ -139,7 +141,8 @@ private fun fetchRawEntriesByPid(pid: Int): List<RawEntry> {
             alias = item.optString("name_alias").trim(),
             iconUrl = normalizeCatalogImageUrl(item.optString("icon")),
             type = item.optInt("type", 0),
-            order = index
+            order = index,
+            createdAtSec = item.optLong("created_at", 0L)
         )
     }
     return out
@@ -156,6 +159,7 @@ private fun RawEntry.toCatalogEntry(tab: BaGuideCatalogTab): BaGuideCatalogEntry
         iconUrl = iconUrl,
         type = type,
         order = order,
+        createdAtSec = createdAtSec,
         detailUrl = "https://www.gamekee.com/ba/tj/$contentId.html",
         tab = tab
     )

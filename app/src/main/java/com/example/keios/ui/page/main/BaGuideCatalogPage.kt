@@ -1,8 +1,5 @@
 package com.example.keios.ui.page.main
 
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -55,7 +52,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +59,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.example.keios.ui.page.main.student.catalog.BA_GUIDE_INDEX_URL
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
@@ -76,8 +71,13 @@ import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.LiquidActionBar
+import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
+import com.example.keios.ui.page.main.widget.LiquidDropdownImpl
 import com.example.keios.ui.page.main.widget.SearchBarHost
+import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
+import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.core.prefs.UiPrefs
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -92,6 +92,7 @@ import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -100,18 +101,23 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Share
+import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val CATALOG_BATCH_SIZE = 20
 private const val CATALOG_LOAD_MORE_THRESHOLD = 10
+
+private enum class BaGuideCatalogSortMode(val label: String) {
+    Default("默认排序"),
+    ReleaseDateDesc("实装日期：新到旧"),
+    ReleaseDateAsc("实装日期：旧到新"),
+}
 
 @Composable
 fun BaGuideCatalogPage(
     onBack: () -> Unit,
     onOpenGuide: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val pageTitle = "图鉴"
     val accent = MiuixTheme.colorScheme.primary
     val surfaceColor = MiuixTheme.colorScheme.surface
@@ -135,10 +141,14 @@ fun BaGuideCatalogPage(
     var catalog by remember { mutableStateOf(BaGuideCatalogBundle.EMPTY) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var sortMode by rememberSaveable { mutableStateOf(BaGuideCatalogSortMode.Default) }
+    var showSortPopup by remember { mutableStateOf(false) }
 
     val tabs = BaGuideCatalogTab.entries
     val activeTab = tabs.getOrElse(selectedTabIndex) { BaGuideCatalogTab.Student }
-    val currentEntries = remember(catalog, activeTab) { catalog.entries(activeTab) }
+    val currentEntries = remember(catalog, activeTab, sortMode) {
+        catalog.entries(activeTab).sortedByMode(sortMode)
+    }
     val filteredEntries = remember(currentEntries, searchQuery) {
         currentEntries.filterByQuery(searchQuery)
     }
@@ -197,17 +207,6 @@ fun BaGuideCatalogPage(
         }
     }
 
-    fun openSourceIndex() {
-        runCatching {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(BA_GUIDE_INDEX_URL)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        }.onFailure {
-            Toast.makeText(context, "无法打开来源页面", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     LaunchedEffect(refreshSignal) {
         loading = true
         val result = withContext(Dispatchers.IO) {
@@ -253,9 +252,9 @@ fun BaGuideCatalogPage(
                                 backdrop = backdrop,
                                 items = listOf(
                                     LiquidActionItem(
-                                        icon = MiuixIcons.Regular.Share,
-                                        contentDescription = "打开来源",
-                                        onClick = ::openSourceIndex
+                                        icon = MiuixIcons.Regular.Sort,
+                                        contentDescription = "排序",
+                                        onClick = { showSortPopup = !showSortPopup }
                                     ),
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Refresh,
@@ -264,6 +263,34 @@ fun BaGuideCatalogPage(
                                     )
                                 )
                             )
+                            LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
+                                if (slotIndex == 0 && showSortPopup) {
+                                    SnapshotWindowListPopup(
+                                        show = showSortPopup,
+                                        alignment = PopupPositionProvider.Align.BottomStart,
+                                        anchorBounds = popupAnchorBounds,
+                                        placement = SnapshotPopupPlacement.ActionBarCenter,
+                                        onDismissRequest = { showSortPopup = false },
+                                        enableWindowDim = false
+                                    ) {
+                                        LiquidDropdownColumn {
+                                            val modes = BaGuideCatalogSortMode.entries
+                                            modes.forEachIndexed { index, mode ->
+                                                LiquidDropdownImpl(
+                                                    text = mode.label,
+                                                    optionSize = modes.size,
+                                                    isSelected = sortMode == mode,
+                                                    index = index,
+                                                    onSelectedIndexChange = { selectedIndex ->
+                                                        sortMode = modes[selectedIndex]
+                                                        showSortPopup = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 )
@@ -314,14 +341,20 @@ fun BaGuideCatalogPage(
                                 vertical = 12.dp + navigationBarBottom
                             ),
                         selectedIndex = { selectedTabIndex },
-                        onSelected = { index -> selectedTabIndex = index },
+                        onSelected = { index ->
+                            selectedTabIndex = index
+                            showSortPopup = false
+                        },
                         backdrop = backdrop,
                         tabsCount = tabs.size,
                         isBlurEnabled = liquidBottomBarEnabled
                     ) {
                         tabs.forEachIndexed { index, tab ->
                             FloatingBottomBarItem(
-                                onClick = { selectedTabIndex = index },
+                                onClick = {
+                                    selectedTabIndex = index
+                                    showSortPopup = false
+                                },
                                 modifier = Modifier.defaultMinSize(minWidth = 76.dp)
                             ) {
                                 Icon(
@@ -422,7 +455,6 @@ fun BaGuideCatalogPage(
                 ) { entry ->
                     BaGuideCatalogEntryCard(
                         entry = entry,
-                        backdrop = backdrop,
                         onOpenGuide = onOpenGuide
                     )
                 }
@@ -460,7 +492,6 @@ fun BaGuideCatalogPage(
 @Composable
 private fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
-    backdrop: LayerBackdrop,
     onOpenGuide: (String) -> Unit
 ) {
     Card(
@@ -506,28 +537,34 @@ private fun BaGuideCatalogEntryCard(
                 androidx.compose.foundation.layout.Column(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        text = entry.name,
-                        color = MiuixTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = entry.name,
+                            modifier = Modifier.weight(1f),
+                            color = MiuixTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "ID ${entry.contentId}",
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            fontSize = 12.sp,
+                            maxLines = 1
+                        )
+                    }
                     if (entry.aliasDisplay.isNotBlank()) {
                         Text(
                             text = entry.aliasDisplay,
                             color = MiuixTheme.colorScheme.onBackgroundVariant,
                             fontSize = 12.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Clip
                         )
                     }
-                    Text(
-                        text = "ID ${entry.contentId}",
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
                 }
             }
             GlassIconButton(
@@ -566,4 +603,22 @@ private fun rememberCatalogSyncProgress(loading: Boolean): Float {
         }
     }
     return progress.value
+}
+
+private fun List<BaGuideCatalogEntry>.sortedByMode(
+    mode: BaGuideCatalogSortMode
+): List<BaGuideCatalogEntry> {
+    return when (mode) {
+        BaGuideCatalogSortMode.Default -> sortedBy { it.order }
+        BaGuideCatalogSortMode.ReleaseDateDesc -> sortedWith(
+            compareByDescending<BaGuideCatalogEntry> {
+                if (it.createdAtSec > 0L) it.createdAtSec else Long.MIN_VALUE
+            }.thenBy { it.order }
+        )
+        BaGuideCatalogSortMode.ReleaseDateAsc -> sortedWith(
+            compareBy<BaGuideCatalogEntry> {
+                if (it.createdAtSec > 0L) it.createdAtSec else Long.MAX_VALUE
+            }.thenBy { it.order }
+        )
+    }
 }
