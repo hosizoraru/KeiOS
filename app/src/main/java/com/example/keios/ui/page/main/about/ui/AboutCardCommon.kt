@@ -2,14 +2,14 @@ package com.example.keios.ui.page.main.about.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,19 +43,20 @@ fun AboutCompactRow(
     } else {
         Modifier
     }
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .then(clickableModifier)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(vertical = 4.dp)
     ) {
-        Box(
-            modifier = Modifier.width(104.dp),
-            contentAlignment = Alignment.CenterStart
+        val maxTitleWidth = (maxWidth * 0.44f).coerceAtLeast(96.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
+                modifier = Modifier.widthIn(min = 70.dp, max = maxTitleWidth),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -73,13 +74,13 @@ fun AboutCompactRow(
                     overflow = Clip
                 )
             }
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.Top,
+                content = valueContent
+            )
         }
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-            content = valueContent
-        )
     }
 }
 
