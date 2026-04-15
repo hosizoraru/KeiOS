@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -570,13 +571,22 @@ private fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
     onOpenGuide: (String) -> Unit
 ) {
+    val cardShape = RoundedCornerShape(16.dp)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onOpenGuide(entry.detailUrl) },
+            .border(
+                width = 1.dp,
+                color = MiuixTheme.colorScheme.primary.copy(alpha = 0.24f),
+                shape = cardShape
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onOpenGuide(entry.detailUrl) },
         cornerRadius = 16.dp,
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surface.copy(alpha = 0.32f)
+            color = MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
         )
     ) {
         Row(
