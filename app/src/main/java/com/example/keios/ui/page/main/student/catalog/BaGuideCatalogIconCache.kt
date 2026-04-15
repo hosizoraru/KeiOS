@@ -29,4 +29,8 @@ internal object BaGuideCatalogIconCache {
         synchronized(cache) { cache.put(key, bitmap) }
         return bitmap
     }
+
+    fun clear() {
+        synchronized(cache) { cache.evictAll() }
+    }
 }

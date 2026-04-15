@@ -11,7 +11,6 @@ private const val BA_GUIDE_SECOND_PAGE_ID = 23941
 private const val BA_GUIDE_STUDENT_PID = 49443
 private const val BA_GUIDE_NPC_SATELLITE_PID = 107619
 private const val BA_GUIDE_INDEX_REFERER_PATH = "/ba/second/$BA_GUIDE_SECOND_PAGE_ID"
-private const val BA_GUIDE_CATALOG_CACHE_TTL_MS = 2 * 60 * 1000L
 internal const val BA_GUIDE_INDEX_URL = "https://www.gamekee.com$BA_GUIDE_INDEX_REFERER_PATH"
 
 @Volatile
@@ -68,12 +67,51 @@ private data class RawEntry(
     val createdAtSec: Long
 )
 
-internal suspend fun fetchBaGuideCatalogBundle(forceRefresh: Boolean = false): BaGuideCatalogBundle {
-    val now = System.currentTimeMillis()
-    val cached = cachedCatalogBundle
-    if (!forceRefresh && cached != null && (now - cached.syncedAtMs) <= BA_GUIDE_CATALOG_CACHE_TTL_MS) {
-        return cached
+internal fun loadCachedBaGuideCatalogBundle(): BaGuideCatalogBundle? {
+    val memory = cachedCatalogBundle
+    if (memory != null) return memory
+    val persisted = BaGuideCatalogStore.loadBundle() ?: return null
+    cachedCatalogBundle = persisted
+    return persisted
+}
+
+internal fun isBaGuideCatalogBundleComplete(bundle: BaGuideCatalogBundle?): Boolean {
+    bundle ?: return false
+    return BaGuideCatalogTab.entries.all { tab ->
+        val entries = bundle.entries(tab)
+        entries.isNotEmpty() && entries.all { entry ->
+            entry.contentId > 0L &&
+                entry.name.isNotBlank() &&
+                entry.detailUrl.isNotBlank()
+        }
     }
+}
+
+internal fun isBaGuideCatalogCacheExpired(
+    bundle: BaGuideCatalogBundle?,
+    refreshIntervalHours: Int,
+    nowMs: Long = System.currentTimeMillis()
+): Boolean {
+    bundle ?: return true
+    val intervalMs = refreshIntervalHours.coerceAtLeast(1) * 60L * 60L * 1000L
+    if (bundle.syncedAtMs <= 0L) return true
+    return (nowMs - bundle.syncedAtMs).coerceAtLeast(0L) >= intervalMs
+}
+
+internal fun clearBaGuideCatalogCache() {
+    cachedCatalogBundle = null
+    BaGuideCatalogStore.clearCache()
+    BaGuideCatalogIconCache.clear()
+}
+
+internal suspend fun fetchBaGuideCatalogBundle(forceRefresh: Boolean = false): BaGuideCatalogBundle {
+    if (!forceRefresh) {
+        val cached = loadCachedBaGuideCatalogBundle()
+        if (isBaGuideCatalogBundleComplete(cached)) {
+            return cached!!
+        }
+    }
+    val now = System.currentTimeMillis()
 
     val (studentRaw, npcSatelliteRaw) = coroutineScope {
         val studentDeferred = async { fetchRawEntriesByPid(BA_GUIDE_STUDENT_PID) }
@@ -97,6 +135,7 @@ internal suspend fun fetchBaGuideCatalogBundle(forceRefresh: Boolean = false): B
         syncedAtMs = now
     )
     cachedCatalogBundle = bundle
+    BaGuideCatalogStore.saveBundle(bundle)
     return bundle
 }
 

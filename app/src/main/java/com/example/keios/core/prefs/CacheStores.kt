@@ -12,6 +12,9 @@ import com.example.keios.ui.page.main.OsSectionCard
 import com.example.keios.ui.page.main.OsUiStateStore
 import com.example.keios.ui.page.main.student.BaGuideTempMediaCache
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
+import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogStore
+import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
+import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
 import com.tencent.mmkv.MMKV
 import java.io.File
 import java.text.SimpleDateFormat
@@ -61,7 +64,10 @@ internal object CacheStores {
                 CacheEventStore.markCleared("app_icon")
             }
             "ba_calendar" -> BASettingsStore.clearCalendarAndPoolCaches()
-            "ba_student_guide" -> BaStudentGuideStore.clearAllCachedInfo()
+            "ba_student_guide" -> {
+                BaStudentGuideStore.clearAllCachedInfo()
+                clearBaGuideCatalogCache()
+            }
             "os_info" -> OsInfoCache.clearAll()
             "app_icon" -> AppIconCache.clear()
             "ba_temp_media" -> BaGuideTempMediaCache.clearAll(context)
@@ -155,21 +161,33 @@ internal object CacheStores {
     }
 
     private fun baStudentGuideSummary(context: Context): CacheEntrySummary {
-        val count = BaStudentGuideStore.cachedEntryCount()
-        val updatedAtMs = BaStudentGuideStore.latestSyncedAtMs().takeIf { it > 0L }
-            ?: mmkvLastModified(context, "ba_student_guide")
+        val detailCount = BaStudentGuideStore.cachedEntryCount()
+        val catalogCounts = BaGuideCatalogStore.cachedEntryCounts()
+        val studentCount = catalogCounts[BaGuideCatalogTab.Student] ?: 0
+        val npcSatelliteCount = catalogCounts[BaGuideCatalogTab.NpcSatellite] ?: 0
+        val cacheBytes = BaStudentGuideStore.cacheBytesEstimated() + BaGuideCatalogStore.cacheBytesEstimated()
+        val configBytes = BaStudentGuideStore.configBytesEstimated() + BaGuideCatalogStore.configBytesEstimated()
+        val diskBytes = BaStudentGuideStore.actualDataBytes() + BaGuideCatalogStore.actualDataBytes()
+        val updatedAtMs = maxOf(
+            BaStudentGuideStore.latestSyncedAtMs(),
+            BaGuideCatalogStore.latestSyncedAtMs()
+        ).takeIf { it > 0L }
+            ?: maxOf(
+                mmkvLastModified(context, "ba_student_guide"),
+                mmkvLastModified(context, "ba_guide_catalog")
+            )
         val clearedAtMs = CacheEventStore.loadClearedAt("ba_student_guide")
         return CacheEntrySummary(
             id = "ba_student_guide",
             title = "BA 图鉴页",
-            summary = "角色图鉴详情页面缓存",
-            detail = "已缓存 $count 条",
+            summary = "角色图鉴详情与图鉴总览列表缓存",
+            detail = "详情缓存 $detailCount 条 · 总览 实装 $studentCount 条 / NPC及卫星 $npcSatelliteCount 条",
             activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(BaStudentGuideStore.cacheBytesEstimated())} · 配置估算 ${formatBytes(BaStudentGuideStore.configBytesEstimated())} · MMKV 已用 ${formatBytes(BaStudentGuideStore.actualDataBytes())}",
+            storage = "缓存估算 ${formatBytes(cacheBytes)} · 配置估算 ${formatBytes(configBytes)} · MMKV 已用 ${formatBytes(diskBytes)}",
             clearLabel = "清理",
-            cacheBytes = BaStudentGuideStore.cacheBytesEstimated(),
-            configBytes = BaStudentGuideStore.configBytesEstimated(),
-            diskBytes = BaStudentGuideStore.actualDataBytes(),
+            cacheBytes = cacheBytes,
+            configBytes = configBytes,
+            diskBytes = diskBytes,
             updatedAtMs = updatedAtMs,
             clearedAtMs = clearedAtMs
         )

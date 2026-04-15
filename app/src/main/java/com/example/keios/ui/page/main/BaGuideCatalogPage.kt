@@ -71,8 +71,12 @@ import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogIconCache
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
+import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.filterByQuery
+import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogBundleComplete
+import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
+import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
@@ -88,6 +92,7 @@ import com.example.keios.ui.page.main.widget.SearchBarHost
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.core.prefs.UiPrefs
+import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -233,9 +238,34 @@ fun BaGuideCatalogPage(
     }
 
     LaunchedEffect(refreshSignal) {
+        val manualRefresh = refreshSignal > 0
+        val now = System.currentTimeMillis()
         loading = true
+        val refreshIntervalHours = withContext(Dispatchers.IO) {
+            BASettingsStore.loadCalendarRefreshIntervalHours()
+        }
+        val cachedBundle = withContext(Dispatchers.IO) { loadCachedBaGuideCatalogBundle() }
+        val cacheComplete = isBaGuideCatalogBundleComplete(cachedBundle)
+        val cacheExpired = isBaGuideCatalogCacheExpired(
+            bundle = cachedBundle,
+            refreshIntervalHours = refreshIntervalHours,
+            nowMs = now
+        )
+
+        if (!manualRefresh && cacheComplete && !cacheExpired) {
+            catalog = cachedBundle!!
+            error = null
+            loading = false
+            return@LaunchedEffect
+        }
+
+        val shouldClearLocalCache = manualRefresh || (cachedBundle != null && (cacheExpired || !cacheComplete))
+        if (shouldClearLocalCache) {
+            withContext(Dispatchers.IO) { clearBaGuideCatalogCache() }
+        }
+
         val result = withContext(Dispatchers.IO) {
-            runCatching { fetchBaGuideCatalogBundle(forceRefresh = refreshSignal > 0) }
+            runCatching { fetchBaGuideCatalogBundle(forceRefresh = true) }
         }
         result.onSuccess { latest ->
             catalog = latest
