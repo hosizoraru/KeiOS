@@ -348,27 +348,22 @@ fun BaStudentGuidePage(
         if (index !in bottomTabs.indices) return
         showBottomBar = true
         selectedBottomTabIndex = index
-        if (index != pagerState.currentPage) {
-            pageScope.launch {
-                pagerState.animateScrollToPage(index)
-            }
+        if (index == pagerState.targetPage && !pagerState.isScrollInProgress) return
+        pageScope.launch {
+            pagerState.animateScrollToPage(index)
         }
     }
 
-    LaunchedEffect(sourceUrl, bottomTabs.size, selectedBottomTabIndex) {
+    LaunchedEffect(sourceUrl, bottomTabs.size) {
         val targetIndex = selectedBottomTabIndex.coerceIn(0, bottomTabs.lastIndex)
-        if (targetIndex != selectedBottomTabIndex) {
-            selectedBottomTabIndex = targetIndex
-            return@LaunchedEffect
-        }
         if (pagerState.currentPage != targetIndex) {
             pagerState.scrollToPage(targetIndex)
         }
     }
 
-    LaunchedEffect(pagerState.currentPage) {
-        if (selectedBottomTabIndex != pagerState.currentPage) {
-            selectedBottomTabIndex = pagerState.currentPage
+    LaunchedEffect(pagerState.settledPage) {
+        if (selectedBottomTabIndex != pagerState.settledPage) {
+            selectedBottomTabIndex = pagerState.settledPage
         }
     }
 
@@ -515,9 +510,9 @@ fun BaStudentGuidePage(
                                 horizontal = 12.dp,
                                 vertical = 12.dp + navigationBarBottom
                             ),
-                        selectedIndex = { pagerState.currentPage },
+                        selectedIndex = { pagerState.targetPage },
                         onSelected = { index ->
-                            if (index != pagerState.currentPage) {
+                            if (index != pagerState.targetPage) {
                                 selectBottomTab(index)
                             }
                         },
