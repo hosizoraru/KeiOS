@@ -78,8 +78,10 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -285,6 +287,7 @@ private fun MainPagerLayout(
     val visibleTabsSnapshot = remember(tabs) { tabs.toSet() }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
+    var tabJumpJob by remember { mutableStateOf<Job?>(null) }
     val mcpUiState by mcpServerManager.uiState.collectAsState()
 
     var osScrollToTopSignal by remember { mutableIntStateOf(0) }
@@ -335,19 +338,33 @@ private fun MainPagerLayout(
     }
 
     val handlePageSelected: (Int) -> Unit = { index ->
-        val selected = tabs[index]
-        showBottomBar = true
-        if (index == pagerState.currentPage) {
-            when (selected) {
-                BottomPage.Os -> osScrollToTopSignal++
-                BottomPage.Ba -> baScrollToTopSignal++
-                BottomPage.Mcp -> mcpScrollToTopSignal++
-                BottomPage.GitHub -> githubScrollToTopSignal++
-                else -> {}
+        if (index in tabs.indices) {
+            val selected = tabs[index]
+            val stablePageIndex = if (pagerState.isScrollInProgress) {
+                pagerState.targetPage
+            } else {
+                pagerState.settledPage
             }
-        } else {
-            coroutineScope.launch {
-                pagerState.animateScrollToPage(index)
+            showBottomBar = true
+            if (index == stablePageIndex && !pagerState.isScrollInProgress) {
+                when (selected) {
+                    BottomPage.Os -> osScrollToTopSignal++
+                    BottomPage.Ba -> baScrollToTopSignal++
+                    BottomPage.Mcp -> mcpScrollToTopSignal++
+                    BottomPage.GitHub -> githubScrollToTopSignal++
+                    else -> {}
+                }
+            } else {
+                tabJumpJob?.cancel()
+                tabJumpJob = coroutineScope.launch {
+                    val jumpDistance = abs(index - stablePageIndex)
+                    if (jumpDistance > 1) {
+                        // Use direct jump for far targets to avoid transient intermediate-page flash.
+                        pagerState.scrollToPage(index)
+                    } else {
+                        pagerState.animateScrollToPage(index)
+                    }
+                }
             }
         }
     }
@@ -355,8 +372,16 @@ private fun MainPagerLayout(
     LaunchedEffect(requestedBottomPageToken, requestedBottomPage, tabs) {
         val target = requestedBottomPage ?: return@LaunchedEffect
         val index = tabs.indexOfFirst { it.name == target }
-        if (index >= 0 && index != pagerState.currentPage) {
-            pagerState.animateScrollToPage(index)
+        val stablePageIndex = if (pagerState.isScrollInProgress) {
+            pagerState.targetPage
+        } else {
+            pagerState.settledPage
+        }
+        if (index >= 0 && index != stablePageIndex) {
+            tabJumpJob?.cancel()
+            tabJumpJob = coroutineScope.launch {
+                pagerState.scrollToPage(index)
+            }
             showBottomBar = true
         }
     }
@@ -391,11 +416,11 @@ private fun MainPagerLayout(
                                 horizontal = 12.dp,
                                 vertical = 12.dp + navigationBarBottom
                             ),
-                        selectedIndex = { pagerState.currentPage },
+                        selectedIndex = { pagerState.targetPage },
                         onSelected = { index ->
                             // Ignore mirror callbacks emitted after pager page sync.
                             // Keep explicit tab click behavior (including reselect-to-top) unchanged.
-                            if (index != pagerState.currentPage) {
+                            if (index != pagerState.targetPage) {
                                 handlePageSelected(index)
                             }
                         },

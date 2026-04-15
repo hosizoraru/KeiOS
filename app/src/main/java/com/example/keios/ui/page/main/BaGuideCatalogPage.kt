@@ -94,9 +94,11 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.max
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -169,9 +171,10 @@ fun BaGuideCatalogPage(
         pageCount = { tabs.size }
     )
     val pagerScope = rememberCoroutineScope()
-    LaunchedEffect(pagerState.currentPage) {
-        if (selectedTabIndex != pagerState.currentPage) {
-            selectedTabIndex = pagerState.currentPage
+    var tabJumpJob by remember { mutableStateOf<Job?>(null) }
+    LaunchedEffect(pagerState.settledPage) {
+        if (selectedTabIndex != pagerState.settledPage) {
+            selectedTabIndex = pagerState.settledPage
         }
     }
 
@@ -202,6 +205,28 @@ fun BaGuideCatalogPage(
                     searchBarHideOffsetPx = 0f
                 }
                 return Offset.Zero
+            }
+        }
+    }
+
+    fun selectCatalogTab(index: Int) {
+        if (index !in tabs.indices) return
+        val stablePageIndex = if (pagerState.isScrollInProgress) {
+            pagerState.targetPage
+        } else {
+            pagerState.settledPage
+        }
+        selectedTabIndex = index
+        showSortPopup = false
+        if (index == stablePageIndex && !pagerState.isScrollInProgress) return
+        tabJumpJob?.cancel()
+        tabJumpJob = pagerScope.launch {
+            val jumpDistance = abs(index - stablePageIndex)
+            if (jumpDistance > 1) {
+                // Use direct jump for far targets to avoid transient intermediate-page flash.
+                pagerState.scrollToPage(index)
+            } else {
+                pagerState.animateScrollToPage(index)
             }
         }
     }
@@ -341,16 +366,9 @@ fun BaGuideCatalogPage(
                                 horizontal = 12.dp,
                                 vertical = 12.dp + navigationBarBottom
                             ),
-                        selectedIndex = { selectedTabIndex },
+                        selectedIndex = { pagerState.targetPage },
                         onSelected = { index ->
-                            if (index !in tabs.indices) return@FloatingBottomBar
-                            selectedTabIndex = index
-                            if (pagerState.currentPage != index) {
-                                pagerScope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            }
-                            showSortPopup = false
+                            selectCatalogTab(index)
                         },
                         backdrop = bottomBarBackdrop,
                         tabsCount = tabs.size,
@@ -358,15 +376,7 @@ fun BaGuideCatalogPage(
                     ) {
                         tabs.forEachIndexed { index, tab ->
                             FloatingBottomBarItem(
-                                onClick = {
-                                    selectedTabIndex = index
-                                    if (pagerState.currentPage != index) {
-                                        pagerScope.launch {
-                                            pagerState.animateScrollToPage(index)
-                                        }
-                                    }
-                                    showSortPopup = false
-                                },
+                                onClick = { selectCatalogTab(index) },
                                 modifier = Modifier.defaultMinSize(minWidth = 76.dp)
                             ) {
                                 Icon(
