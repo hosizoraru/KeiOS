@@ -63,6 +63,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.example.keios.ui.page.main.ba.BASettingsStore
+import com.example.keios.ui.page.main.student.BaStudentGuideInfo
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
 import com.example.keios.ui.page.main.student.BaGuideTempMediaCache
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
@@ -161,10 +163,11 @@ fun BaStudentGuidePage(
     val scrollBehavior = MiuixScrollBehavior()
 
     var sourceUrl by rememberSaveable { mutableStateOf(BaStudentGuideStore.loadCurrentUrl()) }
-    var info by remember(sourceUrl) { mutableStateOf(BaStudentGuideStore.loadInfo(sourceUrl)) }
+    var info by remember(sourceUrl) { mutableStateOf<BaStudentGuideInfo?>(null) }
     var loading by remember(sourceUrl) { mutableStateOf(sourceUrl.isNotBlank()) }
     var error by remember { mutableStateOf<String?>(null) }
     var refreshSignal by remember { mutableStateOf(0) }
+    var manualRefreshRequested by remember { mutableStateOf(false) }
     var selectedBottomTabIndex by rememberSaveable(sourceUrl) { mutableIntStateOf(0) }
     var selectedVoiceLanguage by rememberSaveable(sourceUrl) { mutableStateOf("") }
     var playingVoiceUrl by rememberSaveable(sourceUrl) { mutableStateOf("") }
@@ -290,6 +293,7 @@ fun BaStudentGuidePage(
         val target = normalizeGuideUrl(rawUrl)
         if (target.isBlank()) return
         if (target == sourceUrl) return
+        manualRefreshRequested = false
         BaStudentGuideStore.setCurrentUrl(target)
         sourceUrl = target
         error = null
@@ -463,9 +467,48 @@ fun BaStudentGuidePage(
     LaunchedEffect(sourceUrl, refreshSignal) {
         val requestUrl = sourceUrl
         if (requestUrl.isBlank()) return@LaunchedEffect
-        val cached = BaStudentGuideStore.loadInfo(requestUrl)
-        info = cached
+        val manualRefresh = manualRefreshRequested
+        manualRefreshRequested = false
         loading = true
+
+        val now = System.currentTimeMillis()
+        val refreshIntervalHours = withContext(Dispatchers.IO) {
+            BASettingsStore.loadCalendarRefreshIntervalHours()
+        }
+        val cacheSnapshot = withContext(Dispatchers.IO) {
+            BaStudentGuideStore.loadInfoSnapshot(requestUrl)
+        }
+        if (requestUrl != sourceUrl) return@LaunchedEffect
+
+        val cacheExpired = BaStudentGuideStore.isCacheExpired(
+            snapshot = cacheSnapshot,
+            refreshIntervalHours = refreshIntervalHours,
+            nowMs = now
+        )
+        val cacheComplete = cacheSnapshot.isComplete && cacheSnapshot.info != null
+        if (!manualRefresh && cacheComplete && !cacheExpired) {
+            info = cacheSnapshot.info
+            error = null
+            loading = false
+            return@LaunchedEffect
+        }
+
+        if (cacheComplete) {
+            info = cacheSnapshot.info
+            error = null
+        } else if (cacheSnapshot.hasCache && !cacheSnapshot.isComplete) {
+            info = null
+        }
+
+        val shouldClearLocalCache = manualRefresh || (cacheSnapshot.hasCache && (cacheExpired || !cacheSnapshot.isComplete))
+        if (shouldClearLocalCache) {
+            withContext(Dispatchers.IO) {
+                BaStudentGuideStore.clearCachedInfo(requestUrl)
+                BaGuideTempMediaCache.clearGuideCache(context, requestUrl)
+            }
+            if (requestUrl != sourceUrl) return@LaunchedEffect
+        }
+
         val result = withContext(Dispatchers.IO) {
             runCatching { fetchGuideInfo(requestUrl) }
         }
@@ -517,7 +560,10 @@ fun BaStudentGuidePage(
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Refresh,
                                     contentDescription = "刷新",
-                                    onClick = { refreshSignal += 1 }
+                                    onClick = {
+                                        manualRefreshRequested = true
+                                        refreshSignal += 1
+                                    }
                                 )
                             )
                         )
