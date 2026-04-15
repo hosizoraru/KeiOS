@@ -16,7 +16,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.net.InetAddress
-import java.net.URI
 import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -34,9 +33,6 @@ object GameKeeFetchHelper {
     private const val ACCEPT_LANGUAGE = "zh-CN"
     private const val DEFAULT_MAX_DECODE_EDGE = 2560
     private const val DNS_CACHE_TTL_MS = 10 * 60 * 1000L
-    private val GAMEKEE_RESOLVE_IPS = listOf(
-        "39.96.244.149"
-    )
     private const val DESKTOP_UA =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
     private const val ANDROID_UA =
@@ -290,71 +286,6 @@ object GameKeeFetchHelper {
         }
     }
 
-    private fun executeTextBySystemCurl(
-        url: String,
-        referer: String,
-        ua: String,
-        acceptHeader: String,
-        extraHeaders: Map<String, String>,
-        requireJsonBody: Boolean
-    ): String {
-        val host = runCatching { URI(url).host.orEmpty() }.getOrDefault("")
-        val useResolveByIp = host.equals("www.gamekee.com", ignoreCase = true) ||
-            host.equals("gamekee.com", ignoreCase = true)
-        val cmd = mutableListOf(
-            "/system/bin/curl",
-            "-sS",
-            "-L",
-            "--max-time",
-            "12",
-            "--connect-timeout",
-            "8",
-            "--retry",
-            "1",
-            "--retry-delay",
-            "1",
-            "-H",
-            "Accept: $acceptHeader",
-            "-H",
-            "Accept-Language: $ACCEPT_LANGUAGE",
-            "-H",
-            "Referer: $referer",
-            "-H",
-            "User-Agent: $ua",
-            "-H",
-            "Cache-Control: no-cache"
-        )
-        if (useResolveByIp) {
-            val resolveHost = if (host.equals("gamekee.com", ignoreCase = true)) "gamekee.com" else "www.gamekee.com"
-            GAMEKEE_RESOLVE_IPS.forEach { ip ->
-                cmd += "--resolve"
-                cmd += "$resolveHost:443:$ip"
-            }
-        }
-        extraHeaders.forEach { (k, v) ->
-            cmd += "-H"
-            cmd += "$k: $v"
-        }
-        cmd += url
-
-        val process = ProcessBuilder(cmd)
-            .redirectErrorStream(true)
-            .start()
-        val output = process.inputStream.bufferedReader().use { it.readText() }
-        val finished = process.waitFor(14, TimeUnit.SECONDS)
-        if (!finished) {
-            process.destroyForcibly()
-            throw IOException("system curl timeout")
-        }
-        if (process.exitValue() != 0) {
-            throw IOException("system curl exit=${process.exitValue()} body=${output.take(120)}")
-        }
-        if (requireJsonBody && !isJsonLike(output)) {
-            throw IOException("system curl non-json body")
-        }
-        return output
-    }
-
     private fun fetchText(
         pathOrUrl: String,
         refererPath: String,
@@ -364,7 +295,9 @@ object GameKeeFetchHelper {
     ): String {
         val candidates = listOf(
             Triple(BASE_WWW, DESKTOP_UA, normalizeReferer(BASE_WWW, refererPath)),
-            Triple(BASE_WWW, ANDROID_UA, normalizeReferer(BASE_WWW, refererPath))
+            Triple(BASE_WWW, ANDROID_UA, normalizeReferer(BASE_WWW, refererPath)),
+            Triple(BASE_BARE, DESKTOP_UA, normalizeReferer(BASE_BARE, refererPath)),
+            Triple(BASE_BARE, ANDROID_UA, normalizeReferer(BASE_BARE, refererPath))
         )
 
         var lastError: Throwable? = null
@@ -383,29 +316,6 @@ object GameKeeFetchHelper {
             if (result.isSuccess) return result.getOrThrow()
             lastError = result.exceptionOrNull()
             logD("fetch failed: url=$url referer=$referer ua=${ua.take(24)} err=${lastError?.message}")
-        }
-
-        val fallbackCandidates = listOf(
-            Triple(BASE_WWW, DESKTOP_UA, normalizeReferer(BASE_WWW, refererPath)),
-            Triple(BASE_BARE, DESKTOP_UA, normalizeReferer(BASE_BARE, refererPath))
-        )
-        fallbackCandidates.forEach { (base, ua, referer) ->
-            val fallbackUrl = normalizeUrl(base, pathOrUrl)
-            val fallback = runCatching {
-                logD("fallback to system curl: $fallbackUrl")
-                executeTextBySystemCurl(
-                    url = fallbackUrl,
-                    referer = referer,
-                    ua = ua,
-                    acceptHeader = acceptHeader,
-                    extraHeaders = extraHeaders,
-                    requireJsonBody = requireJsonBody
-                )
-            }
-            if (fallback.isSuccess) return fallback.getOrThrow()
-            lastError = fallback.exceptionOrNull() ?: lastError
-            val errName = lastError?.javaClass?.simpleName ?: "UnknownErr"
-            logD("system curl failed: url=$fallbackUrl err=$errName:${lastError?.message}")
         }
 
         throw (lastError ?: IOException("gamekee fetch failed"))
