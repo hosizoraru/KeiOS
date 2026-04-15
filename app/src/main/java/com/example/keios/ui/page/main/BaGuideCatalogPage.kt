@@ -17,8 +17,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -72,8 +75,10 @@ import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.page.main.widget.SearchBarHost
 import com.example.keios.core.prefs.UiPrefs
 import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
@@ -159,6 +164,7 @@ fun BaGuideCatalogPage(
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
+    var showSearchBar by remember { mutableStateOf(true) }
     val bottomBarNestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -202,40 +208,61 @@ fun BaGuideCatalogPage(
             .background(MiuixTheme.colorScheme.background)
             .nestedScroll(bottomBarNestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = pageTitle,
-                largeTitle = pageTitle,
-                scrollBehavior = scrollBehavior,
-                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Back,
-                            contentDescription = null,
-                            tint = MiuixTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                actions = {
-                    Box {
-                        LiquidActionBar(
-                            backdrop = backdrop,
-                            items = listOf(
-                                LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Share,
-                                    contentDescription = "打开来源",
-                                    onClick = ::openSourceIndex
-                                ),
-                                LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Refresh,
-                                    contentDescription = "刷新列表",
-                                    onClick = { refreshSignal += 1 }
+            Column {
+                TopAppBar(
+                    title = pageTitle,
+                    largeTitle = pageTitle,
+                    scrollBehavior = scrollBehavior,
+                    color = topBarMaterialBackdrop.getMiuixAppBarColor(),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = MiuixIcons.Regular.Back,
+                                contentDescription = null,
+                                tint = MiuixTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    actions = {
+                        Box {
+                            LiquidActionBar(
+                                backdrop = backdrop,
+                                items = listOf(
+                                    LiquidActionItem(
+                                        icon = MiuixIcons.Regular.Share,
+                                        contentDescription = "打开来源",
+                                        onClick = ::openSourceIndex
+                                    ),
+                                    LiquidActionItem(
+                                        icon = MiuixIcons.Regular.Refresh,
+                                        contentDescription = "刷新列表",
+                                        onClick = { refreshSignal += 1 }
+                                    )
                                 )
                             )
+                        }
+                    }
+                )
+                SearchBarHost(
+                    visible = showSearchBar,
+                    animationLabelPrefix = "baGuideCatalogSearch"
+                ) {
+                    Column {
+                        GlassSearchField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp),
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = "搜索名称 / 别名 / ID",
+                            backdrop = backdrop,
+                            variant = GlassVariant.Bar,
+                            singleLine = true
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
-            )
+            }
         },
         bottomBar = {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -310,6 +337,7 @@ fun BaGuideCatalogPage(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
+                .layerBackdrop(backdrop)
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
@@ -340,24 +368,6 @@ fun BaGuideCatalogPage(
                         ),
                     )
                 }
-            }
-
-            item {
-                FrostedBlock(
-                    backdrop = null,
-                    title = "筛选",
-                    subtitle = "共 ${currentEntries.size} 项 · 显示 ${filteredEntries.size} 项",
-                    accent = accent,
-                    content = {
-                        GlassSearchField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            label = "搜索名称 / 别名 / ID",
-                            backdrop = null,
-                            variant = GlassVariant.Content
-                        )
-                    }
-                )
             }
 
             if (!error.isNullOrBlank()) {
