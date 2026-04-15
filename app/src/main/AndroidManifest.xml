@@ -62,6 +62,11 @@
             android:name=".feature.notification.NotificationActionReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <receiver
+            android:name=".core.background.AppBackgroundTickReceiver"
+            android:enabled="true"
+            android:exported="false" />
     </application>
 
 </manifest>

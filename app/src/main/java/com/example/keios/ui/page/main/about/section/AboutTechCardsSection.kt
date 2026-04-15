@@ -147,7 +147,16 @@ fun AboutNetworkServiceCardSection(
         AboutInfoRow(R.string.about_row_mcp_sdk, BuildConfig.MCP_KOTLIN_SDK_VERSION, MiuixIcons.Regular.Info),
         AboutInfoRow(R.string.about_row_ktor, BuildConfig.KTOR_VERSION, MiuixIcons.Regular.Settings),
         AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, MiuixIcons.Regular.Settings),
-        AboutInfoRow(R.string.about_row_work_manager, BuildConfig.WORK_RUNTIME_VERSION, MiuixIcons.Regular.Refresh),
+        AboutInfoRow(
+            R.string.about_row_broadcast_handler,
+            stringResource(R.string.about_value_broadcast_handler),
+            MiuixIcons.Regular.Refresh
+        ),
+        AboutInfoRow(
+            R.string.about_row_foreground_info_handler,
+            stringResource(R.string.about_value_foreground_info_handler),
+            MiuixIcons.Regular.Info
+        ),
         AboutInfoRow(
             R.string.about_row_background_jobs,
             stringResource(R.string.about_value_background_jobs),

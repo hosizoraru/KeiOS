@@ -1,21 +1,14 @@
 package com.example.keios.core.background
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.example.keios.feature.github.data.local.GitHubTrackStore
-import com.example.keios.feature.github.worker.GitHubAutoRefreshWorker
 import com.example.keios.ui.page.main.ba.BASettingsStore
-import com.example.keios.ui.page.main.ba.BaApThresholdWorker
-import java.util.concurrent.TimeUnit
 
 object AppBackgroundScheduler {
-    private const val UNIQUE_GITHUB_REFRESH_WORK = "keios.github.refresh.periodic"
-    private const val UNIQUE_BA_AP_NOTIFY_WORK = "keios.ba.ap.notify.periodic"
+    private const val BA_AP_TICK_INTERVAL_MS = 6L * 60L * 1000L
+    private const val GITHUB_FIRST_TICK_DELAY_MS = 2L * 60L * 1000L
 
     fun scheduleAll(context: Context) {
         scheduleGitHubRefresh(context)
@@ -25,51 +18,55 @@ object AppBackgroundScheduler {
     fun scheduleGitHubRefresh(context: Context) {
         val appContext = context.applicationContext
         val snapshot = GitHubTrackStore.loadSnapshot()
-        val intervalHours = snapshot.refreshIntervalHours.coerceIn(1, 12)
+        val alarmManager = appContext.getSystemService(AlarmManager::class.java) ?: return
+        val pending = AppBackgroundTickReceiver.githubTickPendingIntent(appContext)
         if (snapshot.items.isEmpty()) {
-            WorkManager.getInstance(appContext).cancelUniqueWork(UNIQUE_GITHUB_REFRESH_WORK)
+            alarmManager.cancel(pending)
+            pending.cancel()
             return
         }
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val request = PeriodicWorkRequestBuilder<GitHubAutoRefreshWorker>(
-            repeatInterval = intervalHours.toLong(),
-            repeatIntervalTimeUnit = TimeUnit.HOURS,
-            flexTimeInterval = 15,
-            flexTimeIntervalUnit = TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
-            .addTag(UNIQUE_GITHUB_REFRESH_WORK)
-            .build()
-        WorkManager.getInstance(appContext).enqueueUniquePeriodicWork(
-            UNIQUE_GITHUB_REFRESH_WORK,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            request
-        )
+        val intervalMs = snapshot.refreshIntervalHours.coerceIn(1, 12) * 60L * 60L * 1000L
+        val nowMs = System.currentTimeMillis()
+        val nextAtMs = if (snapshot.lastRefreshMs > 0L) {
+            (snapshot.lastRefreshMs + intervalMs).coerceAtLeast(nowMs + 60_000L)
+        } else {
+            nowMs + GITHUB_FIRST_TICK_DELAY_MS
+        }
+        scheduleWithAlarmManager(alarmManager, nextAtMs, pending)
     }
 
     fun scheduleBaApThreshold(context: Context) {
         val appContext = context.applicationContext
         val snapshot = BASettingsStore.loadSnapshot()
+        val alarmManager = appContext.getSystemService(AlarmManager::class.java) ?: return
+        val pending = AppBackgroundTickReceiver.baApTickPendingIntent(appContext)
         if (!snapshot.apNotifyEnabled) {
-            WorkManager.getInstance(appContext).cancelUniqueWork(UNIQUE_BA_AP_NOTIFY_WORK)
+            alarmManager.cancel(pending)
+            pending.cancel()
+            BASettingsStore.saveApLastNotifiedLevel(-1)
             return
         }
-        val request = PeriodicWorkRequestBuilder<BaApThresholdWorker>(
-            repeatInterval = 15,
-            repeatIntervalTimeUnit = TimeUnit.MINUTES,
-            flexTimeInterval = 5,
-            flexTimeIntervalUnit = TimeUnit.MINUTES
-        )
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.MINUTES)
-            .addTag(UNIQUE_BA_AP_NOTIFY_WORK)
-            .build()
-        WorkManager.getInstance(appContext).enqueueUniquePeriodicWork(
-            UNIQUE_BA_AP_NOTIFY_WORK,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            request
+        val nextAtMs = System.currentTimeMillis() + BA_AP_TICK_INTERVAL_MS
+        scheduleWithAlarmManager(alarmManager, nextAtMs, pending)
+    }
+
+    internal fun onTickHandled(context: Context, action: String) {
+        when (action) {
+            AppBackgroundTickReceiver.ACTION_GITHUB_TICK -> scheduleGitHubRefresh(context)
+            AppBackgroundTickReceiver.ACTION_BA_AP_TICK -> scheduleBaApThreshold(context)
+        }
+    }
+
+    private fun scheduleWithAlarmManager(
+        alarmManager: AlarmManager,
+        triggerAtMillis: Long,
+        pendingIntent: PendingIntent
+    ) {
+        alarmManager.cancel(pendingIntent)
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis.coerceAtLeast(System.currentTimeMillis() + 15_000L),
+            pendingIntent
         )
     }
 }

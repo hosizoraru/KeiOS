@@ -69,7 +69,6 @@ val kxml2Version = "2.3.0"
 val media3Version = "1.10.0"
 val coil3Version = "3.4.0"
 val zoomImageVersion = "1.4.0"
-val workRuntimeVersion = "2.11.2"
 val focusApiVersion = "1.4"
 val projectCompileSdk = 37
 val projectMinSdk = 35
@@ -105,7 +104,6 @@ android {
         buildConfigField("String", "MEDIA3_VERSION", "\"$media3Version\"")
         buildConfigField("String", "ZOOMIMAGE_VERSION", "\"$zoomImageVersion\"")
         buildConfigField("String", "COIL3_VERSION", "\"$coil3Version\"")
-        buildConfigField("String", "WORK_RUNTIME_VERSION", "\"$workRuntimeVersion\"")
         buildConfigField("String", "GRADLE_VERSION", "\"$projectGradleVersion\"")
         buildConfigField("int", "COMPILE_SDK_VERSION", projectCompileSdk.toString())
         buildConfigField("int", "MIN_SDK_VERSION", projectMinSdk.toString())
@@ -199,7 +197,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:$okhttpVersion")
     implementation("androidx.media3:media3-exoplayer:$media3Version")
     implementation("androidx.media3:media3-ui:$media3Version")
-    implementation("androidx.work:work-runtime-ktx:$workRuntimeVersion")
     implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3:$zoomImageVersion")
     implementation("io.coil-kt.coil3:coil-compose:$coil3Version")
     implementation("io.coil-kt.coil3:coil-gif:$coil3Version")

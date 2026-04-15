@@ -91,6 +91,11 @@ private val componentExplainMap = mapOf(
         purposeRes = R.string.about_component_notification_receiver_purpose,
         usedInRes = R.string.about_component_notification_receiver_used_in
     ),
+    "com.example.keios.core.background.AppBackgroundTickReceiver" to AboutExplainRes(
+        titleRes = R.string.about_component_background_tick_receiver_title,
+        purposeRes = R.string.about_component_background_tick_receiver_purpose,
+        usedInRes = R.string.about_component_background_tick_receiver_used_in
+    ),
     "rikka.shizuku.ShizukuProvider" to AboutExplainRes(
         titleRes = R.string.about_component_shizuku_provider_title,
         purposeRes = R.string.about_component_shizuku_provider_purpose,
