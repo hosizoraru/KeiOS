@@ -140,6 +140,7 @@ internal fun BaOverviewCard(
     onOverviewServerPopupChange: (Boolean) -> Unit,
     onServerSelected: (Int) -> Unit,
     onClaimCafeStoredAp: () -> Unit,
+    onOpenGuideCatalog: () -> Unit,
     initState: BAInitState,
     onInitStateChange: (BAInitState) -> Unit,
 ) {
@@ -177,6 +178,13 @@ internal fun BaOverviewCard(
         BaCardHeader(
             title = "办公室总览",
             trailing = {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = "图鉴",
+                    textColor = stateAccent,
+                    variant = GlassVariant.Content,
+                    onClick = onOpenGuideCatalog
+                )
                 Text(
                     text = if (isWorkActivated) "已激活" else "默认",
                     color = stateAccent,

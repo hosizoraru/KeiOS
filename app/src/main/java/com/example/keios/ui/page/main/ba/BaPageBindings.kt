@@ -104,6 +104,7 @@ internal fun buildBaPageContentActions(
     onRefreshPool: () -> Unit,
     onOpenCalendarLink: (String) -> Unit,
     onOpenPoolStudentGuide: (String) -> Unit,
+    onOpenGuideCatalog: () -> Unit,
 ): BaPageContentActions {
     return BaPageContentActions(
         onApCurrentInputChange = { office.apCurrentInput = it },
@@ -152,6 +153,7 @@ internal fun buildBaPageContentActions(
         onOpenCalendarLink = onOpenCalendarLink,
         onRefreshPool = onRefreshPool,
         onOpenPoolStudentGuide = onOpenPoolStudentGuide,
+        onOpenGuideCatalog = onOpenGuideCatalog,
         onIdNicknameInputChange = { office.idNicknameInput = it },
         onSaveIdNickname = { office.saveIdNicknameFromInput() },
         onIdFriendCodeInputChange = { office.idFriendCodeInput = it },

@@ -46,6 +46,7 @@ fun BAPage(
     scrollToTopSignal: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
     onOpenPoolStudentGuide: (String) -> Unit = {},
+    onOpenGuideCatalog: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -129,6 +130,7 @@ fun BAPage(
         onRefreshPool = { refreshPool(force = true) },
         onOpenCalendarLink = { url -> openBaExternalLink(context = context, url = url) },
         onOpenPoolStudentGuide = onOpenPoolStudentGuide,
+        onOpenGuideCatalog = onOpenGuideCatalog,
     )
 
     BaPageCommonEffects(

@@ -21,4 +21,7 @@ sealed interface KeiosRoute : NavKey {
 
     @Serializable
     data object BaStudentGuide : KeiosRoute
+
+    @Serializable
+    data object BaGuideCatalog : KeiosRoute
 }

@@ -65,6 +65,7 @@ internal data class BaPageContentActions(
     val onOpenCalendarLink: (String) -> Unit,
     val onRefreshPool: () -> Unit,
     val onOpenPoolStudentGuide: (String) -> Unit,
+    val onOpenGuideCatalog: () -> Unit,
     val onIdNicknameInputChange: (String) -> Unit,
     val onSaveIdNickname: () -> Unit,
     val onIdFriendCodeInputChange: (String) -> Unit,
@@ -123,6 +124,7 @@ internal fun BaPageContent(
                 onOverviewServerPopupChange = actions.onOverviewServerPopupChange,
                 onServerSelected = actions.onServerSelected,
                 onClaimCafeStoredAp = actions.onClaimCafeStoredAp,
+                onOpenGuideCatalog = actions.onOpenGuideCatalog,
                 initState = state.initState,
                 onInitStateChange = actions.onInitStateChange,
             )

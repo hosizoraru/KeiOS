@@ -233,6 +233,18 @@ fun MainScreen(
                     onBack = { navigator.pop() }
                 )
             }
+            entry<KeiosRoute.BaGuideCatalog> {
+                BaGuideCatalogPage(
+                    onBack = { navigator.pop() },
+                    onOpenGuide = { sourceUrl ->
+                        val target = sourceUrl.trim()
+                        if (target.isNotBlank()) {
+                            BaStudentGuideStore.setCurrentUrl(target)
+                            navigator.push(KeiosRoute.BaStudentGuide)
+                        }
+                    }
+                )
+            }
         }
     val entries = rememberDecoratedNavEntries(
         backStack = backStack,
@@ -529,6 +541,9 @@ private fun MainPagerLayout(
                                     BaStudentGuideStore.setCurrentUrl(target)
                                     navigator.push(KeiosRoute.BaStudentGuide)
                                 }
+                            },
+                            onOpenGuideCatalog = {
+                                navigator.push(KeiosRoute.BaGuideCatalog)
                             },
                             onActionBarInteractingChanged = { interacting ->
                                 pagerScrollEnabled = !interacting
