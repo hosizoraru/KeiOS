@@ -22,6 +22,7 @@ import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Layers
 import top.yukonga.miuix.kmp.icon.extended.ListView
 import top.yukonga.miuix.kmp.icon.extended.Lock
+import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.Tune
 
@@ -145,7 +146,13 @@ fun AboutNetworkServiceCardSection(
     val rows = listOf(
         AboutInfoRow(R.string.about_row_mcp_sdk, BuildConfig.MCP_KOTLIN_SDK_VERSION, MiuixIcons.Regular.Info),
         AboutInfoRow(R.string.about_row_ktor, BuildConfig.KTOR_VERSION, MiuixIcons.Regular.Settings),
-        AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, MiuixIcons.Regular.Settings)
+        AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, MiuixIcons.Regular.Settings),
+        AboutInfoRow(R.string.about_row_work_manager, BuildConfig.WORK_RUNTIME_VERSION, MiuixIcons.Regular.Refresh),
+        AboutInfoRow(
+            R.string.about_row_background_jobs,
+            stringResource(R.string.about_value_background_jobs),
+            MiuixIcons.Regular.Tune
+        )
     )
     AboutSectionCard(
         cardColor = cardColor,
@@ -181,6 +188,7 @@ fun AboutMediaStorageCardSection(
     val rows = listOf(
         AboutInfoRow(R.string.about_row_media3, BuildConfig.MEDIA3_VERSION, MiuixIcons.Regular.Album),
         AboutInfoRow(R.string.about_row_zoomimage, BuildConfig.ZOOMIMAGE_VERSION, MiuixIcons.Regular.GridView),
+        AboutInfoRow(R.string.about_row_coil3, BuildConfig.COIL3_VERSION, MiuixIcons.Regular.Album),
         AboutInfoRow(R.string.about_row_mmkv, BuildConfig.MMKV_VERSION, MiuixIcons.Regular.Lock)
     )
     AboutSectionCard(

@@ -27,7 +27,7 @@
     <string name="about_card_ui_title">UI与框架</string>
     <string name="about_card_ui_subtitle">页面渲染、导航与材质能力</string>
     <string name="about_card_network_title">网络与服务</string>
-    <string name="about_card_network_subtitle">MCP与请求服务栈</string>
+    <string name="about_card_network_subtitle">MCP、请求服务栈与后台调度</string>
     <string name="about_card_media_title">媒体与存储</string>
     <string name="about_card_media_subtitle">播放器、图像与本地存储能力</string>
 
@@ -58,8 +58,12 @@
     <string name="about_row_mcp_sdk">MCP SDK</string>
     <string name="about_row_ktor">Ktor</string>
     <string name="about_row_okhttp">OkHttp</string>
+    <string name="about_row_work_manager">WorkManager</string>
+    <string name="about_row_background_jobs">后台任务</string>
+    <string name="about_value_background_jobs">GitHub 定时刷新 / BA AP 阈值检查</string>
     <string name="about_row_media3">Media3</string>
     <string name="about_row_zoomimage">ZoomImage</string>
+    <string name="about_row_coil3">Coil3</string>
     <string name="about_row_mmkv">MMKV</string>
 
     <string name="about_runtime_label_notification_permission">通知权限</string>
@@ -84,7 +88,7 @@
     <string name="about_permission_internet_used_in">GitHub 版本检查、BA 数据抓取、MCP 对外通信</string>
     <string name="about_permission_access_network_state_title">网络状态</string>
     <string name="about_permission_access_network_state_purpose">读取当前网络连接状态</string>
-    <string name="about_permission_access_network_state_used_in">请求/通知链路状态判断与容错</string>
+    <string name="about_permission_access_network_state_used_in">请求链路状态判断、WorkManager 任务网络约束与容错</string>
     <string name="about_permission_post_notifications_title">通知权限</string>
     <string name="about_permission_post_notifications_purpose">显示系统通知、实时动态与超级岛通知</string>
     <string name="about_permission_post_notifications_used_in">MCP 常驻通知、BA AP 通知、GitHub 刷新通知</string>
@@ -116,7 +120,7 @@
     <string name="about_component_mcp_keep_alive_used_in">MCP 页面启动/停止服务；BA AP 通知联动</string>
     <string name="about_component_notification_receiver_title">通知动作接收器</string>
     <string name="about_component_notification_receiver_purpose">处理通知按钮动作（如已读）</string>
-    <string name="about_component_notification_receiver_used_in">GitHub 刷新通知的“已读”动作</string>
+    <string name="about_component_notification_receiver_used_in">GitHub/MCP/BA 通知的“已读”与“打开”动作</string>
     <string name="about_component_shizuku_provider_title">Shizuku Provider</string>
     <string name="about_component_shizuku_provider_purpose">接入 Shizuku 权限桥接能力</string>
     <string name="about_component_shizuku_provider_used_in">Shizuku 状态检查与能力调用</string>

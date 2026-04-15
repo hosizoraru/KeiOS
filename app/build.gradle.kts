@@ -104,6 +104,8 @@ android {
         buildConfigField("String", "OKHTTP_VERSION", "\"$okhttpVersion\"")
         buildConfigField("String", "MEDIA3_VERSION", "\"$media3Version\"")
         buildConfigField("String", "ZOOMIMAGE_VERSION", "\"$zoomImageVersion\"")
+        buildConfigField("String", "COIL3_VERSION", "\"$coil3Version\"")
+        buildConfigField("String", "WORK_RUNTIME_VERSION", "\"$workRuntimeVersion\"")
         buildConfigField("String", "GRADLE_VERSION", "\"$projectGradleVersion\"")
         buildConfigField("int", "COMPILE_SDK_VERSION", projectCompileSdk.toString())
         buildConfigField("int", "MIN_SDK_VERSION", projectMinSdk.toString())
