@@ -35,9 +35,11 @@ import top.yukonga.miuix.kmp.theme.ThemeController
 class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_TARGET_BOTTOM_PAGE = "com.example.keios.extra.TARGET_BOTTOM_PAGE"
+        const val EXTRA_MCP_SERVER_ACTION = "com.example.keios.extra.MCP_SERVER_ACTION"
         const val TARGET_BOTTOM_PAGE_GITHUB = "GitHub"
         const val TARGET_BOTTOM_PAGE_MCP = "Mcp"
         const val TARGET_BOTTOM_PAGE_BA = "Ba"
+        const val MCP_SERVER_ACTION_TOGGLE = "toggle"
     }
 
     private var shizukuStatus = mutableStateOf("Shizuku status: initializing...")
@@ -45,6 +47,7 @@ class MainActivity : ComponentActivity() {
     private var notificationPermissionGranted by mutableStateOf(true)
     private var requestedBottomPage by mutableStateOf<String?>(null)
     private var requestedBottomPageToken by mutableStateOf(0)
+    private var pendingMcpServerAction: String? = null
     private val shizukuApiUtils = ShizukuApiUtils()
     private lateinit var localMcpService: LocalMcpService
     private lateinit var mcpServerManager: McpServerManager
@@ -82,6 +85,7 @@ class MainActivity : ComponentActivity() {
             appContext = applicationContext,
             localMcpService = localMcpService
         )
+        applyPendingMcpServerAction()
         McpNotificationHelper.restoreXiaomiNetworkIfNeeded(this)
 
         shizukuApiUtils.attach { status ->
@@ -125,6 +129,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         consumeIntentNavigation(intent)
+        applyPendingMcpServerAction()
     }
 
     override fun onDestroy() {
@@ -164,6 +169,28 @@ class MainActivity : ComponentActivity() {
             ?: return
         requestedBottomPage = target
         requestedBottomPageToken += 1
+        if (target == TARGET_BOTTOM_PAGE_MCP) {
+            pendingMcpServerAction = intent.getStringExtra(EXTRA_MCP_SERVER_ACTION)
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+        }
+    }
+
+    private fun applyPendingMcpServerAction() {
+        if (!::mcpServerManager.isInitialized) return
+        val action = pendingMcpServerAction ?: return
+        pendingMcpServerAction = null
+        if (action != MCP_SERVER_ACTION_TOGGLE) return
+
+        val state = mcpServerManager.uiState.value
+        if (state.running) {
+            mcpServerManager.stop()
+        } else {
+            mcpServerManager.start(
+                port = state.port,
+                allowExternal = state.allowExternal
+            )
+        }
     }
 }
 

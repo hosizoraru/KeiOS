@@ -78,9 +78,9 @@ data class McpNotificationPayload(
 
     fun stopActionTitle(context: Context): String {
         return if (isBlueArchiveAp) {
-            context.getString(R.string.common_mark_read)
+            context.getString(R.string.common_close)
         } else {
-            context.getString(R.string.common_stop)
+            context.getString(R.string.mcp_action_toggle_service)
         }
     }
 

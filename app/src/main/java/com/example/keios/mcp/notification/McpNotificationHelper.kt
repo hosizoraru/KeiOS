@@ -32,7 +32,6 @@ object McpNotificationHelper {
     const val KEEPALIVE_NOTIFICATION_ID = 38888
     const val BA_AP_NOTIFICATION_ID = 38889
     private const val TEST_NOTIFICATION_ID = KEEPALIVE_NOTIFICATION_ID
-    private const val ACTION_STOP = "com.example.keios.mcp.keepalive.STOP"
     private const val ACTION_DISMISS = "com.example.keios.mcp.keepalive.DISMISS"
     private const val EXTRA_NOTIFICATION_ID = "notification_id"
     private const val XMSF_PACKAGE_NAME = "com.xiaomi.xmsf"
@@ -174,19 +173,30 @@ object McpNotificationHelper {
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val actionForSecondaryButton = if (isBlueArchiveAp) ACTION_DISMISS else ACTION_STOP
-        val stopIntent = Intent(context, McpKeepAliveService::class.java).apply {
-            action = actionForSecondaryButton
-            if (isBlueArchiveAp) {
+        val stopPendingIntent = if (isBlueArchiveAp) {
+            val dismissIntent = Intent(context, McpKeepAliveService::class.java).apply {
+                action = ACTION_DISMISS
                 putExtra(EXTRA_NOTIFICATION_ID, BA_AP_NOTIFICATION_ID)
             }
+            PendingIntent.getService(
+                context,
+                1102,
+                dismissIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            val toggleIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                putExtra(MainActivity.EXTRA_TARGET_BOTTOM_PAGE, MainActivity.TARGET_BOTTOM_PAGE_MCP)
+                putExtra(MainActivity.EXTRA_MCP_SERVER_ACTION, MainActivity.MCP_SERVER_ACTION_TOGGLE)
+            }
+            PendingIntent.getActivity(
+                context,
+                1102,
+                toggleIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
         }
-        val stopPendingIntent = PendingIntent.getService(
-            context,
-            1102,
-            stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
         val payload = McpNotificationPayload(
             serverName = serverName,
@@ -212,6 +222,7 @@ object McpNotificationHelper {
         clients: Int
     ) {
         val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
+        val runningForNotification = if (isBlueArchiveAp) running else true
         if (isBlueArchiveAp) {
             runCatching {
                 McpKeepAliveService.startOrUpdate(
@@ -235,20 +246,20 @@ object McpNotificationHelper {
         val buildResult = buildForegroundNotificationResult(
             context = context,
             serverName = serverName,
-            running = running,
+            running = runningForNotification,
             port = port,
             path = path,
             clients = clients,
-            ongoing = running,
+            ongoing = runningForNotification,
             onlyAlertOnce = false
         )
         val snapshot = CachedNotificationSnapshot(
             serverName = serverName,
-            running = running,
+            running = runningForNotification,
             port = port,
             path = path,
             clients = clients,
-            ongoing = running,
+            ongoing = runningForNotification,
             onlyAlertOnce = false,
             style = buildResult.style,
             useXiaomiMagic = buildResult.useXiaomiMagic

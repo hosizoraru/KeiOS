@@ -142,13 +142,15 @@
     <string name="mcp_live_update_channel_name">MCP Live Update</string>
     <string name="mcp_live_update_channel_desc">用于展示 AOSP Live Update 实时通知</string>
 
-    <string name="github_refresh_channel_name">GitHub 刷新</string>
-    <string name="github_refresh_channel_desc">用于展示 GitHub 版本跟踪刷新进度与结果</string>
-    <string name="github_refresh_title_running">GitHub 刷新中</string>
-    <string name="github_refresh_title_cancelled">GitHub 刷新已取消</string>
-    <string name="github_refresh_title_completed">GitHub 刷新完成</string>
-    <string name="github_refresh_content">已检查 %1$d/%2$d · 追踪 %3$d · 可更新 %4$d</string>
-    <string name="github_refresh_content_with_failed">已检查 %1$d/%2$d · 追踪 %3$d · 可更新 %4$d · 失败 %5$d</string>
+    <string name="github_refresh_channel_name">GitHub 项目追踪刷新</string>
+    <string name="github_refresh_channel_desc">用于展示 GitHub 项目追踪刷新进度与结果</string>
+    <string name="github_refresh_title_running">GitHub项目追踪刷新中</string>
+    <string name="github_refresh_title_cancelled">GitHub项目追踪刷新已取消</string>
+    <string name="github_refresh_title_completed">GitHub项目追踪刷新完成</string>
+    <string name="github_refresh_content">已检查 %1$d/%2$d 项 · 追踪项目 %3$d · 可更新 %4$d</string>
+    <string name="github_refresh_content_with_failed">已检查 %1$d/%2$d 项 · 追踪项目 %3$d · 可更新 %4$d · 失败 %5$d</string>
+
+    <string name="mcp_action_toggle_service">开关服务</string>
 
     <string name="github_check_failed_prefix">检查失败</string>
     <string name="github_page_title">GitHub</string>
