@@ -24,8 +24,7 @@ object GitHubRefreshNotificationHelper {
     private const val TAG = "GitHubRefreshNotify"
     const val CHANNEL_ID = "github_refresh_channel_v1"
     const val NOTIFICATION_ID = 38990
-    private const val ISLAND_ICON_BLUE_LIGHT = 0xFF2B6DFF.toInt()
-    private const val ISLAND_ICON_BLUE_DARK = 0xFF5EA8FF.toInt()
+    private const val ISLAND_ICON_RES_ID = R.drawable.ic_github_invertocat_island_blue
 
     private data class RefreshState(
         val current: Int,
@@ -210,7 +209,7 @@ object GitHubRefreshNotificationHelper {
             .setStyledByProgress(true)
             .setProgress(state.progressPercent)
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_github_invertocat)
+            .setSmallIcon(ISLAND_ICON_RES_ID)
             .setContentTitle(state.title)
             .setContentText(state.content)
             .setContentIntent(openPendingIntent)
@@ -233,7 +232,7 @@ object GitHubRefreshNotificationHelper {
         val openPendingIntent = buildOpenPendingIntent(context)
         val readPendingIntent = buildMarkReadPendingIntent(context)
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_github_invertocat)
+            .setSmallIcon(ISLAND_ICON_RES_ID)
             .setContentTitle(state.title)
             .setContentText(state.content)
             .setSubText("进度 ${state.shortText}")
@@ -260,7 +259,7 @@ object GitHubRefreshNotificationHelper {
         state: RefreshState,
         onlyAlertOnce: Boolean
     ): Notification {
-        val iconResId = R.drawable.ic_github_invertocat
+        val iconResId = ISLAND_ICON_RES_ID
         val openPendingIntent = buildOpenPendingIntent(context)
         val readPendingIntent = buildMarkReadPendingIntent(context)
         val baseBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -299,12 +298,8 @@ object GitHubRefreshNotificationHelper {
         readPendingIntent: PendingIntent
     ) = runCatching {
         FocusNotification.buildV3 {
-            val lightLogoIcon = Icon.createWithResource(context, iconResId).setTint(
-                ISLAND_ICON_BLUE_LIGHT
-            )
-            val darkLogoIcon = Icon.createWithResource(context, iconResId).setTint(
-                ISLAND_ICON_BLUE_DARK
-            )
+            val lightLogoIcon = Icon.createWithResource(context, iconResId)
+            val darkLogoIcon = Icon.createWithResource(context, iconResId)
             val light = createPicture("github_logo_light", lightLogoIcon)
             val dark = createPicture("github_logo_dark", darkLogoIcon)
 
