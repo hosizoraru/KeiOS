@@ -50,8 +50,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
@@ -1600,9 +1602,12 @@ fun GuideSkillCardItem(
 ) {
     var showLevelPopup by remember(card.id) { mutableStateOf(false) }
     var levelPopupAnchorBounds by remember(card.id) { mutableStateOf<IntRect?>(null) }
+    var skillTitleRowHeightPx by remember(card.id) { mutableStateOf(0) }
     val levelOptions = card.levelOptions
     var selectedLevel by rememberSaveable(card.id) { mutableStateOf(card.defaultLevel) }
+    var typeCapsuleHeightPx by remember(card.id, selectedLevel) { mutableStateOf(0) }
     var descriptionLineCount by remember(card.id, selectedLevel) { mutableStateOf(1) }
+    val density = LocalDensity.current
 
     LaunchedEffect(card.id, card.defaultLevel, levelOptions) {
         if (levelOptions.isEmpty()) {
@@ -1621,6 +1626,17 @@ fun GuideSkillCardItem(
     }
     val metaColumnShouldTopAlign = descriptionLineCount >= 3
     val metaColumnAlignment = if (metaColumnShouldTopAlign) Alignment.Top else Alignment.CenterVertically
+    val descriptionTopOffsetDp = with(density) { skillTitleRowHeightPx.toDp() } + 8.dp
+    val occupiedBeforeCostDp = if (card.type.isNotBlank()) {
+        with(density) { typeCapsuleHeightPx.toDp() } + 4.dp
+    } else {
+        0.dp
+    }
+    val costAlignToDescriptionOffset = if (metaColumnShouldTopAlign) {
+        (descriptionTopOffsetDp - occupiedBeforeCostDp).coerceAtLeast(0.dp)
+    } else {
+        0.dp
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -1642,7 +1658,9 @@ fun GuideSkillCardItem(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { skillTitleRowHeightPx = it.height },
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1685,17 +1703,22 @@ fun GuideSkillCardItem(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (card.type.isNotBlank()) {
-                        GlassTextButton(
-                            backdrop = backdrop,
-                            text = card.type,
-                            enabled = false,
-                            textColor = Color(0xFF3B82F6),
-                            variant = GlassVariant.Compact,
-                            minHeight = 30.dp,
-                            horizontalPadding = 10.dp,
-                            verticalPadding = 6.dp,
-                            onClick = {}
-                        )
+                        Box(modifier = Modifier.onSizeChanged { typeCapsuleHeightPx = it.height }) {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                text = card.type,
+                                enabled = false,
+                                textColor = Color(0xFF3B82F6),
+                                variant = GlassVariant.Compact,
+                                minHeight = 30.dp,
+                                horizontalPadding = 10.dp,
+                                verticalPadding = 6.dp,
+                                onClick = {}
+                            )
+                        }
+                    }
+                    if (costAlignToDescriptionOffset > 0.dp && (skillCost.isNotBlank() || levelOptions.isNotEmpty())) {
+                        Spacer(modifier = Modifier.height(costAlignToDescriptionOffset))
                     }
                     if (skillCost.isNotBlank()) {
                         GlassTextButton(
