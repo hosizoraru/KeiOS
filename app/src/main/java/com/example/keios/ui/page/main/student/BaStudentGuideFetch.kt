@@ -1127,11 +1127,22 @@ private fun defaultVoiceLanguageLabelForIndex(index: Int): String {
 }
 
 private fun looksLikeVoiceLanguageLabel(raw: String): Boolean {
-    val canonical = canonicalVoiceLanguageLabel(raw)
-    if (canonical.isBlank()) return false
-    if (canonical in setOf("日配", "中配", "韩配", "官翻")) return true
-    val normalized = normalizeVoiceLanguageLabelRaw(canonical)
-    return normalized.contains("配") || normalized.contains("翻")
+    val normalizedRaw = normalizeVoiceLanguageLabelRaw(raw)
+    if (normalizedRaw.isBlank()) return false
+    val sanitized = normalizedRaw
+        .replace("cv", "")
+        .replace("声优", "")
+        .trim(':', '：', '|', '｜', '-', '－', '—', '/', '／', ',', '，', ';', '；')
+    if (sanitized.isBlank()) return false
+    // Strict label-only guard: avoid treating composite payloads like
+    // "日 | 梅澤 めぐ" as a pure language label.
+    if (Regex("""[|｜:：\-－—/／,，;；]""").containsMatchIn(sanitized)) return false
+    return sanitized in setOf(
+        "日", "日配", "日语", "日本", "jp", "jpn",
+        "中", "中配", "中文", "国语", "国配", "cn",
+        "韩", "韩配", "kr", "kor", "korean",
+        "官翻", "官中", "官方翻译", "官方中文"
+    )
 }
 
 private fun voiceLineDisplayPriority(label: String): Int {
