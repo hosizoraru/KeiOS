@@ -113,14 +113,73 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                     )
                                                 }
                                             }
-                                            Column(
+                                            val rarityItem = profileItems.firstOrNull { meta ->
+                                                meta.title == "稀有度" || meta.title == "星级"
+                                            }
+                                            val academyItem = profileItems.firstOrNull { meta ->
+                                                meta.title == "学院"
+                                            }
+                                            val clubItem = profileItems.firstOrNull { meta ->
+                                                meta.title == "所属社团" || meta.title == "社团"
+                                            }
+                                            val alignedItems = listOfNotNull(rarityItem, academyItem, clubItem)
+                                            val extraItems = profileItems.filterNot { item ->
+                                                alignedItems.any { it.title == item.title && it.value == item.value }
+                                            }
+
+                                            Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .heightIn(min = 152.dp),
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                    .height(152.dp)
                                             ) {
-                                                profileItems.forEach { item ->
-                                                    GuideProfileMetaLine(item)
+                                                rarityItem?.let { item ->
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.TopStart)
+                                                            .fillMaxWidth()
+                                                    ) {
+                                                        GuideProfileMetaLine(item)
+                                                    }
+                                                }
+                                                academyItem?.let { item ->
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.CenterStart)
+                                                            .fillMaxWidth()
+                                                    ) {
+                                                        GuideProfileMetaLine(item)
+                                                    }
+                                                }
+                                                clubItem?.let { item ->
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.BottomStart)
+                                                            .fillMaxWidth()
+                                                    ) {
+                                                        GuideProfileMetaLine(item)
+                                                    }
+                                                }
+                                                if (alignedItems.isEmpty()) {
+                                                    Column(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        profileItems.forEach { item ->
+                                                            GuideProfileMetaLine(item)
+                                                        }
+                                                    }
+                                                } else if (extraItems.isNotEmpty()) {
+                                                    Column(
+                                                        modifier = Modifier
+                                                            .align(Alignment.TopStart)
+                                                            .fillMaxWidth()
+                                                            .padding(top = 2.dp),
+                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        extraItems.forEach { item ->
+                                                            GuideProfileMetaLine(item)
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
