@@ -1599,6 +1599,7 @@ fun GuideSkillCardItem(
     modifier: Modifier = Modifier
 ) {
     var showLevelPopup by remember(card.id) { mutableStateOf(false) }
+    var levelPopupAnchorBounds by remember(card.id) { mutableStateOf<IntRect?>(null) }
     val levelOptions = card.levelOptions
     var selectedLevel by rememberSaveable(card.id) { mutableStateOf(card.defaultLevel) }
 
@@ -1613,6 +1614,10 @@ fun GuideSkillCardItem(
     val skillDesc = card.descriptionFor(selectedLevel)
     val skillCost = card.costFor(selectedLevel)
     val displayLevel = selectedLevel.ifBlank { card.defaultLevel }
+    val isExSkill = remember(card.type) { card.type.contains("EX", ignoreCase = true) }
+    val hasSkillMetaColumn = remember(card.type, skillCost, levelOptions) {
+        card.type.isNotBlank() || skillCost.isNotBlank() || levelOptions.isNotEmpty()
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -1631,7 +1636,7 @@ fun GuideSkillCardItem(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Row(
                     modifier = Modifier.weight(1f),
@@ -1649,29 +1654,82 @@ fun GuideSkillCardItem(
                         text = card.name,
                         modifier = Modifier.weight(1f),
                         color = MiuixTheme.colorScheme.onBackground,
-                        maxLines = 1,
+                        maxLines = if (isExSkill) 2 else 1,
                         overflow = TextOverflow.Ellipsis
                     )
-
-                    if (card.type.isNotBlank()) {
-                        GlassTextButton(
-                            backdrop = backdrop,
-                            text = card.type,
-                            enabled = false,
-                            textColor = Color(0xFF3B82F6),
-                            variant = GlassVariant.Compact,
-                            onClick = {}
-                        )
-                    }
-                    if (skillCost.isNotBlank()) {
-                        GlassTextButton(
-                            backdrop = backdrop,
-                            text = "COST: $skillCost",
-                            enabled = false,
-                            textColor = Color(0xFF3B82F6),
-                            variant = GlassVariant.Compact,
-                            onClick = {}
-                        )
+                }
+                if (hasSkillMetaColumn) {
+                    Column(
+                        modifier = Modifier.widthIn(min = 68.dp, max = 90.dp),
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (card.type.isNotBlank()) {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                text = card.type,
+                                enabled = false,
+                                textColor = Color(0xFF3B82F6),
+                                variant = GlassVariant.Compact,
+                                minHeight = 30.dp,
+                                horizontalPadding = 10.dp,
+                                verticalPadding = 6.dp,
+                                onClick = {}
+                            )
+                        }
+                        if (skillCost.isNotBlank()) {
+                            GlassTextButton(
+                                backdrop = backdrop,
+                                text = "COST:$skillCost",
+                                enabled = false,
+                                textColor = Color(0xFF3B82F6),
+                                variant = GlassVariant.Compact,
+                                minHeight = 30.dp,
+                                horizontalPadding = 10.dp,
+                                verticalPadding = 6.dp,
+                                onClick = {}
+                            )
+                        }
+                        if (levelOptions.isNotEmpty()) {
+                            Box(
+                                modifier = Modifier.capturePopupAnchor { levelPopupAnchorBounds = it }
+                            ) {
+                                GlassTextButton(
+                                    backdrop = backdrop,
+                                    text = displayLevel,
+                                    variant = GlassVariant.Compact,
+                                    minHeight = 30.dp,
+                                    horizontalPadding = 10.dp,
+                                    verticalPadding = 6.dp,
+                                    onClick = { showLevelPopup = !showLevelPopup }
+                                )
+                                if (showLevelPopup) {
+                                    SnapshotWindowListPopup(
+                                        show = showLevelPopup,
+                                        alignment = PopupPositionProvider.Align.BottomEnd,
+                                        anchorBounds = levelPopupAnchorBounds,
+                                        placement = SnapshotPopupPlacement.ButtonEnd,
+                                        onDismissRequest = { showLevelPopup = false },
+                                        enableWindowDim = false
+                                    ) {
+                                        LiquidDropdownColumn {
+                                            levelOptions.forEachIndexed { index, option ->
+                                                LiquidDropdownImpl(
+                                                    text = option,
+                                                    optionSize = levelOptions.size,
+                                                    isSelected = selectedLevel == option,
+                                                    index = index,
+                                                    onSelectedIndexChange = { selected ->
+                                                        selectedLevel = levelOptions[selected]
+                                                        showLevelPopup = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1685,46 +1743,8 @@ fun GuideSkillCardItem(
                     description = skillDesc.ifBlank { "暂未解析到技能描述。" },
                     glossaryIcons = card.glossaryIcons,
                     descriptionIcons = card.descriptionIconsFor(selectedLevel),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 )
-                if (levelOptions.isNotEmpty()) {
-                    var levelPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
-                    Box(
-                        modifier = Modifier.capturePopupAnchor { levelPopupAnchorBounds = it }
-                    ) {
-                        GlassTextButton(
-                            backdrop = backdrop,
-                            text = displayLevel,
-                            variant = GlassVariant.Compact,
-                            onClick = { showLevelPopup = !showLevelPopup }
-                        )
-                        if (showLevelPopup) {
-                            SnapshotWindowListPopup(
-                                show = showLevelPopup,
-                                alignment = PopupPositionProvider.Align.BottomEnd,
-                                anchorBounds = levelPopupAnchorBounds,
-                                placement = SnapshotPopupPlacement.ButtonEnd,
-                                onDismissRequest = { showLevelPopup = false },
-                                enableWindowDim = false
-                            ) {
-                                LiquidDropdownColumn {
-                                    levelOptions.forEachIndexed { index, option ->
-                                        LiquidDropdownImpl(
-                                            text = option,
-                                            optionSize = levelOptions.size,
-                                            isSelected = selectedLevel == option,
-                                            index = index,
-                                            onSelectedIndexChange = { selected ->
-                                                selectedLevel = levelOptions[selected]
-                                                showLevelPopup = false
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }

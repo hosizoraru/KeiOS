@@ -214,7 +214,10 @@ fun GlassTextButton(
     onLongClick: (() -> Unit)? = null,
     onPressedChange: ((Boolean) -> Unit)? = null,
     blurRadius: Dp? = null,
-    variant: GlassVariant = GlassVariant.Content
+    variant: GlassVariant = GlassVariant.Content,
+    minHeight: Dp = 40.dp,
+    horizontalPadding: Dp = 14.dp,
+    verticalPadding: Dp = 10.dp
 ) {
     val isDark = isSystemInDarkTheme()
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
@@ -255,7 +258,7 @@ fun GlassTextButton(
 
     Box(
         modifier = modifier
-            .defaultMinSize(minHeight = 40.dp)
+            .defaultMinSize(minHeight = minHeight)
             .clip(ContinuousCapsule)
             .then(
                 if (longClick != null) {
@@ -311,7 +314,7 @@ fun GlassTextButton(
                 }
             )
             .then(borderModifier)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         contentAlignment = Alignment.Center
     ) {
         Row(
