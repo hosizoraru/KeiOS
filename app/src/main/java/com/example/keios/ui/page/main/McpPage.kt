@@ -34,9 +34,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -247,9 +250,28 @@ fun McpPage(
         }
     }
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop: LayerBackdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
+    var activationCount by rememberSaveable { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        activationCount++
+        onDispose { }
+    }
+    val topBarBackdrop: LayerBackdrop = key("mcp-topbar-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val contentBackdrop: LayerBackdrop = key("mcp-content-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val sheetBackdrop: LayerBackdrop = key("mcp-sheet-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
     }
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     DisposableEffect(Unit) {
@@ -269,7 +291,7 @@ fun McpPage(
                 color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 actions = {
                     LiquidActionBar(
-                        backdrop = backdrop,
+                        backdrop = topBarBackdrop,
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Edit,
@@ -411,7 +433,7 @@ fun McpPage(
 
             item {
                 MiuixExpandableSection(
-                backdrop = backdrop,
+                backdrop = contentBackdrop,
                 title = stringResource(R.string.mcp_section_service_control_title),
                 subtitle = stringResource(R.string.mcp_section_service_control_subtitle),
                 expanded = controlExpanded,
@@ -425,7 +447,7 @@ fun McpPage(
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     GlassTextButton(
-                        backdrop = backdrop,
+                        backdrop = contentBackdrop,
                         variant = GlassVariant.Content,
                         text = stringResource(R.string.mcp_action_send_test_notification),
                         modifier = Modifier.weight(1f),
@@ -458,7 +480,7 @@ fun McpPage(
 
             item {
                 MiuixExpandableSection(
-                backdrop = backdrop,
+                backdrop = contentBackdrop,
                 title = stringResource(R.string.mcp_section_tools_title),
                 subtitle = stringResource(R.string.mcp_section_tools_subtitle, uiState.tools.size),
                 expanded = configExpanded,
@@ -480,7 +502,7 @@ fun McpPage(
 
             item {
                 MiuixExpandableSection(
-                backdrop = backdrop,
+                backdrop = contentBackdrop,
                 title = stringResource(R.string.mcp_section_logs_title),
                 subtitle = stringResource(R.string.mcp_section_logs_subtitle, uiState.logs.size),
                 expanded = logsExpanded,
@@ -501,7 +523,7 @@ fun McpPage(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 GlassTextButton(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     variant = GlassVariant.Content,
                     text = stringResource(R.string.mcp_action_clear_logs),
                     onClick = { mcpServerManager.clearLogs() }
@@ -523,7 +545,7 @@ fun McpPage(
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
                 GlassIconButton(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     icon = if (uiState.running) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
                     contentDescription = if (uiState.running) {
                         stringResource(R.string.mcp_action_stop_service)
@@ -546,7 +568,7 @@ fun McpPage(
         onDismissRequest = { showEditSheet = false },
         startAction = {
             GlassIconButton(
-                backdrop = backdrop,
+                backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Close,
                 contentDescription = stringResource(R.string.common_close),
@@ -555,7 +577,7 @@ fun McpPage(
         },
         endAction = {
             GlassIconButton(
-                backdrop = backdrop,
+                backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = MiuixIcons.Regular.Ok,
                 contentDescription = stringResource(R.string.common_save),
@@ -606,7 +628,7 @@ fun McpPage(
                         value = serverName,
                         onValueChange = { serverName = it },
                         label = stringResource(R.string.mcp_input_service_name_hint),
-                        backdrop = backdrop,
+                        backdrop = sheetBackdrop,
                         variant = GlassVariant.SheetInput,
                         singleLine = true,
                         textAlign = TextAlign.Center,
@@ -618,7 +640,7 @@ fun McpPage(
                         value = portText,
                         onValueChange = { portText = it.filter(Char::isDigit).take(5) },
                         label = stringResource(R.string.mcp_input_port_hint),
-                        backdrop = backdrop,
+                        backdrop = sheetBackdrop,
                         variant = GlassVariant.SheetInput,
                         singleLine = true,
                         textAlign = TextAlign.Center,
@@ -647,7 +669,7 @@ fun McpPage(
             )
             SheetSectionCard {
                 GlassTextButton(
-                    backdrop = backdrop,
+                    backdrop = sheetBackdrop,
                     variant = GlassVariant.SheetDangerAction,
                     text = stringResource(R.string.mcp_action_reset_token),
                     textColor = MiuixTheme.colorScheme.error,

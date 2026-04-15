@@ -4,10 +4,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +36,7 @@ import com.example.keios.ui.page.main.ba.openBaExternalLink
 import com.example.keios.ui.page.main.ba.rememberBaOfficeController
 import com.example.keios.ui.page.main.ba.rememberBaPageUiController
 import com.example.keios.ui.page.main.ba.saveBaPageSettings
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
@@ -53,9 +58,28 @@ fun BAPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
+    var activationCount by rememberSaveable { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        activationCount++
+        onDispose { }
+    }
+    val topBarBackdrop: LayerBackdrop = key("ba-topbar-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val contentBackdrop: LayerBackdrop = key("ba-content-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val sheetBackdrop: LayerBackdrop = key("ba-sheet-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
     }
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val baSmallTitleMargin = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
@@ -184,7 +208,7 @@ fun BAPage(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             BaTopBar(
-                backdrop = backdrop,
+                backdrop = topBarBackdrop,
                 topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 scrollBehavior = scrollBehavior,
                 showCalendarIntervalPopup = ui.showCalendarIntervalPopup,
@@ -211,7 +235,7 @@ fun BAPage(
         },
     ) { innerPadding ->
         BaPageContent(
-            backdrop = backdrop,
+            backdrop = contentBackdrop,
             innerPadding = innerPadding,
             contentBottomPadding = contentBottomPadding,
             listState = listState,
@@ -223,7 +247,7 @@ fun BAPage(
 
     BaSettingsSheet(
         show = ui.showSettingsSheet,
-        backdrop = backdrop,
+        backdrop = sheetBackdrop,
         state = settingsSheetState,
         onApNotifyEnabledChange = { ui.sheetApNotifyEnabled = it },
         onApNotifyThresholdTextChange = { ui.sheetApNotifyThresholdText = it },

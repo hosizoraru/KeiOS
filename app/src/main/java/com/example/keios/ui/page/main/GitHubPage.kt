@@ -45,12 +45,15 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -182,9 +185,28 @@ fun GitHubPage(
     val scrollBehavior = MiuixScrollBehavior()
     val isDark = isSystemInDarkTheme()
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop: LayerBackdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
+    var activationCount by rememberSaveable { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        activationCount++
+        onDispose { }
+    }
+    val topBarBackdrop: LayerBackdrop = key("github-topbar-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val contentBackdrop: LayerBackdrop = key("github-content-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val sheetBackdrop: LayerBackdrop = key("github-sheet-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
     }
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     var trackedSearch by remember { mutableStateOf("") }
@@ -1146,7 +1168,8 @@ fun GitHubPage(
         listState = listState,
         scrollBehavior = scrollBehavior,
         addButtonScrollConnection = addButtonScrollConnection,
-        backdrop = backdrop,
+        topBarBackdrop = topBarBackdrop,
+        contentBackdrop = contentBackdrop,
         topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
         showSearchBar = showSearchBar,
         trackedSearch = trackedSearch,
@@ -1201,7 +1224,7 @@ fun GitHubPage(
 
     GitHubStrategySheet(
         show = showStrategySheet,
-        backdrop = backdrop,
+        backdrop = sheetBackdrop,
         lookupConfig = lookupConfig,
         selectedStrategyInput = selectedStrategyInput,
         githubApiTokenInput = githubApiTokenInput,
@@ -1236,7 +1259,7 @@ fun GitHubPage(
     }
     GitHubCheckLogicSheet(
         show = showCheckLogicSheet,
-        backdrop = backdrop,
+        backdrop = sheetBackdrop,
         lookupConfig = lookupConfig,
         refreshIntervalHours = refreshIntervalHours,
         refreshIntervalHoursInput = refreshIntervalHoursInput,
@@ -1269,7 +1292,7 @@ fun GitHubPage(
 
     GitHubTrackEditSheet(
         show = showAddSheet,
-        backdrop = backdrop,
+        backdrop = sheetBackdrop,
         editingTrackedItem = editingTrackedItem,
         repoUrlInput = repoUrlInput,
         appSearch = appSearch,

@@ -36,6 +36,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -155,9 +157,28 @@ fun OsPage(
     var showSearchBar by remember { mutableStateOf(true) }
     var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop: LayerBackdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
+    var activationCount by rememberSaveable { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        activationCount++
+        onDispose { }
+    }
+    val topBarBackdrop: LayerBackdrop = key("os-topbar-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val contentBackdrop: LayerBackdrop = key("os-content-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val sheetBackdrop: LayerBackdrop = key("os-sheet-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
     }
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
@@ -576,7 +597,7 @@ fun OsPage(
                     color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     actions = {
                         LiquidActionBar(
-                            backdrop = backdrop,
+                            backdrop = topBarBackdrop,
                             items = listOf(
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Edit,
@@ -627,7 +648,7 @@ fun OsPage(
                             value = queryInput,
                             onValueChange = { queryInput = it },
                             label = "搜索OS参数",
-                            backdrop = backdrop,
+                            backdrop = topBarBackdrop,
                             variant = GlassVariant.Bar,
                             singleLine = true
                         )
@@ -643,7 +664,7 @@ fun OsPage(
             onDismissRequest = { showCardManager = false },
             startAction = {
                 GlassIconButton(
-                    backdrop = backdrop,
+                    backdrop = sheetBackdrop,
                     variant = GlassVariant.Bar,
                     icon = MiuixIcons.Regular.Close,
                     contentDescription = "关闭",
@@ -797,7 +818,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.TOP_INFO)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "TopInfo",
                     subtitle = "${displayedTopInfoRows.size} 条",
                     expanded = topInfoExpanded,
@@ -835,7 +856,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.SYSTEM)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "System Table",
                     subtitle = sectionSubtitle(SectionKind.SYSTEM, if (q.isBlank()) prunedSystemRows.size else displayedSystemRows.size),
                     expanded = systemTableExpanded,
@@ -855,7 +876,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.SECURE)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "Secure Table",
                     subtitle = sectionSubtitle(SectionKind.SECURE, if (q.isBlank()) prunedSecureRows.size else displayedSecureRows.size),
                     expanded = secureTableExpanded,
@@ -875,7 +896,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.GLOBAL)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "Global Table",
                     subtitle = sectionSubtitle(SectionKind.GLOBAL, if (q.isBlank()) prunedGlobalRows.size else displayedGlobalRows.size),
                     expanded = globalTableExpanded,
@@ -895,7 +916,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.ANDROID)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "Android Properties",
                     subtitle = sectionSubtitle(SectionKind.ANDROID, if (q.isBlank()) prunedAndroidRows.size else displayedAndroidRows.size),
                     expanded = androidPropsExpanded,
@@ -915,7 +936,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.JAVA)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "Java Properties",
                     subtitle = sectionSubtitle(SectionKind.JAVA, if (q.isBlank()) prunedJavaRows.size else displayedJavaRows.size),
                     expanded = javaPropsExpanded,
@@ -935,7 +956,7 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.LINUX)) {
                 item {
                 MiuixAccordionCard(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     title = "Linux environment",
                     subtitle = sectionSubtitle(SectionKind.LINUX, if (q.isBlank()) prunedLinuxRows.size else displayedLinuxRows.size),
                     expanded = linuxEnvExpanded,

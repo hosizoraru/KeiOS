@@ -106,7 +106,8 @@ internal fun GitHubMainContent(
     listState: LazyListState,
     scrollBehavior: ScrollBehavior,
     addButtonScrollConnection: NestedScrollConnection,
-    backdrop: LayerBackdrop,
+    topBarBackdrop: LayerBackdrop,
+    contentBackdrop: LayerBackdrop,
     topBarColor: Color,
     showSearchBar: Boolean,
     trackedSearch: String,
@@ -149,7 +150,7 @@ internal fun GitHubMainContent(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             GitHubTopBarSection(
-                backdrop = backdrop,
+                backdrop = topBarBackdrop,
                 topBarColor = topBarColor,
                 scrollBehavior = scrollBehavior,
                 showSearchBar = showSearchBar,
@@ -205,7 +206,7 @@ internal fun GitHubMainContent(
                     filteredTracked = filteredTracked,
                     sortedTracked = sortedTracked,
                     checkStates = checkStates,
-                    backdrop = backdrop,
+                    contentBackdrop = contentBackdrop,
                     isDark = isDark,
                     apkAssetBundles = apkAssetBundles,
                     apkAssetLoading = apkAssetLoading,
@@ -234,7 +235,7 @@ internal fun GitHubMainContent(
                 modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
             ) {
                 GlassIconButton(
-                    backdrop = backdrop,
+                    backdrop = contentBackdrop,
                     icon = MiuixIcons.Regular.AddCircle,
                     contentDescription = stringResource(R.string.github_cd_add_track),
                     onClick = onOpenTrackSheetForAdd,
@@ -254,7 +255,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
     filteredTracked: List<GitHubTrackedApp>,
     sortedTracked: List<GitHubTrackedApp>,
     checkStates: SnapshotStateMap<String, VersionCheckUi>,
-    backdrop: LayerBackdrop,
+    contentBackdrop: LayerBackdrop,
     isDark: Boolean,
     apkAssetBundles: SnapshotStateMap<String, GitHubReleaseAssetBundle>,
     apkAssetLoading: SnapshotStateMap<String, Boolean>,
@@ -286,7 +287,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
         items(sortedTracked, key = { it.id }) { item ->
             var expanded by remember(item.id) { mutableStateOf(false) }
             MiuixAccordionCard(
-                backdrop = backdrop,
+                backdrop = contentBackdrop,
                 title = item.appLabel,
                 subtitle = item.packageName,
                 expanded = expanded,
@@ -714,7 +715,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                                     ) {
                                                         GlassTextButton(
-                                                            backdrop = backdrop,
+                                                            backdrop = contentBackdrop,
                                                             text = sizeLabel,
                                                             leadingIcon = MiuixIcons.Regular.Download,
                                                             onClick = { onOpenApkInDownloader(asset) },
@@ -722,7 +723,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                             variant = GlassVariant.SheetAction
                                                         )
                                                         GlassIconButton(
-                                                            backdrop = backdrop,
+                                                            backdrop = contentBackdrop,
                                                             icon = MiuixIcons.Regular.Share,
                                                             contentDescription = stringResource(
                                                                 R.string.github_cd_share_asset,

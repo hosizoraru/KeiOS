@@ -130,7 +130,19 @@ fun BaGuideCatalogPage(
         activationCount++
         onDispose { }
     }
-    val backdrop: LayerBackdrop = key(activationCount) {
+    val topBarBackdrop: LayerBackdrop = key("catalog-topbar-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val contentBackdrop: LayerBackdrop = key("catalog-content-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
+    val bottomBarBackdrop: LayerBackdrop = key("catalog-bottom-$activationCount") {
         rememberLayerBackdrop {
             drawRect(surfaceColor)
             drawContent()
@@ -253,7 +265,7 @@ fun BaGuideCatalogPage(
                     actions = {
                         Box {
                             LiquidActionBar(
-                                backdrop = backdrop,
+                                backdrop = topBarBackdrop,
                                 items = listOf(
                                     LiquidActionItem(
                                         icon = MiuixIcons.Regular.Sort,
@@ -349,7 +361,7 @@ fun BaGuideCatalogPage(
                             selectedTabIndex = index
                             showSortPopup = false
                         },
-                        backdrop = backdrop,
+                        backdrop = bottomBarBackdrop,
                         tabsCount = tabs.size,
                         isBlurEnabled = liquidBottomBarEnabled
                     ) {
@@ -398,7 +410,7 @@ fun BaGuideCatalogPage(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .layerBackdrop(backdrop)
+                .layerBackdrop(contentBackdrop)
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
