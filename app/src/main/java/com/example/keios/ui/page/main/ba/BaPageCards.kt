@@ -1,22 +1,26 @@
 package com.example.keios.ui.page.main.ba
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.keios.R
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassTextButton
@@ -243,7 +247,17 @@ internal fun BaOverviewCard(
                     modifier = Modifier.heightIn(min = 40.dp),
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    Text("AP", color = accentGreen, fontWeight = FontWeight.Bold)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("AP", color = accentGreen, fontWeight = FontWeight.Bold)
+                        Image(
+                            painter = painterResource(id = R.drawable.ba_ap_icon_tight),
+                            contentDescription = "AP Icon",
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
