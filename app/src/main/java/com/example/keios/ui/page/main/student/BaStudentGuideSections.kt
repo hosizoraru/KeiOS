@@ -16,6 +16,9 @@ import android.view.Surface
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.activity.BackEventCompat
+import androidx.activity.ExperimentalActivityApi
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -68,6 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -103,7 +107,9 @@ import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import com.github.panpf.zoomimage.CoilZoomAsyncImage
@@ -136,6 +142,9 @@ import java.util.concurrent.ConcurrentHashMap
 private const val IMAGE_TAP_DISMISS_GESTURE_COOLDOWN_MS = 260L
 private const val IMAGE_TAP_DISMISS_SCALE_EPSILON = 0.035f
 private const val IMAGE_TAP_DISMISS_OFFSET_EPSILON_PX = 18f
+private const val IMAGE_BACK_GESTURE_TRANSLATION_FACTOR = 0.2f
+private const val IMAGE_BACK_GESTURE_CONTENT_FADE_FACTOR = 0.16f
+private const val IMAGE_BACK_GESTURE_SCRIM_FADE_FACTOR = 0.72f
 private const val GUIDE_INLINE_GIF_CACHE_SCOPE = "https://www.gamekee.com/__guide_inline_gif_scope"
 private val guideCircledNumbers = listOf(
     "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
@@ -1988,6 +1997,7 @@ private fun GuideInlineVideoPlayer(
     }
 }
 
+@OptIn(ExperimentalActivityApi::class)
 @Composable
 private fun GuideImageFullscreenDialog(
     imageUrl: String,
@@ -2060,18 +2070,53 @@ private fun GuideImageFullscreenDialog(
             lastTransformActiveAtMs = SystemClock.elapsedRealtime()
         }
     }
+    var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
+    var predictiveBackSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_NONE) }
+    var dialogWidthPx by remember { mutableIntStateOf(0) }
+    PredictiveBackHandler(enabled = true) { backEvents ->
+        try {
+            backEvents.collect { event ->
+                predictiveBackProgress = event.progress.coerceIn(0f, 1f)
+                predictiveBackSwipeEdge = event.swipeEdge
+            }
+            onDismiss()
+        } catch (_: CancellationException) {
+        } finally {
+            predictiveBackProgress = 0f
+            predictiveBackSwipeEdge = BackEventCompat.EDGE_NONE
+        }
+    }
+    val clampedBackProgress = predictiveBackProgress.coerceIn(0f, 1f)
+    val easedBackProgress = clampedBackProgress * clampedBackProgress * (3f - 2f * clampedBackProgress)
+    val backEdgeDirection = when (predictiveBackSwipeEdge) {
+        BackEventCompat.EDGE_LEFT -> 1f
+        BackEventCompat.EDGE_RIGHT -> -1f
+        else -> 0f
+    }
+    val backTranslationX = dialogWidthPx.toFloat() *
+        IMAGE_BACK_GESTURE_TRANSLATION_FACTOR *
+        backEdgeDirection *
+        easedBackProgress
+    val backContentAlpha = (1f - easedBackProgress * IMAGE_BACK_GESTURE_CONTENT_FADE_FACTOR).coerceIn(0f, 1f)
+    val backScrimAlpha = (1f - easedBackProgress * IMAGE_BACK_GESTURE_SCRIM_FADE_FACTOR).coerceIn(0f, 1f)
 
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
+            decorFitsSystemWindows = false,
+            dismissOnBackPress = false
         )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .onSizeChanged { dialogWidthPx = it.width }
+                .graphicsLayer {
+                    translationX = backTranslationX
+                    alpha = backContentAlpha
+                }
+                .background(Color.Black.copy(alpha = backScrimAlpha))
         ) {
             BoxWithConstraints(
                 modifier = Modifier.fillMaxSize(),
