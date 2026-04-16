@@ -152,9 +152,9 @@ private fun currentDisplayRotationDegrees(context: Context): Int {
             }.getOrDefault(Surface.ROTATION_0)
         }
     return when (rotation) {
-        Surface.ROTATION_90 -> 90
+        Surface.ROTATION_90 -> 270
         Surface.ROTATION_180 -> 180
-        Surface.ROTATION_270 -> 270
+        Surface.ROTATION_270 -> 90
         else -> 0
     }
 }
@@ -162,9 +162,9 @@ private fun currentDisplayRotationDegrees(context: Context): Int {
 private fun normalizeRotationDegreesByOrientation(rawOrientation: Int): Int {
     val orientation = ((rawOrientation % 360) + 360) % 360
     return when {
-        orientation in 45..134 -> 90
+        orientation in 45..134 -> 270
         orientation in 135..224 -> 180
-        orientation in 225..314 -> 270
+        orientation in 225..314 -> 90
         else -> 0
     }
 }
