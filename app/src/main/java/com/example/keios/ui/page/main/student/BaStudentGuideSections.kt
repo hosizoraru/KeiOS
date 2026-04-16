@@ -120,6 +120,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.icon.extended.Replace
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
@@ -781,7 +782,7 @@ fun GuideGalleryCardItem(
                     GlassTextButton(
                         backdrop = backdrop,
                         text = "",
-                        leadingIcon = MiuixIcons.Regular.Refresh,
+                        leadingIcon = MiuixIcons.Regular.Replace,
                         textColor = if (audioLoopEnabled) Color(0xFF34C759) else Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
                         onClick = {
