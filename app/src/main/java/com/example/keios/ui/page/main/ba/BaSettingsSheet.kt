@@ -109,6 +109,10 @@ internal fun BaSettingsSheet(
                 accentColor = Color(0xFF3B82F6),
                 variant = GlassVariant.SheetAction,
             ) {
+                Text(
+                    text = stringResource(R.string.ba_settings_card_ap_title),
+                    color = Color(0xFF3B82F6),
+                )
                 SheetControlRow(label = stringResource(R.string.ba_settings_label_ap_notify)) {
                     Switch(
                         checked = state.apNotifyEnabled,
@@ -143,6 +147,16 @@ internal fun BaSettingsSheet(
                         )
                     }
                 }
+            }
+            BaGlassPanel(
+                backdrop = backdrop,
+                accentColor = Color(0xFF60A5FA),
+                variant = GlassVariant.SheetAction,
+            ) {
+                Text(
+                    text = stringResource(R.string.ba_settings_card_media_title),
+                    color = Color(0xFF60A5FA),
+                )
                 SheetControlRow(
                     label = stringResource(R.string.ba_settings_label_media_adaptive_rotation),
                     summary = stringResource(R.string.ba_settings_summary_media_adaptive_rotation),

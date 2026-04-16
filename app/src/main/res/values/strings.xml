@@ -420,6 +420,8 @@
     <string name="ba_settings_title">BA 配置</string>
     <string name="ba_settings_section_basic">基础设置</string>
     <string name="ba_settings_section_content">显示内容</string>
+    <string name="ba_settings_card_ap_title">AP设置</string>
+    <string name="ba_settings_card_media_title">媒体设置</string>
     <string name="ba_settings_label_ap_notify">AP 通知</string>
     <string name="ba_settings_label_ap_threshold">AP 提醒阈值</string>
     <string name="ba_settings_summary_ap_threshold">建议 0-%1$d</string>
