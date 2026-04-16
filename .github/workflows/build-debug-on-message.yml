@@ -5,11 +5,15 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   build-debug-apk:
     if: contains(join(github.event.commits.*.message, ' '), 'Build-CI')
     runs-on: ubuntu-latest
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout
@@ -26,9 +30,33 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+          accept-android-sdk-licenses: true
 
       - name: Install Android 37 SDK components
-        run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+
+          yes | "${SDKMANAGER}" --channel=3 "build-tools;37.0.0"
+          if yes | "${SDKMANAGER}" --channel=3 "platforms;android-37.0"; then
+            echo "Installed SDK platform: android-37.0"
+          else
+            yes | "${SDKMANAGER}" --channel=3 "platforms;android-37"
+            echo "Installed SDK platform: android-37"
+          fi
+
+      - name: Prepare Gradle credentials for GitHub Packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.gradle"
+          {
+            echo "gpr.user=${GITHUB_ACTOR}"
+            echo "gpr.key=${GITHUB_TOKEN}"
+          } >> "${HOME}/.gradle/gradle.properties"
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
