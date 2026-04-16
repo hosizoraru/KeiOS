@@ -21,6 +21,8 @@ import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +36,7 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -51,6 +54,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -1152,8 +1156,8 @@ fun GuideGalleryCardItem(
             }
 
             if (displayImageUrl.isNotBlank() && normalizedMediaType != "video" && normalizedMediaType != "audio") {
-                Box(
-                    modifier = Modifier.clickable { showImageFullscreen = true }
+                GuidePressableMediaSurface(
+                    onClick = { showImageFullscreen = true }
                 ) {
                     GuideRemoteImageAdaptive(
                         imageUrl = displayImageUrl,
@@ -1492,32 +1496,31 @@ fun GuideGalleryExpressionCardItem(
             }
 
             if (displayImageUrl.isNotBlank() && selectedItem.mediaType.lowercase() != "video") {
-                Box(
-                    modifier = Modifier
-                        .draggable(
-                            state = expressionDragState,
-                            orientation = Orientation.Horizontal,
-                            enabled = canSwipeExpressions,
-                            onDragStopped = { velocity ->
-                                val totalDrag = expressionDragAccumPx
-                                expressionDragAccumPx = 0f
-                                val shouldGoNext =
-                                    totalDrag <= -swipeThresholdPx || velocity <= -1600f
-                                val shouldGoPrev =
-                                    totalDrag >= swipeThresholdPx || velocity >= 1600f
-                                when {
-                                    shouldGoNext && selectedIndex < items.lastIndex -> {
-                                        selectedIndex += 1
-                                        showPicker = false
-                                    }
-                                    shouldGoPrev && selectedIndex > 0 -> {
-                                        selectedIndex -= 1
-                                        showPicker = false
-                                    }
+                GuidePressableMediaSurface(
+                    modifier = Modifier.draggable(
+                        state = expressionDragState,
+                        orientation = Orientation.Horizontal,
+                        enabled = canSwipeExpressions,
+                        onDragStopped = { velocity ->
+                            val totalDrag = expressionDragAccumPx
+                            expressionDragAccumPx = 0f
+                            val shouldGoNext =
+                                totalDrag <= -swipeThresholdPx || velocity <= -1600f
+                            val shouldGoPrev =
+                                totalDrag >= swipeThresholdPx || velocity >= 1600f
+                            when {
+                                shouldGoNext && selectedIndex < items.lastIndex -> {
+                                    selectedIndex += 1
+                                    showPicker = false
+                                }
+                                shouldGoPrev && selectedIndex > 0 -> {
+                                    selectedIndex -= 1
+                                    showPicker = false
                                 }
                             }
-                        )
-                        .clickable { showImageFullscreen = true }
+                        }
+                    ),
+                    onClick = { showImageFullscreen = true }
                 ) {
                     GuideRemoteImageAdaptive(
                         imageUrl = displayImageUrl,
@@ -3379,8 +3382,8 @@ fun GuideWeaponCardItem(
             )
 
             if (card.imageUrl.isNotBlank()) {
-                Box(
-                    modifier = Modifier.clickable { showImageFullscreen = true }
+                GuidePressableMediaSurface(
+                    onClick = { showImageFullscreen = true }
                 ) {
                     GuideRemoteImage(
                         imageUrl = card.imageUrl,
@@ -3495,6 +3498,48 @@ fun GuideWeaponCardItem(
             imageUrl = card.imageUrl,
             onDismiss = { showImageFullscreen = false }
         )
+    }
+}
+
+@Composable
+private fun GuidePressableMediaSurface(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.994f else 1f,
+        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
+        label = "guide_media_press_scale"
+    )
+    val pressOverlayAlpha by animateFloatAsState(
+        targetValue = if (pressed) 0.065f else 0f,
+        animationSpec = tween(durationMillis = 130, easing = FastOutSlowInEasing),
+        label = "guide_media_press_overlay"
+    )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+    ) {
+        content()
+        if (pressOverlayAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1E3A8A).copy(alpha = pressOverlayAlpha))
+            )
+        }
     }
 }
 
