@@ -136,8 +136,8 @@ private const val CATALOG_LOAD_MORE_THRESHOLD = 10
 
 private enum class BaGuideCatalogSortMode(val label: String) {
     Default("默认排序"),
-    ReleaseDateDesc("实装日期：新到旧"),
-    ReleaseDateAsc("实装日期：旧到新"),
+    ReleaseDateDesc("创建条目：新到旧"),
+    ReleaseDateAsc("创建条目：旧到新"),
 }
 
 @Composable
