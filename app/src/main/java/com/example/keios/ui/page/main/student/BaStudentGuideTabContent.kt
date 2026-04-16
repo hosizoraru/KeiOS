@@ -2934,7 +2934,13 @@ private fun GuideProfileRowsSection(
         Text(emptyText, color = MiuixTheme.colorScheme.onBackgroundVariant)
         return
     }
-    val visibleRows = rows.take(120)
+    val visibleRows = rows
+        .take(120)
+        .filterNot { row -> isProfileInstructionPlaceholder(row.value) }
+    if (visibleRows.isEmpty()) {
+        Text(emptyText, color = MiuixTheme.colorScheme.onBackgroundVariant)
+        return
+    }
     visibleRows.forEachIndexed { index, row ->
         val hasImage = row.imageUrl.isNotBlank()
         val value = row.value
@@ -3479,12 +3485,28 @@ private fun isProfileValuePlaceholder(value: String): Boolean {
         .replace("　", "")
         .lowercase()
     if (normalized.isBlank()) return true
+    if (isProfileInstructionPlaceholder(normalized)) return true
     return normalized == "-" ||
         normalized == "—" ||
         normalized == "--" ||
         normalized == "暂无" ||
-        normalized == "无" ||
-        compact == "不用写"
+        normalized == "无"
+}
+
+private fun isProfileInstructionPlaceholder(value: String): Boolean {
+    if (value.isBlank()) return false
+    val normalized = value
+        .trim()
+        .trim('。', '.', ',', '，', ';', '；', '!', '！', '?', '？')
+    val compact = normalized
+        .replace(" ", "")
+        .replace("　", "")
+        .lowercase()
+    return compact == "不用写" ||
+        compact == "这个不用写" ||
+        compact == "这里不用写" ||
+        compact == "此处不用写" ||
+        compact == "这条不用写"
 }
 
 private fun stripProfileCopyHint(raw: String): String {
@@ -3545,6 +3567,9 @@ private fun buildProfileCardRows(rows: List<BaGuideRow>, specs: List<ProfileFiel
                 isProfileRowAliasMatch(row, spec.aliases)
             } ?: return@forEach
             val normalizedValue = sanitizeProfileFieldValue(spec.title, matched.value)
+            if (isProfileInstructionPlaceholder(normalizedValue)) {
+                return@forEach
+            }
             if (spec.hideWhenEmpty && isProfileValuePlaceholder(normalizedValue)) {
                 return@forEach
             }
