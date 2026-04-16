@@ -222,6 +222,7 @@ fun GitHubPage(
     var showDownloaderPopup by remember { mutableStateOf(false) }
     var editingTrackedItem by remember { mutableStateOf<GitHubTrackedApp?>(null) }
     var preferPreReleaseInput by remember { mutableStateOf(false) }
+    var alwaysShowLatestReleaseDownloadButtonInput by remember { mutableStateOf(false) }
     var selectedApp by remember { mutableStateOf<InstalledAppItem?>(null) }
     var appList by remember { mutableStateOf<List<InstalledAppItem>>(emptyList()) }
     var appListLoaded by remember { mutableStateOf(false) }
@@ -926,9 +927,19 @@ fun GitHubPage(
         toggleOnlyWhenCached: Boolean = true,
         includeAllAssets: Boolean = false
     ) {
-        val target = state.apkAssetTarget(item.owner, item.repo, context)
+        val alwaysLatestRelease = item.alwaysShowLatestReleaseDownloadButton
+        val target = state.apkAssetTarget(
+            owner = item.owner,
+            repo = item.repo,
+            context = context,
+            alwaysLatestRelease = alwaysLatestRelease
+        )
         if (target == null) {
-            val fallbackUrl = state.statusActionUrl(item.owner, item.repo)
+            val fallbackUrl = if (alwaysLatestRelease) {
+                GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
+            } else {
+                state.statusActionUrl(item.owner, item.repo)
+            }
             if (fallbackUrl.isNotBlank()) {
                 openExternalUrl(fallbackUrl)
             } else {
@@ -1050,6 +1061,7 @@ fun GitHubPage(
         appSearch = ""
         pickerExpanded = false
         preferPreReleaseInput = false
+        alwaysShowLatestReleaseDownloadButtonInput = false
         showAddSheet = true
     }
 
@@ -1061,6 +1073,7 @@ fun GitHubPage(
         appSearch = ""
         pickerExpanded = false
         preferPreReleaseInput = item.preferPreRelease
+        alwaysShowLatestReleaseDownloadButtonInput = item.alwaysShowLatestReleaseDownloadButton
         showAddSheet = true
     }
 
@@ -1081,7 +1094,8 @@ fun GitHubPage(
             repo = parsed.second,
             packageName = app.packageName,
             appLabel = app.label,
-            preferPreRelease = preferPreReleaseInput
+            preferPreRelease = preferPreReleaseInput,
+            alwaysShowLatestReleaseDownloadButton = alwaysShowLatestReleaseDownloadButtonInput
         )
         val editing = editingTrackedItem
         if (editing == null) {
@@ -1134,6 +1148,7 @@ fun GitHubPage(
         appSearch = ""
         pickerExpanded = false
         preferPreReleaseInput = false
+        alwaysShowLatestReleaseDownloadButtonInput = false
         showAddSheet = false
     }
 
@@ -1351,11 +1366,13 @@ fun GitHubPage(
         selectedApp = selectedApp,
         appList = appList,
         preferPreReleaseInput = preferPreReleaseInput,
+        alwaysShowLatestReleaseDownloadButtonInput = alwaysShowLatestReleaseDownloadButtonInput,
         onDismissRequest = {
             showAddSheet = false
             pickerExpanded = false
             appSearch = ""
             preferPreReleaseInput = false
+            alwaysShowLatestReleaseDownloadButtonInput = false
             editingTrackedItem = null
         },
         onApply = { applyTrackSheet() },
@@ -1364,6 +1381,9 @@ fun GitHubPage(
         onPickerExpandedChange = { pickerExpanded = it },
         onSelectedAppChange = { selectedApp = it },
         onPreferPreReleaseInputChange = { preferPreReleaseInput = it },
+        onAlwaysShowLatestReleaseDownloadButtonInputChange = {
+            alwaysShowLatestReleaseDownloadButtonInput = it
+        },
         onRequestDelete = {
             pendingDeleteItem = editingTrackedItem
             showAddSheet = false

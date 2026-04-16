@@ -307,6 +307,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                 onHeaderLongClick = { onOpenTrackSheetForEdit(item) },
                 headerActions = {
                     val state = checkStates[item.id] ?: VersionCheckUi()
+                    val alwaysLatestReleaseDownload = item.alwaysShowLatestReleaseDownloadButton
+                    val latestReleaseAccent = Color(0xFF06B6D4)
                     val statusColor = state.statusColor(
                         neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
                     )
@@ -314,17 +316,22 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                         owner = item.owner,
                         repo = item.repo
                     )
-                    val canLoadApkAssets = state.hasUpdate == true ||
+                    val canLoadApkAssets = alwaysLatestReleaseDownload ||
+                        state.hasUpdate == true ||
                         state.recommendsPreRelease ||
                         state.hasPreReleaseUpdate
                     val isAssetPanelExpanded = apkAssetExpanded[item.id] == true
                     val isAssetPanelLoading = apkAssetLoading[item.id] == true
                     val statusIcon = when {
+                        alwaysLatestReleaseDownload && isAssetPanelLoading -> MiuixIcons.Regular.Refresh
+                        alwaysLatestReleaseDownload && isAssetPanelExpanded -> MiuixIcons.Regular.Close
+                        alwaysLatestReleaseDownload -> MiuixIcons.Regular.Download
                         isAssetPanelLoading -> MiuixIcons.Regular.Refresh
                         canLoadApkAssets && isAssetPanelExpanded -> MiuixIcons.Regular.Close
                         else -> state.statusIcon()
                     }
-                    val clickableModifier = if (statusReleaseUrl.isNotBlank()) {
+                    val iconTint = if (alwaysLatestReleaseDownload) latestReleaseAccent else statusColor
+                    val clickableModifier = if (canLoadApkAssets || statusReleaseUrl.isNotBlank()) {
                         Modifier.clickable {
                             if (canLoadApkAssets) {
                                 if (isAssetPanelExpanded) {
@@ -342,7 +349,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     top.yukonga.miuix.kmp.basic.Icon(
                         imageVector = statusIcon,
                         contentDescription = state.message.ifBlank { stringResource(R.string.github_cd_status) },
-                        tint = statusColor,
+                        tint = iconTint,
                         modifier = clickableModifier
                     )
                 }
@@ -426,6 +433,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     val assetLoading = apkAssetLoading[item.id] == true
                     val assetError = apkAssetErrors[item.id].orEmpty()
                     val assetExpanded = apkAssetExpanded[item.id] == true
+                    val alwaysLatestReleaseDownload = item.alwaysShowLatestReleaseDownloadButton
+                    val latestReleaseAccent = Color(0xFF06B6D4)
                     AnimatedVisibility(
                         visible = assetExpanded || assetLoading || assetError.isNotBlank()
                     ) {
@@ -435,8 +444,14 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 .padding(top = 4.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            val target = state.apkAssetTarget(item.owner, item.repo, context)
+                            val target = state.apkAssetTarget(
+                                owner = item.owner,
+                                repo = item.repo,
+                                context = context,
+                                alwaysLatestRelease = alwaysLatestReleaseDownload
+                            )
                             val targetAccent = when {
+                                alwaysLatestReleaseDownload -> latestReleaseAccent
                                 state.recommendsPreRelease || state.hasPreReleaseUpdate -> GitHubStatusPalette.PreRelease
                                 else -> GitHubStatusPalette.Update
                             }
@@ -583,7 +598,14 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                     Card(
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = CardDefaults.defaultColors(
-                                            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
+                                            color = if (alwaysLatestReleaseDownload) {
+                                                GitHubStatusPalette.tonedSurface(
+                                                    targetAccent,
+                                                    isDark = isDark
+                                                ).copy(alpha = if (isDark) 0.62f else 0.34f)
+                                            } else {
+                                                MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
+                                            }
                                         )
                                     ) {
                                         Row(
@@ -650,6 +672,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 assetBundle != null -> {
                                     assetBundle.assets.forEach { asset ->
                                         val actionAccent = when {
+                                            alwaysLatestReleaseDownload -> targetAccent
                                             prefersApiAssetTransport(asset) -> GitHubStatusPalette.Active
                                             else -> GitHubStatusPalette.Update
                                         }
@@ -661,7 +684,14 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
                                             colors = CardDefaults.defaultColors(
-                                                color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
+                                                color = if (alwaysLatestReleaseDownload) {
+                                                    GitHubStatusPalette.tonedSurface(
+                                                        targetAccent,
+                                                        isDark = isDark
+                                                    ).copy(alpha = if (isDark) 0.68f else 0.36f)
+                                                } else {
+                                                    MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
+                                                }
                                             )
                                         ) {
                                             Column(
@@ -724,7 +754,9 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                             leadingIcon = MiuixIcons.Regular.Download,
                                                             onClick = { onOpenApkInDownloader(asset) },
                                                             modifier = Modifier,
-                                                            variant = GlassVariant.SheetAction
+                                                            variant = GlassVariant.SheetAction,
+                                                            textColor = actionAccent,
+                                                            iconTint = actionAccent
                                                         )
                                                         GlassIconButton(
                                                             backdrop = contentBackdrop,
@@ -736,7 +768,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                             onClick = { onShareApkLink(asset) },
                                                             width = 40.dp,
                                                             height = 40.dp,
-                                                            variant = GlassVariant.SheetAction
+                                                            variant = GlassVariant.SheetAction,
+                                                            iconTint = actionAccent
                                                         )
                                                     }
                                                 }

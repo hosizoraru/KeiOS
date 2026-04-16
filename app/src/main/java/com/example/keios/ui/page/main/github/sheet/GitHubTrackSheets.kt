@@ -336,6 +336,7 @@ internal fun GitHubTrackEditSheet(
     selectedApp: InstalledAppItem?,
     appList: List<InstalledAppItem>,
     preferPreReleaseInput: Boolean,
+    alwaysShowLatestReleaseDownloadButtonInput: Boolean,
     onDismissRequest: () -> Unit,
     onApply: () -> Unit,
     onRepoUrlInputChange: (String) -> Unit,
@@ -343,6 +344,7 @@ internal fun GitHubTrackEditSheet(
     onPickerExpandedChange: (Boolean) -> Unit,
     onSelectedAppChange: (InstalledAppItem?) -> Unit,
     onPreferPreReleaseInputChange: (Boolean) -> Unit,
+    onAlwaysShowLatestReleaseDownloadButtonInputChange: (Boolean) -> Unit,
     onRequestDelete: () -> Unit
 ) {
     SnapshotWindowBottomSheet(
@@ -432,6 +434,15 @@ internal fun GitHubTrackEditSheet(
                     Switch(
                         checked = preferPreReleaseInput,
                         onCheckedChange = onPreferPreReleaseInputChange
+                    )
+                }
+                SheetControlRow(
+                    label = stringResource(R.string.github_track_sheet_label_always_show_latest_release_download),
+                    summary = stringResource(R.string.github_track_sheet_summary_always_show_latest_release_download)
+                ) {
+                    Switch(
+                        checked = alwaysShowLatestReleaseDownloadButtonInput,
+                        onCheckedChange = onAlwaysShowLatestReleaseDownloadButtonInputChange
                     )
                 }
             }

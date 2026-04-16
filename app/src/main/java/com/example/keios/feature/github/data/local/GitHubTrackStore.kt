@@ -60,6 +60,13 @@ object GitHubTrackStore {
                                     obj.has("preferPreRelease") -> obj.optBoolean("preferPreRelease", false)
                                     obj.has("checkPreRelease") -> obj.optBoolean("checkPreRelease", false)
                                     else -> false
+                                },
+                                alwaysShowLatestReleaseDownloadButton = when {
+                                    obj.has("alwaysShowLatestReleaseDownloadButton") ->
+                                        obj.optBoolean("alwaysShowLatestReleaseDownloadButton", false)
+                                    obj.has("alwaysShowLatestReleaseDownload") ->
+                                        obj.optBoolean("alwaysShowLatestReleaseDownload", false)
+                                    else -> false
                                 }
                             )
                         )
@@ -80,6 +87,8 @@ object GitHubTrackStore {
                 .put("appLabel", item.appLabel)
                 .put("preferPreRelease", item.preferPreRelease)
                 .put("checkPreRelease", item.preferPreRelease)
+                .put("alwaysShowLatestReleaseDownloadButton", item.alwaysShowLatestReleaseDownloadButton)
+                .put("alwaysShowLatestReleaseDownload", item.alwaysShowLatestReleaseDownloadButton)
             array.put(obj)
         }
         kv().encode(KEY_ITEMS, array.toString())

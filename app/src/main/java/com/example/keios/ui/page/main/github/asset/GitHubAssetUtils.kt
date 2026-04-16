@@ -18,13 +18,42 @@ internal data class ApkAssetTarget(
 internal fun VersionCheckUi.apkAssetTarget(
     owner: String,
     repo: String,
-    context: Context
+    context: Context,
+    alwaysLatestRelease: Boolean = false
 ): ApkAssetTarget? {
     val stableTag = latestStableRawTag.ifBlank {
         GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestStableUrl)
     }
     val preTag = latestPreRawTag.ifBlank {
         GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestPreUrl)
+    }
+    if (alwaysLatestRelease) {
+        val latestStableTagCandidate = stableTag.trim()
+        val latestVersionTagCandidate = latestTag.trim()
+        val latestPreTagCandidate = preTag.trim()
+        val latestReleaseTag = when {
+            latestStableTagCandidate.isNotBlank() -> latestStableTagCandidate
+            latestVersionTagCandidate.isNotBlank() -> latestVersionTagCandidate
+            latestPreTagCandidate.isNotBlank() -> latestPreTagCandidate
+            else -> ""
+        }
+        val latestReleaseUrl = when {
+            latestStableUrl.isNotBlank() -> latestStableUrl.trim()
+            latestReleaseTag.isNotBlank() ->
+                GitHubVersionUtils.buildReleaseTagUrl(owner, repo, latestReleaseTag)
+            latestPreUrl.isNotBlank() -> latestPreUrl.trim()
+            else -> ""
+        }
+        if (latestReleaseTag.isBlank() && latestReleaseUrl.isBlank()) return null
+        val targetTag = latestReleaseTag.ifBlank {
+            GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestReleaseUrl)
+        }
+        if (targetTag.isBlank()) return null
+        return ApkAssetTarget(
+            rawTag = targetTag,
+            releaseUrl = latestReleaseUrl.ifBlank { GitHubVersionUtils.buildReleaseTagUrl(owner, repo, targetTag) },
+            label = context.getString(R.string.github_asset_target_latest)
+        )
     }
     return when {
         recommendsPreRelease && preTag.isNotBlank() -> ApkAssetTarget(

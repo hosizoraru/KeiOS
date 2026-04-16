@@ -6,7 +6,8 @@ data class GitHubTrackedApp(
     val repo: String,
     val packageName: String,
     val appLabel: String,
-    val preferPreRelease: Boolean = false
+    val preferPreRelease: Boolean = false,
+    val alwaysShowLatestReleaseDownloadButton: Boolean = false
 ) {
     val id: String
         get() = "$owner/$repo|$packageName"
