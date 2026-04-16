@@ -675,8 +675,8 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                                 text = role.name.ifBlank { "同名角色" },
                                                                 color = MiuixTheme.colorScheme.onBackground,
                                                                 modifier = Modifier.weight(1f),
-                                                                maxLines = 1,
-                                                                overflow = TextOverflow.Ellipsis
+                                                                maxLines = Int.MAX_VALUE,
+                                                                overflow = TextOverflow.Clip
                                                             )
                                                             if (link.isNotBlank()) {
                                                                 GlassTextButton(

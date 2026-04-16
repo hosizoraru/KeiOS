@@ -176,7 +176,15 @@ private fun sanitizeGuideMediaTitle(raw: String): String {
         .replace(Regex("""[\\/:*?"<>|]"""), " ")
         .replace(Regex("""\s+"""), " ")
         .trim()
-    return cleaned.ifBlank { "BA_media" }.take(64)
+    return cleaned.ifBlank { "BA_media" }.take(96)
+}
+
+private fun sanitizeGuideMediaToken(raw: String): String {
+    return raw
+        .replace(Regex("""[\\/:*?"<>|]"""), " ")
+        .replace(Regex("""\s+"""), " ")
+        .trim()
+        .take(48)
 }
 
 private fun guessGuideMediaExt(rawSourceUrl: String): String {
@@ -213,12 +221,24 @@ private fun mimeTypeFromGuideExt(ext: String): String {
     }
 }
 
-private fun buildGuideMediaSaveRequest(rawUrl: String, rawTitle: String): GuideMediaSaveRequest? {
+private fun buildGuideMediaSaveRequest(
+    rawUrl: String,
+    rawTitle: String,
+    rawPrefix: String = ""
+): GuideMediaSaveRequest? {
     val source = normalizeGuidePlaybackSource(rawUrl)
     if (source.isBlank()) return null
     val ext = guessGuideMediaExt(source)
     val mime = mimeTypeFromGuideExt(ext)
-    val title = sanitizeGuideMediaTitle(rawTitle)
+    val baseTitle = sanitizeGuideMediaTitle(rawTitle)
+    val prefix = sanitizeGuideMediaToken(rawPrefix)
+        .takeIf { it.isNotBlank() && it != "学生图鉴" }
+        .orEmpty()
+    val title = when {
+        prefix.isBlank() -> baseTitle
+        baseTitle.startsWith(prefix) -> baseTitle
+        else -> sanitizeGuideMediaTitle("${prefix}_${baseTitle}")
+    }
     val fileName = if (title.endsWith(".$ext", ignoreCase = true)) {
         title
     } else {
@@ -552,7 +572,12 @@ fun BaStudentGuidePage(
     }
 
     fun saveGuideMedia(rawMediaUrl: String, rawTitle: String) {
-        val request = buildGuideMediaSaveRequest(rawMediaUrl, rawTitle)
+        val studentNamePrefix = info?.title?.trim().orEmpty()
+        val request = buildGuideMediaSaveRequest(
+            rawUrl = rawMediaUrl,
+            rawTitle = rawTitle,
+            rawPrefix = studentNamePrefix
+        )
         if (request == null) {
             Toast.makeText(context, context.getString(R.string.guide_media_save_empty), Toast.LENGTH_SHORT).show()
             return
