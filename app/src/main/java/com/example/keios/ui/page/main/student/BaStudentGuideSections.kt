@@ -573,11 +573,11 @@ fun GuideGalleryCardItem(
         }
     }
     val mediaTypeLabel = when (normalizedMediaType) {
-        "video" -> "视频"
+        "video" -> ""
         "audio" -> ""
         "live2d" -> "Live2D"
         "imageset" -> "图集"
-        else -> "影画"
+        else -> ""
     }
     val displayImageUrl = mediaUrlResolver(preferredImageRaw)
     val displayMediaUrl = mediaUrlResolver(item.mediaUrl.ifBlank { preferredImageRaw })
@@ -774,20 +774,6 @@ fun GuideGalleryCardItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (isImageType && displayImageUrl.isNotBlank()) {
-                    val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
-                    val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
-                    val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
-                    CircularProgressIndicator(
-                        progress = imageProgressValue,
-                        size = 18.dp,
-                        strokeWidth = 2.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = progressForegroundColor,
-                            backgroundColor = progressBackgroundColor
-                        )
-                    )
-                }
                 if (showMediaTypeLabel && mediaTypeLabel.isNotBlank()) {
                     GlassTextButton(
                         backdrop = backdrop,
@@ -806,6 +792,20 @@ fun GuideGalleryCardItem(
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
                         onClick = { onSaveMedia(saveTargetUrl, displayTitle) }
+                    )
+                }
+                if (isImageType && displayImageUrl.isNotBlank()) {
+                    val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
+                    val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
+                    val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
+                    CircularProgressIndicator(
+                        progress = imageProgressValue,
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = progressForegroundColor,
+                            backgroundColor = progressBackgroundColor
+                        )
                     )
                 }
                 if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
@@ -1176,20 +1176,6 @@ fun GuideGalleryExpressionCardItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (isImageType && displayImageUrl.isNotBlank()) {
-                    val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
-                    val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
-                    val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
-                    CircularProgressIndicator(
-                        progress = imageProgressValue,
-                        size = 18.dp,
-                        strokeWidth = 2.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = progressForegroundColor,
-                            backgroundColor = progressBackgroundColor
-                        )
-                    )
-                }
                 var pickerPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
                 Box(
                     modifier = Modifier.capturePopupAnchor { pickerPopupAnchorBounds = it }
@@ -1242,6 +1228,20 @@ fun GuideGalleryExpressionCardItem(
                                 optionLabels.getOrElse(selectedIndex) { title }
                             )
                         }
+                    )
+                }
+                if (isImageType && displayImageUrl.isNotBlank()) {
+                    val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
+                    val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
+                    val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
+                    CircularProgressIndicator(
+                        progress = imageProgressValue,
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = progressForegroundColor,
+                            backgroundColor = progressBackgroundColor
+                        )
                     )
                 }
             }
@@ -1418,14 +1418,6 @@ fun GuideGalleryVideoGroupCardItem(
                         }
                     }
                 }
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "视频",
-                    enabled = false,
-                    textColor = Color(0xFF3B82F6),
-                    variant = GlassVariant.Compact,
-                    onClick = {}
-                )
                 if (saveTargetUrl.isNotBlank()) {
                     GlassTextButton(
                         backdrop = backdrop,
