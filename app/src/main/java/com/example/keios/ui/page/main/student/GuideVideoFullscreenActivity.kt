@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main.student
 
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -80,12 +81,25 @@ class GuideVideoFullscreenActivity : ComponentActivity() {
             context: Context,
             mediaUrl: String
         ) {
+            val hostActivity = context.findHostActivity()
             val intent = Intent(context, GuideVideoFullscreenActivity::class.java).apply {
                 putExtra(EXTRA_MEDIA_URL, mediaUrl)
-                if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (hostActivity == null) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(intent)
+            if (hostActivity != null) {
+                hostActivity.startActivity(intent)
+            } else {
+                context.startActivity(intent)
+            }
         }
+    }
+}
+
+private tailrec fun Context.findHostActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext?.findHostActivity()
+        else -> null
     }
 }
 
