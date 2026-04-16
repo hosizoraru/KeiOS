@@ -128,6 +128,7 @@ fun McpPage(
     val stoppedColor = Color(0xFFC62828)
 
     val context = LocalContext.current
+    val itemCopiedToast = stringResource(R.string.guide_toast_item_copied)
     val uiState by mcpServerManager.uiState.collectAsState()
     val overviewAccentColor = if (uiState.running) runningColor else stoppedColor
     val isDark = isSystemInDarkTheme()
@@ -248,6 +249,17 @@ fun McpPage(
                         ).show()
                     }
             }
+        }
+    }
+    val copyItemToClipboard: (String, String) -> Unit = remember(context, itemCopiedToast) {
+        { key, value ->
+            val copied = buildString {
+                append(key)
+                append("：")
+                append(value.ifBlank { context.getString(R.string.common_na) })
+            }
+            copyToClipboard(context, "mcp-item", copied)
+            Toast.makeText(context, itemCopiedToast, Toast.LENGTH_SHORT).show()
         }
     }
     val surfaceColor = MiuixTheme.colorScheme.surface
@@ -495,7 +507,11 @@ fun McpPage(
                 }
             ) {
                 uiState.tools.forEach { tool ->
-                    MiuixInfoItem(tool.name, tool.description)
+                    MiuixInfoItem(
+                        key = tool.name,
+                        value = tool.description,
+                        onLongClick = { copyItemToClipboard(tool.name, tool.description) }
+                    )
                 }
             }
             }
@@ -517,10 +533,24 @@ fun McpPage(
                 }
             ) {
                 if (uiState.logs.isEmpty()) {
-                    MiuixInfoItem(stringResource(R.string.mcp_log_label), stringResource(R.string.mcp_log_empty))
+                    MiuixInfoItem(
+                        key = stringResource(R.string.mcp_log_label),
+                        value = stringResource(R.string.mcp_log_empty),
+                        onLongClick = {
+                            copyItemToClipboard(
+                                context.getString(R.string.mcp_log_label),
+                                context.getString(R.string.mcp_log_empty)
+                            )
+                        }
+                    )
                 } else {
                     uiState.logs.asReversed().forEach { log ->
-                        MiuixInfoItem("${log.time} [${log.level}]", log.message)
+                        val logTitle = "${log.time} [${log.level}]"
+                        MiuixInfoItem(
+                            key = logTitle,
+                            value = log.message,
+                            onLongClick = { copyItemToClipboard(logTitle, log.message) }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))

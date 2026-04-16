@@ -1,6 +1,8 @@
 package com.example.keios.ui.page.main
 
 import android.app.ActivityManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.FeatureInfo
 import android.content.pm.PackageManager
@@ -10,9 +12,11 @@ import android.widget.Toast
 import androidx.compose.animation.core.tween
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.keios.R
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.GlassIconButton
@@ -1014,9 +1019,25 @@ private fun OsSectionInfoRow(
     value: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val displayValue = value.ifBlank { "N/A" }
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {},
+                onLongClick = {
+                    copyOsRowToClipboard(context, label, displayValue)
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.guide_toast_item_copied),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            )
             .padding(vertical = 3.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1029,7 +1050,7 @@ private fun OsSectionInfoRow(
             overflow = TextOverflow.Clip
         )
         Text(
-            text = value.ifBlank { "N/A" },
+            text = displayValue,
             color = MiuixTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.End,
@@ -1038,4 +1059,14 @@ private fun OsSectionInfoRow(
             overflow = TextOverflow.Ellipsis
         )
     }
+}
+
+private fun copyOsRowToClipboard(context: Context, label: String, value: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+    val copiedText = buildString {
+        append(label)
+        append("：")
+        append(value)
+    }
+    clipboard.setPrimaryClip(ClipData.newPlainText("os-item", copiedText))
 }
