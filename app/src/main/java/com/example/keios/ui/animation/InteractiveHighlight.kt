@@ -26,7 +26,8 @@ class InteractiveHighlight(
     val animationScope: CoroutineScope,
     val position: (size: Size, offset: Offset) -> Offset = { _, offset -> offset },
     val highlightColor: Color = Color.White,
-    val highlightStrength: Float = 1f
+    val highlightStrength: Float = 1f,
+    val highlightRadiusScale: Float = 1.2f
 ) {
     private val pressProgressAnimationSpec = spring(0.5f, 300f, 0.001f)
     private val positionAnimationSpec = spring(0.5f, 300f, Offset.VisibilityThreshold)
@@ -62,9 +63,10 @@ class InteractiveHighlight(
             )
             shader.apply {
                 val point = position(size, positionAnimation.value)
+                val radiusScale = highlightRadiusScale.fastCoerceIn(0.4f, 1.8f)
                 setFloatUniform("size", size.width, size.height)
                 setColorUniform("color", highlightColor.copy((0.12f * progress * strength).fastCoerceIn(0f, 0.55f)).toArgb())
-                setFloatUniform("radius", size.minDimension * 1.2f)
+                setFloatUniform("radius", size.minDimension * radiusScale)
                 setFloatUniform(
                     "position",
                     point.x.fastCoerceIn(0f, size.width),

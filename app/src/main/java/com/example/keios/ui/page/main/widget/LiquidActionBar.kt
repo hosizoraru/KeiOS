@@ -207,7 +207,7 @@ fun LiquidActionBar(
     var gestureActive by remember { mutableStateOf(false) }
     var dragMoved by remember { mutableStateOf(false) }
 
-    val dampedDragAnimation = remember(animationScope, items.size, density, isLtr) {
+    val dampedDragAnimation = remember(animationScope, items.size, density, isLtr, layeredStyleEnabled) {
         DampedDragAnimation(
             animationScope = animationScope,
             initialValue = clampedSelectedIndex.toFloat(),
@@ -226,6 +226,10 @@ fun LiquidActionBar(
                 gestureActive = false
                 onInteractionChanged(false)
                 if (!dragMoved) {
+                    if (layeredStyleEnabled) {
+                        val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
+                        items.getOrNull(targetIndex)?.takeIf { it.enabled }?.onClick?.invoke()
+                    }
                     animationScope.launch {
                         offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
                     }
@@ -261,11 +265,12 @@ fun LiquidActionBar(
     }
 
     val interactionHighlightColor = if (!layeredStyleEnabled && isInLightTheme) {
-        Color(0xFF2D8CFF)
+        Color(0xFF8CCBFF)
     } else {
         Color.White
     }
-    val interactionHighlightStrength = if (!layeredStyleEnabled && isInLightTheme) 1.8f else 1f
+    val interactionHighlightStrength = if (!layeredStyleEnabled && isInLightTheme) 0.72f else 1f
+    val interactionHighlightRadiusScale = if (!layeredStyleEnabled && isInLightTheme) 0.74f else 1.2f
     val interactiveHighlight = if (isBlurEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         remember(animationScope, tabWidthPx) {
             InteractiveHighlight(
@@ -278,7 +283,8 @@ fun LiquidActionBar(
                     )
                 },
                 highlightColor = interactionHighlightColor,
-                highlightStrength = interactionHighlightStrength
+                highlightStrength = interactionHighlightStrength,
+                highlightRadiusScale = interactionHighlightRadiusScale
             )
         }
     } else {
