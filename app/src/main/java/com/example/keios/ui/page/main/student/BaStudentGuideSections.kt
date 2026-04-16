@@ -19,6 +19,9 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
@@ -50,6 +53,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -1020,6 +1024,12 @@ fun GuideGalleryExpressionCardItem(
     val canOpenMedia = selectedItem.mediaUrl.isNotBlank() && selectedItem.mediaUrl != selectedItem.imageUrl
     val isImageType = selectedItem.mediaType.lowercase() != "video"
     var showImageFullscreen by remember(displayImageUrl) { mutableStateOf(false) }
+    val canSwipeExpressions = optionLabels.size > 1
+    val swipeThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
+    var expressionDragAccumPx by remember(title, items.size) { mutableFloatStateOf(0f) }
+    val expressionDragState = rememberDraggableState { delta ->
+        expressionDragAccumPx += delta
+    }
     val imageProgressState = remember(displayImageUrl) {
         MutableStateFlow(if (displayImageUrl.isBlank()) 1f else 0f)
     }
@@ -1109,7 +1119,31 @@ fun GuideGalleryExpressionCardItem(
 
             if (displayImageUrl.isNotBlank() && selectedItem.mediaType.lowercase() != "video") {
                 Box(
-                    modifier = Modifier.clickable { showImageFullscreen = true }
+                    modifier = Modifier
+                        .draggable(
+                            state = expressionDragState,
+                            orientation = Orientation.Horizontal,
+                            enabled = canSwipeExpressions,
+                            onDragStopped = { velocity ->
+                                val totalDrag = expressionDragAccumPx
+                                expressionDragAccumPx = 0f
+                                val shouldGoNext =
+                                    totalDrag <= -swipeThresholdPx || velocity <= -1600f
+                                val shouldGoPrev =
+                                    totalDrag >= swipeThresholdPx || velocity >= 1600f
+                                when {
+                                    shouldGoNext && selectedIndex < items.lastIndex -> {
+                                        selectedIndex += 1
+                                        showPicker = false
+                                    }
+                                    shouldGoPrev && selectedIndex > 0 -> {
+                                        selectedIndex -= 1
+                                        showPicker = false
+                                    }
+                                }
+                            }
+                        )
+                        .clickable { showImageFullscreen = true }
                 ) {
                     GuideRemoteImageAdaptive(
                         imageUrl = displayImageUrl,
