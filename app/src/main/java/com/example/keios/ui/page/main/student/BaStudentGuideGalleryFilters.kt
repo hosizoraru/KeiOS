@@ -125,6 +125,36 @@ internal fun isInteractiveFurnitureGalleryItem(item: BaGuideGalleryItem): Boolea
     return title.startsWith("互动家具")
 }
 
+private fun looksLikeGifGalleryUrl(raw: String): Boolean {
+    val value = raw.trim()
+    if (value.isBlank()) return false
+    if (value.startsWith("data:image/gif", ignoreCase = true)) return true
+    if (Regex("""\.gif(\?.*)?(#.*)?$""", RegexOption.IGNORE_CASE).containsMatchIn(value)) return true
+    val lower = value.lowercase()
+    return lower.contains("format=gif") || lower.contains("image/gif")
+}
+
+internal fun isInteractiveFurnitureAnimatedGalleryItem(item: BaGuideGalleryItem): Boolean {
+    if (!isInteractiveFurnitureGalleryItem(item)) return false
+    val media = item.mediaUrl.ifBlank { item.imageUrl }.trim()
+    if (looksLikeGifGalleryUrl(media)) return true
+
+    val numericTokens = Regex("""\d+""")
+        .findAll(item.title)
+        .map { it.value }
+        .toList()
+    if (numericTokens.size >= 2) {
+        return numericTokens.last() == "2"
+    }
+    if (numericTokens.size == 1) {
+        val token = numericTokens.first()
+        if (token.length >= 2 && token.last() == '2') {
+            return true
+        }
+    }
+    return false
+}
+
 internal fun isPreviewVideoCategoryTitle(rawTitle: String): Boolean {
     val title = normalizeGalleryTitle(rawTitle)
     return title.startsWith("回忆大厅视频") || title.startsWith("PV") || title.startsWith("角色演示")

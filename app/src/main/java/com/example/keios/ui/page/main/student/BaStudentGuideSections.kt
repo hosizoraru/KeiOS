@@ -350,21 +350,18 @@ fun GuideGalleryCardItem(
 ) {
     val context = LocalContext.current
     val normalizedMediaType = item.mediaType.lowercase()
-    val isInteractiveFurniture12 = remember(item.title) {
-        val title = normalizeGalleryTitle(item.title)
-        if (!title.contains("互动家具")) return@remember false
-        if (title.contains("互动家具12")) return@remember true
-        title.filter(Char::isDigit) == "12"
+    val isInteractiveFurnitureAnimated = remember(item.title, item.mediaUrl, item.imageUrl) {
+        isInteractiveFurnitureAnimatedGalleryItem(item)
     }
     val preferredImageRaw = remember(
         item.imageUrl,
         item.mediaUrl,
         normalizedMediaType,
-        isInteractiveFurniture12
+        isInteractiveFurnitureAnimated
     ) {
         when {
             normalizedMediaType == "video" || normalizedMediaType == "audio" -> item.imageUrl
-            isInteractiveFurniture12 && item.mediaUrl.isNotBlank() -> item.mediaUrl
+            isInteractiveFurnitureAnimated && item.mediaUrl.isNotBlank() -> item.mediaUrl
             item.imageUrl.isNotBlank() -> item.imageUrl
             else -> item.mediaUrl
         }
