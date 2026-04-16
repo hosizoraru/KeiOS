@@ -42,6 +42,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -169,6 +172,26 @@ private fun normalizeRotationDegreesByOrientation(rawOrientation: Int): Int {
     }
 }
 
+private fun circularAngleDistance(a: Int, b: Int): Int {
+    val diff = kotlin.math.abs(a - b) % 360
+    return kotlin.math.min(diff, 360 - diff)
+}
+
+private fun snapCardinalOrientation(rawOrientation: Int): Int? {
+    val orientation = ((rawOrientation % 360) + 360) % 360
+    val candidates = intArrayOf(0, 90, 180, 270)
+    var best = 0
+    var bestDistance = Int.MAX_VALUE
+    candidates.forEach { candidate ->
+        val distance = circularAngleDistance(orientation, candidate)
+        if (distance < bestDistance) {
+            bestDistance = distance
+            best = candidate
+        }
+    }
+    return if (bestDistance <= 24) best else null
+}
+
 @Composable
 private fun rememberSystemAutoRotateEnabled(active: Boolean): Boolean {
     val context = LocalContext.current
@@ -205,13 +228,29 @@ private fun rememberDeviceRotationDegrees(active: Boolean): Int {
             return@DisposableEffect onDispose { }
         }
         degrees = currentDisplayRotationDegrees(context)
+        val handler = Handler(Looper.getMainLooper())
+        var pendingDegrees = degrees
+        var pendingApplyRunnable: Runnable? = null
         val listener = object : OrientationEventListener(context.applicationContext) {
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
-                val nextDegrees = normalizeRotationDegreesByOrientation(orientation)
-                if (nextDegrees != degrees) {
-                    degrees = nextDegrees
+                val snapped = snapCardinalOrientation(orientation) ?: return
+                val nextDegrees = normalizeRotationDegreesByOrientation(snapped)
+                if (nextDegrees == degrees) {
+                    pendingApplyRunnable?.let(handler::removeCallbacks)
+                    pendingApplyRunnable = null
+                    pendingDegrees = degrees
+                    return
                 }
+                pendingDegrees = nextDegrees
+                pendingApplyRunnable?.let(handler::removeCallbacks)
+                val applyRunnable = Runnable {
+                    if (pendingDegrees != degrees) {
+                        degrees = pendingDegrees
+                    }
+                }
+                pendingApplyRunnable = applyRunnable
+                handler.postDelayed(applyRunnable, 120L)
             }
         }
         if (listener.canDetectOrientation()) {
@@ -219,6 +258,8 @@ private fun rememberDeviceRotationDegrees(active: Boolean): Int {
         }
         onDispose {
             listener.disable()
+            pendingApplyRunnable?.let(handler::removeCallbacks)
+            pendingApplyRunnable = null
         }
     }
     return degrees
@@ -1636,17 +1677,32 @@ private fun GuideImageFullscreenDialog(
                 } else {
                     if (systemAutoRotateEnabled) systemRotationDegrees else 0
                 }
-
+                val rotationAnim = remember(normalizedImageUrl) { Animatable(0f) }
                 LaunchedEffect(normalizedImageUrl, targetRotation) {
-                    zoomState.zoomable.reset()
-                    zoomState.zoomable.rotate(targetRotation)
+                    val current = rotationAnim.value
+                    val desired = targetRotation.toFloat()
+                    var delta = (desired - current) % 360f
+                    if (delta > 180f) delta -= 360f
+                    if (delta < -180f) delta += 360f
+                    val finalTarget = current + delta
+                    if (kotlin.math.abs(finalTarget - current) < 0.5f) return@LaunchedEffect
+                    rotationAnim.animateTo(
+                        targetValue = finalTarget,
+                        animationSpec = tween(
+                            durationMillis = 220,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
                 }
+
+                val renderRotation = ((rotationAnim.value % 360f) + 360f) % 360f
 
                 CoilZoomAsyncImage(
                     model = if (isGifSource) normalizedImageUrl else sampledBitmap ?: normalizedImageUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
+                        .rotate(renderRotation)
                         .align(Alignment.Center),
                     contentScale = ContentScale.Fit,
                     zoomState = zoomState,
