@@ -8,6 +8,7 @@ private const val BA_GUIDE_CATALOG_KV_ID = "ba_guide_catalog"
 private const val KEY_CACHE_RAW = "catalog_cache_raw"
 private const val KEY_CACHE_SYNC_MS = "catalog_cache_sync_ms"
 private const val KEY_CACHE_VERSION = "catalog_cache_version"
+private const val KEY_FAVORITES_RAW = "catalog_favorites_raw"
 private const val BA_GUIDE_CATALOG_CACHE_SCHEMA_VERSION = 1
 
 internal object BaGuideCatalogStore {
@@ -145,5 +146,52 @@ internal object BaGuideCatalogStore {
     }
 
     fun configBytesEstimated(): Long = 0L
-}
 
+    fun loadFavorites(): Map<Long, Long> {
+        val raw = kv().decodeString(KEY_FAVORITES_RAW, "").orEmpty()
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val json = JSONObject(raw)
+            buildMap {
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next().trim()
+                    val contentId = key.toLongOrNull() ?: continue
+                    val favoritedAtMs = json.optLong(key, 0L).coerceAtLeast(0L)
+                    if (contentId > 0L && favoritedAtMs > 0L) {
+                        put(contentId, favoritedAtMs)
+                    }
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    fun saveFavorites(favorites: Map<Long, Long>) {
+        if (favorites.isEmpty()) {
+            kv().removeValueForKey(KEY_FAVORITES_RAW)
+            return
+        }
+        val raw = JSONObject().apply {
+            favorites.forEach { (contentId, favoritedAtMs) ->
+                if (contentId > 0L && favoritedAtMs > 0L) {
+                    put(contentId.toString(), favoritedAtMs)
+                }
+            }
+        }.toString()
+        kv().encode(KEY_FAVORITES_RAW, raw)
+    }
+
+    fun toggleFavorite(contentId: Long, nowMs: Long = System.currentTimeMillis()): Boolean {
+        if (contentId <= 0L) return false
+        val current = loadFavorites().toMutableMap()
+        return if (current.containsKey(contentId)) {
+            current.remove(contentId)
+            saveFavorites(current)
+            false
+        } else {
+            current[contentId] = nowMs.coerceAtLeast(1L)
+            saveFavorites(current)
+            true
+        }
+    }
+}

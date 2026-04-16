@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.sp
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogIconCache
+import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogStore
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
@@ -120,6 +121,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -172,6 +174,7 @@ fun BaGuideCatalogPage(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var sortMode by rememberSaveable { mutableStateOf(BaGuideCatalogSortMode.Default) }
     var showSortPopup by remember { mutableStateOf(false) }
+    var favoriteCatalogEntries by remember { mutableStateOf(BaGuideCatalogStore.loadFavorites()) }
 
     val tabs = BaGuideCatalogTab.entries
     val pagerState = rememberPagerState(
@@ -248,6 +251,19 @@ fun BaGuideCatalogPage(
                 }
             )
         }
+    }
+
+    fun toggleCatalogFavorite(contentId: Long) {
+        if (contentId <= 0L) return
+        val next = favoriteCatalogEntries.toMutableMap()
+        if (next.containsKey(contentId)) {
+            next.remove(contentId)
+        } else {
+            next[contentId] = System.currentTimeMillis().coerceAtLeast(1L)
+        }
+        val frozen = next.toMap()
+        favoriteCatalogEntries = frozen
+        BaGuideCatalogStore.saveFavorites(frozen)
     }
 
     LaunchedEffect(refreshSignal) {
@@ -471,6 +487,7 @@ fun BaGuideCatalogPage(
                 tab = pageTab,
                 catalog = catalog,
                 sortMode = sortMode,
+                favoriteCatalogEntries = favoriteCatalogEntries,
                 searchQuery = searchQuery,
                 loading = loading,
                 error = error,
@@ -480,7 +497,8 @@ fun BaGuideCatalogPage(
                 innerPadding = innerPadding,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                 isPageActive = pageIndex == pagerState.currentPage,
-                onOpenGuide = onOpenGuide
+                onOpenGuide = onOpenGuide,
+                onToggleFavorite = ::toggleCatalogFavorite
             )
         }
     }
@@ -491,6 +509,7 @@ private fun CatalogTabContent(
     tab: BaGuideCatalogTab,
     catalog: BaGuideCatalogBundle,
     sortMode: BaGuideCatalogSortMode,
+    favoriteCatalogEntries: Map<Long, Long>,
     searchQuery: String,
     loading: Boolean,
     error: String?,
@@ -501,9 +520,10 @@ private fun CatalogTabContent(
     nestedScrollConnection: NestedScrollConnection,
     isPageActive: Boolean,
     onOpenGuide: (String) -> Unit,
+    onToggleFavorite: (Long) -> Unit,
 ) {
-    val currentEntries = remember(catalog, tab, sortMode) {
-        catalog.entries(tab).sortedByMode(sortMode)
+    val currentEntries = remember(catalog, tab, sortMode, favoriteCatalogEntries) {
+        catalog.entries(tab).sortedByMode(sortMode, favoriteCatalogEntries)
     }
     val filteredEntries = remember(currentEntries, searchQuery) {
         currentEntries.filterByQuery(searchQuery)
@@ -607,7 +627,9 @@ private fun CatalogTabContent(
                 ) { entry ->
                     BaGuideCatalogEntryCard(
                         entry = entry,
-                        onOpenGuide = onOpenGuide
+                        isFavorite = favoriteCatalogEntries.containsKey(entry.contentId),
+                        onOpenGuide = onOpenGuide,
+                        onToggleFavorite = onToggleFavorite
                     )
                 }
                 if (visibleCount < filteredEntries.size) {
@@ -644,7 +666,9 @@ private fun CatalogTabContent(
 @Composable
 private fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
-    onOpenGuide: (String) -> Unit
+    isFavorite: Boolean,
+    onOpenGuide: (String) -> Unit,
+    onToggleFavorite: (Long) -> Unit
 ) {
     val cardShape = RoundedCornerShape(16.dp)
     Card(
@@ -652,7 +676,11 @@ private fun BaGuideCatalogEntryCard(
             .fillMaxWidth()
             .border(
                 width = 1.dp,
-                color = MiuixTheme.colorScheme.primary.copy(alpha = 0.24f),
+                color = if (isFavorite) {
+                    Color(0x99EC4899)
+                } else {
+                    MiuixTheme.colorScheme.primary.copy(alpha = 0.24f)
+                },
                 shape = cardShape
             )
             .clickable(
@@ -661,7 +689,11 @@ private fun BaGuideCatalogEntryCard(
             ) { onOpenGuide(entry.detailUrl) },
         cornerRadius = 16.dp,
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
+            color = if (isFavorite) {
+                Color(0x33EC4899)
+            } else {
+                MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
+            }
         )
     ) {
         Row(
@@ -721,10 +753,9 @@ private fun BaGuideCatalogEntryCard(
             }
             GlassIconButton(
                 backdrop = null,
-                icon = MiuixIcons.Regular.Back,
-                contentDescription = "进入图鉴",
-                onClick = { onOpenGuide(entry.detailUrl) },
-                modifier = Modifier.graphicsLayer { rotationZ = 180f },
+                icon = MiuixIcons.Regular.FavoritesFill,
+                contentDescription = if (isFavorite) "取消收藏" else "收藏学生",
+                onClick = { onToggleFavorite(entry.contentId) },
                 width = 34.dp,
                 height = 34.dp,
                 variant = GlassVariant.Bar
@@ -800,9 +831,10 @@ private fun CatalogAvatarFallback(iconRes: Int) {
 }
 
 private fun List<BaGuideCatalogEntry>.sortedByMode(
-    mode: BaGuideCatalogSortMode
+    mode: BaGuideCatalogSortMode,
+    favoriteCatalogEntries: Map<Long, Long>
 ): List<BaGuideCatalogEntry> {
-    return when (mode) {
+    val sortedBase = when (mode) {
         BaGuideCatalogSortMode.Default -> sortedBy { it.order }
         BaGuideCatalogSortMode.ReleaseDateDesc -> sortedWith(
             compareByDescending<BaGuideCatalogEntry> {
@@ -815,4 +847,16 @@ private fun List<BaGuideCatalogEntry>.sortedByMode(
             }.thenBy { it.order }
         )
     }
+    if (favoriteCatalogEntries.isEmpty()) return sortedBase
+    val pinnedFavorites = sortedBase
+        .filter { entry -> favoriteCatalogEntries.containsKey(entry.contentId) }
+        .sortedWith(
+            compareBy<BaGuideCatalogEntry> {
+                favoriteCatalogEntries[it.contentId] ?: Long.MAX_VALUE
+            }.thenBy { it.order }
+        )
+    val regularEntries = sortedBase.filterNot { entry ->
+        favoriteCatalogEntries.containsKey(entry.contentId)
+    }
+    return pinnedFavorites + regularEntries
 }
