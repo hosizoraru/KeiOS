@@ -50,6 +50,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -1677,32 +1678,61 @@ private fun GuideImageFullscreenDialog(
                 } else {
                     if (systemAutoRotateEnabled) systemRotationDegrees else 0
                 }
-                val rotationAnim = remember(normalizedImageUrl) { Animatable(0f) }
+                val rotationTransition = remember(normalizedImageUrl) { Animatable(0f) }
+                var appliedZoomRotation by rememberSaveable(normalizedImageUrl) { mutableIntStateOf(0) }
+                var initializedRotation by rememberSaveable(normalizedImageUrl) { mutableStateOf(false) }
+                val zoomInteracting = zoomState.zoomable.continuousTransformType != ContinuousTransformType.NONE
+                LaunchedEffect(normalizedImageUrl) {
+                    rotationTransition.snapTo(0f)
+                    appliedZoomRotation = 0
+                    initializedRotation = false
+                }
                 LaunchedEffect(normalizedImageUrl, targetRotation) {
-                    val current = rotationAnim.value
-                    val desired = targetRotation.toFloat()
-                    var delta = (desired - current) % 360f
-                    if (delta > 180f) delta -= 360f
-                    if (delta < -180f) delta += 360f
-                    val finalTarget = current + delta
-                    if (kotlin.math.abs(finalTarget - current) < 0.5f) return@LaunchedEffect
-                    rotationAnim.animateTo(
-                        targetValue = finalTarget,
+                    if (!initializedRotation) {
+                        zoomState.zoomable.rotate(targetRotation)
+                        appliedZoomRotation = targetRotation
+                        initializedRotation = true
+                        rotationTransition.snapTo(0f)
+                        return@LaunchedEffect
+                    }
+                    if (targetRotation == appliedZoomRotation) {
+                        rotationTransition.snapTo(0f)
+                        return@LaunchedEffect
+                    }
+                    if (zoomInteracting) {
+                        zoomState.zoomable.rotate(targetRotation)
+                        appliedZoomRotation = targetRotation
+                        rotationTransition.snapTo(0f)
+                        return@LaunchedEffect
+                    }
+                    var delta = (targetRotation - appliedZoomRotation) % 360
+                    if (delta > 180) delta -= 360
+                    if (delta < -180) delta += 360
+                    if (delta == 0) {
+                        zoomState.zoomable.rotate(targetRotation)
+                        appliedZoomRotation = targetRotation
+                        rotationTransition.snapTo(0f)
+                        return@LaunchedEffect
+                    }
+                    rotationTransition.snapTo(0f)
+                    rotationTransition.animateTo(
+                        targetValue = delta.toFloat(),
                         animationSpec = tween(
                             durationMillis = 220,
                             easing = FastOutSlowInEasing
                         )
                     )
+                    zoomState.zoomable.rotate(targetRotation)
+                    appliedZoomRotation = targetRotation
+                    rotationTransition.snapTo(0f)
                 }
-
-                val renderRotation = ((rotationAnim.value % 360f) + 360f) % 360f
 
                 CoilZoomAsyncImage(
                     model = if (isGifSource) normalizedImageUrl else sampledBitmap ?: normalizedImageUrl,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .rotate(renderRotation)
+                        .rotate(rotationTransition.value)
                         .align(Alignment.Center),
                     contentScale = ContentScale.Fit,
                     zoomState = zoomState,
