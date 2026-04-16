@@ -134,6 +134,8 @@ import com.example.keios.ui.page.main.widget.capturePopupAnchor
 import java.util.concurrent.ConcurrentHashMap
 
 private const val IMAGE_TAP_DISMISS_GESTURE_COOLDOWN_MS = 260L
+private const val IMAGE_TAP_DISMISS_SCALE_EPSILON = 0.035f
+private const val IMAGE_TAP_DISMISS_OFFSET_EPSILON_PX = 18f
 private const val GUIDE_INLINE_GIF_CACHE_SCOPE = "https://www.gamekee.com/__guide_inline_gif_scope"
 private val guideCircledNumbers = listOf(
     "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
@@ -2004,9 +2006,9 @@ private fun GuideImageFullscreenDialog(
     val zoomState = rememberCoilZoomState()
     LaunchedEffect(zoomState) {
         // Keep fullscreen image interaction predictable:
-        // pinch zoom (two fingers) + one-finger drag + single-tap dismiss.
+        // pinch zoom (two fingers) + one-finger drag + double-tap zoom + single-tap dismiss.
         zoomState.zoomable.setDisabledGestureTypes(
-            GestureType.ONE_FINGER_SCALE or GestureType.DOUBLE_TAP_SCALE
+            GestureType.ONE_FINGER_SCALE
         )
     }
     var retryToken by rememberSaveable(normalizedImageUrl) { mutableStateOf(0) }
@@ -2171,6 +2173,14 @@ private fun GuideImageFullscreenDialog(
                         }
                         val now = SystemClock.elapsedRealtime()
                         if (now - lastTransformActiveAtMs < IMAGE_TAP_DISMISS_GESTURE_COOLDOWN_MS) {
+                            return@CoilZoomAsyncImage
+                        }
+                        val userTransform = zoomState.zoomable.userTransform
+                        val scaleNearBase = kotlin.math.abs(userTransform.scaleX - 1f) <= IMAGE_TAP_DISMISS_SCALE_EPSILON &&
+                            kotlin.math.abs(userTransform.scaleY - 1f) <= IMAGE_TAP_DISMISS_SCALE_EPSILON
+                        val offsetNearBase = kotlin.math.abs(userTransform.offsetX) <= IMAGE_TAP_DISMISS_OFFSET_EPSILON_PX &&
+                            kotlin.math.abs(userTransform.offsetY) <= IMAGE_TAP_DISMISS_OFFSET_EPSILON_PX
+                        if (!scaleNearBase || !offsetNearBase) {
                             return@CoilZoomAsyncImage
                         }
                         onDismiss()
