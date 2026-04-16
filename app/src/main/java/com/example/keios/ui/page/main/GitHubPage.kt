@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
 import com.example.keios.core.background.AppBackgroundScheduler
+import com.example.keios.core.system.AppPackageChangedEvents
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -498,7 +499,11 @@ fun GitHubPage(
         }
     }
 
-    fun refreshItem(item: GitHubTrackedApp, showToastOnError: Boolean = false) {
+    fun refreshItem(
+        item: GitHubTrackedApp,
+        showToastOnError: Boolean = false,
+        onUpdated: ((VersionCheckUi) -> Unit)? = null
+    ) {
         scope.launch {
             checkStates[item.id] = VersionCheckUi(loading = true)
             val state = resolveItemState(item)
@@ -508,6 +513,7 @@ fun GitHubPage(
             }
             checkStates[item.id] = state
             persistCheckCache()
+            onUpdated?.invoke(state)
         }
     }
 
@@ -1232,6 +1238,52 @@ fun GitHubPage(
                     context.getString(R.string.github_toast_open_permission_page_failed),
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val minHandleIntervalMs = 1200L
+        val handledAtByPackage = mutableMapOf<String, Long>()
+        val packageUpdateActions = setOf(
+            Intent.ACTION_PACKAGE_ADDED,
+            Intent.ACTION_PACKAGE_REPLACED,
+            Intent.ACTION_PACKAGE_CHANGED
+        )
+        AppPackageChangedEvents.events.collect { event ->
+            val packageName = event.packageName.trim()
+            if (packageName.isBlank()) return@collect
+            if (event.action !in packageUpdateActions) return@collect
+
+            val matchedItems = trackedItems.filter { it.packageName == packageName }
+            if (matchedItems.isEmpty()) return@collect
+
+            val lastHandledAt = handledAtByPackage[packageName] ?: 0L
+            if ((event.atMillis - lastHandledAt).coerceAtLeast(0L) < minHandleIntervalMs) {
+                return@collect
+            }
+            handledAtByPackage[packageName] = event.atMillis
+
+            reloadApps(forceRefresh = true)
+            matchedItems.forEach { item ->
+                val wasAssetExpanded = apkAssetExpanded[item.id] == true
+                val previousState = checkStates[item.id] ?: VersionCheckUi()
+                clearApkAssetUiState(item.id)
+                clearApkAssetCache(item, previousState)
+                refreshItem(item = item, showToastOnError = false) { updatedState ->
+                    val canLoadApkAssets = item.alwaysShowLatestReleaseDownloadButton ||
+                        updatedState.hasUpdate == true ||
+                        updatedState.recommendsPreRelease ||
+                        updatedState.hasPreReleaseUpdate
+                    if (wasAssetExpanded && canLoadApkAssets) {
+                        loadApkAssets(
+                            item = item,
+                            state = updatedState,
+                            toggleOnlyWhenCached = false,
+                            includeAllAssets = false
+                        )
+                    }
+                }
             }
         }
     }

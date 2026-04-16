@@ -9,6 +9,8 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.gif.AnimatedImageDecoder
 import com.example.keios.core.background.AppBackgroundScheduler
+import com.example.keios.core.system.AppPackageChangedEvent
+import com.example.keios.core.system.AppPackageChangedEvents
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.tencent.mmkv.MMKV
 
@@ -29,6 +31,15 @@ class KeiOSApp : Application() {
                 Intent.ACTION_PACKAGE_REPLACED,
                 Intent.ACTION_PACKAGE_CHANGED,
                 Intent.ACTION_PACKAGE_FULLY_REMOVED -> {
+                    val pkg = intent.data?.schemeSpecificPart?.trim().orEmpty()
+                    if (pkg.isNotBlank()) {
+                        AppPackageChangedEvents.publish(
+                            AppPackageChangedEvent(
+                                packageName = pkg,
+                                action = intent.action.orEmpty()
+                            )
+                        )
+                    }
                     GitHubVersionUtils.invalidateInstalledLaunchableAppsCache()
                 }
             }
