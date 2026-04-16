@@ -24,6 +24,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -75,9 +76,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -656,7 +659,11 @@ fun GuideRowsSection(
         val value = row.value
             .takeIf { it.isNotBlank() && it != "图片" }
             ?: if (hasImage) "见下图" else "-"
-        MiuixInfoItem(key, value)
+        MiuixInfoItem(
+            key = key,
+            value = value,
+            onLongClick = rememberGuideCopyAction(buildGuideCopyPayload(key, value))
+        )
         if (hasImage) {
             Spacer(modifier = Modifier.height(6.dp))
             GuideRemoteImage(
@@ -2451,12 +2458,32 @@ private fun adaptiveValueMaxLines(value: String, lineCharBudget: Int): Int {
     return if (veryLong || longAndBreakable) 2 else 1
 }
 
+private fun buildGuideCopyPayload(key: String, value: String): String {
+    val title = key.trim().ifBlank { "信息" }
+    val content = value.trim().ifBlank { "-" }
+    return "$title：$content"
+}
+
+@Composable
+private fun rememberGuideCopyAction(copyPayload: String): () -> Unit {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    val toastText = stringResource(R.string.guide_toast_item_copied)
+    return remember(clipboard, context, copyPayload, toastText) {
+        {
+            clipboard.setText(AnnotatedString(copyPayload))
+            Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
 @Composable
 fun GuideProfileMetaLine(item: BaGuideMetaItem) {
     val isPosition = item.title == "位置"
     val isRarity = item.title == "稀有度"
     val inlineTitleIcon = isRarity || item.title == "学院"
     val summary = if (isPosition) "" else item.value.ifBlank { "-" }
+    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(item.title, summary))
     val iconSlotWidth = 34.dp
     val iconSlotHeight = 24.dp
     val iconWidth = when {
@@ -2477,7 +2504,14 @@ fun GuideProfileMetaLine(item: BaGuideMetaItem) {
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                    onLongClick = rowCopyAction
+                ),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top
         ) {
@@ -2557,6 +2591,7 @@ fun GuideCombatMetaTile(
     modifier: Modifier = Modifier
 ) {
     val value = item.value.ifBlank { "-" }
+    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(item.title, value))
     val adaptiveWide = item.title.contains("战术") || item.title == "武器类型"
     val iconWidth = if (adaptiveWide) 28.dp else 18.dp
     val iconHeight = if (adaptiveWide) 18.dp else 18.dp
@@ -2567,6 +2602,12 @@ fun GuideCombatMetaTile(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+                onLongClick = rowCopyAction
+            )
             .clip(RoundedCornerShape(12.dp))
             .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.36f))
             .padding(horizontal = 10.dp, vertical = 6.dp)

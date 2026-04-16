@@ -1,6 +1,7 @@
 package com.example.keios.ui.page.main
 
 import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -13,6 +14,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +37,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -62,13 +63,17 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.keios.R
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogIconCache
@@ -80,6 +85,7 @@ import com.example.keios.ui.page.main.student.catalog.filterByQuery
 import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogBundleComplete
 import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
 import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
+import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
@@ -180,6 +186,12 @@ fun BaGuideCatalogPage(
     val pagerState = rememberPagerState(
         initialPage = selectedTabIndex.coerceIn(0, tabs.lastIndex.coerceAtLeast(0)),
         pageCount = { tabs.size }
+    )
+    ReportPagerPerformanceState(
+        scope = "guide_catalog_pager",
+        currentPage = tabs.getOrElse(pagerState.currentPage) { BaGuideCatalogTab.Student }.name,
+        targetPage = tabs.getOrElse(pagerState.targetPage) { BaGuideCatalogTab.Student }.name,
+        scrolling = pagerState.isScrollInProgress
     )
     val pagerScope = rememberCoroutineScope()
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
@@ -497,6 +509,7 @@ fun BaGuideCatalogPage(
                 innerPadding = innerPadding,
                 nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                 isPageActive = pageIndex == pagerState.currentPage,
+                renderHeavyContent = pageIndex == pagerState.currentPage || pageIndex == pagerState.settledPage,
                 onOpenGuide = onOpenGuide,
                 onToggleFavorite = ::toggleCatalogFavorite
             )
@@ -519,9 +532,31 @@ private fun CatalogTabContent(
     innerPadding: PaddingValues,
     nestedScrollConnection: NestedScrollConnection,
     isPageActive: Boolean,
+    renderHeavyContent: Boolean,
     onOpenGuide: (String) -> Unit,
     onToggleFavorite: (Long) -> Unit,
 ) {
+    if (!renderHeavyContent) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding() + 10.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = tab.label,
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = 13.sp
+            )
+        }
+        return
+    }
+
     val currentEntries = remember(catalog, tab, sortMode, favoriteCatalogEntries) {
         catalog.entries(tab).sortedByMode(sortMode, favoriteCatalogEntries)
     }
@@ -562,20 +597,19 @@ private fun CatalogTabContent(
         }
     }
 
-    SelectionContainer {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(nestedScrollConnection),
-            contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + 10.dp,
-                start = 16.dp,
-                end = 16.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(nestedScrollConnection),
+        contentPadding = PaddingValues(
+            top = innerPadding.calculateTopPadding(),
+            bottom = innerPadding.calculateBottomPadding() + 10.dp,
+            start = 16.dp,
+            end = 16.dp
+        ),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
             item {
                 Row(
                     modifier = Modifier
@@ -659,7 +693,6 @@ private fun CatalogTabContent(
                     }
                 }
             }
-        }
     }
 }
 
@@ -670,6 +703,30 @@ private fun BaGuideCatalogEntryCard(
     onOpenGuide: (String) -> Unit,
     onToggleFavorite: (Long) -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val copiedToast = stringResource(R.string.guide_toast_item_copied)
+    val copyPayload = remember(entry) {
+        buildString {
+            append(entry.name.ifBlank { "未知角色" })
+            append(" | ID ")
+            append(entry.contentId)
+            if (entry.aliasDisplay.isNotBlank()) {
+                append('\n')
+                append(entry.aliasDisplay)
+            }
+            if (entry.detailUrl.isNotBlank()) {
+                append('\n')
+                append(entry.detailUrl)
+            }
+        }
+    }
+    val copyAction = remember(context, clipboard, copiedToast, copyPayload) {
+        {
+            clipboard.setText(AnnotatedString(copyPayload))
+            Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
+        }
+    }
     val cardShape = RoundedCornerShape(16.dp)
     Card(
         modifier = Modifier
@@ -683,10 +740,12 @@ private fun BaGuideCatalogEntryCard(
                 },
                 shape = cardShape
             )
-            .clickable(
+            .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onOpenGuide(entry.detailUrl) },
+                indication = null,
+                onClick = { onOpenGuide(entry.detailUrl) },
+                onLongClick = copyAction
+            ),
         cornerRadius = 16.dp,
         colors = CardDefaults.defaultColors(
             color = if (isFavorite) {

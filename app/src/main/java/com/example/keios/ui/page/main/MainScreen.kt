@@ -74,6 +74,7 @@ import com.example.keios.ui.page.main.model.BottomPage
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
 import com.example.keios.ui.page.main.student.extractGuideContentIdFromUrl
 import com.example.keios.ui.page.main.student.normalizeGuideUrl
+import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.core.system.ShizukuApiUtils
@@ -323,6 +324,12 @@ private fun MainPagerLayout(
     var githubScrollToTopSignal by remember { mutableIntStateOf(0) }
     var pagerScrollEnabled by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
+    ReportPagerPerformanceState(
+        scope = "main_pager",
+        currentPage = tabs.getOrElse(pagerState.currentPage) { BottomPage.Home }.name,
+        targetPage = tabs.getOrElse(pagerState.targetPage) { BottomPage.Home }.name,
+        scrolling = pagerState.isScrollInProgress
+    )
 
     var showBottomBar by remember { mutableStateOf(true) }
     val nestedScrollConnection = remember {

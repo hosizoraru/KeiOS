@@ -71,6 +71,7 @@ val coil3Version = "3.4.0"
 val zoomImageVersion = "1.4.0"
 val documentFileVersion = "1.1.0"
 val focusApiVersion = "1.4"
+val metricsPerformanceVersion = "1.0.0"
 val projectCompileSdk = 37
 val projectMinSdk = 35
 val projectTargetSdk = 37
@@ -105,6 +106,7 @@ android {
         buildConfigField("String", "MEDIA3_VERSION", "\"$media3Version\"")
         buildConfigField("String", "ZOOMIMAGE_VERSION", "\"$zoomImageVersion\"")
         buildConfigField("String", "COIL3_VERSION", "\"$coil3Version\"")
+        buildConfigField("String", "METRICS_PERFORMANCE_VERSION", "\"$metricsPerformanceVersion\"")
         buildConfigField("String", "DOCUMENTFILE_VERSION", "\"$documentFileVersion\"")
         buildConfigField("String", "GRADLE_VERSION", "\"$projectGradleVersion\"")
         buildConfigField("int", "COMPILE_SDK_VERSION", projectCompileSdk.toString())
@@ -203,6 +205,7 @@ dependencies {
     implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3:$zoomImageVersion")
     implementation("io.coil-kt.coil3:coil-compose:$coil3Version")
     implementation("io.coil-kt.coil3:coil-gif:$coil3Version")
+    implementation("androidx.metrics:metrics-performance:$metricsPerformanceVersion")
     implementation("androidx.documentfile:documentfile:$documentFileVersion")
     implementation("com.xzakota.hyper.notification:focus-api:$focusApiVersion")
 

@@ -21,8 +21,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.metrics.performance.JankStats
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.UiPrefs
+import com.example.keios.core.perf.AppJankMonitor
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.mcp.LocalMcpService
 import com.example.keios.mcp.McpNotificationHelper
@@ -51,6 +53,7 @@ class MainActivity : ComponentActivity() {
     private val shizukuApiUtils = ShizukuApiUtils()
     private lateinit var localMcpService: LocalMcpService
     private lateinit var mcpServerManager: McpServerManager
+    private var jankStats: JankStats? = null
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             notificationPermissionGranted = granted
@@ -123,6 +126,10 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        jankStats = AppJankMonitor.attach(
+            window = window,
+            enabled = BuildConfig.DEBUG
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -133,6 +140,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        jankStats?.isTrackingEnabled = false
+        jankStats = null
         runCatching { mcpServerManager.stop() }
         shizukuApiUtils.detach()
         super.onDestroy()

@@ -441,6 +441,7 @@
     <string name="guide_media_save_success">已保存：%1$s</string>
     <string name="guide_media_save_failed">保存失败</string>
     <string name="guide_media_save_empty">无可保存的媒体</string>
+    <string name="guide_toast_item_copied">条目已复制</string>
     <string name="guide_loading_title">阿罗娜帮老师连接中！</string>
     <string name="ba_settings_label_show_ended_activity">显示已结束活动</string>
     <string name="ba_settings_label_show_ended_pool">显示已结束卡池</string>

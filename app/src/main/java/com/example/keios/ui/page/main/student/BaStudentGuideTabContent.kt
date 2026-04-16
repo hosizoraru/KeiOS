@@ -2,9 +2,12 @@ package com.example.keios.ui.page.main.student
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
@@ -34,11 +37,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.example.keios.R
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.GlassTextButton
@@ -53,8 +60,39 @@ import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
+import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+
+private const val GUIDE_SIMULATE_CACHE_MAX_SIZE = 96
+private val guideSimulateDataCache = object : LinkedHashMap<String, GuideSimulateData>(
+    GUIDE_SIMULATE_CACHE_MAX_SIZE,
+    0.75f,
+    true
+) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, GuideSimulateData>?): Boolean {
+        return size > GUIDE_SIMULATE_CACHE_MAX_SIZE
+    }
+}
+
+private fun buildGuideCopyPayload(key: String, value: String): String {
+    val title = key.trim().ifBlank { "信息" }
+    val content = value.trim().ifBlank { "-" }
+    return "$title：$content"
+}
+
+@Composable
+private fun rememberGuideCopyAction(copyPayload: String): () -> Unit {
+    val clipboard = LocalClipboardManager.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val toastText = stringResource(R.string.guide_toast_item_copied)
+    return remember(clipboard, context, copyPayload, toastText) {
+        {
+            clipboard.setText(AnnotatedString(copyPayload))
+            Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
+        }
+    }
+}
 
 internal fun LazyListScope.renderBaStudentGuideTabContent(
     activeBottomTab: GuideBottomTab,
@@ -79,7 +117,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                     GuideBottomTab.Archive -> {
                         item {
                             val guide = info
-                            val profileItems = guide?.buildProfileMetaItems().orEmpty()
+                            val profileItems = remember(
+                                guide?.sourceUrl,
+                                guide?.syncedAtMs
+                            ) {
+                                guide?.buildProfileMetaItems().orEmpty()
+                            }
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.defaultColors(
@@ -190,7 +233,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                         item { Spacer(modifier = Modifier.height(10.dp)) }
                         item {
                             val guide = info
-                            val combatItems = guide?.buildCombatMetaItems().orEmpty()
+                            val combatItems = remember(
+                                guide?.sourceUrl,
+                                guide?.syncedAtMs
+                            ) {
+                                guide?.buildCombatMetaItems().orEmpty()
+                            }
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.defaultColors(
@@ -927,7 +975,13 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                         ) {
                                             voiceCvByLanguage.forEach { (label, value) ->
                                                 val title = if (label.contains("配")) "$label CV" else label
-                                                MiuixInfoItem(title, value)
+                                                MiuixInfoItem(
+                                                    key = title,
+                                                    value = value,
+                                                    onLongClick = rememberGuideCopyAction(
+                                                        buildGuideCopyPayload(title, value)
+                                                    )
+                                                )
                                             }
                                         }
                                     }
@@ -1569,7 +1623,8 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 )
                             }
                         } else {
-                            val simulateData = buildGuideSimulateData(guide.simulateRowsForDisplay())
+                            val simulateRows = guide.simulateRowsForDisplay()
+                            val simulateData = buildGuideSimulateData(simulateRows)
 
                             if (!error.isNullOrBlank()) {
                                 item {
@@ -2472,10 +2527,17 @@ private fun GuideSimulateRowItem(
 ) {
     val key = row.key.trim().ifBlank { "信息" }
     val value = row.value.trim()
+    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(key, value.ifBlank { "-" }))
     val iconUrl = row.imageUrl.trim().ifBlank { row.imageUrls.firstOrNull().orEmpty() }
     val statGlyph = simulateStatGlyphForKey(key)
     if (isSimulateSubHeader(key)) {
         Row(
+            modifier = Modifier.combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+                onLongClick = rowCopyAction
+            ),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2507,7 +2569,14 @@ private fun GuideSimulateRowItem(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+                onLongClick = rowCopyAction
+            ),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -2629,8 +2698,25 @@ private fun extractComparableNumber(raw: String): Double? {
     return numberText.toDoubleOrNull()
 }
 
+private fun buildGuideSimulateCacheKey(rows: List<BaGuideRow>): String {
+    var hash = 17
+    rows.forEach { row ->
+        hash = 31 * hash + normalizeProfileFieldKey(row.key).hashCode()
+        hash = 31 * hash + row.value.trim().hashCode()
+        hash = 31 * hash + row.imageUrl.trim().hashCode()
+        row.imageUrls.forEach { image ->
+            hash = 31 * hash + image.trim().hashCode()
+        }
+    }
+    return "${rows.size}|$hash"
+}
+
 private fun buildGuideSimulateData(rows: List<BaGuideRow>): GuideSimulateData {
     if (rows.isEmpty()) return GuideSimulateData()
+    val cacheKey = buildGuideSimulateCacheKey(rows)
+    synchronized(guideSimulateDataCache) {
+        guideSimulateDataCache[cacheKey]?.let { return it }
+    }
     val sections = linkedMapOf<String, MutableList<BaGuideRow>>()
     val hints = mutableMapOf<String, String>()
     var currentSection = ""
@@ -2663,7 +2749,7 @@ private fun buildGuideSimulateData(rows: List<BaGuideRow>): GuideSimulateData {
         sections.getOrPut(currentSection) { mutableListOf() } += cleaned
     }
 
-    return GuideSimulateData(
+    val computed = GuideSimulateData(
         initialHint = hints["初始数据"].orEmpty(),
         initialRows = expandSimulateRows(sections["初始数据"].orEmpty()),
         maxHint = hints["顶级数据"].orEmpty(),
@@ -2683,6 +2769,10 @@ private fun buildGuideSimulateData(rows: List<BaGuideRow>): GuideSimulateData {
             expandSimulateRows(sections["羁绊等级奖励"].orEmpty())
         )
     )
+    synchronized(guideSimulateDataCache) {
+        guideSimulateDataCache[cacheKey] = computed
+    }
+    return computed
 }
 
 private fun resolveSimulateSectionName(rawKey: String): String? {
@@ -2830,11 +2920,18 @@ private fun GuideProfileInfoItem(
 ) {
     val displayKey = key.ifBlank { "信息" }
     val displayValue = value.ifBlank { "-" }
+    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(displayKey, displayValue))
     val showCapsule = preferCapsule && shouldUseProfileValueCapsule(displayKey, displayValue, onClick)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 1.dp)
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onClick?.invoke() },
+                onLongClick = rowCopyAction
+            )
         ) {
         val keyMaxWidth = adaptiveProfileKeyMaxWidth(
             key = displayKey,
@@ -2860,20 +2957,14 @@ private fun GuideProfileInfoItem(
                     GuideProfileValueCapsule(
                         label = displayValue,
                         tint = valueColor ?: Color(0xFF5FA8FF),
-                        onClick = onClick
+                        onClick = onClick,
+                        onLongClick = rowCopyAction
                     )
                 } else {
-                    val clickableModifier = if (onClick != null) {
-                        Modifier.clickable(onClick = onClick)
-                    } else {
-                        Modifier
-                    }
                     Text(
                         text = displayValue,
                         color = valueColor ?: MiuixTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(clickableModifier),
+                        modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.End,
                         fontWeight = FontWeight.Medium,
                         maxLines = Int.MAX_VALUE,
@@ -2889,11 +2980,17 @@ private fun GuideProfileInfoItem(
 private fun GuideProfileValueCapsule(
     label: String,
     tint: Color,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null
 ) {
     val isDark = isSystemInDarkTheme()
-    val clickModifier = if (onClick != null) {
-        Modifier.clickable(onClick = onClick)
+    val clickModifier = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = { onClick?.invoke() },
+            onLongClick = onLongClick
+        )
     } else {
         Modifier
     }
@@ -2986,20 +3083,40 @@ private fun GuideGalleryRelatedLinkRows(
         val links = extractGuideWebLinks(row.value)
         if (links.isEmpty()) return@forEachIndexed
         val noteText = stripGuideWebLinks(row.value)
+        val keyText = row.key.ifBlank { "影画链接" }
+        val rowCopyPayload = buildGuideCopyPayload(
+            key = keyText,
+            value = buildString {
+                if (noteText.isNotBlank()) {
+                    append(noteText)
+                }
+                if (links.isNotEmpty()) {
+                    if (isNotEmpty()) append('\n')
+                    append(links.joinToString("\n"))
+                }
+            }.ifBlank { "-" }
+        )
+        val rowCopyAction = rememberGuideCopyAction(rowCopyPayload)
 
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 1.dp)
         ) {
-            val keyText = row.key.ifBlank { "影画链接" }
             val keyMaxWidth = adaptiveProfileKeyMaxWidth(
                 key = keyText,
                 value = links.first(),
                 containerWidth = maxWidth
             )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                        onLongClick = rowCopyAction
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Top
             ) {
@@ -3025,13 +3142,19 @@ private fun GuideGalleryRelatedLinkRows(
                         )
                     }
                     links.forEach { link ->
+                        val linkCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(keyText, link))
                         Text(
                             text = link,
                             color = Color(0xFF3B82F6),
                             textAlign = TextAlign.End,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.clickable { onOpenExternal(link) }
+                            modifier = Modifier.combinedClickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onOpenExternal(link) },
+                                onLongClick = linkCopyAction
+                            )
                         )
                     }
                 }

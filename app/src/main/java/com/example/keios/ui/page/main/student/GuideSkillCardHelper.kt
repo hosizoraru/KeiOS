@@ -1,8 +1,42 @@
 package com.example.keios.ui.page.main.student
 
+import java.util.LinkedHashMap
 import java.util.Locale
 
+private const val GUIDE_SKILL_CACHE_MAX_SIZE = 96
+
+private val guideSkillCardCache = object : LinkedHashMap<String, List<GuideSkillCardModel>>(
+    GUIDE_SKILL_CACHE_MAX_SIZE,
+    0.75f,
+    true
+) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<GuideSkillCardModel>>?): Boolean {
+        return size > GUIDE_SKILL_CACHE_MAX_SIZE
+    }
+}
+
+private fun BaStudentGuideInfo.skillCardCacheKey(): String {
+    val source = sourceUrl.trim().ifBlank { title.trim() }
+    return buildString {
+        append(source)
+        append('|')
+        append(syncedAtMs)
+        append('|')
+        append(skillRows.size)
+        append('|')
+        append(profileRows.size)
+        append('|')
+        append(growthRows.size)
+        append('|')
+        append(stats.size)
+    }
+}
+
 fun BaStudentGuideInfo.skillCardsForDisplay(): List<GuideSkillCardModel> {
+    val cacheKey = skillCardCacheKey()
+    synchronized(guideSkillCardCache) {
+        guideSkillCardCache[cacheKey]?.let { return it }
+    }
     val rows = skillRowsForDisplay()
     if (rows.isEmpty()) return emptyList()
 
@@ -18,7 +52,7 @@ fun BaStudentGuideInfo.skillCardsForDisplay(): List<GuideSkillCardModel> {
     val drafts = parseBaseSkillDrafts(rows)
     if (drafts.isEmpty()) return emptyList()
 
-    return drafts.mapIndexedNotNull { index, draft ->
+    val computed = drafts.mapIndexedNotNull { index, draft ->
         val hasHead = draft.name.isNotBlank() || draft.iconUrl.isNotBlank()
         val hasDesc = draft.descriptionByLevel.isNotEmpty() || draft.fallbackDescription.isNotBlank()
         if (!hasHead || !hasDesc) return@mapIndexedNotNull null
@@ -35,6 +69,10 @@ fun BaStudentGuideInfo.skillCardsForDisplay(): List<GuideSkillCardModel> {
             fallbackDescriptionIcons = draft.fallbackDescriptionIcons.toList()
         )
     }
+    synchronized(guideSkillCardCache) {
+        guideSkillCardCache[cacheKey] = computed
+    }
+    return computed
 }
 
 private data class SkillDraft(

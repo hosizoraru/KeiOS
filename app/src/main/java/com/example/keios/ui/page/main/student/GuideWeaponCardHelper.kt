@@ -1,6 +1,41 @@
 package com.example.keios.ui.page.main.student
 
+import java.util.LinkedHashMap
+
+private const val GUIDE_WEAPON_CACHE_MAX_SIZE = 96
+
+private val guideWeaponCardCache = object : LinkedHashMap<String, GuideWeaponCardModel?>(
+    GUIDE_WEAPON_CACHE_MAX_SIZE,
+    0.75f,
+    true
+) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, GuideWeaponCardModel?>?): Boolean {
+        return size > GUIDE_WEAPON_CACHE_MAX_SIZE
+    }
+}
+
+private fun BaStudentGuideInfo.weaponCardCacheKey(): String {
+    val source = sourceUrl.trim().ifBlank { title.trim() }
+    return buildString {
+        append(source)
+        append('|')
+        append(syncedAtMs)
+        append('|')
+        append(growthRows.size)
+        append('|')
+        append(skillRows.size)
+        append('|')
+        append(stats.size)
+    }
+}
+
 fun BaStudentGuideInfo.weaponCardForDisplay(): GuideWeaponCardModel? {
+    val cacheKey = weaponCardCacheKey()
+    synchronized(guideWeaponCardCache) {
+        if (guideWeaponCardCache.containsKey(cacheKey)) {
+            return guideWeaponCardCache[cacheKey]
+        }
+    }
     val growthRows = growthRowsForDisplay()
     val skillRows = skillRowsForDisplay()
     val rows = if (growthRows.any { it.key.trim() == "专武" }) {
@@ -165,10 +200,13 @@ fun BaStudentGuideInfo.weaponCardForDisplay(): GuideWeaponCardModel? {
     }
 
     if (weaponName.isBlank() && weaponImage.isBlank() && weaponDescription.isBlank() && statRows.isEmpty() && starEffects.isEmpty()) {
+        synchronized(guideWeaponCardCache) {
+            guideWeaponCardCache[cacheKey] = null
+        }
         return null
     }
 
-    return GuideWeaponCardModel(
+    val computed = GuideWeaponCardModel(
         name = weaponName.ifBlank { "专属武器" },
         imageUrl = weaponImage,
         description = weaponDescription,
@@ -178,6 +216,10 @@ fun BaStudentGuideInfo.weaponCardForDisplay(): GuideWeaponCardModel? {
         starEffects = starEffects,
         glossaryIcons = glossaryIcons
     )
+    synchronized(guideWeaponCardCache) {
+        guideWeaponCardCache[cacheKey] = computed
+    }
+    return computed
 }
 
 private data class WeaponStarDraft(

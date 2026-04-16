@@ -1,5 +1,50 @@
 package com.example.keios.ui.page.main.student
 
+import java.util.LinkedHashMap
+
+private const val GUIDE_DERIVED_CACHE_MAX_SIZE = 96
+
+private val guideProfileMetaCache = object : LinkedHashMap<String, List<BaGuideMetaItem>>(
+    GUIDE_DERIVED_CACHE_MAX_SIZE,
+    0.75f,
+    true
+) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<BaGuideMetaItem>>?): Boolean {
+        return size > GUIDE_DERIVED_CACHE_MAX_SIZE
+    }
+}
+
+private val guideCombatMetaCache = object : LinkedHashMap<String, List<BaGuideMetaItem>>(
+    GUIDE_DERIVED_CACHE_MAX_SIZE,
+    0.75f,
+    true
+) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<BaGuideMetaItem>>?): Boolean {
+        return size > GUIDE_DERIVED_CACHE_MAX_SIZE
+    }
+}
+
+private fun BaStudentGuideInfo.derivedCacheKey(tag: String): String {
+    val source = sourceUrl.trim().ifBlank { title.trim() }
+    return buildString {
+        append(tag)
+        append('|')
+        append(source)
+        append('|')
+        append(syncedAtMs)
+        append('|')
+        append(stats.size)
+        append('|')
+        append(profileRows.size)
+        append('|')
+        append(skillRows.size)
+        append('|')
+        append(growthRows.size)
+        append('|')
+        append(simulateRows.size)
+    }
+}
+
 private val guideInlineNoteKeywords = listOf(
     "可以用", "后面的", "后面", "图标", "替换", "占位",
     "备注", "说明", "注释", "样式", "不用写", "待补",
@@ -153,14 +198,26 @@ private fun BaStudentGuideInfo.buildMetaItem(
 }
 
 fun BaStudentGuideInfo.buildProfileMetaItems(): List<BaGuideMetaItem> {
-    return listOf(
+    val cacheKey = derivedCacheKey("profile_meta")
+    synchronized(guideProfileMetaCache) {
+        guideProfileMetaCache[cacheKey]?.let { return it }
+    }
+    val computed = listOf(
         buildMetaItem("稀有度", listOf("稀有度", "星级")),
         buildMetaItem("学院", listOf("所属学园", "所属学院", "学园")),
         buildMetaItem("所属社团", listOf("所属社团", "社团"))
     )
+    synchronized(guideProfileMetaCache) {
+        guideProfileMetaCache[cacheKey] = computed
+    }
+    return computed
 }
 
 fun BaStudentGuideInfo.buildCombatMetaItems(): List<BaGuideMetaItem> {
+    val cacheKey = derivedCacheKey("combat_meta")
+    synchronized(guideCombatMetaCache) {
+        guideCombatMetaCache[cacheKey]?.let { return it }
+    }
     val rawWeaponTypeItem = buildMetaItem("武器类型", listOf("武器类型"))
     val weaponTypeItem = rawWeaponTypeItem.copy(
         value = normalizeWeaponTypeMetaValue(rawWeaponTypeItem.value)
@@ -187,7 +244,7 @@ fun BaStudentGuideInfo.buildCombatMetaItems(): List<BaGuideMetaItem> {
             extraImageUrl = positionIcon
         )
     }
-    return listOf(
+    val computed = listOf(
         mergedTacticalPosition,
         buildMetaItem("攻击类型", listOf("攻击类型")),
         buildMetaItem("防御类型", listOf("防御类型")),
@@ -196,6 +253,10 @@ fun BaStudentGuideInfo.buildCombatMetaItems(): List<BaGuideMetaItem> {
         buildMetaItem("屋外", listOf("屋外")),
         buildMetaItem("室内", listOf("屋内", "室内"))
     )
+    synchronized(guideCombatMetaCache) {
+        guideCombatMetaCache[cacheKey] = computed
+    }
+    return computed
 }
 
 fun shouldHideMovedHeaderRow(row: BaGuideRow): Boolean {

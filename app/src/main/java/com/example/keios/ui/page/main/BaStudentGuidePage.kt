@@ -42,7 +42,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -112,6 +111,7 @@ import com.example.keios.ui.page.main.student.skillCardsForDisplay
 import com.example.keios.ui.page.main.student.weaponCardForDisplay
 import com.example.keios.ui.page.main.student.clearGuideBgmLoopScope
 import com.example.keios.ui.page.main.student.clearGuideBgmPlaybackScope
+import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
@@ -469,6 +469,12 @@ fun BaStudentGuidePage(
         initialPage = selectedBottomTabIndex,
         pageCount = { bottomTabs.size }
     )
+    ReportPagerPerformanceState(
+        scope = "guide_detail_pager",
+        currentPage = bottomTabs.getOrElse(pagerState.currentPage) { GuideBottomTab.Archive }.name,
+        targetPage = bottomTabs.getOrElse(pagerState.targetPage) { GuideBottomTab.Archive }.name,
+        scrolling = pagerState.isScrollInProgress
+    )
     val activeBottomTab = bottomTabs.getOrElse(pagerState.currentPage) { GuideBottomTab.Archive }
     val pageScope = rememberCoroutineScope()
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
@@ -816,12 +822,15 @@ fun BaStudentGuidePage(
         }
     }
 
-    LaunchedEffect(isVoicePlaying, playingVoiceUrl) {
-        if (!isVoicePlaying || playingVoiceUrl.isBlank()) {
+    val voiceTabActive = activeBottomTab == GuideBottomTab.Voice
+    val voicePlayingForProgress = if (voiceTabActive) isVoicePlaying else false
+    val voiceUrlForProgress = if (voiceTabActive) playingVoiceUrl else ""
+    LaunchedEffect(voiceTabActive, voicePlayingForProgress, voiceUrlForProgress) {
+        if (!voiceTabActive || !voicePlayingForProgress || voiceUrlForProgress.isBlank()) {
             voicePlayProgress = 0f
             return@LaunchedEffect
         }
-        while (isVoicePlaying && playingVoiceUrl.isNotBlank()) {
+        while (voiceTabActive && voicePlayingForProgress && voiceUrlForProgress.isNotBlank()) {
             val duration = voicePlayer.duration
             val position = voicePlayer.currentPosition
             voicePlayProgress = if (duration > 0L && position >= 0L) {
@@ -1120,7 +1129,7 @@ fun BaStudentGuidePage(
             state = pagerState,
             key = { index -> bottomTabs[index].name },
             overscrollEffect = null,
-            beyondViewportPageCount = 1,
+            beyondViewportPageCount = 0,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }
@@ -1128,6 +1137,8 @@ fun BaStudentGuidePage(
         ) { pageIndex ->
             val pageBottomTab = bottomTabs.getOrElse(pageIndex) { GuideBottomTab.Archive }
             val isVoiceTab = pageBottomTab == GuideBottomTab.Voice
+            val shouldRenderHeavyContent =
+                pageIndex == pagerState.currentPage || pageIndex == pagerState.settledPage
             val pageListState = rememberSaveable(
                 sourceUrl,
                 pageBottomTab.name,
@@ -1143,7 +1154,7 @@ fun BaStudentGuidePage(
                 }
             }
             Box(modifier = Modifier.fillMaxSize()) {
-                SelectionContainer {
+                if (shouldRenderHeavyContent) {
                     LazyColumn(
                         state = pageListState,
                         modifier = Modifier
@@ -1222,8 +1233,26 @@ fun BaStudentGuidePage(
                             )
                         }
                     }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = innerPadding.calculateTopPadding(),
+                                bottom = innerPadding.calculateBottomPadding(),
+                                start = 20.dp,
+                                end = 20.dp
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = pageBottomTab.label,
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
-                if (sourceUrl.isNotBlank() && loading && info == null) {
+                if (shouldRenderHeavyContent && sourceUrl.isNotBlank() && loading && info == null) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
