@@ -16,7 +16,6 @@ import okhttp3.Response
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 object GameKeeFetchHelper {
@@ -39,31 +38,76 @@ object GameKeeFetchHelper {
     private val REQUEST_UAS = listOf(FIREFOX_ANDROID_UA)
 
     private class InMemoryCookieJar : CookieJar {
-        private val store = ConcurrentHashMap<String, MutableList<Cookie>>()
+        companion object {
+            private const val MAX_COOKIE_COUNT = 96
+        }
 
+        private data class StoredCookie(
+            val cookie: Cookie,
+            val receivedAtMs: Long
+        )
+
+        private val lock = Any()
+        private val store = mutableListOf<StoredCookie>()
+
+        @Suppress("UNUSED_PARAMETER")
         override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
             if (cookies.isEmpty()) return
-            val key = cookieKey(url)
-            val current = store[key] ?: mutableListOf()
-            val merged = current
-                .filter { existing -> cookies.none { it.name == existing.name && it.path == existing.path } }
-                .toMutableList()
-            merged.addAll(cookies)
-            store[key] = merged
+            val now = System.currentTimeMillis()
+            synchronized(lock) {
+                pruneExpiredLocked(now)
+                cookies.forEach { incoming ->
+                    val normalizedDomain = normalizeCookieDomain(incoming.domain)
+                    // Keep one effective cookie per (name + domain), update with newest value.
+                    store.removeAll { existing ->
+                        existing.cookie.name == incoming.name &&
+                            normalizeCookieDomain(existing.cookie.domain) == normalizedDomain
+                    }
+                    if (incoming.expiresAt > now) {
+                        store.add(StoredCookie(cookie = incoming, receivedAtMs = now))
+                    }
+                }
+                trimStoreSizeLocked()
+            }
         }
 
         override fun loadForRequest(url: HttpUrl): List<Cookie> {
             val now = System.currentTimeMillis()
-            val key = cookieKey(url)
-            val existing = (store[key] ?: emptyList()).filter { it.expiresAt > now }
-            if (existing.isEmpty()) return emptyList()
-            store[key] = existing.toMutableList()
-            return existing
+            synchronized(lock) {
+                pruneExpiredLocked(now)
+                val matched = store
+                    .asSequence()
+                    .filter { it.cookie.matches(url) }
+                    .sortedWith(
+                        compareByDescending<StoredCookie> { it.cookie.path.length }
+                            .thenByDescending { it.receivedAtMs }
+                    )
+                    .toList()
+                if (matched.isEmpty()) return emptyList()
+
+                // Avoid repeated cookie names in one request header.
+                val dedupedByName = LinkedHashMap<String, Cookie>()
+                matched.forEach { item ->
+                    dedupedByName.putIfAbsent(item.cookie.name, item.cookie)
+                }
+                return dedupedByName.values.toList()
+            }
         }
 
-        private fun cookieKey(url: HttpUrl): String {
-            val host = url.host.removePrefix("www.")
-            return host.lowercase()
+        private fun pruneExpiredLocked(now: Long) {
+            store.removeAll { it.cookie.expiresAt <= now }
+        }
+
+        private fun trimStoreSizeLocked() {
+            if (store.size <= MAX_COOKIE_COUNT) return
+            store.sortByDescending { it.receivedAtMs }
+            if (store.size > MAX_COOKIE_COUNT) {
+                store.subList(MAX_COOKIE_COUNT, store.size).clear()
+            }
+        }
+
+        private fun normalizeCookieDomain(domain: String): String {
+            return domain.removePrefix(".").removePrefix("www.").lowercase()
         }
     }
 
