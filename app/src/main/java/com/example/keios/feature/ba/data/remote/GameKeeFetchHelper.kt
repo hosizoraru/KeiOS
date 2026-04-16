@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 
 object GameKeeFetchHelper {
     private const val TAG = "GameKeeFetch"
-    private const val ENABLE_LOG = BuildConfig.DEBUG
+    private val ENABLE_LOG = BuildConfig.DEBUG
     private const val BASE_WWW = "https://www.gamekee.com"
     private const val ACCEPT_JSON = "application/json, text/plain, */*"
     private const val ACCEPT_HTML = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"

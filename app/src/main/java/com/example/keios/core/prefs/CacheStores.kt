@@ -5,6 +5,7 @@ import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.data.local.GitHubReleaseAssetCacheStore
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubReleaseStrategyRegistry
+import com.example.keios.core.system.AppBuildEnv
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.ba.BaCalendarPoolImageCache
 import com.example.keios.ui.page.main.ba.BASettingsStore
@@ -55,6 +56,7 @@ internal object CacheStores {
             appIconSummary(),
             baMediaPlaybackSummary(context),
             baTempMediaSummary(context),
+            debugUiDumpSummary(context),
             mcpSummary(context)
         )
         return listOf(buildOverview(entries)) + entries
@@ -81,6 +83,7 @@ internal object CacheStores {
             "app_icon" -> AppIconCache.clear()
             "ba_media_playback" -> clearGameKeeMediaPlaybackCache(context)
             "ba_temp_media" -> BaGuideTempMediaCache.clearAll(context)
+            "debug_ui_dump" -> clearDebugUiDump(context)
             "mcp_prefs" -> McpServerManager.clearSavedCacheOnly()
         }
         if (id != "cache_overview") {
@@ -308,6 +311,26 @@ internal object CacheStores {
         )
     }
 
+    private fun debugUiDumpSummary(context: Context): CacheEntrySummary {
+        val targetDir = AppBuildEnv.uiDumpDirectory(context)
+        val stats = collectDirectoryStats(targetDir)
+        val clearedAtMs = CacheEventStore.loadClearedAt("debug_ui_dump")
+        return CacheEntrySummary(
+            id = "debug_ui_dump",
+            title = "调试 UI Dump",
+            summary = "uiautomator dump 重定向输出目录",
+            detail = "环境 ${AppBuildEnv.displayName} · 文件 ${stats.fileCount} 个",
+            activity = formatActivity(stats.latestModifiedAtMs, clearedAtMs),
+            storage = "缓存估算 ${formatBytes(stats.totalBytes)} · 配置估算 0 B · 磁盘占用 ${formatBytes(stats.totalBytes)} · 目录 ${targetDir.absolutePath}",
+            clearLabel = "清理",
+            cacheBytes = stats.totalBytes,
+            configBytes = 0L,
+            diskBytes = stats.totalBytes,
+            updatedAtMs = stats.latestModifiedAtMs,
+            clearedAtMs = clearedAtMs
+        )
+    }
+
     private fun mcpSummary(context: Context): CacheEntrySummary {
         val snapshot = McpServerManager.loadSavedCacheSummary()
         val updatedAtMs = mmkvLastModified(context, "mcp_server_prefs")
@@ -337,6 +360,53 @@ internal object CacheStores {
     private fun formatTimestamp(epochMs: Long): String {
         if (epochMs <= 0L) return "未记录"
         return SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()).format(Date(epochMs))
+    }
+
+    private fun clearDebugUiDump(context: Context) {
+        val dir = AppBuildEnv.uiDumpDirectory(context)
+        if (dir.exists()) {
+            dir.deleteRecursively()
+        }
+        dir.mkdirs()
+    }
+
+    private data class DirectoryStats(
+        val fileCount: Int,
+        val totalBytes: Long,
+        val latestModifiedAtMs: Long
+    )
+
+    private fun collectDirectoryStats(root: File): DirectoryStats {
+        if (!root.exists()) {
+            return DirectoryStats(
+                fileCount = 0,
+                totalBytes = 0L,
+                latestModifiedAtMs = 0L
+            )
+        }
+        val queue = ArrayDeque<File>()
+        queue.add(root)
+        var fileCount = 0
+        var totalBytes = 0L
+        var latestModifiedAtMs = 0L
+        while (queue.isNotEmpty()) {
+            val current = queue.removeLast()
+            val modifiedAt = current.lastModified()
+            if (modifiedAt > latestModifiedAtMs) {
+                latestModifiedAtMs = modifiedAt
+            }
+            if (current.isFile) {
+                fileCount += 1
+                totalBytes += current.length().coerceAtLeast(0L)
+                continue
+            }
+            current.listFiles().orEmpty().forEach(queue::add)
+        }
+        return DirectoryStats(
+            fileCount = fileCount,
+            totalBytes = totalBytes,
+            latestModifiedAtMs = latestModifiedAtMs
+        )
     }
 
     private fun mmkvLastModified(context: Context, id: String): Long {
