@@ -125,8 +125,48 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.capturePopupAnchor
+import java.util.concurrent.ConcurrentHashMap
 
 private const val IMAGE_TAP_DISMISS_GESTURE_COOLDOWN_MS = 260L
+
+private object GuideBgmLoopStore {
+    private val loopByScopedAudio = ConcurrentHashMap<String, Boolean>()
+
+    private fun scopedKey(scopeKey: String, audioUrl: String): String {
+        if (scopeKey.isBlank() || audioUrl.isBlank()) return ""
+        return "$scopeKey|$audioUrl"
+    }
+
+    fun isEnabled(scopeKey: String, audioUrl: String): Boolean {
+        val key = scopedKey(scopeKey, audioUrl)
+        if (key.isBlank()) return false
+        return loopByScopedAudio[key] == true
+    }
+
+    fun setEnabled(scopeKey: String, audioUrl: String, enabled: Boolean) {
+        val key = scopedKey(scopeKey, audioUrl)
+        if (key.isBlank()) return
+        if (enabled) {
+            loopByScopedAudio[key] = true
+        } else {
+            loopByScopedAudio.remove(key)
+        }
+    }
+
+    fun clearScope(scopeKey: String) {
+        if (scopeKey.isBlank()) return
+        val prefix = "$scopeKey|"
+        loopByScopedAudio.keys.forEach { key ->
+            if (key.startsWith(prefix)) {
+                loopByScopedAudio.remove(key)
+            }
+        }
+    }
+}
+
+internal fun clearGuideBgmLoopScope(scopeKey: String) {
+    GuideBgmLoopStore.clearScope(scopeKey)
+}
 
 private fun normalizeGuideMediaSource(raw: String): String {
     val value = raw.trim()
@@ -497,6 +537,7 @@ fun GuideGalleryCardItem(
     item: BaGuideGalleryItem,
     backdrop: Backdrop?,
     onOpenMedia: (String) -> Unit,
+    audioLoopScopeKey: String = "",
     mediaUrlResolver: (String) -> String = { it },
     embedded: Boolean = false,
     showMediaTypeLabel: Boolean = true,
@@ -557,6 +598,9 @@ fun GuideGalleryCardItem(
     var audioDurationMs by remember(audioTargetUrl) { mutableStateOf(0L) }
     var audioSeekProgress by remember(audioTargetUrl) { mutableStateOf<Float?>(null) }
     var audioLoadError by remember(audioTargetUrl) { mutableStateOf<String?>(null) }
+    var audioLoopEnabled by remember(audioLoopScopeKey, audioTargetUrl) {
+        mutableStateOf(GuideBgmLoopStore.isEnabled(audioLoopScopeKey, audioTargetUrl))
+    }
     val audioPlayer = remember(context, audioTargetUrl) {
         if (audioTargetUrl.isNotBlank()) {
             ExoPlayer.Builder(context)
@@ -571,7 +615,14 @@ fun GuideGalleryCardItem(
             runCatching { audioPlayer?.release() }
         }
     }
-    DisposableEffect(audioPlayer, audioTargetUrl) {
+    LaunchedEffect(audioPlayer, audioLoopEnabled) {
+        audioPlayer?.repeatMode = if (audioLoopEnabled) {
+            Player.REPEAT_MODE_ONE
+        } else {
+            Player.REPEAT_MODE_OFF
+        }
+    }
+    DisposableEffect(audioPlayer, audioTargetUrl, audioLoopEnabled) {
         val player = audioPlayer ?: return@DisposableEffect onDispose { }
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlayingNow: Boolean) {
@@ -597,6 +648,9 @@ fun GuideGalleryCardItem(
                         }
                     }
                     Player.STATE_ENDED -> {
+                        if (audioLoopEnabled && player.repeatMode == Player.REPEAT_MODE_ONE) {
+                            return
+                        }
                         audioIsBuffering = false
                         audioIsPlaying = false
                         audioPlayProgress = 1f
@@ -724,6 +778,27 @@ fun GuideGalleryCardItem(
                     )
                 }
                 if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "",
+                        leadingIcon = MiuixIcons.Regular.Refresh,
+                        textColor = if (audioLoopEnabled) Color(0xFF34C759) else Color(0xFF3B82F6),
+                        variant = GlassVariant.Compact,
+                        onClick = {
+                            val nextEnabled = !audioLoopEnabled
+                            audioLoopEnabled = nextEnabled
+                            GuideBgmLoopStore.setEnabled(
+                                scopeKey = audioLoopScopeKey,
+                                audioUrl = audioTargetUrl,
+                                enabled = nextEnabled
+                            )
+                            audioPlayer?.repeatMode = if (nextEnabled) {
+                                Player.REPEAT_MODE_ONE
+                            } else {
+                                Player.REPEAT_MODE_OFF
+                            }
+                        }
+                    )
                     GlassTextButton(
                         backdrop = backdrop,
                         text = "",

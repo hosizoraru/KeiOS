@@ -791,6 +791,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                     item = chocolateItem,
                                                     backdrop = backdrop,
                                                     onOpenMedia = onOpenExternal,
+                                                    audioLoopScopeKey = sourceUrl,
                                                     mediaUrlResolver = { raw ->
                                                         galleryCacheRevision.let {
                                                             BaGuideTempMediaCache.resolveCachedUrl(
@@ -845,6 +846,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                     item = furnitureItem,
                                                     backdrop = backdrop,
                                                     onOpenMedia = onOpenExternal,
+                                                    audioLoopScopeKey = sourceUrl,
                                                     mediaUrlResolver = { raw ->
                                                         galleryCacheRevision.let {
                                                             BaGuideTempMediaCache.resolveCachedUrl(
@@ -1258,6 +1260,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                 item = item,
                                                 backdrop = backdrop,
                                                 onOpenMedia = onOpenExternal,
+                                                audioLoopScopeKey = sourceUrl,
                                                 mediaUrlResolver = { raw ->
                                                     galleryCacheRevision.let {
                                                         BaGuideTempMediaCache.resolveCachedUrl(
