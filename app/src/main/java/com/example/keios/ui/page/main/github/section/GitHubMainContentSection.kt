@@ -636,42 +636,71 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                             }
                                             val releaseUpdatedLabel = loadedReleaseUpdatedAt
                                                 ?: stringResource(R.string.common_unknown)
+                                            val tagTooLong = releaseTagLabel.length >= 22
                                             StatusPill(
                                                 label = releaseNameLabel,
                                                 color = targetAccent,
                                                 modifier = Modifier.fillMaxWidth(),
                                                 contentPadding = PaddingValues(horizontal = 9.dp, vertical = 5.dp)
                                             )
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                verticalAlignment = androidx.compose.ui.Alignment.Top
-                                            ) {
+                                            if (tagTooLong) {
                                                 StatusPill(
                                                     label = releaseTagLabel,
                                                     color = targetAccent,
-                                                    modifier = Modifier.weight(1f),
+                                                    modifier = Modifier.fillMaxWidth(),
                                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                                 )
-                                                StatusPill(
-                                                    label = releaseUpdatedLabel,
-                                                    color = targetAccent,
-                                                    modifier = Modifier.weight(1f),
-                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                                )
+                                                Box(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    contentAlignment = androidx.compose.ui.Alignment.CenterEnd
+                                                ) {
+                                                    StatusPill(
+                                                        label = releaseUpdatedLabel,
+                                                        color = targetAccent,
+                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                }
+                                            } else {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalAlignment = androidx.compose.ui.Alignment.Top
+                                                ) {
+                                                    StatusPill(
+                                                        label = releaseTagLabel,
+                                                        color = targetAccent,
+                                                        modifier = Modifier.weight(1f),
+                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                    StatusPill(
+                                                        label = releaseUpdatedLabel,
+                                                        color = targetAccent,
+                                                        modifier = Modifier.weight(1f),
+                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                }
                                             }
                                         }
-                                        Text(
-                                            text = when {
-                                                assetLoading -> stringResource(R.string.github_asset_hint_loading)
-                                                assetBundle?.showingAllAssets == true -> stringResource(R.string.github_asset_hint_all_loaded)
-                                                assetError.isNotBlank() -> stringResource(R.string.github_asset_hint_error)
-                                                else -> stringResource(R.string.github_asset_hint_open_release_or_load_all)
-                                            },
-                                            color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        when {
+                                            assetLoading -> Text(
+                                                text = stringResource(R.string.github_asset_hint_loading),
+                                                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            assetBundle?.showingAllAssets == true -> Text(
+                                                text = stringResource(R.string.github_asset_hint_all_loaded),
+                                                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            assetError.isNotBlank() -> Text(
+                                                text = stringResource(R.string.github_asset_hint_error),
+                                                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     }
                                 }
                             }
