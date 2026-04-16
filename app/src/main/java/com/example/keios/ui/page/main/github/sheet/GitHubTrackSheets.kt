@@ -3,9 +3,13 @@ package com.example.keios.ui.page.main.github.sheet
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -372,7 +376,10 @@ internal fun GitHubTrackEditSheet(
             )
         }
     ) {
-        SheetContentColumn(verticalSpacing = 8.dp) {
+        SheetContentColumn(
+            scrollable = !pickerExpanded,
+            verticalSpacing = 8.dp
+        ) {
             SheetSectionTitle(stringResource(R.string.github_track_sheet_section_repo_app))
             SheetSectionCard {
                 SheetInputTitle(stringResource(R.string.github_track_sheet_input_repo))
@@ -429,11 +436,13 @@ internal fun GitHubTrackEditSheet(
                 }
             }
             if (pickerExpanded) {
-                val filteredApps = appList.filter { app ->
-                    appSearch.isBlank() ||
-                    app.label.contains(appSearch, ignoreCase = true) ||
-                        app.packageName.contains(appSearch, ignoreCase = true)
-                }.take(80)
+                val filteredApps = remember(appList, appSearch) {
+                    appList.filter { app ->
+                        appSearch.isBlank() ||
+                            app.label.contains(appSearch, ignoreCase = true) ||
+                            app.packageName.contains(appSearch, ignoreCase = true)
+                    }
+                }
                 SheetSectionTitle(stringResource(R.string.github_track_sheet_section_app_candidates))
                 SheetSectionCard(verticalSpacing = 6.dp) {
                     if (filteredApps.isEmpty()) {
@@ -442,15 +451,26 @@ internal fun GitHubTrackEditSheet(
                             stringResource(R.string.github_track_sheet_msg_app_no_match)
                         )
                     } else {
-                        filteredApps.forEach { app ->
-                            GitHubAppCandidateRow(
-                                app = app,
-                                selected = selectedApp?.packageName == app.packageName,
-                                onClick = {
-                                    onSelectedAppChange(app)
-                                    onPickerExpandedChange(false)
-                                }
-                            )
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 420.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            contentPadding = PaddingValues(vertical = 2.dp)
+                        ) {
+                            items(
+                                items = filteredApps,
+                                key = { it.packageName }
+                            ) { app ->
+                                GitHubAppCandidateRow(
+                                    app = app,
+                                    selected = selectedApp?.packageName == app.packageName,
+                                    onClick = {
+                                        onSelectedAppChange(app)
+                                        onPickerExpandedChange(false)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
