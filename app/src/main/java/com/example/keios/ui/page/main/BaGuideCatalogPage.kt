@@ -13,7 +13,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -240,9 +239,9 @@ fun BaGuideCatalogPage(
         } else {
             pagerState.settledPage
         }
+        if (index == stablePageIndex) return
         selectedTabIndex = index
         showSortPopup = false
-        if (index == stablePageIndex && !pagerState.isScrollInProgress) return
         tabJumpJob?.cancel()
         tabJumpJob = pagerScope.launch {
             pagerState.animateTabSwitch(
@@ -430,18 +429,16 @@ fun BaGuideCatalogPage(
                 ) {
                     FloatingBottomBar(
                         modifier = Modifier
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {}
-                            )
                             .padding(
                                 horizontal = 12.dp,
                                 vertical = 12.dp + navigationBarBottom
                             ),
                         selectedIndex = { pagerState.targetPage },
                         onSelected = { index ->
-                            selectCatalogTab(index)
+                            // Ignore mirror callbacks emitted after pager state sync.
+                            if (index != pagerState.targetPage) {
+                                selectCatalogTab(index)
+                            }
                         },
                         backdrop = bottomBarBackdrop,
                         tabsCount = tabs.size,
