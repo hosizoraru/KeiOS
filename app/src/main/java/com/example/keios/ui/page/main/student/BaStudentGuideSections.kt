@@ -90,6 +90,7 @@ import kotlinx.coroutines.withContext
 import com.github.panpf.zoomimage.CoilZoomAsyncImage
 import com.github.panpf.zoomimage.rememberCoilZoomState
 import com.github.panpf.zoomimage.zoom.ContinuousTransformType
+import com.github.panpf.zoomimage.zoom.GestureType
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -1413,6 +1414,10 @@ private fun GuideImageFullscreenDialog(
     val normalizedImageUrl = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
     if (normalizedImageUrl.isBlank()) return
     val zoomState = rememberCoilZoomState()
+    LaunchedEffect(zoomState) {
+        // Prevent edge-stuck single-finger accidental scaling.
+        zoomState.zoomable.setDisabledGestureTypes(GestureType.ONE_FINGER_SCALE)
+    }
     var retryToken by rememberSaveable(normalizedImageUrl) { mutableStateOf(0) }
     var lastTransformActiveAtMs by rememberSaveable(normalizedImageUrl) { mutableStateOf(0L) }
     val sampledState by produceState(
