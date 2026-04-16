@@ -2750,7 +2750,7 @@ private fun parseGuideSkillTypeMeta(raw: String): GuideSkillTypeMeta {
             if (variantIndex == null && tokenMeta.variantIndex != null) {
                 variantIndex = tokenMeta.variantIndex
             }
-            val tag = tokenMeta.base.ifBlank { token.trim() }
+            val tag = normalizeGuideSkillStateTag(tokenMeta.base.ifBlank { token.trim() })
             if (tag.isNotBlank()) {
                 stateTags += tag
             }
@@ -2781,6 +2781,21 @@ private data class GuideSkillTypeTokenMeta(
     val base: String,
     val variantIndex: Int? = null
 )
+
+private fun normalizeGuideSkillStateTag(raw: String): String {
+    val cleaned = raw.trim()
+    if (cleaned.isBlank()) return ""
+    val compact = cleaned.replace(" ", "").replace("　", "")
+    return if (
+        compact.startsWith("对") &&
+        compact.endsWith("使用") &&
+        compact.length > 3
+    ) {
+        compact.removeSuffix("使用")
+    } else {
+        cleaned
+    }
+}
 
 private fun parseGuideSkillTypeToken(raw: String): GuideSkillTypeTokenMeta {
     val cleaned = raw.trim()
