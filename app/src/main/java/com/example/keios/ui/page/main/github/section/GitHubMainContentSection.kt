@@ -77,8 +77,10 @@ import com.example.keios.ui.page.main.github.asset.assetDisplayName
 import com.example.keios.ui.page.main.github.asset.assetFileExtensionLabel
 import com.example.keios.ui.page.main.github.asset.assetRelativeTimeLabel
 import com.example.keios.ui.page.main.github.asset.assetTransportLabel
+import com.example.keios.ui.page.main.github.asset.bundleReleaseUpdatedAtMillis
 import com.example.keios.ui.page.main.github.asset.bundleCommitLabel
 import com.example.keios.ui.page.main.github.asset.bundleTransportLabel
+import com.example.keios.ui.page.main.github.asset.formatReleaseUpdatedAtCompact
 import com.example.keios.ui.page.main.github.asset.formatAssetSize
 import com.example.keios.ui.page.main.github.asset.prefersApiAssetTransport
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -576,6 +578,69 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                     },
                                                     fontWeight = FontWeight.Bold,
                                                     maxLines = 1
+                                                )
+                                            }
+                                        }
+                                        val fallbackReleaseName = when {
+                                            state.latestStableName.isNotBlank() -> state.latestStableName
+                                            state.latestPreName.isNotBlank() -> state.latestPreName
+                                            else -> ""
+                                        }
+                                        val loadedReleaseName = assetBundle?.releaseName?.trim().orEmpty()
+                                            .ifBlank { fallbackReleaseName.ifBlank { target?.rawTag.orEmpty() } }
+                                        val loadedReleaseTag = assetBundle?.tagName?.trim().orEmpty()
+                                            .ifBlank { target?.rawTag.orEmpty() }
+                                        val loadedReleaseUpdatedAtMillis = bundleReleaseUpdatedAtMillis(assetBundle)
+                                            ?: when {
+                                                loadedReleaseTag.isBlank() -> null
+                                                loadedReleaseTag.equals(state.latestStableRawTag, ignoreCase = true) ->
+                                                    state.latestStableUpdatedAtMillis.takeIf { it > 0L }
+                                                loadedReleaseTag.equals(state.latestTag, ignoreCase = true) ->
+                                                    state.latestStableUpdatedAtMillis.takeIf { it > 0L }
+                                                loadedReleaseTag.equals(state.latestPreRawTag, ignoreCase = true) ->
+                                                    state.latestPreUpdatedAtMillis.takeIf { it > 0L }
+                                                else -> null
+                                            }
+                                        val loadedReleaseUpdatedAt =
+                                            formatReleaseUpdatedAtCompact(loadedReleaseUpdatedAtMillis)
+                                        val showLoadedReleaseMeta =
+                                            loadedReleaseName.isNotBlank() ||
+                                                loadedReleaseTag.isNotBlank() ||
+                                                loadedReleaseUpdatedAt != null
+                                        if (showLoadedReleaseMeta) {
+                                            FlowRow(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                StatusPill(
+                                                    label = stringResource(
+                                                        R.string.github_asset_loaded_release_name,
+                                                        loadedReleaseName.ifBlank {
+                                                            stringResource(R.string.common_unknown)
+                                                        }
+                                                    ),
+                                                    color = targetAccent,
+                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                )
+                                                StatusPill(
+                                                    label = stringResource(
+                                                        R.string.github_asset_loaded_release_tag,
+                                                        loadedReleaseTag.ifBlank {
+                                                            stringResource(R.string.common_unknown)
+                                                        }
+                                                    ),
+                                                    color = targetAccent,
+                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                )
+                                                StatusPill(
+                                                    label = stringResource(
+                                                        R.string.github_asset_loaded_release_updated_at,
+                                                        loadedReleaseUpdatedAt
+                                                            ?: stringResource(R.string.common_unknown)
+                                                    ),
+                                                    color = targetAccent,
+                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                                 )
                                             }
                                         }

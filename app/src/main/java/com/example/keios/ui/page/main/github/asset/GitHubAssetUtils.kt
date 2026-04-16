@@ -7,6 +7,10 @@ import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetRepository
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.ui.page.main.VersionCheckUi
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 internal data class ApkAssetTarget(
@@ -14,6 +18,10 @@ internal data class ApkAssetTarget(
     val releaseUrl: String,
     val label: String
 )
+
+private val releaseUpdatedAtFormatter: DateTimeFormatter = DateTimeFormatter
+    .ofPattern("yy-M-d H:mm", Locale.getDefault())
+    .withZone(ZoneId.systemDefault())
 
 private data class LatestReleaseCandidate(
     val rawTag: String,
@@ -118,6 +126,20 @@ internal fun bundleTransportLabel(bundle: GitHubReleaseAssetBundle?, context: Co
 
 internal fun bundleCommitLabel(bundle: GitHubReleaseAssetBundle?): String? {
     return bundle?.shortCommitSha?.trim().takeIf { !it.isNullOrBlank() }
+}
+
+internal fun bundleReleaseUpdatedAtMillis(bundle: GitHubReleaseAssetBundle?): Long? {
+    bundle ?: return null
+    return bundle.releaseUpdatedAtMillis?.takeIf { it > 0L }
+        ?: bundle.assets.maxOfOrNull { it.updatedAtMillis ?: Long.MIN_VALUE }
+            ?.takeIf { it > 0L }
+}
+
+internal fun formatReleaseUpdatedAtCompact(updatedAtMillis: Long?): String? {
+    val millis = updatedAtMillis?.takeIf { it > 0L } ?: return null
+    return runCatching {
+        releaseUpdatedAtFormatter.format(Instant.ofEpochMilli(millis))
+    }.getOrNull()
 }
 
 internal fun assetAbiLabel(fileName: String): String? {

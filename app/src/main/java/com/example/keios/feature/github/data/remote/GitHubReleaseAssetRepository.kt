@@ -27,6 +27,7 @@ data class GitHubReleaseAssetBundle(
     val releaseName: String,
     val tagName: String,
     val htmlUrl: String,
+    val releaseUpdatedAtMillis: Long? = null,
     val assets: List<GitHubReleaseAssetFile>,
     val showingAllAssets: Boolean = false,
     val shortCommitSha: String = ""
@@ -461,6 +462,7 @@ object GitHubReleaseAssetRepository {
             .put("name", rawTag)
             .put("tag_name", rawTag)
             .put("html_url", releaseUrl)
+            .put("published_at", JSONObject.NULL)
             .put(
                 "assets",
                 JSONArray().apply {
@@ -484,6 +486,9 @@ object GitHubReleaseAssetRepository {
         val releaseName = release.optString("name").trim()
         val tagName = release.optString("tag_name").trim().ifBlank { releaseName }
         val htmlUrl = release.optString("html_url").trim()
+        val releaseUpdatedAtMillis = release.optString("published_at").parseIsoInstantOrNull()
+            ?: release.optString("updated_at").parseIsoInstantOrNull()
+            ?: release.optString("created_at").parseIsoInstantOrNull()
         val assetsArray = release.optJSONArray("assets") ?: JSONArray()
         val assets = buildList {
             for (index in 0 until assetsArray.length()) {
@@ -513,6 +518,7 @@ object GitHubReleaseAssetRepository {
             releaseName = releaseName,
             tagName = tagName,
             htmlUrl = htmlUrl,
+            releaseUpdatedAtMillis = releaseUpdatedAtMillis,
             assets = assets,
             shortCommitSha = ""
         )

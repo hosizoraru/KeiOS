@@ -126,6 +126,7 @@ internal object GitHubReleaseAssetCacheStore {
             put("releaseName", bundle.releaseName)
             put("tagName", bundle.tagName)
             put("htmlUrl", bundle.htmlUrl)
+            put("releaseUpdatedAtMillis", bundle.releaseUpdatedAtMillis ?: 0L)
             put("showingAllAssets", bundle.showingAllAssets)
             put("shortCommitSha", bundle.shortCommitSha)
             put(
@@ -178,6 +179,7 @@ internal object GitHubReleaseAssetCacheStore {
             releaseName = obj.optString("releaseName").trim(),
             tagName = tagName,
             htmlUrl = obj.optString("htmlUrl").trim(),
+            releaseUpdatedAtMillis = obj.optLong("releaseUpdatedAtMillis", 0L).takeIf { it > 0L },
             assets = assets,
             showingAllAssets = obj.optBoolean("showingAllAssets", false),
             shortCommitSha = obj.optString("shortCommitSha").trim()

@@ -1206,16 +1206,19 @@ fun GitHubPage(
             item.appLabel.contains(trackedSearch, ignoreCase = true) ||
             item.packageName.contains(trackedSearch, ignoreCase = true)
     }
+    val isSortUpdatable: (GitHubTrackedApp) -> Boolean = { item ->
+        item.alwaysShowLatestReleaseDownloadButton || checkStates[item.id]?.hasUpdate == true
+    }
     val sortedTracked = when (sortMode) {
         GitHubSortMode.UpdateFirst -> filteredTracked.sortedWith(
-            compareByDescending<GitHubTrackedApp> { checkStates[it.id]?.hasUpdate == true }
+            compareByDescending<GitHubTrackedApp> { isSortUpdatable(it) }
                 .thenByDescending { checkStates[it.id]?.hasPreReleaseUpdate == true }
                 .thenBy { it.appLabel.lowercase() }
         )
         GitHubSortMode.NameAsc -> filteredTracked.sortedBy { it.appLabel.lowercase() }
         GitHubSortMode.PreReleaseFirst -> filteredTracked.sortedWith(
             compareByDescending<GitHubTrackedApp> { checkStates[it.id]?.isPreRelease == true }
-                .thenByDescending { checkStates[it.id]?.hasUpdate == true }
+                .thenByDescending { isSortUpdatable(it) }
                 .thenBy { it.appLabel.lowercase() }
         )
     }

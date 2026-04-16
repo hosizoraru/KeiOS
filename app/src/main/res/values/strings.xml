@@ -242,6 +242,9 @@
     <string name="github_asset_hint_all_loaded">未找到 APK 或已手动全加载</string>
     <string name="github_asset_hint_error">资源读取失败</string>
     <string name="github_asset_hint_open_release_or_load_all">进 Release / 长按全载</string>
+    <string name="github_asset_loaded_release_name">名称 %1$s</string>
+    <string name="github_asset_loaded_release_tag">Tag %1$s</string>
+    <string name="github_asset_loaded_release_updated_at">更新 %1$s</string>
     <string name="github_asset_loading_title">正在读取 release 里的可下载文件</string>
     <string name="github_asset_loading_summary">会优先筛出 .apk；若找不到 APK，会自动回退显示其它资源</string>
     <string name="github_asset_error_title">资源读取失败</string>
