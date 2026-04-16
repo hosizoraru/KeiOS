@@ -10,11 +10,15 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.RandomAccessFile
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 
 object BaGuideTempMediaCache {
     private const val ROOT_DIR = "ba_student_guide_temp_media"
@@ -25,6 +29,7 @@ object BaGuideTempMediaCache {
     private const val KEY_SESSION_IDS = "session_ids"
 
     private val indexStore: MMKV by lazy { MMKV.mmkvWithID(INDEX_KV_ID) }
+    private val downloadLocks = ConcurrentHashMap<String, Mutex>()
 
     private fun rootDir(context: Context): File = File(context.cacheDir, ROOT_DIR)
 
@@ -97,6 +102,16 @@ object BaGuideTempMediaCache {
         }.getOrDefault(false)
     }
 
+    private fun hasGifTrailer(file: File): Boolean {
+        if (!file.exists() || file.length() < 2L) return false
+        return runCatching {
+            RandomAccessFile(file, "r").use { raf ->
+                raf.seek(file.length() - 1L)
+                raf.read() == 0x3B
+            }
+        }.getOrDefault(false)
+    }
+
     private fun hasDecodableImageBounds(file: File): Boolean {
         if (!file.exists() || file.length() <= 0L) return false
         return runCatching {
@@ -109,10 +124,61 @@ object BaGuideTempMediaCache {
     private fun isUsableCachedMedia(url: String, file: File): Boolean {
         if (!file.exists() || file.length() <= 0L) return false
         val strictGif = looksLikeGifUrl(url) || file.extension.equals("gif", ignoreCase = true)
-        if (strictGif) return hasGifHeader(file)
+        val fileLooksLikeGif = hasGifHeader(file)
+        if (strictGif || fileLooksLikeGif) {
+            return fileLooksLikeGif && hasGifTrailer(file)
+        }
         val mediaIsVideoOrAudio = looksLikeVideoUrl(url) || looksLikeAudioUrl(url)
         if (mediaIsVideoOrAudio) return true
         return hasDecodableImageBounds(file)
+    }
+
+    private fun looksLikeImageUrl(url: String): Boolean {
+        val normalized = url.trim()
+        if (normalized.isBlank()) return false
+        if (looksLikeVideoUrl(normalized) || looksLikeAudioUrl(normalized)) return false
+        if (looksLikeGifUrl(normalized)) return true
+        val fromPath = runCatching { Uri.parse(normalized).lastPathSegment.orEmpty() }
+            .getOrDefault("")
+            .substringAfterLast('.', "")
+            .lowercase()
+        return fromPath in setOf("png", "jpg", "jpeg", "webp", "gif", "bmp", "avif")
+    }
+
+    private suspend fun downloadWithValidation(
+        normalizedUrl: String,
+        targetFile: File,
+        forceReDownload: Boolean
+    ): Boolean {
+        val strictGif = looksLikeGifUrl(normalizedUrl) || targetFile.extension.equals("gif", ignoreCase = true)
+        val retryCount = when {
+            strictGif -> 3
+            looksLikeImageUrl(normalizedUrl) -> 2
+            else -> 1
+        }
+        repeat(retryCount) { attempt ->
+            if (targetFile.exists()) {
+                runCatching { targetFile.delete() }
+            }
+            val requestUrl = when {
+                forceReDownload -> withForceNetworkQuery(normalizedUrl)
+                attempt > 0 -> withForceNetworkQuery(normalizedUrl)
+                else -> normalizedUrl
+            }
+            val ok = runCatching {
+                GameKeeFetchHelper.downloadToFile(requestUrl, targetFile)
+            }.getOrDefault(false)
+            if (ok && isUsableCachedMedia(normalizedUrl, targetFile)) {
+                return true
+            }
+            runCatching { targetFile.delete() }
+        }
+        return false
+    }
+
+    private fun lockFor(sourceUrl: String, normalizedUrl: String): Mutex {
+        val key = "${sessionId(sourceUrl)}|${sha1(normalizedUrl)}"
+        return downloadLocks.getOrPut(key) { Mutex() }
     }
 
     private fun fileExtFromUrl(url: String): String {
@@ -159,25 +225,16 @@ object BaGuideTempMediaCache {
             targets.map { url ->
                 async(Dispatchers.IO) {
                     semaphore.withPermit {
-                        ensureActive()
-                        val file = targetFile(context, sourceUrl, url)
-                        if (!forceReDownload && isUsableCachedMedia(url, file)) return@withPermit
-                        if (file.exists()) {
-                            runCatching { file.delete() }
-                        }
-                        val strictGif = looksLikeGifUrl(url) || file.extension.equals("gif", ignoreCase = true)
-                        val firstRequestUrl = if (forceReDownload) withForceNetworkQuery(url) else url
-                        val firstAttemptOk = runCatching {
-                            GameKeeFetchHelper.downloadToFile(firstRequestUrl, file)
-                        }.getOrDefault(false)
-                        if (firstAttemptOk && isUsableCachedMedia(url, file)) return@withPermit
-                        runCatching { file.delete() }
-                        if (strictGif) {
-                            val retryRequestUrl = if (forceReDownload) withForceNetworkQuery(url) else url
-                            val retryOk = runCatching {
-                                GameKeeFetchHelper.downloadToFile(retryRequestUrl, file)
-                            }.getOrDefault(false)
-                            if (!retryOk || !isUsableCachedMedia(url, file)) {
+                        lockFor(sourceUrl = sourceUrl, normalizedUrl = url).withLock {
+                            ensureActive()
+                            val file = targetFile(context, sourceUrl, url)
+                            if (!forceReDownload && isUsableCachedMedia(url, file)) return@withLock
+                            val downloaded = downloadWithValidation(
+                                normalizedUrl = url,
+                                targetFile = file,
+                                forceReDownload = forceReDownload
+                            )
+                            if (!downloaded) {
                                 runCatching { file.delete() }
                             }
                         }

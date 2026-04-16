@@ -134,6 +134,7 @@ import com.example.keios.ui.page.main.widget.capturePopupAnchor
 import java.util.concurrent.ConcurrentHashMap
 
 private const val IMAGE_TAP_DISMISS_GESTURE_COOLDOWN_MS = 260L
+private const val GUIDE_INLINE_GIF_CACHE_SCOPE = "https://www.gamekee.com/__guide_inline_gif_scope"
 private val guideCircledNumbers = listOf(
     "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
     "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳"
@@ -441,13 +442,67 @@ fun GuideRemoteImageAdaptive(
     }
     val isGifSource = remember(target) { isGifMediaSource(target) }
     if (isGifSource) {
-        progressState?.value = 1f
-        onLoadingChanged?.invoke(false)
-        val ratio = remember(target) { detectMediaRatioFromUrl(target) ?: (16f / 9f) }
+        val resolvedGifTarget by produceState(
+            initialValue = target,
+            target
+        ) {
+            if (!isHttpMediaSource(target)) {
+                value = target
+                return@produceState
+            }
+            progressState?.value = 0f
+            onLoadingChanged?.invoke(true)
+            val warmed = withContext(Dispatchers.IO) {
+                runCatching {
+                    BaGuideTempMediaCache.prefetchForGuide(
+                        context = context,
+                        sourceUrl = GUIDE_INLINE_GIF_CACHE_SCOPE,
+                        rawUrls = listOf(target)
+                    )
+                }
+                var resolved = BaGuideTempMediaCache.resolveCachedUrl(
+                    context = context,
+                    sourceUrl = GUIDE_INLINE_GIF_CACHE_SCOPE,
+                    rawUrl = target
+                )
+                if (!isFileMediaSource(resolved)) {
+                    runCatching {
+                        BaGuideTempMediaCache.prefetchForGuide(
+                            context = context,
+                            sourceUrl = GUIDE_INLINE_GIF_CACHE_SCOPE,
+                            rawUrls = listOf(target),
+                            forceReDownload = true
+                        )
+                    }
+                    resolved = BaGuideTempMediaCache.resolveCachedUrl(
+                        context = context,
+                        sourceUrl = GUIDE_INLINE_GIF_CACHE_SCOPE,
+                        rawUrl = target
+                    )
+                }
+                resolved
+            }
+            value = warmed.ifBlank { target }
+        }
+        val ratio = remember(resolvedGifTarget, target) {
+            detectMediaRatioFromUrl(resolvedGifTarget.ifBlank { target }) ?: (16f / 9f)
+        }
         AsyncImage(
-            model = target,
+            model = resolvedGifTarget,
             contentDescription = null,
             contentScale = ContentScale.Fit,
+            onLoading = {
+                progressState?.value = 0.24f
+                onLoadingChanged?.invoke(true)
+            },
+            onSuccess = {
+                progressState?.value = 1f
+                onLoadingChanged?.invoke(false)
+            },
+            onError = {
+                progressState?.value = 1f
+                onLoadingChanged?.invoke(false)
+            },
             modifier = modifier
                 .fillMaxWidth()
                 .aspectRatio(ratio)
@@ -513,6 +568,21 @@ private fun isGifMediaSource(source: String): Boolean {
             magic == "GIF87a" || magic == "GIF89a"
         }
     }.getOrDefault(false)
+}
+
+private fun isFileMediaSource(source: String): Boolean {
+    val value = source.trim()
+    if (value.isBlank()) return false
+    val uri = runCatching { Uri.parse(value) }.getOrNull() ?: return false
+    return uri.scheme.equals("file", ignoreCase = true)
+}
+
+private fun isHttpMediaSource(source: String): Boolean {
+    val value = source.trim()
+    if (value.isBlank()) return false
+    val uri = runCatching { Uri.parse(value) }.getOrNull() ?: return false
+    val scheme = uri.scheme.orEmpty()
+    return scheme.equals("http", ignoreCase = true) || scheme.equals("https", ignoreCase = true)
 }
 
 private fun detectMediaRatioFromUrl(source: String): Float? {
