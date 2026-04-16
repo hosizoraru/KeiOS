@@ -346,10 +346,6 @@ fun GuideGalleryCardItem(
     mediaUrlResolver: (String) -> String = { it },
     embedded: Boolean = false,
     showMediaTypeLabel: Boolean = true,
-    showReloadCapsule: Boolean = false,
-    showReloadProgress: Boolean = false,
-    reloadProgress: Float = 0f,
-    onReloadRequest: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -486,28 +482,6 @@ fun GuideGalleryCardItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (showReloadCapsule && showReloadProgress) {
-                    CircularProgressIndicator(
-                        progress = reloadProgress.coerceIn(0f, 1f),
-                        size = 18.dp,
-                        strokeWidth = 2.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = Color(0xFF3B82F6),
-                            backgroundColor = Color(0x553B82F6)
-                        )
-                    )
-                }
-                if (showReloadCapsule) {
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        text = "",
-                        leadingIcon = MiuixIcons.Regular.Refresh,
-                        textColor = Color(0xFF3B82F6),
-                        variant = GlassVariant.Compact,
-                        enabled = !showReloadProgress,
-                        onClick = { onReloadRequest?.invoke() }
-                    )
-                }
                 if (isImageType && displayImageUrl.isNotBlank()) {
                     val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
                     val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)

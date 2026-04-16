@@ -198,8 +198,6 @@ fun BaStudentGuidePage(
     var isVoicePlaying by remember(sourceUrl) { mutableStateOf(false) }
     var voicePlayProgress by remember(sourceUrl) { mutableFloatStateOf(0f) }
     var galleryPrefetchRequested by rememberSaveable(sourceUrl) { mutableStateOf(false) }
-    var reloadingInteractiveFurnitureGifUrl by remember(sourceUrl) { mutableStateOf("") }
-    var reloadingInteractiveFurnitureGifProgress by remember(sourceUrl) { mutableFloatStateOf(0f) }
     var galleryCacheRevision by remember(sourceUrl) { mutableIntStateOf(0) }
     val bottomTabs = GuideBottomTab.entries
     val pagerState = rememberPagerState(
@@ -363,43 +361,6 @@ fun BaStudentGuidePage(
             isVoicePlaying = false
             voicePlayProgress = 0f
             Toast.makeText(context, "语音播放失败", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    fun reloadInteractiveFurnitureGif(rawUrl: String) {
-        val target = normalizeGuideUrl(rawUrl)
-        if (target.isBlank()) return
-        if (reloadingInteractiveFurnitureGifUrl == target) return
-        val currentSource = sourceUrl
-        reloadingInteractiveFurnitureGifUrl = target
-        reloadingInteractiveFurnitureGifProgress = 0.12f
-        pageScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    BaGuideTempMediaCache.clearMediaCache(
-                        context = context,
-                        sourceUrl = currentSource,
-                        rawUrl = target
-                    )
-                }
-                reloadingInteractiveFurnitureGifProgress = 0.34f
-                withContext(Dispatchers.IO) {
-                    BaGuideTempMediaCache.prefetchForGuide(
-                        context = context,
-                        sourceUrl = currentSource,
-                        rawUrls = listOf(target),
-                        forceReDownload = true
-                    )
-                }
-                reloadingInteractiveFurnitureGifProgress = 1f
-                delay(80)
-                galleryCacheRevision += 1
-            } finally {
-                reloadingInteractiveFurnitureGifProgress = 0f
-                if (reloadingInteractiveFurnitureGifUrl == target) {
-                    reloadingInteractiveFurnitureGifUrl = ""
-                }
-            }
         }
     }
 
@@ -760,7 +721,6 @@ fun BaStudentGuidePage(
         ) { pageIndex ->
             val pageBottomTab = bottomTabs.getOrElse(pageIndex) { GuideBottomTab.Archive }
             val isVoiceTab = pageBottomTab == GuideBottomTab.Voice
-            val isGalleryTab = pageBottomTab == GuideBottomTab.Gallery
             val pageListState = rememberSaveable(
                 sourceUrl,
                 pageBottomTab.name,
@@ -841,26 +801,11 @@ fun BaStudentGuidePage(
                         isVoicePlaying = isVoiceTab && isVoicePlaying,
                         voicePlayProgress = if (isVoiceTab) voicePlayProgress else 0f,
                         selectedVoiceLanguage = if (isVoiceTab) selectedVoiceLanguage else "",
-                        interactiveFurnitureGifReloadingUrl = if (isGalleryTab) {
-                            reloadingInteractiveFurnitureGifUrl
-                        } else {
-                            ""
-                        },
-                        interactiveFurnitureGifReloadingProgress = if (isGalleryTab) {
-                            reloadingInteractiveFurnitureGifProgress
-                        } else {
-                            0f
-                        },
                         onOpenExternal = ::openExternal,
                         onOpenGuide = ::openGuideInPage,
                         onToggleVoicePlayback = if (isVoiceTab) ::toggleVoicePlayback else ignoreStringInput,
                         onSelectedVoiceLanguageChange = if (isVoiceTab) {
                             { selectedVoiceLanguage = it }
-                        } else {
-                            ignoreStringInput
-                        },
-                        onReloadInteractiveFurnitureGif = if (isGalleryTab) {
-                            ::reloadInteractiveFurnitureGif
                         } else {
                             ignoreStringInput
                         }
