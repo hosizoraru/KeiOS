@@ -150,7 +150,8 @@ private fun BaStudentGuideInfo.findGuideFieldValue(vararg keywords: String): Str
 
 private fun normalizeWeaponTypeMetaValue(raw: String): String {
     val value = raw.trim()
-    if (value.isBlank() || value == "-") return "原网站暂无该数据"
+    if (value.isBlank() || value == "-") return "暂无数据"
+    if (value == "原网站暂无该数据") return "暂无数据"
     val compact = value.replace(" ", "")
     val hasPlaceholderHints = compact.contains("这一行") ||
         compact.contains("素材") ||
@@ -159,7 +160,7 @@ private fun normalizeWeaponTypeMetaValue(raw: String): String {
         compact.contains("暂无")
     val looksSuspiciouslyLong = compact.length > 18
     if (hasPlaceholderHints || looksSuspiciouslyLong) {
-        return "原网站暂无该数据"
+        return "暂无数据"
     }
     return value
 }

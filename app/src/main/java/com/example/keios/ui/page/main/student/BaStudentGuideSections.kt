@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -391,6 +392,9 @@ fun GuideGalleryCardItem(
     var audioIsPlaying by remember(audioTargetUrl) { mutableStateOf(false) }
     var audioIsBuffering by remember(audioTargetUrl) { mutableStateOf(false) }
     var audioPlayProgress by remember(audioTargetUrl) { mutableStateOf(0f) }
+    var audioPositionMs by remember(audioTargetUrl) { mutableStateOf(0L) }
+    var audioDurationMs by remember(audioTargetUrl) { mutableStateOf(0L) }
+    var audioSeekProgress by remember(audioTargetUrl) { mutableStateOf<Float?>(null) }
     var audioLoadError by remember(audioTargetUrl) { mutableStateOf<String?>(null) }
     val audioPlayer = remember(context, audioTargetUrl) {
         if (audioTargetUrl.isNotBlank()) {
@@ -416,15 +420,37 @@ fun GuideGalleryCardItem(
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_BUFFERING -> audioIsBuffering = true
-                    Player.STATE_READY -> audioIsBuffering = false
+                    Player.STATE_READY -> {
+                        audioIsBuffering = false
+                        val duration = player.duration
+                        if (duration > 0L) {
+                            audioDurationMs = duration
+                        }
+                        val position = player.currentPosition
+                        if (position >= 0L) {
+                            audioPositionMs = if (audioDurationMs > 0L) {
+                                position.coerceAtMost(audioDurationMs)
+                            } else {
+                                position
+                            }
+                        }
+                    }
                     Player.STATE_ENDED -> {
                         audioIsBuffering = false
                         audioIsPlaying = false
                         audioPlayProgress = 1f
+                        val duration = player.duration
+                        if (duration > 0L) {
+                            audioDurationMs = duration
+                            audioPositionMs = duration
+                        }
                     }
                     Player.STATE_IDLE -> {
                         audioIsBuffering = false
-                        if (!player.isPlaying) audioPlayProgress = 0f
+                        if (!player.isPlaying) {
+                            audioPlayProgress = 0f
+                            audioPositionMs = 0L
+                        }
                     }
                 }
             }
@@ -438,20 +464,51 @@ fun GuideGalleryCardItem(
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
     }
-    LaunchedEffect(audioIsPlaying, audioTargetUrl) {
-        if (!audioIsPlaying) {
-            val player = audioPlayer
-            if (player == null || player.duration <= 0L || player.currentPosition <= 0L) {
-                audioPlayProgress = 0f
+    LaunchedEffect(audioTargetUrl, audioIsPlaying, audioIsBuffering, audioSeekProgress) {
+        if (audioSeekProgress != null) return@LaunchedEffect
+        val player = audioPlayer ?: run {
+            audioPlayProgress = 0f
+            audioPositionMs = 0L
+            audioDurationMs = 0L
+            return@LaunchedEffect
+        }
+
+        if (!audioIsPlaying && !audioIsBuffering) {
+            val duration = player.duration
+            if (duration > 0L) {
+                audioDurationMs = duration
+            }
+            val position = player.currentPosition.coerceAtLeast(0L)
+            audioPositionMs = if (audioDurationMs > 0L) {
+                position.coerceAtMost(audioDurationMs)
+            } else {
+                position
+            }
+            audioPlayProgress = if (audioDurationMs > 0L) {
+                (audioPositionMs.toFloat() / audioDurationMs.toFloat()).coerceIn(0f, 1f)
+            } else {
+                0f
             }
             return@LaunchedEffect
         }
-        val player = audioPlayer ?: return@LaunchedEffect
-        while (audioIsPlaying) {
+
+        while ((audioIsPlaying || audioIsBuffering) && audioSeekProgress == null) {
             val duration = player.duration
             val position = player.currentPosition
-            audioPlayProgress = if (duration > 0L && position >= 0L) {
-                (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+            if (duration > 0L) {
+                audioDurationMs = duration
+            }
+            audioPositionMs = if (position >= 0L) {
+                if (audioDurationMs > 0L) {
+                    position.coerceAtMost(audioDurationMs)
+                } else {
+                    position
+                }
+            } else {
+                0L
+            }
+            audioPlayProgress = if (audioDurationMs > 0L) {
+                (audioPositionMs.toFloat() / audioDurationMs.toFloat()).coerceIn(0f, 1f)
             } else {
                 0f
             }
@@ -506,17 +563,6 @@ fun GuideGalleryCardItem(
                     )
                 }
                 if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
-                    if (audioIsPlaying || audioIsBuffering) {
-                        CircularProgressIndicator(
-                            progress = if (audioIsBuffering) 0.35f else audioPlayProgress.coerceIn(0f, 1f),
-                            size = 18.dp,
-                            strokeWidth = 2.dp,
-                            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                foregroundColor = Color(0xFF3B82F6),
-                                backgroundColor = Color(0x553B82F6)
-                            )
-                        )
-                    }
                     GlassTextButton(
                         backdrop = backdrop,
                         text = "",
@@ -558,6 +604,70 @@ fun GuideGalleryCardItem(
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+            if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
+                val playerDuration = audioPlayer?.duration ?: 0L
+                val resolvedDurationMs = maxOf(audioDurationMs, playerDuration.coerceAtLeast(0L))
+                val seekPreview = audioSeekProgress?.coerceIn(0f, 1f)
+                val displayProgress = (seekPreview ?: audioPlayProgress).coerceIn(0f, 1f)
+                val displayPositionMs = when {
+                    seekPreview != null && resolvedDurationMs > 0L -> {
+                        (resolvedDurationMs * seekPreview).toLong()
+                    }
+                    else -> audioPositionMs
+                }.coerceAtLeast(0L).let { position ->
+                    if (resolvedDurationMs > 0L) position.coerceAtMost(resolvedDurationMs) else position
+                }
+
+                GuideAudioSeekBar(
+                    progress = displayProgress,
+                    enabled = resolvedDurationMs > 0L && audioPlayer != null,
+                    onSeekStarted = {
+                        audioSeekProgress = displayProgress
+                    },
+                    onSeekChanged = { fraction ->
+                        audioSeekProgress = fraction
+                    },
+                    onSeekFinished = { fraction ->
+                        val player = audioPlayer
+                        if (player == null) {
+                            audioSeekProgress = null
+                            return@GuideAudioSeekBar
+                        }
+                        val duration = maxOf(
+                            resolvedDurationMs,
+                            player.duration.coerceAtLeast(0L)
+                        )
+                        if (duration <= 0L) {
+                            audioSeekProgress = null
+                            return@GuideAudioSeekBar
+                        }
+                        val targetMs = (duration * fraction.coerceIn(0f, 1f)).toLong()
+                            .coerceIn(0L, duration)
+                        runCatching { player.seekTo(targetMs) }
+                        audioDurationMs = duration
+                        audioPositionMs = targetMs
+                        audioPlayProgress =
+                            (targetMs.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                        audioSeekProgress = null
+                    }
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formatAudioDuration(displayPositionMs),
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = formatAudioDuration(resolvedDurationMs),
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = 12.sp
+                    )
+                }
             }
             if (noteLinks.isNotEmpty()) {
                 Column(
@@ -658,6 +768,68 @@ fun GuideGalleryCardItem(
             imageUrl = displayImageUrl,
             onDismiss = { showImageFullscreen = false }
         )
+    }
+}
+
+@Composable
+private fun GuideAudioSeekBar(
+    progress: Float,
+    enabled: Boolean,
+    onSeekStarted: () -> Unit,
+    onSeekChanged: (Float) -> Unit,
+    onSeekFinished: (Float) -> Unit
+) {
+    val normalizedProgress = progress.coerceIn(0f, 1f)
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(26.dp),
+        factory = { ctx ->
+            SeekBar(ctx).apply {
+                max = 1000
+                isEnabled = enabled
+                setPadding(0, 0, 0, 0)
+                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progressValue: Int,
+                        fromUser: Boolean
+                    ) {
+                        if (!fromUser) return
+                        onSeekChanged((progressValue / 1000f).coerceIn(0f, 1f))
+                    }
+
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                        onSeekStarted()
+                    }
+
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                        val target = ((seekBar?.progress ?: 0) / 1000f).coerceIn(0f, 1f)
+                        onSeekFinished(target)
+                    }
+                })
+            }
+        },
+        update = { seekBar ->
+            seekBar.isEnabled = enabled
+            val targetProgress = (normalizedProgress * 1000f).toInt().coerceIn(0, 1000)
+            if (kotlin.math.abs(seekBar.progress - targetProgress) > 2) {
+                seekBar.progress = targetProgress
+            }
+        }
+    )
+}
+
+private fun formatAudioDuration(durationMs: Long): String {
+    if (durationMs <= 0L) return "00:00"
+    val totalSeconds = (durationMs / 1000L).coerceAtLeast(0L)
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return if (hours > 0L) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
     }
 }
 
