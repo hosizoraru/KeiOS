@@ -122,8 +122,15 @@ object BaGuideTempMediaCache {
             .substringAfterLast('.', "")
             .lowercase()
         val ext = when (fromPath) {
-            "png", "jpg", "jpeg", "webp", "gif", "bmp", "mp4", "webm", "mov", "m3u8" -> fromPath
-            else -> if (looksLikeGifUrl(url)) "gif" else "bin"
+            "png", "jpg", "jpeg", "webp", "gif", "bmp",
+            "mp4", "webm", "mov", "m3u8",
+            "ogg", "mp3", "wav", "m4a", "aac", "flac" -> fromPath
+            else -> when {
+                looksLikeGifUrl(url) -> "gif"
+                looksLikeAudioUrl(url) -> "ogg"
+                looksLikeVideoUrl(url) -> "mp4"
+                else -> "bin"
+            }
         }
         return ".$ext"
     }
