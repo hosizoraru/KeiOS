@@ -140,6 +140,8 @@ private val guideCircledNumbers = listOf(
 )
 private val guideSkillTypeNumericSuffixPattern = Regex("""^(.*?)[\s\-_]*(\d{1,2})$""")
 private val guideSkillTypeCircledSuffixPattern = Regex("""^(.*?)([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳])$""")
+private val guideSkillTypeBracketPattern = Regex("""[（(【\[]([^()（）【】\[\]]+)[)）】\]]""")
+private val guideSkillTypeStateSplitPattern = Regex("""\s*[、,，/／|｜+＋]\s*""")
 
 private enum class GuideVideoControlAction {
     TogglePlayPause
@@ -2455,6 +2457,7 @@ fun GuideSkillCardItem(
     val levelOptions = card.levelOptions
     var selectedLevel by rememberSaveable(card.id) { mutableStateOf(card.defaultLevel) }
     var typeCapsuleHeightPx by remember(card.id, selectedLevel) { mutableStateOf(0) }
+    var typeStateBlockHeightPx by remember(card.id, selectedLevel) { mutableStateOf(0) }
     var typeSubRowHeightPx by remember(card.id, selectedLevel) { mutableStateOf(0) }
     var skillNameLineCount by remember(card.id, selectedLevel) { mutableStateOf(1) }
     var descriptionLineCount by remember(card.id, selectedLevel) { mutableStateOf(1) }
@@ -2473,11 +2476,17 @@ fun GuideSkillCardItem(
     val displayLevel = selectedLevel.ifBlank { card.defaultLevel }
     val parsedSkillType = remember(card.type) { parseGuideSkillTypeMeta(card.type) }
     val displaySkillType = parsedSkillType.baseType
+    val skillTypeStateTags = parsedSkillType.stateTags
     val skillTypeVariantBadge = parsedSkillType.variantIndex?.let(::toGuideCircledNumber)
+    val hasTypeStateBlock = skillTypeStateTags.isNotEmpty()
     val hasTypeSubRow = skillTypeVariantBadge != null || levelOptions.isNotEmpty()
     val isExSkill = remember(card.type) { card.type.contains("EX", ignoreCase = true) }
-    val hasSkillMetaColumn = remember(displaySkillType, skillCost, levelOptions, skillTypeVariantBadge) {
-        displaySkillType.isNotBlank() || skillCost.isNotBlank() || levelOptions.isNotEmpty() || skillTypeVariantBadge != null
+    val hasSkillMetaColumn = remember(displaySkillType, skillCost, levelOptions, skillTypeVariantBadge, skillTypeStateTags) {
+        displaySkillType.isNotBlank() ||
+            skillCost.isNotBlank() ||
+            levelOptions.isNotEmpty() ||
+            skillTypeVariantBadge != null ||
+            skillTypeStateTags.isNotEmpty()
     }
     val metaColumnShouldTopAlign = descriptionLineCount >= 3
     val skillNameTooLong = skillNameLineCount > 1
@@ -2492,6 +2501,15 @@ fun GuideSkillCardItem(
         0.dp
     }
     val descriptionTopOffsetDp = with(density) { skillTitleRowHeightPx.toDp() } + 8.dp
+    val stateBlockHeightDp = if (hasTypeStateBlock) {
+        if (typeStateBlockHeightPx > 0) {
+            with(density) { typeStateBlockHeightPx.toDp() }
+        } else {
+            26.dp
+        }
+    } else {
+        0.dp
+    }
     val subRowHeightDp = if (hasTypeSubRow) {
         if (typeSubRowHeightPx > 0) {
             with(density) { typeSubRowHeightPx.toDp() }
@@ -2503,13 +2521,16 @@ fun GuideSkillCardItem(
     }
     val occupiedBeforeCostDp = when {
         displaySkillType.isNotBlank() -> {
-            val typeBottomSpacing = if (hasTypeSubRow) {
-                4.dp + subRowHeightDp + 4.dp
-            } else {
-                4.dp
+            val typeBottomSpacing = when {
+                hasTypeStateBlock && hasTypeSubRow -> 4.dp + stateBlockHeightDp + 4.dp + subRowHeightDp + 4.dp
+                hasTypeStateBlock -> 4.dp + stateBlockHeightDp + 4.dp
+                hasTypeSubRow -> 4.dp + subRowHeightDp + 4.dp
+                else -> 4.dp
             }
             typeAlignToTitleOffset + with(density) { typeCapsuleHeightPx.toDp() } + typeBottomSpacing
         }
+        hasTypeStateBlock && hasTypeSubRow -> stateBlockHeightDp + 4.dp + subRowHeightDp + 4.dp
+        hasTypeStateBlock -> stateBlockHeightDp + 4.dp
         hasTypeSubRow -> subRowHeightDp + 4.dp
         else -> 0.dp
     }
@@ -2607,6 +2628,22 @@ fun GuideSkillCardItem(
                             )
                         }
                     }
+                    if (hasTypeStateBlock) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { typeStateBlockHeightPx = it.height },
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            skillTypeStateTags.forEach { stateTag ->
+                                GuideSkillStateTagButton(
+                                    label = stateTag,
+                                    backdrop = backdrop
+                                )
+                            }
+                        }
+                    }
                     if (hasTypeSubRow) {
                         Row(
                             modifier = Modifier
@@ -2686,20 +2723,76 @@ fun GuideSkillCardItem(
 
 private data class GuideSkillTypeMeta(
     val baseType: String,
-    val variantIndex: Int? = null
+    val variantIndex: Int? = null,
+    val stateTags: List<String> = emptyList()
 )
 
 private fun parseGuideSkillTypeMeta(raw: String): GuideSkillTypeMeta {
     val cleaned = sanitizeGuideSkillLabelForDisplay(raw).trim()
     if (cleaned.isBlank()) return GuideSkillTypeMeta(baseType = "")
 
+    var variantIndex: Int? = null
+    val stateTags = mutableListOf<String>()
+    val stateCandidates = guideSkillTypeBracketPattern
+        .findAll(cleaned)
+        .map { it.groupValues.getOrElse(1) { "" }.trim() }
+        .filter { it.isNotBlank() }
+        .toList()
+
+    stateCandidates.forEach { candidate ->
+        val tokens = candidate
+            .split(guideSkillTypeStateSplitPattern)
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .ifEmpty { listOf(candidate) }
+        tokens.forEach { token ->
+            val tokenMeta = parseGuideSkillTypeToken(token)
+            if (variantIndex == null && tokenMeta.variantIndex != null) {
+                variantIndex = tokenMeta.variantIndex
+            }
+            val tag = tokenMeta.base.ifBlank { token.trim() }
+            if (tag.isNotBlank()) {
+                stateTags += tag
+            }
+        }
+    }
+
+    val baseCandidate = guideSkillTypeBracketPattern
+        .replace(cleaned, "")
+        .replace(Regex("""\s{2,}"""), " ")
+        .trim(' ', '-', '_', '/', '／', '|', '｜')
+        .trim()
+    val baseMeta = parseGuideSkillTypeToken(baseCandidate.ifBlank { cleaned })
+    if (variantIndex == null) {
+        variantIndex = baseMeta.variantIndex
+    }
+
+    return GuideSkillTypeMeta(
+        baseType = baseMeta.base.ifBlank { cleaned },
+        variantIndex = variantIndex,
+        stateTags = stateTags
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+    )
+}
+
+private data class GuideSkillTypeTokenMeta(
+    val base: String,
+    val variantIndex: Int? = null
+)
+
+private fun parseGuideSkillTypeToken(raw: String): GuideSkillTypeTokenMeta {
+    val cleaned = raw.trim()
+    if (cleaned.isBlank()) return GuideSkillTypeTokenMeta(base = "")
+
     val circledMatch = guideSkillTypeCircledSuffixPattern.matchEntire(cleaned)
     if (circledMatch != null) {
         val base = circledMatch.groupValues[1].trim()
         val circled = circledMatch.groupValues[2]
         val index = guideCircledNumbers.indexOf(circled).takeIf { it >= 0 }?.plus(1)
-        return GuideSkillTypeMeta(
-            baseType = if (base.isBlank()) cleaned else base,
+        return GuideSkillTypeTokenMeta(
+            base = if (base.isBlank()) cleaned else base,
             variantIndex = index
         )
     }
@@ -2709,14 +2802,14 @@ private fun parseGuideSkillTypeMeta(raw: String): GuideSkillTypeMeta {
         val base = numericMatch.groupValues[1].trim()
         val index = numericMatch.groupValues[2].toIntOrNull()?.takeIf { it > 0 }
         if (index != null) {
-            return GuideSkillTypeMeta(
-                baseType = if (base.isBlank()) cleaned else base,
+            return GuideSkillTypeTokenMeta(
+                base = if (base.isBlank()) cleaned else base,
                 variantIndex = index
             )
         }
     }
 
-    return GuideSkillTypeMeta(baseType = cleaned)
+    return GuideSkillTypeTokenMeta(base = cleaned)
 }
 
 private fun toGuideCircledNumber(index: Int): String {
@@ -2744,6 +2837,26 @@ private fun GuideSkillVariantBadge(
             maxLines = 1
         )
     }
+}
+
+@Composable
+private fun GuideSkillStateTagButton(
+    label: String,
+    backdrop: Backdrop?,
+    modifier: Modifier = Modifier
+) {
+    GlassTextButton(
+        backdrop = backdrop,
+        text = label,
+        enabled = false,
+        textColor = Color(0xFF3B82F6),
+        variant = GlassVariant.Compact,
+        minHeight = 26.dp,
+        horizontalPadding = 8.dp,
+        verticalPadding = 5.dp,
+        modifier = modifier,
+        onClick = {}
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
