@@ -69,6 +69,8 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
     isVoicePlaying: Boolean,
     voicePlayProgress: Float,
     selectedVoiceLanguage: String,
+    interactiveFurnitureGifReloadingUrl: String,
+    interactiveFurnitureGifReloadingProgress: Float,
     onOpenExternal: (String) -> Unit,
     onOpenGuide: (String) -> Unit,
     onToggleVoicePlayback: (String) -> Unit,
@@ -842,6 +844,18 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                     Spacer(modifier = Modifier.height(6.dp))
                                                 }
                                                 val showReloadCapsule = isInteractiveFurniture12GalleryItem(furnitureItem)
+                                                val furnitureReloadUrl = normalizeGuideUrl(
+                                                    furnitureItem.mediaUrl.ifBlank { furnitureItem.imageUrl }
+                                                )
+                                                val showReloadProgress = showReloadCapsule &&
+                                                    furnitureReloadUrl.isNotBlank() &&
+                                                    interactiveFurnitureGifReloadingUrl.isNotBlank() &&
+                                                    normalizeGuideUrl(interactiveFurnitureGifReloadingUrl) == furnitureReloadUrl
+                                                val reloadProgress = if (showReloadProgress) {
+                                                    interactiveFurnitureGifReloadingProgress.coerceIn(0f, 1f)
+                                                } else {
+                                                    0f
+                                                }
                                                 GuideGalleryCardItem(
                                                     item = furnitureItem,
                                                     backdrop = backdrop,
@@ -858,6 +872,8 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                     embedded = true,
                                                     showMediaTypeLabel = false,
                                                     showReloadCapsule = showReloadCapsule,
+                                                    showReloadProgress = showReloadProgress,
+                                                    reloadProgress = reloadProgress,
                                                     onReloadRequest = if (showReloadCapsule) {
                                                         {
                                                             onReloadInteractiveFurnitureGif(

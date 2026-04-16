@@ -347,6 +347,8 @@ fun GuideGalleryCardItem(
     embedded: Boolean = false,
     showMediaTypeLabel: Boolean = true,
     showReloadCapsule: Boolean = false,
+    showReloadProgress: Boolean = false,
+    reloadProgress: Float = 0f,
     onReloadRequest: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -484,6 +486,17 @@ fun GuideGalleryCardItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (showReloadCapsule && showReloadProgress) {
+                    CircularProgressIndicator(
+                        progress = reloadProgress.coerceIn(0f, 1f),
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = Color(0xFF3B82F6),
+                            backgroundColor = Color(0x553B82F6)
+                        )
+                    )
+                }
                 if (showReloadCapsule) {
                     GlassTextButton(
                         backdrop = backdrop,
@@ -491,6 +504,7 @@ fun GuideGalleryCardItem(
                         leadingIcon = MiuixIcons.Regular.Refresh,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
+                        enabled = !showReloadProgress,
                         onClick = { onReloadRequest?.invoke() }
                     )
                 }
