@@ -119,6 +119,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Download
+import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Replace
@@ -979,8 +980,7 @@ fun GuideGalleryCardItem(
                         GuideInlineVideoPlayer(
                             mediaUrl = displayMediaUrl,
                             previewImageUrl = displayImageUrl,
-                            backdrop = backdrop,
-                            onOpenExternal = onOpenMedia
+                            backdrop = backdrop
                         )
                     }
 
@@ -1291,8 +1291,7 @@ fun GuideGalleryExpressionCardItem(
                     GuideInlineVideoPlayer(
                         mediaUrl = displayMediaUrl,
                         previewImageUrl = displayImageUrl,
-                        backdrop = backdrop,
-                        onOpenExternal = onOpenMedia
+                        backdrop = backdrop
                     )
                 } else {
                     GlassTextButton(
@@ -1452,8 +1451,7 @@ fun GuideGalleryVideoGroupCardItem(
                 GuideInlineVideoPlayer(
                     mediaUrl = displayMediaUrl,
                     previewImageUrl = displayPreviewUrl,
-                    backdrop = backdrop,
-                    onOpenExternal = onOpenMedia
+                    backdrop = backdrop
                 )
             }
         }
@@ -1505,8 +1503,7 @@ fun GuideGalleryUnlockLevelCardItem(
 private fun GuideInlineVideoPlayer(
     mediaUrl: String,
     previewImageUrl: String = "",
-    backdrop: Backdrop?,
-    onOpenExternal: (String) -> Unit
+    backdrop: Backdrop?
 ) {
     val context = LocalContext.current
     var expanded by remember(mediaUrl) { mutableStateOf(false) }
@@ -1622,12 +1619,9 @@ private fun GuideInlineVideoPlayer(
 
     val activePlayer = player
     if (activePlayer == null) {
-        GlassTextButton(
-            backdrop = backdrop,
-            text = "外部打开",
-            textColor = Color(0xFF3B82F6),
-            variant = GlassVariant.Compact,
-            onClick = { onOpenExternal(mediaUrl) }
+        Text(
+            text = "视频暂不可用",
+            color = MiuixTheme.colorScheme.onBackgroundVariant
         )
         return
     }
@@ -1661,7 +1655,7 @@ private fun GuideInlineVideoPlayer(
     ) {
         GlassTextButton(
             backdrop = backdrop,
-            text = if (isPlaying) "暂停" else "继续",
+            text = "",
             leadingIcon = if (isPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
             textColor = Color(0xFF3B82F6),
             variant = GlassVariant.Compact,
@@ -1685,14 +1679,8 @@ private fun GuideInlineVideoPlayer(
         )
         GlassTextButton(
             backdrop = backdrop,
-            text = "外部打开",
-            textColor = Color(0xFF3B82F6),
-            variant = GlassVariant.Compact,
-            onClick = { onOpenExternal(mediaUrl) }
-        )
-        GlassTextButton(
-            backdrop = backdrop,
-            text = "收起",
+            text = "",
+            leadingIcon = MiuixIcons.Regular.ExpandMore,
             textColor = Color(0xFF3B82F6),
             variant = GlassVariant.Compact,
             onClick = { expanded = false }
@@ -1724,7 +1712,7 @@ private fun GuideInlineVideoPlayer(
 
     loadError?.takeIf { it.isNotBlank() }?.let { err ->
         Text(
-            text = "视频播放失败：$err，可尝试外部打开",
+            text = "视频播放失败：$err",
             color = MiuixTheme.colorScheme.error,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
