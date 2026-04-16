@@ -359,8 +359,8 @@ fun GuideGalleryCardItem(
     val isInteractiveFurnitureAnimated = remember(item.title, item.mediaUrl, item.imageUrl) {
         isInteractiveFurnitureAnimatedGalleryItem(item)
     }
-    val disableFullscreenAutoRotate = remember(item.title, item.mediaUrl, item.imageUrl, isInteractiveFurnitureAnimated) {
-        isInteractiveFurnitureGalleryItem(item) && !isInteractiveFurnitureAnimated
+    val disableFullscreenAutoRotate = remember(item.title, item.mediaUrl, item.imageUrl) {
+        isInteractiveFurnitureGalleryItem(item)
     }
     val preferredImageRaw = remember(
         item.imageUrl,
@@ -1520,6 +1520,7 @@ private fun GuideImageFullscreenDialog(
                 val rotatedArea = fitArea(rotatedRatio)
                 val shouldRotate90 =
                     allowAutoRotate &&
+                        !isGifSource &&
                         safeRatio > 1.02f &&
                         rotatedArea > (normalArea * 1.12f)
 
