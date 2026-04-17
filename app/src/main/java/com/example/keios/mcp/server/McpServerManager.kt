@@ -1,7 +1,7 @@
 package com.example.keios.mcp
 
 import android.content.Context
-import android.util.Log
+import com.example.keios.core.log.AppLogger
 import com.tencent.mmkv.MMKV
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCallPipeline
@@ -228,7 +228,7 @@ class McpServerManager(
                         val mode = describeAuthHeader(authHeaderRaw)
                         val message = "Rejected unauthorized request: path=$requestPath auth=$mode"
                         appendLog("WARN", message)
-                        Log.w(TAG, message)
+                        AppLogger.w(TAG, message)
                         appCall.respond(HttpStatusCode.Unauthorized, "Unauthorized")
                         finish()
                         return@intercept

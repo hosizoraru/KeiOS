@@ -1,7 +1,7 @@
 package com.example.keios.core.perf
 
-import android.util.Log
 import android.view.Window
+import com.example.keios.core.log.AppLogger
 import androidx.metrics.performance.JankStats
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
@@ -51,7 +51,7 @@ object AppJankMonitor {
                 val stateSummary = frameData.states
                     .take(5)
                     .joinToString(" | ") { state -> "${state.key}=${state.value}" }
-                Log.w(
+                AppLogger.w(
                     TAG,
                     "jankRate=${"%.1f".format(Locale.US, jankRate)}% " +
                         "($totalJank/$totalFrames), " +
@@ -61,7 +61,7 @@ object AppJankMonitor {
                 jankHeuristicMultiplier = 2.0f
             }
         }.onFailure { throwable ->
-            Log.w(TAG, "Jank monitor attach failed: ${throwable.message}")
+            AppLogger.w(TAG, "Jank monitor attach failed: ${throwable.message}")
         }.getOrNull()
     }
 }

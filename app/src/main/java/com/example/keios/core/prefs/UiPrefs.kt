@@ -1,5 +1,6 @@
 package com.example.keios.core.prefs
 
+import com.example.keios.BuildConfig
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ data class UiPrefsSnapshot(
     val homeIconHdrEnabled: Boolean,
     val superIslandNotificationEnabled: Boolean,
     val superIslandBypassRestrictionEnabled: Boolean,
+    val logDebugEnabled: Boolean,
     val textCopyCapabilityExpanded: Boolean,
     val cacheDiagnosticsEnabled: Boolean,
     val appThemeMode: AppThemeMode,
@@ -32,6 +34,7 @@ object UiPrefs {
     private const val KEY_HOME_ICON_HDR = "home_icon_hdr"
     private const val KEY_SUPER_ISLAND_NOTIFICATION = "super_island_notification"
     private const val KEY_SUPER_ISLAND_BYPASS_RESTRICTION = "super_island_bypass_restriction"
+    private const val KEY_LOG_DEBUG = "log_debug"
     private const val KEY_TEXT_COPY_CAPABILITY_EXPANDED = "text_copy_capability_expanded"
     private const val KEY_CACHE_DIAGNOSTICS = "cache_diagnostics"
     private const val KEY_THEME_MODE = "theme_mode"
@@ -92,6 +95,14 @@ object UiPrefs {
         kv().encode(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, value)
     }
 
+    fun isLogDebugEnabled(defaultValue: Boolean = BuildConfig.DEBUG): Boolean {
+        return kv().decodeBool(KEY_LOG_DEBUG, defaultValue)
+    }
+
+    fun setLogDebugEnabled(value: Boolean) {
+        kv().encode(KEY_LOG_DEBUG, value)
+    }
+
     fun isTextCopyCapabilityExpanded(defaultValue: Boolean = false): Boolean {
         return kv().decodeBool(KEY_TEXT_COPY_CAPABILITY_EXPANDED, defaultValue)
     }
@@ -149,6 +160,7 @@ object UiPrefs {
             homeIconHdrEnabled = false,
             superIslandNotificationEnabled = false,
             superIslandBypassRestrictionEnabled = false,
+            logDebugEnabled = BuildConfig.DEBUG,
             textCopyCapabilityExpanded = false,
             cacheDiagnosticsEnabled = true,
             appThemeMode = appThemeMode,
@@ -165,6 +177,7 @@ object UiPrefs {
             homeIconHdrEnabled = store.decodeBool(KEY_HOME_ICON_HDR, false),
             superIslandNotificationEnabled = store.decodeBool(KEY_SUPER_ISLAND_NOTIFICATION, false),
             superIslandBypassRestrictionEnabled = store.decodeBool(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, false),
+            logDebugEnabled = store.decodeBool(KEY_LOG_DEBUG, BuildConfig.DEBUG),
             textCopyCapabilityExpanded = store.decodeBool(KEY_TEXT_COPY_CAPABILITY_EXPANDED, false),
             cacheDiagnosticsEnabled = store.decodeBool(KEY_CACHE_DIAGNOSTICS, true),
             appThemeMode = getAppThemeMode(),

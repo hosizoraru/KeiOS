@@ -2,9 +2,8 @@ package com.example.keios.feature.ba.data.remote
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
-import com.example.keios.BuildConfig
 import com.example.keios.KeiOSApp
+import com.example.keios.core.log.AppLogger
 import okhttp3.Cache
 import okhttp3.Cookie
 import okhttp3.CookieJar
@@ -20,7 +19,6 @@ import java.util.concurrent.TimeUnit
 
 object GameKeeFetchHelper {
     private const val TAG = "GameKeeFetch"
-    private val ENABLE_LOG = BuildConfig.DEBUG
     private const val BASE_WWW = "https://www.gamekee.com"
     private const val ACCEPT_JSON = "application/json, text/plain, */*"
     private const val ACCEPT_HTML = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
@@ -112,7 +110,7 @@ object GameKeeFetchHelper {
     }
 
     private fun logD(msg: String) {
-        if (ENABLE_LOG) Log.d(TAG, msg)
+        AppLogger.d(TAG, msg)
     }
 
     private fun String.compactForLog(limit: Int = 160): String {

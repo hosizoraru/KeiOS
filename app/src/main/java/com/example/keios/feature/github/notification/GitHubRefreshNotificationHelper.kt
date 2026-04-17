@@ -9,11 +9,11 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.keios.MainActivity
 import com.example.keios.R
+import com.example.keios.core.log.AppLogger
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.feature.notification.NotificationActionReceiver
 import com.example.keios.mcp.framework.notification.NotificationHelper
@@ -392,7 +392,7 @@ object GitHubRefreshNotificationHelper {
             }
         }
     }.onFailure {
-        Log.e(TAG, "Build FocusNotification extras failed", it)
+        AppLogger.e(TAG, "Build FocusNotification extras failed", it)
     }.getOrNull()
 
     private fun buildOpenPendingIntent(context: Context): PendingIntent {

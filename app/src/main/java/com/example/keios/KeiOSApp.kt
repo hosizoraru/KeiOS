@@ -9,6 +9,7 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.gif.AnimatedImageDecoder
 import com.example.keios.core.background.AppBackgroundScheduler
+import com.example.keios.core.log.AppLogger
 import com.example.keios.core.system.AppPackageChangedEvent
 import com.example.keios.core.system.AppPackageChangedEvents
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
@@ -57,6 +58,7 @@ class KeiOSApp : Application() {
                 .build()
         }
         MMKV.initialize(this)
+        AppLogger.refreshEnabledFromPrefs()
         AppBackgroundScheduler.scheduleAll(this)
         registerPackageChangedReceiver()
     }

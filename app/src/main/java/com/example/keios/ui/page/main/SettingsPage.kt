@@ -1,5 +1,8 @@
 package com.example.keios.ui.page.main
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +38,7 @@ import com.example.keios.R
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.CacheEntrySummary
 import com.example.keios.core.prefs.CacheStores
+import com.example.keios.core.log.AppLogStore
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
@@ -46,8 +50,12 @@ import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.capturePopupAnchor
 import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -77,6 +85,8 @@ fun SettingsPage(
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     superIslandBypassRestrictionEnabled: Boolean,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
+    logDebugEnabled: Boolean,
+    onLogDebugChanged: (Boolean) -> Unit,
     textCopyCapabilityExpanded: Boolean,
     onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit,
     cacheDiagnosticsEnabled: Boolean,
@@ -97,6 +107,9 @@ fun SettingsPage(
     var themePopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
     var cacheReloadSignal by remember { mutableIntStateOf(0) }
     var clearingCacheId by remember { mutableStateOf<String?>(null) }
+    var logReloadSignal by remember { mutableIntStateOf(0) }
+    var exportingLogZip by remember { mutableStateOf(false) }
+    var clearingLogs by remember { mutableStateOf(false) }
     val themeModeOptions = listOf(
         AppThemeMode.FOLLOW_SYSTEM to stringResource(R.string.settings_theme_follow_system),
         AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light_mode),
@@ -122,11 +135,57 @@ fun SettingsPage(
         value = null
         value = withContext(Dispatchers.IO) { CacheStores.list(context) }
     }
+    val logStats by produceState(
+        initialValue = AppLogStore.Stats.Empty,
+        logReloadSignal,
+        logDebugEnabled
+    ) {
+        do {
+            value = withContext(Dispatchers.IO) {
+                AppLogStore.stats(context)
+            }
+            if (!logDebugEnabled) break
+            delay(1200)
+        } while (true)
+    }
     val uiGroupActive = liquidActionBarLayeredStyleEnabled ||
         liquidBottomBarEnabled ||
         cardPressFeedbackEnabled ||
         homeIconHdrEnabled
     val notifyGroupActive = superIslandNotificationEnabled || superIslandBypassRestrictionEnabled
+    val logGroupActive = logDebugEnabled || logStats.fileCount > 0
+    val logLatestText = if (logStats.latestModifiedAtMs <= 0L) {
+        stringResource(R.string.settings_log_stat_latest_empty)
+    } else {
+        formatLogTime(logStats.latestModifiedAtMs)
+    }
+    val logExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri == null) {
+            exportingLogZip = false
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { AppLogStore.exportZipToUri(context, uri) }
+            exportingLogZip = false
+            if (result.isSuccess) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_log_toast_exported),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                val reason = result.exceptionOrNull()?.javaClass?.simpleName ?: context.getString(R.string.common_unknown)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_log_toast_export_failed, reason),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            logReloadSignal++
+        }
+    }
 
     val scrollBehavior = MiuixScrollBehavior()
 
@@ -264,6 +323,119 @@ fun SettingsPage(
                             infoKey = stringResource(R.string.common_scope),
                             infoValue = stringResource(R.string.settings_home_shine_scope)
                         )
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = if (logGroupActive) enabledCardColor else disabledCardColor,
+                        contentColor = titleColor
+                    ),
+                    onClick = {}
+                ) {
+                    SettingsGroupCard(
+                        header = stringResource(R.string.settings_group_log_header),
+                        title = stringResource(R.string.settings_group_log_title),
+                        summary = stringResource(R.string.settings_group_log_summary)
+                    ) {
+                        SettingsToggleItem(
+                            title = stringResource(R.string.settings_log_debug_title),
+                            summary = if (logDebugEnabled) {
+                                stringResource(R.string.settings_log_debug_summary_enabled)
+                            } else {
+                                stringResource(R.string.settings_log_debug_summary_disabled)
+                            },
+                            checked = logDebugEnabled,
+                            onCheckedChange = onLogDebugChanged,
+                            infoKey = stringResource(R.string.common_scope),
+                            infoValue = stringResource(R.string.settings_log_scope)
+                        )
+                        SettingsInfoItem(
+                            key = stringResource(R.string.common_note),
+                            value = if (logDebugEnabled) {
+                                stringResource(R.string.settings_log_note_enabled)
+                            } else {
+                                stringResource(R.string.settings_log_note_disabled)
+                            }
+                        )
+                        SettingsInfoItem(
+                            key = stringResource(R.string.settings_log_stat_size),
+                            value = formatBytes(logStats.totalBytes)
+                        )
+                        SettingsInfoItem(
+                            key = stringResource(R.string.settings_log_stat_files),
+                            value = stringResource(R.string.settings_log_stat_files_count, logStats.fileCount)
+                        )
+                        SettingsInfoItem(
+                            key = stringResource(R.string.settings_log_stat_latest),
+                            value = logLatestText
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            GlassTextButton(
+                                backdrop = null,
+                                variant = GlassVariant.Compact,
+                                text = if (exportingLogZip) {
+                                    stringResource(R.string.common_processing)
+                                } else {
+                                    stringResource(R.string.settings_log_action_export_zip)
+                                },
+                                enabled = !exportingLogZip && !clearingLogs,
+                                onClick = {
+                                    exportingLogZip = true
+                                    val stamp = SimpleDateFormat(
+                                        "yyyyMMdd-HHmmss",
+                                        Locale.getDefault()
+                                    ).format(Date())
+                                    logExportLauncher.launch("keios-logs-$stamp.zip")
+                                }
+                            )
+                            GlassTextButton(
+                                backdrop = null,
+                                variant = GlassVariant.Compact,
+                                text = if (clearingLogs) {
+                                    stringResource(R.string.common_processing)
+                                } else {
+                                    stringResource(R.string.settings_log_action_clear)
+                                },
+                                textColor = MiuixTheme.colorScheme.error,
+                                containerColor = MiuixTheme.colorScheme.error,
+                                enabled = !exportingLogZip && !clearingLogs,
+                                onClick = {
+                                    scope.launch {
+                                        clearingLogs = true
+                                        val result = withContext(Dispatchers.IO) {
+                                            runCatching { AppLogStore.clear(context) }
+                                        }
+                                        clearingLogs = false
+                                        if (result.isSuccess) {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.settings_log_toast_cleared),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                                                ?: context.getString(R.string.common_unknown)
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.settings_log_toast_clear_failed, reason),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        logReloadSignal++
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -634,4 +806,24 @@ private fun SettingsCacheRow(
             color = subtitleColor
         )
     }
+}
+
+private fun formatBytes(bytes: Long): String {
+    val safe = bytes.coerceAtLeast(0L).toDouble()
+    val kb = 1024.0
+    val mb = kb * 1024.0
+    val gb = mb * 1024.0
+    return when {
+        safe >= gb -> String.format(Locale.US, "%.2f GB", safe / gb)
+        safe >= mb -> String.format(Locale.US, "%.2f MB", safe / mb)
+        safe >= kb -> String.format(Locale.US, "%.2f KB", safe / kb)
+        else -> "${safe.toLong()} B"
+    }
+}
+
+private fun formatLogTime(timestampMs: Long): String {
+    if (timestampMs <= 0L) return ""
+    return runCatching {
+        SimpleDateFormat("yy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestampMs))
+    }.getOrElse { "" }
 }

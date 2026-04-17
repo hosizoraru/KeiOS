@@ -5,9 +5,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Icon
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.keios.R
+import com.example.keios.core.log.AppLogger
 import com.xzakota.hyper.notification.focus.FocusNotification
 
 class MiIslandNotificationBuilder(
@@ -172,6 +172,6 @@ class MiIslandNotificationBuilder(
             }
         }
     }.onFailure {
-        Log.e(TAG, "Build FocusNotification extras failed", it)
+        AppLogger.e(TAG, "Build FocusNotification extras failed", it)
     }.getOrNull()
 }

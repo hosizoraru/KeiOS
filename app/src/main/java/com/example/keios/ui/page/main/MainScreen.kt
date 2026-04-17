@@ -77,6 +77,7 @@ import com.example.keios.ui.page.main.student.normalizeGuideUrl
 import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
+import com.example.keios.core.log.AppLogger
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.UiPrefs
@@ -139,6 +140,7 @@ fun MainScreen(
     var superIslandBypassRestrictionEnabled by remember(uiPrefsSnapshot) {
         mutableStateOf(uiPrefsSnapshot.superIslandBypassRestrictionEnabled)
     }
+    var logDebugEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.logDebugEnabled) }
     var textCopyCapabilityExpanded by remember(uiPrefsSnapshot) {
         mutableStateOf(uiPrefsSnapshot.textCopyCapabilityExpanded)
     }
@@ -233,6 +235,12 @@ fun MainScreen(
                         UiPrefs.setSuperIslandBypassRestrictionEnabled(it)
                         mcpServerManager.refreshNotificationNow()
                         McpNotificationHelper.refreshCurrentNotificationStyle(view.context.applicationContext)
+                    },
+                    logDebugEnabled = logDebugEnabled,
+                    onLogDebugChanged = {
+                        logDebugEnabled = it
+                        UiPrefs.setLogDebugEnabled(it)
+                        AppLogger.setDebugEnabled(it)
                     },
                     textCopyCapabilityExpanded = textCopyCapabilityExpanded,
                     onTextCopyCapabilityExpandedChanged = {

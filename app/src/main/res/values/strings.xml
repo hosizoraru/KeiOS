@@ -94,6 +94,26 @@
     <string name="settings_cache_disabled_desc">已关闭缓存诊断统计。设置页不会再读取缓存大小、更新时间或清理记录。</string>
     <string name="settings_cache_loading_desc">正在读取各页面缓存摘要</string>
     <string name="settings_cache_empty_desc">暂无可管理缓存</string>
+    <string name="settings_group_log_header">Debug Log</string>
+    <string name="settings_group_log_title">日志调试</string>
+    <string name="settings_group_log_summary">按需记录应用调试日志，支持查看大小、清理与导出 ZIP。</string>
+    <string name="settings_log_debug_title">LOG 调试</string>
+    <string name="settings_log_debug_summary_enabled">已开启详细日志记录：网络、通知、MCP、性能等链路会写入本地日志文件。</string>
+    <string name="settings_log_debug_summary_disabled">已关闭详细日志记录：应用保持低开销运行，现有日志可手动导出或清理。</string>
+    <string name="settings_log_scope">影响统一 AppLogger 日志链路；Debug 包默认开启，Release 包默认关闭。</string>
+    <string name="settings_log_note_enabled">复现问题前先开启，复现后导出压缩包提交；日志会持续增长，建议定位完成后清理。</string>
+    <string name="settings_log_note_disabled">日常使用建议保持关闭；需要排障时临时开启即可。</string>
+    <string name="settings_log_stat_size">日志大小</string>
+    <string name="settings_log_stat_files">日志文件</string>
+    <string name="settings_log_stat_files_count">%1$d 个</string>
+    <string name="settings_log_stat_latest">最近写入</string>
+    <string name="settings_log_stat_latest_empty">暂无记录</string>
+    <string name="settings_log_action_export_zip">导出压缩包</string>
+    <string name="settings_log_action_clear">清理日志</string>
+    <string name="settings_log_toast_exported">日志压缩包导出成功</string>
+    <string name="settings_log_toast_export_failed">日志导出失败: %1$s</string>
+    <string name="settings_log_toast_cleared">日志已清理</string>
+    <string name="settings_log_toast_clear_failed">日志清理失败: %1$s</string>
 
     <string name="page_mcp_title">MCP</string>
     <string name="mcp_default_service_name">KeiOS MCP</string>

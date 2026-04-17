@@ -6,10 +6,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.example.keios.MainActivity
 import com.example.keios.R
+import com.example.keios.core.log.AppLogger
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.feature.notification.NotificationActionReceiver
 import com.example.keios.mcp.domain.notification.SessionNotifier
@@ -259,7 +259,7 @@ object McpNotificationHelper {
             }.onSuccess {
                 return
             }.onFailure {
-                Log.w(TAG, "AP notifyTest fallback to direct notify: ${it.message ?: it.javaClass.simpleName}")
+                AppLogger.w(TAG, "AP notifyTest fallback to direct notify: ${it.message ?: it.javaClass.simpleName}")
             }
         }
         ensureChannel(context)
@@ -478,9 +478,9 @@ object McpNotificationHelper {
         val notificationManager = NotificationManagerCompat.from(context)
         val targetUid = resolveXmsfUid(context)
         val selfPackage = context.packageName
-        Log.i(TAG, "notifyWithXiaomiMagic: targetUid=$targetUid notifId=$notificationId")
+        AppLogger.i(TAG, "notifyWithXiaomiMagic: targetUid=$targetUid notifId=$notificationId")
         if (!shouldExecuteXiaomiMagic(targetUid)) {
-            Log.w(TAG, "skip Xiaomi magic: preconditions not satisfied")
+            AppLogger.w(TAG, "skip Xiaomi magic: preconditions not satisfied")
             if (shizukuApiUtils.canUseCommand()) {
                 magicScope.launch {
                     networkMutex.withLock {
@@ -492,7 +492,7 @@ object McpNotificationHelper {
             return
         }
         val nonNullUid = targetUid ?: run {
-            Log.w(TAG, "skip Xiaomi magic: xmsf uid is null")
+            AppLogger.w(TAG, "skip Xiaomi magic: xmsf uid is null")
             notificationManager.notify(notificationId, notification)
             return
         }
@@ -501,12 +501,12 @@ object McpNotificationHelper {
             networkMutex.withLock {
                 try {
                     healConnectivityStateLocked(selfPackage, nonNullUid)
-                    Log.i(TAG, "blocking xmsf network for uid=$nonNullUid")
+                    AppLogger.i(TAG, "blocking xmsf network for uid=$nonNullUid")
                     blockXmsfNetworkingLocked(nonNullUid, selfPackage)
                     notificationManager.notify(notificationId, notification)
                     delay(XIAOMI_MAGIC_BLOCK_INTERVAL_MS)
                 } finally {
-                    Log.i(TAG, "restoring xmsf network for uid=$nonNullUid")
+                    AppLogger.i(TAG, "restoring xmsf network for uid=$nonNullUid")
                     restoreXmsfNetworkingLocked(nonNullUid, selfPackage)
                     healConnectivityStateLocked(selfPackage, nonNullUid)
                 }
@@ -523,18 +523,18 @@ object McpNotificationHelper {
 
     private fun shouldExecuteXiaomiMagic(xmsfUid: Int?): Boolean {
         if (xmsfUid == null) {
-            Log.w(TAG, "shouldExecuteXiaomiMagic=false: xmsf uid not found")
+            AppLogger.w(TAG, "shouldExecuteXiaomiMagic=false: xmsf uid not found")
             return false
         }
         if (!shizukuApiUtils.canUseCommand()) {
-            Log.w(TAG, "shouldExecuteXiaomiMagic=false: Shizuku command unavailable")
+            AppLogger.w(TAG, "shouldExecuteXiaomiMagic=false: Shizuku command unavailable")
             return false
         }
         val idOutput = shizukuApiUtils.execCommand("id").orEmpty()
         val isShellOrRoot = idOutput.contains("uid=2000") || idOutput.contains("uid=0")
         val mode = resolveMagicCommandSet()
         val canUseMode = mode != XiaomiMagicCommandSet.NONE
-        Log.i(TAG, "Shizuku id='$idOutput', mode=$mode, allowMagic=${isShellOrRoot && canUseMode}")
+        AppLogger.i(TAG, "Shizuku id='$idOutput', mode=$mode, allowMagic=${isShellOrRoot && canUseMode}")
         return isShellOrRoot && canUseMode
     }
 
@@ -545,7 +545,7 @@ object McpNotificationHelper {
                 execMagicCommand("cmd connectivity set-package-networking-enabled true $selfPackage")
                 isXmsfNetworkBlocked = blocked
                 isPackageChainEnabled = false
-                Log.i(
+                AppLogger.i(
                     TAG,
                     "blockXmsfNetworkingLocked(package): uid=$uid blocked=$blocked"
                 )
@@ -556,7 +556,7 @@ object McpNotificationHelper {
                 val blocked = execMagicCommand("cmd connectivity set-uid-firewall-rule 9 $uid 2")
                 isXmsfNetworkBlocked = blocked
                 isUidFirewallChainEnabled = chainEnabled
-                Log.i(
+                AppLogger.i(
                     TAG,
                     "blockXmsfNetworkingLocked(uid): uid=$uid chainEnabled=$chainEnabled blocked=$blocked"
                 )
@@ -566,7 +566,7 @@ object McpNotificationHelper {
                 isXmsfNetworkBlocked = false
                 isPackageChainEnabled = false
                 isUidFirewallChainEnabled = false
-                Log.w(TAG, "blockXmsfNetworkingLocked skipped: no supported connectivity command")
+                AppLogger.w(TAG, "blockXmsfNetworkingLocked skipped: no supported connectivity command")
             }
         }
     }
@@ -600,7 +600,7 @@ object McpNotificationHelper {
 
             XiaomiMagicCommandSet.NONE -> false
         }
-        Log.i(TAG, "restoreXmsfNetworkingLocked: uid=$uid mode=$mode restored=$restored")
+        AppLogger.i(TAG, "restoreXmsfNetworkingLocked: uid=$uid mode=$mode restored=$restored")
         isXmsfNetworkBlocked = false
         isPackageChainEnabled = false
         isUidFirewallChainEnabled = false
@@ -634,7 +634,7 @@ object McpNotificationHelper {
             else -> XiaomiMagicCommandSet.NONE
         }
         commandSet = resolved
-        Log.i(TAG, "resolved Xiaomi magic command set: $resolved")
+        AppLogger.i(TAG, "resolved Xiaomi magic command set: $resolved")
         return resolved
     }
 
@@ -643,7 +643,7 @@ object McpNotificationHelper {
             ?: return false
         val success = output.contains("__OK__")
         if (!success) {
-            Log.w(TAG, "magic command failed: $command; output=$output")
+            AppLogger.w(TAG, "magic command failed: $command; output=$output")
         }
         return success
     }
