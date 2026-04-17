@@ -942,30 +942,25 @@ internal fun BaDebugCard(
     ) {
         BaCardHeader(title = "Debug")
 
-        BaGlassPanel(
-            backdrop = backdrop,
-            accentColor = accentAmber,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "AP 通知",
-                    textColor = accentAmber,
-                    variant = GlassVariant.Content,
-                    onClick = onSendApTestNotification,
-                )
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "咖啡厅 3h AP",
-                    textColor = accentAmber,
-                    variant = GlassVariant.Content,
-                    onClick = onTestCafePlus3Hours,
-                )
-            }
+            GlassTextButton(
+                backdrop = backdrop,
+                text = "AP 通知",
+                textColor = accentAmber,
+                variant = GlassVariant.Content,
+                onClick = onSendApTestNotification,
+            )
+            GlassTextButton(
+                backdrop = backdrop,
+                text = "咖啡厅 3h AP",
+                textColor = accentAmber,
+                variant = GlassVariant.Content,
+                onClick = onTestCafePlus3Hours,
+            )
         }
     }
 }
