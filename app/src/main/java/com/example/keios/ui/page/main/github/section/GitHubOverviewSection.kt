@@ -30,6 +30,7 @@ import com.example.keios.ui.page.main.overviewApiLabel
 import com.example.keios.ui.page.main.overviewLabel
 import com.example.keios.ui.page.main.borderColor
 import com.example.keios.ui.page.main.surfaceColor
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.ui.page.main.widget.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
@@ -99,12 +100,12 @@ internal fun GitHubOverviewCard(
                     onClick = onRefreshAllTracked,
                     onLongClick = onOpenTrackSheetForAdd
                 )
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(CardLayoutRhythm.cardContentPadding),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Text(stringResource(R.string.github_overview_title), color = MiuixTheme.colorScheme.onBackground)
@@ -154,7 +155,7 @@ internal fun GitHubOverviewCard(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
             ) {
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_strategy),
@@ -181,7 +182,7 @@ internal fun GitHubOverviewCard(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
             ) {
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_tracked),
@@ -208,7 +209,7 @@ internal fun GitHubOverviewCard(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
             ) {
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_stable_latest),
@@ -235,7 +236,7 @@ internal fun GitHubOverviewCard(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
             ) {
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_prerelease_update),

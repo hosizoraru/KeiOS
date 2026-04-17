@@ -16,7 +16,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -36,8 +35,8 @@ fun AppInfoRow(
     labelMaxWidth: Dp = Dp.Unspecified,
     labelWeight: Float? = null,
     valueWeight: Float = 1f,
-    horizontalSpacing: Dp = 10.dp,
-    rowVerticalPadding: Dp = 3.dp,
+    horizontalSpacing: Dp = CardLayoutRhythm.infoRowGap,
+    rowVerticalPadding: Dp = CardLayoutRhythm.infoRowVerticalPadding,
     valueTextAlign: TextAlign = TextAlign.End,
     labelMaxLines: Int = Int.MAX_VALUE,
     valueMaxLines: Int = Int.MAX_VALUE,

@@ -43,6 +43,7 @@ import com.example.keios.core.prefs.CacheEntrySummary
 import com.example.keios.core.prefs.CacheStores
 import com.example.keios.core.log.AppLogStore
 import com.example.keios.ui.page.main.widget.AppInfoRow
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
@@ -536,8 +537,8 @@ fun SettingsPage(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(CardLayoutRhythm.cardContentPadding),
+                        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
                     ) {
                         Text(
                             text = stringResource(R.string.settings_cache_header),
@@ -657,8 +658,8 @@ private fun SettingsGroupCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(CardLayoutRhythm.cardContentPadding),
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
     ) {
         Text(
             text = header,
@@ -681,7 +682,7 @@ private fun SettingsGroupCard(
         )
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap),
             content = content
         )
     }
@@ -702,7 +703,7 @@ private fun SettingsActionItem(
         modifier = Modifier
             .fillMaxWidth()
             .let { base -> if (onClick != null) base.clickable { onClick() } else base },
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -770,8 +771,8 @@ private fun SettingsInfoItem(
         valueColor = MiuixTheme.colorScheme.onBackground,
         labelMinWidth = 64.dp,
         labelMaxWidth = 112.dp,
-        horizontalSpacing = 8.dp,
-        rowVerticalPadding = 3.dp,
+        horizontalSpacing = CardLayoutRhythm.infoRowGap,
+        rowVerticalPadding = CardLayoutRhythm.infoRowVerticalPadding,
         labelMaxLines = 2,
         valueMaxLines = 6,
         valueOverflow = TextOverflow.Ellipsis,
@@ -800,7 +801,7 @@ private fun SettingsCacheRow(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

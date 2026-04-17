@@ -34,6 +34,7 @@ import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
 import com.example.keios.feature.github.model.InstalledAppItem
 import com.example.keios.ui.page.main.widget.AppInfoRow
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetExpandableCard
 import com.example.keios.ui.page.main.widget.SheetSurfaceCard
@@ -61,8 +62,8 @@ internal fun GitHubCompactInfoRow(
         labelColor = titleColor,
         valueColor = valueColor,
         labelMinWidth = titleMinWidth,
-        horizontalSpacing = 8.dp,
-        rowVerticalPadding = 2.dp,
+        horizontalSpacing = CardLayoutRhythm.infoRowGap,
+        rowVerticalPadding = CardLayoutRhythm.metricCardTextGap,
         valueTextAlign = TextAlign.End,
         valueMaxLines = 4,
         valueOverflow = TextOverflow.Ellipsis,
@@ -109,8 +110,8 @@ internal fun GitHubOverviewMetricItem(
         valueColor = valueColor,
         labelWeight = 0.46f,
         valueWeight = 0.54f,
-        horizontalSpacing = 8.dp,
-        rowVerticalPadding = 2.dp,
+        horizontalSpacing = CardLayoutRhythm.infoRowGap,
+        rowVerticalPadding = CardLayoutRhythm.metricCardTextGap,
         valueTextAlign = TextAlign.End,
         labelMaxLines = 1,
         valueMaxLines = 1,

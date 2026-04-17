@@ -19,6 +19,7 @@ import com.example.keios.ui.page.main.about.model.AboutPermissionEntry
 import com.example.keios.ui.page.main.about.ui.AboutCompactInfoRow
 import com.example.keios.ui.page.main.about.ui.AboutCompactPillRow
 import com.example.keios.ui.page.main.about.ui.AboutSectionCard
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.StatusLabelText
 import java.util.Locale
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -69,7 +70,7 @@ fun AboutRuntimeStatusCardSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
         ) {
             AboutCompactPillRow(
                 title = stringResource(R.string.about_runtime_label_notification_permission),
@@ -137,7 +138,7 @@ fun AboutPermissionCardSection(
                 value = stringResource(R.string.about_permission_empty)
             )
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)) {
                 entries.forEachIndexed { index, entry ->
                     AboutPermissionEntryView(
                         entry = entry,
@@ -181,7 +182,7 @@ fun AboutComponentCardSection(
                 value = stringResource(R.string.about_component_empty)
             )
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)) {
                 entries.forEachIndexed { index, entry ->
                     AboutComponentEntryView(
                         entry = entry,
@@ -213,7 +214,7 @@ private fun AboutPermissionEntryView(
     }
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricCardTextGap)
     ) {
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_permission),
@@ -255,7 +256,7 @@ private fun AboutComponentEntryView(
     val exportColor = if (entry.exported) exportedColor else internalColor
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricCardTextGap)
     ) {
         AboutCompactInfoRow(
             title = stringResource(entry.type.titleRes),

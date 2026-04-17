@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow.Companion.Clip
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.rememberLightTextCopyAction
@@ -61,13 +62,13 @@ fun AboutCompactRow(
         modifier = modifier
             .fillMaxWidth()
             .then(clickableModifier)
-            .padding(vertical = 4.dp)
+            .padding(vertical = CardLayoutRhythm.compactSectionGap)
     ) {
         val maxTitleWidth = (maxWidth * 0.44f).coerceAtLeast(96.dp)
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap)
         ) {
             Row(
                 modifier = Modifier.widthIn(min = 70.dp, max = maxTitleWidth),
@@ -179,10 +180,10 @@ fun AboutSectionCard(
         }
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(CardLayoutRhythm.cardContentPadding),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -191,7 +192,7 @@ fun AboutSectionCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap)
                 ) {
                     if (sectionIcon != null) {
                         Icon(

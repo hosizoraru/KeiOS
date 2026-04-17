@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppInfoRow
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.GlassIconButton
@@ -833,12 +834,12 @@ fun OsPage(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                            .padding(CardLayoutRhythm.cardContentPadding),
+                        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("系统参数与属性", color = titleColor)
@@ -865,7 +866,7 @@ fun OsPage(
                         overviewMetrics.chunked(2).forEach { pair ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
                             ) {
                                 GitHubOverviewMetricItem(
                                     label = pair[0].label,
@@ -1116,8 +1117,8 @@ private fun OsSectionInfoRow(
         valueColor = MiuixTheme.colorScheme.onBackground,
         labelMinWidth = 72.dp,
         labelMaxWidth = 136.dp,
-        horizontalSpacing = 10.dp,
-        rowVerticalPadding = 3.dp,
+        horizontalSpacing = CardLayoutRhythm.infoRowGap,
+        rowVerticalPadding = CardLayoutRhythm.infoRowVerticalPadding,
         valueTextAlign = TextAlign.End,
         labelMaxLines = Int.MAX_VALUE,
         valueMaxLines = 6,

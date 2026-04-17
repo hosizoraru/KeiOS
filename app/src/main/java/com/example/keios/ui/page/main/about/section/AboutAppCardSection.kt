@@ -18,6 +18,7 @@ import com.example.keios.R
 import com.example.keios.ui.page.main.AppIcon
 import com.example.keios.ui.page.main.about.ui.AboutCompactInfoRow
 import com.example.keios.ui.page.main.about.util.formatTime
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
@@ -69,12 +70,12 @@ fun AboutAppCardSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(CardLayoutRhythm.cardContentPadding),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap)
             ) {
                 AppIcon(
                     packageName = packageInfo?.packageName ?: context.packageName,

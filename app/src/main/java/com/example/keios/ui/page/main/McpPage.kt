@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.mcp.McpServerUiState
 import com.example.keios.mcp.McpServerManager
+import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -422,12 +423,12 @@ fun McpPage(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                            .padding(CardLayoutRhythm.cardContentPadding),
+                        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(stringResource(R.string.mcp_overview_title), color = titleColor)
@@ -446,7 +447,7 @@ fun McpPage(
                         overviewMetrics.chunked(2).forEach { pair ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
                             ) {
                                 McpOverviewMetricItem(
                                     metric = pair[0],
@@ -843,8 +844,11 @@ private fun McpOverviewMetricItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+                .padding(
+                    horizontal = CardLayoutRhythm.metricCardHorizontalPadding,
+                    vertical = CardLayoutRhythm.metricCardVerticalPadding
+                ),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricCardTextGap)
         ) {
             Text(
                 text = metric.label,
