@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppDropdownSelector
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassTextButton
@@ -443,8 +446,8 @@ internal fun BaCafeCard(
     val invite2AvailableAt = calculateInviteTicketAvailableMs(coffeeInvite2UsedMs)
     val invite1Ready = coffeeInvite1UsedMs <= 0L || invite1AvailableAt <= uiNowMs
     val invite2Ready = coffeeInvite2UsedMs <= 0L || invite2AvailableAt <= uiNowMs
-    val invite1Color = if (invite1Ready) accentPink else accentYellow
-    val invite2Color = if (invite2Ready) accentPink else accentYellow
+    val invite1Color = accentPink
+    val invite2Color = accentPink
     val invite1Text = if (invite1Ready) "0s" else formatBaRemainingTime(invite1AvailableAt, uiNowMs)
     val invite2Text = if (invite2Ready) "0s" else formatBaRemainingTime(invite2AvailableAt, uiNowMs)
     val invite1TimeText = formatBaDateTimeNoSeconds(if (invite1Ready) uiNowMs else invite1AvailableAt)
@@ -856,12 +859,12 @@ internal fun BaIdCard(
     onSaveIdFriendCode: () -> Unit,
 ) {
     val nicknameLengthForWidth = idNicknameInput.ifEmpty { BA_DEFAULT_NICKNAME }.length.coerceIn(1, 10)
-    val nicknameFieldWidth = (nicknameLengthForWidth * 11 + 34).coerceIn(72, 124).dp
+    val nicknameFieldWidth = (nicknameLengthForWidth * 10 + 24).coerceIn(68, 108).dp
     val friendCodeLengthForWidth = idFriendCodeInput.ifEmpty { BA_DEFAULT_FRIEND_CODE }.length.coerceIn(1, 8)
-    val friendCodeFieldWidth = (friendCodeLengthForWidth * 11 + 34).coerceIn(92, 128).dp
+    val friendCodeFieldWidth = (friendCodeLengthForWidth * 10 + 28).coerceIn(86, 116).dp
     val nicknameSuffixWidth = 44.dp
     val trailingSlotWidth = maxOf(
-        nicknameFieldWidth + 6.dp + nicknameSuffixWidth,
+        nicknameFieldWidth + 4.dp + nicknameSuffixWidth,
         friendCodeFieldWidth
     )
     val accentBlue = Color(0xFF3B82F6)
@@ -882,7 +885,7 @@ internal fun BaIdCard(
                 trailingSlotWidth = trailingSlotWidth,
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     GlassSearchField(
@@ -895,16 +898,30 @@ internal fun BaIdCard(
                         variant = GlassVariant.SheetInput,
                         singleLine = true,
                         textAlign = TextAlign.Center,
+                        textColor = accentBlue,
+                        minHeight = 34.dp,
+                        horizontalPadding = 10.dp,
+                        verticalPadding = 5.dp,
                     )
-                    Text(
-                        text = "老师",
-                        color = accentBlue,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.width(nicknameSuffixWidth),
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .width(nicknameSuffixWidth)
+                            .height(34.dp)
+                            .wrapContentHeight(align = Alignment.CenterVertically)
+                            .offset(y = (-1).dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "老师",
+                            color = accentBlue,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = AppTypographyTokens.Body.fontSize,
+                            lineHeight = AppTypographyTokens.Body.fontSize,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
@@ -927,6 +944,10 @@ internal fun BaIdCard(
                     variant = GlassVariant.SheetInput,
                     singleLine = true,
                     textAlign = TextAlign.Center,
+                    textColor = accentBlue,
+                    minHeight = 34.dp,
+                    horizontalPadding = 10.dp,
+                    verticalPadding = 5.dp,
                 )
             }
         }

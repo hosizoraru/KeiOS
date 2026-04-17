@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -50,11 +52,23 @@ fun GlassSearchField(
     onImeActionDone: (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     blurRadius: Dp? = null,
-    variant: GlassVariant = GlassVariant.Content
+    variant: GlassVariant = GlassVariant.Content,
+    minHeight: Dp = AppInteractiveTokens.glassSearchFieldMinHeight,
+    horizontalPadding: Dp = AppInteractiveTokens.glassSearchFieldHorizontalPadding,
+    verticalPadding: Dp = AppInteractiveTokens.glassSearchFieldVerticalPadding,
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
-    val placeholderColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val placeholderColor = if (variant == GlassVariant.SheetInput) {
+        textColor.copy(alpha = if (isDark) 0.72f else 0.62f)
+    } else {
+        MiuixTheme.colorScheme.onBackgroundVariant
+    }
+    val effectiveLineHeight = if (singleLine && variant == GlassVariant.SheetInput) {
+        fontSize
+    } else {
+        AppTypographyTokens.Body.lineHeight
+    }
     val glass = glassStyle(
         isDark = isDark,
         variant = variant,
@@ -88,7 +102,7 @@ fun GlassSearchField(
 
     Box(
         modifier = modifier
-            .defaultMinSize(minHeight = AppInteractiveTokens.glassSearchFieldMinHeight)
+            .defaultMinSize(minHeight = minHeight)
             .clip(ContinuousCapsule)
             .then(
                 if (backdrop != null) {
@@ -138,8 +152,8 @@ fun GlassSearchField(
             )
             .then(borderModifier)
             .padding(
-                horizontal = AppInteractiveTokens.glassSearchFieldHorizontalPadding,
-                vertical = AppInteractiveTokens.glassSearchFieldVerticalPadding
+                horizontal = horizontalPadding,
+                vertical = verticalPadding
             )
     ) {
         BasicTextField(
@@ -149,7 +163,8 @@ fun GlassSearchField(
             textStyle = TextStyle(
                 color = textColor,
                 fontSize = fontSize,
-                lineHeight = AppTypographyTokens.Body.lineHeight,
+                lineHeight = effectiveLineHeight,
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
                 textAlign = textAlign
             ),
             cursorBrush = SolidColor(textColor),
@@ -161,10 +176,14 @@ fun GlassSearchField(
                     focusManager.clearFocus()
                 }
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(align = Alignment.CenterVertically),
             decorationBox = { innerTextField ->
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(align = Alignment.CenterVertically),
                     contentAlignment = contentAlignment
                 ) {
                     if (value.isBlank()) {
@@ -172,7 +191,7 @@ fun GlassSearchField(
                             text = label,
                             color = placeholderColor,
                             fontSize = fontSize,
-                            lineHeight = AppTypographyTokens.Body.lineHeight,
+                            lineHeight = effectiveLineHeight,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

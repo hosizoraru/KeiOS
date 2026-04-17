@@ -47,7 +47,7 @@ fun AppDropdownAnchorButton(
         textColor = textColor,
         containerColor = dropdownAnchorTint(textColor = textColor, variant = variant),
         enabled = enabled,
-        variant = GlassVariant.Floating,
+        variant = variant,
         minHeight = minHeight,
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding
