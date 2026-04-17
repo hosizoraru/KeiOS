@@ -29,7 +29,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -37,20 +36,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.highlight.Highlight
-import com.kyant.backdrop.shadow.InnerShadow
-import com.kyant.backdrop.shadow.Shadow
-import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Check
@@ -67,6 +56,27 @@ private fun liquidDropdownBlueAccent(isDark: Boolean): Color = if (isDark) {
 }
 
 private fun liquidDropdownItemShape(): RoundedCornerShape = RoundedCornerShape(LiquidDropdownItemRadius)
+
+@Composable
+private fun liquidDropdownSelectedBrush(isDark: Boolean, accentColor: Color): Brush {
+    return Brush.linearGradient(
+        colors = if (isDark) {
+            listOf(
+                accentColor.copy(alpha = 0.20f),
+                Color.White.copy(alpha = 0.04f),
+                accentColor.copy(alpha = 0.12f)
+            )
+        } else {
+            listOf(
+                Color.White.copy(alpha = 0.72f),
+                accentColor.copy(alpha = 0.12f),
+                Color.White.copy(alpha = 0.28f)
+            )
+        },
+        start = Offset.Zero,
+        end = Offset(280f, 220f)
+    )
+}
 
 @Composable
 fun LiquidDropdownColumn(
@@ -259,16 +269,14 @@ fun LiquidDropdownItem(
     } else {
         accentColor.copy(alpha = 0.38f)
     }
-    val selectedShadowColor = if (isDark) {
-        Color.Black.copy(alpha = 0.22f)
+    val selectedBaseColor = if (isDark) {
+        accentColor.copy(alpha = 0.12f)
     } else {
-        Color.Black.copy(alpha = 0.10f)
+        accentColor.copy(alpha = 0.08f)
     }
+    val selectedBrush = liquidDropdownSelectedBrush(isDark = isDark, accentColor = accentColor)
     val outerTopPadding = if (index == 0) 3.dp else 2.dp
     val outerBottomPadding = if (index == optionSize - 1) 3.dp else 2.dp
-    val baseBackdrop = rememberLayerBackdrop()
-    val accentBackdrop = rememberLayerBackdrop()
-    val selectedBackdrop = rememberCombinedBackdrop(baseBackdrop, accentBackdrop)
     val currentOnClick by rememberUpdatedState(onClick)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -300,56 +308,31 @@ fun LiquidDropdownItem(
     ) {
         LiquidDropdownRowContent(
             modifier = Modifier
-                .layerBackdrop(baseBackdrop),
+                .clip(itemShape)
+                .background(
+                    color = if (selected) selectedBaseColor else Color.Transparent,
+                    shape = itemShape
+                )
+                .background(
+                    brush = if (selected) selectedBrush else Brush.linearGradient(
+                        colors = listOf(Color.Transparent, Color.Transparent),
+                        start = Offset.Zero,
+                        end = Offset.Zero
+                    ),
+                    shape = itemShape
+                )
+                .then(
+                    if (selected) {
+                        Modifier.border(1.dp, selectedBorderColor, itemShape)
+                    } else {
+                        Modifier
+                    }
+                ),
             text = text,
             textColor = baseTextColor,
             checkColor = baseCheckColor,
             showCheck = selected
         )
-
-        LiquidDropdownRowContent(
-            modifier = Modifier
-                .matchParentSize()
-                .alpha(0f)
-                .clearAndSetSemantics {}
-                .layerBackdrop(accentBackdrop)
-                .graphicsLayer { colorFilter = ColorFilter.tint(accentColor) },
-            text = text,
-            textColor = Color.White,
-            checkColor = Color.White,
-            showCheck = selected
-        )
-
-        if (selected) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .drawBackdrop(
-                        backdrop = selectedBackdrop,
-                        shape = { RoundedRectangle(LiquidDropdownItemRadius) },
-                        effects = { lens(9.dp.toPx(), 12.dp.toPx(), true) },
-                        highlight = {
-                            Highlight.Default.copy(alpha = if (isDark) 0.22f else 0.82f)
-                        },
-                        shadow = {
-                            Shadow.Default.copy(color = selectedShadowColor)
-                        },
-                        innerShadow = {
-                            InnerShadow(radius = 7.dp, alpha = if (isDark) 0.16f else 0.08f)
-                        },
-                        onDrawSurface = {
-                            drawRect(
-                                color = accentColor.copy(alpha = if (isDark) 0.13f else 0.10f)
-                            )
-                            drawRect(
-                                if (isDark) Color.White.copy(alpha = 0.03f)
-                                else Color.White.copy(alpha = 0.10f)
-                            )
-                        }
-                    )
-                    .border(1.dp, selectedBorderColor, itemShape)
-            )
-        }
         if (pressedOverlayAlpha > 0f) {
             Box(
                 modifier = Modifier
