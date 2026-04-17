@@ -798,8 +798,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         val sizeLabel = formatAssetSize(asset.sizeBytes, context)
                                         val relativeTimeLabel = assetRelativeTimeLabel(asset.updatedAtMillis, context)
                                         val assetCardShape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
-                                        val assetDownloadButtonWidth = 96.dp
-                                        val assetShareButtonWidth = 42.dp
+                                        val assetDownloadButtonMinWidth = 104.dp
+                                        val assetShareButtonSize = 44.dp
                                         val assetCardContainerColor = summaryContainerColor
                                         val assetCardBorderColor = summaryBorderColor
                                         Card(
@@ -864,30 +864,28 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         text = sizeLabel,
                                                         leadingIcon = MiuixIcons.Regular.Download,
                                                         onClick = { onOpenApkInDownloader(asset) },
-                                                        modifier = Modifier.width(assetDownloadButtonWidth),
+                                                        modifier = Modifier.widthIn(min = assetDownloadButtonMinWidth),
                                                         variant = GlassVariant.SheetAction,
                                                         textColor = actionButtonColor,
                                                         iconTint = actionButtonColor,
                                                         containerColor = Color.White,
+                                                        horizontalPadding = 12.dp,
                                                         textMaxLines = 1,
                                                         textOverflow = TextOverflow.Clip,
                                                         textSoftWrap = false
                                                     )
-                                                    GlassTextButton(
+                                                    GlassIconButton(
                                                         backdrop = contentBackdrop,
-                                                        text = "",
-                                                        leadingIcon = MiuixIcons.Regular.Share,
+                                                        icon = MiuixIcons.Regular.Share,
+                                                        contentDescription = context.getString(
+                                                            R.string.github_cd_share_asset,
+                                                            asset.name
+                                                        ),
                                                         onClick = { onShareApkLink(asset) },
-                                                        modifier = Modifier
-                                                            .width(assetShareButtonWidth)
-                                                            .semantics {
-                                                                contentDescription = context.getString(
-                                                                    R.string.github_cd_share_asset,
-                                                                    asset.name
-                                                                )
-                                                            },
+                                                        modifier = Modifier,
+                                                        width = assetShareButtonSize,
+                                                        height = assetShareButtonSize,
                                                         variant = GlassVariant.SheetAction,
-                                                        textColor = actionButtonColor,
                                                         iconTint = actionButtonColor,
                                                         containerColor = Color.White
                                                     )

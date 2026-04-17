@@ -58,7 +58,8 @@ fun GlassIconButton(
     shape: Shape = ContinuousCapsule,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
-    iconTint: Color = MiuixTheme.colorScheme.primary
+    iconTint: Color = MiuixTheme.colorScheme.primary,
+    containerColor: Color? = null
 ) {
     val isDark = isSystemInDarkTheme()
     val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
@@ -73,7 +74,8 @@ fun GlassIconButton(
         shape = shape,
         blurRadius = blurRadius,
         variant = variant,
-        isDark = isDark
+        isDark = isDark,
+        containerColor = containerColor
     ) {
         Icon(
             imageVector = icon,
@@ -97,7 +99,8 @@ fun GlassIconButton(
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
     iconTint: Color = Color.Unspecified,
-    iconModifier: Modifier = Modifier
+    iconModifier: Modifier = Modifier,
+    containerColor: Color? = null
 ) {
     val isDark = isSystemInDarkTheme()
     val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
@@ -112,7 +115,8 @@ fun GlassIconButton(
         shape = shape,
         blurRadius = blurRadius,
         variant = variant,
-        isDark = isDark
+        isDark = isDark,
+        containerColor = containerColor
     ) {
         Icon(
             painter = painter,
@@ -135,6 +139,7 @@ private fun GlassIconButtonContainer(
     blurRadius: Dp?,
     variant: GlassVariant,
     isDark: Boolean,
+    containerColor: Color?,
     content: @Composable () -> Unit
 ) {
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
@@ -144,6 +149,16 @@ private fun GlassIconButtonContainer(
         blurRadius = blurRadius
     )
     val showBorder = glass.showBorder
+    val containerOverlay = containerColor?.copy(
+        alpha = when (variant) {
+            GlassVariant.Bar -> 0.34f
+            GlassVariant.SheetInput -> if (isDark) 0.20f else 0.20f
+            GlassVariant.SheetAction -> if (isDark) 0.24f else 0.34f
+            GlassVariant.Compact -> if (isDark) 0.22f else 0.28f
+            GlassVariant.SheetDangerAction -> if (isDark) 0.18f else 0.18f
+            GlassVariant.Content -> if (isDark) 0.26f else 0.32f
+        }
+    )
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by animateFloatAsState(
@@ -208,10 +223,12 @@ private fun GlassIconButtonContainer(
                                     drawRect(glass.overlayColor)
                                 }
                             }
+                            containerOverlay?.let { drawRect(it) }
                         }
                     )
                 } else {
-                    Modifier.background(fallbackSurface.copy(alpha = glass.fallbackAlpha))
+                    val fallbackColor = containerOverlay ?: fallbackSurface.copy(alpha = glass.fallbackAlpha)
+                    Modifier.background(fallbackColor)
                 }
             ),
         contentAlignment = Alignment.Center
