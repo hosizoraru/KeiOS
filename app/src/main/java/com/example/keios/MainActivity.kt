@@ -122,7 +122,10 @@ class MainActivity : ComponentActivity() {
                         UiPrefs.setAppThemeMode(mode)
                     },
                     requestedBottomPage = requestedBottomPage,
-                    requestedBottomPageToken = requestedBottomPageToken
+                    requestedBottomPageToken = requestedBottomPageToken,
+                    onRequestedBottomPageConsumed = {
+                        requestedBottomPage = null
+                    }
                 )
             }
         }

@@ -106,7 +106,8 @@ fun MainScreen(
     appThemeMode: AppThemeMode,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     requestedBottomPage: String?,
-    requestedBottomPageToken: Int
+    requestedBottomPageToken: Int,
+    onRequestedBottomPageConsumed: () -> Unit
 ) {
     val backStack = remember { mutableStateListOf<NavKey>().apply { add(KeiosRoute.Main) } }
     val navigator = remember { Navigator(backStack) }
@@ -197,7 +198,8 @@ fun MainScreen(
                         mcpServerManager = mcpServerManager,
                         onOpenGuideDetail = openGuideDetail,
                         requestedBottomPage = requestedBottomPage,
-                        requestedBottomPageToken = requestedBottomPageToken
+                        requestedBottomPageToken = requestedBottomPageToken,
+                        onRequestedBottomPageConsumed = onRequestedBottomPageConsumed
                     )
             }
             entry<KeiosRoute.Settings> {
@@ -321,7 +323,8 @@ private fun MainPagerLayout(
     mcpServerManager: McpServerManager,
     onOpenGuideDetail: (String) -> Unit,
     requestedBottomPage: String?,
-    requestedBottomPageToken: Int
+    requestedBottomPageToken: Int,
+    onRequestedBottomPageConsumed: () -> Unit
 ) {
     val tabs = remember(visibleBottomPageNames) {
         BottomPage.entries.filter { page ->
@@ -461,6 +464,7 @@ private fun MainPagerLayout(
             }
             showBottomBar = true
         }
+        onRequestedBottomPageConsumed()
     }
 
     Scaffold(
