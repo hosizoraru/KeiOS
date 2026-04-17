@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -157,7 +158,7 @@ fun OsPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
-    var exportPreparing by remember { mutableStateOf(false) }
+    var exportingCard by remember { mutableStateOf<OsSectionCard?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }
     var showSearchBar by remember { mutableStateOf(true) }
@@ -212,7 +213,7 @@ fun OsPage(
         onDispose { onActionBarInteractingChanged(false) }
     }
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/markdown")
+        contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         val content = pendingExportContent
         if (uri == null || content.isNullOrBlank()) return@rememberLauncherForActivityResult
@@ -532,6 +533,94 @@ fun OsPage(
             else -> "$size 条"
         }
     }
+
+    fun sectionKindByCard(card: OsSectionCard): SectionKind? = when (card) {
+        OsSectionCard.TOP_INFO -> null
+        OsSectionCard.SYSTEM -> SectionKind.SYSTEM
+        OsSectionCard.SECURE -> SectionKind.SECURE
+        OsSectionCard.GLOBAL -> SectionKind.GLOBAL
+        OsSectionCard.ANDROID -> SectionKind.ANDROID
+        OsSectionCard.JAVA -> SectionKind.JAVA
+        OsSectionCard.LINUX -> SectionKind.LINUX
+    }
+
+    fun currentRowsForCard(card: OsSectionCard): List<InfoRow> {
+        val section = sectionKindByCard(card)
+        return if (section == null) {
+            val system = sectionStates[SectionKind.SYSTEM]?.rows ?: emptyList()
+            val secure = sectionStates[SectionKind.SECURE]?.rows ?: emptyList()
+            val global = sectionStates[SectionKind.GLOBAL]?.rows ?: emptyList()
+            val android = sectionStates[SectionKind.ANDROID]?.rows ?: emptyList()
+            val java = sectionStates[SectionKind.JAVA]?.rows ?: emptyList()
+            val linux = sectionStates[SectionKind.LINUX]?.rows ?: emptyList()
+            buildTopInfoRows(system, secure, global, android, java, linux)
+        } else {
+            removeTopInfoRows(section, sectionStates[section]?.rows ?: emptyList())
+        }
+    }
+
+    fun exportSlug(card: OsSectionCard): String = when (card) {
+        OsSectionCard.TOP_INFO -> "top-info"
+        OsSectionCard.SYSTEM -> "system-table"
+        OsSectionCard.SECURE -> "secure-table"
+        OsSectionCard.GLOBAL -> "global-table"
+        OsSectionCard.ANDROID -> "android-properties"
+        OsSectionCard.JAVA -> "java-properties"
+        OsSectionCard.LINUX -> "linux-environment"
+    }
+
+    suspend fun exportCard(card: OsSectionCard) {
+        if (exportingCard != null) return
+        exportingCard = card
+        try {
+            when (card) {
+                OsSectionCard.TOP_INFO -> {
+                    visibleSectionKinds().forEach { section ->
+                        ensureLoad(section, forceRefresh = false)
+                    }
+                }
+
+                else -> {
+                    sectionKindByCard(card)?.let { section ->
+                        ensureLoad(section, forceRefresh = false)
+                    }
+                }
+            }
+
+            val rows = currentRowsForCard(card)
+            val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+            val payload = buildOsCardJson(
+                generatedAt = generatedAt,
+                shizukuStatus = shizukuStatus,
+                cardTitle = card.title,
+                rows = rows
+            )
+            val exportStamp = SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.getDefault()).format(Date())
+            val fileName = "keios-os-${exportSlug(card)}-$exportStamp.json"
+            pendingExportContent = payload
+            exportLauncher.launch(fileName)
+        } catch (t: Throwable) {
+            Toast.makeText(context, "导出失败: ${t.javaClass.simpleName}", Toast.LENGTH_SHORT).show()
+        } finally {
+            exportingCard = null
+        }
+    }
+
+    @Composable
+    fun CardExportAction(card: OsSectionCard) {
+        val isExporting = exportingCard == card
+        val enabled = exportingCard == null || isExporting
+        val tint = if (enabled) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onBackgroundVariant
+        Icon(
+            imageVector = if (isExporting) MiuixIcons.Regular.Refresh else MiuixIcons.Regular.Download,
+            contentDescription = if (isExporting) "准备导出中" else "导出${card.title}",
+            tint = tint,
+            modifier = Modifier.clickable(enabled = enabled && !isExporting) {
+                scope.launch { exportCard(card) }
+            }
+        )
+    }
+
     val visibleSectionKinds = visibleSectionKinds()
     val visibleSectionStates = visibleSectionKinds.mapNotNull { sectionStates[it] }
     val loadedFreshCount = visibleSectionStates.count { it.loadedFresh }
@@ -610,25 +699,6 @@ fun OsPage(
                                     icon = MiuixIcons.Regular.Edit,
                                     contentDescription = "管理卡片显示",
                                     onClick = { showCardManager = true }
-                                ),
-                                LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Download,
-                                    contentDescription = if (exportPreparing) "准备导出中" else "导出",
-                                    onClick = {
-                                        if (exportPreparing) return@LiquidActionItem
-                                        exportPreparing = true
-                                        scope.launch {
-                                            val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                                            val markdown = withContext(Dispatchers.IO) {
-                                                val exportSections = buildExportSections(context, shizukuStatus, shizukuApiUtils)
-                                                buildOsMarkdown(generatedAt, shizukuStatus, exportSections)
-                                            }
-                                            val fileName = "keios-os-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())}.md"
-                                            pendingExportContent = markdown
-                                            exportPreparing = false
-                                            exportLauncher.launch(fileName)
-                                        }
-                                    }
                                 ),
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Refresh,
@@ -834,6 +904,9 @@ fun OsPage(
                     onExpandedChange = { topInfoExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.TOP_INFO)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.TOP_INFO)
                     }
                 ) {
                     if (displayedTopInfoRows.isEmpty()) {
@@ -872,6 +945,9 @@ fun OsPage(
                     onExpandedChange = { systemTableExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.SYSTEM)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.SYSTEM)
                     }
                 ) {
                     if (displayedSystemRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
@@ -892,6 +968,9 @@ fun OsPage(
                     onExpandedChange = { secureTableExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.SECURE)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.SECURE)
                     }
                 ) {
                     if (displayedSecureRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
@@ -912,6 +991,9 @@ fun OsPage(
                     onExpandedChange = { globalTableExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.GLOBAL)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.GLOBAL)
                     }
                 ) {
                     if (displayedGlobalRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
@@ -932,6 +1014,9 @@ fun OsPage(
                     onExpandedChange = { androidPropsExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.ANDROID)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.ANDROID)
                     }
                 ) {
                     if (displayedAndroidRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
@@ -952,6 +1037,9 @@ fun OsPage(
                     onExpandedChange = { javaPropsExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.JAVA)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.JAVA)
                     }
                 ) {
                     if (displayedJavaRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
@@ -972,6 +1060,9 @@ fun OsPage(
                     onExpandedChange = { linuxEnvExpanded = it },
                     headerStartAction = {
                         OsSectionHeaderIcon(card = OsSectionCard.LINUX)
+                    },
+                    headerActions = {
+                        CardExportAction(card = OsSectionCard.LINUX)
                     }
                 ) {
                     if (displayedLinuxRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)

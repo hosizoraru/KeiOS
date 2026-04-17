@@ -87,6 +87,8 @@ import top.yukonga.miuix.kmp.icon.extended.Lock
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Tune
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -417,4 +419,51 @@ internal fun buildOsMarkdown(
         appendSectionMarkdown(this, "Java Properties", sections.java)
         appendSectionMarkdown(this, "Linux environment", sections.linux)
     }
+}
+
+internal fun buildOsCardMarkdown(
+    generatedAt: String,
+    shizukuStatus: String,
+    cardTitle: String,
+    rows: List<InfoRow>
+): String {
+    return buildString {
+        appendLine("# KeiOS OS Export")
+        appendLine()
+        appendLine("- Generated at: $generatedAt")
+        appendLine("- Shizuku status: $shizukuStatus")
+        appendLine("- Card: $cardTitle")
+        appendLine("- Rows: ${rows.size}")
+        appendLine("- Format: Markdown (single-card)")
+        appendLine()
+        appendSectionMarkdown(this, cardTitle, rows)
+    }
+}
+
+internal fun buildOsCardJson(
+    generatedAt: String,
+    shizukuStatus: String,
+    cardTitle: String,
+    rows: List<InfoRow>
+): String {
+    return JSONObject().apply {
+        put("schema", "keios.os.card.v1")
+        put("generatedAt", generatedAt)
+        put("shizukuStatus", shizukuStatus)
+        put("cardTitle", cardTitle)
+        put("rowCount", rows.size)
+        put(
+            "rows",
+            JSONArray().apply {
+                rows.forEach { row ->
+                    put(
+                        JSONObject().apply {
+                            put("key", row.key)
+                            put("value", row.value)
+                        }
+                    )
+                }
+            }
+        )
+    }.toString(2)
 }
