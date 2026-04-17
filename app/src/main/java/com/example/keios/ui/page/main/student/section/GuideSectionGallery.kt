@@ -109,6 +109,7 @@ import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.example.keios.R
 import com.example.keios.ui.page.main.ba.BASettingsStore
+import com.example.keios.ui.page.main.widget.AppDropdownAnchorButton
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
@@ -874,7 +875,7 @@ fun GuideGalleryExpressionCardItem(
                 Box(
                     modifier = Modifier.capturePopupAnchor { pickerPopupAnchorBounds = it }
                 ) {
-                    GlassTextButton(
+                    AppDropdownAnchorButton(
                         backdrop = backdrop,
                         text = optionLabels.getOrElse(selectedIndex) { "角色表情1" },
                         textColor = Color(0xFF3B82F6),
@@ -1127,7 +1128,7 @@ fun GuideGalleryVideoGroupCardItem(
                     Box(
                         modifier = Modifier.capturePopupAnchor { pickerPopupAnchorBounds = it }
                     ) {
-                        GlassTextButton(
+                        AppDropdownAnchorButton(
                             backdrop = backdrop,
                             text = optionLabels.getOrElse(selectedIndex) { "视频 1" },
                             textColor = Color(0xFF3B82F6),

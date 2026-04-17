@@ -10,6 +10,22 @@ import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+private val DropdownNeutralTint = Color(0xFF3B82F6)
+
+private fun dropdownAnchorTint(
+    textColor: Color,
+    variant: GlassVariant
+): Color {
+    return if (textColor.alpha <= 0f) {
+        when (variant) {
+            GlassVariant.SheetDangerAction -> Color(0xFFE25B6A)
+            else -> DropdownNeutralTint
+        }
+    } else {
+        textColor
+    }
+}
+
 @Composable
 fun AppDropdownAnchorButton(
     text: String,
@@ -29,8 +45,9 @@ fun AppDropdownAnchorButton(
         onClick = onClick,
         modifier = modifier,
         textColor = textColor,
+        containerColor = dropdownAnchorTint(textColor = textColor, variant = variant),
         enabled = enabled,
-        variant = variant,
+        variant = GlassVariant.Floating,
         minHeight = minHeight,
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding
