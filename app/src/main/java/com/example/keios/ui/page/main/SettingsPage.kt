@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +43,8 @@ import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.CacheEntrySummary
 import com.example.keios.core.prefs.CacheStores
 import com.example.keios.core.log.AppLogStore
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppControlRow
 import com.example.keios.ui.page.main.widget.AppDualActionRow
@@ -102,6 +107,7 @@ fun SettingsPage(
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
     val enabledCardColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
     val disabledCardColor = Color(0x2264748B)
+    val surfaceColor = MiuixTheme.colorScheme.surface
 
     var showThemeModePopup by remember { mutableStateOf(false) }
     var themePopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
@@ -110,6 +116,17 @@ fun SettingsPage(
     var logReloadSignal by remember { mutableIntStateOf(0) }
     var exportingLogZip by remember { mutableStateOf(false) }
     var clearingLogs by remember { mutableStateOf(false) }
+    var activationCount by rememberSaveable { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        activationCount++
+        onDispose { }
+    }
+    val contentBackdrop: LayerBackdrop = key("settings-content-$activationCount") {
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
+    }
     val themeModeOptions = listOf(
         AppThemeMode.FOLLOW_SYSTEM to stringResource(R.string.settings_theme_follow_system),
         AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light_mode),
@@ -351,14 +368,15 @@ fun SettingsPage(
                         AppDualActionRow(
                             first = { modifier ->
                                 GlassTextButton(
-                                    backdrop = null,
-                                    variant = GlassVariant.Compact,
+                                    backdrop = contentBackdrop,
+                                    variant = GlassVariant.SheetPrimaryAction,
                                     text = if (exportingLogZip) {
                                         stringResource(R.string.common_processing)
                                     } else {
                                         stringResource(R.string.settings_log_action_export_zip)
                                     },
                                     modifier = modifier,
+                                    textColor = MiuixTheme.colorScheme.primary,
                                     enabled = !exportingLogZip && !clearingLogs,
                                     onClick = {
                                         exportingLogZip = true
@@ -372,8 +390,8 @@ fun SettingsPage(
                             },
                             second = { modifier ->
                                 GlassTextButton(
-                                    backdrop = null,
-                                    variant = GlassVariant.Compact,
+                                    backdrop = contentBackdrop,
+                                    variant = GlassVariant.SheetDangerAction,
                                     text = if (clearingLogs) {
                                         stringResource(R.string.common_processing)
                                     } else {
@@ -381,7 +399,6 @@ fun SettingsPage(
                                     },
                                     modifier = modifier,
                                     textColor = MiuixTheme.colorScheme.error,
-                                    containerColor = MiuixTheme.colorScheme.error,
                                     enabled = !exportingLogZip && !clearingLogs,
                                     onClick = {
                                         scope.launch {

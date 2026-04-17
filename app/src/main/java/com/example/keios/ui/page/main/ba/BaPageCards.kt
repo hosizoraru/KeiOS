@@ -950,15 +950,15 @@ internal fun BaDebugCard(
             GlassTextButton(
                 backdrop = backdrop,
                 text = "AP 通知",
-                textColor = accentAmber,
-                variant = GlassVariant.Content,
+                textColor = Color(0xFF3B82F6),
+                variant = GlassVariant.SheetPrimaryAction,
                 onClick = onSendApTestNotification,
             )
             GlassTextButton(
                 backdrop = backdrop,
                 text = "咖啡厅 3h AP",
-                textColor = accentAmber,
-                variant = GlassVariant.Content,
+                textColor = Color(0xFF3B82F6),
+                variant = GlassVariant.SheetPrimaryAction,
                 onClick = onTestCafePlus3Hours,
             )
         }

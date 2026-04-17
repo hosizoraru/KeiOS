@@ -186,7 +186,8 @@ internal fun BaSettingsSheet(
                         trailing = {
                             GlassTextButton(
                                 backdrop = backdrop,
-                                variant = GlassVariant.SheetAction,
+                                variant = GlassVariant.SheetPrimaryAction,
+                                textColor = Color(0xFF3B82F6),
                                 text = stringResource(R.string.ba_settings_action_pick_media_save_location),
                                 onClick = {
                                     val currentTreeUri = state.mediaSaveFixedTreeUri
