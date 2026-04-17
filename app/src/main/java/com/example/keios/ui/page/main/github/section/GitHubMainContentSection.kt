@@ -70,6 +70,7 @@ import com.example.keios.ui.page.main.statusColor
 import com.example.keios.ui.page.main.statusIcon
 import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppInfoListBody
+import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.AppSupportingBlock
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
@@ -523,8 +524,32 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 ) {
                                     val commitLabel = bundleCommitLabel(assetBundle)
                                     val transportLabel = bundleTransportLabel(assetBundle, context)
-                                    val summaryMetaPillModifier = Modifier.widthIn(min = 58.dp)
-                                    val summaryMetaPillPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
+                                    val fallbackReleaseName = when {
+                                        state.latestStableName.isNotBlank() -> state.latestStableName
+                                        state.latestPreName.isNotBlank() -> state.latestPreName
+                                        else -> ""
+                                    }
+                                    val loadedReleaseName = assetBundle?.releaseName?.trim().orEmpty()
+                                        .ifBlank { fallbackReleaseName.ifBlank { target?.rawTag.orEmpty() } }
+                                    val loadedReleaseTag = assetBundle?.tagName?.trim().orEmpty()
+                                        .ifBlank { target?.rawTag.orEmpty() }
+                                    val loadedReleaseUpdatedAtMillis = bundleReleaseUpdatedAtMillis(assetBundle)
+                                        ?: when {
+                                            loadedReleaseTag.isBlank() -> null
+                                            loadedReleaseTag.equals(state.latestStableRawTag, ignoreCase = true) ->
+                                                state.latestStableUpdatedAtMillis.takeIf { it > 0L }
+                                            loadedReleaseTag.equals(state.latestTag, ignoreCase = true) ->
+                                                state.latestStableUpdatedAtMillis.takeIf { it > 0L }
+                                            loadedReleaseTag.equals(state.latestPreRawTag, ignoreCase = true) ->
+                                                state.latestPreUpdatedAtMillis.takeIf { it > 0L }
+                                            else -> null
+                                        }
+                                    val loadedReleaseUpdatedAt =
+                                        formatReleaseUpdatedAtNoYear(loadedReleaseUpdatedAtMillis)
+                                    val showLoadedReleaseMeta =
+                                        loadedReleaseName.isNotBlank() || loadedReleaseTag.isNotBlank()
+                                    val summaryMetaPillModifier = Modifier.widthIn(min = 40.dp)
+                                    val summaryMetaPillPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
                                     Column(
                                         modifier = Modifier.weight(1f),
                                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
@@ -550,6 +575,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                     StatusPill(
                                                         label = label,
                                                         color = GitHubStatusPalette.Active.copy(alpha = 0.92f),
+                                                        size = AppStatusPillSize.Compact,
                                                         modifier = summaryMetaPillModifier,
                                                         contentPadding = summaryMetaPillPadding
                                                     )
@@ -558,6 +584,16 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                     StatusPill(
                                                         label = label,
                                                         color = GitHubStatusPalette.Active,
+                                                        size = AppStatusPillSize.Compact,
+                                                        modifier = summaryMetaPillModifier,
+                                                        contentPadding = summaryMetaPillPadding
+                                                    )
+                                                }
+                                                loadedReleaseUpdatedAt?.let { label ->
+                                                    StatusPill(
+                                                        label = label,
+                                                        color = targetAccent,
+                                                        size = AppStatusPillSize.Compact,
                                                         modifier = summaryMetaPillModifier,
                                                         contentPadding = summaryMetaPillPadding
                                                     )
@@ -597,37 +633,12 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         assetError.isNotBlank() -> GitHubStatusPalette.Error
                                                         else -> targetAccent
                                                     },
+                                                    size = AppStatusPillSize.Compact,
                                                     modifier = summaryMetaPillModifier,
                                                     contentPadding = summaryMetaPillPadding
                                                 )
                                             }
                                         }
-                                        val fallbackReleaseName = when {
-                                            state.latestStableName.isNotBlank() -> state.latestStableName
-                                            state.latestPreName.isNotBlank() -> state.latestPreName
-                                            else -> ""
-                                        }
-                                        val loadedReleaseName = assetBundle?.releaseName?.trim().orEmpty()
-                                            .ifBlank { fallbackReleaseName.ifBlank { target?.rawTag.orEmpty() } }
-                                        val loadedReleaseTag = assetBundle?.tagName?.trim().orEmpty()
-                                            .ifBlank { target?.rawTag.orEmpty() }
-                                        val loadedReleaseUpdatedAtMillis = bundleReleaseUpdatedAtMillis(assetBundle)
-                                            ?: when {
-                                                loadedReleaseTag.isBlank() -> null
-                                                loadedReleaseTag.equals(state.latestStableRawTag, ignoreCase = true) ->
-                                                    state.latestStableUpdatedAtMillis.takeIf { it > 0L }
-                                                loadedReleaseTag.equals(state.latestTag, ignoreCase = true) ->
-                                                    state.latestStableUpdatedAtMillis.takeIf { it > 0L }
-                                                loadedReleaseTag.equals(state.latestPreRawTag, ignoreCase = true) ->
-                                                    state.latestPreUpdatedAtMillis.takeIf { it > 0L }
-                                                else -> null
-                                            }
-                                        val loadedReleaseUpdatedAt =
-                                            formatReleaseUpdatedAtNoYear(loadedReleaseUpdatedAtMillis)
-                                        val showLoadedReleaseMeta =
-                                            loadedReleaseName.isNotBlank() ||
-                                                loadedReleaseTag.isNotBlank() ||
-                                                loadedReleaseUpdatedAt != null
                                         if (showLoadedReleaseMeta) {
                                             val releaseNameLabel = loadedReleaseName.ifBlank {
                                                 stringResource(R.string.common_unknown)
@@ -635,63 +646,50 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                             val releaseTagLabel = loadedReleaseTag.ifBlank {
                                                 stringResource(R.string.common_unknown)
                                             }
-                                            val releaseUpdatedLabel = loadedReleaseUpdatedAt
-                                                ?: stringResource(R.string.common_unknown)
-                                            StatusPill(
-                                                label = releaseNameLabel,
-                                                color = targetAccent,
-                                                modifier = Modifier.fillMaxWidth(),
-                                                contentPadding = PaddingValues(horizontal = 9.dp, vertical = 5.dp)
-                                            )
                                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                                                val timePillEstimatedWidth = 86.dp
                                                 val gapWidth = 6.dp
-                                                val tagInnerHorizontalPadding = 16.dp
                                                 val estimatedCharWidth = 7.2.dp
-                                                val inlineTagAvailableWidth =
-                                                    (maxWidth - timePillEstimatedWidth - gapWidth)
-                                                        .coerceAtLeast(72.dp)
-                                                val estimatedInlineTagChars = (
-                                                    (inlineTagAvailableWidth - tagInnerHorizontalPadding).value /
-                                                        estimatedCharWidth.value
-                                                    ).toInt().coerceAtLeast(8)
-                                                val tagNeedsOwnLine =
-                                                    releaseTagLabel.length > estimatedInlineTagChars
-                                                if (tagNeedsOwnLine) {
-                                                    StatusPill(
-                                                        label = releaseTagLabel,
-                                                        color = targetAccent,
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                                    )
-                                                    Box(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        contentAlignment = androidx.compose.ui.Alignment.CenterEnd
-                                                    ) {
-                                                        StatusPill(
-                                                            label = releaseUpdatedLabel,
-                                                            color = targetAccent,
-                                                            contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
-                                                        )
-                                                    }
-                                                } else {
+                                                val estimatedInlineChars = (
+                                                    (maxWidth - gapWidth).value / estimatedCharWidth.value
+                                                    ).toInt().coerceAtLeast(10)
+                                                val canInlineNameAndTag =
+                                                    (releaseNameLabel.length + releaseTagLabel.length) <= estimatedInlineChars
+                                                if (canInlineNameAndTag) {
                                                     Row(
                                                         modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(gapWidth),
                                                         verticalAlignment = androidx.compose.ui.Alignment.Top
                                                     ) {
                                                         StatusPill(
-                                                            label = releaseTagLabel,
+                                                            label = releaseNameLabel,
                                                             color = targetAccent,
+                                                            size = AppStatusPillSize.Compact,
                                                             modifier = Modifier.weight(1f),
                                                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                                         )
                                                         StatusPill(
-                                                            label = releaseUpdatedLabel,
+                                                            label = releaseTagLabel,
                                                             color = targetAccent,
-                                                            contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
+                                                            size = AppStatusPillSize.Compact,
+                                                            modifier = summaryMetaPillModifier,
+                                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                                         )
                                                     }
+                                                } else {
+                                                    StatusPill(
+                                                        label = releaseNameLabel,
+                                                        color = targetAccent,
+                                                        size = AppStatusPillSize.Compact,
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
+                                                    StatusPill(
+                                                        label = releaseTagLabel,
+                                                        color = targetAccent,
+                                                        size = AppStatusPillSize.Compact,
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                                    )
                                                 }
                                             }
                                         }
