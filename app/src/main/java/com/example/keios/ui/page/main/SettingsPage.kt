@@ -31,9 +31,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.CacheEntrySummary
@@ -640,12 +642,32 @@ private fun SettingsGroupCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(text = header, color = titleColor)
-        Text(text = title, color = titleColor)
-        Text(text = summary, color = subtitleColor)
-        content()
+        Text(
+            text = header,
+            color = titleColor,
+            fontSize = 12.sp,
+            lineHeight = 16.sp
+        )
+        Text(
+            text = title,
+            color = titleColor,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            lineHeight = 21.sp
+        )
+        Text(
+            text = summary,
+            color = subtitleColor,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
+        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content
+        )
     }
 }
 
@@ -664,7 +686,7 @@ private fun SettingsActionItem(
         modifier = Modifier
             .fillMaxWidth()
             .let { base -> if (onClick != null) base.clickable { onClick() } else base },
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -674,13 +696,18 @@ private fun SettingsActionItem(
             Text(
                 text = title,
                 color = titleColor,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 20.sp,
                 modifier = Modifier.weight(1f)
             )
             trailing()
         }
         Text(
             text = summary,
-            color = subtitleColor
+            color = subtitleColor,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
         )
         if (!infoKey.isNullOrBlank() && !infoValue.isNullOrBlank()) {
             SettingsInfoItem(
@@ -765,7 +792,7 @@ private fun SettingsCacheRow(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -775,6 +802,9 @@ private fun SettingsCacheRow(
             Text(
                 text = entry.title,
                 color = titleColor,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 20.sp,
                 modifier = Modifier.weight(1f)
             )
             if (entry.clearLabel.isNotBlank()) {
@@ -791,19 +821,27 @@ private fun SettingsCacheRow(
         }
         Text(
             text = entry.summary,
-            color = subtitleColor
+            color = subtitleColor,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
         )
         Text(
             text = entry.detail,
-            color = subtitleColor
+            color = subtitleColor,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
         )
         Text(
             text = entry.activity,
-            color = subtitleColor
+            color = subtitleColor,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
         )
         Text(
             text = entry.storage,
-            color = subtitleColor
+            color = subtitleColor,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
         )
     }
 }
