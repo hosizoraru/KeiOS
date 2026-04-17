@@ -37,7 +37,6 @@
     <string name="common_send_failed_with_reason">发送失败: %1$s</string>
 
     <string name="settings_title">Settings</string>
-    <string name="settings_section_ui_style">界面与样式</string>
     <string name="settings_theme_mode_header">Theme Mode</string>
     <string name="settings_theme_mode_title">应用主题</string>
     <string name="settings_theme_follow_system">跟随系统</string>

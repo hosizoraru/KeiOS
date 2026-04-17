@@ -38,7 +38,6 @@ import com.example.keios.ui.page.main.about.section.AboutRuntimeStatusCardSectio
 import com.example.keios.ui.page.main.about.section.AboutUiFrameworkCardSection
 import com.example.keios.ui.page.main.about.util.openExternalUrl
 import com.example.keios.ui.page.main.widget.AppChromeTokens
-import com.example.keios.ui.page.main.widget.AppPageSectionTitle
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.appPageContentPadding
 import top.yukonga.miuix.kmp.basic.Icon
@@ -139,13 +138,7 @@ fun AboutPage(
                 bottomExtra = contentBottomPadding + AppChromeTokens.pageBottomInsetExtra
             )
         ) {
-            item {
-                AppPageSectionTitle(
-                    title = stringResource(R.string.about_page_section_title)
-                )
-            }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
+            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
 
             item {
                 AboutAppCardSection(

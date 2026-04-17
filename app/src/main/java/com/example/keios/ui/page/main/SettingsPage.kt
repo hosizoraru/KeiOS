@@ -45,7 +45,6 @@ import com.example.keios.ui.page.main.widget.AppControlRow
 import com.example.keios.ui.page.main.widget.AppDualActionRow
 import com.example.keios.ui.page.main.widget.AppDropdownSelector
 import com.example.keios.ui.page.main.widget.AppInfoRow
-import com.example.keios.ui.page.main.widget.AppPageSectionTitle
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
@@ -215,12 +214,7 @@ fun SettingsPage(
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = appPageContentPadding(innerPadding)
         ) {
-            item {
-                AppPageSectionTitle(
-                    title = stringResource(R.string.settings_section_ui_style)
-                )
-            }
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
+            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
 
             item {
                 Card(
