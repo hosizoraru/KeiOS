@@ -522,80 +522,20 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 ) {
                                     val commitLabel = bundleCommitLabel(assetBundle)
                                     val transportLabel = bundleTransportLabel(assetBundle, context)
-                                    Box(
-                                        modifier = Modifier
-                                            .size(30.dp)
-                                            .clip(RoundedCornerShape(11.dp))
-                                            .background(targetAccent.copy(alpha = if (isDark) 0.24f else 0.14f)),
-                                        contentAlignment = androidx.compose.ui.Alignment.Center
-                                    ) {
-                                        top.yukonga.miuix.kmp.basic.Icon(
-                                            imageVector = if (assetBundle?.showingAllAssets == true) MiuixIcons.Regular.More else MiuixIcons.Regular.Update,
-                                            contentDescription = null,
-                                            tint = targetAccent
-                                        )
-                                    }
                                     Column(
                                         modifier = Modifier.weight(1f),
                                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
-                                            verticalAlignment = androidx.compose.ui.Alignment.Top
-                                        ) {
-                                            Text(
-                                                text = target?.label
-                                                    ?: stringResource(R.string.github_item_label_update_assets),
-                                                color = targetAccent,
-                                                fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                                                lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                                                fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                                                modifier = Modifier.weight(1f),
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(30.dp)
-                                                    .clip(RoundedCornerShape(999.dp))
-                                                    .background(
-                                                        when {
-                                                            assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.22f else 0.16f)
-                                                            assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.22f else 0.16f)
-                                                            else -> targetAccent.copy(alpha = if (isDark) 0.22f else 0.16f)
-                                                        }
-                                                    )
-                                                    .border(
-                                                        width = 0.8.dp,
-                                                        color = when {
-                                                            assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.36f else 0.30f)
-                                                            assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.36f else 0.30f)
-                                                            else -> targetAccent.copy(alpha = if (isDark) 0.36f else 0.30f)
-                                                        },
-                                                        shape = RoundedCornerShape(999.dp)
-                                                    ),
-                                                contentAlignment = androidx.compose.ui.Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = when {
-                                                        assetLoading -> stringResource(R.string.github_asset_count_loading)
-                                                        assetBundle != null -> assetBundle.assets.size.toString()
-                                                        assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
-                                                        else -> stringResource(R.string.github_asset_count_pending)
-                                                    },
-                                                    color = when {
-                                                        assetLoading -> GitHubStatusPalette.Active
-                                                        assetError.isNotBlank() -> GitHubStatusPalette.Error
-                                                        else -> targetAccent
-                                                    },
-                                                    fontSize = AppTypographyTokens.Body.fontSize,
-                                                    lineHeight = AppTypographyTokens.Body.lineHeight,
-                                                    fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
-                                                    maxLines = 1
-                                                )
-                                            }
-                                        }
+                                        Text(
+                                            text = target?.label
+                                                ?: stringResource(R.string.github_item_label_update_assets),
+                                            color = targetAccent,
+                                            fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                                            lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                                            fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
                                         if (!assetLoading && assetError.isBlank() &&
                                             (commitLabel != null || transportLabel != null)
                                         ) {
@@ -737,6 +677,56 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                 lineHeight = AppTypographyTokens.Supporting.lineHeight,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(30.dp)
+                                            .clip(RoundedCornerShape(999.dp))
+                                            .background(
+                                                when {
+                                                    assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.22f else 0.16f)
+                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.22f else 0.16f)
+                                                    else -> targetAccent.copy(alpha = if (isDark) 0.22f else 0.16f)
+                                                }
+                                            )
+                                            .border(
+                                                width = 0.8.dp,
+                                                color = when {
+                                                    assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.36f else 0.30f)
+                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.36f else 0.30f)
+                                                    else -> targetAccent.copy(alpha = if (isDark) 0.36f else 0.30f)
+                                                },
+                                                shape = RoundedCornerShape(999.dp)
+                                            ),
+                                        contentAlignment = androidx.compose.ui.Alignment.Center
+                                    ) {
+                                        if (assetLoading) {
+                                            CircularProgressIndicator(
+                                                progress = 0f,
+                                                size = 14.dp,
+                                                strokeWidth = 2.dp,
+                                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                                    foregroundColor = GitHubStatusPalette.Active,
+                                                    backgroundColor = GitHubStatusPalette.Active.copy(alpha = 0.18f)
+                                                )
+                                            )
+                                        } else {
+                                            Text(
+                                                text = when {
+                                                    assetBundle != null -> assetBundle.assets.size.toString()
+                                                    assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
+                                                    else -> stringResource(R.string.github_asset_count_pending)
+                                                },
+                                                color = when {
+                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error
+                                                    else -> targetAccent
+                                                },
+                                                fontSize = AppTypographyTokens.Body.fontSize,
+                                                lineHeight = AppTypographyTokens.Body.lineHeight,
+                                                fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
+                                                maxLines = 1
                                             )
                                         }
                                     }
@@ -884,77 +874,54 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                 color = assetCardContainerColor
                                             )
                                         ) {
-                                            Row(
+                                            Column(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .padding(
                                                         horizontal = CardLayoutRhythm.cardHorizontalPadding,
                                                         vertical = CardLayoutRhythm.cardVerticalPadding
                                                     ),
-                                                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
-                                                verticalAlignment = androidx.compose.ui.Alignment.Top
+                                                verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                                             ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(32.dp)
-                                                        .clip(RoundedCornerShape(11.dp))
-                                                        .background(actionAccent.copy(alpha = if (isDark) 0.18f else 0.12f))
-                                                        .border(
-                                                            width = 0.8.dp,
-                                                            color = actionAccent.copy(alpha = if (isDark) 0.30f else 0.22f),
-                                                            shape = RoundedCornerShape(11.dp)
-                                                        ),
-                                                    contentAlignment = androidx.compose.ui.Alignment.Center
+                                                Text(
+                                                    text = displayName,
+                                                    color = MiuixTheme.colorScheme.onBackground,
+                                                    fontSize = AppTypographyTokens.Body.fontSize,
+                                                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                                                    fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
+                                                    maxLines = 3,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                FlowRow(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
-                                                    top.yukonga.miuix.kmp.basic.Icon(
-                                                        imageVector = MiuixIcons.Regular.Download,
-                                                        contentDescription = null,
-                                                        tint = actionAccent
-                                                    )
-                                                }
-                                                Column(
-                                                    modifier = Modifier.weight(1f),
-                                                    verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.compactSectionGap)
-                                                ) {
-                                                    Text(
-                                                        text = displayName,
-                                                        color = MiuixTheme.colorScheme.onBackground,
-                                                        fontSize = AppTypographyTokens.Body.fontSize,
-                                                        lineHeight = AppTypographyTokens.Body.lineHeight,
-                                                        fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
-                                                        maxLines = 2,
-                                                        overflow = TextOverflow.Ellipsis
-                                                    )
-                                                    FlowRow(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                                    ) {
-                                                        extensionLabel?.let { label ->
-                                                            StatusPill(
-                                                                label = label,
-                                                                color = MiuixTheme.colorScheme.primary
-                                                            )
-                                                        }
-                                                        abiLabel?.let { label ->
-                                                            StatusPill(
-                                                                label = label,
-                                                                color = actionAccent
-                                                            )
-                                                        }
-                                                        relativeTimeLabel?.let { label ->
-                                                            StatusPill(
-                                                                label = label,
-                                                                color = MiuixTheme.colorScheme.onBackgroundVariant
-                                                            )
-                                                        }
+                                                    extensionLabel?.let { label ->
+                                                        StatusPill(
+                                                            label = label,
+                                                            color = MiuixTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                    abiLabel?.let { label ->
+                                                        StatusPill(
+                                                            label = label,
+                                                            color = actionAccent
+                                                        )
+                                                    }
+                                                    relativeTimeLabel?.let { label ->
+                                                        StatusPill(
+                                                            label = label,
+                                                            color = MiuixTheme.colorScheme.onBackgroundVariant
+                                                        )
                                                     }
                                                 }
                                                 Row(
-                                                    modifier = Modifier.wrapContentWidth(androidx.compose.ui.Alignment.End),
+                                                    modifier = Modifier.fillMaxWidth(),
                                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                                 ) {
+                                                    Spacer(modifier = Modifier.weight(1f))
                                                     GlassTextButton(
                                                         backdrop = contentBackdrop,
                                                         text = sizeLabel,
