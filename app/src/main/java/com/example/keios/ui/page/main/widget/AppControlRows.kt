@@ -25,7 +25,7 @@ fun AppControlRow(
     summary: String? = null,
     titleColor: Color = MiuixTheme.colorScheme.onBackground,
     summaryColor: Color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-    minHeight: Dp = 48.dp,
+    minHeight: Dp = AppInteractiveTokens.controlRowMinHeight,
     onClick: (() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {}
 ) {
@@ -53,7 +53,7 @@ fun AppControlRow(
     modifier: Modifier = Modifier,
     summary: String? = null,
     summaryColor: Color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-    minHeight: Dp = 48.dp,
+    minHeight: Dp = AppInteractiveTokens.controlRowMinHeight,
     onClick: (() -> Unit)? = null,
     titleContent: @Composable ColumnScope.() -> Unit,
     trailing: @Composable RowScope.() -> Unit = {}

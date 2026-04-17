@@ -649,7 +649,7 @@ fun SettingsPage(
 }
 
 @Composable
-private fun SettingsGroupCard(
+internal fun SettingsGroupCard(
     header: String,
     title: String,
     summary: String,
@@ -692,7 +692,7 @@ private fun SettingsGroupCard(
 }
 
 @Composable
-private fun SettingsActionItem(
+internal fun SettingsActionItem(
     title: String,
     summary: String,
     infoKey: String? = null,
@@ -722,7 +722,7 @@ private fun SettingsActionItem(
 }
 
 @Composable
-private fun SettingsToggleItem(
+internal fun SettingsToggleItem(
     title: String,
     summary: String,
     checked: Boolean,

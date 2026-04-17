@@ -713,7 +713,7 @@ private fun CatalogTabContent(
 }
 
 @Composable
-private fun BaGuideCatalogEntryCard(
+internal fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
     isFavorite: Boolean,
     onOpenGuide: (String) -> Unit,

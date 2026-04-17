@@ -80,7 +80,7 @@ fun GlassSearchField(
 
     Box(
         modifier = modifier
-            .defaultMinSize(minHeight = 44.dp)
+            .defaultMinSize(minHeight = AppInteractiveTokens.glassSearchFieldMinHeight)
             .clip(ContinuousCapsule)
             .then(
                 if (backdrop != null) {
@@ -120,7 +120,10 @@ fun GlassSearchField(
                 }
             )
             .then(borderModifier)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(
+                horizontal = AppInteractiveTokens.glassSearchFieldHorizontalPadding,
+                vertical = AppInteractiveTokens.glassSearchFieldVerticalPadding
+            )
     ) {
         BasicTextField(
             value = value,

@@ -1,5 +1,7 @@
 package com.example.keios.ui.page.main.widget
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -27,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
@@ -49,21 +52,23 @@ fun GlassIconButton(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    width: Dp = 40.dp,
-    height: Dp = 40.dp,
+    width: Dp = Dp.Unspecified,
+    height: Dp = Dp.Unspecified,
     shape: Shape = ContinuousCapsule,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
     iconTint: Color = MiuixTheme.colorScheme.primary
 ) {
     val isDark = isSystemInDarkTheme()
+    val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
+    val resolvedHeight = if (height == Dp.Unspecified) defaultGlassIconButtonSize(variant) else height
     GlassIconButtonContainer(
         backdrop = backdrop,
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier,
-        width = width,
-        height = height,
+        width = resolvedWidth,
+        height = resolvedHeight,
         shape = shape,
         blurRadius = blurRadius,
         variant = variant,
@@ -85,8 +90,8 @@ fun GlassIconButton(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    width: Dp = 40.dp,
-    height: Dp = 40.dp,
+    width: Dp = Dp.Unspecified,
+    height: Dp = Dp.Unspecified,
     shape: Shape = ContinuousCapsule,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
@@ -94,13 +99,15 @@ fun GlassIconButton(
     iconModifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
+    val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
+    val resolvedHeight = if (height == Dp.Unspecified) defaultGlassIconButtonSize(variant) else height
     GlassIconButtonContainer(
         backdrop = backdrop,
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier,
-        width = width,
-        height = height,
+        width = resolvedWidth,
+        height = resolvedHeight,
         shape = shape,
         blurRadius = blurRadius,
         variant = variant,
@@ -136,19 +143,41 @@ private fun GlassIconButtonContainer(
         blurRadius = blurRadius
     )
     val showBorder = glass.showBorder
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed) AppInteractiveTokens.pressedScale else 1f,
+        animationSpec = tween(durationMillis = 110),
+        label = "glass_icon_button_scale"
+    )
+    val pressedOverlayAlpha by animateFloatAsState(
+        targetValue = appControlPressedOverlayAlpha(isPressed = isPressed, isDark = isDark),
+        animationSpec = tween(durationMillis = 110),
+        label = "glass_icon_button_overlay"
+    )
     Box(
         modifier = modifier
             .width(width)
             .height(height)
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+            }
             .clip(shape)
             .then(
                 if (onLongClick != null) {
                     Modifier.combinedClickable(
+                        interactionSource = interactionSource,
+                        indication = null,
                         onClick = onClick,
                         onLongClick = onLongClick
                     )
                 } else {
-                    Modifier.clickable(onClick = onClick)
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick
+                    )
                 }
             )
             .then(
@@ -198,6 +227,14 @@ private fun GlassIconButtonContainer(
                     )
             )
         }
+        if (pressedOverlayAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(shape)
+                    .background(appControlPressedOverlayColor(isDark).copy(alpha = pressedOverlayAlpha))
+            )
+        }
         content()
     }
 }
@@ -217,9 +254,9 @@ fun GlassTextButton(
     onPressedChange: ((Boolean) -> Unit)? = null,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
-    minHeight: Dp = 40.dp,
-    horizontalPadding: Dp = 14.dp,
-    verticalPadding: Dp = 10.dp
+    minHeight: Dp = defaultGlassTextButtonMinHeight(variant),
+    horizontalPadding: Dp = defaultGlassTextButtonHorizontalPadding(variant),
+    verticalPadding: Dp = defaultGlassTextButtonVerticalPadding(variant)
 ) {
     val isDark = isSystemInDarkTheme()
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
@@ -250,6 +287,19 @@ fun GlassTextButton(
     }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by animateFloatAsState(
+        targetValue = if (enabled && isPressed) AppInteractiveTokens.pressedScale else 1f,
+        animationSpec = tween(durationMillis = 110),
+        label = "glass_text_button_scale"
+    )
+    val pressedOverlayAlpha by animateFloatAsState(
+        targetValue = appControlPressedOverlayAlpha(
+            isPressed = enabled && isPressed,
+            isDark = isDark
+        ),
+        animationSpec = tween(durationMillis = 110),
+        label = "glass_text_button_overlay"
+    )
 
     LaunchedEffect(isPressed, onPressedChange) {
         onPressedChange?.invoke(isPressed)
@@ -261,6 +311,11 @@ fun GlassTextButton(
     Box(
         modifier = modifier
             .defaultMinSize(minHeight = minHeight)
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+                alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
+            }
             .clip(ContinuousCapsule)
             .then(
                 if (longClick != null) {
@@ -319,6 +374,14 @@ fun GlassTextButton(
             .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         contentAlignment = Alignment.Center
     ) {
+        if (pressedOverlayAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(ContinuousCapsule)
+                    .background(appControlPressedOverlayColor(isDark).copy(alpha = pressedOverlayAlpha))
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically

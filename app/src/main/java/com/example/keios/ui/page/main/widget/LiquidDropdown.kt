@@ -1,14 +1,19 @@
 package com.example.keios.ui.page.main.widget
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -58,8 +63,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.min
 
 private const val LiquidDropdownMaxItemsForWidth = 8
-private val LiquidDropdownMinWidth = 156.dp
-private val LiquidDropdownMaxWidth = 212.dp
 private val LiquidDropdownContainerRadius = 20.dp
 private val LiquidDropdownItemRadius = 20.dp
 
@@ -120,8 +123,8 @@ private fun rememberLiquidDropdownMeasurePolicy(): MeasurePolicy {
                     if (width > maxWidth) maxWidth = width
                 }
                 val listWidth = maxWidth.coerceIn(
-                    LiquidDropdownMinWidth.roundToPx(),
-                    LiquidDropdownMaxWidth.roundToPx()
+                    AppInteractiveTokens.liquidDropdownMinWidth.roundToPx(),
+                    AppInteractiveTokens.liquidDropdownMaxWidth.roundToPx()
                 )
                 val childConstraints = constraints.copy(
                     minWidth = listWidth,
@@ -153,8 +156,8 @@ private fun rememberLiquidDropdownMeasurePolicy(): MeasurePolicy {
                     if (candidate > maxWidth) maxWidth = candidate
                 }
                 val listWidth = maxWidth.coerceIn(
-                    LiquidDropdownMinWidth.roundToPx(),
-                    LiquidDropdownMaxWidth.roundToPx()
+                    AppInteractiveTokens.liquidDropdownMinWidth.roundToPx(),
+                    AppInteractiveTokens.liquidDropdownMaxWidth.roundToPx()
                 )
                 return measurables.sumOf { it.minIntrinsicHeight(listWidth) }
             }
@@ -281,14 +284,34 @@ fun LiquidDropdownItem(
     val accentBackdrop = rememberLayerBackdrop()
     val selectedBackdrop = rememberCombinedBackdrop(baseBackdrop, accentBackdrop)
     val currentOnClick by rememberUpdatedState(onClick)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed) AppInteractiveTokens.pressedScale else 1f,
+        animationSpec = tween(durationMillis = 110),
+        label = "liquid_dropdown_item_scale"
+    )
+    val pressedOverlayAlpha by animateFloatAsState(
+        targetValue = appControlPressedOverlayAlpha(isPressed = isPressed, isDark = isDark),
+        animationSpec = tween(durationMillis = 110),
+        label = "liquid_dropdown_item_overlay"
+    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 2.dp, vertical = 0.dp)
             .padding(top = outerTopPadding, bottom = outerBottomPadding)
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+            }
             .clip(itemShape)
-            .clickable(onClick = { currentOnClick() })
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = { currentOnClick() }
+            )
     ) {
         LiquidDropdownRowContent(
             modifier = Modifier
@@ -343,6 +366,14 @@ fun LiquidDropdownItem(
                     .border(1.dp, selectedBorderColor, itemShape)
             )
         }
+        if (pressedOverlayAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(itemShape)
+                    .background(appControlPressedOverlayColor(isDark).copy(alpha = pressedOverlayAlpha))
+            )
+        }
     }
 }
 
@@ -355,9 +386,14 @@ private fun LiquidDropdownRowContent(
     showCheck: Boolean
 ) {
     Row(
-        modifier = modifier.padding(horizontal = 9.dp, vertical = 11.dp),
+        modifier = modifier
+            .defaultMinSize(minHeight = AppInteractiveTokens.liquidDropdownRowMinHeight)
+            .padding(
+                horizontal = AppInteractiveTokens.liquidDropdownRowHorizontalPadding,
+                vertical = AppInteractiveTokens.liquidDropdownRowVerticalPadding
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp)
+        horizontalArrangement = Arrangement.spacedBy(AppInteractiveTokens.liquidDropdownRowGap)
     ) {
         Text(
             modifier = Modifier.weight(1f),
@@ -368,7 +404,7 @@ private fun LiquidDropdownRowContent(
         )
 
         Image(
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(AppInteractiveTokens.liquidDropdownCheckSize),
             imageVector = MiuixIcons.Basic.Check,
             colorFilter = ColorFilter.tint(if (showCheck) checkColor else Color.Transparent),
             contentDescription = null
