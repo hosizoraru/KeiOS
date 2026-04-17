@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.example.keios.R
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
+import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogStore
+import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -76,6 +78,20 @@ private val guideSimulateDataCache = object : LinkedHashMap<String, GuideSimulat
     override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, GuideSimulateData>?): Boolean {
         return size > GUIDE_SIMULATE_CACHE_MAX_SIZE
     }
+}
+
+private val npcSatelliteGuideFlagCache = ConcurrentHashMap<Long, Boolean>()
+
+private fun isNpcSatelliteGuideSource(sourceUrl: String): Boolean {
+    val contentId = extractGuideContentIdFromUrl(sourceUrl) ?: return false
+    if (contentId <= 0L) return false
+    npcSatelliteGuideFlagCache[contentId]?.let { return it }
+    val bundle = BaGuideCatalogStore.loadBundle() ?: return false
+    val isNpcSatellite = bundle.entries(BaGuideCatalogTab.NpcSatellite).any { entry ->
+        entry.contentId == contentId
+    }
+    npcSatelliteGuideFlagCache[contentId] = isNpcSatellite
+    return isNpcSatellite
 }
 
 private fun buildGuideCopyPayload(key: String, value: String): String {
@@ -138,6 +154,9 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                 onClick = {}
                             ) {
                                 if (guide != null) {
+                                    val useNpcPortraitTopCrop = remember(guide.sourceUrl, guide.syncedAtMs) {
+                                        isNpcSatelliteGuideSource(guide.sourceUrl)
+                                    }
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -153,7 +172,12 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
                                                 if (guide.imageUrl.isNotBlank()) {
                                                     GuideRemoteImage(
                                                         imageUrl = guide.imageUrl,
-                                                        imageHeight = 152.dp
+                                                        imageHeight = 152.dp,
+                                                        cropAlignment = if (useNpcPortraitTopCrop) {
+                                                            Alignment.TopCenter
+                                                        } else {
+                                                            Alignment.Center
+                                                        }
                                                     )
                                                 } else {
                                                     Text(

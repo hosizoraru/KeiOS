@@ -417,7 +417,8 @@ fun GuideRemoteImage(
     imageUrl: String,
     modifier: Modifier = Modifier,
     imageHeight: androidx.compose.ui.unit.Dp = 220.dp,
-    maxDecodeDimension: Int = 1920
+    maxDecodeDimension: Int = 1920,
+    cropAlignment: Alignment = Alignment.Center
 ) {
     val context = LocalContext.current
     val target = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
@@ -438,6 +439,7 @@ fun GuideRemoteImage(
         bitmap = rendered.asImageBitmap(),
         contentDescription = null,
         contentScale = ContentScale.Crop,
+        alignment = cropAlignment,
         modifier = modifier
             .fillMaxWidth()
             .height(imageHeight)
