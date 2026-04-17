@@ -6,9 +6,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,7 +36,6 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -70,7 +69,13 @@ fun GlassSearchField(
     } else {
         AppTypographyTokens.Body.lineHeight
     }
-    val enteredTextOffsetY = if (singleLine && variant == GlassVariant.SheetInput) 1.dp else 0.dp
+    val inputTextStyle = TextStyle(
+        color = textColor,
+        fontSize = fontSize,
+        lineHeight = effectiveLineHeight,
+        platformStyle = PlatformTextStyle(includeFontPadding = false),
+        textAlign = textAlign
+    )
     val glass = glassStyle(
         isDark = isDark,
         variant = variant,
@@ -162,13 +167,7 @@ fun GlassSearchField(
             value = value,
             onValueChange = onValueChange,
             singleLine = singleLine,
-            textStyle = TextStyle(
-                color = textColor,
-                fontSize = fontSize,
-                lineHeight = effectiveLineHeight,
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
-                textAlign = textAlign
-            ),
+            textStyle = inputTextStyle,
             cursorBrush = SolidColor(textColor),
             visualTransformation = visualTransformation,
             keyboardOptions = if (singleLine) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
@@ -189,23 +188,14 @@ fun GlassSearchField(
                     contentAlignment = contentAlignment
                 ) {
                     if (value.isBlank()) {
-                        Text(
+                        BasicText(
                             text = label,
-                            color = placeholderColor,
-                            fontSize = fontSize,
-                            lineHeight = effectiveLineHeight,
+                            style = inputTextStyle.copy(color = placeholderColor),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = if (value.isBlank()) 0.dp else enteredTextOffsetY),
-                        contentAlignment = contentAlignment
-                    ) {
-                        innerTextField()
-                    }
+                    innerTextField()
                 }
             }
         )
