@@ -103,17 +103,6 @@ private tailrec fun Context.findHostActivity(): Activity? {
     }
 }
 
-private fun normalizeGuideMediaSource(raw: String): String {
-    val value = raw.trim()
-    if (value.isBlank()) return ""
-    val scheme = runCatching { Uri.parse(value).scheme.orEmpty() }.getOrDefault("")
-    return if (scheme.equals("file", ignoreCase = true)) {
-        value
-    } else {
-        normalizeGuideUrl(value)
-    }
-}
-
 @Composable
 private fun GuideVideoFullscreenScreen(
     mediaUrl: String,
