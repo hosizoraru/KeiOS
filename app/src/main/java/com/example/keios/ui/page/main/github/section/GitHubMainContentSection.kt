@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -599,45 +602,19 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                     )
                                                 }
                                             }
-                                            if (assetLoading) {
-                                                Box(
-                                                    modifier = summaryMetaPillModifier
-                                                        .clip(RoundedCornerShape(999.dp))
-                                                        .background(GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.18f else 0.12f))
-                                                        .border(
-                                                            width = 0.8.dp,
-                                                            color = GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.32f else 0.22f),
-                                                            shape = RoundedCornerShape(999.dp)
-                                                        )
-                                                        .padding(summaryMetaPillPadding),
-                                                    contentAlignment = androidx.compose.ui.Alignment.Center
-                                                ) {
-                                                    CircularProgressIndicator(
-                                                        progress = 0f,
-                                                        size = 14.dp,
-                                                        strokeWidth = 2.dp,
-                                                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                                            foregroundColor = GitHubStatusPalette.Active,
-                                                            backgroundColor = GitHubStatusPalette.Active.copy(alpha = 0.18f)
-                                                        )
-                                                    )
-                                                }
-                                            } else {
-                                                StatusPill(
-                                                    label = when {
-                                                        assetBundle != null -> assetBundle.assets.size.toString()
-                                                        assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
-                                                        else -> stringResource(R.string.github_asset_count_pending)
-                                                    },
-                                                    color = when {
-                                                        assetError.isNotBlank() -> GitHubStatusPalette.Error
-                                                        else -> targetAccent
-                                                    },
-                                                    size = AppStatusPillSize.Compact,
-                                                    modifier = summaryMetaPillModifier,
-                                                    contentPadding = summaryMetaPillPadding
-                                                )
-                                            }
+                                            GitHubAssetCountBubble(
+                                                modifier = summaryMetaPillModifier,
+                                                label = when {
+                                                    assetBundle != null -> assetBundle.assets.size.toString()
+                                                    assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
+                                                    else -> stringResource(R.string.github_asset_count_pending)
+                                                },
+                                                color = when {
+                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error
+                                                    else -> targetAccent
+                                                },
+                                                loading = assetLoading
+                                            )
                                         }
                                         if (showLoadedReleaseMeta) {
                                             val releaseNameLabel = loadedReleaseName.ifBlank {
@@ -814,6 +791,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                             prefersApiAssetTransport(asset) -> GitHubStatusPalette.Active
                                             else -> GitHubStatusPalette.Update
                                         }
+                                        val actionButtonColor = MiuixTheme.colorScheme.primary
                                         val abiLabel = assetAbiLabel(asset.name)
                                         val extensionLabel = assetFileExtensionLabel(asset.name)
                                         val displayName = assetDisplayName(asset.name)
@@ -897,21 +875,26 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         onClick = { onOpenApkInDownloader(asset) },
                                                         modifier = Modifier,
                                                         variant = GlassVariant.SheetAction,
-                                                        textColor = actionAccent,
-                                                        iconTint = actionAccent
+                                                        textColor = actionButtonColor,
+                                                        iconTint = actionButtonColor,
+                                                        containerColor = Color.White
                                                     )
-                                                    GlassIconButton(
+                                                    GlassTextButton(
                                                         backdrop = contentBackdrop,
-                                                        icon = MiuixIcons.Regular.Share,
-                                                        contentDescription = stringResource(
-                                                            R.string.github_cd_share_asset,
-                                                            asset.name
-                                                        ),
+                                                        text = "",
+                                                        leadingIcon = MiuixIcons.Regular.Share,
                                                         onClick = { onShareApkLink(asset) },
-                                                        width = 38.dp,
-                                                        height = 38.dp,
+                                                        modifier = Modifier.semantics {
+                                                            contentDescription = context.getString(
+                                                                R.string.github_cd_share_asset,
+                                                                asset.name
+                                                            )
+                                                        },
                                                         variant = GlassVariant.SheetAction,
-                                                        iconTint = actionAccent
+                                                        textColor = actionButtonColor,
+                                                        iconTint = actionButtonColor,
+                                                        containerColor = Color.White,
+                                                        horizontalPadding = 10.dp
                                                     )
                                                 }
                                             }
@@ -924,6 +907,49 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun GitHubAssetCountBubble(
+    label: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    loading: Boolean = false
+) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    Box(
+        modifier = modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(color.copy(alpha = if (isDark) 0.18f else 0.12f))
+            .border(
+                width = 0.8.dp,
+                color = color.copy(alpha = if (isDark) 0.34f else 0.24f),
+                shape = CircleShape
+            ),
+        contentAlignment = androidx.compose.ui.Alignment.Center
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                progress = 0f,
+                size = 14.dp,
+                strokeWidth = 2.dp,
+                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                    foregroundColor = color,
+                    backgroundColor = color.copy(alpha = 0.18f)
+                )
+            )
+        } else {
+            Text(
+                text = label,
+                color = if (isDark) color else color.copy(alpha = 0.96f),
+                fontSize = AppTypographyTokens.Caption.fontSize,
+                lineHeight = AppTypographyTokens.Caption.lineHeight,
+                fontWeight = AppTypographyTokens.Caption.fontWeight,
+                maxLines = 1
+            )
         }
     }
 }

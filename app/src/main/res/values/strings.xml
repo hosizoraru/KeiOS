@@ -297,7 +297,7 @@
     <string name="github_asset_target_stable">稳定</string>
     <string name="github_asset_target_latest">最新发布</string>
     <string name="github_asset_fetch_source_api">API</string>
-    <string name="github_asset_fetch_source_html">HTML</string>
+    <string name="github_asset_fetch_source_html">Atom</string>
     <string name="github_asset_transport_direct">直链</string>
     <string name="github_asset_relative_just_now">just now</string>
     <string name="github_asset_relative_min_ago">%1$d min ago</string>
