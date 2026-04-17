@@ -703,6 +703,7 @@ fun McpPage(
                     modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
                     width = 60.dp,
                     height = 44.dp,
+                    iconTint = if (uiState.running) MiuixTheme.colorScheme.error else MiuixTheme.colorScheme.primary,
                     variant = GlassVariant.Floating
                 )
             }
