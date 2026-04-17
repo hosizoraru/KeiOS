@@ -3,6 +3,8 @@
 
     <string name="common_open">打开</string>
     <string name="common_close">关闭</string>
+    <string name="common_expand">展开</string>
+    <string name="common_collapse">收起</string>
     <string name="common_save">保存</string>
     <string name="common_cancel">取消</string>
     <string name="common_delete">删除</string>

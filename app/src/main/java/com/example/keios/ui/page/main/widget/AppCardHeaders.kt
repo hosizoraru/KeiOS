@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -13,9 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.example.keios.R
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -41,10 +43,16 @@ fun AppCardHeader(
     expandable: Boolean = false,
     expanded: Boolean = false,
     expandTint: Color = MiuixTheme.colorScheme.primary,
+    titleMaxLines: Int = 2,
     subtitleMaxLines: Int = 2,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
+    val expandContentDescription = if (expanded) {
+        stringResource(R.string.common_collapse)
+    } else {
+        stringResource(R.string.common_expand)
+    }
     val headerModifier = if (onClick != null || onLongClick != null) {
         val interactionSource = remember { MutableInteractionSource() }
         modifier.combinedClickable(
@@ -60,6 +68,7 @@ fun AppCardHeader(
     Row(
         modifier = headerModifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = AppInteractiveTokens.controlRowMinHeight)
             .padding(CardLayoutRhythm.cardContentPadding),
         horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
         verticalAlignment = Alignment.CenterVertically
@@ -70,6 +79,7 @@ fun AppCardHeader(
             verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowTextGap)
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -78,7 +88,10 @@ fun AppCardHeader(
                     color = titleColor,
                     fontSize = AppTypographyTokens.SectionTitle.fontSize,
                     lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
-                    fontWeight = AppTypographyTokens.SectionTitle.fontWeight
+                    fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = titleMaxLines,
+                    overflow = TextOverflow.Ellipsis
                 )
                 titleAccessory?.invoke(this)
             }
@@ -109,7 +122,7 @@ fun AppCardHeader(
             if (expandable) {
                 Icon(
                     imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
-                    contentDescription = if (expanded) "收起" else "展开",
+                    contentDescription = expandContentDescription,
                     tint = expandTint
                 )
             }

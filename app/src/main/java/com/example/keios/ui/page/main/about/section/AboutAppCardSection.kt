@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main.about.section
 
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,8 @@ import com.example.keios.ui.page.main.widget.AppCardHeader
 import com.example.keios.ui.page.main.widget.AppInfoListBody
 import com.example.keios.ui.page.main.about.util.formatTime
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
+import com.example.keios.ui.page.main.widget.appExpandIn
+import com.example.keios.ui.page.main.widget.appExpandOut
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -88,7 +91,11 @@ fun AboutAppCardSection(
                 expandTint = accent,
                 onClick = { onExpandedChange(!expanded) }
             )
-            if (expanded) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = appExpandIn(),
+                exit = appExpandOut()
+            ) {
                 AppInfoListBody(
                     modifier = Modifier.padding(
                         start = CardLayoutRhythm.cardHorizontalPadding,

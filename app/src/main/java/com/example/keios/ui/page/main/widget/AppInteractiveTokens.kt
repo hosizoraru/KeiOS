@@ -5,8 +5,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 object AppInteractiveTokens {
-    val controlRowMinHeight: Dp = 48.dp
-    val compactControlRowMinHeight: Dp = 40.dp
+    val controlRowMinHeight: Dp = 50.dp
+    val compactControlRowMinHeight: Dp = 42.dp
 
     val glassIconButtonSize: Dp = 40.dp
     val compactGlassIconButtonSize: Dp = 36.dp
@@ -21,6 +21,8 @@ object AppInteractiveTokens {
     val glassSearchFieldMinHeight: Dp = 44.dp
     val glassSearchFieldHorizontalPadding: Dp = 14.dp
     val glassSearchFieldVerticalPadding: Dp = 10.dp
+
+    val controlContentGap: Dp = 8.dp
 
     val liquidDropdownMinWidth: Dp = 156.dp
     val liquidDropdownMaxWidth: Dp = 212.dp

@@ -25,7 +25,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -46,7 +45,7 @@ fun GlassSearchField(
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     textAlign: TextAlign = TextAlign.Start,
-    fontSize: TextUnit = 15.sp,
+    fontSize: TextUnit = AppTypographyTokens.Body.fontSize,
     textColor: Color = MiuixTheme.colorScheme.onBackground,
     onImeActionDone: (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -129,7 +128,12 @@ fun GlassSearchField(
             value = value,
             onValueChange = onValueChange,
             singleLine = singleLine,
-            textStyle = TextStyle(color = textColor, fontSize = fontSize, textAlign = textAlign),
+            textStyle = TextStyle(
+                color = textColor,
+                fontSize = fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
+                textAlign = textAlign
+            ),
             cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
             visualTransformation = visualTransformation,
             keyboardOptions = if (singleLine) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
@@ -149,6 +153,8 @@ fun GlassSearchField(
                         Text(
                             text = label,
                             color = placeholderColor,
+                            fontSize = fontSize,
+                            lineHeight = AppTypographyTokens.Body.lineHeight,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

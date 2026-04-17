@@ -322,7 +322,7 @@ fun GlassTextButton(
                     Modifier.combinedClickable(
                         interactionSource = interactionSource,
                         indication = null,
-                        enabled = true,
+                        enabled = enabled,
                         onClick = { if (enabled) onClick() },
                         onLongClick = longClick
                     )
@@ -383,7 +383,7 @@ fun GlassTextButton(
             )
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppInteractiveTokens.controlContentGap),
             verticalAlignment = Alignment.CenterVertically
         ) {
             leadingIcon?.let { icon ->
@@ -394,7 +394,13 @@ fun GlassTextButton(
                 )
             }
             if (text.isNotBlank()) {
-                Text(text = text, color = textColor)
+                Text(
+                    text = text,
+                    color = textColor,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                    fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight
+                )
             }
         }
     }

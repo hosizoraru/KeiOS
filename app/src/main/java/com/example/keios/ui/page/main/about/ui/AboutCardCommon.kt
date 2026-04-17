@@ -1,5 +1,6 @@
 package com.example.keios.ui.page.main.about.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,8 @@ import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.AppCardHeader
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.appExpandIn
+import com.example.keios.ui.page.main.widget.appExpandOut
 import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.rememberLightTextCopyAction
 import com.example.keios.ui.page.main.widget.rememberTextCopyExpandedEnabled
@@ -211,7 +214,11 @@ fun AboutSectionCard(
                     null
                 }
             )
-            if (!collapsible || expanded) {
+            AnimatedVisibility(
+                visible = !collapsible || expanded,
+                enter = appExpandIn(),
+                exit = appExpandOut()
+            ) {
                 AppCardBodyColumn(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
                         start = CardLayoutRhythm.cardHorizontalPadding,

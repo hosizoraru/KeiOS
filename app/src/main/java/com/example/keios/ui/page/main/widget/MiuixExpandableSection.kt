@@ -1,8 +1,6 @@
 package com.example.keios.ui.page.main.widget
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -48,12 +46,12 @@ fun MiuixExpandableSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(CardLayoutRhythm.cardCornerRadius))
             .then(
                 if (backdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
-                        shape = { RoundedRectangle(16.dp) },
+                        shape = { RoundedRectangle(CardLayoutRhythm.cardCornerRadius) },
                         effects = {
                             vibrancy()
                             blur(8.dp.toPx())
@@ -87,8 +85,8 @@ fun MiuixExpandableSection(
         )
         AnimatedVisibility(
             visible = expanded,
-            enter = fadeIn(),
-            exit = fadeOut()
+            enter = appExpandIn(),
+            exit = appExpandOut()
         ) {
             AppCardBodyColumn(
                 contentPadding = PaddingValues(

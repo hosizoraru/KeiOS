@@ -1,8 +1,6 @@
 package com.example.keios.ui.page.main.widget
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -410,8 +408,8 @@ fun SheetExpandableCard(
         )
         AnimatedVisibility(
             visible = expanded,
-            enter = fadeIn(),
-            exit = fadeOut()
+            enter = appExpandIn(),
+            exit = appExpandOut()
         ) {
             Column(
                 modifier = Modifier

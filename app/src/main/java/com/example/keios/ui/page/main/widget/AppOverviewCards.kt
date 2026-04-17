@@ -41,7 +41,7 @@ fun AppOverviewCard(
     headerEndActions: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
     Card(
         modifier = modifier
             .fillMaxWidth()
