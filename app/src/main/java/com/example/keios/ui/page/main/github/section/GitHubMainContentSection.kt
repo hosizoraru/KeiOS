@@ -798,8 +798,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         val sizeLabel = formatAssetSize(asset.sizeBytes, context)
                                         val relativeTimeLabel = assetRelativeTimeLabel(asset.updatedAtMillis, context)
                                         val assetCardShape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
-                                        val assetDownloadButtonMinWidth = 104.dp
-                                        val assetShareButtonSize = 44.dp
+                                        val assetDownloadButtonMinWidth = 100.dp
+                                        val assetShareButtonSize = 40.dp
                                         val assetCardContainerColor = summaryContainerColor
                                         val assetCardBorderColor = summaryBorderColor
                                         Card(
@@ -855,7 +855,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                 }
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                                                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                                 ) {
                                                     Spacer(modifier = Modifier.weight(1f))
@@ -869,7 +869,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         textColor = actionButtonColor,
                                                         iconTint = actionButtonColor,
                                                         containerColor = Color.White,
-                                                        horizontalPadding = 12.dp,
+                                                        horizontalPadding = 10.dp,
                                                         textMaxLines = 1,
                                                         textOverflow = TextOverflow.Clip,
                                                         textSoftWrap = false
