@@ -26,12 +26,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
 import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
 import com.example.keios.feature.github.model.InstalledAppItem
+import com.example.keios.ui.page.main.widget.AppInfoRow
 import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetExpandableCard
 import com.example.keios.ui.page.main.widget.SheetSurfaceCard
@@ -53,35 +55,24 @@ internal fun GitHubCompactInfoRow(
     titleMinWidth: Dp = 64.dp,
     onClick: (() -> Unit)? = null
 ) {
-    val clickableModifier = if (onClick != null) {
-        Modifier.clickable(onClick = onClick)
-    } else {
-        Modifier
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(clickableModifier)
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            color = titleColor,
-            modifier = Modifier.widthIn(min = titleMinWidth)
-        )
-        Text(
-            text = value,
-            color = valueColor,
-            fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
-        )
-    }
+    AppInfoRow(
+        label = label,
+        value = value,
+        labelColor = titleColor,
+        valueColor = valueColor,
+        labelMinWidth = titleMinWidth,
+        horizontalSpacing = 8.dp,
+        rowVerticalPadding = 2.dp,
+        valueTextAlign = TextAlign.End,
+        valueMaxLines = 4,
+        valueOverflow = TextOverflow.Ellipsis,
+        labelFontSize = 13.sp,
+        labelLineHeight = 18.sp,
+        valueFontSize = 13.sp,
+        valueLineHeight = 18.sp,
+        emphasizedValue = emphasized,
+        onClick = onClick
+    )
 }
 
 @Composable
@@ -110,29 +101,26 @@ internal fun GitHubOverviewMetricItem(
     titleColor: Color = MiuixTheme.colorScheme.onBackgroundVariant,
     emphasized: Boolean = false
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            color = titleColor,
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = value.ifBlank { stringResource(R.string.common_na) },
-            color = valueColor,
-            fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End
-        )
-    }
+    AppInfoRow(
+        label = label,
+        value = value.ifBlank { stringResource(R.string.common_na) },
+        modifier = modifier,
+        labelColor = titleColor,
+        valueColor = valueColor,
+        labelWeight = 0.46f,
+        valueWeight = 0.54f,
+        horizontalSpacing = 8.dp,
+        rowVerticalPadding = 2.dp,
+        valueTextAlign = TextAlign.End,
+        labelMaxLines = 1,
+        valueMaxLines = 1,
+        valueOverflow = TextOverflow.Ellipsis,
+        labelFontSize = 13.sp,
+        labelLineHeight = 18.sp,
+        valueFontSize = 13.sp,
+        valueLineHeight = 18.sp,
+        emphasizedValue = emphasized
+    )
 }
 
 @Composable

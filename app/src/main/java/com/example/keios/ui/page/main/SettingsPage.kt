@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,16 +42,14 @@ import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.CacheEntrySummary
 import com.example.keios.core.prefs.CacheStores
 import com.example.keios.core.log.AppLogStore
+import com.example.keios.ui.page.main.widget.AppInfoRow
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
 import com.example.keios.ui.page.main.widget.LiquidDropdownImpl
-import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
-import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.capturePopupAnchor
-import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -764,36 +763,24 @@ private fun SettingsInfoItem(
     key: String,
     value: String
 ) {
-    val titleColor = MiuixTheme.colorScheme.onBackgroundVariant
-    val valueColor = MiuixTheme.colorScheme.onBackground
-    val displayValue = value.ifBlank { stringResource(R.string.common_na) }
-    val copyPayload = remember(key, displayValue) { buildTextCopyPayload(key, displayValue) }
-    CopyModeSelectionContainer {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .copyModeAwareRow(copyPayload = copyPayload)
-                .padding(vertical = 3.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Text(
-                text = key,
-                color = titleColor,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                modifier = Modifier.wrapContentWidth()
-            )
-            Text(
-                text = displayValue,
-                color = valueColor,
-                fontSize = 12.5.sp,
-                lineHeight = 17.sp,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
+    AppInfoRow(
+        label = key,
+        value = value.ifBlank { stringResource(R.string.common_na) },
+        labelColor = MiuixTheme.colorScheme.onBackgroundVariant,
+        valueColor = MiuixTheme.colorScheme.onBackground,
+        labelMinWidth = 64.dp,
+        labelMaxWidth = 112.dp,
+        horizontalSpacing = 8.dp,
+        rowVerticalPadding = 3.dp,
+        labelMaxLines = 2,
+        valueMaxLines = 6,
+        valueOverflow = TextOverflow.Ellipsis,
+        labelFontSize = 13.sp,
+        labelLineHeight = 18.sp,
+        valueFontSize = 13.sp,
+        valueLineHeight = 18.sp,
+        emphasizedValue = false
+    )
 }
 
 @Composable

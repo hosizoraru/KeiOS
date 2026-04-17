@@ -59,11 +59,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
+import com.example.keios.ui.page.main.widget.AppInfoRow
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
-import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -77,7 +78,6 @@ import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
-import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.system.getAllJavaPropString
@@ -1108,35 +1108,24 @@ private fun OsSectionInfoRow(
     value: String,
     modifier: Modifier = Modifier
 ) {
-    val displayValue = value.ifBlank { "N/A" }
-    val copyPayload = remember(label, displayValue) {
-        buildTextCopyPayload(label, displayValue)
-    }
-    CopyModeSelectionContainer {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .copyModeAwareRow(copyPayload = copyPayload)
-                .padding(vertical = 3.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                modifier = Modifier.widthIn(min = 72.dp, max = 136.dp),
-                maxLines = Int.MAX_VALUE,
-                overflow = TextOverflow.Clip
-            )
-            Text(
-                text = displayValue,
-                color = MiuixTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f),
-                maxLines = 6,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
+    AppInfoRow(
+        label = label,
+        value = value.ifBlank { "N/A" },
+        modifier = modifier,
+        labelColor = MiuixTheme.colorScheme.onBackgroundVariant,
+        valueColor = MiuixTheme.colorScheme.onBackground,
+        labelMinWidth = 72.dp,
+        labelMaxWidth = 136.dp,
+        horizontalSpacing = 10.dp,
+        rowVerticalPadding = 3.dp,
+        valueTextAlign = TextAlign.End,
+        labelMaxLines = Int.MAX_VALUE,
+        valueMaxLines = 6,
+        valueOverflow = TextOverflow.Ellipsis,
+        labelFontSize = 13.sp,
+        labelLineHeight = 18.sp,
+        valueFontSize = 13.sp,
+        valueLineHeight = 18.sp,
+        emphasizedValue = true
+    )
 }

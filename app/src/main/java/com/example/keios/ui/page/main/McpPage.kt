@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.mcp.McpServerUiState
 import com.example.keios.mcp.McpServerManager
@@ -848,12 +849,16 @@ private fun McpOverviewMetricItem(
             Text(
                 text = metric.label,
                 color = labelColor,
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = metric.value.ifBlank { stringResource(R.string.common_na) },
                 color = metric.valueColor ?: defaultValueColor,
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Medium
