@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppInfoRow
+import com.example.keios.ui.page.main.widget.AppOverviewCard
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.LiquidActionBar
@@ -813,61 +814,41 @@ fun OsPage(
         ) {
             item { Spacer(modifier = Modifier.height(10.dp)) }
             item {
-                val overviewShape = RoundedCornerShape(16.dp)
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(overviewShape)
-                        .background(overviewCardColor, overviewShape)
-                        .border(width = 1.dp, color = overviewBorderColor, shape = overviewShape),
-                    colors = CardDefaults.defaultColors(
-                        color = overviewCardColor,
-                        contentColor = titleColor
-                    ),
+                AppOverviewCard(
+                    title = "系统参数与属性",
+                    containerColor = overviewCardColor,
+                    borderColor = overviewBorderColor,
+                    contentColor = titleColor,
                     showIndication = cardPressFeedbackEnabled,
                     onClick = {
-                        if (refreshing) return@Card
+                        if (refreshing) return@AppOverviewCard
                         scope.launch { refreshAllSections() }
+                    },
+                    headerEndActions = {
+                        if (overviewState != SystemOverviewState.Idle) {
+                            CircularProgressIndicator(
+                                progress = indicatorProgress,
+                                size = 16.dp,
+                                strokeWidth = 2.dp,
+                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                    foregroundColor = statusColor,
+                                    backgroundColor = indicatorBg
+                                )
+                            )
+                        }
+                        StatusPill(
+                            label = statusLabel,
+                            color = statusColor,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
+                            backgroundAlphaOverride = if (isDark) 0.24f else 0.34f,
+                            borderAlphaOverride = if (isDark) 0.42f else 0.52f
+                        )
                     }
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(CardLayoutRhythm.cardContentPadding),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "系统参数与属性",
-                                color = titleColor,
-                                fontSize = AppTypographyTokens.CardHeader.fontSize,
-                                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                                fontWeight = AppTypographyTokens.CardHeader.fontWeight
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            if (overviewState != SystemOverviewState.Idle) {
-                                CircularProgressIndicator(
-                                    progress = indicatorProgress,
-                                    size = 16.dp,
-                                    strokeWidth = 2.dp,
-                                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                        foregroundColor = statusColor,
-                                        backgroundColor = indicatorBg
-                                    )
-                                )
-                            }
-                            StatusPill(
-                                label = statusLabel,
-                                color = statusColor,
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
-                                backgroundAlphaOverride = if (isDark) 0.24f else 0.34f,
-                                borderAlphaOverride = if (isDark) 0.42f else 0.52f
-                            )
-                        }
                         overviewMetrics.chunked(2).forEach { pair ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

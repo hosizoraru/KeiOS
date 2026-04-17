@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.mcp.McpServerUiState
 import com.example.keios.mcp.McpServerManager
+import com.example.keios.ui.page.main.widget.AppOverviewCard
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.GlassIconButton
@@ -404,51 +405,31 @@ fun McpPage(
             item { Spacer(modifier = Modifier.height(10.dp)) }
 
             item {
-                val overviewShape = RoundedCornerShape(16.dp)
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(overviewShape)
-                        .background(overviewCardColor, overviewShape)
-                        .border(width = 1.dp, color = overviewBorderColor, shape = overviewShape),
-                    colors = CardDefaults.defaultColors(
-                        color = overviewCardColor,
-                        contentColor = titleColor
-                    ),
+                AppOverviewCard(
+                    title = stringResource(R.string.mcp_overview_title),
+                    containerColor = overviewCardColor,
+                    borderColor = overviewBorderColor,
+                    contentColor = titleColor,
                     showIndication = cardPressFeedbackEnabled,
                     onClick = toggleServer,
-                    onLongPress = { showEditSheet = true }
+                    onLongClick = { showEditSheet = true },
+                    headerEndActions = {
+                        StatusPill(
+                            label = runtimeText,
+                            color = overviewAccentColor,
+                            backgroundAlphaOverride = if (isDark) 0.18f else 0.24f,
+                            borderAlphaOverride = if (isDark) 0.35f else 0.42f
+                        )
+                        StatusPill(
+                            label = if (uiState.running) StatusLabelText.Running else StatusLabelText.NotRunning,
+                            color = overviewAccentColor
+                        )
+                    }
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(CardLayoutRhythm.cardContentPadding),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.mcp_overview_title),
-                                color = titleColor,
-                                fontSize = AppTypographyTokens.CardHeader.fontSize,
-                                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                                fontWeight = AppTypographyTokens.CardHeader.fontWeight
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            StatusPill(
-                                label = runtimeText,
-                                color = overviewAccentColor,
-                                backgroundAlphaOverride = if (isDark) 0.18f else 0.24f,
-                                borderAlphaOverride = if (isDark) 0.35f else 0.42f
-                            )
-                            StatusPill(
-                                label = if (uiState.running) StatusLabelText.Running else StatusLabelText.NotRunning,
-                                color = overviewAccentColor
-                            )
-                        }
                         overviewMetrics.chunked(2).forEach { pair ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

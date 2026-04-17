@@ -14,13 +14,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.ExpandLess
 import top.yukonga.miuix.kmp.icon.extended.ExpandMore
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeController
 
 @Composable
 fun AppCardHeader(
@@ -110,5 +114,32 @@ fun AppCardHeader(
                 )
             }
         }
+    }
+}
+
+@Preview(name = "Card Header Light", showBackground = true, backgroundColor = 0xFFF3F4F6)
+@Composable
+private fun AppCardHeaderPreviewLight() {
+    MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
+        AppCardHeader(
+            title = "MCP Logs",
+            subtitle = "8 条日志 · 长按可导出",
+            supportingText = "点击展开查看详细记录",
+            startAction = {
+                Icon(
+                    imageVector = MiuixIcons.Regular.Info,
+                    contentDescription = null,
+                    tint = MiuixTheme.colorScheme.primary
+                )
+            },
+            endActions = {
+                StatusPill(
+                    label = "已激活",
+                    color = Color(0xFF22C55E)
+                )
+            },
+            expandable = true,
+            expanded = false
+        )
     }
 }
