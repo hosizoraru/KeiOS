@@ -25,7 +25,7 @@ object AppInteractiveTokens {
 
     val controlContentGap: Dp = 8.dp
 
-    val liquidDropdownMinWidth: Dp = 156.dp
+    val liquidDropdownMinWidth: Dp = 88.dp
     val liquidDropdownMaxWidth: Dp = 248.dp
     val liquidDropdownMaxHeight: Dp = 312.dp
     val liquidDropdownMaxVisibleItemsForWidth: Int = 8

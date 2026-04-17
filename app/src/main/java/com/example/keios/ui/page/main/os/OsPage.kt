@@ -799,7 +799,6 @@ fun OsPage(
             state = listState,
             contentPadding = appPageContentPadding(innerPadding)
         ) {
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
             item {
                 AppOverviewCard(
                     title = "系统参数与属性",

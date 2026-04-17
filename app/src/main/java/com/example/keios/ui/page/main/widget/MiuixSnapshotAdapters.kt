@@ -63,7 +63,7 @@ fun SnapshotWindowListPopup(
     maxHeight: Dp? = null,
     minWidth: Dp = 0.dp,
     maxWidth: Dp? = AppInteractiveTokens.liquidDropdownMaxWidth,
-    matchAnchorWidth: Boolean = true,
+    matchAnchorWidth: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val configuration = LocalConfiguration.current

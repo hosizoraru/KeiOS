@@ -199,7 +199,6 @@ internal fun GitHubMainContent(
                     bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding)
                 )
             ) {
-                item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
                 item {
                     GitHubOverviewCard(
                         isDark = isDark,
