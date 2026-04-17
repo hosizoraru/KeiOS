@@ -3,9 +3,8 @@ package com.example.keios.ui.page.main.widget
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -20,12 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -114,23 +111,9 @@ fun SheetDescriptionText(
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
 ) {
-    val shape = RoundedCornerShape(12.dp)
-    Text(
+    AppSupportingBlock(
         text = text,
-        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.96f),
-        fontSize = AppTypographyTokens.Body.fontSize,
-        lineHeight = AppTypographyTokens.Body.lineHeight,
-        textAlign = TextAlign.Start,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.52f))
-            .border(
-                width = 1.dp,
-                color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.12f),
-                shape = shape
-            )
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+        modifier = modifier.fillMaxWidth(),
         maxLines = maxLines,
         overflow = overflow,
     )
@@ -164,9 +147,9 @@ fun SheetSurfaceCard(
         showIndication = onClick != null,
         onClick = onClick ?: {}
     ) {
-        Column(
-            modifier = Modifier.padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+        AppCardBodyColumn(
+            contentPadding = contentPadding,
+            verticalSpacing = verticalSpacing,
             content = content
         )
     }
@@ -286,7 +269,9 @@ fun SheetSummaryCard(
                 Text(
                     text = title,
                     color = accentColor,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                    fontSize = AppTypographyTokens.CardHeader.fontSize,
+                    lineHeight = AppTypographyTokens.CardHeader.lineHeight
                 )
                 badgeLabel?.let { label ->
                     StatusPill(
@@ -343,7 +328,9 @@ fun SheetChoiceCard(
                     Text(
                         text = title,
                         color = if (selected) accentColor else MiuixTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                        fontSize = AppTypographyTokens.CardHeader.fontSize,
+                        lineHeight = AppTypographyTokens.CardHeader.lineHeight
                     )
                     if (selected) {
                         StatusPill(
@@ -354,7 +341,9 @@ fun SheetChoiceCard(
                 }
                 Text(
                     text = summary,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight
                 )
                 details?.invoke(this)
             }

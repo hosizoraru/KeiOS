@@ -17,12 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow.Companion.Clip
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.ui.page.main.widget.AppCardBodyColumn
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
@@ -212,7 +212,15 @@ fun AboutSectionCard(
                 }
             )
             if (!collapsible || expanded) {
-                content()
+                AppCardBodyColumn(
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        start = CardLayoutRhythm.cardHorizontalPadding,
+                        end = CardLayoutRhythm.cardHorizontalPadding,
+                        bottom = CardLayoutRhythm.cardVerticalPadding
+                    ),
+                    verticalSpacing = CardLayoutRhythm.sectionGap,
+                    content = content
+                )
             }
         }
     }

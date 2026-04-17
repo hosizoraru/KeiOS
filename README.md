@@ -64,6 +64,24 @@ JDK fallback examples:
 ./gradlew :app:testDebugUnitTest
 ```
 
+### Screenshot Baseline
+
+Shared UI primitives use `Roborazzi` screenshot baselines under `app/src/test/screenshots/design-system`.
+
+```bash
+# record / refresh baselines
+./gradlew :app:recordRoborazziDebug --tests "com.example.keios.ui.page.main.widget.AppDesignSystemScreenshotTest"
+
+# verify current rendering against baselines
+./gradlew :app:verifyRoborazziDebug --tests "com.example.keios.ui.page.main.widget.AppDesignSystemScreenshotTest"
+```
+
+Current baseline scope:
+
+- `AppCardHeader`
+- `AppOverviewCard`
+- unified list-body layout / supporting block rhythm
+
 ## Runtime Settings Map (Recent)
 
 - `Settings > Visual & Interaction`  

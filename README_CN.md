@@ -63,6 +63,24 @@ JDK 兜底示例路径：
 ./gradlew :app:testDebugUnitTest
 ```
 
+### 截图基线
+
+共享 UI 基础组件已接入 `Roborazzi`，基线图位于 `app/src/test/screenshots/design-system`。
+
+```bash
+# 录制 / 刷新截图基线
+./gradlew :app:recordRoborazziDebug --tests "com.example.keios.ui.page.main.widget.AppDesignSystemScreenshotTest"
+
+# 校验当前渲染结果是否与基线一致
+./gradlew :app:verifyRoborazziDebug --tests "com.example.keios.ui.page.main.widget.AppDesignSystemScreenshotTest"
+```
+
+当前基线覆盖范围：
+
+- `AppCardHeader`
+- `AppOverviewCard`
+- 统一后的列表正文骨架与说明块节奏
+
 ## 运行配置入口（最近变更）
 
 - `设置 > 视觉与交互`  

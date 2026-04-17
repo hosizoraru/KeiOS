@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -18,6 +19,8 @@ import androidx.compose.ui.text.AnnotatedString
 import com.example.keios.R
 import com.example.keios.core.prefs.UiPrefs
 
+internal val LocalTextCopyExpandedOverride = compositionLocalOf<Boolean?> { null }
+
 internal fun buildTextCopyPayload(key: String, value: String): String {
     val title = key.trim().ifBlank { "信息" }
     val content = value.trim().ifBlank { "-" }
@@ -26,6 +29,7 @@ internal fun buildTextCopyPayload(key: String, value: String): String {
 
 @Composable
 internal fun rememberTextCopyExpandedEnabled(): Boolean {
+    LocalTextCopyExpandedOverride.current?.let { return it }
     val copyFlow = remember { UiPrefs.observeTextCopyCapabilityExpanded() }
     val enabled by copyFlow.collectAsState(initial = UiPrefs.isTextCopyCapabilityExpanded())
     return enabled

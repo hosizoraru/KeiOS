@@ -73,6 +73,9 @@ val zoomImageVersion = "1.4.0"
 val documentFileVersion = "1.1.0"
 val focusApiVersion = "1.4"
 val metricsPerformanceVersion = "1.0.0"
+val robolectricVersion = "4.16.1"
+val androidTestExtJunitVersion = "1.3.0"
+val roborazziVersion = "1.59.0"
 val projectCompileSdk = 37
 val projectMinSdk = 35
 val projectTargetSdk = 37
@@ -82,6 +85,7 @@ val projectJvmTarget = JvmTarget.JVM_21
 
 plugins {
     id("com.android.application")
+    id("io.github.takahirom.roborazzi")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -147,6 +151,7 @@ android {
     compileSdkMinor = 0
 
     testOptions {
+        unitTests.isIncludeAndroidResources = true
         unitTests.all {
             // Keep unit tests on the desktop OkHttp platform. Live GitHub tests read secrets from
             // JVM properties, env vars, or ~/.gradle/gradle.properties; see README.md.
@@ -219,8 +224,14 @@ dependencies {
     // Keep kotlin-test aligned with the applied Kotlin plugin version to avoid version skew.
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
+    testImplementation("androidx.test.ext:junit:$androidTestExtJunitVersion")
     testImplementation("org.json:json:$jsonVersion")
+    testImplementation("org.robolectric:robolectric:$robolectricVersion")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:$roborazziVersion")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:$roborazziVersion")
     testImplementation("com.squareup.okhttp3:mockwebserver:$okhttpVersion")
     testImplementation("xmlpull:xmlpull:$xmlPullVersion")
     testImplementation("net.sf.kxml:kxml2:$kxml2Version")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:$composeVersion")
 }

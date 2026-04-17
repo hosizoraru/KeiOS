@@ -162,8 +162,8 @@ internal fun formatReleaseValue(
     return when {
         name.isBlank() -> normalizedTag.ifBlank { tag }
         tag.isBlank() -> normalizedName.ifBlank { name }
+        name.equals(tag, ignoreCase = true) -> name
         normalizedName.equals(normalizedTag, ignoreCase = true) -> normalizedName.ifBlank { normalizedTag }
-        name.equals(tag, ignoreCase = true) -> normalizedName.ifBlank { name }
         else -> "$name · $tag"
     }
 }

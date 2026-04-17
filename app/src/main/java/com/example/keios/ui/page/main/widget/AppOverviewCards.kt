@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -69,15 +69,13 @@ fun AppOverviewCard(
                 startAction = startAction,
                 endActions = headerEndActions
             )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = CardLayoutRhythm.cardHorizontalPadding,
-                        end = CardLayoutRhythm.cardHorizontalPadding,
-                        bottom = CardLayoutRhythm.cardVerticalPadding
-                    ),
-                verticalArrangement = Arrangement.spacedBy(contentVerticalSpacing),
+            AppCardBodyColumn(
+                contentPadding = PaddingValues(
+                    start = CardLayoutRhythm.cardHorizontalPadding,
+                    end = CardLayoutRhythm.cardHorizontalPadding,
+                    bottom = CardLayoutRhythm.cardVerticalPadding
+                ),
+                verticalSpacing = contentVerticalSpacing,
                 content = content
             )
         }
@@ -87,26 +85,28 @@ fun AppOverviewCard(
 @Preview(name = "Overview Light", showBackground = true, backgroundColor = 0xFFF3F4F6)
 @Composable
 private fun AppOverviewCardPreviewLight() {
-    MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
-        AppOverviewCard(
-            title = "GitHub 项目追踪",
-            subtitle = "点击刷新，长按新增",
-            containerColor = Color(0xFFEFF6FF),
-            borderColor = Color(0xFF93C5FD),
-            headerEndActions = {
-                StatusPill(
-                    label = "3m 前",
-                    color = Color(0xFF2563EB)
-                )
-                StatusPill(
-                    label = "已检查",
-                    color = Color(0xFF22C55E)
-                )
+    CompositionLocalProvider(LocalTextCopyExpandedOverride provides false) {
+        MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
+            AppOverviewCard(
+                title = "GitHub 项目追踪",
+                subtitle = "点击刷新，长按新增",
+                containerColor = Color(0xFFEFF6FF),
+                borderColor = Color(0xFF93C5FD),
+                headerEndActions = {
+                    StatusPill(
+                        label = "3m 前",
+                        color = Color(0xFF2563EB)
+                    )
+                    StatusPill(
+                        label = "已检查",
+                        color = Color(0xFF22C55E)
+                    )
+                }
+            ) {
+                AppInfoRow(label = "追踪项目", value = "18")
+                AppInfoRow(label = "可更新", value = "4", valueColor = Color(0xFF2563EB))
+                AppInfoRow(label = "预发行", value = "2", valueColor = Color(0xFFF59E0B))
             }
-        ) {
-            AppInfoRow(label = "追踪项目", value = "18")
-            AppInfoRow(label = "可更新", value = "4", valueColor = Color(0xFF2563EB))
-            AppInfoRow(label = "预发行", value = "2", valueColor = Color(0xFFF59E0B))
         }
     }
 }
@@ -114,24 +114,26 @@ private fun AppOverviewCardPreviewLight() {
 @Preview(name = "Overview Dark", showBackground = true, backgroundColor = 0xFF111827)
 @Composable
 private fun AppOverviewCardPreviewDark() {
-    MiuixTheme(controller = ThemeController(ColorSchemeMode.Dark)) {
-        AppOverviewCard(
-            title = "系统参数与属性",
-            subtitle = "点击刷新系统表",
-            containerColor = Color(0xFF1F2937),
-            borderColor = Color(0xFF334155),
-            titleColor = Color.White,
-            subtitleColor = Color(0xFFCBD5E1),
-            headerEndActions = {
-                StatusPill(
-                    label = "缓存",
-                    color = Color(0xFFF59E0B)
-                )
+    CompositionLocalProvider(LocalTextCopyExpandedOverride provides false) {
+        MiuixTheme(controller = ThemeController(ColorSchemeMode.Dark)) {
+            AppOverviewCard(
+                title = "系统参数与属性",
+                subtitle = "点击刷新系统表",
+                containerColor = Color(0xFF1F2937),
+                borderColor = Color(0xFF334155),
+                titleColor = Color.White,
+                subtitleColor = Color(0xFFCBD5E1),
+                headerEndActions = {
+                    StatusPill(
+                        label = "缓存",
+                        color = Color(0xFFF59E0B)
+                    )
+                }
+            ) {
+                AppInfoRow(label = "System", value = "82 项", labelColor = Color(0xFFCBD5E1), valueColor = Color.White)
+                AppInfoRow(label = "Android", value = "31 项", labelColor = Color(0xFFCBD5E1), valueColor = Color.White)
+                AppInfoRow(label = "Java", value = "16 项", labelColor = Color(0xFFCBD5E1), valueColor = Color.White)
             }
-        ) {
-            AppInfoRow(label = "System", value = "82 项", labelColor = Color(0xFFCBD5E1), valueColor = Color.White)
-            AppInfoRow(label = "Android", value = "31 项", labelColor = Color(0xFFCBD5E1), valueColor = Color.White)
-            AppInfoRow(label = "Java", value = "16 项", labelColor = Color(0xFFCBD5E1), valueColor = Color.White)
         }
     }
 }
