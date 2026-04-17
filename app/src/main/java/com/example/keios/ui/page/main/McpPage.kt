@@ -536,7 +536,6 @@ fun McpPage(
                             text = stringResource(R.string.mcp_action_send_test_notification),
                             modifier = modifier,
                             textColor = MiuixTheme.colorScheme.primary,
-                            containerColor = Color.White,
                             onClick = {
                                 mcpServerManager.sendTestNotification()
                                     .onSuccess {

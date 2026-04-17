@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
@@ -44,6 +45,7 @@ import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.min
 
 @Composable
 fun GlassIconButton(
@@ -148,19 +150,21 @@ private fun GlassIconButtonContainer(
         variant = variant,
         blurRadius = blurRadius
     )
-    val showBorder = glass.showBorder
-    val containerOverlay = containerColor?.copy(
-        alpha = when (variant) {
-            GlassVariant.Bar -> 0.34f
-            GlassVariant.SheetInput -> if (isDark) 0.20f else 0.20f
-            GlassVariant.SheetAction -> if (isDark) 0.24f else 0.34f
-            GlassVariant.SheetPrimaryAction -> if (isDark) 0.18f else 0.18f
-            GlassVariant.Compact -> if (isDark) 0.22f else 0.28f
-            GlassVariant.SheetDangerAction -> if (isDark) 0.18f else 0.18f
-            GlassVariant.Floating -> if (isDark) 0.16f else 0.16f
-            GlassVariant.Content -> if (isDark) 0.26f else 0.32f
-        }
+    val surfaceOverlayColor = resolveDarkCapsuleOverlayColor(
+        defaultOverlayColor = glass.overlayColor,
+        isDark = isDark
     )
+    val surfaceHighlightAlpha = resolveDarkCapsuleHighlightAlpha(
+        defaultAlpha = glass.highlightAlpha,
+        isDark = isDark,
+        variant = variant
+    )
+    val resolvedContainerColor = sanitizeCapsuleContainerColor(
+        containerColor = containerColor,
+        isDark = isDark
+    )
+    val showBorder = glass.showBorder
+    val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by animateFloatAsState(
@@ -209,7 +213,7 @@ private fun GlassIconButtonContainer(
                             lens(glass.lensStart.toPx(), glass.lensEnd.toPx())
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = glass.highlightAlpha)
+                            Highlight.Default.copy(alpha = surfaceHighlightAlpha)
                         },
                         shadow = {
                             Shadow.Default.copy(
@@ -221,8 +225,8 @@ private fun GlassIconButtonContainer(
                                 drawRect(fallbackSurface.copy(alpha = glass.fallbackAlpha))
                             } else {
                                 drawRect(glass.baseColor)
-                                if (glass.overlayColor != Color.Transparent) {
-                                    drawRect(glass.overlayColor)
+                                if (surfaceOverlayColor != Color.Transparent) {
+                                    drawRect(surfaceOverlayColor)
                                 }
                             }
                             containerOverlay?.let { drawRect(it) }
@@ -289,18 +293,20 @@ fun GlassTextButton(
         variant = variant,
         blurRadius = blurRadius
     )
-    val containerOverlay = containerColor?.copy(
-        alpha = when (variant) {
-            GlassVariant.Bar -> 0.34f
-            GlassVariant.SheetInput -> if (isDark) 0.20f else 0.20f
-            GlassVariant.SheetAction -> if (isDark) 0.24f else 0.34f
-            GlassVariant.SheetPrimaryAction -> if (isDark) 0.18f else 0.18f
-            GlassVariant.Compact -> if (isDark) 0.22f else 0.28f
-            GlassVariant.SheetDangerAction -> if (isDark) 0.18f else 0.18f
-            GlassVariant.Floating -> if (isDark) 0.16f else 0.16f
-            GlassVariant.Content -> if (isDark) 0.26f else 0.32f
-        }
+    val surfaceOverlayColor = resolveDarkCapsuleOverlayColor(
+        defaultOverlayColor = glass.overlayColor,
+        isDark = isDark
     )
+    val surfaceHighlightAlpha = resolveDarkCapsuleHighlightAlpha(
+        defaultAlpha = glass.highlightAlpha,
+        isDark = isDark,
+        variant = variant
+    )
+    val resolvedContainerColor = sanitizeCapsuleContainerColor(
+        containerColor = containerColor,
+        isDark = isDark
+    )
+    val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val borderModifier = if (glass.showBorder) {
         Modifier.border(
             width = glass.borderWidth,
@@ -371,7 +377,7 @@ fun GlassTextButton(
                             lens(glass.lensStart.toPx(), glass.lensEnd.toPx())
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = glass.highlightAlpha)
+                            Highlight.Default.copy(alpha = surfaceHighlightAlpha)
                         },
                         shadow = {
                             Shadow.Default.copy(
@@ -383,8 +389,8 @@ fun GlassTextButton(
                                 drawRect(fallbackSurface.copy(alpha = glass.fallbackAlpha))
                             } else {
                                 drawRect(glass.baseColor)
-                                if (glass.overlayColor != Color.Transparent) {
-                                    drawRect(glass.overlayColor)
+                                if (surfaceOverlayColor != Color.Transparent) {
+                                    drawRect(surfaceOverlayColor)
                                 }
                             }
                             containerOverlay?.let { drawRect(it) }
@@ -432,4 +438,64 @@ fun GlassTextButton(
             }
         }
     }
+}
+
+private fun glassContainerOverlayAlpha(
+    variant: GlassVariant,
+    isDark: Boolean
+): Float {
+    return when (variant) {
+        GlassVariant.Bar -> 0.34f
+        GlassVariant.SheetInput -> 0.20f
+        GlassVariant.SheetAction -> if (isDark) 0.24f else 0.34f
+        GlassVariant.SheetPrimaryAction -> 0.18f
+        GlassVariant.Compact -> if (isDark) 0.22f else 0.28f
+        GlassVariant.SheetDangerAction -> 0.18f
+        GlassVariant.Floating -> 0.16f
+        GlassVariant.Content -> if (isDark) 0.26f else 0.32f
+    }
+}
+
+private fun resolveDarkCapsuleOverlayColor(
+    defaultOverlayColor: Color,
+    isDark: Boolean
+): Color {
+    if (!isDark) return defaultOverlayColor
+    if (defaultOverlayColor == Color.Transparent) return Color.Transparent
+    return if (defaultOverlayColor.isNearNeutralWhite()) Color.Transparent else defaultOverlayColor
+}
+
+private fun resolveDarkCapsuleHighlightAlpha(
+    defaultAlpha: Float,
+    isDark: Boolean,
+    variant: GlassVariant
+): Float {
+    if (!isDark) return defaultAlpha
+    val maxAlpha = when (variant) {
+        GlassVariant.Bar -> 0.40f
+        GlassVariant.SheetInput -> 0.42f
+        GlassVariant.SheetAction -> 0.44f
+        GlassVariant.SheetPrimaryAction -> 0.44f
+        GlassVariant.SheetDangerAction -> 0.44f
+        GlassVariant.Floating -> 0.46f
+        GlassVariant.Compact -> 0.36f
+        GlassVariant.Content -> 0.44f
+    }
+    return min(defaultAlpha, maxAlpha)
+}
+
+private fun sanitizeCapsuleContainerColor(
+    containerColor: Color?,
+    isDark: Boolean
+): Color? {
+    if (containerColor == null) return null
+    if (!isDark) return containerColor
+    return if (containerColor.isNearNeutralWhite()) null else containerColor
+}
+
+private fun Color.isNearNeutralWhite(): Boolean {
+    val maxChannel = maxOf(red, green, blue)
+    val minChannel = minOf(red, green, blue)
+    val chroma = maxChannel - minChannel
+    return luminance() >= 0.88f && chroma <= 0.08f
 }

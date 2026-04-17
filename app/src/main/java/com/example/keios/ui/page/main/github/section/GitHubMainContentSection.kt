@@ -868,7 +868,6 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         variant = GlassVariant.SheetAction,
                                                         textColor = actionButtonColor,
                                                         iconTint = actionButtonColor,
-                                                        containerColor = Color.White,
                                                         horizontalPadding = 10.dp,
                                                         textMaxLines = 1,
                                                         textOverflow = TextOverflow.Clip,
@@ -886,8 +885,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                         width = assetShareButtonSize,
                                                         height = assetShareButtonSize,
                                                         variant = GlassVariant.SheetAction,
-                                                        iconTint = actionButtonColor,
-                                                        containerColor = Color.White
+                                                        iconTint = actionButtonColor
                                                     )
                                                 }
                                             }
