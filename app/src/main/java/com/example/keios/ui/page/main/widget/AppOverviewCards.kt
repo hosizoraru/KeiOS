@@ -154,6 +154,8 @@ fun AppOverviewInlineMetricTile(
     containerColor: Color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.42f),
     borderColor: Color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.12f),
     valueMaxLines: Int = 2,
+    labelWeight: Float = 0.58f,
+    valueWeight: Float = 0.42f,
     emphasizedValue: Boolean = true
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -178,7 +180,7 @@ fun AppOverviewInlineMetricTile(
                 color = labelColor,
                 fontSize = AppTypographyTokens.Caption.fontSize,
                 lineHeight = AppTypographyTokens.Caption.lineHeight,
-                modifier = Modifier.weight(0.58f),
+                modifier = Modifier.weight(labelWeight),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -189,7 +191,7 @@ fun AppOverviewInlineMetricTile(
                 lineHeight = AppTypographyTokens.Body.lineHeight,
                 fontWeight = if (emphasizedValue) FontWeight.Medium else FontWeight.Normal,
                 textAlign = TextAlign.End,
-                modifier = Modifier.weight(0.42f),
+                modifier = Modifier.weight(valueWeight),
                 maxLines = valueMaxLines,
                 overflow = TextOverflow.Ellipsis
             )

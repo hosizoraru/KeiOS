@@ -188,7 +188,11 @@ fun McpPage(
     val overviewMetrics = listOf(
         McpOverviewMetric(
             label = context.getString(R.string.mcp_overview_label_service_short),
-            value = uiState.serverName.ifBlank { context.getString(R.string.mcp_default_service_name) }
+            value = uiState.serverName.ifBlank { context.getString(R.string.mcp_default_service_name) },
+            spanFullWidth = true,
+            valueMaxLines = 1,
+            labelWeight = 0.24f,
+            valueWeight = 0.76f
         ),
         McpOverviewMetric(
             label = context.getString(R.string.mcp_overview_label_endpoint_short),
@@ -425,6 +429,8 @@ fun McpPage(
                     bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding)
                 )
             ) {
+            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
+
             item {
                 AppOverviewCard(
                     title = stringResource(R.string.mcp_overview_title),
@@ -451,26 +457,41 @@ fun McpPage(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                     ) {
-                        overviewMetrics.chunked(2).forEach { pair ->
+                        var metricIndex = 0
+                        while (metricIndex < overviewMetrics.size) {
+                            val metric = overviewMetrics[metricIndex]
+                            if (metric.spanFullWidth) {
+                                McpOverviewMetricItem(
+                                    metric = metric,
+                                    labelColor = subtitleColor,
+                                    defaultValueColor = titleColor,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                metricIndex += 1
+                                continue
+                            }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.metricRowGap)
                             ) {
                                 McpOverviewMetricItem(
-                                    metric = pair[0],
+                                    metric = metric,
                                     labelColor = subtitleColor,
                                     defaultValueColor = titleColor,
                                     modifier = Modifier.weight(1f)
                                 )
-                                if (pair.size > 1) {
+                                val nextMetric = overviewMetrics.getOrNull(metricIndex + 1)
+                                if (nextMetric != null && !nextMetric.spanFullWidth) {
                                     McpOverviewMetricItem(
-                                        metric = pair[1],
+                                        metric = nextMetric,
                                         labelColor = subtitleColor,
                                         defaultValueColor = titleColor,
                                         modifier = Modifier.weight(1f)
                                     )
+                                    metricIndex += 2
                                 } else {
                                     Spacer(modifier = Modifier.weight(1f))
+                                    metricIndex += 1
                                 }
                             }
                         }
@@ -499,9 +520,11 @@ fun McpPage(
                     first = { modifier ->
                         GlassTextButton(
                             backdrop = contentBackdrop,
-                            variant = GlassVariant.Content,
+                            variant = GlassVariant.SheetAction,
                             text = stringResource(R.string.mcp_action_send_test_notification),
                             modifier = modifier,
+                            textColor = MiuixTheme.colorScheme.primary,
+                            containerColor = Color.White,
                             onClick = {
                                 mcpServerManager.sendTestNotification()
                                     .onSuccess {
@@ -907,7 +930,9 @@ private fun McpOverviewMetricItem(
         modifier = modifier.fillMaxWidth(),
         labelColor = labelColor,
         valueColor = metric.valueColor ?: defaultValueColor,
-        valueMaxLines = 2,
+        valueMaxLines = metric.valueMaxLines,
+        labelWeight = metric.labelWeight,
+        valueWeight = metric.valueWeight,
         emphasizedValue = true
     )
 }
@@ -915,7 +940,11 @@ private fun McpOverviewMetricItem(
 private data class McpOverviewMetric(
     val label: String,
     val value: String,
-    val valueColor: Color? = null
+    val valueColor: Color? = null,
+    val spanFullWidth: Boolean = false,
+    val valueMaxLines: Int = 2,
+    val labelWeight: Float = 0.58f,
+    val valueWeight: Float = 0.42f
 )
 
 @Composable
