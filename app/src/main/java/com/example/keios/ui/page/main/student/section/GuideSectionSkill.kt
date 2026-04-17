@@ -452,6 +452,15 @@ internal data class GuideSkillTypeMeta(
     val stateTags: List<String> = emptyList()
 )
 
+internal data class GuideSkillOwnedTypeMeta(
+    val ownerTag: String,
+    val skillType: String
+)
+
+private val guideSkillOwnedTypePattern = Regex(
+    """^(「[^」]{1,40}」|『[^』]{1,40}』|【[^】]{1,40}】|[A-Za-z0-9\u4E00-\u9FFF·・\-\s]{1,40})\s*的\s*(.+)$"""
+)
+
 internal fun parseGuideSkillTypeMeta(raw: String): GuideSkillTypeMeta {
     val cleaned = sanitizeGuideSkillLabelForDisplay(raw).trim()
     if (cleaned.isBlank()) return GuideSkillTypeMeta(baseType = "")
@@ -487,9 +496,18 @@ internal fun parseGuideSkillTypeMeta(raw: String): GuideSkillTypeMeta {
         .replace(Regex("""\s{2,}"""), " ")
         .trim(' ', '-', '_', '/', '／', '|', '｜')
         .trim()
-    val baseMeta = parseGuideSkillTypeToken(baseCandidate.ifBlank { cleaned })
+    val ownedTypeMeta = splitGuideOwnedSkillType(baseCandidate.ifBlank { cleaned })
+    val baseToken = ownedTypeMeta?.skillType ?: baseCandidate.ifBlank { cleaned }
+    val baseMeta = parseGuideSkillTypeToken(baseToken)
     if (variantIndex == null) {
         variantIndex = baseMeta.variantIndex
+    }
+    val ownerTag = ownedTypeMeta
+        ?.ownerTag
+        ?.let(::normalizeGuideSkillStateTag)
+        .orEmpty()
+    if (ownerTag.isNotBlank()) {
+        stateTags.add(0, ownerTag)
     }
 
     return GuideSkillTypeMeta(
@@ -499,6 +517,20 @@ internal fun parseGuideSkillTypeMeta(raw: String): GuideSkillTypeMeta {
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .distinct()
+    )
+}
+
+internal fun splitGuideOwnedSkillType(raw: String): GuideSkillOwnedTypeMeta? {
+    val normalized = raw.trim().replace(Regex("""\s+"""), " ")
+    if (normalized.isBlank()) return null
+    val match = guideSkillOwnedTypePattern.matchEntire(normalized) ?: return null
+    val ownerTag = match.groupValues.getOrNull(1)?.trim().orEmpty()
+    val skillType = match.groupValues.getOrNull(2)?.trim().orEmpty()
+    if (ownerTag.isBlank() || skillType.isBlank()) return null
+    if (!skillType.contains("技能")) return null
+    return GuideSkillOwnedTypeMeta(
+        ownerTag = ownerTag,
+        skillType = skillType
     )
 }
 
