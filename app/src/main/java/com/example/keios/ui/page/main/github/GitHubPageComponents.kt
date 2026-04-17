@@ -141,16 +141,22 @@ internal fun GitHubStrategyGuideCard(
         details = {
             Text(
                 text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString("；")),
-                color = MiuixTheme.colorScheme.onBackground
+                color = MiuixTheme.colorScheme.onBackground,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
             )
             Text(
                 text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString("；")),
-                color = MiuixTheme.colorScheme.onBackgroundVariant
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight
             )
             Text(
                 text = stringResource(R.string.github_strategy_guide_requirement, guide.requirement),
                 color = accent,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
             )
         }
     )
@@ -243,7 +249,9 @@ internal fun GitHubRecommendedTokenGuideCard(
         guide.notes.forEach { note ->
             Text(
                 text = note,
-                color = MiuixTheme.colorScheme.onBackgroundVariant
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight
             )
         }
     }
@@ -296,6 +304,8 @@ internal fun GitHubStrategyBenchmarkCard(
             Text(
                 text = result.failures.take(2).joinToString("\n"),
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -383,12 +393,16 @@ internal fun GitHubSelectedAppCard(
                     text = selectedApp.label,
                     color = MiuixTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = selectedApp.packageName,
                     color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -438,12 +452,16 @@ internal fun GitHubAppCandidateRow(
                     text = app.label,
                     color = accent,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = app.packageName,
                     color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -485,7 +503,12 @@ internal fun AppIcon(
                 .clip(ContinuousCapsule),
             contentAlignment = Alignment.Center
         ) {
-            Text(stringResource(R.string.github_strategy_app_fallback), color = MiuixTheme.colorScheme.primary)
+            Text(
+                text = stringResource(R.string.github_strategy_app_fallback),
+                color = MiuixTheme.colorScheme.primary,
+                fontSize = AppTypographyTokens.Caption.fontSize,
+                lineHeight = AppTypographyTokens.Caption.lineHeight
+            )
         }
     }
 }
