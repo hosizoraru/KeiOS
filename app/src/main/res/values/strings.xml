@@ -135,6 +135,8 @@
     <string name="mcp_overview_label_port_short">端口</string>
     <string name="mcp_overview_label_network_short">网络</string>
     <string name="mcp_overview_label_clients_short">客户端</string>
+    <string name="mcp_overview_token_badge">Token</string>
+    <string name="mcp_overview_clients_token_value">%1$d · %2$s</string>
     <string name="mcp_clients_count">%1$d 个</string>
     <string name="mcp_network_mode_lan_accessible">局域网可访问</string>
     <string name="mcp_network_mode_local_only_access">仅本机访问</string>

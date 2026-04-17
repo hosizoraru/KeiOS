@@ -88,6 +88,7 @@ import com.example.keios.ui.page.main.widget.SheetContentColumn
 import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
+import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.ui.page.main.widget.appPageBottomPaddingWithFloatingOverlay
@@ -185,6 +186,9 @@ fun McpPage(
             else -> "0.0.0.0"
         }
     }
+    val tokenPreview = remember(uiState.authToken) {
+        uiState.authToken.toMcpTokenPreview()
+    }.ifBlank { context.getString(R.string.common_na) }
     val overviewMetrics = listOf(
         McpOverviewMetric(
             label = context.getString(R.string.mcp_overview_label_service_short),
@@ -216,8 +220,17 @@ fun McpPage(
         ),
         McpOverviewMetric(
             label = context.getString(R.string.mcp_overview_label_clients_short),
-            value = uiState.connectedClients.toString(),
-            valueColor = if (uiState.connectedClients > 0) runningColor else subtitleColor
+            value = context.getString(
+                R.string.mcp_overview_clients_token_value,
+                uiState.connectedClients,
+                tokenPreview
+            ),
+            valueColor = titleColor,
+            valueBadge = context.getString(R.string.mcp_overview_token_badge),
+            valueBadgeColor = MiuixTheme.colorScheme.primary,
+            valueMaxLines = 1,
+            labelWeight = 0.36f,
+            valueWeight = 0.64f
         )
     )
     var portText by remember(uiState.port) { mutableStateOf(uiState.port.toString()) }
@@ -520,7 +533,7 @@ fun McpPage(
                     first = { modifier ->
                         GlassTextButton(
                             backdrop = contentBackdrop,
-                            variant = GlassVariant.SheetAction,
+                            variant = GlassVariant.SheetPrimaryAction,
                             text = stringResource(R.string.mcp_action_send_test_notification),
                             modifier = modifier,
                             textColor = MiuixTheme.colorScheme.primary,
@@ -924,28 +937,99 @@ private fun McpOverviewMetricItem(
     defaultValueColor: Color,
     modifier: Modifier = Modifier
 ) {
-    AppOverviewInlineMetricTile(
-        label = metric.label,
-        value = metric.value.ifBlank { stringResource(R.string.common_na) },
-        modifier = modifier.fillMaxWidth(),
-        labelColor = labelColor,
-        valueColor = metric.valueColor ?: defaultValueColor,
-        valueMaxLines = metric.valueMaxLines,
-        labelWeight = metric.labelWeight,
-        valueWeight = metric.valueWeight,
-        emphasizedValue = true
-    )
+    val valueText = metric.value.ifBlank { stringResource(R.string.common_na) }
+    if (metric.valueBadge.isNullOrBlank()) {
+        AppOverviewInlineMetricTile(
+            label = metric.label,
+            value = valueText,
+            modifier = modifier.fillMaxWidth(),
+            labelColor = labelColor,
+            valueColor = metric.valueColor ?: defaultValueColor,
+            valueMaxLines = metric.valueMaxLines,
+            labelWeight = metric.labelWeight,
+            valueWeight = metric.valueWeight,
+            emphasizedValue = true
+        )
+        return
+    }
+    val shape = RoundedCornerShape(12.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.42f),
+                shape = shape
+            )
+            .border(
+                width = 1.dp,
+                color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.12f),
+                shape = shape
+            )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = CardLayoutRhythm.metricCardHorizontalPadding,
+                    vertical = CardLayoutRhythm.metricCardVerticalPadding
+                ),
+            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = metric.label,
+                color = labelColor,
+                fontSize = AppTypographyTokens.Caption.fontSize,
+                lineHeight = AppTypographyTokens.Caption.lineHeight,
+                modifier = Modifier.weight(metric.labelWeight),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Row(
+                modifier = Modifier.weight(metric.valueWeight),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StatusPill(
+                    label = metric.valueBadge,
+                    color = metric.valueBadgeColor ?: MiuixTheme.colorScheme.primary,
+                    size = AppStatusPillSize.Compact
+                )
+                Text(
+                    text = valueText,
+                    color = metric.valueColor ?: defaultValueColor,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                    fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f),
+                    maxLines = metric.valueMaxLines,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
 }
 
 private data class McpOverviewMetric(
     val label: String,
     val value: String,
     val valueColor: Color? = null,
+    val valueBadge: String? = null,
+    val valueBadgeColor: Color? = null,
     val spanFullWidth: Boolean = false,
     val valueMaxLines: Int = 2,
     val labelWeight: Float = 0.58f,
     val valueWeight: Float = 0.42f
 )
+
+private fun String.toMcpTokenPreview(): String {
+    val token = trim()
+    if (token.isBlank()) return ""
+    if (token.length <= 8) return token
+    return "${token.take(4)}...${token.takeLast(4)}"
+}
 
 @Composable
 private fun McpSectionHeaderIcon(

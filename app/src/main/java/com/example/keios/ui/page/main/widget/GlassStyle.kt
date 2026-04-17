@@ -9,6 +9,7 @@ enum class GlassVariant {
     Compact,
     SheetInput,
     SheetAction,
+    SheetPrimaryAction,
     SheetDangerAction,
     Bar
 }
@@ -132,6 +133,38 @@ internal fun glassStyle(
                     baseColor = Color.White.copy(alpha = 0.78f),
                     overlayColor = Color(0xFFFFE1E6).copy(alpha = 0.48f),
                     borderColor = Color(0xFFFFD0D8).copy(alpha = 0.96f),
+                    borderWidth = 1.55.dp,
+                    highlightAlpha = 1f,
+                    shadowAlpha = 0.20f,
+                    fallbackAlpha = 1f,
+                    lensStart = 27.dp,
+                    lensEnd = 27.dp,
+                    showBorder = true
+                )
+            }
+        }
+        GlassVariant.SheetPrimaryAction -> {
+            val blur = blurRadius ?: if (isDark) 6.dp else 11.dp
+            if (isDark) {
+                GlassStyle(
+                    blur = blur,
+                    baseColor = Color(0xFF131A23).copy(alpha = 0.30f),
+                    overlayColor = Color(0xFF84B9F8).copy(alpha = 0.10f),
+                    borderColor = Color(0xFF99C7FF).copy(alpha = 0.24f),
+                    borderWidth = 1.dp,
+                    highlightAlpha = 0.68f,
+                    shadowAlpha = 0.12f,
+                    fallbackAlpha = 0.78f,
+                    lensStart = 27.dp,
+                    lensEnd = 27.dp,
+                    showBorder = true
+                )
+            } else {
+                GlassStyle(
+                    blur = blur,
+                    baseColor = Color.White.copy(alpha = 0.78f),
+                    overlayColor = Color(0xFFE3F1FF).copy(alpha = 0.46f),
+                    borderColor = Color(0xFFCEE4FF).copy(alpha = 0.96f),
                     borderWidth = 1.55.dp,
                     highlightAlpha = 1f,
                     shadowAlpha = 0.20f,
