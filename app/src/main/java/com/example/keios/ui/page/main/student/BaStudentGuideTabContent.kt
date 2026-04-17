@@ -3410,7 +3410,7 @@ private val profileStudentInfoFieldSpecs = listOf(
     ProfileFieldSpec("生日", listOf("生日")),
     ProfileFieldSpec("身高", listOf("身高")),
     ProfileFieldSpec("画师", listOf("画师", "原画师")),
-    ProfileFieldSpec("实装日期", listOf("实装日期")),
+    ProfileFieldSpec("实装日期", listOf("实装日期", "首次登场日期")),
     ProfileFieldSpec("声优", listOf("声优")),
     ProfileFieldSpec("角色考据", listOf("角色考据"), hideWhenEmpty = true),
     ProfileFieldSpec("设计", listOf("设计", "设计师"), hideWhenEmpty = true)
@@ -3678,6 +3678,9 @@ private fun isProfileSectionHeaderRow(row: BaGuideRow): Boolean {
 }
 
 private val galleryRelatedProfileLinkKeyTokens = listOf(
+    "影画相关链接",
+    "相关链接",
+    "来源链接",
     "个人账号主页",
     "账号主页",
     "个人主页",

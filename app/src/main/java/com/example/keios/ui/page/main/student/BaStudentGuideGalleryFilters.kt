@@ -161,7 +161,11 @@ internal fun isMemoryHallFileGalleryItem(item: BaGuideGalleryItem): Boolean {
 
 internal fun isExpressionGalleryItem(item: BaGuideGalleryItem): Boolean {
     val title = normalizeGalleryTitle(item.title)
-    return title.startsWith("角色表情")
+    if (title.startsWith("角色表情")) return true
+    if (title.startsWith("表情")) return true
+    if (title == "差分") return true
+    if (title.contains("表情差分")) return true
+    return title.contains("差分")
 }
 
 internal fun isMemoryHallGalleryItem(item: BaGuideGalleryItem): Boolean {
@@ -230,11 +234,11 @@ internal fun isPreviewVideoGalleryItem(item: BaGuideGalleryItem): Boolean {
 
 internal fun expressionGalleryOrder(title: String, fallback: Int): Int {
     val normalized = normalizeGalleryTitle(title)
-    if (normalized == "角色表情") return 1
-    return Regex("""角色表情(\d+)""")
+    if (normalized == "角色表情" || normalized == "表情" || normalized == "差分") return 1
+    val numeric = Regex("""(\d+)(?!.*\d)""")
         .find(normalized)
         ?.groupValues
         ?.getOrNull(1)
         ?.toIntOrNull()
-        ?: fallback
+    return numeric ?: fallback
 }

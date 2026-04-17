@@ -1124,6 +1124,106 @@ private fun extractAudioUrlsFromRaw(sourceUrl: String, raw: String): List<String
         .toList()
 }
 
+private fun extractAudioUrlsFromAny(sourceUrl: String, any: Any?, depth: Int = 0): List<String> {
+    if (any == null || depth > 6) return emptyList()
+    return when (any) {
+        is String -> extractAudioUrlsFromRaw(sourceUrl, any)
+
+        is JSONObject -> {
+            val result = mutableListOf<String>()
+            val keys = any.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                result += extractAudioUrlsFromAny(sourceUrl, any.opt(key), depth + 1)
+            }
+            result.distinct()
+        }
+
+        is JSONArray -> {
+            val result = mutableListOf<String>()
+            for (i in 0 until any.length()) {
+                result += extractAudioUrlsFromAny(sourceUrl, any.opt(i), depth + 1)
+            }
+            result.distinct()
+        }
+
+        else -> emptyList()
+    }
+}
+
+private fun looksLikeBinaryMediaUrl(raw: String): Boolean {
+    val value = raw.trim().lowercase()
+    if (value.isBlank()) return false
+    return Regex("""\.(png|jpg|jpeg|webp|gif|bmp|svg|avif|mp4|webm|mov|m3u8|mp3|ogg|wav|m4a|aac|zip|rar|7z|apk)(\?.*)?(#.*)?$""")
+        .containsMatchIn(value)
+}
+
+private fun normalizeWebUrlCandidate(raw: String): String {
+    val value = raw.trim()
+    if (value.isBlank()) return ""
+    val normalized = when {
+        value.startsWith("http://", ignoreCase = true) ||
+            value.startsWith("https://", ignoreCase = true) -> value
+        value.startsWith("//") -> "https:$value"
+        value.startsWith("/") -> normalizeGuideUrl(value)
+        value.startsWith("www.", ignoreCase = true) -> "https://$value"
+        else -> normalizeGuideUrl(value)
+    }.trim()
+    if (!normalized.startsWith("http://", ignoreCase = true) &&
+        !normalized.startsWith("https://", ignoreCase = true)
+    ) {
+        return ""
+    }
+    if (looksLikeBinaryMediaUrl(normalized)) return ""
+    val host = runCatching { Uri.parse(normalized).host.orEmpty().lowercase() }.getOrDefault("")
+    if (host.isBlank()) return ""
+    return normalized
+}
+
+private fun extractWebUrlsFromAny(sourceUrl: String, any: Any?, depth: Int = 0): List<String> {
+    if (any == null || depth > 8) return emptyList()
+    return when (any) {
+        is String -> {
+            val direct = normalizeWebUrlCandidate(any)
+            val embedded = Regex("""https?://[^\s"'<>]+|//[^\s"'<>]+""", RegexOption.IGNORE_CASE)
+                .findAll(any)
+                .mapNotNull { match ->
+                    normalizeWebUrlCandidate(match.value)
+                }
+                .toList()
+            buildList {
+                if (direct.isNotBlank()) add(direct)
+                addAll(embedded)
+            }.distinct()
+        }
+
+        is JSONObject -> {
+            val result = mutableListOf<String>()
+            val directKeys = listOf("url", "href", "jumpHref", "jump_url", "link")
+            directKeys.forEach { key ->
+                val normalized = normalizeWebUrlCandidate(any.optString(key))
+                if (normalized.isNotBlank()) result += normalized
+            }
+            val keys = any.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                result += extractWebUrlsFromAny(sourceUrl, any.opt(key), depth + 1)
+            }
+            result.distinct()
+        }
+
+        is JSONArray -> {
+            val result = mutableListOf<String>()
+            for (i in 0 until any.length()) {
+                result += extractWebUrlsFromAny(sourceUrl, any.opt(i), depth + 1)
+            }
+            result.distinct()
+        }
+
+        else -> emptyList()
+    }
+}
+
 private fun normalizeVoiceLanguageLabelRaw(raw: String): String {
     return stripHtml(raw)
         .replace(" ", "")
@@ -1742,8 +1842,678 @@ private fun extractGuideTabIcons(root: JSONObject, sourceUrl: String): Map<Guide
     }
 }
 
+private data class ArrayVoiceEntryAccumulator(
+    val section: String,
+    val title: String,
+    val order: Int,
+    val linesByLanguage: LinkedHashMap<String, String> = linkedMapOf(),
+    val audioByLanguage: LinkedHashMap<String, String> = linkedMapOf()
+)
+
+private fun looksLikeMediaTokenText(raw: String): Boolean {
+    val value = raw.trim()
+    if (value.isBlank()) return false
+    val lower = value.lowercase()
+    if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("//")) return true
+    if (lower.contains("cdnimg") || lower.contains("gamekee.com/")) return true
+    return Regex("""\.(png|jpg|jpeg|webp|gif|bmp|svg|avif|mp4|webm|mov|m3u8|mp3|ogg|wav|m4a|aac)(\?.*)?(#.*)?$""")
+        .containsMatchIn(lower)
+}
+
+private fun extractEditorTextLines(any: Any?, depth: Int = 0): List<String> {
+    if (any == null || depth > 10) return emptyList()
+    return when (any) {
+        is String -> {
+            val plain = stripHtml(any)
+            if (plain.isBlank() || looksLikeMediaTokenText(plain)) {
+                emptyList()
+            } else {
+                listOf(plain)
+            }
+        }
+
+        is JSONObject -> {
+            val lines = mutableListOf<String>()
+            val direct = any.opt("text")
+            if (direct is String) {
+                val text = stripHtml(direct)
+                if (text.isNotBlank()) lines += text
+            }
+            val richKeys = listOf("children", "data", "content", "title", "name", "label", "desc", "value")
+            richKeys.forEach { key ->
+                if (!any.has(key)) return@forEach
+                lines += extractEditorTextLines(any.opt(key), depth + 1)
+            }
+            lines
+        }
+
+        is JSONArray -> {
+            buildList {
+                for (i in 0 until any.length()) {
+                    addAll(extractEditorTextLines(any.opt(i), depth + 1))
+                }
+            }
+        }
+
+        else -> emptyList()
+    }
+}
+
+private fun extractEditorText(any: Any?, separator: String = " "): String {
+    val lines = extractEditorTextLines(any)
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    if (lines.isEmpty()) return ""
+    return lines.joinToString(separator).trim()
+}
+
+private fun normalizeArrayGalleryTitle(rawTitle: String): String {
+    val title = stripHtml(rawTitle).replace(Regex("\\s+"), "").trim()
+    if (title.isBlank()) return "影画"
+    if (title == "表情包" || title.startsWith("表情包(") || title.startsWith("表情包（")) {
+        return title.replace("表情包", "角色表情包")
+    }
+    if (title == "差分" || title == "表情差分") return "角色表情"
+    if (title.startsWith("表情")) {
+        val suffix = title.removePrefix("表情").trim()
+        return "角色表情$suffix"
+    }
+    if (title.contains("表情差分")) {
+        return title.replace("表情差分", "角色表情")
+    }
+    if (title.contains("差分")) {
+        val context = title
+            .replace("差分", "")
+            .trim('（', '）', '(', ')', '-', '·', ' ')
+        if (context.isBlank()) return "角色表情"
+        return "角色表情（$context）"
+    }
+    return title
+}
+
+private fun normalizeArrayProfileKey(rawKey: String): String {
+    val key = stripHtml(rawKey).trim()
+    if (key.isBlank()) return ""
+    return when (key) {
+        "所属" -> "所属学园"
+        "学院" -> "所属学园"
+        "社团" -> "所属社团"
+        "兴趣" -> "兴趣爱好"
+        "兴趣爱好（补充）" -> "兴趣爱好"
+        "其他名字" -> "其他译名"
+        "其他称呼" -> "其他译名"
+        "译名" -> "其他译名"
+        "国际服译名" -> "其他译名"
+        "其他翻译" -> "其他译名"
+        "黑话(别名)" -> "其他译名"
+        "日语全名" -> "假名注音"
+        else -> key
+    }
+}
+
+private fun parseVoiceCvByLanguageFromRaw(raw: String): Map<String, String> {
+    if (raw.isBlank()) return emptyMap()
+    val normalized = stripHtml(raw)
+        .replace('｜', '|')
+        .replace('：', ':')
+        .replace('，', ',')
+        .replace('；', ';')
+        .replace('\u3000', ' ')
+        .trim()
+    if (normalized.isBlank()) return emptyMap()
+
+    val labelPattern = "日配|日语|日|jp|jpn|中配|中|cn|国语|国配|中文|韩配|韩|kr|kor|korean|官翻|官中|官方翻译|官方中文"
+    val pairRegex = Regex(
+        """(?i)($labelPattern)\s*(?:[\|:：\-－—])\s*([\s\S]*?)(?=(?:\s*[,，;；/／\n]\s*|\s+)(?:$labelPattern)\s*(?:[\|:：\-－—])|$)"""
+    )
+    val out = linkedMapOf<String, String>()
+
+    fun assign(labelRaw: String, valueRaw: String) {
+        val label = canonicalVoiceLanguageLabel(labelRaw)
+        if (label.isBlank()) return
+        val value = valueRaw.trim()
+            .trim(',', '，', ';', '；', '|', '/', '／')
+            .trim()
+        if (value.isBlank()) return
+        if (out[label].isNullOrBlank()) {
+            out[label] = value
+        }
+    }
+
+    pairRegex.findAll(normalized).forEach { match ->
+        val label = match.groupValues.getOrNull(1).orEmpty()
+        val value = match.groupValues.getOrNull(2).orEmpty()
+        assign(label, value)
+    }
+
+    if (out.isEmpty() && normalized.isNotBlank()) {
+        out["日配"] = normalized
+    }
+
+    if (out.isEmpty()) return emptyMap()
+    val ordered = linkedMapOf<String, String>()
+    listOf("日配", "中配", "韩配", "官翻").forEach { key ->
+        out[key]?.takeIf { it.isNotBlank() }?.let { ordered[key] = it }
+    }
+    out.forEach { (key, value) ->
+        if (key !in ordered && value.isNotBlank()) {
+            ordered[key] = value
+        }
+    }
+    return ordered
+}
+
+private fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String): GuideDetailExtract {
+    if (raw.isBlank()) return GuideDetailExtract()
+    return runCatching {
+        val root = JSONArray(raw)
+        val profileRows = mutableListOf<BaGuideRow>()
+        val galleryItems = mutableListOf<BaGuideGalleryItem>()
+        val stats = mutableListOf<Pair<String, String>>()
+        val voiceAccumulators = linkedMapOf<String, ArrayVoiceEntryAccumulator>()
+        val rawVoiceLanguageHeaders = mutableListOf<String>()
+        val summaryCandidates = mutableListOf<String>()
+
+        var firstImage = ""
+        var tabGalleryIconUrl = ""
+        var summary = ""
+        var voiceOrder = 0
+
+        fun pushProfileRow(
+            key: String,
+            value: String,
+            imageUrl: String = "",
+            imageUrls: List<String> = emptyList()
+        ) {
+            val normalizedKey = normalizeArrayProfileKey(key)
+            val normalizedValue = value.trim()
+            val normalizedImageUrl = normalizeImageUrl(sourceUrl, imageUrl)
+            val normalizedImages = buildList {
+                if (normalizedImageUrl.isNotBlank()) add(normalizedImageUrl)
+                imageUrls.forEach { rawImage ->
+                    val normalized = normalizeImageUrl(sourceUrl, rawImage)
+                    if (normalized.isNotBlank()) add(normalized)
+                }
+            }.filter { looksLikeImageUrl(it) }.distinct()
+            if (normalizedKey.isBlank() && normalizedValue.isBlank() && normalizedImages.isEmpty()) return
+            profileRows += BaGuideRow(
+                key = normalizedKey.ifBlank { "信息" },
+                value = normalizedValue,
+                imageUrl = normalizedImages.firstOrNull().orEmpty(),
+                imageUrls = normalizedImages
+            )
+            if (normalizedKey.isNotBlank() &&
+                isMeaningfulGuideRowValue(normalizedValue) &&
+                stats.none { it.first == normalizedKey }
+            ) {
+                stats += normalizedKey to normalizedValue
+                if (summaryCandidates.size < 4) {
+                    summaryCandidates += "$normalizedKey：$normalizedValue"
+                }
+            }
+        }
+
+        fun pushGalleryItems(
+            rawTitle: String,
+            rawAny: Any?
+        ) {
+            val title = normalizeArrayGalleryTitle(rawTitle)
+            val imageUrls = extractImageUrlsFromAny(sourceUrl, rawAny)
+            val videoUrls = extractVideoUrlsFromAny(sourceUrl, rawAny)
+            val audioUrls = extractAudioUrlsFromAny(sourceUrl, rawAny)
+
+            if (firstImage.isBlank()) {
+                firstImage = imageUrls.firstOrNull().orEmpty()
+            }
+            if (tabGalleryIconUrl.isBlank()) {
+                tabGalleryIconUrl = imageUrls.firstOrNull().orEmpty()
+            }
+
+            if (imageUrls.isNotEmpty()) {
+                galleryItems += imageUrls.mapIndexed { index, url ->
+                    BaGuideGalleryItem(
+                        title = if (imageUrls.size > 1) "$title ${index + 1}" else title,
+                        imageUrl = url,
+                        mediaType = "image",
+                        mediaUrl = url
+                    )
+                }
+            }
+            if (videoUrls.isNotEmpty()) {
+                galleryItems += videoUrls.mapIndexed { index, url ->
+                    BaGuideGalleryItem(
+                        title = if (videoUrls.size > 1) "$title ${index + 1}" else title,
+                        imageUrl = imageUrls.firstOrNull().orEmpty(),
+                        mediaType = "video",
+                        mediaUrl = url
+                    )
+                }
+            }
+            if (audioUrls.isNotEmpty()) {
+                galleryItems += audioUrls.mapIndexed { index, url ->
+                    BaGuideGalleryItem(
+                        title = if (audioUrls.size > 1) "$title ${index + 1}" else title,
+                        imageUrl = imageUrls.firstOrNull().orEmpty(),
+                        mediaType = "audio",
+                        mediaUrl = url
+                    )
+                }
+            }
+        }
+
+        fun ensureVoiceHeader(rawLabel: String): String {
+            val canonical = canonicalVoiceLanguageLabel(rawLabel).ifBlank { stripHtml(rawLabel).trim() }
+            if (canonical.isNotBlank() && canonical != "官翻" && canonical !in rawVoiceLanguageHeaders) {
+                rawVoiceLanguageHeaders += canonical
+            }
+            return canonical
+        }
+
+        fun sanitizeVoiceSection(rawTitle: String, fallback: String): String {
+            val title = stripHtml(rawTitle).trim()
+            if (title.isBlank()) return fallback
+            if (title.contains("分组标题")) return fallback
+            return title
+        }
+
+        fun processAudioInfo(node: JSONObject) {
+            val data = node.optJSONObject("data") ?: return
+            val voiceRootTitle = extractEditorText(data.opt("title")).ifBlank { "语音台词" }
+            val tabKeyToLabel = linkedMapOf<String, String>()
+
+            val tabs = data.optJSONArray("tabs")
+            if (tabs != null) {
+                for (i in 0 until tabs.length()) {
+                    val tab = tabs.optJSONObject(i) ?: continue
+                    val key = tab.optString("key").trim()
+                    if (key.isBlank()) continue
+                    val label = ensureVoiceHeader(extractEditorText(tab.opt("label")).ifBlank { "语言${i + 1}" })
+                    if (label.isNotBlank()) {
+                        tabKeyToLabel[key] = label
+                    }
+                }
+            }
+
+            val list = data.optJSONArray("list") ?: return
+            for (groupIndex in 0 until list.length()) {
+                val group = list.optJSONObject(groupIndex) ?: continue
+                val filterTabKey = group.optString("filterTabKey").trim()
+                val language = tabKeyToLabel[filterTabKey]
+                    ?: ensureVoiceHeader(extractEditorText(group.opt("label")))
+                        .ifBlank { ensureVoiceHeader("语言${groupIndex + 1}") }
+                val section = sanitizeVoiceSection(
+                    rawTitle = extractEditorText(group.opt("title")),
+                    fallback = voiceRootTitle
+                )
+
+                val content = group.optJSONArray("content") ?: continue
+                for (contentIndex in 0 until content.length()) {
+                    val item = content.optJSONObject(contentIndex) ?: continue
+                    val title = extractEditorText(item.opt("name"))
+                        .ifBlank { extractEditorText(item.opt("title")) }
+                        .ifBlank { "语音${contentIndex + 1}" }
+                    val descLines = extractEditorTextLines(item.opt("desc"))
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                    val primaryLine = descLines.firstOrNull().orEmpty()
+                    val officialLine = descLines.drop(1).firstOrNull().orEmpty()
+                    val audioUrl = buildList {
+                        val rawAudio = normalizeMediaUrl(sourceUrl, item.optString("audio"))
+                        if (isAudioUrl(rawAudio)) add(rawAudio)
+                        addAll(extractAudioUrlsFromAny(sourceUrl, item))
+                    }.firstOrNull { it.isNotBlank() }
+                        .orEmpty()
+
+                    val key = "$section|$title"
+                    val accumulator = voiceAccumulators.getOrPut(key) {
+                        ArrayVoiceEntryAccumulator(
+                            section = section,
+                            title = title,
+                            order = voiceOrder++
+                        )
+                    }
+                    if (language.isNotBlank() && primaryLine.isNotBlank() && accumulator.linesByLanguage[language].isNullOrBlank()) {
+                        accumulator.linesByLanguage[language] = primaryLine
+                    }
+                    if (language.isNotBlank() && audioUrl.isNotBlank() && accumulator.audioByLanguage[language].isNullOrBlank()) {
+                        accumulator.audioByLanguage[language] = audioUrl
+                    }
+                    if (officialLine.isNotBlank() && accumulator.linesByLanguage["官翻"].isNullOrBlank()) {
+                        accumulator.linesByLanguage["官翻"] = officialLine
+                    }
+                }
+            }
+        }
+
+        fun processCharacterProfile(node: JSONObject) {
+            val data = node.optJSONObject("data") ?: return
+            val profileName = extractEditorText(data.opt("name")).trim()
+            if (profileName.isNotBlank()) {
+                pushProfileRow(
+                    key = "角色名称",
+                    value = profileName
+                )
+            }
+
+            val attrList = data.optJSONArray("attrList")
+            if (attrList != null) {
+                for (index in 0 until attrList.length()) {
+                    val item = attrList.optJSONObject(index) ?: continue
+                    val key = extractEditorText(item.opt("title")).trim()
+                    val value = extractEditorText(item.opt("content"), separator = " / ").trim()
+                    val icons = extractImageUrlsFromAny(sourceUrl, item.opt("content"))
+                    pushProfileRow(
+                        key = key,
+                        value = value,
+                        imageUrl = icons.firstOrNull().orEmpty(),
+                        imageUrls = icons
+                    )
+                }
+            }
+
+            val descTitle = extractEditorText(data.opt("descTitle")).ifBlank { "个人简介" }
+            val descLines = extractEditorTextLines(data.opt("desc"))
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+            val descValue = descLines.joinToString("\n").trim()
+            if (descValue.isNotBlank()) {
+                pushProfileRow(
+                    key = descTitle,
+                    value = descValue
+                )
+                if (summary.isBlank()) {
+                    summary = descLines.take(2).joinToString(" ")
+                }
+            }
+
+            val images = buildList {
+                addAll(extractImageUrlsFromAny(sourceUrl, data.opt("imageList")))
+                addAll(extractImageUrlsFromAny(sourceUrl, data.opt("imagesList")))
+            }.distinct()
+            if (images.isNotEmpty()) {
+                if (firstImage.isBlank()) firstImage = images.first()
+                if (tabGalleryIconUrl.isBlank()) tabGalleryIconUrl = images.first()
+                galleryItems += images.mapIndexed { index, url ->
+                    BaGuideGalleryItem(
+                        title = if (images.size > 1) "立绘 ${index + 1}" else "立绘",
+                        imageUrl = url,
+                        mediaType = "image",
+                        mediaUrl = url
+                    )
+                }
+            }
+        }
+
+        fun processRelationInfo(node: JSONObject) {
+            val data = node.optJSONObject("data") ?: return
+            val list = data.optJSONArray("list") ?: return
+            for (groupIndex in 0 until list.length()) {
+                val group = list.optJSONObject(groupIndex) ?: continue
+                val relationTitle = extractEditorText(group.opt("title")).ifBlank { "相关人物" }
+                if (relationTitle.contains("同名")) {
+                    pushProfileRow(
+                        key = "相关同名角色",
+                        value = relationTitle
+                    )
+                }
+                val content = group.optJSONArray("content") ?: continue
+                for (i in 0 until content.length()) {
+                    val item = content.optJSONObject(i) ?: continue
+                    val name = extractEditorText(item.opt("name")).trim()
+                    val link = normalizeGuideUrl(item.optString("jumpHref")).trim()
+                    val avatar = normalizeImageUrl(sourceUrl, item.optString("avatar")).trim()
+                    val value = buildString {
+                        if (name.isNotBlank()) append(name)
+                        if (link.isNotBlank()) {
+                            if (isNotEmpty()) append(" / ")
+                            append(link)
+                        }
+                    }.trim()
+                    if (value.isBlank() && avatar.isBlank()) continue
+                    pushProfileRow(
+                        key = "同名角色名称",
+                        value = value,
+                        imageUrl = avatar,
+                        imageUrls = listOf(avatar)
+                    )
+                }
+            }
+        }
+
+        fun processWeaponInfo(node: JSONObject) {
+            val data = node.optJSONObject("data") ?: return
+            val title = extractEditorText(data.opt("title")).trim()
+            if (!title.contains("巧克力")) return
+            val icon = normalizeImageUrl(sourceUrl, data.optString("icon")).trim()
+            val name = extractEditorText(data.opt("name"), separator = " / ").trim()
+            val desc = extractEditorText(data.opt("desc"), separator = " / ").trim()
+            if (name.isNotBlank() || icon.isNotBlank()) {
+                pushProfileRow(
+                    key = "巧克力",
+                    value = name.ifBlank { title },
+                    imageUrl = icon,
+                    imageUrls = listOf(icon)
+                )
+            }
+            if (desc.isNotBlank()) {
+                pushProfileRow(
+                    key = "巧克力简介",
+                    value = desc
+                )
+            }
+            if (icon.isNotBlank() && looksLikeImageUrl(icon)) {
+                galleryItems += BaGuideGalleryItem(
+                    title = "巧克力图",
+                    imageUrl = icon,
+                    mediaType = "image",
+                    mediaUrl = icon
+                )
+            }
+        }
+
+        fun processTabInfo(node: JSONObject) {
+            val data = node.optJSONObject("data") ?: return
+            val tabList = data.optJSONArray("tabList") ?: return
+            for (i in 0 until tabList.length()) {
+                val tab = tabList.optJSONObject(i) ?: continue
+                val title = extractEditorText(tab.opt("title"))
+                    .ifBlank { tab.optString("title").trim() }
+                    .ifBlank { "影画" }
+                val galleryRaw = tab.opt("content") ?: tab
+                pushGalleryItems(
+                    rawTitle = title,
+                    rawAny = galleryRaw
+                )
+                val links = buildList {
+                    addAll(extractWebUrlsFromAny(sourceUrl, tab.opt("topDesc")))
+                    addAll(extractWebUrlsFromAny(sourceUrl, tab.opt("bottomDesc")))
+                    addAll(extractWebUrlsFromAny(sourceUrl, tab.opt("desc")))
+                    val content = tab.opt("content")
+                    when (content) {
+                        is JSONArray -> if (content.length() in 1..8) {
+                            addAll(extractWebUrlsFromAny(sourceUrl, content))
+                        }
+
+                        else -> addAll(extractWebUrlsFromAny(sourceUrl, content))
+                    }
+                }.distinct()
+                links.forEach { link ->
+                    pushProfileRow(
+                        key = "影画相关链接",
+                        value = if (title.isNotBlank()) "$title / $link" else link
+                    )
+                }
+            }
+        }
+
+        fun walk(any: Any?) {
+            when (any) {
+                is JSONObject -> {
+                    when (any.optString("type").trim()) {
+                        "tab-info" -> processTabInfo(any)
+                        "character-profile" -> processCharacterProfile(any)
+                        "relation-info" -> processRelationInfo(any)
+                        "weapon-info" -> processWeaponInfo(any)
+                        "audio-info" -> processAudioInfo(any)
+                    }
+                    val keys = any.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        walk(any.opt(key))
+                    }
+                }
+
+                is JSONArray -> {
+                    for (i in 0 until any.length()) {
+                        walk(any.opt(i))
+                    }
+                }
+            }
+        }
+
+        walk(root)
+
+        val cvFromProfile = profileRows.asSequence()
+            .firstOrNull { row -> row.key.contains("声优") && row.value.isNotBlank() }
+            ?.value
+            .orEmpty()
+        val voiceCvByLanguage = parseVoiceCvByLanguageFromRaw(cvFromProfile)
+
+        val rawVoiceEntries = voiceAccumulators.values
+            .sortedBy { it.order }
+            .map { acc ->
+                val linePairs = sortVoiceLinePairsForDisplay(
+                    acc.linesByLanguage.map { it.key to it.value }
+                )
+                val lineHeaders = linePairs.map { it.first }
+                val lines = linePairs.map { it.second }
+                val audioUrls = lineHeaders.map { label ->
+                    acc.audioByLanguage[label].orEmpty()
+                }
+                BaGuideVoiceEntry(
+                    section = acc.section,
+                    title = acc.title,
+                    lineHeaders = lineHeaders,
+                    lines = lines,
+                    audioUrls = audioUrls,
+                    audioUrl = audioUrls.firstOrNull { it.isNotBlank() }
+                        ?: acc.audioByLanguage.values.firstOrNull { it.isNotBlank() }
+                        .orEmpty()
+                )
+            }
+            .filter { entry ->
+                entry.lines.any { it.isNotBlank() } || entry.audioUrls.any { it.isNotBlank() }
+            }
+
+        val voiceLanguageHeaders = mergeVoiceLanguageHeaders(
+            rawHeaders = rawVoiceLanguageHeaders,
+            voiceEntries = rawVoiceEntries,
+            cvByLanguage = voiceCvByLanguage
+        )
+        val voiceEntries = normalizeVoiceEntriesWithHeaderCount(
+            entries = rawVoiceEntries,
+            headerCount = voiceLanguageHeaders.size
+        )
+        val (voiceCvJp, voiceCvCn) = deriveVoiceCvLegacyFields(voiceCvByLanguage)
+
+        fun normalizedGalleryTitle(rawTitle: String): String = rawTitle.replace(" ", "").trim()
+
+        fun galleryCategoryOrder(rawTitle: String): Int {
+            val title = normalizedGalleryTitle(rawTitle)
+            return when {
+                title.startsWith("立绘") -> 0
+                title.startsWith("回忆大厅") && !title.startsWith("回忆大厅视频") -> 1
+                title.startsWith("回忆大厅视频") -> 2
+                title.startsWith("BGM") -> 3
+                title.startsWith("官方介绍") -> 4
+                title.startsWith("本家画") -> 5
+                title.startsWith("官方衍生") -> 6
+                title.startsWith("TV动画设定图") -> 7
+                title.startsWith("设定集") -> 8
+                isExpressionGalleryItem(BaGuideGalleryItem(title = title, imageUrl = "", mediaUrl = "")) -> 9
+                title.startsWith("互动家具") -> 10
+                title.startsWith("情人节巧克力") -> 11
+                title.startsWith("巧克力图") -> 12
+                title.startsWith("PV") -> 13
+                title.startsWith("角色演示") -> 14
+                title.startsWith("Live") -> 15
+                else -> 99
+            }
+        }
+
+        fun galleryTitleGroupKey(rawTitle: String): String {
+            val normalized = normalizedGalleryTitle(rawTitle)
+            return normalized.replace(Regex("""\d+$"""), "")
+        }
+
+        fun galleryItemIndex(rawTitle: String): Int {
+            return Regex("""(\d+)(?!.*\d)""")
+                .find(normalizedGalleryTitle(rawTitle))
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.toIntOrNull()
+                ?: Int.MAX_VALUE
+        }
+
+        val distinctGallery = galleryItems
+            .filter {
+                val media = it.mediaUrl.ifBlank { it.imageUrl }
+                media.isNotBlank()
+            }
+            .distinctBy {
+                val media = it.mediaUrl.ifBlank { it.imageUrl }
+                "${it.mediaType}|$media"
+            }
+            .sortedWith(
+                compareBy<BaGuideGalleryItem> { galleryCategoryOrder(it.title) }
+                    .thenBy { galleryTitleGroupKey(it.title) }
+                    .thenBy { galleryItemIndex(it.title) }
+            )
+            .take(100)
+
+        val mergedProfileRows = profileRows
+            .distinctBy { row ->
+                val packedImages = row.imageUrls.joinToString("|")
+                "${row.key.trim()}|${row.value.trim()}|${row.imageUrl.trim()}|$packedImages"
+            }
+            .take(180)
+
+        val resolvedFirstImage = firstImage
+            .ifBlank { distinctGallery.firstOrNull { it.imageUrl.isNotBlank() }?.imageUrl.orEmpty() }
+        val resolvedSummary = summary
+            .ifBlank { summaryCandidates.joinToString(" · ") }
+            .ifBlank { "NPC及卫星图鉴条目数据较少，已展示可用信息。" }
+
+        GuideDetailExtract(
+            imageUrl = resolvedFirstImage,
+            summary = resolvedSummary,
+            stats = stats.take(14),
+            skillRows = emptyList(),
+            profileRows = mergedProfileRows,
+            galleryItems = distinctGallery,
+            growthRows = emptyList(),
+            simulateRows = emptyList(),
+            voiceRows = emptyList(),
+            voiceCvJp = voiceCvJp,
+            voiceCvCn = voiceCvCn,
+            voiceCvByLanguage = voiceCvByLanguage,
+            voiceLanguageHeaders = voiceLanguageHeaders,
+            voiceEntries = voiceEntries,
+            tabSkillIconUrl = "",
+            tabProfileIconUrl = resolvedFirstImage,
+            tabVoiceIconUrl = "",
+            tabGalleryIconUrl = tabGalleryIconUrl.ifBlank { resolvedFirstImage },
+            tabSimulateIconUrl = ""
+        )
+    }.getOrDefault(GuideDetailExtract())
+}
+
 private fun parseGuideDetailFromContentJson(raw: String, sourceUrl: String): GuideDetailExtract {
     if (raw.isBlank()) return GuideDetailExtract()
+    val trimmed = raw.trimStart()
+    if (trimmed.startsWith("[")) {
+        return parseGuideDetailFromArrayContentJson(trimmed, sourceUrl)
+    }
     return runCatching {
         val root = JSONObject(raw)
         val tabIcons = extractGuideTabIcons(root, sourceUrl)

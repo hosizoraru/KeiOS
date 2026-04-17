@@ -1335,7 +1335,24 @@ fun GuideGalleryExpressionCardItem(
         }
     }
     val optionLabels = remember(items) {
-        items.mapIndexed { index, _ -> "角色表情${index + 1}" }
+        items.mapIndexed { index, item ->
+            val normalizedTitle = normalizeGalleryTitle(item.title)
+            val rawVariant = when {
+                normalizedTitle.startsWith("角色表情") -> normalizedTitle.removePrefix("角色表情")
+                normalizedTitle.startsWith("表情") -> normalizedTitle.removePrefix("表情")
+                else -> ""
+            }
+            val variant = rawVariant
+                .replace(Regex("""\d+$"""), "")
+                .trim('（', '）', '(', ')', '-', '·', ' ')
+            if (variant.isBlank()) {
+                "角色表情${index + 1}"
+            } else if (variant == "包") {
+                "表情包${index + 1}"
+            } else {
+                "表情${index + 1}·$variant"
+            }
+        }
     }
     val pickerMaxHeight = remember(optionLabels.size) {
         val maxVisibleRows = 7

@@ -204,7 +204,7 @@ fun BaStudentGuideInfo.buildProfileMetaItems(): List<BaGuideMetaItem> {
     }
     val computed = listOf(
         buildMetaItem("稀有度", listOf("稀有度", "星级")),
-        buildMetaItem("学院", listOf("所属学园", "所属学院", "学园")),
+        buildMetaItem("学院", listOf("所属学园", "所属学院", "学园", "所属", "学院")),
         buildMetaItem("所属社团", listOf("所属社团", "社团"))
     )
     synchronized(guideProfileMetaCache) {
