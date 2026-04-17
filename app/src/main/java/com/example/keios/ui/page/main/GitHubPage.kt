@@ -303,6 +303,7 @@ fun GitHubPage(
     LaunchedEffect(trackSnapshot) {
         val activeStrategyId = trackSnapshot.lookupConfig.selectedStrategy.storageId
         val snapshotAssetSourceSignature = listOf(
+            "asset-v2",
             trackSnapshot.lookupConfig.selectedStrategy.storageId,
             trackSnapshot.lookupConfig.apiToken.isNotBlank().toString(),
             trackSnapshot.lookupConfig.aggressiveApkFiltering.toString()
@@ -447,6 +448,7 @@ fun GitHubPage(
 
     fun buildAssetSourceSignature(config: GitHubLookupConfig = lookupConfig): String {
         return listOf(
+            "asset-v2",
             config.selectedStrategy.storageId,
             config.apiToken.isNotBlank().toString(),
             config.aggressiveApkFiltering.toString()

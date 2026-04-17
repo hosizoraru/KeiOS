@@ -548,8 +548,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         formatReleaseUpdatedAtNoYear(loadedReleaseUpdatedAtMillis)
                                     val showLoadedReleaseMeta =
                                         loadedReleaseName.isNotBlank() || loadedReleaseTag.isNotBlank()
-                                    val summaryMetaPillModifier = Modifier.widthIn(min = 40.dp)
-                                    val summaryMetaPillPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
+                                    val summaryMetaPillModifier = Modifier
+                                    val summaryMetaPillPadding = PaddingValues(horizontal = 5.dp, vertical = 3.dp)
                                     Column(
                                         modifier = Modifier.weight(1f),
                                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
@@ -557,7 +557,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            verticalAlignment = androidx.compose.ui.Alignment.Top
+                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                                         ) {
                                             Text(
                                                 text = target?.label
@@ -647,47 +647,25 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                 stringResource(R.string.common_unknown)
                                             }
                                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                                                val gapWidth = 6.dp
-                                                val estimatedCharWidth = 7.2.dp
-                                                val estimatedInlineChars = (
-                                                    (maxWidth - gapWidth).value / estimatedCharWidth.value
-                                                    ).toInt().coerceAtLeast(10)
-                                                val canInlineNameAndTag =
-                                                    (releaseNameLabel.length + releaseTagLabel.length) <= estimatedInlineChars
-                                                if (canInlineNameAndTag) {
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.spacedBy(gapWidth),
-                                                        verticalAlignment = androidx.compose.ui.Alignment.Top
-                                                    ) {
-                                                        StatusPill(
-                                                            label = releaseNameLabel,
-                                                            color = targetAccent,
-                                                            size = AppStatusPillSize.Compact,
-                                                            modifier = Modifier.weight(1f),
-                                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                                        )
-                                                        StatusPill(
-                                                            label = releaseTagLabel,
-                                                            color = targetAccent,
-                                                            size = AppStatusPillSize.Compact,
-                                                            modifier = summaryMetaPillModifier,
-                                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                                        )
-                                                    }
-                                                } else {
+                                                val releaseNameMaxWidth = maxWidth * 0.82f
+                                                val releaseTagMaxWidth = maxWidth * 0.64f
+                                                FlowRow(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
                                                     StatusPill(
                                                         label = releaseNameLabel,
                                                         color = targetAccent,
                                                         size = AppStatusPillSize.Compact,
-                                                        modifier = Modifier.fillMaxWidth(),
+                                                        modifier = Modifier.widthIn(max = releaseNameMaxWidth),
                                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                                     )
                                                     StatusPill(
                                                         label = releaseTagLabel,
                                                         color = targetAccent,
                                                         size = AppStatusPillSize.Compact,
-                                                        modifier = Modifier.fillMaxWidth(),
+                                                        modifier = Modifier.widthIn(max = releaseTagMaxWidth),
                                                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                                     )
                                                 }
