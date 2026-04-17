@@ -86,7 +86,7 @@ fun AboutCompactRow(
                 }
                 Text(
                     text = title,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.86f),
                     fontSize = AppTypographyTokens.Supporting.fontSize,
                     lineHeight = AppTypographyTokens.Supporting.lineHeight,
                     maxLines = Int.MAX_VALUE,
@@ -187,7 +187,7 @@ fun AboutSectionCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
         ) {
             AppCardHeader(
                 title = title,

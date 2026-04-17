@@ -62,7 +62,7 @@ fun SnapshotWindowListPopup(
     onDismissFinished: (() -> Unit)? = null,
     maxHeight: Dp? = null,
     minWidth: Dp = 0.dp,
-    maxWidth: Dp? = null,
+    maxWidth: Dp? = AppInteractiveTokens.liquidDropdownMaxWidth,
     matchAnchorWidth: Boolean = true,
     content: @Composable () -> Unit,
 ) {
@@ -79,6 +79,7 @@ fun SnapshotWindowListPopup(
     } else {
         minWidth
     }
+    val popupMinWidth = maxWidth?.let { resolvedMinWidth.coerceAtMost(it) } ?: resolvedMinWidth
     val opensDownward = remember(explicitAnchorBounds, screenHeightPx) {
         explicitAnchorBounds?.let {
             val availableBelow = screenHeightPx - it.bottom
@@ -206,7 +207,7 @@ fun SnapshotWindowListPopup(
             ) {
                 Box(
                     modifier = popupModifier
-                        .defaultMinSize(minWidth = resolvedMinWidth)
+                        .defaultMinSize(minWidth = popupMinWidth)
                         .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
                         .then(if (maxHeight != null) Modifier.heightIn(max = maxHeight) else Modifier)
                 ) {

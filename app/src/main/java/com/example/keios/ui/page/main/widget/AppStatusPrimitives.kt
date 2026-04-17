@@ -73,14 +73,14 @@ fun AppSupportingBlock(
     val borderColor = accentColor.copy(alpha = if (isDark) 0.18f else 0.14f)
     top.yukonga.miuix.kmp.basic.Text(
         text = text,
-        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.96f),
-        fontSize = AppTypographyTokens.Body.fontSize,
-        lineHeight = AppTypographyTokens.Body.lineHeight,
+        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
+        fontSize = AppTypographyTokens.Supporting.fontSize,
+        lineHeight = AppTypographyTokens.Supporting.lineHeight,
         modifier = modifier
             .clip(shape)
             .background(backgroundColor)
             .border(width = 1.dp, color = borderColor, shape = shape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 9.dp),
         maxLines = maxLines,
         overflow = overflow
     )

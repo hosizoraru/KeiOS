@@ -3,7 +3,6 @@ package com.example.keios.ui.page.main
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +43,7 @@ import com.example.keios.core.log.AppLogStore
 import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppControlRow
 import com.example.keios.ui.page.main.widget.AppInfoRow
+import com.example.keios.ui.page.main.widget.AppPageSectionTitle
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
@@ -69,7 +69,6 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -104,7 +103,7 @@ fun SettingsPage(
     val scope = rememberCoroutineScope()
     val settingsTitle = stringResource(R.string.settings_title)
     val titleColor = MiuixTheme.colorScheme.onBackground
-    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
     val enabledCardColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
     val disabledCardColor = Color(0x2264748B)
 
@@ -219,7 +218,11 @@ fun SettingsPage(
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             contentPadding = appPageContentPadding(innerPadding)
         ) {
-            item { SmallTitle(stringResource(R.string.settings_section_ui_style)) }
+            item {
+                AppPageSectionTitle(
+                    title = stringResource(R.string.settings_section_ui_style)
+                )
+            }
             item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
 
             item {
@@ -532,48 +535,36 @@ fun SettingsPage(
                     ),
                     onClick = {}
                 ) {
+                    val metaColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.74f)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(CardLayoutRhythm.cardContentPadding),
-                        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
+                        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                     ) {
                         Text(
                             text = stringResource(R.string.settings_cache_header),
-                            color = titleColor,
+                            color = metaColor,
                             fontSize = AppTypographyTokens.Eyebrow.fontSize,
                             fontWeight = AppTypographyTokens.Eyebrow.fontWeight,
                             lineHeight = AppTypographyTokens.Eyebrow.lineHeight
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onCacheDiagnosticsChanged(!cacheDiagnosticsEnabled) },
-                            horizontalArrangement = Arrangement.spacedBy(AppChromeTokens.pageSectionGapLarge),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_cache_diagnostics_title),
-                                color = titleColor,
-                                fontSize = AppTypographyTokens.SectionTitle.fontSize,
-                                fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
-                                lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(
-                                checked = cacheDiagnosticsEnabled,
-                                onCheckedChange = { checked -> onCacheDiagnosticsChanged(checked) }
-                            )
-                        }
-                        Text(
-                            text = if (cacheDiagnosticsEnabled) {
+                        AppControlRow(
+                            title = stringResource(R.string.settings_cache_diagnostics_title),
+                            summary = if (cacheDiagnosticsEnabled) {
                                 stringResource(R.string.settings_cache_diagnostics_summary_enabled)
                             } else {
                                 stringResource(R.string.settings_cache_diagnostics_summary_disabled)
                             },
-                            color = subtitleColor,
-                            fontSize = AppTypographyTokens.Supporting.fontSize,
-                            lineHeight = AppTypographyTokens.Supporting.lineHeight
+                            titleColor = titleColor,
+                            minHeight = 48.dp,
+                            onClick = { onCacheDiagnosticsChanged(!cacheDiagnosticsEnabled) },
+                            trailing = {
+                                Switch(
+                                    checked = cacheDiagnosticsEnabled,
+                                    onCheckedChange = { checked -> onCacheDiagnosticsChanged(checked) }
+                                )
+                            }
                         )
                         SettingsInfoItem(
                             key = stringResource(R.string.common_scope),
@@ -652,36 +643,42 @@ internal fun SettingsGroupCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val titleColor = MiuixTheme.colorScheme.onBackground
-    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val summaryColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
+    val metaColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.74f)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(CardLayoutRhythm.cardContentPadding),
-        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
     ) {
         Text(
             text = header,
-            color = titleColor,
+            color = metaColor,
             fontSize = AppTypographyTokens.Eyebrow.fontSize,
             lineHeight = AppTypographyTokens.Eyebrow.lineHeight,
             fontWeight = AppTypographyTokens.Eyebrow.fontWeight
         )
-        Text(
-            text = title,
-            color = titleColor,
-            fontSize = AppTypographyTokens.SectionTitle.fontSize,
-            fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
-            lineHeight = AppTypographyTokens.SectionTitle.lineHeight
-        )
-        Text(
-            text = summary,
-            color = subtitleColor,
-            fontSize = AppTypographyTokens.Supporting.fontSize,
-            lineHeight = AppTypographyTokens.Supporting.lineHeight
-        )
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowTextGap)
+        ) {
+            Text(
+                text = title,
+                color = titleColor,
+                fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
+                lineHeight = AppTypographyTokens.SectionTitle.lineHeight
+            )
+            Text(
+                text = summary,
+                color = summaryColor,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap),
             content = content
         )
     }
@@ -698,7 +695,7 @@ internal fun SettingsActionItem(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
     ) {
         AppControlRow(
             title = title,
@@ -773,7 +770,7 @@ private fun SettingsCacheRow(
     onClear: () -> Unit
 ) {
     val titleColor = MiuixTheme.colorScheme.onBackground
-    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
     val resetLabel = stringResource(R.string.common_reset)
     val actionColor = if (entry.clearLabel == resetLabel) {
         MiuixTheme.colorScheme.error
@@ -783,7 +780,7 @@ private fun SettingsCacheRow(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
     ) {
         AppControlRow(
             title = entry.title,

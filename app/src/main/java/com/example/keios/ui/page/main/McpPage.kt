@@ -69,6 +69,7 @@ import com.example.keios.mcp.McpServerUiState
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.widget.AppOverviewCard
 import com.example.keios.ui.page.main.widget.AppChromeTokens
+import com.example.keios.ui.page.main.widget.AppPageSectionTitle
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
@@ -98,7 +99,6 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
@@ -143,7 +143,7 @@ fun McpPage(
     val unknownText = stringResource(R.string.common_unknown)
     val runtimePendingText = stringResource(R.string.mcp_runtime_pending)
     val titleColor = MiuixTheme.colorScheme.onBackground
-    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
     val runningColor = Color(0xFF2E7D32)
     val stoppedColor = Color(0xFFC62828)
 
@@ -424,7 +424,11 @@ fun McpPage(
                     bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding)
                 )
             ) {
-            item { SmallTitle(stringResource(R.string.mcp_page_local_service_title)) }
+            item {
+                AppPageSectionTitle(
+                    title = stringResource(R.string.mcp_page_local_service_title)
+                )
+            }
             item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
 
             item {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -398,33 +399,42 @@ private fun LiquidDropdownRowContent(
     checkColor: Color,
     showCheck: Boolean
 ) {
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .defaultMinSize(minHeight = AppInteractiveTokens.liquidDropdownRowMinHeight)
             .padding(
                 horizontal = AppInteractiveTokens.liquidDropdownRowHorizontalPadding,
                 vertical = AppInteractiveTokens.liquidDropdownRowVerticalPadding
             ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppInteractiveTokens.liquidDropdownRowGap)
     ) {
-        Text(
-            modifier = Modifier.weight(1f),
-            text = text,
-            fontSize = AppTypographyTokens.Body.fontSize,
-            lineHeight = AppTypographyTokens.Body.lineHeight,
-            fontWeight = FontWeight.Medium,
-            color = textColor,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
+        val maxTextWidth = (
+            maxWidth -
+                AppInteractiveTokens.liquidDropdownCheckSize -
+                AppInteractiveTokens.liquidDropdownRowGap
+            ).coerceAtLeast(0.dp)
+        Row(
+            modifier = Modifier.widthIn(max = maxWidth),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppInteractiveTokens.liquidDropdownRowGap)
+        ) {
+            Text(
+                modifier = Modifier.widthIn(max = maxTextWidth),
+                text = text,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
+                fontWeight = FontWeight.Medium,
+                color = textColor,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
-        Image(
-            modifier = Modifier.size(AppInteractiveTokens.liquidDropdownCheckSize),
-            imageVector = MiuixIcons.Basic.Check,
-            colorFilter = ColorFilter.tint(if (showCheck) checkColor else Color.Transparent),
-            contentDescription = null
-        )
+            Image(
+                modifier = Modifier.size(AppInteractiveTokens.liquidDropdownCheckSize),
+                imageVector = MiuixIcons.Basic.Check,
+                colorFilter = ColorFilter.tint(if (showCheck) checkColor else Color.Transparent),
+                contentDescription = null
+            )
+        }
     }
 }
 

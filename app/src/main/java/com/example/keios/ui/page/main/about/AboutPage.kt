@@ -38,13 +38,13 @@ import com.example.keios.ui.page.main.about.section.AboutRuntimeStatusCardSectio
 import com.example.keios.ui.page.main.about.section.AboutUiFrameworkCardSection
 import com.example.keios.ui.page.main.about.util.openExternalUrl
 import com.example.keios.ui.page.main.widget.AppChromeTokens
+import com.example.keios.ui.page.main.widget.AppPageSectionTitle
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.appPageContentPadding
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -63,7 +63,7 @@ fun AboutPage(
 ) {
     val context = LocalContext.current
     val accent = MiuixTheme.colorScheme.primary
-    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
     val readyColor = Color(0xFF2E7D32)
     val notReadyColor = Color(0xFFC62828)
     val infoCardColor = Color(0x223B82F6)
@@ -140,7 +140,9 @@ fun AboutPage(
             )
         ) {
             item {
-                SmallTitle(stringResource(R.string.about_page_section_title))
+                AppPageSectionTitle(
+                    title = stringResource(R.string.about_page_section_title)
+                )
             }
 
             item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
