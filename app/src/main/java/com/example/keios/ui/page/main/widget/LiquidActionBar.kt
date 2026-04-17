@@ -66,6 +66,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalViewConfiguration
 
 data class LiquidActionItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -185,6 +186,7 @@ fun LiquidActionBar(
 
     val tabsBackdrop = rememberLayerBackdrop()
     val density = LocalDensity.current
+    val viewConfiguration = LocalViewConfiguration.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
 
@@ -206,6 +208,11 @@ fun LiquidActionBar(
 
     var gestureActive by remember { mutableStateOf(false) }
     var dragMoved by remember { mutableStateOf(false) }
+    var dragTravelPx by remember { mutableFloatStateOf(0f) }
+    val dragActivationThresholdPx = remember(viewConfiguration.touchSlop) {
+        // 仅在明确滑动时才触发松手选中，避免点按抖动导致串触发。
+        (viewConfiguration.touchSlop * 1.15f).coerceAtLeast(8f)
+    }
 
     val dampedDragAnimation = remember(animationScope, items.size, density, isLtr, layeredStyleEnabled) {
         DampedDragAnimation(
@@ -219,6 +226,7 @@ fun LiquidActionBar(
             onDragStarted = {
                 gestureActive = true
                 dragMoved = false
+                dragTravelPx = 0f
                 onInteractionChanged(true)
             },
             onDragStopped = {
@@ -244,7 +252,8 @@ fun LiquidActionBar(
             },
             onDrag = { _, dragAmount ->
                 if (tabWidthPx > 0) {
-                    if (!dragMoved && abs(dragAmount.x) > 0.01f) {
+                    dragTravelPx += abs(dragAmount.x)
+                    if (!dragMoved && dragTravelPx >= dragActivationThresholdPx) {
                         dragMoved = true
                     }
                     val raw = (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
