@@ -766,4 +766,9 @@ object BaStudentGuideStore {
 
         return latest
     }
+
+    fun cachedSourceUrls(): Set<String> {
+        val store = kv()
+        return readV2Index(store).toSet()
+    }
 }

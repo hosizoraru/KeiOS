@@ -9,7 +9,8 @@ private const val KEY_CACHE_RAW = "catalog_cache_raw"
 private const val KEY_CACHE_SYNC_MS = "catalog_cache_sync_ms"
 private const val KEY_CACHE_VERSION = "catalog_cache_version"
 private const val KEY_FAVORITES_RAW = "catalog_favorites_raw"
-private const val BA_GUIDE_CATALOG_CACHE_SCHEMA_VERSION = 1
+private const val KEY_RELEASE_DATE_INDEX_RAW = "catalog_release_date_index_raw"
+private const val BA_GUIDE_CATALOG_CACHE_SCHEMA_VERSION = 2
 
 internal object BaGuideCatalogStore {
     private val store: MMKV by lazy { MMKV.mmkvWithID(BA_GUIDE_CATALOG_KV_ID) }
@@ -40,6 +41,8 @@ internal object BaGuideCatalogStore {
                                             put("type", entry.type)
                                             put("order", entry.order)
                                             put("createdAtSec", entry.createdAtSec)
+                                            put("releaseDateSec", entry.releaseDateSec)
+                                            put("releaseDateProbeAtMs", entry.releaseDateProbeAtMs)
                                             put("detailUrl", entry.detailUrl)
                                         }
                                     )
@@ -60,6 +63,7 @@ internal object BaGuideCatalogStore {
         if (store.decodeInt(KEY_CACHE_VERSION, 0) < BA_GUIDE_CATALOG_CACHE_SCHEMA_VERSION) {
             return null
         }
+        val releaseDateIndex = loadReleaseDateIndex(store)
         val raw = store.decodeString(KEY_CACHE_RAW, "").orEmpty()
         if (raw.isBlank()) return null
         return runCatching {
@@ -93,6 +97,12 @@ internal object BaGuideCatalogStore {
                                 type = item.optInt("type", 0),
                                 order = item.optInt("order", index),
                                 createdAtSec = item.optLong("createdAtSec", 0L),
+                                releaseDateSec = item.optLong("releaseDateSec", 0L)
+                                    .takeIf { it > 0L }
+                                    ?: releaseDateIndex[contentId]
+                                    ?: 0L,
+                                releaseDateProbeAtMs = item.optLong("releaseDateProbeAtMs", 0L)
+                                    .coerceAtLeast(0L),
                                 detailUrl = item.optString("detailUrl").trim()
                                     .ifBlank { "https://www.gamekee.com/ba/tj/$contentId.html" },
                                 tab = tab
@@ -120,6 +130,48 @@ internal object BaGuideCatalogStore {
         store.trim()
     }
 
+    private fun loadReleaseDateIndex(store: MMKV = kv()): Map<Long, Long> {
+        val raw = store.decodeString(KEY_RELEASE_DATE_INDEX_RAW, "").orEmpty()
+        if (raw.isBlank()) return emptyMap()
+        return runCatching {
+            val json = JSONObject(raw)
+            buildMap {
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next().trim()
+                    val contentId = key.toLongOrNull() ?: continue
+                    val releaseDateSec = json.optLong(key, 0L).coerceAtLeast(0L)
+                    if (contentId > 0L && releaseDateSec > 0L) {
+                        put(contentId, releaseDateSec)
+                    }
+                }
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    fun loadReleaseDateIndexSnapshot(): Map<Long, Long> = loadReleaseDateIndex()
+
+    fun upsertReleaseDateIndex(releaseDateSecByContentId: Map<Long, Long>) {
+        if (releaseDateSecByContentId.isEmpty()) return
+        val merged = loadReleaseDateIndex().toMutableMap()
+        releaseDateSecByContentId.forEach { (contentId, releaseDateSec) ->
+            if (contentId > 0L && releaseDateSec > 0L) {
+                val current = merged[contentId] ?: 0L
+                // 实装日期是稳定信息，只更新为更可信的有效值。
+                if (current <= 0L || current != releaseDateSec) {
+                    merged[contentId] = releaseDateSec
+                }
+            }
+        }
+        if (merged.isEmpty()) return
+        val raw = JSONObject().apply {
+            merged.forEach { (contentId, releaseDateSec) ->
+                put(contentId.toString(), releaseDateSec)
+            }
+        }.toString()
+        kv().encode(KEY_RELEASE_DATE_INDEX_RAW, raw)
+    }
+
     fun cachedEntryCount(): Int {
         val bundle = loadBundle() ?: return 0
         return bundle.entriesByTab.values.sumOf { it.size }
@@ -140,9 +192,12 @@ internal object BaGuideCatalogStore {
     fun actualDataBytes(): Long = kv().actualSize()
 
     fun cacheBytesEstimated(): Long {
-        val raw = kv().decodeString(KEY_CACHE_RAW, "").orEmpty()
-        if (raw.isBlank()) return 0L
-        return raw.length.toLong() * 2L + 16L
+        val store = kv()
+        val raw = store.decodeString(KEY_CACHE_RAW, "").orEmpty()
+        val indexRaw = store.decodeString(KEY_RELEASE_DATE_INDEX_RAW, "").orEmpty()
+        val rawBytes = if (raw.isBlank()) 0L else raw.length.toLong() * 2L + 16L
+        val indexBytes = if (indexRaw.isBlank()) 0L else indexRaw.length.toLong() * 2L + 16L
+        return rawBytes + indexBytes
     }
 
     fun configBytesEstimated(): Long = 0L

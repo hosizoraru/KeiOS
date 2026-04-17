@@ -81,6 +81,7 @@ import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.filterByQuery
+import com.example.keios.ui.page.main.student.catalog.hydrateBaGuideCatalogReleaseDateIndex
 import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogBundleComplete
 import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
 import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
@@ -133,11 +134,12 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val CATALOG_BATCH_SIZE = 20
 private const val CATALOG_LOAD_MORE_THRESHOLD = 10
+private const val CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS = 24
 
 private enum class BaGuideCatalogSortMode(val label: String) {
     Default("默认排序"),
-    ReleaseDateDesc("创建条目：新到旧"),
-    ReleaseDateAsc("创建条目：旧到新"),
+    ReleaseDateDesc("实装日期：新到旧"),
+    ReleaseDateAsc("实装日期：旧到新"),
 }
 
 @Composable
@@ -318,6 +320,18 @@ fun BaGuideCatalogPage(
             }
         }
         loading = false
+    }
+
+    LaunchedEffect(catalog.syncedAtMs, loading) {
+        if (loading) return@LaunchedEffect
+        if (catalog.entriesByTab.values.all { it.isEmpty() }) return@LaunchedEffect
+        hydrateBaGuideCatalogReleaseDateIndex(
+            source = catalog,
+            maxNetworkFetchPerPass = CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS,
+            onBundleUpdated = { updated ->
+                catalog = updated
+            }
+        )
     }
 
     Scaffold(
@@ -895,12 +909,20 @@ private fun List<BaGuideCatalogEntry>.sortedByMode(
         BaGuideCatalogSortMode.Default -> sortedBy { it.order }
         BaGuideCatalogSortMode.ReleaseDateDesc -> sortedWith(
             compareByDescending<BaGuideCatalogEntry> {
-                if (it.createdAtSec > 0L) it.createdAtSec else Long.MIN_VALUE
+                when {
+                    it.releaseDateSec > 0L -> it.releaseDateSec
+                    it.createdAtSec > 0L -> it.createdAtSec
+                    else -> Long.MIN_VALUE
+                }
             }.thenBy { it.order }
         )
         BaGuideCatalogSortMode.ReleaseDateAsc -> sortedWith(
             compareBy<BaGuideCatalogEntry> {
-                if (it.createdAtSec > 0L) it.createdAtSec else Long.MAX_VALUE
+                when {
+                    it.releaseDateSec > 0L -> it.releaseDateSec
+                    it.createdAtSec > 0L -> it.createdAtSec
+                    else -> Long.MAX_VALUE
+                }
             }.thenBy { it.order }
         )
     }
