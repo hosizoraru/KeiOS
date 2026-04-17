@@ -540,7 +540,13 @@ fun SettingsPage(
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(text = stringResource(R.string.settings_cache_header), color = titleColor)
+                        Text(
+                            text = stringResource(R.string.settings_cache_header),
+                            color = titleColor,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            lineHeight = 19.sp
+                        )
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -551,6 +557,9 @@ fun SettingsPage(
                             Text(
                                 text = stringResource(R.string.settings_cache_diagnostics_title),
                                 color = titleColor,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                lineHeight = 21.sp,
                                 modifier = Modifier.weight(1f)
                             )
                             Switch(
@@ -564,7 +573,9 @@ fun SettingsPage(
                             } else {
                                 stringResource(R.string.settings_cache_diagnostics_summary_disabled)
                             },
-                            color = subtitleColor
+                            color = subtitleColor,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
                         )
                         SettingsInfoItem(
                             key = stringResource(R.string.common_scope),
@@ -578,21 +589,27 @@ fun SettingsPage(
                             !cacheDiagnosticsEnabled -> {
                                 Text(
                                     text = stringResource(R.string.settings_cache_disabled_desc),
-                                    color = subtitleColor
+                                    color = subtitleColor,
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp
                                 )
                             }
 
                             cacheEntries == null -> {
                                 Text(
                                     text = stringResource(R.string.settings_cache_loading_desc),
-                                    color = subtitleColor
+                                    color = subtitleColor,
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp
                                 )
                             }
 
                             cacheEntries!!.isEmpty() -> {
                                 Text(
                                     text = stringResource(R.string.settings_cache_empty_desc),
-                                    color = subtitleColor
+                                    color = subtitleColor,
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp
                                 )
                             }
 
@@ -686,7 +703,7 @@ private fun SettingsActionItem(
         modifier = Modifier
             .fillMaxWidth()
             .let { base -> if (onClick != null) base.clickable { onClick() } else base },
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -696,9 +713,9 @@ private fun SettingsActionItem(
             Text(
                 text = title,
                 color = titleColor,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                lineHeight = 20.sp,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 21.sp,
                 modifier = Modifier.weight(1f)
             )
             trailing()
@@ -756,18 +773,22 @@ private fun SettingsInfoItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .copyModeAwareRow(copyPayload = copyPayload)
-                .padding(vertical = 2.dp),
+                .padding(vertical = 3.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top
         ) {
             Text(
                 text = key,
                 color = titleColor,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
                 modifier = Modifier.wrapContentWidth()
             )
             Text(
                 text = displayValue,
                 color = valueColor,
+                fontSize = 12.5.sp,
+                lineHeight = 17.sp,
                 textAlign = TextAlign.End,
                 modifier = Modifier.weight(1f)
             )
