@@ -26,6 +26,7 @@ import com.example.keios.R
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
+import com.example.keios.ui.page.main.widget.AppCardHeader
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.rememberLightTextCopyAction
@@ -34,9 +35,6 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.ExpandLess
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -185,52 +183,33 @@ fun AboutSectionCard(
         }
     ) {
         Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(CardLayoutRhythm.cardContentPadding),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap)
-                ) {
-                    if (sectionIcon != null) {
-                        Icon(
+            AppCardHeader(
+                title = title,
+                subtitle = subtitle,
+                titleColor = titleColor,
+                subtitleColor = subtitleColor,
+                startAction = if (sectionIcon != null) {
+                    {
+                        top.yukonga.miuix.kmp.basic.Icon(
                             imageVector = sectionIcon,
                             contentDescription = null,
                             tint = titleColor
                         )
                     }
-                    Text(
-                        text = title,
-                        color = titleColor,
-                        fontSize = AppTypographyTokens.SectionTitle.fontSize,
-                        lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
-                        fontWeight = AppTypographyTokens.SectionTitle.fontWeight
-                    )
+                } else {
+                    null
+                },
+                expandable = collapsible,
+                expanded = expanded,
+                expandTint = titleColor,
+                onClick = if (collapsible) {
+                    { onExpandedChange(!expanded) }
+                } else {
+                    null
                 }
-                if (collapsible) {
-                    Icon(
-                        imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
-                        contentDescription = if (expanded) {
-                            stringResource(R.string.about_action_collapse)
-                        } else {
-                            stringResource(R.string.about_action_expand)
-                        },
-                        tint = titleColor
-                    )
-                }
-            }
-            Text(
-                text = subtitle,
-                color = subtitleColor,
-                fontSize = AppTypographyTokens.Body.fontSize,
-                lineHeight = AppTypographyTokens.Body.lineHeight
             )
             if (!collapsible || expanded) {
                 content()

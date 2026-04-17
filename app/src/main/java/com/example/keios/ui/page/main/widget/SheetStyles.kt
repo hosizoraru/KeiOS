@@ -32,12 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.ExpandLess
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -394,61 +390,35 @@ fun SheetExpandableCard(
         },
         contentPadding = PaddingValues(0.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onExpandedChange(!expanded) }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = title,
-                        color = accentColor,
-                        fontWeight = FontWeight.Bold
+        AppCardHeader(
+            title = title,
+            subtitle = if (expanded) expandedSummary else collapsedSummary,
+            titleColor = accentColor,
+            subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant,
+            supportingText = if (expanded) expandedHint else collapsedHint,
+            supportingColor = accentColor,
+            titleAccessory = if (badgeLabel != null) {
+                {
+                    StatusPill(
+                        label = badgeLabel,
+                        color = accentColor
                     )
-                    badgeLabel?.let { label ->
-                        StatusPill(
-                            label = label,
-                            color = accentColor
-                        )
-                    }
                 }
-                Text(
-                    text = if (expanded) expandedSummary else collapsedSummary,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    maxLines = if (expanded) 3 else 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = if (expanded) expandedHint else collapsedHint,
-                    color = accentColor,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            } else {
+                null
+            },
+            endActions = {
                 StatusPill(
                     label = if (expanded) "收起" else "展开",
                     color = accentColor
                 )
-                Icon(
-                    imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
-                    contentDescription = if (expanded) "收起" else "展开",
-                    tint = accentColor
-                )
-            }
-        }
+            },
+            expandable = true,
+            expanded = expanded,
+            expandTint = accentColor,
+            subtitleMaxLines = if (expanded) 3 else 2,
+            onClick = { onExpandedChange(!expanded) }
+        )
         AnimatedVisibility(
             visible = expanded,
             enter = fadeIn(),
@@ -457,8 +427,12 @@ fun SheetExpandableCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(
+                        start = CardLayoutRhythm.cardHorizontalPadding,
+                        end = CardLayoutRhythm.cardHorizontalPadding,
+                        bottom = CardLayoutRhythm.cardVerticalPadding
+                    ),
+                verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap),
                 content = content
             )
         }

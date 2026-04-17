@@ -4,10 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,11 +23,6 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.ExpandLess
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -79,45 +72,21 @@ fun MiuixExpandableSection(
                 }
             )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    onClick = { onExpandedChange(!expanded) },
-                    onLongClick = { onHeaderLongClick?.invoke() }
-                )
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            headerStartAction?.invoke()
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = title,
-                    color = MiuixTheme.colorScheme.onBackground
-                )
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant
-                    )
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                headerActions?.invoke()
-                Icon(
-                    imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
-                    contentDescription = if (expanded) "收起" else "展开",
-                    tint = MiuixTheme.colorScheme.primary
-                )
-            }
-        }
+        AppCardHeader(
+            title = title,
+            subtitle = subtitle,
+            startAction = headerStartAction,
+            endActions = if (headerActions != null) {
+                { headerActions.invoke() }
+            } else {
+                null
+            },
+            expandable = true,
+            expanded = expanded,
+            expandTint = MiuixTheme.colorScheme.primary,
+            onClick = { onExpandedChange(!expanded) },
+            onLongClick = onHeaderLongClick
+        )
         AnimatedVisibility(
             visible = expanded,
             enter = fadeIn(),
@@ -126,7 +95,12 @@ fun MiuixExpandableSection(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 14.dp, end = 14.dp, bottom = 12.dp)
+                    .padding(
+                        start = CardLayoutRhythm.cardHorizontalPadding,
+                        end = CardLayoutRhythm.cardHorizontalPadding,
+                        bottom = CardLayoutRhythm.cardVerticalPadding
+                    ),
+                verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
             ) {
                 content()
             }

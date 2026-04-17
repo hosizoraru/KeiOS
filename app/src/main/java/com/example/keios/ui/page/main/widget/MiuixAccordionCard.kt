@@ -4,14 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,11 +23,6 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.RoundedRectangle
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.ExpandLess
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -72,26 +64,20 @@ fun MiuixAccordionCard(
                 }
             )
     ) {
-        val headerModifier = Modifier.combinedClickable(
-            onClick = { onExpandedChange(!expanded) },
-            onLongClick = { onHeaderLongClick?.invoke() }
-        )
-        BasicComponent(
+        AppCardHeader(
             title = title,
-            summary = subtitle,
-            modifier = headerModifier,
+            subtitle = subtitle,
             startAction = headerStartAction,
-            endActions = {
-                Row {
-                    headerActions?.invoke()
-                    if (headerActions != null) Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = if (expanded) MiuixIcons.Regular.ExpandLess else MiuixIcons.Regular.ExpandMore,
-                        contentDescription = if (expanded) "收起" else "展开",
-                        tint = MiuixTheme.colorScheme.primary
-                    )
-                }
-            }
+            endActions = if (headerActions != null) {
+                { headerActions.invoke() }
+            } else {
+                null
+            },
+            expandable = true,
+            expanded = expanded,
+            expandTint = MiuixTheme.colorScheme.primary,
+            onClick = { onExpandedChange(!expanded) },
+            onLongClick = onHeaderLongClick
         )
         AnimatedVisibility(
             visible = expanded,
@@ -101,7 +87,8 @@ fun MiuixAccordionCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                    .padding(CardLayoutRhythm.cardContentPadding),
+                verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
             ) {
                 content()
             }
