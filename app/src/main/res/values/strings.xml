@@ -129,6 +129,12 @@
     <string name="mcp_overview_label_port">端口</string>
     <string name="mcp_overview_label_network_mode">网络模式</string>
     <string name="mcp_overview_label_clients">客户端数量</string>
+    <string name="mcp_overview_label_service_short">服务</string>
+    <string name="mcp_overview_label_endpoint_short">路径</string>
+    <string name="mcp_overview_label_bind_short">地址</string>
+    <string name="mcp_overview_label_port_short">端口</string>
+    <string name="mcp_overview_label_network_short">网络</string>
+    <string name="mcp_overview_label_clients_short">客户端</string>
     <string name="mcp_clients_count">%1$d 个</string>
     <string name="mcp_network_mode_lan_accessible">局域网可访问</string>
     <string name="mcp_network_mode_local_only_access">仅本机访问</string>

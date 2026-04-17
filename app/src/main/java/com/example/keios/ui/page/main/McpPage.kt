@@ -70,7 +70,7 @@ import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.widget.AppOverviewCard
 import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppDualActionRow
-import com.example.keios.ui.page.main.widget.AppOverviewMetricTile
+import com.example.keios.ui.page.main.widget.AppOverviewInlineMetricTile
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
@@ -162,7 +162,6 @@ fun McpPage(
     } else {
         overviewAccentColor.copy(alpha = 0.26f)
     }
-    val overviewItemColor = overviewAccentColor.copy(alpha = 0.08f)
     val runtimeNowMs by produceState(
         initialValue = System.currentTimeMillis(),
         key1 = uiState.running,
@@ -188,32 +187,32 @@ fun McpPage(
     }
     val overviewMetrics = listOf(
         McpOverviewMetric(
-            label = context.getString(R.string.mcp_overview_label_service_name),
+            label = context.getString(R.string.mcp_overview_label_service_short),
             value = uiState.serverName.ifBlank { context.getString(R.string.mcp_default_service_name) }
         ),
         McpOverviewMetric(
-            label = context.getString(R.string.mcp_overview_label_endpoint_path),
+            label = context.getString(R.string.mcp_overview_label_endpoint_short),
             value = uiState.endpointPath
         ),
         McpOverviewMetric(
-            label = context.getString(R.string.mcp_overview_label_bind_address),
+            label = context.getString(R.string.mcp_overview_label_bind_short),
             value = bindAddress
         ),
         McpOverviewMetric(
-            label = context.getString(R.string.mcp_overview_label_port),
+            label = context.getString(R.string.mcp_overview_label_port_short),
             value = uiState.port.toString()
         ),
         McpOverviewMetric(
-            label = context.getString(R.string.mcp_overview_label_network_mode),
+            label = context.getString(R.string.mcp_overview_label_network_short),
             value = if (uiState.allowExternal) {
-                context.getString(R.string.mcp_network_mode_lan_accessible)
+                context.getString(R.string.mcp_network_mode_lan_short)
             } else {
-                context.getString(R.string.mcp_network_mode_local_only_access)
+                context.getString(R.string.mcp_network_mode_local_only_short)
             }
         ),
         McpOverviewMetric(
-            label = context.getString(R.string.mcp_overview_label_clients),
-            value = context.getString(R.string.mcp_clients_count, uiState.connectedClients),
+            label = context.getString(R.string.mcp_overview_label_clients_short),
+            value = uiState.connectedClients.toString(),
             valueColor = if (uiState.connectedClients > 0) runningColor else subtitleColor
         )
     )
@@ -459,7 +458,6 @@ fun McpPage(
                             ) {
                                 McpOverviewMetricItem(
                                     metric = pair[0],
-                                    cardColor = overviewItemColor,
                                     labelColor = subtitleColor,
                                     defaultValueColor = titleColor,
                                     modifier = Modifier.weight(1f)
@@ -467,7 +465,6 @@ fun McpPage(
                                 if (pair.size > 1) {
                                     McpOverviewMetricItem(
                                         metric = pair[1],
-                                        cardColor = overviewItemColor,
                                         labelColor = subtitleColor,
                                         defaultValueColor = titleColor,
                                         modifier = Modifier.weight(1f)
@@ -900,21 +897,17 @@ private fun McpNetworkModeOption(
 @Composable
 private fun McpOverviewMetricItem(
     metric: McpOverviewMetric,
-    cardColor: Color,
     labelColor: Color,
     defaultValueColor: Color,
     modifier: Modifier = Modifier
 ) {
-    AppOverviewMetricTile(
+    AppOverviewInlineMetricTile(
         label = metric.label,
         value = metric.value.ifBlank { stringResource(R.string.common_na) },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
+        modifier = modifier.fillMaxWidth(),
         labelColor = labelColor,
         valueColor = metric.valueColor ?: defaultValueColor,
-        containerColor = cardColor,
-        borderColor = (metric.valueColor ?: defaultValueColor).copy(alpha = 0.12f),
+        valueMaxLines = 2,
         emphasizedValue = true
     )
 }
