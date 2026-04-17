@@ -1,5 +1,6 @@
 package com.example.keios.ui.page.main.widget
 
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -273,4 +274,28 @@ internal fun glassStyle(
             }
         }
     }
+}
+
+internal fun GlassStyle.tintWithAccent(
+    accentColor: Color,
+    isDark: Boolean,
+): GlassStyle {
+    val normalizedAccent = accentColor.copy(alpha = 1f)
+    val baseTint = normalizedAccent.copy(alpha = if (isDark) 0.06f else 0.05f)
+    val overlayTint = normalizedAccent.copy(alpha = if (isDark) 0.10f else 0.13f)
+    val borderTint = normalizedAccent.copy(alpha = if (isDark) 0.20f else 0.28f)
+
+    return copy(
+        baseColor = baseTint.compositeOver(baseColor),
+        overlayColor = if (overlayColor == Color.Transparent) {
+            overlayTint
+        } else {
+            overlayTint.compositeOver(overlayColor)
+        },
+        borderColor = if (borderColor == Color.Transparent) {
+            borderTint
+        } else {
+            borderTint.compositeOver(borderColor)
+        }
+    )
 }

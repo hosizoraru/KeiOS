@@ -44,6 +44,18 @@ internal data class GitHubOverviewMetrics(
     val failedCount: Int
 )
 
+private fun overviewMetricColor(
+    color: Color,
+    emphasized: Boolean,
+    isDark: Boolean
+): Color {
+    return if (emphasized) {
+        color
+    } else {
+        color.copy(alpha = if (isDark) 0.76f else 0.84f)
+    }
+}
+
 @Composable
 internal fun GitHubOverviewCard(
     isDark: Boolean,
@@ -131,7 +143,12 @@ internal fun GitHubOverviewCard(
                     label = stringResource(R.string.github_overview_label_strategy),
                     value = lookupConfig.selectedStrategy.overviewLabel(context),
                     titleColor = overviewTitleColor,
-                    valueColor = MiuixTheme.colorScheme.primary,
+                    valueColor = lookupConfig.selectedStrategy.run {
+                        when (this) {
+                            GitHubLookupStrategyOption.AtomFeed -> GitHubStatusPalette.Active
+                            GitHubLookupStrategyOption.GitHubApiToken -> GitHubStatusPalette.Update
+                        }
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
@@ -145,7 +162,11 @@ internal fun GitHubOverviewCard(
                             GitHubStatusPalette.Active
                         }
                     } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
+                        overviewMetricColor(
+                            color = GitHubStatusPalette.Active,
+                            emphasized = false,
+                            isDark = isDark
+                        )
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -158,22 +179,22 @@ internal fun GitHubOverviewCard(
                     label = stringResource(R.string.github_overview_label_tracked),
                     value = stringResource(R.string.github_overview_value_count, metrics.trackedCount),
                     titleColor = overviewTitleColor,
-                    valueColor = if (metrics.trackedCount > 0) {
-                        GitHubStatusPalette.Stable
-                    } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
-                    },
+                    valueColor = overviewMetricColor(
+                        color = GitHubStatusPalette.Stable,
+                        emphasized = metrics.trackedCount > 0,
+                        isDark = isDark
+                    ),
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_stable_update),
                     value = stringResource(R.string.github_overview_value_count, metrics.updatableCount),
                     titleColor = overviewTitleColor,
-                    valueColor = if (metrics.updatableCount > 0) {
-                        GitHubStatusPalette.Update
-                    } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
-                    },
+                    valueColor = overviewMetricColor(
+                        color = GitHubStatusPalette.Update,
+                        emphasized = metrics.updatableCount > 0,
+                        isDark = isDark
+                    ),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -185,22 +206,22 @@ internal fun GitHubOverviewCard(
                     label = stringResource(R.string.github_overview_label_stable_latest),
                     value = stringResource(R.string.github_overview_value_count, metrics.stableLatestCount),
                     titleColor = overviewTitleColor,
-                    valueColor = if (metrics.stableLatestCount > 0) {
-                        GitHubStatusPalette.Stable
-                    } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
-                    },
+                    valueColor = overviewMetricColor(
+                        color = GitHubStatusPalette.Stable,
+                        emphasized = metrics.stableLatestCount > 0,
+                        isDark = isDark
+                    ),
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_prerelease_tracked),
                     value = stringResource(R.string.github_overview_value_count, metrics.preReleaseCount),
                     titleColor = overviewTitleColor,
-                    valueColor = if (metrics.preReleaseCount > 0) {
-                        GitHubStatusPalette.PreRelease
-                    } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
-                    },
+                    valueColor = overviewMetricColor(
+                        color = GitHubStatusPalette.PreRelease,
+                        emphasized = metrics.preReleaseCount > 0,
+                        isDark = isDark
+                    ),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -212,22 +233,22 @@ internal fun GitHubOverviewCard(
                     label = stringResource(R.string.github_overview_label_prerelease_update),
                     value = stringResource(R.string.github_overview_value_count, metrics.preReleaseUpdateCount),
                     titleColor = overviewTitleColor,
-                    valueColor = if (metrics.preReleaseUpdateCount > 0) {
-                        GitHubStatusPalette.PreRelease
-                    } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
-                    },
+                    valueColor = overviewMetricColor(
+                        color = GitHubStatusPalette.PreRelease,
+                        emphasized = metrics.preReleaseUpdateCount > 0,
+                        isDark = isDark
+                    ),
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
                     label = stringResource(R.string.github_overview_label_check_failed),
                     value = stringResource(R.string.github_overview_value_count, metrics.failedCount),
                     titleColor = overviewTitleColor,
-                    valueColor = if (metrics.failedCount > 0) {
-                        GitHubStatusPalette.Error
-                    } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
-                    },
+                    valueColor = overviewMetricColor(
+                        color = GitHubStatusPalette.Error,
+                        emphasized = metrics.failedCount > 0,
+                        isDark = isDark
+                    ),
                     modifier = Modifier.weight(1f)
                 )
             }

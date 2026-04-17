@@ -65,6 +65,7 @@ internal fun BaSettingsSheet(
     onSaveRequest: () -> Unit,
 ) {
     val context = LocalContext.current
+    val settingsAccent = Color(0xFF3B82F6)
     val pickMediaSaveFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -106,12 +107,12 @@ internal fun BaSettingsSheet(
             SheetSectionTitle(stringResource(R.string.ba_settings_section_basic))
             BaGlassPanel(
                 backdrop = backdrop,
-                accentColor = Color(0xFF3B82F6),
+                accentColor = settingsAccent,
                 variant = GlassVariant.SheetAction,
             ) {
                 Text(
                     text = stringResource(R.string.ba_settings_card_ap_title),
-                    color = Color(0xFF3B82F6),
+                    color = settingsAccent,
                 )
                 SheetControlRow(label = stringResource(R.string.ba_settings_label_ap_notify)) {
                     Switch(
@@ -150,12 +151,12 @@ internal fun BaSettingsSheet(
             }
             BaGlassPanel(
                 backdrop = backdrop,
-                accentColor = Color(0xFF60A5FA),
+                accentColor = settingsAccent,
                 variant = GlassVariant.SheetAction,
             ) {
                 Text(
                     text = stringResource(R.string.ba_settings_card_media_title),
-                    color = Color(0xFF60A5FA),
+                    color = settingsAccent,
                 )
                 SheetControlRow(
                     label = stringResource(R.string.ba_settings_label_media_adaptive_rotation),

@@ -59,7 +59,16 @@ fun GlassSearchField(
         isDark = isDark,
         variant = variant,
         blurRadius = blurRadius
-    )
+    ).let { baseStyle ->
+        if (variant == GlassVariant.SheetInput) {
+            baseStyle.tintWithAccent(
+                accentColor = textColor,
+                isDark = isDark
+            )
+        } else {
+            baseStyle
+        }
+    }
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
     val borderModifier = if (!glass.showBorder) {
         Modifier
@@ -143,7 +152,7 @@ fun GlassSearchField(
                 lineHeight = AppTypographyTokens.Body.lineHeight,
                 textAlign = textAlign
             ),
-            cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
+            cursorBrush = SolidColor(textColor),
             visualTransformation = visualTransformation,
             keyboardOptions = if (singleLine) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
             keyboardActions = KeyboardActions(
