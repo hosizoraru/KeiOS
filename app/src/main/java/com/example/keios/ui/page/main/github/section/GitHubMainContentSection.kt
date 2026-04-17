@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -522,42 +523,83 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 ) {
                                     val commitLabel = bundleCommitLabel(assetBundle)
                                     val transportLabel = bundleTransportLabel(assetBundle, context)
+                                    val summaryMetaPillModifier = Modifier.widthIn(min = 58.dp)
+                                    val summaryMetaPillPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
                                     Column(
                                         modifier = Modifier.weight(1f),
                                         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
                                     ) {
-                                        Text(
-                                            text = target?.label
-                                                ?: stringResource(R.string.github_item_label_update_assets),
-                                            color = targetAccent,
-                                            fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                                            lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                                            fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        if (!assetLoading && assetError.isBlank() &&
-                                            (commitLabel != null || transportLabel != null)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            verticalAlignment = androidx.compose.ui.Alignment.Top
                                         ) {
-                                            FlowRow(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                                            ) {
+                                            Text(
+                                                text = target?.label
+                                                    ?: stringResource(R.string.github_item_label_update_assets),
+                                                color = targetAccent,
+                                                fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                                                lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                                                fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            if (!assetLoading && assetError.isBlank()) {
                                                 commitLabel?.let { label ->
                                                     StatusPill(
                                                         label = label,
                                                         color = GitHubStatusPalette.Active.copy(alpha = 0.92f),
-                                                        contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
+                                                        modifier = summaryMetaPillModifier,
+                                                        contentPadding = summaryMetaPillPadding
                                                     )
                                                 }
                                                 transportLabel?.let { label ->
                                                     StatusPill(
                                                         label = label,
                                                         color = GitHubStatusPalette.Active,
-                                                        contentPadding = PaddingValues(horizontal = 7.dp, vertical = 4.dp)
+                                                        modifier = summaryMetaPillModifier,
+                                                        contentPadding = summaryMetaPillPadding
                                                     )
                                                 }
+                                            }
+                                            if (assetLoading) {
+                                                Box(
+                                                    modifier = summaryMetaPillModifier
+                                                        .clip(RoundedCornerShape(999.dp))
+                                                        .background(GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.18f else 0.12f))
+                                                        .border(
+                                                            width = 0.8.dp,
+                                                            color = GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.32f else 0.22f),
+                                                            shape = RoundedCornerShape(999.dp)
+                                                        )
+                                                        .padding(summaryMetaPillPadding),
+                                                    contentAlignment = androidx.compose.ui.Alignment.Center
+                                                ) {
+                                                    CircularProgressIndicator(
+                                                        progress = 0f,
+                                                        size = 14.dp,
+                                                        strokeWidth = 2.dp,
+                                                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                                            foregroundColor = GitHubStatusPalette.Active,
+                                                            backgroundColor = GitHubStatusPalette.Active.copy(alpha = 0.18f)
+                                                        )
+                                                    )
+                                                }
+                                            } else {
+                                                StatusPill(
+                                                    label = when {
+                                                        assetBundle != null -> assetBundle.assets.size.toString()
+                                                        assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
+                                                        else -> stringResource(R.string.github_asset_count_pending)
+                                                    },
+                                                    color = when {
+                                                        assetError.isNotBlank() -> GitHubStatusPalette.Error
+                                                        else -> targetAccent
+                                                    },
+                                                    modifier = summaryMetaPillModifier,
+                                                    contentPadding = summaryMetaPillPadding
+                                                )
                                             }
                                         }
                                         val fallbackReleaseName = when {
@@ -677,56 +719,6 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                                 lineHeight = AppTypographyTokens.Supporting.lineHeight,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(30.dp)
-                                            .clip(RoundedCornerShape(999.dp))
-                                            .background(
-                                                when {
-                                                    assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.22f else 0.16f)
-                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.22f else 0.16f)
-                                                    else -> targetAccent.copy(alpha = if (isDark) 0.22f else 0.16f)
-                                                }
-                                            )
-                                            .border(
-                                                width = 0.8.dp,
-                                                color = when {
-                                                    assetLoading -> GitHubStatusPalette.Active.copy(alpha = if (isDark) 0.36f else 0.30f)
-                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.36f else 0.30f)
-                                                    else -> targetAccent.copy(alpha = if (isDark) 0.36f else 0.30f)
-                                                },
-                                                shape = RoundedCornerShape(999.dp)
-                                            ),
-                                        contentAlignment = androidx.compose.ui.Alignment.Center
-                                    ) {
-                                        if (assetLoading) {
-                                            CircularProgressIndicator(
-                                                progress = 0f,
-                                                size = 14.dp,
-                                                strokeWidth = 2.dp,
-                                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                                    foregroundColor = GitHubStatusPalette.Active,
-                                                    backgroundColor = GitHubStatusPalette.Active.copy(alpha = 0.18f)
-                                                )
-                                            )
-                                        } else {
-                                            Text(
-                                                text = when {
-                                                    assetBundle != null -> assetBundle.assets.size.toString()
-                                                    assetError.isNotBlank() -> stringResource(R.string.github_asset_count_error)
-                                                    else -> stringResource(R.string.github_asset_count_pending)
-                                                },
-                                                color = when {
-                                                    assetError.isNotBlank() -> GitHubStatusPalette.Error
-                                                    else -> targetAccent
-                                                },
-                                                fontSize = AppTypographyTokens.Body.fontSize,
-                                                lineHeight = AppTypographyTokens.Body.lineHeight,
-                                                fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
-                                                maxLines = 1
                                             )
                                         }
                                     }
