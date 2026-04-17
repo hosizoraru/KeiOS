@@ -26,7 +26,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.model.GitHubApiCredentialStatus
@@ -34,6 +33,7 @@ import com.example.keios.feature.github.model.GitHubStrategyBenchmarkResult
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
 import com.example.keios.feature.github.model.InstalledAppItem
 import com.example.keios.ui.page.main.widget.AppInfoRow
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetExpandableCard
@@ -67,10 +67,10 @@ internal fun GitHubCompactInfoRow(
         valueTextAlign = TextAlign.End,
         valueMaxLines = 4,
         valueOverflow = TextOverflow.Ellipsis,
-        labelFontSize = 13.sp,
-        labelLineHeight = 18.sp,
-        valueFontSize = 13.sp,
-        valueLineHeight = 18.sp,
+        labelFontSize = AppTypographyTokens.Body.fontSize,
+        labelLineHeight = AppTypographyTokens.Body.lineHeight,
+        valueFontSize = AppTypographyTokens.Body.fontSize,
+        valueLineHeight = AppTypographyTokens.Body.lineHeight,
         emphasizedValue = emphasized,
         onClick = onClick
     )
@@ -116,10 +116,10 @@ internal fun GitHubOverviewMetricItem(
         labelMaxLines = 1,
         valueMaxLines = 1,
         valueOverflow = TextOverflow.Ellipsis,
-        labelFontSize = 13.sp,
-        labelLineHeight = 18.sp,
-        valueFontSize = 13.sp,
-        valueLineHeight = 18.sp,
+        labelFontSize = AppTypographyTokens.Body.fontSize,
+        labelLineHeight = AppTypographyTokens.Body.lineHeight,
+        valueFontSize = AppTypographyTokens.Body.fontSize,
+        valueLineHeight = AppTypographyTokens.Body.lineHeight,
         emphasizedValue = emphasized
     )
 }

@@ -54,16 +54,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppInfoRow
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.GlassIconButton
@@ -842,7 +841,13 @@ fun OsPage(
                             horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("系统参数与属性", color = titleColor)
+                            Text(
+                                text = "系统参数与属性",
+                                color = titleColor,
+                                fontSize = AppTypographyTokens.CardHeader.fontSize,
+                                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                                fontWeight = AppTypographyTokens.CardHeader.fontWeight
+                            )
                             Spacer(modifier = Modifier.weight(1f))
                             if (overviewState != SystemOverviewState.Idle) {
                                 CircularProgressIndicator(
@@ -921,6 +926,9 @@ fun OsPage(
                                 Text(
                                     text = type,
                                     color = MiuixTheme.colorScheme.onBackground,
+                                    fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                                    lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                                    fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
                                     modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
                                 )
                                 rows.forEach { row ->
@@ -1123,10 +1131,10 @@ private fun OsSectionInfoRow(
         labelMaxLines = Int.MAX_VALUE,
         valueMaxLines = 6,
         valueOverflow = TextOverflow.Ellipsis,
-        labelFontSize = 13.sp,
-        labelLineHeight = 18.sp,
-        valueFontSize = 13.sp,
-        valueLineHeight = 18.sp,
+        labelFontSize = AppTypographyTokens.Body.fontSize,
+        labelLineHeight = AppTypographyTokens.Body.lineHeight,
+        valueFontSize = AppTypographyTokens.Body.fontSize,
+        valueLineHeight = AppTypographyTokens.Body.lineHeight,
         emphasizedValue = true
     )
 }

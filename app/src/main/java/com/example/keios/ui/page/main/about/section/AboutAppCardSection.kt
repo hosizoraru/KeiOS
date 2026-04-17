@@ -18,6 +18,7 @@ import com.example.keios.R
 import com.example.keios.ui.page.main.AppIcon
 import com.example.keios.ui.page.main.about.ui.AboutCompactInfoRow
 import com.example.keios.ui.page.main.about.util.formatTime
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -83,12 +84,17 @@ fun AboutAppCardSection(
                 )
                 Text(
                     text = stringResource(R.string.about_card_app_title),
-                    color = accent
+                    color = accent,
+                    fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                    lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
+                    fontWeight = AppTypographyTokens.SectionTitle.fontWeight
                 )
             }
             Text(
                 text = stringResource(R.string.about_card_app_subtitle),
-                color = subtitleColor
+                color = subtitleColor,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
             )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 AboutCompactInfoRow(

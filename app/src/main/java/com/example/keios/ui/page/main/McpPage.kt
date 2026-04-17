@@ -51,7 +51,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -63,11 +62,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.mcp.McpServerUiState
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -431,7 +430,13 @@ fun McpPage(
                             horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(stringResource(R.string.mcp_overview_title), color = titleColor)
+                            Text(
+                                text = stringResource(R.string.mcp_overview_title),
+                                color = titleColor,
+                                fontSize = AppTypographyTokens.CardHeader.fontSize,
+                                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                                fontWeight = AppTypographyTokens.CardHeader.fontWeight
+                            )
                             Spacer(modifier = Modifier.weight(1f))
                             StatusPill(
                                 label = runtimeText,
@@ -853,19 +858,19 @@ private fun McpOverviewMetricItem(
             Text(
                 text = metric.label,
                 color = labelColor,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = metric.value.ifBlank { stringResource(R.string.common_na) },
                 color = metric.valueColor ?: defaultValueColor,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Medium
+                fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight
             )
         }
     }

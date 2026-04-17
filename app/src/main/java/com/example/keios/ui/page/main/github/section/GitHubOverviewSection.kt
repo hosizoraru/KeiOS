@@ -30,6 +30,7 @@ import com.example.keios.ui.page.main.overviewApiLabel
 import com.example.keios.ui.page.main.overviewLabel
 import com.example.keios.ui.page.main.borderColor
 import com.example.keios.ui.page.main.surfaceColor
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.StatusLabelText
 import com.example.keios.ui.page.main.widget.StatusPill
@@ -108,7 +109,13 @@ internal fun GitHubOverviewCard(
                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.github_overview_title), color = MiuixTheme.colorScheme.onBackground)
+                Text(
+                    text = stringResource(R.string.github_overview_title),
+                    color = MiuixTheme.colorScheme.onBackground,
+                    fontSize = AppTypographyTokens.CardHeader.fontSize,
+                    lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                    fontWeight = AppTypographyTokens.CardHeader.fontWeight
+                )
                 Spacer(modifier = Modifier.weight(1f))
                 if (overviewRefreshState != OverviewRefreshState.Idle) {
                     val indicatorColor = overviewRefreshState.color(

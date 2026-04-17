@@ -31,12 +31,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.CacheEntrySummary
@@ -44,6 +42,7 @@ import com.example.keios.core.prefs.CacheStores
 import com.example.keios.core.log.AppLogStore
 import com.example.keios.ui.page.main.widget.AppInfoRow
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
@@ -543,9 +542,9 @@ fun SettingsPage(
                         Text(
                             text = stringResource(R.string.settings_cache_header),
                             color = titleColor,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            lineHeight = 19.sp
+                            fontSize = AppTypographyTokens.CardHeader.fontSize,
+                            fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                            lineHeight = AppTypographyTokens.CardHeader.lineHeight
                         )
                         Row(
                             modifier = Modifier
@@ -557,9 +556,9 @@ fun SettingsPage(
                             Text(
                                 text = stringResource(R.string.settings_cache_diagnostics_title),
                                 color = titleColor,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                lineHeight = 21.sp,
+                                fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                                fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
+                                lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
                                 modifier = Modifier.weight(1f)
                             )
                             Switch(
@@ -574,8 +573,8 @@ fun SettingsPage(
                                 stringResource(R.string.settings_cache_diagnostics_summary_disabled)
                             },
                             color = subtitleColor,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
+                            fontSize = AppTypographyTokens.Body.fontSize,
+                            lineHeight = AppTypographyTokens.Body.lineHeight
                         )
                         SettingsInfoItem(
                             key = stringResource(R.string.common_scope),
@@ -590,8 +589,8 @@ fun SettingsPage(
                                 Text(
                                     text = stringResource(R.string.settings_cache_disabled_desc),
                                     color = subtitleColor,
-                                    fontSize = 13.sp,
-                                    lineHeight = 18.sp
+                                    fontSize = AppTypographyTokens.Body.fontSize,
+                                    lineHeight = AppTypographyTokens.Body.lineHeight
                                 )
                             }
 
@@ -599,8 +598,8 @@ fun SettingsPage(
                                 Text(
                                     text = stringResource(R.string.settings_cache_loading_desc),
                                     color = subtitleColor,
-                                    fontSize = 13.sp,
-                                    lineHeight = 18.sp
+                                    fontSize = AppTypographyTokens.Body.fontSize,
+                                    lineHeight = AppTypographyTokens.Body.lineHeight
                                 )
                             }
 
@@ -608,8 +607,8 @@ fun SettingsPage(
                                 Text(
                                     text = stringResource(R.string.settings_cache_empty_desc),
                                     color = subtitleColor,
-                                    fontSize = 13.sp,
-                                    lineHeight = 18.sp
+                                    fontSize = AppTypographyTokens.Body.fontSize,
+                                    lineHeight = AppTypographyTokens.Body.lineHeight
                                 )
                             }
 
@@ -664,21 +663,21 @@ private fun SettingsGroupCard(
         Text(
             text = header,
             color = titleColor,
-            fontSize = 12.sp,
-            lineHeight = 16.sp
+            fontSize = AppTypographyTokens.Caption.fontSize,
+            lineHeight = AppTypographyTokens.Caption.lineHeight
         )
         Text(
             text = title,
             color = titleColor,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            lineHeight = 21.sp
+            fontSize = AppTypographyTokens.SectionTitle.fontSize,
+            fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
+            lineHeight = AppTypographyTokens.SectionTitle.lineHeight
         )
         Text(
             text = summary,
             color = subtitleColor,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
         )
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -713,9 +712,9 @@ private fun SettingsActionItem(
             Text(
                 text = title,
                 color = titleColor,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                lineHeight = 21.sp,
+                fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
+                lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
                 modifier = Modifier.weight(1f)
             )
             trailing()
@@ -723,8 +722,8 @@ private fun SettingsActionItem(
         Text(
             text = summary,
             color = subtitleColor,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
         )
         if (!infoKey.isNullOrBlank() && !infoValue.isNullOrBlank()) {
             SettingsInfoItem(
@@ -776,10 +775,10 @@ private fun SettingsInfoItem(
         labelMaxLines = 2,
         valueMaxLines = 6,
         valueOverflow = TextOverflow.Ellipsis,
-        labelFontSize = 13.sp,
-        labelLineHeight = 18.sp,
-        valueFontSize = 13.sp,
-        valueLineHeight = 18.sp,
+        labelFontSize = AppTypographyTokens.Body.fontSize,
+        labelLineHeight = AppTypographyTokens.Body.lineHeight,
+        valueFontSize = AppTypographyTokens.Body.fontSize,
+        valueLineHeight = AppTypographyTokens.Body.lineHeight,
         emphasizedValue = false
     )
 }
@@ -811,9 +810,9 @@ private fun SettingsCacheRow(
             Text(
                 text = entry.title,
                 color = titleColor,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                lineHeight = 20.sp,
+                fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
                 modifier = Modifier.weight(1f)
             )
             if (entry.clearLabel.isNotBlank()) {
@@ -831,26 +830,26 @@ private fun SettingsCacheRow(
         Text(
             text = entry.summary,
             color = subtitleColor,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
         )
         Text(
             text = entry.detail,
             color = subtitleColor,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
         )
         Text(
             text = entry.activity,
             color = subtitleColor,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
         )
         Text(
             text = entry.storage,
             color = subtitleColor,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
         )
     }
 }

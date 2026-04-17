@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
+import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.rememberLightTextCopyAction
@@ -85,6 +86,8 @@ fun AboutCompactRow(
                 Text(
                     text = title,
                     color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
                     maxLines = Int.MAX_VALUE,
                     overflow = Clip
                 )
@@ -127,6 +130,8 @@ fun AboutCompactInfoRow(
             Text(
                 text = displayValue,
                 color = valueColor,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
                 maxLines = Int.MAX_VALUE,
                 overflow = Clip,
                 modifier = Modifier.fillMaxWidth(),
@@ -203,7 +208,10 @@ fun AboutSectionCard(
                     }
                     Text(
                         text = title,
-                        color = titleColor
+                        color = titleColor,
+                        fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                        lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
+                        fontWeight = AppTypographyTokens.SectionTitle.fontWeight
                     )
                 }
                 if (collapsible) {
@@ -220,7 +228,9 @@ fun AboutSectionCard(
             }
             Text(
                 text = subtitle,
-                color = subtitleColor
+                color = subtitleColor,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
             )
             if (!collapsible || expanded) {
                 content()

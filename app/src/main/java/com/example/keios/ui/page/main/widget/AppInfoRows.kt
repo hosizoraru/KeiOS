@@ -16,7 +16,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -42,10 +41,10 @@ fun AppInfoRow(
     valueMaxLines: Int = Int.MAX_VALUE,
     labelOverflow: TextOverflow = TextOverflow.Clip,
     valueOverflow: TextOverflow = TextOverflow.Clip,
-    labelFontSize: TextUnit = 13.sp,
-    labelLineHeight: TextUnit = 18.sp,
-    valueFontSize: TextUnit = 13.sp,
-    valueLineHeight: TextUnit = 18.sp,
+    labelFontSize: TextUnit = AppTypographyTokens.Body.fontSize,
+    labelLineHeight: TextUnit = AppTypographyTokens.Body.lineHeight,
+    valueFontSize: TextUnit = AppTypographyTokens.Body.fontSize,
+    valueLineHeight: TextUnit = AppTypographyTokens.Body.lineHeight,
     emphasizedValue: Boolean = true,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
