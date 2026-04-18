@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,6 +50,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -91,6 +93,9 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.size.Precision
+import coil3.size.Scale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -394,6 +399,15 @@ private fun MainPagerLayout(
     var githubScrollToTopSignal by remember { mutableIntStateOf(0) }
     var pagerScrollEnabled by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
+    val shouldRenderNonHomeBackground by remember(hasNonHomeBackground, tabs, pagerState) {
+        derivedStateOf {
+            if (!hasNonHomeBackground) return@derivedStateOf false
+            val current = tabs.getOrElse(pagerState.currentPage) { BottomPage.Home }
+            val target = tabs.getOrElse(pagerState.targetPage) { BottomPage.Home }
+            val settled = tabs.getOrElse(pagerState.settledPage) { BottomPage.Home }
+            current != BottomPage.Home || target != BottomPage.Home || settled != BottomPage.Home
+        }
+    }
     ReportPagerPerformanceState(
         scope = "main_pager",
         currentPage = tabs.getOrElse(pagerState.currentPage) { BottomPage.Home }.name,
@@ -620,165 +634,169 @@ private fun MainPagerLayout(
             }
         }
     ) { _ ->
-        HorizontalPager(
-            state = pagerState,
-            key = { index -> tabs[index].name },
-            userScrollEnabled = pagerScrollEnabled,
-            overscrollEffect = null,
-            beyondViewportPageCount = preloadPolicy.mainPagerBeyondViewportPageCount,
-            // CRITICAL FIX: NEVER conditionally unmount layerBackdrop.
-            // If the node is visible (even during an exit animation), it MUST have the backdrop attached,
-            // otherwise consumer composables will attempt to draw a detached Native pointer causing SIGSEGV.
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = farJumpAlpha.value }
-                .layerBackdrop(backdrop)
-        ) { pageIndex ->
-
-            val currentPageType = tabs[pageIndex]
-            val isHome = currentPageType == BottomPage.Home
-            val isTopBarManagedPage = currentPageType == BottomPage.Os ||
-                currentPageType == BottomPage.Ba ||
-                currentPageType == BottomPage.Mcp ||
-                currentPageType == BottomPage.GitHub
-
-            val pageHorizontalPadding = when {
-                isHome -> 0.dp
-                isTopBarManagedPage -> 0.dp
-                else -> 18.dp
-            }
-            val contentInsets = when {
-                isHome -> PaddingValues(0.dp)
-                isTopBarManagedPage -> PaddingValues(0.dp)
-                else -> systemInsets
-            }
-            val topSpacerPadding = when {
-                isHome -> 0.dp
-                isTopBarManagedPage -> 0.dp
-                else -> 14.dp
-            }
-
-            Box(
+        Box(modifier = Modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                key = { index -> tabs[index].name },
+                userScrollEnabled = pagerScrollEnabled,
+                overscrollEffect = null,
+                beyondViewportPageCount = preloadPolicy.mainPagerBeyondViewportPageCount,
+                // CRITICAL FIX: NEVER conditionally unmount layerBackdrop.
+                // If the node is visible (even during an exit animation), it MUST have the backdrop attached,
+                // otherwise consumer composables will attempt to draw a detached Native pointer causing SIGSEGV.
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = pageHorizontalPadding)
-                    .padding(contentInsets)
-                    .padding(top = topSpacerPadding)
-            ) {
-                when (currentPageType) {
-                    BottomPage.Home -> {
-                        HomePage(
-                            shizukuStatus = shizukuStatus,
-                            mcpRunning = mcpUiState.running,
-                            mcpRunningSinceEpochMs = mcpUiState.runningSinceEpochMs,
-                            mcpPort = mcpUiState.port,
-                            mcpEndpointPath = mcpUiState.endpointPath,
-                            mcpServerName = mcpUiState.serverName,
-                            mcpAuthTokenConfigured = mcpUiState.authToken.isNotBlank(),
-                            mcpConnectedClients = mcpUiState.connectedClients,
-                            mcpAllowExternal = mcpUiState.allowExternal,
-                            homeIconHdrEnabled = homeIconHdrEnabled,
-                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            visibleBottomPages = visibleTabsSnapshot,
-                            onBottomPageVisibilityChange = { page, visible ->
-                                if (page == BottomPage.Home) return@HomePage
-                                val updated = visibleBottomPageNames
-                                    .toMutableSet()
-                                    .apply {
-                                        if (visible) add(page.name) else remove(page.name)
-                                    }
-                                    .toSet()
-                                onVisibleBottomPageNamesChange(updated)
-                            },
-                            onOpenSettings = { navigator.pushSingleTop(KeiosRoute.Settings) },
-                            onOpenAbout = { navigator.pushSingleTop(KeiosRoute.About) },
-                            onActionBarInteractingChanged = { interacting ->
-                                pagerScrollEnabled = !interacting
-                            },
-                            contentTopPadding = homeTopInset,
-                            contentBottomPadding = homeBottomInset
-                        )
-                    }
-                    BottomPage.Os -> {
-                        val isWarmActive = pageIndex == pagerState.currentPage ||
-                            pageIndex == pagerState.settledPage ||
-                            (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
-                        OsPage(
-                            scrollToTopSignal = osScrollToTopSignal,
-                            isPageActive = isWarmActive,
-                            shizukuStatus = shizukuStatus,
-                            shizukuApiUtils = shizukuApiUtils,
-                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
-                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            contentBottomPadding = bottomOverlayPadding,
-                            onActionBarInteractingChanged = { interacting ->
-                                pagerScrollEnabled = !interacting
-                            }
-                        )
-                    }
-                    BottomPage.Ba -> {
-                        val isWarmActive = pageIndex == pagerState.currentPage ||
-                            pageIndex == pagerState.settledPage ||
-                            (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
-                        BAPage(
-                            contentBottomPadding = bottomOverlayPadding,
-                            scrollToTopSignal = baScrollToTopSignal,
-                            isPageActive = isWarmActive,
-                            preloadingEnabled = preloadingEnabled,
-                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
-                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            onOpenPoolStudentGuide = { sourceUrl ->
-                                onOpenGuideDetail(sourceUrl)
-                            },
-                            onOpenGuideCatalog = {
-                                navigator.pushSingleTop(KeiosRoute.BaGuideCatalog)
-                            },
-                            onActionBarInteractingChanged = { interacting ->
-                                pagerScrollEnabled = !interacting
-                            }
-                        )
-                    }
-                    BottomPage.Mcp -> {
-                        val isWarmActive = pageIndex == pagerState.currentPage ||
-                            pageIndex == pagerState.settledPage ||
-                            (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
-                        McpPage(
-                            mcpServerManager = mcpServerManager,
-                            contentBottomPadding = bottomOverlayPadding,
-                            scrollToTopSignal = mcpScrollToTopSignal,
-                            isPageActive = isWarmActive,
-                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
-                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            onOpenSkill = { navigator.pushSingleTop(KeiosRoute.McpSkill) },
-                            onActionBarInteractingChanged = { interacting ->
-                                pagerScrollEnabled = !interacting
-                            }
-                        )
-                    }
-                    BottomPage.GitHub -> {
-                        val isWarmActive = pageIndex == pagerState.currentPage ||
-                            pageIndex == pagerState.settledPage ||
-                            (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
-                        GitHubPage(
-                            contentBottomPadding = bottomOverlayPadding,
-                            scrollToTopSignal = githubScrollToTopSignal,
-                            isPageActive = isWarmActive,
-                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
-                            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            onActionBarInteractingChanged = { interacting ->
-                                pagerScrollEnabled = !interacting
-                            }
-                        )
+                    .graphicsLayer { alpha = farJumpAlpha.value }
+                    .layerBackdrop(backdrop)
+            ) { pageIndex ->
+
+                val currentPageType = tabs[pageIndex]
+                val isHome = currentPageType == BottomPage.Home
+                val isTopBarManagedPage = currentPageType == BottomPage.Os ||
+                    currentPageType == BottomPage.Ba ||
+                    currentPageType == BottomPage.Mcp ||
+                    currentPageType == BottomPage.GitHub
+
+                val pageHorizontalPadding = when {
+                    isHome -> 0.dp
+                    isTopBarManagedPage -> 0.dp
+                    else -> 18.dp
+                }
+                val contentInsets = when {
+                    isHome -> PaddingValues(0.dp)
+                    isTopBarManagedPage -> PaddingValues(0.dp)
+                    else -> systemInsets
+                }
+                val topSpacerPadding = when {
+                    isHome -> 0.dp
+                    isTopBarManagedPage -> 0.dp
+                    else -> 14.dp
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = pageHorizontalPadding)
+                        .padding(contentInsets)
+                        .padding(top = topSpacerPadding)
+                ) {
+                    when (currentPageType) {
+                        BottomPage.Home -> {
+                            HomePage(
+                                shizukuStatus = shizukuStatus,
+                                mcpRunning = mcpUiState.running,
+                                mcpRunningSinceEpochMs = mcpUiState.runningSinceEpochMs,
+                                mcpPort = mcpUiState.port,
+                                mcpEndpointPath = mcpUiState.endpointPath,
+                                mcpServerName = mcpUiState.serverName,
+                                mcpAuthTokenConfigured = mcpUiState.authToken.isNotBlank(),
+                                mcpConnectedClients = mcpUiState.connectedClients,
+                                mcpAllowExternal = mcpUiState.allowExternal,
+                                homeIconHdrEnabled = homeIconHdrEnabled,
+                                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                visibleBottomPages = visibleTabsSnapshot,
+                                onBottomPageVisibilityChange = { page, visible ->
+                                    if (page == BottomPage.Home) return@HomePage
+                                    val updated = visibleBottomPageNames
+                                        .toMutableSet()
+                                        .apply {
+                                            if (visible) add(page.name) else remove(page.name)
+                                        }
+                                        .toSet()
+                                    onVisibleBottomPageNamesChange(updated)
+                                },
+                                onOpenSettings = { navigator.pushSingleTop(KeiosRoute.Settings) },
+                                onOpenAbout = { navigator.pushSingleTop(KeiosRoute.About) },
+                                onActionBarInteractingChanged = { interacting ->
+                                    pagerScrollEnabled = !interacting
+                                },
+                                contentTopPadding = homeTopInset,
+                                contentBottomPadding = homeBottomInset
+                            )
+                        }
+                        BottomPage.Os -> {
+                            val isWarmActive = pageIndex == pagerState.currentPage ||
+                                pageIndex == pagerState.settledPage ||
+                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            OsPage(
+                                scrollToTopSignal = osScrollToTopSignal,
+                                isPageActive = isWarmActive,
+                                shizukuStatus = shizukuStatus,
+                                shizukuApiUtils = shizukuApiUtils,
+                                cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                contentBottomPadding = bottomOverlayPadding,
+                                onActionBarInteractingChanged = { interacting ->
+                                    pagerScrollEnabled = !interacting
+                                }
+                            )
+                        }
+                        BottomPage.Ba -> {
+                            val isWarmActive = pageIndex == pagerState.currentPage ||
+                                pageIndex == pagerState.settledPage ||
+                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            BAPage(
+                                contentBottomPadding = bottomOverlayPadding,
+                                scrollToTopSignal = baScrollToTopSignal,
+                                isPageActive = isWarmActive,
+                                preloadingEnabled = preloadingEnabled,
+                                cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                onOpenPoolStudentGuide = { sourceUrl ->
+                                    onOpenGuideDetail(sourceUrl)
+                                },
+                                onOpenGuideCatalog = {
+                                    navigator.pushSingleTop(KeiosRoute.BaGuideCatalog)
+                                },
+                                onActionBarInteractingChanged = { interacting ->
+                                    pagerScrollEnabled = !interacting
+                                }
+                            )
+                        }
+                        BottomPage.Mcp -> {
+                            val isWarmActive = pageIndex == pagerState.currentPage ||
+                                pageIndex == pagerState.settledPage ||
+                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            McpPage(
+                                mcpServerManager = mcpServerManager,
+                                contentBottomPadding = bottomOverlayPadding,
+                                scrollToTopSignal = mcpScrollToTopSignal,
+                                isPageActive = isWarmActive,
+                                cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                onOpenSkill = { navigator.pushSingleTop(KeiosRoute.McpSkill) },
+                                onActionBarInteractingChanged = { interacting ->
+                                    pagerScrollEnabled = !interacting
+                                }
+                            )
+                        }
+                        BottomPage.GitHub -> {
+                            val isWarmActive = pageIndex == pagerState.currentPage ||
+                                pageIndex == pagerState.settledPage ||
+                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            GitHubPage(
+                                contentBottomPadding = bottomOverlayPadding,
+                                scrollToTopSignal = githubScrollToTopSignal,
+                                isPageActive = isWarmActive,
+                                cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                onActionBarInteractingChanged = { interacting ->
+                                    pagerScrollEnabled = !interacting
+                                }
+                            )
+                        }
                     }
                 }
-                if (!isHome && hasNonHomeBackground) {
-                    // Render as a soft foreground overlay so it remains visible even when
-                    // destination pages use opaque surface/background containers.
-                    NonHomePageBackground(
-                        enabled = hasNonHomeBackground,
-                        imageUri = nonHomeBackgroundUri
-                    )
-                }
+            }
+
+            if (shouldRenderNonHomeBackground) {
+                // Keep one global foreground overlay for non-home pages.
+                // This avoids N-times duplicated AsyncImage work in offscreen pager pages.
+                NonHomePageBackground(
+                    enabled = hasNonHomeBackground,
+                    imageUri = nonHomeBackgroundUri,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }
@@ -787,14 +805,33 @@ private fun MainPagerLayout(
 @Composable
 private fun NonHomePageBackground(
     enabled: Boolean,
-    imageUri: String
+    imageUri: String,
+    modifier: Modifier = Modifier
 ) {
     if (!enabled || imageUri.isBlank()) return
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val (targetWidthPx, targetHeightPx) = remember(configuration, density) {
+        with(density) {
+            val width = configuration.screenWidthDp.dp.roundToPx().coerceAtLeast(1)
+            val height = configuration.screenHeightDp.dp.roundToPx().coerceAtLeast(1)
+            width to height
+        }
+    }
+    val request: ImageRequest = remember(imageUri, targetWidthPx, targetHeightPx) {
+        ImageRequest.Builder(context)
+            .data(imageUri)
+            .size(targetWidthPx, targetHeightPx)
+            .scale(Scale.FILL)
+            .precision(Precision.INEXACT)
+            .build()
+    }
     AsyncImage(
-        model = imageUri,
+        model = request,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         alpha = 0.16f,
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier
     )
 }
