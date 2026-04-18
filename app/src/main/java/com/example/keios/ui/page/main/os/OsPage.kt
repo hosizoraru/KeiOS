@@ -1124,7 +1124,6 @@ fun OsPage(
                     }
                 }
 
-                SheetSectionTitle("显示控制")
                 SheetSectionCard(verticalSpacing = 10.dp) {
                     OsSectionCard.entries.filter { it != OsSectionCard.GOOGLE_SYSTEM_SERVICE }.forEach { card ->
                         SheetControlRow(
@@ -1530,17 +1529,30 @@ fun OsPage(
             }
         ) {
             val packageSuggestionQuery = googleSystemServicePackageSuggestionQuery.trim()
+            val currentPackageName = googleSystemServiceDraft.packageName.trim()
             val filteredInstalledApps = remember(
                 googleSystemServicePackageSuggestions,
-                packageSuggestionQuery
+                packageSuggestionQuery,
+                currentPackageName
             ) {
-                if (packageSuggestionQuery.isBlank()) {
+                val filtered = if (packageSuggestionQuery.isBlank()) {
                     googleSystemServicePackageSuggestions
                 } else {
                     googleSystemServicePackageSuggestions.filter { app ->
                         app.appName.contains(packageSuggestionQuery, ignoreCase = true) ||
                             app.packageName.contains(packageSuggestionQuery, ignoreCase = true)
                     }
+                }
+                if (currentPackageName.isBlank()) {
+                    filtered
+                } else {
+                    val selected = filtered.filter {
+                        it.packageName.equals(currentPackageName, ignoreCase = true)
+                    }
+                    val others = filtered.filterNot {
+                        it.packageName.equals(currentPackageName, ignoreCase = true)
+                    }
+                    selected + others
                 }
             }
             val classSuggestionQuery = googleSystemServiceClassSuggestionQuery.trim()
@@ -1552,31 +1564,26 @@ fun OsPage(
                     googleSystemServiceClassSuggestions
                 } else {
                     googleSystemServiceClassSuggestions.filter { option ->
-                        option.className.contains(classSuggestionQuery, ignoreCase = true)
+                        option.className.contains(classSuggestionQuery, ignoreCase = true) ||
+                            option.activityName.contains(classSuggestionQuery, ignoreCase = true)
                     }
                 }
             }
-            val implicitRecommendationSelected = remember(
-                googleSystemServiceDraft.className,
-                googleSystemServiceDraft.intentAction,
-                googleSystemServiceDraft.intentCategory
-            ) {
-                val categoryTokens = parseIntentTokenText(googleSystemServiceDraft.intentCategory)
+            val currentClassName = googleSystemServiceDraft.className.trim()
+            val currentIntentAction = googleSystemServiceDraft.intentAction.trim()
+            val currentCategoryTokensUpper = remember(googleSystemServiceDraft.intentCategory) {
+                parseIntentTokenText(googleSystemServiceDraft.intentCategory)
                     .map { it.uppercase(Locale.ROOT) }
                     .toSet()
-                googleSystemServiceDraft.className.trim().isBlank() &&
-                    googleSystemServiceDraft.intentAction.trim() == Intent.ACTION_MAIN &&
-                    categoryTokens.contains(Intent.CATEGORY_LAUNCHER.uppercase(Locale.ROOT))
             }
-            val explicitRecommendationSelected = remember(
-                googleSystemServiceDraft.className,
-                googleSystemServiceDraft.intentAction,
-                googleSystemServiceDraft.intentCategory
-            ) {
-                googleSystemServiceDraft.className.trim().isNotBlank() &&
-                    googleSystemServiceDraft.intentAction.trim() == Intent.ACTION_VIEW &&
-                    googleSystemServiceDraft.intentCategory.trim().isBlank()
-            }
+            val explicitActionRecommendationSelected = currentClassName.isNotBlank() &&
+                currentIntentAction == Intent.ACTION_VIEW
+            val implicitActionRecommendationSelected = currentClassName.isBlank() &&
+                currentIntentAction == Intent.ACTION_MAIN
+            val explicitCategoryRecommendationSelected = currentClassName.isNotBlank() &&
+                currentCategoryTokensUpper.isEmpty()
+            val implicitCategoryRecommendationSelected = currentClassName.isBlank() &&
+                currentCategoryTokensUpper == setOf(Intent.CATEGORY_LAUNCHER.uppercase(Locale.ROOT))
             val suggestions = when (googleSystemServiceSuggestionTarget) {
                 ShortcutSuggestionField.PackageName -> filteredInstalledApps.map { app ->
                     ShortcutSuggestionItem(
@@ -1595,9 +1602,9 @@ fun OsPage(
                     )
                     listOf(implicitItem) + filteredActivityClasses.map { option ->
                         ShortcutSuggestionItem(
-                            label = option.className,
+                            label = option.activityName,
                             value = option.className,
-                            summary = stringResource(R.string.os_google_system_service_class_suggestion_explicit_summary)
+                            summary = option.className
                         )
                     }
                 }
@@ -1780,17 +1787,18 @@ fun OsPage(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                if (googleSystemServiceSuggestionTarget == ShortcutSuggestionField.IntentAction) {
                     SheetSectionTitle(
-                        text = stringResource(R.string.os_google_system_service_class_recommend_section)
+                        text = stringResource(R.string.os_google_system_service_recommend_section)
                     )
                     SheetChoiceCard(
-                        title = stringResource(R.string.os_google_system_service_class_recommend_explicit_title),
-                        summary = stringResource(R.string.os_google_system_service_class_recommend_explicit_summary),
-                        selected = explicitRecommendationSelected,
+                        title = stringResource(R.string.os_google_system_service_action_recommend_explicit_title),
+                        summary = stringResource(R.string.os_google_system_service_action_recommend_explicit_summary),
+                        selected = explicitActionRecommendationSelected,
                         onSelect = {
-                            googleSystemServiceDraft = applyShortcutExplicitDefaults(
-                                draft = googleSystemServiceDraft,
-                                className = googleSystemServiceDraft.className.trim()
+                            googleSystemServiceDraft = googleSystemServiceDraft.copy(
+                                intentAction = Intent.ACTION_VIEW
                             )
                         },
                         accentColor = Color(0xFF16A34A),
@@ -1800,11 +1808,48 @@ fun OsPage(
                         selectedLabel = null
                     )
                     SheetChoiceCard(
-                        title = stringResource(R.string.os_google_system_service_class_recommend_implicit_title),
-                        summary = stringResource(R.string.os_google_system_service_class_recommend_implicit_summary),
-                        selected = implicitRecommendationSelected,
+                        title = stringResource(R.string.os_google_system_service_action_recommend_implicit_title),
+                        summary = stringResource(R.string.os_google_system_service_action_recommend_implicit_summary),
+                        selected = implicitActionRecommendationSelected,
                         onSelect = {
-                            googleSystemServiceDraft = applyShortcutImplicitDefaults(googleSystemServiceDraft)
+                            googleSystemServiceDraft = googleSystemServiceDraft.copy(
+                                intentAction = Intent.ACTION_MAIN
+                            )
+                        },
+                        accentColor = Color(0xFF16A34A),
+                        selectedAccentColor = MiuixTheme.colorScheme.primary,
+                        unselectedTitleColor = Color(0xFF16A34A),
+                        summaryColor = Color(0xFF16A34A),
+                        selectedLabel = null
+                    )
+                }
+                if (googleSystemServiceSuggestionTarget == ShortcutSuggestionField.IntentCategory) {
+                    SheetSectionTitle(
+                        text = stringResource(R.string.os_google_system_service_recommend_section)
+                    )
+                    SheetChoiceCard(
+                        title = stringResource(R.string.os_google_system_service_category_recommend_explicit_title),
+                        summary = stringResource(R.string.os_google_system_service_category_recommend_explicit_summary),
+                        selected = explicitCategoryRecommendationSelected,
+                        onSelect = {
+                            googleSystemServiceDraft = googleSystemServiceDraft.copy(
+                                intentCategory = ""
+                            )
+                        },
+                        accentColor = Color(0xFF16A34A),
+                        selectedAccentColor = MiuixTheme.colorScheme.primary,
+                        unselectedTitleColor = Color(0xFF16A34A),
+                        summaryColor = Color(0xFF16A34A),
+                        selectedLabel = null
+                    )
+                    SheetChoiceCard(
+                        title = stringResource(R.string.os_google_system_service_category_recommend_implicit_title),
+                        summary = stringResource(R.string.os_google_system_service_category_recommend_implicit_summary),
+                        selected = implicitCategoryRecommendationSelected,
+                        onSelect = {
+                            googleSystemServiceDraft = googleSystemServiceDraft.copy(
+                                intentCategory = Intent.CATEGORY_LAUNCHER
+                            )
                         },
                         accentColor = Color(0xFF16A34A),
                         selectedAccentColor = MiuixTheme.colorScheme.primary,
@@ -1883,6 +1928,12 @@ fun OsPage(
                                 if (suggestion.value.trim().isBlank()) Color(0xFFDC2626) else Color(0xFF16A34A)
                             }
                             else -> MiuixTheme.colorScheme.onBackground
+                        },
+                        summaryColor = when (googleSystemServiceSuggestionTarget) {
+                            ShortcutSuggestionField.ClassName -> {
+                                if (suggestion.value.trim().isBlank()) Color(0xFFDC2626) else Color(0xFF16A34A)
+                            }
+                            else -> MiuixTheme.colorScheme.onBackgroundVariant
                         },
                         selectedLabel = null,
                         leading = leading
@@ -2334,7 +2385,8 @@ private data class ShortcutInstalledAppOption(
 )
 
 private data class ShortcutActivityClassOption(
-    val className: String
+    val className: String,
+    val activityName: String
 )
 
 private fun loadInstalledAppOptions(context: Context): List<ShortcutInstalledAppOption> {
@@ -2414,10 +2466,21 @@ private fun loadActivityClassOptions(
             } else {
                 raw
             }
-            ShortcutActivityClassOption(className = normalized)
+            val activityName = runCatching {
+                info.loadLabel(pm).toString()
+            }.getOrNull()?.trim().orEmpty().ifBlank {
+                normalized.substringAfterLast('.')
+            }
+            ShortcutActivityClassOption(
+                className = normalized,
+                activityName = activityName
+            )
         }
         .distinctBy { it.className }
-        .sortedBy { it.className.lowercase(Locale.ROOT) }
+        .sortedWith(
+            compareBy<ShortcutActivityClassOption> { it.activityName.lowercase(Locale.ROOT) }
+                .thenBy { it.className.lowercase(Locale.ROOT) }
+        )
         .toList()
 }
 
