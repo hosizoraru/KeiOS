@@ -78,6 +78,8 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -102,6 +104,8 @@ fun SettingsPage(
     onNonHomeBackgroundEnabledChanged: (Boolean) -> Unit,
     nonHomeBackgroundUri: String,
     onNonHomeBackgroundUriChanged: (String) -> Unit,
+    nonHomeBackgroundOpacity: Float,
+    onNonHomeBackgroundOpacityChanged: (Float) -> Unit,
     superIslandNotificationEnabled: Boolean,
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     superIslandBypassRestrictionEnabled: Boolean,
@@ -186,8 +190,8 @@ fun SettingsPage(
         transitionAnimationsEnabled ||
         cardPressFeedbackEnabled ||
         preloadingEnabled ||
-        homeIconHdrEnabled ||
-        nonHomeBackgroundEnabled
+        homeIconHdrEnabled
+    val backgroundGroupActive = nonHomeBackgroundEnabled || nonHomeBackgroundUri.isNotBlank()
     val notifyGroupActive = superIslandNotificationEnabled || superIslandBypassRestrictionEnabled
     val logGroupActive = logDebugEnabled || logStats.fileCount > 0
     val logLatestText = if (logStats.latestModifiedAtMs <= 0L) {
@@ -428,7 +432,15 @@ fun SettingsPage(
                         infoKey = stringResource(R.string.common_scope),
                         infoValue = stringResource(R.string.settings_home_shine_scope)
                     )
-
+                }
+            }
+            item {
+                SettingsGroupCard(
+                    header = stringResource(R.string.settings_group_background_header),
+                    title = stringResource(R.string.settings_group_background_title),
+                    summary = stringResource(R.string.settings_group_background_summary),
+                    containerColor = if (backgroundGroupActive) enabledCardColor else disabledCardColor
+                ) {
                     SettingsToggleItem(
                         title = stringResource(R.string.settings_non_home_background_title),
                         summary = if (nonHomeBackgroundEnabled) {
@@ -482,6 +494,37 @@ fun SettingsPage(
                                 }
                             )
                         }
+                    )
+
+                    SettingsActionItem(
+                        title = stringResource(R.string.settings_non_home_background_opacity_title),
+                        summary = stringResource(
+                            R.string.settings_non_home_background_opacity_summary,
+                            formatOpacityPercent(nonHomeBackgroundOpacity)
+                        )
+                    )
+                    Slider(
+                        value = nonHomeBackgroundOpacity.coerceIn(
+                            NON_HOME_BACKGROUND_OPACITY_MIN,
+                            NON_HOME_BACKGROUND_OPACITY_MAX
+                        ),
+                        onValueChange = onNonHomeBackgroundOpacityChanged,
+                        valueRange = NON_HOME_BACKGROUND_OPACITY_MIN..NON_HOME_BACKGROUND_OPACITY_MAX,
+                        showKeyPoints = true,
+                        keyPoints = NON_HOME_BACKGROUND_OPACITY_KEY_POINTS,
+                        magnetThreshold = NON_HOME_BACKGROUND_OPACITY_MAGNET_THRESHOLD,
+                        hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                        enabled = nonHomeBackgroundEnabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp)
+                    )
+                    SettingsInfoItem(
+                        key = stringResource(R.string.common_note),
+                        value = stringResource(
+                            R.string.settings_non_home_background_opacity_default,
+                            formatOpacityPercent(NON_HOME_BACKGROUND_OPACITY_DEFAULT)
+                        )
                     )
                 }
             }
@@ -917,11 +960,29 @@ private fun formatLogTime(timestampMs: Long): String {
     }.getOrElse { "" }
 }
 
+private fun formatOpacityPercent(alpha: Float): Int {
+    return (alpha.coerceIn(0f, 1f) * 100f).roundToInt()
+}
+
 private const val NON_HOME_BACKGROUND_CROP_DIR = "non_home_background"
 private const val NON_HOME_BACKGROUND_CROP_FILE_PREFIX = "cropped_non_home_"
 private const val NON_HOME_BACKGROUND_CROP_TARGET_SHORT_EDGE = 1440
 private const val NON_HOME_BACKGROUND_CROP_MAX_WIDTH = 2560
 private const val NON_HOME_BACKGROUND_CROP_MAX_HEIGHT = 4096
+private const val NON_HOME_BACKGROUND_OPACITY_DEFAULT = 0.16f
+private const val NON_HOME_BACKGROUND_OPACITY_MIN = 0.06f
+private const val NON_HOME_BACKGROUND_OPACITY_MAX = 0.40f
+private const val NON_HOME_BACKGROUND_OPACITY_MAGNET_THRESHOLD = 0.03f
+private val NON_HOME_BACKGROUND_OPACITY_KEY_POINTS = listOf(
+    0.06f,
+    0.10f,
+    0.13f,
+    NON_HOME_BACKGROUND_OPACITY_DEFAULT,
+    0.20f,
+    0.26f,
+    0.33f,
+    NON_HOME_BACKGROUND_OPACITY_MAX
+)
 
 private fun createNonHomeBackgroundCropOutputUri(context: Context): Uri {
     val dir = File(context.filesDir, NON_HOME_BACKGROUND_CROP_DIR)

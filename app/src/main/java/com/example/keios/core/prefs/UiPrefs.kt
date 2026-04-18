@@ -21,6 +21,7 @@ data class UiPrefsSnapshot(
     val preloadingEnabled: Boolean,
     val nonHomeBackgroundEnabled: Boolean,
     val nonHomeBackgroundUri: String,
+    val nonHomeBackgroundOpacity: Float,
     val superIslandNotificationEnabled: Boolean,
     val superIslandBypassRestrictionEnabled: Boolean,
     val logDebugEnabled: Boolean,
@@ -40,6 +41,7 @@ object UiPrefs {
     private const val KEY_PRELOADING_ENABLED = "preloading_enabled"
     private const val KEY_NON_HOME_BACKGROUND_ENABLED = "non_home_background_enabled"
     private const val KEY_NON_HOME_BACKGROUND_URI = "non_home_background_uri"
+    private const val KEY_NON_HOME_BACKGROUND_OPACITY = "non_home_background_opacity"
     private const val KEY_SUPER_ISLAND_NOTIFICATION = "super_island_notification"
     private const val KEY_SUPER_ISLAND_BYPASS_RESTRICTION = "super_island_bypass_restriction"
     private const val KEY_LOG_DEBUG = "log_debug"
@@ -47,6 +49,9 @@ object UiPrefs {
     private const val KEY_CACHE_DIAGNOSTICS = "cache_diagnostics"
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_VISIBLE_BOTTOM_PAGES = "visible_bottom_pages"
+    private const val NON_HOME_BACKGROUND_OPACITY_DEFAULT = 0.16f
+    private const val NON_HOME_BACKGROUND_OPACITY_MIN = 0.06f
+    private const val NON_HOME_BACKGROUND_OPACITY_MAX = 0.40f
     private val DEFAULT_VISIBLE_BOTTOM_PAGE_NAMES = setOf("Os", "Mcp", "GitHub", "Ba")
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
     private val textCopyCapabilityExpandedState = MutableStateFlow(
@@ -117,6 +122,24 @@ object UiPrefs {
 
     fun setNonHomeBackgroundUri(uri: String) {
         kv().encode(KEY_NON_HOME_BACKGROUND_URI, uri.trim())
+    }
+
+    fun getNonHomeBackgroundOpacity(defaultValue: Float = NON_HOME_BACKGROUND_OPACITY_DEFAULT): Float {
+        val fallback = defaultValue.coerceIn(
+            NON_HOME_BACKGROUND_OPACITY_MIN,
+            NON_HOME_BACKGROUND_OPACITY_MAX
+        )
+        return kv().decodeFloat(KEY_NON_HOME_BACKGROUND_OPACITY, fallback).coerceIn(
+            NON_HOME_BACKGROUND_OPACITY_MIN,
+            NON_HOME_BACKGROUND_OPACITY_MAX
+        )
+    }
+
+    fun setNonHomeBackgroundOpacity(value: Float) {
+        kv().encode(
+            KEY_NON_HOME_BACKGROUND_OPACITY,
+            value.coerceIn(NON_HOME_BACKGROUND_OPACITY_MIN, NON_HOME_BACKGROUND_OPACITY_MAX)
+        )
     }
 
     fun isSuperIslandNotificationEnabled(defaultValue: Boolean = false): Boolean {
@@ -202,6 +225,7 @@ object UiPrefs {
             preloadingEnabled = true,
             nonHomeBackgroundEnabled = false,
             nonHomeBackgroundUri = "",
+            nonHomeBackgroundOpacity = NON_HOME_BACKGROUND_OPACITY_DEFAULT,
             superIslandNotificationEnabled = false,
             superIslandBypassRestrictionEnabled = false,
             logDebugEnabled = BuildConfig.DEBUG,
@@ -223,6 +247,10 @@ object UiPrefs {
             preloadingEnabled = store.decodeBool(KEY_PRELOADING_ENABLED, true),
             nonHomeBackgroundEnabled = store.decodeBool(KEY_NON_HOME_BACKGROUND_ENABLED, false),
             nonHomeBackgroundUri = store.decodeString(KEY_NON_HOME_BACKGROUND_URI, "").orEmpty().trim(),
+            nonHomeBackgroundOpacity = store.decodeFloat(
+                KEY_NON_HOME_BACKGROUND_OPACITY,
+                NON_HOME_BACKGROUND_OPACITY_DEFAULT
+            ).coerceIn(NON_HOME_BACKGROUND_OPACITY_MIN, NON_HOME_BACKGROUND_OPACITY_MAX),
             superIslandNotificationEnabled = store.decodeBool(KEY_SUPER_ISLAND_NOTIFICATION, false),
             superIslandBypassRestrictionEnabled = store.decodeBool(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, false),
             logDebugEnabled = store.decodeBool(KEY_LOG_DEBUG, BuildConfig.DEBUG),

@@ -62,6 +62,9 @@
     <string name="settings_group_visual_header">Visual</string>
     <string name="settings_group_visual_title">视觉与交互</string>
     <string name="settings_group_visual_summary">主题、ActionBar、底栏、按压反馈与主页高光集中管理。</string>
+    <string name="settings_group_background_header">Background</string>
+    <string name="settings_group_background_title">背景图片资源</string>
+    <string name="settings_group_background_summary">管理非 Home 页面背景开关、图片资源与透明度关键档位。</string>
     <string name="settings_group_notify_header">Notify</string>
     <string name="settings_group_notify_title">通知与兼容</string>
     <string name="settings_group_notify_summary">统一管理超级岛模板、Live Update 与 HyperOS 兼容绕过策略。</string>
@@ -99,6 +102,9 @@
     <string name="settings_non_home_background_image_summary_ready">已设置背景图片，进入非 Home 页面即可生效</string>
     <string name="settings_non_home_background_action_select">选择图片</string>
     <string name="settings_non_home_background_action_clear">清空图片</string>
+    <string name="settings_non_home_background_opacity_title">背景透明度</string>
+    <string name="settings_non_home_background_opacity_summary">当前透明度 %1$d%%。使用关键刻度滑杆快速切换常用档位。</string>
+    <string name="settings_non_home_background_opacity_default">默认推荐 %1$d%%，兼顾可读性与背景氛围。</string>
     <string name="settings_non_home_background_crop_title">裁切背景图</string>
     <string name="settings_non_home_background_toast_selected">已应用裁切后的非 Home 页面背景图</string>
     <string name="settings_non_home_background_toast_crop_failed">背景图裁切失败：%1$s</string>

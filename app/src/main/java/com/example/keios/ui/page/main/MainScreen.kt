@@ -155,6 +155,7 @@ fun MainScreen(
     var preloadingEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.preloadingEnabled) }
     var nonHomeBackgroundEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.nonHomeBackgroundEnabled) }
     var nonHomeBackgroundUri by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.nonHomeBackgroundUri) }
+    var nonHomeBackgroundOpacity by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.nonHomeBackgroundOpacity) }
     var superIslandNotificationEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.superIslandNotificationEnabled) }
     var superIslandBypassRestrictionEnabled by remember(uiPrefsSnapshot) {
         mutableStateOf(uiPrefsSnapshot.superIslandBypassRestrictionEnabled)
@@ -206,6 +207,7 @@ fun MainScreen(
                     preloadingEnabled = preloadingEnabled,
                     nonHomeBackgroundEnabled = nonHomeBackgroundEnabled,
                     nonHomeBackgroundUri = nonHomeBackgroundUri,
+                    nonHomeBackgroundOpacity = nonHomeBackgroundOpacity,
                     visibleBottomPageNames = visibleBottomPageNames,
                     onVisibleBottomPageNamesChange = { names ->
                         visibleBottomPageNames = names
@@ -265,6 +267,11 @@ fun MainScreen(
                     onNonHomeBackgroundUriChanged = {
                         nonHomeBackgroundUri = it
                         UiPrefs.setNonHomeBackgroundUri(it)
+                    },
+                    nonHomeBackgroundOpacity = nonHomeBackgroundOpacity,
+                    onNonHomeBackgroundOpacityChanged = {
+                        nonHomeBackgroundOpacity = it
+                        UiPrefs.setNonHomeBackgroundOpacity(it)
                     },
                     superIslandNotificationEnabled = superIslandNotificationEnabled,
                     onSuperIslandNotificationChanged = {
@@ -361,6 +368,7 @@ private fun MainPagerLayout(
     preloadingEnabled: Boolean,
     nonHomeBackgroundEnabled: Boolean,
     nonHomeBackgroundUri: String,
+    nonHomeBackgroundOpacity: Float,
     visibleBottomPageNames: Set<String>,
     onVisibleBottomPageNamesChange: (Set<String>) -> Unit,
     appLabel: String,
@@ -778,6 +786,7 @@ private fun MainPagerLayout(
                 NonHomePageBackground(
                     enabled = hasNonHomeBackground,
                     imageUri = nonHomeBackgroundUri,
+                    opacity = nonHomeBackgroundOpacity,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -789,6 +798,7 @@ private fun MainPagerLayout(
 private fun NonHomePageBackground(
     enabled: Boolean,
     imageUri: String,
+    opacity: Float,
     modifier: Modifier = Modifier
 ) {
     if (!enabled || imageUri.isBlank()) return
@@ -814,7 +824,7 @@ private fun NonHomePageBackground(
         model = request,
         contentDescription = null,
         contentScale = ContentScale.Crop,
-        alpha = 0.16f,
+        alpha = opacity.coerceIn(0f, 1f),
         modifier = modifier
     )
 }
