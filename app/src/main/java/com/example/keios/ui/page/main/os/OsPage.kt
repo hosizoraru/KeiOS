@@ -1091,35 +1091,52 @@ fun OsPage(
                 scrollable = false,
                 verticalSpacing = 10.dp
             ) {
+                val shortcutConfig = googleSystemServiceConfig.normalized(googleSystemServiceDefaults)
+                val activityVisibilityItems = listOf(
+                    OsActivityVisibilityItem(
+                        card = OsSectionCard.GOOGLE_SYSTEM_SERVICE,
+                        title = shortcutConfig.title.ifBlank { OsSectionCard.GOOGLE_SYSTEM_SERVICE.title },
+                        packageName = shortcutConfig.packageName
+                    )
+                )
                 SheetSectionCard(verticalSpacing = 10.dp) {
-                    SheetControlRow(
-                        labelContent = {
-                            Row(
-                                modifier = Modifier.defaultMinSize(minHeight = 24.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = MiuixIcons.Regular.Update,
-                                    contentDescription = googleSystemServiceDefaultTitle,
-                                    tint = MiuixTheme.colorScheme.onBackground,
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .defaultMinSize(minHeight = 18.dp)
-                                )
-                                Text(
-                                    text = googleSystemServiceDefaultTitle,
-                                    color = MiuixTheme.colorScheme.onBackground
-                                )
+                    activityVisibilityItems.forEach { item ->
+                        SheetControlRow(
+                            labelContent = {
+                                Row(
+                                    modifier = Modifier.defaultMinSize(minHeight = 24.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (item.packageName.isNotBlank()) {
+                                        AppIcon(
+                                            packageName = item.packageName,
+                                            size = 18.dp
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = sectionCardIcon(item.card),
+                                            contentDescription = item.title,
+                                            tint = MiuixTheme.colorScheme.onBackground,
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                                .defaultMinSize(minHeight = 18.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = item.title,
+                                        color = MiuixTheme.colorScheme.onBackground
+                                    )
+                                }
                             }
+                        ) {
+                            Switch(
+                                checked = isCardVisible(item.card),
+                                onCheckedChange = { checked ->
+                                    scope.launch { applyCardVisibility(item.card, checked) }
+                                }
+                            )
                         }
-                    ) {
-                        Switch(
-                            checked = isCardVisible(OsSectionCard.GOOGLE_SYSTEM_SERVICE),
-                            onCheckedChange = { checked ->
-                                scope.launch { applyCardVisibility(OsSectionCard.GOOGLE_SYSTEM_SERVICE, checked) }
-                            }
-                        )
                     }
                 }
                 SheetDescriptionText(
@@ -2074,6 +2091,12 @@ private fun OsSectionInfoRow(
         emphasizedValue = true
     )
 }
+
+private data class OsActivityVisibilityItem(
+    val card: OsSectionCard,
+    val title: String,
+    val packageName: String
+)
 
 private enum class ShortcutSuggestionField {
     PackageName,
