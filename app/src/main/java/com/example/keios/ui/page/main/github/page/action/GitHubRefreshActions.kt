@@ -5,6 +5,7 @@ import com.example.keios.core.background.AppBackgroundScheduler
 import com.example.keios.feature.github.data.local.AppIconCache
 import com.example.keios.feature.github.data.local.GitHubTrackSnapshot
 import com.example.keios.feature.github.data.local.GitHubTrackStore
+import com.example.keios.feature.github.data.local.GitHubTrackStoreSignals
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.feature.github.domain.GitHubReleaseCheckService
 import com.example.keios.feature.github.model.GitHubLookupStrategyOption
@@ -86,6 +87,7 @@ internal class GitHubRefreshActions(
         )
         AppBackgroundScheduler.scheduleGitHubRefresh(context)
         reloadApps(forceRefresh = false)
+        val refreshedRequestedTracks = refreshRequestedTracksIfNeeded()
         val hasTracked = state.trackedItems.isNotEmpty()
         val hasCachedForTracked = state.trackedItems.any { item ->
             state.checkStates.containsKey(item.id)
@@ -94,6 +96,7 @@ internal class GitHubRefreshActions(
             (System.currentTimeMillis() - state.lastRefreshMs) >=
             state.refreshIntervalHours * 60L * 60L * 1000L
         when {
+            refreshedRequestedTracks -> state.overviewRefreshState = OverviewRefreshState.Cached
             !hasCachedForTracked && hasTracked -> refreshAllTracked(showToast = false)
             stale -> refreshAllTracked(showToast = false)
             hasCachedForTracked -> state.overviewRefreshState = OverviewRefreshState.Cached
@@ -108,6 +111,7 @@ internal class GitHubRefreshActions(
         if (forceRefreshApps) {
             reloadApps(forceRefresh = true)
         }
+        refreshRequestedTracksIfNeeded()
         val hasTracked = state.trackedItems.isNotEmpty()
         val hasCachedForTracked = state.trackedItems.any { item ->
             state.checkStates.containsKey(item.id)
@@ -117,6 +121,18 @@ internal class GitHubRefreshActions(
             hasCachedForTracked -> OverviewRefreshState.Cached
             else -> OverviewRefreshState.Idle
         }
+    }
+
+    private fun refreshRequestedTracksIfNeeded(): Boolean {
+        val trackedById = state.trackedItems.associateBy { it.id }
+        if (trackedById.isEmpty()) return false
+        val requestedIds = GitHubTrackStoreSignals.consumeTrackRefreshRequests(trackedById.keys)
+        if (requestedIds.isEmpty()) return false
+        requestedIds.forEach { trackId ->
+            val item = trackedById[trackId] ?: return@forEach
+            refreshItem(item = item, showToastOnError = false)
+        }
+        return true
     }
 
     fun refreshItem(

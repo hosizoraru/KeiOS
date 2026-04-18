@@ -631,7 +631,7 @@ private suspend fun attachCandidateToTracked(
                 GitHubTrackStore.saveCheckCache(updatedCache, System.currentTimeMillis())
             }
         }
-        GitHubTrackStoreSignals.notifyChanged()
+        GitHubTrackStoreSignals.requestTrackRefresh(trackedItem.id)
 
         ShareImportAttachResult.Added(trackedItem.appLabel.ifBlank { trackedItem.packageName })
     }
