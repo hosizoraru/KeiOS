@@ -408,6 +408,39 @@ private fun MainPagerLayout(
             current != BottomPage.Home || target != BottomPage.Home || settled != BottomPage.Home
         }
     }
+    val resolveWarmActive: (Int) -> Boolean = { pageIndex ->
+        val current = pageIndex == pagerState.currentPage
+        val target = pageIndex == pagerState.targetPage
+        val settled = pageIndex == pagerState.settledPage
+        if (pagerState.isScrollInProgress) {
+            current || target
+        } else {
+            current || settled || (preloadPolicy.includeTargetPageInHeavyRender && target)
+        }
+    }
+    val farJumpBefore: suspend () -> Unit = {
+        farJumpAlpha.snapTo(1f)
+        farJumpAlpha.animateTo(
+            targetValue = 0.92f,
+            animationSpec = tween(
+                durationMillis = resolvedMotionDuration(
+                    AppMotionTokens.farJumpDimMs,
+                    transitionAnimationsEnabled
+                )
+            )
+        )
+    }
+    val farJumpAfter: suspend () -> Unit = {
+        farJumpAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = resolvedMotionDuration(
+                    AppMotionTokens.farJumpRestoreMs,
+                    transitionAnimationsEnabled
+                )
+            )
+        )
+    }
     ReportPagerPerformanceState(
         scope = "main_pager",
         currentPage = tabs.getOrElse(pagerState.currentPage) { BottomPage.Home }.name,
@@ -480,29 +513,8 @@ private fun MainPagerLayout(
                         fromIndex = stablePageIndex,
                         targetIndex = index,
                         animationsEnabled = transitionAnimationsEnabled,
-                        onFarJumpBefore = {
-                            farJumpAlpha.snapTo(1f)
-                            farJumpAlpha.animateTo(
-                                targetValue = 0.92f,
-                                animationSpec = tween(
-                                    durationMillis = resolvedMotionDuration(
-                                        AppMotionTokens.farJumpDimMs,
-                                        transitionAnimationsEnabled
-                                    )
-                                )
-                            )
-                        },
-                        onFarJumpAfter = {
-                            farJumpAlpha.animateTo(
-                                targetValue = 1f,
-                                animationSpec = tween(
-                                    durationMillis = resolvedMotionDuration(
-                                        AppMotionTokens.farJumpRestoreMs,
-                                        transitionAnimationsEnabled
-                                    )
-                                )
-                            )
-                        }
+                        onFarJumpBefore = farJumpBefore,
+                        onFarJumpAfter = farJumpAfter
                     )
                 }
             }
@@ -524,29 +536,8 @@ private fun MainPagerLayout(
                     fromIndex = stablePageIndex,
                     targetIndex = index,
                     animationsEnabled = transitionAnimationsEnabled,
-                    onFarJumpBefore = {
-                        farJumpAlpha.snapTo(1f)
-                        farJumpAlpha.animateTo(
-                            targetValue = 0.92f,
-                            animationSpec = tween(
-                                durationMillis = resolvedMotionDuration(
-                                    AppMotionTokens.farJumpDimMs,
-                                    transitionAnimationsEnabled
-                                )
-                            )
-                        )
-                    },
-                    onFarJumpAfter = {
-                        farJumpAlpha.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(
-                                durationMillis = resolvedMotionDuration(
-                                    AppMotionTokens.farJumpRestoreMs,
-                                    transitionAnimationsEnabled
-                                )
-                            )
-                        )
-                    }
+                    onFarJumpBefore = farJumpBefore,
+                    onFarJumpAfter = farJumpAfter
                 )
             }
             showBottomBar = true
@@ -715,9 +706,7 @@ private fun MainPagerLayout(
                             )
                         }
                         BottomPage.Os -> {
-                            val isWarmActive = pageIndex == pagerState.currentPage ||
-                                pageIndex == pagerState.settledPage ||
-                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            val isWarmActive = resolveWarmActive(pageIndex)
                             OsPage(
                                 scrollToTopSignal = osScrollToTopSignal,
                                 isPageActive = isWarmActive,
@@ -732,9 +721,7 @@ private fun MainPagerLayout(
                             )
                         }
                         BottomPage.Ba -> {
-                            val isWarmActive = pageIndex == pagerState.currentPage ||
-                                pageIndex == pagerState.settledPage ||
-                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            val isWarmActive = resolveWarmActive(pageIndex)
                             BAPage(
                                 contentBottomPadding = bottomOverlayPadding,
                                 scrollToTopSignal = baScrollToTopSignal,
@@ -754,9 +741,7 @@ private fun MainPagerLayout(
                             )
                         }
                         BottomPage.Mcp -> {
-                            val isWarmActive = pageIndex == pagerState.currentPage ||
-                                pageIndex == pagerState.settledPage ||
-                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            val isWarmActive = resolveWarmActive(pageIndex)
                             McpPage(
                                 mcpServerManager = mcpServerManager,
                                 contentBottomPadding = bottomOverlayPadding,
@@ -771,9 +756,7 @@ private fun MainPagerLayout(
                             )
                         }
                         BottomPage.GitHub -> {
-                            val isWarmActive = pageIndex == pagerState.currentPage ||
-                                pageIndex == pagerState.settledPage ||
-                                (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                            val isWarmActive = resolveWarmActive(pageIndex)
                             GitHubPage(
                                 contentBottomPadding = bottomOverlayPadding,
                                 scrollToTopSignal = githubScrollToTopSignal,
