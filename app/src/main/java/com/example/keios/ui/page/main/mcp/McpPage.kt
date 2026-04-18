@@ -69,6 +69,7 @@ fun McpPage(
     mcpServerManager: McpServerManager,
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    isPageActive: Boolean = true,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     onOpenSkill: () -> Unit = {},
@@ -99,11 +100,12 @@ fun McpPage(
     val runtimeNowMs by produceState(
         initialValue = System.currentTimeMillis(),
         key1 = uiState.running,
-        key2 = uiState.runningSinceEpochMs
+        key2 = uiState.runningSinceEpochMs,
+        key3 = isPageActive
     ) {
         value = System.currentTimeMillis()
         while (uiState.running && uiState.runningSinceEpochMs > 0L) {
-            delay(1_000L)
+            delay(if (isPageActive) 1_000L else 3_000L)
             value = System.currentTimeMillis()
         }
     }
@@ -254,8 +256,8 @@ fun McpPage(
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
     }
-    LaunchedEffect(scrollToTopSignal) {
-        if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
+    LaunchedEffect(scrollToTopSignal, isPageActive) {
+        if (isPageActive && scrollToTopSignal > 0) listState.animateScrollToItem(0)
     }
     val logsExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")

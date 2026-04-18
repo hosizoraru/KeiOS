@@ -39,6 +39,7 @@ internal class GitHubPageState(
     var appList by mutableStateOf<List<InstalledAppItem>>(emptyList())
     var appListLoaded by mutableStateOf(false)
     var hasAutoRequestedPermission by mutableStateOf(false)
+    var hasInitialized by mutableStateOf(false)
     var showSortPopup by mutableStateOf(false)
     var showCheckLogicIntervalPopup by mutableStateOf(false)
     var showOnlineShareTargetPopup by mutableStateOf(false)

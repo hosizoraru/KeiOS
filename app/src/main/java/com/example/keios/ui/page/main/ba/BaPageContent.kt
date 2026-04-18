@@ -17,6 +17,7 @@ import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.SmallTitle
 
 internal data class BaPageContentState(
+    val isPageActive: Boolean,
     val officeSmallTitle: String,
     val baSmallTitleMargin: PaddingValues,
     val officeState: BaOfficeState,
@@ -161,6 +162,7 @@ internal fun BaPageContent(
         item {
             BaCalendarCard(
                 backdrop = backdrop,
+                isPageActive = state.isPageActive,
                 serverOptions = state.serverOptions,
                 serverIndex = state.serverIndex,
                 uiNowMs = state.uiNowMs,
@@ -180,6 +182,7 @@ internal fun BaPageContent(
         item {
             BaPoolCard(
                 backdrop = backdrop,
+                isPageActive = state.isPageActive,
                 serverOptions = state.serverOptions,
                 serverIndex = state.serverIndex,
                 uiNowMs = state.uiNowMs,

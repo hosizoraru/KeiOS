@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +31,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun BaCalendarCard(
     backdrop: Backdrop?,
+    isPageActive: Boolean,
     serverOptions: List<String>,
     serverIndex: Int,
     uiNowMs: Long,
@@ -45,7 +49,16 @@ internal fun BaCalendarCard(
     val accentAmber = Color(0xFFF59E0B)
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
-    val visibleCalendarEntries = if (showEndedActivities) baCalendarEntries else baCalendarEntries.filter { it.endAtMs > uiNowMs }
+    val minuteBucket = remember(uiNowMs) { uiNowMs / 60_000L }
+    val visibleCalendarEntries by remember(baCalendarEntries, showEndedActivities, minuteBucket) {
+        derivedStateOf {
+            if (showEndedActivities) {
+                baCalendarEntries
+            } else {
+                baCalendarEntries.filter { it.endAtMs > uiNowMs }
+            }
+        }
+    }
 
     BaGlassCard(
         backdrop = backdrop,
@@ -135,6 +148,7 @@ internal fun BaCalendarCard(
                             if (showCalendarPoolImages) {
                                 GameKeeCoverImage(
                                     imageUrl = activity.imageUrl,
+                                    enabled = isPageActive,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             }
@@ -164,6 +178,7 @@ internal fun BaCalendarCard(
 @Composable
 internal fun BaPoolCard(
     backdrop: Backdrop?,
+    isPageActive: Boolean,
     serverOptions: List<String>,
     serverIndex: Int,
     uiNowMs: Long,
@@ -182,7 +197,16 @@ internal fun BaPoolCard(
     val accentAmber = Color(0xFFF59E0B)
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
-    val visiblePoolEntries = if (showEndedPools) baPoolEntries else baPoolEntries.filter { it.endAtMs > uiNowMs }
+    val minuteBucket = remember(uiNowMs) { uiNowMs / 60_000L }
+    val visiblePoolEntries by remember(baPoolEntries, showEndedPools, minuteBucket) {
+        derivedStateOf {
+            if (showEndedPools) {
+                baPoolEntries
+            } else {
+                baPoolEntries.filter { it.endAtMs > uiNowMs }
+            }
+        }
+    }
 
     BaGlassCard(
         backdrop = backdrop,
@@ -267,6 +291,7 @@ internal fun BaPoolCard(
                                     ) {
                                         GameKeeCoverImage(
                                             imageUrl = pool.imageUrl,
+                                            enabled = isPageActive,
                                             modifier = Modifier.fillMaxWidth(),
                                             contentScale = ContentScale.Fit,
                                             aspectRatioRange = 0.66f..1.34f

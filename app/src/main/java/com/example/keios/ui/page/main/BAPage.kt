@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -17,15 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.keios.ui.page.main.ba.BASessionState
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.example.keios.ui.page.main.ba.BA_AP_MAX
 import com.example.keios.ui.page.main.ba.BaCalendarEntry
-import com.example.keios.ui.page.main.ba.BaCalendarSyncEffect
+import com.example.keios.ui.page.main.ba.BaCalendarPoolViewModel
 import com.example.keios.ui.page.main.ba.BaPageCommonEffects
 import com.example.keios.ui.page.main.ba.BaPageContent
 import com.example.keios.ui.page.main.ba.BaPoolEntry
-import com.example.keios.ui.page.main.ba.BaPoolSyncEffect
 import com.example.keios.ui.page.main.ba.BaSettingsSheet
 import com.example.keios.ui.page.main.ba.BaTopBar
 import com.example.keios.ui.page.main.ba.applyBaCalendarRefreshInterval
@@ -100,6 +101,9 @@ fun BAPage(
     val initialSnapshot = remember { BASettingsStore.loadSnapshot() }
     val office = rememberBaOfficeController(initialSnapshot)
     val ui = rememberBaPageUiController(initialSnapshot)
+    val calendarPoolViewModel: BaCalendarPoolViewModel = viewModel()
+    val calendarUiState by calendarPoolViewModel.calendarUiState.collectAsState()
+    val poolUiState by calendarPoolViewModel.poolUiState.collectAsState()
 
     var baCalendarEntries by remember { mutableStateOf(emptyList<BaCalendarEntry>()) }
     var baPoolEntries by remember { mutableStateOf(emptyList<BaPoolEntry>()) }
@@ -111,6 +115,7 @@ fun BAPage(
 
     val settingsSheetState = buildBaSettingsSheetState(ui)
     val pageContentState = buildBaPageContentState(
+        isPageActive = isPageActive,
         officeSmallTitle = officeSmallTitle,
         baSmallTitleMargin = baSmallTitleMargin,
         office = office,
@@ -183,31 +188,48 @@ fun BAPage(
         context = context,
     )
 
-    BaCalendarSyncEffect(
-        context = context,
-        isPageActive = isPageActive,
-        serverIndex = ui.serverIndex,
-        reloadSignal = ui.baCalendarReloadSignal,
-        calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
-        hydrationReady = ui.calendarHydrationReady,
-        onLoadingChange = { ui.baCalendarLoading = it },
-        onErrorChange = { ui.baCalendarError = it },
-        onEntriesChange = { baCalendarEntries = it },
-        onLastSyncMsChange = { ui.baCalendarLastSyncMs = it },
-    )
-
-    BaPoolSyncEffect(
-        context = context,
-        isPageActive = isPageActive,
-        serverIndex = ui.serverIndex,
-        reloadSignal = ui.baPoolReloadSignal,
-        calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
-        hydrationReady = ui.poolHydrationReady,
-        onLoadingChange = { ui.baPoolLoading = it },
-        onErrorChange = { ui.baPoolError = it },
-        onEntriesChange = { baPoolEntries = it },
-        onLastSyncMsChange = { ui.baPoolLastSyncMs = it },
-    )
+    LaunchedEffect(
+        isPageActive,
+        ui.serverIndex,
+        ui.baCalendarReloadSignal,
+        ui.calendarRefreshIntervalHours,
+        ui.calendarHydrationReady
+    ) {
+        calendarPoolViewModel.syncCalendar(
+            isPageActive = isPageActive,
+            serverIndex = ui.serverIndex,
+            reloadSignal = ui.baCalendarReloadSignal,
+            calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
+            hydrationReady = ui.calendarHydrationReady
+        )
+    }
+    LaunchedEffect(
+        isPageActive,
+        ui.serverIndex,
+        ui.baPoolReloadSignal,
+        ui.calendarRefreshIntervalHours,
+        ui.poolHydrationReady
+    ) {
+        calendarPoolViewModel.syncPool(
+            isPageActive = isPageActive,
+            serverIndex = ui.serverIndex,
+            reloadSignal = ui.baPoolReloadSignal,
+            calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
+            hydrationReady = ui.poolHydrationReady
+        )
+    }
+    LaunchedEffect(calendarUiState) {
+        baCalendarEntries = calendarUiState.entries
+        ui.baCalendarLoading = calendarUiState.loading
+        ui.baCalendarError = calendarUiState.error
+        ui.baCalendarLastSyncMs = calendarUiState.lastSyncMs
+    }
+    LaunchedEffect(poolUiState) {
+        baPoolEntries = poolUiState.entries
+        ui.baPoolLoading = poolUiState.loading
+        ui.baPoolError = poolUiState.error
+        ui.baPoolLastSyncMs = poolUiState.lastSyncMs
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

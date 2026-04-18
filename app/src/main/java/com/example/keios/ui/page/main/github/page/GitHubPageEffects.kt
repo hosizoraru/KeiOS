@@ -17,6 +17,7 @@ internal fun BindGitHubPageEffects(
     context: Context,
     listState: LazyListState,
     scrollToTopSignal: Int,
+    isPageActive: Boolean,
     state: GitHubPageState,
     actions: GitHubPageActions,
     installedOnlineShareTargets: List<OnlineShareTargetOption>,
@@ -31,12 +32,14 @@ internal fun BindGitHubPageEffects(
         actions.handleInstalledOnlineShareTargetsChanged(installedOnlineShareTargets)
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isPageActive) {
+        if (!isPageActive || state.hasInitialized) return@LaunchedEffect
+        state.hasInitialized = true
         actions.initializePage()
     }
 
-    LaunchedEffect(scrollToTopSignal) {
-        if (scrollToTopSignal > 0) {
+    LaunchedEffect(scrollToTopSignal, isPageActive) {
+        if (isPageActive && scrollToTopSignal > 0) {
             listState.animateScrollToItem(0)
         }
     }
@@ -57,7 +60,8 @@ internal fun BindGitHubPageEffects(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isPageActive) {
+        if (!isPageActive) return@LaunchedEffect
         AppPackageChangedEvents.events.collect { event ->
             actions.handlePackageChangedEvent(event)
         }

@@ -43,6 +43,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun GitHubPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    isPageActive: Boolean = true,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     enableSearchBar: Boolean = true,
@@ -191,6 +192,7 @@ fun GitHubPage(
         context = context,
         listState = listState,
         scrollToTopSignal = scrollToTopSignal,
+        isPageActive = isPageActive,
         state = state,
         actions = actions,
         installedOnlineShareTargets = installedOnlineShareTargets,

@@ -21,6 +21,7 @@ internal fun buildBaSettingsSheetState(
 }
 
 internal fun buildBaPageContentState(
+    isPageActive: Boolean,
     officeSmallTitle: String,
     baSmallTitleMargin: PaddingValues,
     office: BaOfficeController,
@@ -31,6 +32,7 @@ internal fun buildBaPageContentState(
     baPoolEntries: List<BaPoolEntry>,
 ): BaPageContentState {
     return BaPageContentState(
+        isPageActive = isPageActive,
         officeSmallTitle = officeSmallTitle,
         baSmallTitleMargin = baSmallTitleMargin,
         officeState = office.state(),

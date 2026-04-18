@@ -237,25 +237,42 @@ private fun decodeSampledLocalBitmap(
 @Composable
 internal fun GameKeeCoverImage(
     imageUrl: String,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     aspectRatioRange: ClosedFloatingPointRange<Float> = 1.0f..2.4f
 ) {
+    if (!enabled) return
     val normalizedUrl = remember(imageUrl) { normalizeGameKeeImageLink(imageUrl) }
     if (normalizedUrl.isBlank()) return
 
-    val bitmap by produceState<Bitmap?>(initialValue = null, normalizedUrl) {
+    val bitmap by produceState<Bitmap?>(initialValue = null, normalizedUrl, enabled) {
+        if (!enabled) {
+            value = null
+            return@produceState
+        }
+        if (normalizedUrl.startsWith("file://")) {
+            val localPath = Uri.parse(normalizedUrl).path.orEmpty()
+            if (localPath.isBlank()) {
+                value = null
+                return@produceState
+            }
+            value = withContext(Dispatchers.IO) { decodeSampledLocalBitmap(localPath, 720) }
+            val high = withContext(Dispatchers.IO) { decodeSampledLocalBitmap(localPath, 1280) }
+            if (high != null) {
+                val low = value
+                val shouldUpgrade = low == null ||
+                    (high.width * high.height) > (low.width * low.height)
+                if (shouldUpgrade) value = high
+            }
+            return@produceState
+        }
         value = withContext(Dispatchers.IO) {
             runCatching {
-                if (normalizedUrl.startsWith("file://")) {
-                    val localPath = Uri.parse(normalizedUrl).path.orEmpty()
-                    if (localPath.isBlank()) null else decodeSampledLocalBitmap(localPath)
-                } else {
-                    GameKeeFetchHelper.fetchImage(
-                        imageUrl = normalizedUrl,
-                        maxDecodeDimension = 1280
-                    )
-                }
+                GameKeeFetchHelper.fetchImage(
+                    imageUrl = normalizedUrl,
+                    maxDecodeDimension = 720
+                )
             }.getOrNull()
         }
     }

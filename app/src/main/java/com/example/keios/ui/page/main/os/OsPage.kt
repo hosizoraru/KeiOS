@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -85,14 +86,15 @@ import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.system.getAllJavaPropString
 import com.example.keios.core.system.getAllSystemProperties
+import com.example.keios.ui.page.main.os.OsPageViewModel
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -120,6 +122,7 @@ import java.util.Locale
 @Composable
 fun OsPage(
     scrollToTopSignal: Int,
+    isPageActive: Boolean = true,
     shizukuStatus: String,
     shizukuApiUtils: ShizukuApiUtils,
     cardPressFeedbackEnabled: Boolean = true,
@@ -150,8 +153,9 @@ fun OsPage(
     val initialUiSnapshot = remember { OsUiStateStore.loadSnapshot() }
     var cacheLoaded by remember { mutableStateOf(false) }
     var cachePersisted by remember { mutableStateOf(false) }
-    var queryInput by remember { mutableStateOf("") }
-    var queryApplied by remember { mutableStateOf("") }
+    val osPageViewModel: OsPageViewModel = viewModel()
+    val queryInput by osPageViewModel.queryInput.collectAsState()
+    val queryApplied by osPageViewModel.queryApplied.collectAsState()
     var topInfoExpanded by remember { mutableStateOf(initialUiSnapshot.topInfoExpanded) }
     var systemTableExpanded by remember { mutableStateOf(initialUiSnapshot.systemTableExpanded) }
     var secureTableExpanded by remember { mutableStateOf(initialUiSnapshot.secureTableExpanded) }
@@ -371,11 +375,6 @@ fun OsPage(
         if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
     }
 
-    LaunchedEffect(queryInput) {
-        delay(180)
-        queryApplied = queryInput
-    }
-
     LaunchedEffect(Unit) {
         val visibleSections = visibleSectionKinds()
         val snapshot = withContext(Dispatchers.IO) {
@@ -393,10 +392,10 @@ fun OsPage(
         cachePersisted = snapshot.hasPersistedCache
         cacheLoaded = true
         uiStatePersistenceReady = true
-        delay(48)
-        visibleSections.forEach { section ->
-            ensureLoad(section, forceRefresh = false)
-            delay(16)
+        if (isPageActive) {
+            visibleSections.forEach { section ->
+                ensureLoad(section, forceRefresh = false)
+            }
         }
     }
 
@@ -436,29 +435,29 @@ fun OsPage(
         withContext(Dispatchers.IO) { OsUiStateStore.setLinuxEnvExpanded(linuxEnvExpanded) }
     }
 
-    LaunchedEffect(systemTableExpanded, visibleCards, cacheLoaded) {
+    LaunchedEffect(systemTableExpanded, visibleCards, cacheLoaded, isPageActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (systemTableExpanded && isCardVisible(OsSectionCard.SYSTEM)) ensureLoad(SectionKind.SYSTEM)
+        if (isPageActive && systemTableExpanded && isCardVisible(OsSectionCard.SYSTEM)) ensureLoad(SectionKind.SYSTEM)
     }
-    LaunchedEffect(secureTableExpanded, visibleCards, cacheLoaded) {
+    LaunchedEffect(secureTableExpanded, visibleCards, cacheLoaded, isPageActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (secureTableExpanded && isCardVisible(OsSectionCard.SECURE)) ensureLoad(SectionKind.SECURE)
+        if (isPageActive && secureTableExpanded && isCardVisible(OsSectionCard.SECURE)) ensureLoad(SectionKind.SECURE)
     }
-    LaunchedEffect(globalTableExpanded, visibleCards, cacheLoaded) {
+    LaunchedEffect(globalTableExpanded, visibleCards, cacheLoaded, isPageActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (globalTableExpanded && isCardVisible(OsSectionCard.GLOBAL)) ensureLoad(SectionKind.GLOBAL)
+        if (isPageActive && globalTableExpanded && isCardVisible(OsSectionCard.GLOBAL)) ensureLoad(SectionKind.GLOBAL)
     }
-    LaunchedEffect(androidPropsExpanded, visibleCards, cacheLoaded) {
+    LaunchedEffect(androidPropsExpanded, visibleCards, cacheLoaded, isPageActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (androidPropsExpanded && isCardVisible(OsSectionCard.ANDROID)) ensureLoad(SectionKind.ANDROID)
+        if (isPageActive && androidPropsExpanded && isCardVisible(OsSectionCard.ANDROID)) ensureLoad(SectionKind.ANDROID)
     }
-    LaunchedEffect(javaPropsExpanded, visibleCards, cacheLoaded) {
+    LaunchedEffect(javaPropsExpanded, visibleCards, cacheLoaded, isPageActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (javaPropsExpanded && isCardVisible(OsSectionCard.JAVA)) ensureLoad(SectionKind.JAVA)
+        if (isPageActive && javaPropsExpanded && isCardVisible(OsSectionCard.JAVA)) ensureLoad(SectionKind.JAVA)
     }
-    LaunchedEffect(linuxEnvExpanded, visibleCards, cacheLoaded) {
+    LaunchedEffect(linuxEnvExpanded, visibleCards, cacheLoaded, isPageActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (linuxEnvExpanded && isCardVisible(OsSectionCard.LINUX)) ensureLoad(SectionKind.LINUX)
+        if (isPageActive && linuxEnvExpanded && isCardVisible(OsSectionCard.LINUX)) ensureLoad(SectionKind.LINUX)
     }
 
     val systemRows = sectionStates[SectionKind.SYSTEM]?.rows ?: emptyList()
@@ -747,7 +746,7 @@ fun OsPage(
                         .fillMaxWidth()
                         .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
                     value = queryInput,
-                    onValueChange = { queryInput = it },
+                    onValueChange = { osPageViewModel.updateQueryInput(it) },
                     label = searchLabel,
                     backdrop = topBarBackdrop
                 )

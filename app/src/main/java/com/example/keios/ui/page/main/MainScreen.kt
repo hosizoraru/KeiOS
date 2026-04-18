@@ -668,6 +668,7 @@ private fun MainPagerLayout(
                     BottomPage.Os -> {
                         OsPage(
                             scrollToTopSignal = osScrollToTopSignal,
+                            isPageActive = pageIndex == pagerState.currentPage || pageIndex == pagerState.settledPage,
                             shizukuStatus = shizukuStatus,
                             shizukuApiUtils = shizukuApiUtils,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
@@ -701,6 +702,7 @@ private fun MainPagerLayout(
                             mcpServerManager = mcpServerManager,
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = mcpScrollToTopSignal,
+                            isPageActive = pageIndex == pagerState.currentPage || pageIndex == pagerState.settledPage,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onOpenSkill = { navigator.pushSingleTop(KeiosRoute.McpSkill) },
@@ -713,6 +715,7 @@ private fun MainPagerLayout(
                         GitHubPage(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = githubScrollToTopSignal,
+                            isPageActive = pageIndex == pagerState.currentPage || pageIndex == pagerState.settledPage,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onActionBarInteractingChanged = { interacting ->

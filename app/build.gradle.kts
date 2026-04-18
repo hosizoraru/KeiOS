@@ -74,6 +74,7 @@ val zoomImageVersion = "1.4.0"
 val documentFileVersion = "1.1.0"
 val focusApiVersion = "1.4"
 val metricsPerformanceVersion = "1.0.0"
+val lifecycleViewModelComposeVersion = "2.9.4"
 val robolectricVersion = "4.16.1"
 val androidTestExtJunitVersion = "1.3.0"
 val roborazziVersion = "1.59.0"
@@ -220,6 +221,7 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:$coil3Version")
     implementation("io.coil-kt.coil3:coil-gif:$coil3Version")
     implementation("androidx.metrics:metrics-performance:$metricsPerformanceVersion")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleViewModelComposeVersion")
     implementation("androidx.documentfile:documentfile:$documentFileVersion")
     implementation("com.xzakota.hyper.notification:focus-api:$focusApiVersion")
 
