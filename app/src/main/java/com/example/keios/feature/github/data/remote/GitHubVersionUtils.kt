@@ -24,6 +24,11 @@ object GitHubVersionUtils {
         val apps: List<InstalledAppItem>
     )
 
+    data class LocalVersionInfo(
+        val versionName: String,
+        val versionCode: Long
+    )
+
     fun buildReleaseUrl(owner: String, repo: String): String {
         return "https://github.com/$owner/$repo/releases"
     }
@@ -96,20 +101,37 @@ object GitHubVersionUtils {
     }
 
     fun localVersionName(context: Context, packageName: String): String {
-        val pm = context.packageManager
-        val pkgInfo = pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-        return pkgInfo.versionName?.trim().orEmpty().ifBlank { "unknown" }
+        return localVersionInfoOrNull(context, packageName)?.versionName.orEmpty().ifBlank { "unknown" }
     }
 
     fun localVersionCode(context: Context, packageName: String): Long {
+        return localVersionInfoOrNull(context, packageName)?.versionCode ?: -1L
+    }
+
+    fun localVersionInfoOrNull(context: Context, packageName: String): LocalVersionInfo? {
         val pm = context.packageManager
-        val pkgInfo = pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        val pkgInfo = runCatching {
+            pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+        }.recoverCatching {
+            @Suppress("DEPRECATION")
+            pm.getPackageInfo(packageName, 0)
+        }.getOrElse { error ->
+            if (error is PackageManager.NameNotFoundException) {
+                return null
+            }
+            throw error
+        }
+        val versionName = pkgInfo.versionName?.trim().orEmpty().ifBlank { "unknown" }
+        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             pkgInfo.longVersionCode
         } else {
             @Suppress("DEPRECATION")
             pkgInfo.versionCode.toLong()
         }
+        return LocalVersionInfo(
+            versionName = versionName,
+            versionCode = versionCode
+        )
     }
 
     fun parseOwnerRepo(urlOrPath: String): Pair<String, String>? {

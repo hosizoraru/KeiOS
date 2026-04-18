@@ -37,7 +37,8 @@ class KeiOSApp : Application() {
                         AppPackageChangedEvents.publish(
                             AppPackageChangedEvent(
                                 packageName = pkg,
-                                action = intent.action.orEmpty()
+                                action = intent.action.orEmpty(),
+                                replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                             )
                         )
                     }

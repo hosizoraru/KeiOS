@@ -35,11 +35,14 @@ internal fun BindGitHubPageEffects(
 
     LaunchedEffect(isPageActive) {
         if (!isPageActive) return@LaunchedEffect
+        val currentSignalVersion = GitHubTrackStoreSignals.version.value
         if (!state.hasInitialized) {
             state.hasInitialized = true
             actions.initializePage()
+        } else if (currentSignalVersion > state.lastTrackStoreSignalVersion) {
+            actions.syncTrackSnapshotFromStore(forceRefreshApps = true)
         }
-        state.lastTrackStoreSignalVersion = GitHubTrackStoreSignals.version.value
+        state.lastTrackStoreSignalVersion = currentSignalVersion
         actions.trimExpiredPendingShareImportTrack()
     }
 

@@ -393,6 +393,7 @@
     <string name="github_list_msg_no_match">没有匹配的跟踪项目</string>
     <string name="github_item_label_repo">仓库地址</string>
     <string name="github_item_label_local_version">本地版本</string>
+    <string name="github_item_value_local_version_uninstalled">未安装 App</string>
     <string name="github_item_label_stable_version">稳定版本</string>
     <string name="github_item_label_prerelease_version">预发版本</string>
     <string name="github_item_label_updated_at">更新时间</string>

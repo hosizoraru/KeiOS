@@ -404,16 +404,8 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                             onOpenExternalUrl(GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo))
                         }
                     )
-                    if (state.localVersion.isNotBlank()) {
-                        val normalizedLocalVersion = formatReleaseValue(
-                            releaseName = state.localVersion,
-                            rawTag = state.localVersion
-                        )
-                        val localText = if (state.localVersionCode >= 0L) {
-                            "$normalizedLocalVersion (${state.localVersionCode})"
-                        } else {
-                            normalizedLocalVersion
-                        }
+                    val localText = formatLocalVersionText(context, state)
+                    if (localText != null) {
                         VersionValueRow(
                             label = stringResource(R.string.github_item_label_local_version),
                             value = localText,
@@ -901,6 +893,28 @@ private fun LazyListScope.GitHubTrackedItemsSection(
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
+    }
+}
+
+private fun formatLocalVersionText(
+    context: Context,
+    state: VersionCheckUi
+): String? {
+    val rawLocalVersion = state.localVersion.trim()
+    val hasUnknownPlaceholder = rawLocalVersion.equals("unknown", ignoreCase = true)
+    val uninstalled = state.localVersionCode < 0L && (rawLocalVersion.isBlank() || hasUnknownPlaceholder)
+    if (uninstalled) {
+        return context.getString(R.string.github_item_value_local_version_uninstalled)
+    }
+    if (rawLocalVersion.isBlank()) return null
+    val normalizedLocalVersion = formatReleaseValue(
+        releaseName = rawLocalVersion,
+        rawTag = rawLocalVersion
+    )
+    return if (state.localVersionCode >= 0L) {
+        "$normalizedLocalVersion (${state.localVersionCode})"
+    } else {
+        normalizedLocalVersion
     }
 }
 

@@ -7,7 +7,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 data class AppPackageChangedEvent(
     val packageName: String,
     val action: String,
-    val atMillis: Long = System.currentTimeMillis()
+    val atMillis: Long = System.currentTimeMillis(),
+    val replacing: Boolean = false
 )
 
 object AppPackageChangedEvents {
@@ -22,4 +23,3 @@ object AppPackageChangedEvents {
         _events.tryEmit(event)
     }
 }
-

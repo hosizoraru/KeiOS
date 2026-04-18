@@ -19,12 +19,11 @@ object GitHubReleaseCheckService {
         strategy: GitHubReleaseLookupStrategy? = null
     ): GitHubTrackedReleaseCheck {
         val lookupConfig = GitHubReleaseStrategyRegistry.loadLookupConfig()
-        val localVersion = runCatching {
-            GitHubVersionUtils.localVersionName(context, item.packageName)
-        }.getOrDefault("unknown")
-        val localVersionCode = runCatching {
-            GitHubVersionUtils.localVersionCode(context, item.packageName)
-        }.getOrDefault(-1L)
+        val localVersionInfo = runCatching {
+            GitHubVersionUtils.localVersionInfoOrNull(context, item.packageName)
+        }.getOrNull()
+        val localVersion = localVersionInfo?.versionName.orEmpty()
+        val localVersionCode = localVersionInfo?.versionCode ?: -1L
         val effectiveStrategy = strategy ?: GitHubReleaseStrategyRegistry.resolveConfiguredStrategy().getOrElse { error ->
             return GitHubTrackedReleaseCheck(
                 strategyId = lookupConfig.selectedStrategy.storageId,
