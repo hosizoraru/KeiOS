@@ -6,6 +6,7 @@ import kotlin.math.abs
 internal suspend fun PagerState.animateTabSwitch(
     fromIndex: Int,
     targetIndex: Int,
+    animationsEnabled: Boolean = true,
     onFarJumpBefore: suspend () -> Unit = {},
     onFarJumpAfter: suspend () -> Unit = {}
 ) {
@@ -15,6 +16,15 @@ internal suspend fun PagerState.animateTabSwitch(
     val from = fromIndex.coerceIn(0, total - 1)
     val target = targetIndex.coerceIn(0, total - 1)
     if (target == from && !isScrollInProgress) return
+
+    if (!animationsEnabled) {
+        onFarJumpBefore()
+        if (currentPage != target || isScrollInProgress) {
+            scrollToPage(target)
+        }
+        onFarJumpAfter()
+        return
+    }
 
     val distance = abs(target - from)
     if (distance <= 1) {

@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main
 
 import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -98,6 +99,7 @@ import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
+import com.example.keios.ui.page.main.widget.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.appFloatingEnter
 import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.ui.page.main.widget.LiquidDropdownImpl
@@ -105,6 +107,7 @@ import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.UiPerformanceBudget
+import com.example.keios.ui.page.main.widget.resolvedMotionDuration
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -140,10 +143,10 @@ private const val CATALOG_BATCH_SIZE = 20
 private const val CATALOG_LOAD_MORE_THRESHOLD = 10
 private const val CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS = 24
 
-private enum class BaGuideCatalogSortMode(val label: String) {
-    Default("默认排序"),
-    ReleaseDateDesc("实装日期：新到旧"),
-    ReleaseDateAsc("实装日期：旧到新"),
+private enum class BaGuideCatalogSortMode(@StringRes val labelRes: Int) {
+    Default(R.string.ba_catalog_sort_default),
+    ReleaseDateDesc(R.string.ba_catalog_sort_release_date_desc),
+    ReleaseDateAsc(R.string.ba_catalog_sort_release_date_asc),
 }
 
 @Composable
@@ -154,7 +157,14 @@ fun BaGuideCatalogPage(
     enableSearchBar: Boolean = true,
 ) {
     val context = LocalContext.current
-    val pageTitle = "图鉴"
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
+    val pageTitle = stringResource(R.string.ba_catalog_page_title)
+    val sortActionContentDescription = stringResource(R.string.ba_catalog_action_sort)
+    val refreshActionContentDescription = stringResource(R.string.ba_catalog_action_refresh)
+    val searchLabel = stringResource(R.string.ba_catalog_search_label)
+    val syncStatusTitle = stringResource(R.string.ba_catalog_sync_status_title)
+    val syncStatusBody = stringResource(R.string.ba_catalog_sync_status_body_retry)
+    val emptyTitle = stringResource(R.string.ba_catalog_empty_title)
     val accent = MiuixTheme.colorScheme.primary
     val surfaceColor = MiuixTheme.colorScheme.surface
     var activationCount by rememberSaveable { mutableIntStateOf(0) }
@@ -186,6 +196,11 @@ fun BaGuideCatalogPage(
     var sortMode by rememberSaveable { mutableStateOf(BaGuideCatalogSortMode.Default) }
     var showSortPopup by remember { mutableStateOf(false) }
     var favoriteCatalogEntries by remember { mutableStateOf(BaGuideCatalogStore.loadFavorites()) }
+    val emptySubtitle = if (searchQuery.isBlank()) {
+        stringResource(R.string.ba_catalog_empty_subtitle_default)
+    } else {
+        stringResource(R.string.ba_catalog_empty_subtitle_search)
+    }
 
     val tabs = BaGuideCatalogTab.entries
     val pagerState = rememberPagerState(
@@ -253,17 +268,28 @@ fun BaGuideCatalogPage(
             pagerState.animateTabSwitch(
                 fromIndex = stablePageIndex,
                 targetIndex = index,
+                animationsEnabled = transitionAnimationsEnabled,
                 onFarJumpBefore = {
                     farJumpAlpha.snapTo(1f)
                     farJumpAlpha.animateTo(
                         targetValue = 0.92f,
-                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpDimMs)
+                        animationSpec = tween(
+                            durationMillis = resolvedMotionDuration(
+                                AppMotionTokens.farJumpDimMs,
+                                transitionAnimationsEnabled
+                            )
+                        )
                     )
                 },
                 onFarJumpAfter = {
                     farJumpAlpha.animateTo(
                         targetValue = 1f,
-                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpRestoreMs)
+                        animationSpec = tween(
+                            durationMillis = resolvedMotionDuration(
+                                AppMotionTokens.farJumpRestoreMs,
+                                transitionAnimationsEnabled
+                            )
+                        )
                     )
                 }
             )
@@ -366,12 +392,12 @@ fun BaGuideCatalogPage(
                             items = listOf(
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Sort,
-                                    contentDescription = "排序",
+                                    contentDescription = sortActionContentDescription,
                                     onClick = { showSortPopup = !showSortPopup }
                                 ),
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Refresh,
-                                    contentDescription = "刷新列表",
+                                    contentDescription = refreshActionContentDescription,
                                     onClick = { refreshSignal += 1 }
                                 )
                             )
@@ -390,7 +416,7 @@ fun BaGuideCatalogPage(
                                         val modes = BaGuideCatalogSortMode.entries
                                         modes.forEachIndexed { index, mode ->
                                             LiquidDropdownImpl(
-                                                text = mode.label,
+                                                text = stringResource(mode.labelRes),
                                                 optionSize = modes.size,
                                                 isSelected = sortMode == mode,
                                                 index = index,
@@ -415,7 +441,7 @@ fun BaGuideCatalogPage(
                             .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        label = "搜索名称 / 别名 / ID"
+                        label = searchLabel
                     )
                 }
             }
@@ -477,7 +503,10 @@ fun BaGuideCatalogPage(
             }
         }
     ) { innerPadding ->
-        val progress = rememberCatalogSyncProgress(loading = loading)
+        val progress = rememberCatalogSyncProgress(
+            loading = loading,
+            animationsEnabled = transitionAnimationsEnabled
+        )
         val progressColor = when {
             loading -> Color(0xFF3B82F6)
             !error.isNullOrBlank() -> Color(0xFFEF4444)
@@ -594,6 +623,14 @@ private fun CatalogTabContent(
             filteredEntries.subList(0, visibleCount)
         }
     }
+    val syncStatusTitle = stringResource(R.string.ba_catalog_sync_status_title)
+    val syncStatusBody = stringResource(R.string.ba_catalog_sync_status_body_retry)
+    val emptyTitle = stringResource(R.string.ba_catalog_empty_title)
+    val emptySubtitle = if (searchQuery.isBlank()) {
+        stringResource(R.string.ba_catalog_empty_subtitle_default)
+    } else {
+        stringResource(R.string.ba_catalog_empty_subtitle_search)
+    }
 
     LazyColumn(
         state = listState,
@@ -617,7 +654,7 @@ private fun CatalogTabContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
-                        SmallTitle("${tab.label}图鉴")
+                        SmallTitle(stringResource(R.string.ba_catalog_tab_title, tab.label))
                     }
                     CircularProgressIndicator(
                         progress = progress,
@@ -631,27 +668,27 @@ private fun CatalogTabContent(
                 }
             }
 
-            if (!error.isNullOrBlank()) {
-                item {
-                    FrostedBlock(
-                        backdrop = null,
-                        title = "同步状态",
-                        subtitle = error.orEmpty(),
-                        body = "可通过右上角刷新按钮重试",
-                        accent = Color(0xFFEF4444)
-                    )
-                }
+                if (!error.isNullOrBlank()) {
+                    item {
+                        FrostedBlock(
+                            backdrop = null,
+                            title = syncStatusTitle,
+                            subtitle = error.orEmpty(),
+                            body = syncStatusBody,
+                            accent = Color(0xFFEF4444)
+                        )
+                    }
             }
 
-            if (!loading && filteredEntries.isEmpty()) {
-                item {
-                    FrostedBlock(
-                        backdrop = null,
-                        title = "暂无结果",
-                        subtitle = if (searchQuery.isBlank()) "当前分类没有可显示条目" else "未匹配到相关条目",
-                        accent = accent
-                    )
-                }
+                if (!loading && filteredEntries.isEmpty()) {
+                    item {
+                        FrostedBlock(
+                            backdrop = null,
+                            title = emptyTitle,
+                            subtitle = emptySubtitle,
+                            accent = accent
+                        )
+                    }
             } else {
                 items(
                     items = displayedEntries,
@@ -822,7 +859,11 @@ internal fun BaGuideCatalogEntryCard(
             GlassIconButton(
                 backdrop = null,
                 icon = MiuixIcons.Regular.FavoritesFill,
-                contentDescription = if (isFavorite) "取消收藏" else "收藏学生",
+                contentDescription = if (isFavorite) {
+                    stringResource(R.string.ba_catalog_cd_unfavorite_student)
+                } else {
+                    stringResource(R.string.ba_catalog_cd_favorite_student)
+                },
                 onClick = { onToggleFavorite(entry.contentId) },
                 width = 34.dp,
                 height = 34.dp,
@@ -835,23 +876,39 @@ internal fun BaGuideCatalogEntryCard(
 }
 
 @Composable
-private fun rememberCatalogSyncProgress(loading: Boolean): Float {
+private fun rememberCatalogSyncProgress(
+    loading: Boolean,
+    animationsEnabled: Boolean
+): Float {
     val progress = remember { Animatable(0f) }
-    LaunchedEffect(loading) {
+    LaunchedEffect(loading, animationsEnabled) {
+        if (!animationsEnabled) {
+            progress.snapTo(if (loading) 0.9f else 1f)
+            return@LaunchedEffect
+        }
         if (loading) {
             progress.snapTo(0.12f)
             progress.animateTo(
                 targetValue = 0.68f,
-                animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(520, animationsEnabled),
+                    easing = FastOutSlowInEasing
+                ),
             )
             progress.animateTo(
                 targetValue = 0.90f,
-                animationSpec = tween(durationMillis = 1800, easing = LinearEasing),
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(1800, animationsEnabled),
+                    easing = LinearEasing
+                ),
             )
         } else {
             progress.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(260, animationsEnabled),
+                    easing = FastOutSlowInEasing
+                ),
             )
         }
     }

@@ -1,8 +1,5 @@
 package com.example.keios.ui.page.main.widget
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,19 +20,19 @@ fun SearchBarHost(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val density = LocalDensity.current
-    val searchBarHeight by animateDpAsState(
+    val searchBarHeight by appMotionDpState(
         targetValue = if (visible) AppChromeTokens.searchBarHostHeight else 0.dp,
-        animationSpec = tween(durationMillis = AppMotionTokens.searchBarSlideMs),
+        durationMillis = AppMotionTokens.searchBarSlideMs,
         label = "${animationLabelPrefix}Height"
     )
-    val searchBarAlpha by animateFloatAsState(
+    val searchBarAlpha by appMotionFloatState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = AppMotionTokens.searchBarFadeMs),
+        durationMillis = AppMotionTokens.searchBarFadeMs,
         label = "${animationLabelPrefix}Alpha"
     )
-    val searchBarOffsetY by animateDpAsState(
+    val searchBarOffsetY by appMotionDpState(
         targetValue = if (visible) 0.dp else (-12).dp,
-        animationSpec = tween(durationMillis = AppMotionTokens.searchBarSlideMs),
+        durationMillis = AppMotionTokens.searchBarSlideMs,
         label = "${animationLabelPrefix}Offset"
     )
 

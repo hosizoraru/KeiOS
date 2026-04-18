@@ -1,7 +1,5 @@
 package com.example.keios.ui.page.main.widget
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -167,14 +165,14 @@ private fun GlassIconButtonContainer(
     val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val animatedScale by animateFloatAsState(
+    val animatedScale by appMotionFloatState(
         targetValue = if (isPressed) AppInteractiveTokens.pressedScale else 1f,
-        animationSpec = tween(durationMillis = 110),
+        durationMillis = 110,
         label = "glass_icon_button_scale"
     )
-    val pressedOverlayAlpha by animateFloatAsState(
+    val pressedOverlayAlpha by appMotionFloatState(
         targetValue = appControlPressedOverlayAlpha(isPressed = isPressed, isDark = isDark),
-        animationSpec = tween(durationMillis = 110),
+        durationMillis = 110,
         label = "glass_icon_button_overlay"
     )
     Box(
@@ -318,17 +316,17 @@ fun GlassTextButton(
     }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val animatedScale by animateFloatAsState(
+    val animatedScale by appMotionFloatState(
         targetValue = if (enabled && isPressed) AppInteractiveTokens.pressedScale else 1f,
-        animationSpec = tween(durationMillis = 110),
+        durationMillis = 110,
         label = "glass_text_button_scale"
     )
-    val pressedOverlayAlpha by animateFloatAsState(
+    val pressedOverlayAlpha by appMotionFloatState(
         targetValue = appControlPressedOverlayAlpha(
             isPressed = enabled && isPressed,
             isDark = isDark
         ),
-        animationSpec = tween(durationMillis = 110),
+        durationMillis = 110,
         label = "glass_text_button_overlay"
     )
 

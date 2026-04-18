@@ -1,7 +1,5 @@
 package com.example.keios.ui.page.main.widget
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -284,14 +282,14 @@ fun LiquidDropdownItem(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val animatedScale by animateFloatAsState(
+    val animatedScale by appMotionFloatState(
         targetValue = if (isPressed) AppInteractiveTokens.pressedScale else 1f,
-        animationSpec = tween(durationMillis = 110),
+        durationMillis = 110,
         label = "liquid_dropdown_item_scale"
     )
-    val pressedOverlayAlpha by animateFloatAsState(
+    val pressedOverlayAlpha by appMotionFloatState(
         targetValue = appControlPressedOverlayAlpha(isPressed = isPressed, isDark = isDark),
-        animationSpec = tween(durationMillis = 110),
+        durationMillis = 110,
         label = "liquid_dropdown_item_overlay"
     )
     LaunchedEffect(selected) {

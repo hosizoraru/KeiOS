@@ -1,8 +1,5 @@
 package com.example.keios.ui.page.main
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -29,11 +27,13 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.keios.R
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.page.main.widget.AppPageLazyColumn
 import com.example.keios.ui.page.main.widget.AppPageScaffold
 import com.example.keios.ui.page.main.widget.AppSurfaceCard
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
+import com.example.keios.ui.page.main.widget.appMotionFloatState
 import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -73,13 +73,16 @@ fun McpSkillPage(
     mcpServerManager: McpServerManager,
     onBack: () -> Unit
 ) {
+    val pageTitle = stringResource(R.string.mcp_skill_page_title)
+    val markdownSubtitle = stringResource(R.string.mcp_skill_page_subtitle)
+    val emptyMarkdown = stringResource(R.string.mcp_skill_markdown_empty)
     val markdown by produceState(initialValue = "", mcpServerManager) {
         value = withContext(Dispatchers.IO) {
             mcpServerManager.getSkillMarkdown()
         }
     }
-    val sections = remember(markdown) {
-        val blocks = parseMarkdownBlocks(markdown.ifBlank { "# MCP Skill\n\n暂无内容" })
+    val sections = remember(markdown, emptyMarkdown) {
+        val blocks = parseMarkdownBlocks(markdown.ifBlank { emptyMarkdown })
         buildSkillSections(blocks)
     }
 
@@ -91,14 +94,14 @@ fun McpSkillPage(
     val codeColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.10f)
 
     val subtitleVisibleTarget = if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset < 28) 1f else 0f
-    val subtitleAlpha by animateFloatAsState(
+    val subtitleAlpha by appMotionFloatState(
         targetValue = subtitleVisibleTarget,
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        durationMillis = 220,
         label = "skillSubtitleAlpha"
     )
 
     AppPageScaffold(
-        title = "MCP Skill",
+        title = pageTitle,
         modifier = Modifier.fillMaxSize(),
         scrollBehavior = scrollBehavior,
         topBarColor = MiuixTheme.colorScheme.surface,
@@ -125,7 +128,7 @@ fun McpSkillPage(
             item {
                 SmallTitle(
                     modifier = Modifier.alpha(subtitleAlpha),
-                    text = "SKILL.md"
+                    text = markdownSubtitle
                 )
             }
             item {

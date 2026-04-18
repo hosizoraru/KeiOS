@@ -1,6 +1,5 @@
 package com.example.keios.ui.page.main
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.LinearEasing
@@ -61,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +82,9 @@ import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
+import com.example.keios.ui.page.main.widget.LocalTransitionAnimationsEnabled
+import com.example.keios.ui.page.main.widget.appMotionFloatState
+import com.example.keios.ui.page.main.widget.resolvedMotionDuration
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop as rememberActionBarBackdrop
@@ -118,11 +121,16 @@ import top.yukonga.miuix.kmp.icon.extended.Layers
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private fun formatGitHubCacheAgo(lastRefreshMs: Long, nowMs: Long = System.currentTimeMillis()): String {
-    if (lastRefreshMs <= 0L) return "未刷新"
+private fun formatGitHubCacheAgo(
+    lastRefreshMs: Long,
+    notRefreshedText: String,
+    justNowText: String,
+    nowMs: Long = System.currentTimeMillis()
+): String {
+    if (lastRefreshMs <= 0L) return notRefreshedText
     val deltaMs = (nowMs - lastRefreshMs).coerceAtLeast(0L)
     val minutes = TimeUnit.MILLISECONDS.toMinutes(deltaMs)
-    if (minutes <= 0L) return "刚刚"
+    if (minutes <= 0L) return justNowText
     if (minutes < 60L) return "${minutes}m"
     val hours = minutes / 60L
     val remainMinutes = minutes % 60L
@@ -448,19 +456,32 @@ fun HomePage(
         else -> inactiveColor
     }
 
-    val networkModeText = if (mcpAllowExternal) "局域网可访问" else "仅本机"
-    val cacheRefreshLine = if (githubOverview.cachedRefreshMs > 0L) formatGitHubCacheAgo(githubOverview.cachedRefreshMs) else "未刷新"
+    val homeStatusLoading = stringResource(R.string.home_status_loading)
+    val homeGitHubUnconfigured = stringResource(R.string.home_github_status_unconfigured)
+    val homeGitHubNoCache = stringResource(R.string.home_github_status_no_cache)
+    val homeGitHubPendingRefresh = stringResource(R.string.home_github_status_pending_refresh)
+    val homeJustNow = stringResource(R.string.home_time_just_now)
+    val networkModeText = if (mcpAllowExternal) {
+        stringResource(R.string.mcp_network_mode_lan_accessible)
+    } else {
+        stringResource(R.string.mcp_network_mode_local_only_short)
+    }
+    val cacheRefreshLine = formatGitHubCacheAgo(
+        lastRefreshMs = githubOverview.cachedRefreshMs,
+        notRefreshedText = stringResource(R.string.github_refresh_ago_not_refreshed),
+        justNowText = homeJustNow
+    )
     val githubLastUpdateLine = when {
-        !githubOverview.loaded -> "读取中"
-        trackedCount == 0 -> "未配置"
-        cacheHitCount == 0 -> "暂无缓存"
+        !githubOverview.loaded -> homeStatusLoading
+        trackedCount == 0 -> homeGitHubUnconfigured
+        cacheHitCount == 0 -> homeGitHubNoCache
         else -> cacheRefreshLine
     }
     val githubUpdatableLine = when {
-        !githubOverview.loaded -> "读取中"
-        trackedCount == 0 -> "0 项"
-        cacheHitCount == 0 -> "待刷新"
-        else -> "$updatableCount 项"
+        !githubOverview.loaded -> homeStatusLoading
+        trackedCount == 0 -> stringResource(R.string.github_overview_value_count, 0)
+        cacheHitCount == 0 -> homeGitHubPendingRefresh
+        else -> stringResource(R.string.github_overview_value_count, updatableCount)
     }
 
     var logoHeightPx by remember { mutableIntStateOf(0) }
@@ -476,11 +497,11 @@ fun HomePage(
         }
     }
 
-    val topBarProgress by animateFloatAsState(
+    val topBarProgress by appMotionFloatState(
         targetValue = scrollProgress,
         label = "home_top_bar_progress"
     )
-    val bgAlpha by animateFloatAsState(
+    val bgAlpha by appMotionFloatState(
         targetValue = 1f - scrollProgress,
         label = "home_bg_alpha"
     )
@@ -491,13 +512,17 @@ fun HomePage(
     var titleY by remember { mutableFloatStateOf(0f) }
     var summaryY by remember { mutableFloatStateOf(0f) }
     var initialLogoAreaY by remember { mutableFloatStateOf(0f) }
-    val hdrSweepProgress = if (homeIconHdrEnabled) {
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
+    val hdrSweepProgress = if (homeIconHdrEnabled && transitionAnimationsEnabled) {
         val hdrSweep = rememberInfiniteTransition(label = "kei_hdr_sweep")
         val animated by hdrSweep.animateFloat(
             initialValue = -0.35f,
             targetValue = 1.35f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 4600, easing = LinearEasing)
+                animation = tween(
+                    durationMillis = resolvedMotionDuration(4600, transitionAnimationsEnabled),
+                    easing = LinearEasing
+                )
             ),
             label = "kei_hdr_sweep_progress"
         )
@@ -559,7 +584,7 @@ fun HomePage(
                         items = listOf(
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Layers,
-                                contentDescription = "编辑底栏板块",
+                                contentDescription = stringResource(R.string.home_cd_edit_bottom_pages),
                                 onClick = {
                                     actionBarSelectedIndex = 0
                                     showBottomPageEditor = true
@@ -567,7 +592,7 @@ fun HomePage(
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Info,
-                                contentDescription = "关于",
+                                contentDescription = stringResource(R.string.about_page_title),
                                 onClick = {
                                     actionBarSelectedIndex = 1
                                     onOpenAbout()
@@ -575,7 +600,7 @@ fun HomePage(
                             ),
                             LiquidActionItem(
                                 icon = MiuixIcons.Regular.Settings,
-                                contentDescription = "设置",
+                                contentDescription = stringResource(R.string.settings_title),
                                 onClick = {
                                     actionBarSelectedIndex = 2
                                     onOpenSettings()
@@ -591,14 +616,14 @@ fun HomePage(
     ) { innerPadding ->
         SnapshotWindowBottomSheet(
             show = showBottomPageEditor,
-            title = "底栏板块",
+            title = stringResource(R.string.home_sheet_bottom_pages_title),
             onDismissRequest = { showBottomPageEditor = false },
             startAction = {
                 GlassIconButton(
                     backdrop = actionBarBackdrop,
                     variant = GlassVariant.Bar,
                     icon = MiuixIcons.Regular.Close,
-                    contentDescription = "关闭",
+                    contentDescription = stringResource(R.string.common_close),
                     onClick = { showBottomPageEditor = false }
                 )
             }
@@ -607,7 +632,7 @@ fun HomePage(
                 scrollable = false,
                 verticalSpacing = 10.dp
             ) {
-                SheetSectionTitle("显示板块")
+                SheetSectionTitle(stringResource(R.string.home_sheet_visible_pages_title))
                 SheetSectionCard(verticalSpacing = 10.dp) {
                     SheetControlRow(
                         labelContent = {
@@ -644,7 +669,7 @@ fun HomePage(
                         }
                 }
                 SheetDescriptionText(
-                    text = "Home 固定显示，其他板块可按需隐藏或重新显示。"
+                    text = stringResource(R.string.home_sheet_visible_pages_desc)
                 )
             }
         }
@@ -851,8 +876,20 @@ fun HomePage(
                         ) {
                             HomeInlineInfoItem(
                                 "MCP",
-                                "状态：${if (mcpRunning) "运行中" else "未运行"}   在线设备：$mcpConnectedClients",
-                                "端口：$mcpPort   网络模式：$networkModeText"
+                                stringResource(
+                                    R.string.home_mcp_line_status_clients,
+                                    if (mcpRunning) {
+                                        stringResource(R.string.home_mcp_status_running)
+                                    } else {
+                                        stringResource(R.string.home_mcp_status_stopped)
+                                    },
+                                    mcpConnectedClients
+                                ),
+                                stringResource(
+                                    R.string.home_mcp_line_port_mode,
+                                    mcpPort,
+                                    networkModeText
+                                )
                             )
                         }
 
@@ -862,8 +899,12 @@ fun HomePage(
                         ) {
                             HomeInlineInfoItem(
                                 "GitHub Cache",
-                                "上次更新：$githubLastUpdateLine",
-                                "追踪：$trackedCount 项   可更新：$githubUpdatableLine"
+                                stringResource(R.string.home_github_line_last_update, githubLastUpdateLine),
+                                stringResource(
+                                    R.string.home_github_line_track_update,
+                                    trackedCount,
+                                    githubUpdatableLine
+                                )
                             )
                         }
 
@@ -874,9 +915,15 @@ fun HomePage(
                             HomeInlineInfoItem(
                                 "BA",
                                 if (baOverview.loaded) {
-                                    "AP：${baOverview.apCurrent}/${baOverview.apLimit}   咖啡厅AP：${baOverview.cafeStored}/${baOverview.cafeCap}"
+                                    stringResource(
+                                        R.string.home_ba_line_ap,
+                                        baOverview.apCurrent,
+                                        baOverview.apLimit,
+                                        baOverview.cafeStored,
+                                        baOverview.cafeCap
+                                    )
                                 } else {
-                                    "读取中"
+                                    homeStatusLoading
                                 }
                             )
                         }

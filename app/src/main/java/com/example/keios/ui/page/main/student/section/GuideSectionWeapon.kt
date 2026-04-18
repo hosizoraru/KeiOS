@@ -54,10 +54,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -111,6 +108,7 @@ import com.example.keios.R
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.appMotionFloatState
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.copyModeAwareRow
@@ -333,14 +331,14 @@ internal fun GuidePressableMediaSurface(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val pressScale by animateFloatAsState(
+    val pressScale by appMotionFloatState(
         targetValue = if (pressed) 0.994f else 1f,
-        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
+        durationMillis = 120,
         label = "guide_media_press_scale"
     )
-    val pressOverlayAlpha by animateFloatAsState(
+    val pressOverlayAlpha by appMotionFloatState(
         targetValue = if (pressed) 0.065f else 0f,
-        animationSpec = tween(durationMillis = 130, easing = FastOutSlowInEasing),
+        durationMillis = 130,
         label = "guide_media_press_overlay"
     )
     Box(

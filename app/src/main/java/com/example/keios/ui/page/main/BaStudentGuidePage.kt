@@ -113,10 +113,12 @@ import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.page.main.widget.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.appFloatingEnter
 import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.core.prefs.UiPrefs
+import com.example.keios.ui.page.main.widget.resolvedMotionDuration
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -461,6 +463,13 @@ fun BaStudentGuidePage(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
+    val defaultPageTitle = stringResource(R.string.guide_page_title_default)
+    val shareSourceEmptyText = stringResource(R.string.guide_share_source_empty)
+    val shareSourceChooserTitle = stringResource(R.string.guide_share_source_chooser_title)
+    val shareSourceFailedText = stringResource(R.string.common_share_failed)
+    val openLinkFailedText = stringResource(R.string.common_open_link_failed)
+    val shareSourceContentDescription = stringResource(R.string.guide_cd_share_source)
     val accent = MiuixTheme.colorScheme.primary
     val surfaceColor = MiuixTheme.colorScheme.surface
     // Keep backdrop allocation stable per page lifecycle to avoid RenderThread native crashes
@@ -518,7 +527,10 @@ fun BaStudentGuidePage(
     val activeBottomTab = bottomTabs.getOrElse(pagerState.currentPage) { GuideBottomTab.Archive }
     val pageScope = rememberCoroutineScope()
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
-    val syncProgress = rememberGuideSyncProgress(loading = loading)
+    val syncProgress = rememberGuideSyncProgress(
+        loading = loading,
+        animationsEnabled = transitionAnimationsEnabled
+    )
     val ignoreStringInput: (String) -> Unit = remember { { _: String -> } }
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
@@ -533,7 +545,7 @@ fun BaStudentGuidePage(
             }
         }
     }
-    val pageTitle = info?.title?.ifBlank { "学生图鉴" } ?: "学生图鉴"
+    val pageTitle = info?.title?.ifBlank { defaultPageTitle } ?: defaultPageTitle
     val voicePlayer = remember(context, sourceUrl) {
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(createGameKeeMediaSourceFactory(context))
@@ -649,7 +661,11 @@ fun BaStudentGuidePage(
                 playingVoiceUrl = ""
                 isVoicePlaying = false
                 voicePlayProgress = 0f
-                Toast.makeText(context, "语音播放失败：${error.errorCodeName}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.guide_toast_voice_play_failed_with_reason, error.errorCodeName),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
         voicePlayer.addListener(listener)
@@ -662,7 +678,7 @@ fun BaStudentGuidePage(
         val raw = info?.sourceUrl?.ifBlank { sourceUrl } ?: sourceUrl
         val target = normalizeGuideUrl(raw)
         if (target.isBlank()) {
-            Toast.makeText(context, "暂无可分享的来源链接", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, shareSourceEmptyText, Toast.LENGTH_SHORT).show()
             return
         }
         runCatching {
@@ -670,12 +686,12 @@ fun BaStudentGuidePage(
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, target)
             }
-            val chooser = Intent.createChooser(intent, "分享来源").apply {
+            val chooser = Intent.createChooser(intent, shareSourceChooserTitle).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(chooser)
         }.onFailure {
-            Toast.makeText(context, "分享失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, shareSourceFailedText, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -688,7 +704,7 @@ fun BaStudentGuidePage(
             }
             context.startActivity(intent)
         }.onFailure {
-            Toast.makeText(context, "无法打开链接", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, openLinkFailedText, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -838,6 +854,7 @@ fun BaStudentGuidePage(
             pagerState.animateTabSwitch(
                 fromIndex = fromIndex,
                 targetIndex = index,
+                animationsEnabled = transitionAnimationsEnabled,
                 onFarJumpBefore = {
                     // Keep far jump immediate: dim instantly, jump, then fade in.
                     // This avoids lingering on the previous tab for an extra frame.
@@ -847,8 +864,11 @@ fun BaStudentGuidePage(
                     farJumpAlpha.animateTo(
                         targetValue = 1f,
                         animationSpec = tween(
-                            durationMillis = AppMotionTokens.farJumpRestoreEmphasisMs,
-                            easing = FastOutSlowInEasing
+                            durationMillis = resolvedMotionDuration(
+                                AppMotionTokens.farJumpRestoreEmphasisMs,
+                                transitionAnimationsEnabled
+                            ),
+                            easing = if (transitionAnimationsEnabled) FastOutSlowInEasing else LinearEasing
                         )
                     )
                 }
@@ -1021,18 +1041,18 @@ fun BaStudentGuidePage(
                 },
                 actions = {
                     Box {
-                            LiquidActionBar(
-                                backdrop = topBarBackdrop,
-                                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                                items = listOf(
-                                    LiquidActionItem(
-                                        icon = MiuixIcons.Regular.Share,
-                                        contentDescription = "分享来源",
+                        LiquidActionBar(
+                            backdrop = topBarBackdrop,
+                            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                            items = listOf(
+                                LiquidActionItem(
+                                    icon = MiuixIcons.Regular.Share,
+                                    contentDescription = shareSourceContentDescription,
                                     onClick = ::shareSource
                                 ),
                                 LiquidActionItem(
                                     icon = MiuixIcons.Regular.Refresh,
-                                    contentDescription = "刷新",
+                                    contentDescription = stringResource(R.string.common_refresh),
                                     onClick = {
                                         manualRefreshRequested = true
                                         refreshSignal += 1
@@ -1200,8 +1220,8 @@ fun BaStudentGuidePage(
                             item {
                                 FrostedBlock(
                                     backdrop = pageBackdrop,
-                                    title = "未选择学生",
-                                    subtitle = "请从 BA 卡池信息中点击对应卡池进入",
+                                    title = stringResource(R.string.guide_empty_student_title),
+                                    subtitle = stringResource(R.string.guide_empty_student_subtitle),
                                     accent = accent
                                 )
                             }
@@ -1270,24 +1290,40 @@ fun BaStudentGuidePage(
 }
 
 @Composable
-private fun rememberGuideSyncProgress(loading: Boolean): Float {
+private fun rememberGuideSyncProgress(
+    loading: Boolean,
+    animationsEnabled: Boolean
+): Float {
     val progress = remember { Animatable(0f) }
-    LaunchedEffect(loading) {
+    LaunchedEffect(loading, animationsEnabled) {
+        if (!animationsEnabled) {
+            progress.snapTo(if (loading) 0.9f else 1f)
+            return@LaunchedEffect
+        }
         if (loading) {
             // Restart from a visible low point and move forward once, no looping.
             progress.snapTo(0.12f)
             progress.animateTo(
                 targetValue = 0.68f,
-                animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing),
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(520, animationsEnabled),
+                    easing = FastOutSlowInEasing
+                ),
             )
             progress.animateTo(
                 targetValue = 0.90f,
-                animationSpec = tween(durationMillis = 1800, easing = LinearEasing),
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(1800, animationsEnabled),
+                    easing = LinearEasing
+                ),
             )
         } else {
             progress.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(260, animationsEnabled),
+                    easing = FastOutSlowInEasing
+                ),
             )
         }
     }

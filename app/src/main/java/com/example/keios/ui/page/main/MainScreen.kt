@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -51,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -61,6 +63,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.example.keios.R
 import com.example.keios.mcp.McpNotificationHelper
 import com.example.keios.mcp.McpServerManager
 import com.example.keios.ui.navigation.KeiosRoute
@@ -75,8 +78,10 @@ import com.example.keios.ui.page.main.widget.AppMotionTokens
 import com.example.keios.ui.page.main.widget.UiPerformanceBudget
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
+import com.example.keios.ui.page.main.widget.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.appFloatingEnter
 import com.example.keios.ui.page.main.widget.appFloatingExit
+import com.example.keios.ui.page.main.widget.resolvedMotionDuration
 import com.example.keios.core.log.AppLogger
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.prefs.AppThemeMode
@@ -135,6 +140,9 @@ fun MainScreen(
     var liquidActionBarLayeredStyleEnabled by remember(uiPrefsSnapshot) {
         mutableStateOf(uiPrefsSnapshot.liquidActionBarLayeredStyleEnabled)
     }
+    var transitionAnimationsEnabled by remember(uiPrefsSnapshot) {
+        mutableStateOf(uiPrefsSnapshot.transitionAnimationsEnabled)
+    }
     var cardPressFeedbackEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.cardPressFeedbackEnabled) }
     var homeIconHdrEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.homeIconHdrEnabled) }
     var superIslandNotificationEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.superIslandNotificationEnabled) }
@@ -148,12 +156,13 @@ fun MainScreen(
     var cacheDiagnosticsEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.cacheDiagnosticsEnabled) }
     var visibleBottomPageNames by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.visibleBottomPageNames) }
     val view = LocalView.current
+    val poolGuideMissingText = stringResource(R.string.main_toast_pool_guide_missing)
 
     val openGuideDetail: (String) -> Unit = { rawUrl ->
         val normalized = normalizeGuideUrl(rawUrl)
         val contentId = if (normalized.isBlank()) null else extractGuideContentIdFromUrl(normalized)
         if (contentId == null || contentId <= 0L) {
-            Toast.makeText(context, "该卡池暂未关联学生图鉴", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, poolGuideMissingText, Toast.LENGTH_SHORT).show()
         } else {
             val canonicalGuideUrl = "https://www.gamekee.com/ba/tj/$contentId.html"
             BaStudentGuideStore.setCurrentUrl(canonicalGuideUrl)
@@ -213,6 +222,11 @@ fun MainScreen(
                     onLiquidActionBarLayeredStyleChanged = {
                         liquidActionBarLayeredStyleEnabled = it
                         UiPrefs.setLiquidActionBarLayeredStyleEnabled(it)
+                    },
+                    transitionAnimationsEnabled = transitionAnimationsEnabled,
+                    onTransitionAnimationsChanged = {
+                        transitionAnimationsEnabled = it
+                        UiPrefs.setTransitionAnimationsEnabled(it)
                     },
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     onCardPressFeedbackChanged = {
@@ -298,11 +312,13 @@ fun MainScreen(
         entryProvider = entryProvider,
     )
 
-    NavDisplay(
-        entries = entries,
-        onBack = { navigator.pop() },
-        modifier = Modifier.fillMaxSize()
-    )
+    CompositionLocalProvider(LocalTransitionAnimationsEnabled provides transitionAnimationsEnabled) {
+        NavDisplay(
+            entries = entries,
+            onBack = { navigator.pop() },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }
 
 @Composable
@@ -326,6 +342,7 @@ private fun MainPagerLayout(
     requestedBottomPageToken: Int,
     onRequestedBottomPageConsumed: () -> Unit
 ) {
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val tabs = remember(visibleBottomPageNames) {
         BottomPage.entries.filter { page ->
             page == BottomPage.Home || visibleBottomPageNames.contains(page.name)
@@ -414,17 +431,28 @@ private fun MainPagerLayout(
                     pagerState.animateTabSwitch(
                         fromIndex = stablePageIndex,
                         targetIndex = index,
+                        animationsEnabled = transitionAnimationsEnabled,
                         onFarJumpBefore = {
                             farJumpAlpha.snapTo(1f)
                             farJumpAlpha.animateTo(
                                 targetValue = 0.92f,
-                                animationSpec = tween(durationMillis = AppMotionTokens.farJumpDimMs)
+                                animationSpec = tween(
+                                    durationMillis = resolvedMotionDuration(
+                                        AppMotionTokens.farJumpDimMs,
+                                        transitionAnimationsEnabled
+                                    )
+                                )
                             )
                         },
                         onFarJumpAfter = {
                             farJumpAlpha.animateTo(
                                 targetValue = 1f,
-                                animationSpec = tween(durationMillis = AppMotionTokens.farJumpRestoreMs)
+                                animationSpec = tween(
+                                    durationMillis = resolvedMotionDuration(
+                                        AppMotionTokens.farJumpRestoreMs,
+                                        transitionAnimationsEnabled
+                                    )
+                                )
                             )
                         }
                     )
@@ -447,20 +475,31 @@ private fun MainPagerLayout(
                 pagerState.animateTabSwitch(
                     fromIndex = stablePageIndex,
                     targetIndex = index,
+                    animationsEnabled = transitionAnimationsEnabled,
                     onFarJumpBefore = {
                         farJumpAlpha.snapTo(1f)
                         farJumpAlpha.animateTo(
-                        targetValue = 0.92f,
-                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpDimMs)
-                    )
-                },
-                onFarJumpAfter = {
-                    farJumpAlpha.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpRestoreMs)
-                    )
-                }
-            )
+                            targetValue = 0.92f,
+                            animationSpec = tween(
+                                durationMillis = resolvedMotionDuration(
+                                    AppMotionTokens.farJumpDimMs,
+                                    transitionAnimationsEnabled
+                                )
+                            )
+                        )
+                    },
+                    onFarJumpAfter = {
+                        farJumpAlpha.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(
+                                durationMillis = resolvedMotionDuration(
+                                    AppMotionTokens.farJumpRestoreMs,
+                                    transitionAnimationsEnabled
+                                )
+                            )
+                        )
+                    }
+                )
             }
             showBottomBar = true
         }

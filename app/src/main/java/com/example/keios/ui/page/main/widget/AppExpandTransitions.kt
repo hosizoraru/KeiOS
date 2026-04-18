@@ -9,9 +9,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 
+@Composable
 internal fun appExpandIn(): EnterTransition {
+    if (!LocalTransitionAnimationsEnabled.current) return EnterTransition.None
     return fadeIn(animationSpec = tween(durationMillis = AppMotionTokens.expandFadeInMs)) +
         expandVertically(
             animationSpec = tween(durationMillis = AppMotionTokens.expandSizeInMs),
@@ -19,7 +22,9 @@ internal fun appExpandIn(): EnterTransition {
         )
 }
 
+@Composable
 internal fun appExpandOut(): ExitTransition {
+    if (!LocalTransitionAnimationsEnabled.current) return ExitTransition.None
     return fadeOut(animationSpec = tween(durationMillis = AppMotionTokens.expandFadeOutMs)) +
         shrinkVertically(
             animationSpec = tween(durationMillis = AppMotionTokens.expandSizeOutMs),
@@ -27,7 +32,9 @@ internal fun appExpandOut(): ExitTransition {
         )
 }
 
+@Composable
 internal fun appFloatingEnter(): EnterTransition {
+    if (!LocalTransitionAnimationsEnabled.current) return EnterTransition.None
     return fadeIn(animationSpec = tween(durationMillis = AppMotionTokens.floatingFadeInMs)) +
         slideInVertically(
             animationSpec = tween(durationMillis = AppMotionTokens.floatingSlideInMs),
@@ -35,7 +42,9 @@ internal fun appFloatingEnter(): EnterTransition {
         )
 }
 
+@Composable
 internal fun appFloatingExit(): ExitTransition {
+    if (!LocalTransitionAnimationsEnabled.current) return ExitTransition.None
     return fadeOut(animationSpec = tween(durationMillis = AppMotionTokens.floatingFadeOutMs)) +
         slideOutVertically(
             animationSpec = tween(durationMillis = AppMotionTokens.floatingSlideOutMs),

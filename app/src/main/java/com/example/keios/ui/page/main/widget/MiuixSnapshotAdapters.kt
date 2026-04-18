@@ -1,6 +1,8 @@
 package com.example.keios.ui.page.main.widget
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
@@ -70,6 +72,7 @@ fun SnapshotWindowListPopup(
     val density = LocalDensity.current
     val explicitAnchorBounds = anchorBounds
     val popupAnimationOffsetPx = with(density) { AppInteractiveTokens.popupAnimationOffset.roundToPx() }
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.roundToPx() }
     val anchorWidthDp = remember(explicitAnchorBounds, density) {
         explicitAnchorBounds?.let { with(density) { it.width.toDp() } } ?: 0.dp
@@ -170,6 +173,36 @@ fun SnapshotWindowListPopup(
     }
 
     if (popupRender) {
+        val popupEnter = if (transitionAnimationsEnabled) {
+            fadeIn(
+                animationSpec = tween(durationMillis = 140)
+            ) + scaleIn(
+                initialScale = 0.92f,
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
+            ) + slideInVertically(
+                initialOffsetY = {
+                    if (opensDownward) -popupAnimationOffsetPx else popupAnimationOffsetPx
+                },
+                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
+            )
+        } else {
+            EnterTransition.None
+        }
+        val popupExit = if (transitionAnimationsEnabled) {
+            fadeOut(
+                animationSpec = tween(durationMillis = 100)
+            ) + scaleOut(
+                targetScale = 0.96f,
+                animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
+            ) + slideOutVertically(
+                targetOffsetY = {
+                    if (opensDownward) -popupAnimationOffsetPx else popupAnimationOffsetPx
+                },
+                animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
+            )
+        } else {
+            ExitTransition.None
+        }
         Popup(
             popupPositionProvider = composePopupPositionProvider,
             onDismissRequest = onDismissRequest,
@@ -182,28 +215,8 @@ fun SnapshotWindowListPopup(
         ) {
             AnimatedVisibility(
                 visibleState = popupVisibilityState,
-                enter = fadeIn(
-                    animationSpec = tween(durationMillis = 140)
-                ) + scaleIn(
-                    initialScale = 0.92f,
-                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
-                ) + slideInVertically(
-                    initialOffsetY = {
-                        if (opensDownward) -popupAnimationOffsetPx else popupAnimationOffsetPx
-                    },
-                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
-                ),
-                exit = fadeOut(
-                    animationSpec = tween(durationMillis = 100)
-                ) + scaleOut(
-                    targetScale = 0.96f,
-                    animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
-                ) + slideOutVertically(
-                    targetOffsetY = {
-                        if (opensDownward) -popupAnimationOffsetPx else popupAnimationOffsetPx
-                    },
-                    animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing)
-                )
+                enter = popupEnter,
+                exit = popupExit
             ) {
                 Box(
                     modifier = popupModifier

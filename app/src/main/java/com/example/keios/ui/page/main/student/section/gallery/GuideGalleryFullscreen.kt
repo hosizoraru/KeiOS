@@ -50,6 +50,8 @@ import androidx.media3.ui.PlayerView
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
+import com.example.keios.ui.page.main.widget.LocalTransitionAnimationsEnabled
+import com.example.keios.ui.page.main.widget.resolvedMotionDuration
 import com.github.panpf.zoomimage.CoilZoomAsyncImage
 import com.github.panpf.zoomimage.rememberCoilZoomState
 import com.github.panpf.zoomimage.zoom.ContinuousTransformType
@@ -73,6 +75,7 @@ internal fun GuideImageFullscreenDialog(
 ) {
     val context = LocalContext.current
     val mediaAdaptiveRotationEnabled = remember { BASettingsStore.loadMediaAdaptiveRotationEnabled() }
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val systemAutoRotateEnabled = rememberSystemAutoRotateEnabled(active = !mediaAdaptiveRotationEnabled)
     val systemRotationDegrees = rememberDeviceRotationDegrees(
         active = !mediaAdaptiveRotationEnabled && systemAutoRotateEnabled
@@ -265,13 +268,17 @@ internal fun GuideImageFullscreenDialog(
                         return@LaunchedEffect
                     }
                     rotationTransition.snapTo(0f)
-                    rotationTransition.animateTo(
-                        targetValue = delta.toFloat(),
-                        animationSpec = tween(
-                            durationMillis = 220,
-                            easing = FastOutSlowInEasing
+                    if (transitionAnimationsEnabled) {
+                        rotationTransition.animateTo(
+                            targetValue = delta.toFloat(),
+                            animationSpec = tween(
+                                durationMillis = resolvedMotionDuration(220, transitionAnimationsEnabled),
+                                easing = FastOutSlowInEasing
+                            )
                         )
-                    )
+                    } else {
+                        rotationTransition.snapTo(delta.toFloat())
+                    }
                     zoomState.zoomable.rotate(targetRotation)
                     appliedZoomRotation = targetRotation
                     rotationTransition.snapTo(0f)

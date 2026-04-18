@@ -79,6 +79,8 @@ fun SettingsPage(
     onLiquidBottomBarChanged: (Boolean) -> Unit,
     liquidActionBarLayeredStyleEnabled: Boolean,
     onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
+    transitionAnimationsEnabled: Boolean,
+    onTransitionAnimationsChanged: (Boolean) -> Unit,
     cardPressFeedbackEnabled: Boolean,
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     homeIconHdrEnabled: Boolean,
@@ -164,6 +166,7 @@ fun SettingsPage(
     }
     val uiGroupActive = liquidActionBarLayeredStyleEnabled ||
         liquidBottomBarEnabled ||
+        transitionAnimationsEnabled ||
         cardPressFeedbackEnabled ||
         homeIconHdrEnabled
     val notifyGroupActive = superIslandNotificationEnabled || superIslandBypassRestrictionEnabled
@@ -254,6 +257,19 @@ fun SettingsPage(
                             variant = GlassVariant.SheetAction
                         )
                     }
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_transition_animations_title),
+                        summary = if (transitionAnimationsEnabled) {
+                            stringResource(R.string.settings_transition_animations_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_transition_animations_summary_disabled)
+                        },
+                        checked = transitionAnimationsEnabled,
+                        onCheckedChange = onTransitionAnimationsChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_transition_animations_scope)
+                    )
 
                     SettingsToggleItem(
                         title = stringResource(R.string.settings_actionbar_style_title),

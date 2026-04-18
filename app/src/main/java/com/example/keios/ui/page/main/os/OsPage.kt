@@ -51,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextAlign
@@ -137,6 +138,14 @@ fun OsPage(
     val context = LocalContext.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
+    val exportSuccessText = stringResource(R.string.common_export_success)
+    val noRefreshableCardText = stringResource(R.string.os_toast_no_refreshable_card)
+    val refreshCompletedText = stringResource(R.string.os_toast_refresh_completed)
+    val manageCardsContentDescription = stringResource(R.string.os_action_manage_cards)
+    val refreshParamsContentDescription = stringResource(R.string.os_action_refresh_params)
+    val searchLabel = stringResource(R.string.os_search_label)
+    val visibleCardsTitle = stringResource(R.string.os_sheet_visible_cards_title)
+    val noMatchedResultsText = stringResource(R.string.common_no_matched_results)
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val initialUiSnapshot = remember { OsUiStateStore.loadSnapshot() }
     var cacheLoaded by remember { mutableStateOf(false) }
@@ -220,9 +229,13 @@ fun OsPage(
                 writer?.write(content)
             }
         }.onSuccess {
-            Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, exportSuccessText, Toast.LENGTH_SHORT).show()
         }.onFailure {
-            Toast.makeText(context, "导出失败: ${it.javaClass.simpleName}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.common_export_failed_with_reason, it.javaClass.simpleName),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -344,7 +357,11 @@ fun OsPage(
                 ensureLoad(section, forceRefresh = true)
                 refreshProgress = (index + 1).toFloat() / sectionCount.toFloat()
             }
-            Toast.makeText(context, if (targets.isEmpty()) "当前没有可刷新的卡片" else "系统参数已刷新并缓存", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                if (targets.isEmpty()) noRefreshableCardText else refreshCompletedText,
+                Toast.LENGTH_SHORT
+            ).show()
         } finally {
             refreshing = false
         }
@@ -525,10 +542,12 @@ fun OsPage(
     fun sectionSubtitle(section: SectionKind, size: Int): String {
         val state = sectionStates[section] ?: SectionState()
         return when {
-            state.loading -> "加载中..."
-            !state.loadedFresh && state.rows.isNotEmpty() -> "$size 条（缓存）"
-            !state.loadedFresh && state.rows.isEmpty() -> "未加载"
-            else -> "$size 条"
+            state.loading -> context.getString(R.string.common_loading)
+            !state.loadedFresh && state.rows.isNotEmpty() -> {
+                context.getString(R.string.common_item_count_cached, size)
+            }
+            !state.loadedFresh && state.rows.isEmpty() -> context.getString(R.string.common_not_loaded)
+            else -> context.getString(R.string.common_item_count, size)
         }
     }
 
@@ -672,10 +691,22 @@ fun OsPage(
         loadedFreshCount
     ) {
         listOf(
-            OsOverviewMetric(label = "条目视图", value = "$visibleRowsCount/$totalRowsCount"),
-            OsOverviewMetric(label = "TopInfo", value = "${topInfoRows.size} 条"),
-            OsOverviewMetric(label = "Fresh 覆盖", value = "$loadedFreshCount/$sectionCount"),
-            OsOverviewMetric(label = "可见分区", value = "$sectionCount 个")
+            OsOverviewMetric(
+                label = context.getString(R.string.os_overview_metric_visible_rows),
+                value = "$visibleRowsCount/$totalRowsCount"
+            ),
+            OsOverviewMetric(
+                label = context.getString(R.string.os_overview_metric_top_info),
+                value = context.getString(R.string.common_item_count, topInfoRows.size)
+            ),
+            OsOverviewMetric(
+                label = context.getString(R.string.os_overview_metric_fresh_coverage),
+                value = "$loadedFreshCount/$sectionCount"
+            ),
+            OsOverviewMetric(
+                label = context.getString(R.string.os_overview_metric_visible_sections),
+                value = context.getString(R.string.os_overview_metric_visible_sections_value, sectionCount)
+            )
         )
     }
 
@@ -692,12 +723,12 @@ fun OsPage(
                 items = listOf(
                     LiquidActionItem(
                         icon = MiuixIcons.Regular.Layers,
-                        contentDescription = "管理卡片显示",
+                        contentDescription = manageCardsContentDescription,
                         onClick = { showCardManager = true }
                     ),
                     LiquidActionItem(
                         icon = MiuixIcons.Regular.Refresh,
-                        contentDescription = "刷新OS参数",
+                        contentDescription = refreshParamsContentDescription,
                         onClick = {
                             if (refreshing) return@LiquidActionItem
                             scope.launch { refreshAllSections() }
@@ -717,7 +748,7 @@ fun OsPage(
                         .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
                     value = queryInput,
                     onValueChange = { queryInput = it },
-                    label = "搜索OS参数",
+                    label = searchLabel,
                     backdrop = topBarBackdrop
                 )
             }
@@ -725,14 +756,14 @@ fun OsPage(
     ) { innerPadding ->
         SnapshotWindowBottomSheet(
             show = showCardManager,
-            title = "显示卡片",
+            title = visibleCardsTitle,
             onDismissRequest = { showCardManager = false },
             startAction = {
                 GlassIconButton(
                     backdrop = sheetBackdrop,
                     variant = GlassVariant.Bar,
                     icon = MiuixIcons.Regular.Close,
-                    contentDescription = "关闭",
+                    contentDescription = stringResource(R.string.common_close),
                     onClick = { showCardManager = false }
                 )
             }
@@ -797,7 +828,7 @@ fun OsPage(
         ) {
             item {
                 AppOverviewCard(
-                    title = "系统参数与属性",
+                    title = stringResource(R.string.os_overview_title),
                     containerColor = overviewCardColor,
                     borderColor = overviewBorderColor,
                     contentColor = titleColor,
@@ -866,8 +897,8 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "TopInfo",
-                    subtitle = "${displayedTopInfoRows.size} 条",
+                    title = stringResource(R.string.os_section_top_info_title),
+                    subtitle = stringResource(R.string.common_item_count, displayedTopInfoRows.size),
                     expanded = topInfoExpanded,
                     onExpandedChange = { topInfoExpanded = it },
                     headerStartAction = {
@@ -878,7 +909,7 @@ fun OsPage(
                     }
                 ) {
                     if (displayedTopInfoRows.isEmpty()) {
-                        Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                        Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     } else {
                         if (q.isBlank() && !topInfoExpanded) {
                             displayedTopInfoRows.forEach { row ->
@@ -910,7 +941,7 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "System Table",
+                    title = stringResource(R.string.os_section_system_title),
                     subtitle = sectionSubtitle(SectionKind.SYSTEM, if (q.isBlank()) prunedSystemRows.size else displayedSystemRows.size),
                     expanded = systemTableExpanded,
                     onExpandedChange = { systemTableExpanded = it },
@@ -921,7 +952,7 @@ fun OsPage(
                         CardExportAction(card = OsSectionCard.SYSTEM)
                     }
                 ) {
-                    if (displayedSystemRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                    if (displayedSystemRows.isEmpty()) Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     else displayedSystemRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
@@ -933,7 +964,7 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "Secure Table",
+                    title = stringResource(R.string.os_section_secure_title),
                     subtitle = sectionSubtitle(SectionKind.SECURE, if (q.isBlank()) prunedSecureRows.size else displayedSecureRows.size),
                     expanded = secureTableExpanded,
                     onExpandedChange = { secureTableExpanded = it },
@@ -944,7 +975,7 @@ fun OsPage(
                         CardExportAction(card = OsSectionCard.SECURE)
                     }
                 ) {
-                    if (displayedSecureRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                    if (displayedSecureRows.isEmpty()) Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     else displayedSecureRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
@@ -956,7 +987,7 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "Global Table",
+                    title = stringResource(R.string.os_section_global_title),
                     subtitle = sectionSubtitle(SectionKind.GLOBAL, if (q.isBlank()) prunedGlobalRows.size else displayedGlobalRows.size),
                     expanded = globalTableExpanded,
                     onExpandedChange = { globalTableExpanded = it },
@@ -967,7 +998,7 @@ fun OsPage(
                         CardExportAction(card = OsSectionCard.GLOBAL)
                     }
                 ) {
-                    if (displayedGlobalRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                    if (displayedGlobalRows.isEmpty()) Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     else displayedGlobalRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
@@ -979,7 +1010,7 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "Android Properties",
+                    title = stringResource(R.string.os_section_android_title),
                     subtitle = sectionSubtitle(SectionKind.ANDROID, if (q.isBlank()) prunedAndroidRows.size else displayedAndroidRows.size),
                     expanded = androidPropsExpanded,
                     onExpandedChange = { androidPropsExpanded = it },
@@ -990,7 +1021,7 @@ fun OsPage(
                         CardExportAction(card = OsSectionCard.ANDROID)
                     }
                 ) {
-                    if (displayedAndroidRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                    if (displayedAndroidRows.isEmpty()) Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     else displayedAndroidRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
@@ -1002,7 +1033,7 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "Java Properties",
+                    title = stringResource(R.string.os_section_java_title),
                     subtitle = sectionSubtitle(SectionKind.JAVA, if (q.isBlank()) prunedJavaRows.size else displayedJavaRows.size),
                     expanded = javaPropsExpanded,
                     onExpandedChange = { javaPropsExpanded = it },
@@ -1013,7 +1044,7 @@ fun OsPage(
                         CardExportAction(card = OsSectionCard.JAVA)
                     }
                 ) {
-                    if (displayedJavaRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                    if (displayedJavaRows.isEmpty()) Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     else displayedJavaRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
@@ -1025,7 +1056,7 @@ fun OsPage(
                 item {
                 MiuixAccordionCard(
                     backdrop = contentBackdrop,
-                    title = "Linux environment",
+                    title = stringResource(R.string.os_section_linux_title),
                     subtitle = sectionSubtitle(SectionKind.LINUX, if (q.isBlank()) prunedLinuxRows.size else displayedLinuxRows.size),
                     expanded = linuxEnvExpanded,
                     onExpandedChange = { linuxEnvExpanded = it },
@@ -1036,7 +1067,7 @@ fun OsPage(
                         CardExportAction(card = OsSectionCard.LINUX)
                     }
                 ) {
-                    if (displayedLinuxRows.isEmpty()) Text(text = "No matched results.", color = MiuixTheme.colorScheme.onBackgroundVariant)
+                    if (displayedLinuxRows.isEmpty()) Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                     else displayedLinuxRows.forEach { row -> OsSectionInfoRow(label = row.key, value = row.value) }
                 }
                 }
