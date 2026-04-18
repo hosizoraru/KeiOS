@@ -1,0 +1,314 @@
+package com.example.keios.ui.page.main
+
+import android.app.DownloadManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Environment
+import androidx.core.net.toUri
+import com.example.keios.R
+import com.example.keios.feature.github.data.local.GitHubReleaseAssetCacheStore
+import com.example.keios.feature.github.data.local.GitHubTrackStore
+import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
+import com.example.keios.feature.github.data.remote.GitHubReleaseAssetRepository
+import com.example.keios.feature.github.data.remote.GitHubVersionUtils
+import com.example.keios.feature.github.model.GitHubLookupStrategyOption
+import com.example.keios.feature.github.model.GitHubTrackedApp
+import com.example.keios.ui.page.main.github.asset.apkAssetTarget
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+internal class GitHubAssetActions(
+    private val env: GitHubPageActionEnvironment
+) {
+    private val context get() = env.context
+    private val scope get() = env.scope
+    private val state get() = env.state
+    private val systemDmOption get() = env.systemDmOption
+
+    fun openExternalUrl(
+        url: String,
+        failureMessage: String = env.openLinkFailureMessage
+    ) {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }.onFailure {
+            env.toast(failureMessage)
+        }
+    }
+
+    fun shareApkLink(asset: GitHubReleaseAssetFile) {
+        scope.launch {
+            val resolvedUrl = resolvePreferredAssetUrl(asset)
+            val onlineSharePackage = state.lookupConfig.onlineShareTargetPackage.trim()
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, asset.name)
+                putExtra(Intent.EXTRA_TEXT, resolvedUrl)
+                if (onlineSharePackage.isNotBlank()) {
+                    `package` = onlineSharePackage
+                    putExtra("channel", "Online")
+                    putExtra("extra_channel", "Online")
+                    putExtra("online_channel", true)
+                }
+            }
+            runCatching {
+                if (onlineSharePackage.isNotBlank()) {
+                    context.startActivity(intent)
+                } else {
+                    context.startActivity(
+                        Intent.createChooser(intent, context.getString(R.string.github_share_apk_link_title))
+                    )
+                }
+            }.onFailure {
+                env.toast(R.string.github_toast_share_link_failed)
+            }
+        }
+    }
+
+    fun openApkInDownloader(asset: GitHubReleaseAssetFile) {
+        scope.launch {
+            val resolvedUrl = resolvePreferredAssetUrl(asset)
+            val preferredPackage = state.lookupConfig.preferredDownloaderPackage.trim()
+            runCatching {
+                when (preferredPackage) {
+                    systemDmOption.packageName -> {
+                        enqueueWithSystemDownloadManager(resolvedUrl, asset.name)
+                        env.toast(R.string.github_toast_downloader_system_builtin)
+                    }
+                    "" -> {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
+                                addCategory(Intent.CATEGORY_BROWSABLE)
+                            }
+                        )
+                        env.toast(R.string.github_toast_downloader_system_default)
+                    }
+                    else -> {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
+                                addCategory(Intent.CATEGORY_BROWSABLE)
+                                setPackage(preferredPackage)
+                            }
+                        )
+                        env.toast(R.string.github_toast_downloader_selected)
+                    }
+                }
+            }.recoverCatching {
+                if (preferredPackage.isNotBlank() && preferredPackage != systemDmOption.packageName) {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
+                            addCategory(Intent.CATEGORY_BROWSABLE)
+                        }
+                    )
+                    env.toast(R.string.github_toast_downloader_fallback_system)
+                } else {
+                    throw it
+                }
+            }.onFailure {
+                env.toast(R.string.github_toast_open_downloader_failed)
+            }
+        }
+    }
+
+    fun clearApkAssetUiState(itemId: String) {
+        state.clearAssetUiState(itemId)
+    }
+
+    fun clearApkAssetCache(item: GitHubTrackedApp, itemState: VersionCheckUi) {
+        val target = itemState.apkAssetTarget(
+            owner = item.owner,
+            repo = item.repo,
+            context = context,
+            alwaysLatestRelease = item.alwaysShowLatestReleaseDownloadButton
+        ) ?: return
+        val preferHtml = state.lookupConfig.selectedStrategy == GitHubLookupStrategyOption.AtomFeed
+        val hasApiToken = state.lookupConfig.apiToken.isNotBlank()
+        val releaseUrl = target.releaseUrl
+        val normalizedRawTag = target.rawTag
+        val cacheKeyDefault = GitHubReleaseAssetCacheStore.buildCacheKey(
+            owner = item.owner,
+            repo = item.repo,
+            rawTag = normalizedRawTag,
+            releaseUrl = releaseUrl,
+            preferHtml = preferHtml,
+            aggressiveFiltering = state.lookupConfig.aggressiveApkFiltering,
+            includeAllAssets = false,
+            hasApiToken = hasApiToken
+        )
+        val cacheKeyAllAssets = GitHubReleaseAssetCacheStore.buildCacheKey(
+            owner = item.owner,
+            repo = item.repo,
+            rawTag = normalizedRawTag,
+            releaseUrl = releaseUrl,
+            preferHtml = preferHtml,
+            aggressiveFiltering = state.lookupConfig.aggressiveApkFiltering,
+            includeAllAssets = true,
+            hasApiToken = hasApiToken
+        )
+        scope.launch(Dispatchers.IO) {
+            GitHubReleaseAssetCacheStore.clear(cacheKeyDefault)
+            GitHubReleaseAssetCacheStore.clear(cacheKeyAllAssets)
+        }
+    }
+
+    fun loadApkAssets(
+        item: GitHubTrackedApp,
+        itemState: VersionCheckUi,
+        toggleOnlyWhenCached: Boolean = true,
+        includeAllAssets: Boolean = false
+    ) {
+        val alwaysLatestRelease = item.alwaysShowLatestReleaseDownloadButton
+        val target = itemState.apkAssetTarget(
+            owner = item.owner,
+            repo = item.repo,
+            context = context,
+            alwaysLatestRelease = alwaysLatestRelease
+        )
+        if (target == null) {
+            val fallbackUrl = if (alwaysLatestRelease) {
+                GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
+            } else {
+                itemState.statusActionUrl(item.owner, item.repo)
+            }
+            if (fallbackUrl.isNotBlank()) {
+                openExternalUrl(fallbackUrl)
+            } else {
+                env.toast(R.string.github_toast_no_apk_to_load)
+            }
+            return
+        }
+
+        val cachedBundle = state.apkAssetBundles[item.id]
+        if (
+            toggleOnlyWhenCached &&
+            cachedBundle != null &&
+            state.matchesAssetSourceSignature(cachedBundle) &&
+            cachedBundle.tagName.equals(target.rawTag, ignoreCase = true) &&
+            cachedBundle.showingAllAssets == includeAllAssets
+        ) {
+            state.apkAssetExpanded[item.id] = !(state.apkAssetExpanded[item.id] ?: false)
+            state.apkAssetErrors.remove(item.id)
+            return
+        }
+
+        state.apkAssetExpanded[item.id] = true
+        state.apkAssetLoading[item.id] = true
+        state.apkAssetErrors.remove(item.id)
+        scope.launch {
+            val preferHtml = state.lookupConfig.selectedStrategy == GitHubLookupStrategyOption.AtomFeed
+            val refreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
+            val assetCacheKey = GitHubReleaseAssetCacheStore.buildCacheKey(
+                owner = item.owner,
+                repo = item.repo,
+                rawTag = target.rawTag,
+                releaseUrl = target.releaseUrl,
+                preferHtml = preferHtml,
+                aggressiveFiltering = state.lookupConfig.aggressiveApkFiltering,
+                includeAllAssets = includeAllAssets,
+                hasApiToken = state.lookupConfig.apiToken.isNotBlank()
+            )
+            val persistedBundle = withContext(Dispatchers.IO) {
+                GitHubReleaseAssetCacheStore.load(
+                    cacheKey = assetCacheKey,
+                    refreshIntervalHours = refreshIntervalHours
+                )
+            }
+            if (persistedBundle != null && state.matchesAssetSourceSignature(persistedBundle)) {
+                state.apkAssetLoading[item.id] = false
+                state.apkAssetBundles[item.id] = persistedBundle
+                state.apkAssetErrors[item.id] = buildEmptyAssetMessage(
+                    label = target.label,
+                    includeAllAssets = includeAllAssets,
+                    assetCount = persistedBundle.assets.size
+                )
+                return@launch
+            } else if (persistedBundle != null) {
+                withContext(Dispatchers.IO) {
+                    GitHubReleaseAssetCacheStore.clear(assetCacheKey)
+                }
+            }
+            val result = withContext(Dispatchers.IO) {
+                GitHubReleaseAssetRepository.fetchApkAssets(
+                    owner = item.owner,
+                    repo = item.repo,
+                    rawTag = target.rawTag,
+                    releaseUrl = target.releaseUrl,
+                    preferHtml = preferHtml,
+                    aggressiveFiltering = state.lookupConfig.aggressiveApkFiltering,
+                    includeAllAssets = includeAllAssets,
+                    apiToken = state.lookupConfig.apiToken
+                )
+            }
+            state.apkAssetLoading[item.id] = false
+            result.onSuccess { bundle ->
+                val persistedBundle = bundle.copy(
+                    sourceConfigSignature = state.buildAssetSourceSignature()
+                )
+                state.apkAssetBundles[item.id] = persistedBundle
+                scope.launch(Dispatchers.IO) {
+                    GitHubReleaseAssetCacheStore.save(
+                        cacheKey = assetCacheKey,
+                        bundle = persistedBundle
+                    )
+                }
+                state.apkAssetErrors[item.id] = buildEmptyAssetMessage(
+                    label = target.label,
+                    includeAllAssets = includeAllAssets,
+                    assetCount = persistedBundle.assets.size
+                )
+            }.onFailure { error ->
+                state.apkAssetErrors[item.id] = error.message
+                    ?: context.getString(R.string.github_error_load_apk_assets_failed)
+            }
+        }
+    }
+
+    private suspend fun resolvePreferredAssetUrl(asset: GitHubReleaseAssetFile): String {
+        val token = state.lookupConfig.apiToken.trim()
+        val preferApiAsset =
+            state.lookupConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken
+        return withContext(Dispatchers.IO) {
+            GitHubReleaseAssetRepository.resolvePreferredDownloadUrl(
+                asset = asset,
+                useApiAssetUrl = preferApiAsset,
+                apiToken = token
+            ).getOrElse { asset.downloadUrl }
+        }
+    }
+
+    private fun enqueueWithSystemDownloadManager(url: String, fileName: String) {
+        val request = DownloadManager.Request(url.toUri()).apply {
+            setAllowedNetworkTypes(
+                DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE
+            )
+            setTitle(fileName)
+            setDescription(fileName)
+            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+        }
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
+            ?: throw IllegalStateException("download manager unavailable")
+        manager.enqueue(request)
+    }
+
+    private fun buildEmptyAssetMessage(
+        label: String,
+        includeAllAssets: Boolean,
+        assetCount: Int
+    ): String {
+        if (assetCount > 0) return ""
+        return if (includeAllAssets) {
+            context.getString(
+                R.string.github_msg_assets_no_downloadable_except_source,
+                label
+            )
+        } else {
+            context.getString(
+                R.string.github_msg_assets_no_downloadable,
+                label
+            )
+        }
+    }
+}
