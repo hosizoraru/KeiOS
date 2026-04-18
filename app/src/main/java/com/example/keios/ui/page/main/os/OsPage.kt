@@ -1,51 +1,17 @@
 package com.example.keios.ui.page.main
 
-import android.app.ActivityManager
-import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.FeatureInfo
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import android.widget.Toast
-import androidx.compose.animation.core.tween
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -55,42 +21,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.keios.R
-import com.example.keios.ui.page.main.widget.AppInfoRow
-import com.example.keios.ui.page.main.widget.AppOverviewCard
 import com.example.keios.ui.page.main.widget.AppChromeTokens
-import com.example.keios.ui.page.main.widget.AppPageLazyColumn
 import com.example.keios.ui.page.main.widget.AppPageScaffold
 import com.example.keios.ui.page.main.widget.AppTopBarSearchField
-import com.example.keios.ui.page.main.widget.CardLayoutRhythm
-import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
-import com.example.keios.ui.page.main.widget.GlassIconButton
-import com.example.keios.ui.page.main.widget.GlassSearchField
-import com.example.keios.ui.page.main.widget.GlassVariant
-import com.example.keios.ui.page.main.widget.MiuixAccordionCard
-import com.example.keios.ui.page.main.widget.SheetContentColumn
-import com.example.keios.ui.page.main.widget.SheetChoiceCard
-import com.example.keios.ui.page.main.widget.SheetControlRow
-import com.example.keios.ui.page.main.widget.SheetFieldBlock
-import com.example.keios.ui.page.main.widget.SheetDescriptionText
-import com.example.keios.ui.page.main.widget.SheetSectionCard
-import com.example.keios.ui.page.main.widget.SheetSectionTitle
-import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
-import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
-import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import com.example.keios.core.system.ShizukuApiUtils
-import com.example.keios.core.system.getAllJavaPropString
-import com.example.keios.core.system.getAllSystemProperties
 import com.example.keios.ui.page.main.os.OsPageViewModel
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
@@ -100,29 +41,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.AddCircle
-import top.yukonga.miuix.kmp.icon.extended.Close
-import top.yukonga.miuix.kmp.icon.extended.Download
-import top.yukonga.miuix.kmp.icon.extended.Filter
 import top.yukonga.miuix.kmp.icon.extended.GridView
-import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Layers
-import top.yukonga.miuix.kmp.icon.extended.ListView
-import top.yukonga.miuix.kmp.icon.extended.Lock
-import top.yukonga.miuix.kmp.icon.extended.Ok
-import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Tune
-import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -161,6 +84,8 @@ fun OsPage(
     val googleSystemServiceDefaultTitle = stringResource(R.string.os_section_google_system_service_title)
     val googleSystemServiceDefaultSubtitle = stringResource(R.string.os_google_system_service_default_subtitle)
     val googleSystemServiceDefaultAppName = stringResource(R.string.os_google_system_service_default_app_name)
+    val editActivityCardTitle = stringResource(R.string.os_activity_sheet_title_edit)
+    val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
     val googleSystemServiceDefaultIntentFlags =
         stringResource(R.string.os_google_system_service_default_intent_flags)
     val googleSystemServiceDefaults = remember(
@@ -185,7 +110,6 @@ fun OsPage(
     val queryInput by osPageViewModel.queryInput.collectAsState()
     val queryApplied by osPageViewModel.queryApplied.collectAsState()
     var topInfoExpanded by remember { mutableStateOf(initialUiSnapshot.topInfoExpanded) }
-    var googleSystemServiceExpanded by remember { mutableStateOf(initialUiSnapshot.googleSystemServiceExpanded) }
     var systemTableExpanded by remember { mutableStateOf(initialUiSnapshot.systemTableExpanded) }
     var secureTableExpanded by remember { mutableStateOf(initialUiSnapshot.secureTableExpanded) }
     var globalTableExpanded by remember { mutableStateOf(initialUiSnapshot.globalTableExpanded) }
@@ -193,16 +117,21 @@ fun OsPage(
     var javaPropsExpanded by remember { mutableStateOf(initialUiSnapshot.javaPropsExpanded) }
     var linuxEnvExpanded by remember { mutableStateOf(initialUiSnapshot.linuxEnvExpanded) }
     var visibleCards by remember { mutableStateOf(initialUiSnapshot.visibleCards) }
-    var googleSystemServiceConfig by remember {
+    var activityShortcutCards by remember {
         mutableStateOf(
-            OsShortcutCardStore.loadGoogleSystemServiceConfig(
+            OsActivityShortcutCardStore.loadCards(
                 defaults = googleSystemServiceDefaults
             )
         )
     }
-    var googleSystemServiceDraft by remember { mutableStateOf(googleSystemServiceConfig) }
-    var showGoogleSystemServiceEditor by rememberSaveable { mutableStateOf(false) }
-    var showGoogleSystemServiceSuggestionSheet by rememberSaveable { mutableStateOf(false) }
+    val activityCardExpanded = remember { mutableStateMapOf<String, Boolean>() }
+    var activityShortcutDraft by remember {
+        mutableStateOf(createDefaultActivityShortcutDraft(googleSystemServiceDefaults))
+    }
+    var showActivityShortcutEditor by rememberSaveable { mutableStateOf(false) }
+    var showActivitySuggestionSheet by rememberSaveable { mutableStateOf(false) }
+    var activityCardEditMode by rememberSaveable { mutableStateOf(OsActivityCardEditMode.Edit) }
+    var editingActivityShortcutCardId by rememberSaveable { mutableStateOf<String?>(null) }
     var googleSystemServiceSuggestionTarget by remember {
         mutableStateOf(ShortcutSuggestionField.IntentAction)
     }
@@ -342,11 +271,7 @@ fun OsPage(
             OsSectionCard.TOP_INFO -> {
                 if (!visible) topInfoExpanded = false
             }
-            OsSectionCard.GOOGLE_SYSTEM_SERVICE -> {
-                if (!visible) {
-                    googleSystemServiceExpanded = false
-                }
-            }
+            OsSectionCard.GOOGLE_SYSTEM_SERVICE -> Unit
             OsSectionCard.SYSTEM -> {
                 if (!visible) {
                     systemTableExpanded = false
@@ -395,6 +320,19 @@ fun OsPage(
         }
     }
 
+    suspend fun applyActivityCardVisibility(cardId: String, visible: Boolean) {
+        val updatedCards = activityShortcutCards.map { card ->
+            if (card.id == cardId) card.copy(visible = visible) else card
+        }
+        activityShortcutCards = updatedCards
+        withContext(Dispatchers.IO) {
+            OsActivityShortcutCardStore.saveCards(
+                cards = updatedCards,
+                defaults = googleSystemServiceDefaults
+            )
+        }
+    }
+
     suspend fun refreshAllSections() {
         refreshing = true
         refreshProgress = 0f
@@ -415,11 +353,37 @@ fun OsPage(
         }
     }
 
+    LaunchedEffect(activityShortcutCards) {
+        val currentIds = activityShortcutCards.map { it.id }.toSet()
+        activityCardExpanded.keys.toList().forEach { id ->
+            if (!currentIds.contains(id)) {
+                activityCardExpanded.remove(id)
+            }
+        }
+        activityShortcutCards.forEachIndexed { index, card ->
+            if (!activityCardExpanded.containsKey(card.id)) {
+                activityCardExpanded[card.id] =
+                    if (index == 0 && card.id == LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID) {
+                        initialUiSnapshot.googleSystemServiceExpanded
+                    } else {
+                        false
+                    }
+            }
+        }
+    }
+
     LaunchedEffect(scrollToTopSignal) {
         if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
     }
 
     LaunchedEffect(Unit) {
+        if (!visibleCards.contains(OsSectionCard.GOOGLE_SYSTEM_SERVICE)) {
+            val ensuredVisibleCards = visibleCards + OsSectionCard.GOOGLE_SYSTEM_SERVICE
+            visibleCards = ensuredVisibleCards
+            withContext(Dispatchers.IO) {
+                OsCardVisibilityStore.saveVisibleCards(ensuredVisibleCards)
+            }
+        }
         val visibleSections = visibleSectionKinds(visibleCards)
         val snapshot = withContext(Dispatchers.IO) {
             OsInfoCache.readSnapshot(visibleSections)
@@ -453,12 +417,6 @@ fun OsPage(
     LaunchedEffect(topInfoExpanded) {
         if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setTopInfoExpanded(topInfoExpanded) }
-    }
-    LaunchedEffect(googleSystemServiceExpanded) {
-        if (!uiStatePersistenceReady) return@LaunchedEffect
-        withContext(Dispatchers.IO) {
-            OsUiStateStore.setGoogleSystemServiceExpanded(googleSystemServiceExpanded)
-        }
     }
     LaunchedEffect(systemTableExpanded) {
         if (!uiStatePersistenceReady) return@LaunchedEffect
@@ -510,11 +468,11 @@ fun OsPage(
         if (isPageActive && linuxEnvExpanded && isCardVisible(visibleCards, OsSectionCard.LINUX)) ensureLoad(SectionKind.LINUX)
     }
     LaunchedEffect(
-        showGoogleSystemServiceSuggestionSheet,
+        showActivitySuggestionSheet,
         googleSystemServiceSuggestionTarget,
-        googleSystemServiceDraft.packageName
+        activityShortcutDraft.packageName
     ) {
-        if (!showGoogleSystemServiceSuggestionSheet) return@LaunchedEffect
+        if (!showActivitySuggestionSheet) return@LaunchedEffect
         when (googleSystemServiceSuggestionTarget) {
             ShortcutSuggestionField.PackageName -> {
                 googleSystemServicePackageSuggestionsLoading = true
@@ -529,7 +487,7 @@ fun OsPage(
             }
 
             ShortcutSuggestionField.ClassName -> {
-                val targetPackageName = googleSystemServiceDraft.packageName.trim()
+                val targetPackageName = activityShortcutDraft.packageName.trim()
                 if (targetPackageName.isBlank()) {
                     googleSystemServiceClassSuggestions = emptyList()
                     return@LaunchedEffect
@@ -653,7 +611,8 @@ fun OsPage(
             val rows = currentRowsForCard(
                 card = card,
                 sectionStates = sectionStates,
-                googleSystemServiceConfig = googleSystemServiceConfig,
+                googleSystemServiceConfig = activityShortcutCards.firstOrNull()?.config
+                    ?: googleSystemServiceDefaults,
                 googleSystemServiceDefaults = googleSystemServiceDefaults,
                 context = context
             )
@@ -812,19 +771,23 @@ fun OsPage(
             title = visibleActivitiesTitle,
             sheetBackdrop = sheetBackdrop,
             activityHintText = stringResource(R.string.os_sheet_visible_activities_desc),
-            googleSystemServiceConfig = googleSystemServiceConfig,
-            googleSystemServiceDefaults = googleSystemServiceDefaults,
+            cards = activityShortcutCards,
+            defaultCardTitle = googleSystemServiceDefaultTitle,
             onDismissRequest = { showActivityVisibilityManager = false },
-            isCardVisible = { card -> isCardVisible(visibleCards, card) },
-            onCardVisibilityChange = { card, checked ->
-                scope.launch { applyCardVisibility(card, checked) }
+            onCardVisibilityChange = { cardId, checked ->
+                scope.launch { applyActivityCardVisibility(cardId, checked) }
             }
         )
-        OsGoogleSystemServiceEditorSheet(
-            show = showGoogleSystemServiceEditor,
+        OsActivityShortcutEditorHost(
+            showEditor = showActivityShortcutEditor,
+            editorTitle = if (activityCardEditMode == OsActivityCardEditMode.Add) {
+                addActivityCardTitle
+            } else {
+                editActivityCardTitle
+            },
             sheetBackdrop = sheetBackdrop,
-            draft = googleSystemServiceDraft,
-            onDraftChange = { googleSystemServiceDraft = it },
+            draft = activityShortcutDraft,
+            onDraftChange = { activityShortcutDraft = it },
             onOpenSuggestionSheet = { target ->
                 googleSystemServiceSuggestionTarget = target
                 when (target) {
@@ -832,15 +795,38 @@ fun OsPage(
                     ShortcutSuggestionField.ClassName -> googleSystemServiceClassSuggestionQuery = ""
                     else -> Unit
                 }
-                showGoogleSystemServiceSuggestionSheet = true
+                showActivitySuggestionSheet = true
             },
-            onDismissRequest = { showGoogleSystemServiceEditor = false },
-            onSave = {
-                val normalized = googleSystemServiceDraft.normalized(googleSystemServiceDefaults)
-                googleSystemServiceConfig = normalized
+            onDismissEditor = { showActivityShortcutEditor = false },
+            onSaveEditor = {
+                val normalized = normalizeActivityShortcutConfig(
+                    config = activityShortcutDraft,
+                    defaults = googleSystemServiceDefaults
+                )
+                val updatedCards = if (activityCardEditMode == OsActivityCardEditMode.Add) {
+                    activityShortcutCards + OsActivityShortcutCard(
+                        id = newOsActivityShortcutCardId(),
+                        visible = true,
+                        config = normalized
+                    )
+                } else {
+                    val targetId = editingActivityShortcutCardId
+                    if (targetId.isNullOrBlank()) {
+                        activityShortcutCards + OsActivityShortcutCard(
+                            id = newOsActivityShortcutCardId(),
+                            visible = true,
+                            config = normalized
+                        )
+                    } else {
+                        activityShortcutCards.map { card ->
+                            if (card.id == targetId) card.copy(config = normalized) else card
+                        }
+                    }
+                }
+                activityShortcutCards = updatedCards
                 scope.launch(Dispatchers.IO) {
-                    OsShortcutCardStore.saveGoogleSystemServiceConfig(
-                        normalized,
+                    OsActivityShortcutCardStore.saveCards(
+                        cards = updatedCards,
                         defaults = googleSystemServiceDefaults
                     )
                 }
@@ -849,14 +835,10 @@ fun OsPage(
                     context.getString(R.string.os_google_system_service_toast_saved),
                     Toast.LENGTH_SHORT
                 ).show()
-                showGoogleSystemServiceEditor = false
-            }
-        )
-        OsGoogleSystemServiceSuggestionSheet(
-            show = showGoogleSystemServiceSuggestionSheet,
-            target = googleSystemServiceSuggestionTarget,
-            draft = googleSystemServiceDraft,
-            sheetBackdrop = sheetBackdrop,
+                showActivityShortcutEditor = false
+            },
+            showSuggestionSheet = showActivitySuggestionSheet,
+            suggestionTarget = googleSystemServiceSuggestionTarget,
             packageSuggestions = googleSystemServicePackageSuggestions,
             packageSuggestionsLoading = googleSystemServicePackageSuggestionsLoading,
             packageSuggestionQuery = googleSystemServicePackageSuggestionQuery,
@@ -866,35 +848,35 @@ fun OsPage(
             classSuggestionQuery = googleSystemServiceClassSuggestionQuery,
             onClassSuggestionQueryChange = { googleSystemServiceClassSuggestionQuery = it },
             noMatchedResultsText = noMatchedResultsText,
-            onDismissRequest = { showGoogleSystemServiceSuggestionSheet = false },
+            onDismissSuggestionSheet = { showActivitySuggestionSheet = false },
             onApplySuggestion = { suggestion ->
-                googleSystemServiceDraft = applyGoogleSystemServiceSuggestion(
-                    draft = googleSystemServiceDraft,
+                activityShortcutDraft = applyGoogleSystemServiceSuggestion(
+                    draft = activityShortcutDraft,
                     target = googleSystemServiceSuggestionTarget,
                     item = suggestion,
                     defaultIntentFlags = googleSystemServiceDefaultIntentFlags
                 )
-                showGoogleSystemServiceSuggestionSheet = false
+                showActivitySuggestionSheet = false
             },
             onApplyExplicitActionRecommendation = {
-                googleSystemServiceDraft = googleSystemServiceDraft.copy(
+                activityShortcutDraft = activityShortcutDraft.copy(
                     intentAction = Intent.ACTION_VIEW
                 )
             },
             onApplyImplicitActionRecommendation = {
-                googleSystemServiceDraft = applyShortcutImplicitDefaults(
-                    draft = googleSystemServiceDraft,
+                activityShortcutDraft = applyShortcutImplicitDefaults(
+                    draft = activityShortcutDraft,
                     defaultIntentFlags = googleSystemServiceDefaultIntentFlags
                 )
             },
             onApplyExplicitCategoryRecommendation = {
-                googleSystemServiceDraft = googleSystemServiceDraft.copy(
+                activityShortcutDraft = activityShortcutDraft.copy(
                     intentCategory = ""
                 )
             },
             onApplyImplicitCategoryRecommendation = {
-                googleSystemServiceDraft = applyShortcutImplicitDefaults(
-                    draft = googleSystemServiceDraft,
+                activityShortcutDraft = applyShortcutImplicitDefaults(
+                    draft = activityShortcutDraft,
                     defaultIntentFlags = googleSystemServiceDefaultIntentFlags
                 )
             }
@@ -924,12 +906,17 @@ fun OsPage(
             groupedTopInfoRows = groupedTopInfoRows,
             topInfoExpanded = topInfoExpanded,
             onTopInfoExpandedChange = { topInfoExpanded = it },
-            googleSystemServiceConfig = googleSystemServiceConfig,
-            googleSystemServiceDefaults = googleSystemServiceDefaults,
-            googleSystemServiceExpanded = googleSystemServiceExpanded,
-            onGoogleSystemServiceExpandedChange = { googleSystemServiceExpanded = it },
-            onOpenGoogleSystemServiceActivity = {
-                val normalized = googleSystemServiceConfig.normalized(googleSystemServiceDefaults)
+            activityShortcutCards = activityShortcutCards,
+            defaultActivityCardTitle = googleSystemServiceDefaultTitle,
+            activityCardExpanded = activityCardExpanded,
+            onActivityCardExpandedChange = { cardId, expanded ->
+                activityCardExpanded[cardId] = expanded
+            },
+            onOpenActivityShortcutCard = { card ->
+                val normalized = normalizeActivityShortcutConfig(
+                    config = card.config,
+                    defaults = googleSystemServiceDefaults
+                )
                 if (normalized.packageName.isBlank()) {
                     Toast.makeText(
                         context,
@@ -940,7 +927,7 @@ fun OsPage(
                     runCatching {
                         launchGoogleSystemServiceActivity(
                             context = context,
-                            config = googleSystemServiceConfig,
+                            config = normalized,
                             defaults = googleSystemServiceDefaults
                         )
                     }.onFailure { error ->
@@ -955,9 +942,14 @@ fun OsPage(
                     }
                 }
             },
-            onOpenGoogleSystemServiceEditor = {
-                googleSystemServiceDraft = googleSystemServiceConfig.normalized(googleSystemServiceDefaults)
-                showGoogleSystemServiceEditor = true
+            onOpenActivityShortcutCardEditor = { card ->
+                activityCardEditMode = OsActivityCardEditMode.Edit
+                editingActivityShortcutCardId = card.id
+                activityShortcutDraft = normalizeActivityShortcutConfig(
+                    config = card.config,
+                    defaults = googleSystemServiceDefaults
+                )
+                showActivityShortcutEditor = true
             },
             displayedSystemRows = displayedSystemRows,
             displayedSecureRows = displayedSecureRows,
@@ -994,7 +986,15 @@ fun OsPage(
             },
             exportingCard = exportingCard,
             onExportCard = { card -> scope.launch { exportCard(card) } },
-            onRefreshAll = { scope.launch { refreshAllSections() } }
+            onRefreshAll = { scope.launch { refreshAllSections() } },
+            contentBottomPadding = contentBottomPadding,
+            showFloatingAddButton = !showActivityShortcutEditor && !showActivitySuggestionSheet,
+            onOpenAddActivityShortcutCard = {
+                activityCardEditMode = OsActivityCardEditMode.Add
+                editingActivityShortcutCardId = null
+                activityShortcutDraft = createDefaultActivityShortcutDraft(googleSystemServiceDefaults)
+                showActivityShortcutEditor = true
+            }
         )
     }
 }

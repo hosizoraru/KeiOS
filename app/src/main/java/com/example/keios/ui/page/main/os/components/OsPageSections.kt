@@ -86,72 +86,79 @@ internal fun LazyListScope.addTopInfoCard(
     item { Spacer(modifier = Modifier.height(8.dp)) }
 }
 
-internal fun LazyListScope.addGoogleSystemServiceCard(
-    visible: Boolean,
+internal fun LazyListScope.addShortcutActivityCards(
+    cards: List<OsActivityShortcutCard>,
     contentBackdrop: LayerBackdrop,
-    shortcutConfig: OsGoogleSystemServiceConfig,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    onOpenActivity: () -> Unit,
-    onHeaderLongClick: () -> Unit
+    defaultCardTitle: String,
+    expandedStates: Map<String, Boolean>,
+    onExpandedChange: (String, Boolean) -> Unit,
+    onOpenActivity: (OsActivityShortcutCard) -> Unit,
+    onHeaderLongClick: (OsActivityShortcutCard) -> Unit
 ) {
-    if (!visible) return
-    item {
-        MiuixAccordionCard(
-            backdrop = contentBackdrop,
-            title = shortcutConfig.title,
-            subtitle = shortcutConfig.subtitle,
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
-            headerStartAction = {
-                AppIcon(packageName = shortcutConfig.packageName, size = 24.dp)
-            },
-            headerActions = {
-                Icon(
-                    imageVector = MiuixIcons.Regular.Play,
-                    contentDescription = stringResource(R.string.os_google_system_service_cd_open_activity),
-                    tint = MiuixTheme.colorScheme.primary,
-                    modifier = Modifier.clickable(onClick = onOpenActivity)
+    cards.filter { it.visible }.forEach { card ->
+        val shortcutConfig = card.config
+        item(key = "os-activity-${card.id}") {
+            MiuixAccordionCard(
+                backdrop = contentBackdrop,
+                title = shortcutConfig.title.ifBlank { defaultCardTitle },
+                subtitle = shortcutConfig.subtitle,
+                expanded = expandedStates[card.id] == true,
+                onExpandedChange = { expanded -> onExpandedChange(card.id, expanded) },
+                headerStartAction = {
+                    ShortcutActivityIcon(
+                        packageName = shortcutConfig.packageName,
+                        className = shortcutConfig.className,
+                        size = 24.dp,
+                        fallbackToPackageIcon = true
+                    )
+                },
+                headerActions = {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Play,
+                        contentDescription = stringResource(R.string.os_google_system_service_cd_open_activity),
+                        tint = MiuixTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { onOpenActivity(card) }
+                    )
+                },
+                onHeaderLongClick = { onHeaderLongClick(card) }
+            ) {
+                val emptyValueText = stringResource(R.string.os_google_system_service_value_data_empty)
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_app_name),
+                    value = shortcutConfig.appName
                 )
-            },
-            onHeaderLongClick = onHeaderLongClick
-        ) {
-            val emptyValueText = stringResource(R.string.os_google_system_service_value_data_empty)
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_app_name),
-                value = shortcutConfig.appName
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_package_name),
-                value = shortcutConfig.packageName
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_class_name),
-                value = shortcutConfig.className
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_intent_action),
-                value = shortcutConfig.intentAction
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_intent_category),
-                value = shortcutConfig.intentCategory.ifBlank { emptyValueText }
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_intent_flags),
-                value = shortcutConfig.intentFlags.ifBlank { emptyValueText }
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_intent_data),
-                value = shortcutConfig.intentUriData.ifBlank { emptyValueText }
-            )
-            OsSectionInfoRow(
-                label = stringResource(R.string.os_google_system_service_label_intent_mime_type),
-                value = shortcutConfig.intentMimeType.ifBlank { emptyValueText }
-            )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_package_name),
+                    value = shortcutConfig.packageName
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_class_name),
+                    value = shortcutConfig.className
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_intent_action),
+                    value = shortcutConfig.intentAction
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_intent_category),
+                    value = shortcutConfig.intentCategory.ifBlank { emptyValueText }
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_intent_flags),
+                    value = shortcutConfig.intentFlags.ifBlank { emptyValueText }
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_intent_data),
+                    value = shortcutConfig.intentUriData.ifBlank { emptyValueText }
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_google_system_service_label_intent_mime_type),
+                    value = shortcutConfig.intentMimeType.ifBlank { emptyValueText }
+                )
+            }
         }
+        item(key = "os-activity-space-${card.id}") { Spacer(modifier = Modifier.height(8.dp)) }
     }
-    item { Spacer(modifier = Modifier.height(8.dp)) }
 }
 
 internal fun LazyListScope.addKeyValueSectionCard(
@@ -264,11 +271,10 @@ internal fun OsActivityVisibilityManagerSheet(
     title: String,
     sheetBackdrop: LayerBackdrop,
     activityHintText: String,
-    googleSystemServiceConfig: OsGoogleSystemServiceConfig,
-    googleSystemServiceDefaults: OsGoogleSystemServiceConfig,
+    cards: List<OsActivityShortcutCard>,
+    defaultCardTitle: String,
     onDismissRequest: () -> Unit,
-    isCardVisible: (OsSectionCard) -> Boolean,
-    onCardVisibilityChange: (OsSectionCard, Boolean) -> Unit
+    onCardVisibilityChange: (String, Boolean) -> Unit
 ) {
     SnapshotWindowBottomSheet(
         show = show,
@@ -288,14 +294,15 @@ internal fun OsActivityVisibilityManagerSheet(
             scrollable = false,
             verticalSpacing = 10.dp
         ) {
-            val shortcutConfig = googleSystemServiceConfig.normalized(googleSystemServiceDefaults)
-            val activityVisibilityItems = listOf(
+            val activityVisibilityItems = cards.map { card ->
                 OsActivityVisibilityItem(
-                    card = OsSectionCard.GOOGLE_SYSTEM_SERVICE,
-                    title = shortcutConfig.title.ifBlank { OsSectionCard.GOOGLE_SYSTEM_SERVICE.title },
-                    packageName = shortcutConfig.packageName
+                    id = card.id,
+                    title = card.config.title.ifBlank { defaultCardTitle },
+                    packageName = card.config.packageName,
+                    className = card.config.className,
+                    visible = card.visible
                 )
-            )
+            }
             SheetSectionCard(verticalSpacing = 10.dp) {
                 activityVisibilityItems.forEach { item ->
                     SheetControlRow(
@@ -305,14 +312,15 @@ internal fun OsActivityVisibilityManagerSheet(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (item.packageName.isNotBlank()) {
-                                    AppIcon(
+                                if (item.packageName.isNotBlank() || item.className.isNotBlank()) {
+                                    ShortcutActivityIcon(
                                         packageName = item.packageName,
+                                        className = item.className,
                                         size = 18.dp
                                     )
                                 } else {
                                     Icon(
-                                        imageVector = sectionCardIcon(item.card),
+                                        imageVector = MiuixIcons.Regular.Play,
                                         contentDescription = item.title,
                                         tint = MiuixTheme.colorScheme.onBackground,
                                         modifier = Modifier
@@ -328,9 +336,9 @@ internal fun OsActivityVisibilityManagerSheet(
                         }
                     ) {
                         Switch(
-                            checked = isCardVisible(item.card),
+                            checked = item.visible,
                             onCheckedChange = { checked ->
-                                onCardVisibilityChange(item.card, checked)
+                                onCardVisibilityChange(item.id, checked)
                             }
                         )
                     }

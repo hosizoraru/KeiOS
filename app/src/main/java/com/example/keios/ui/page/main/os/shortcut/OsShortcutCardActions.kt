@@ -10,7 +10,7 @@ internal fun buildGoogleSystemServiceRows(
     config: OsGoogleSystemServiceConfig,
     defaults: OsGoogleSystemServiceConfig
 ): List<InfoRow> {
-    val normalized = config.normalized(defaults)
+    val normalized = normalizeActivityShortcutConfig(config, defaults)
     val emptyDataValue = context.getString(R.string.os_google_system_service_value_data_empty)
     val actionValue = normalized.intentAction.ifBlank {
         context.getString(R.string.os_google_system_service_value_action_auto_default)
@@ -59,7 +59,7 @@ internal fun launchGoogleSystemServiceActivity(
     config: OsGoogleSystemServiceConfig,
     defaults: OsGoogleSystemServiceConfig
 ) {
-    val normalized = config.normalized(defaults)
+    val normalized = normalizeActivityShortcutConfig(config, defaults)
     val packageName = normalized.packageName.trim()
     val className = normalized.className.trim()
     val action = normalized.intentAction.trim()

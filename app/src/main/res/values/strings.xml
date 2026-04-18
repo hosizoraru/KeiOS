@@ -188,10 +188,12 @@
     <string name="os_section_android_title">Android Properties</string>
     <string name="os_section_java_title">Java Properties</string>
     <string name="os_section_linux_title">Linux environment</string>
-    <string name="os_google_system_service_sheet_title">编辑 Google系统服务 卡片</string>
+    <string name="os_google_system_service_sheet_title">编辑活动卡片</string>
+    <string name="os_activity_sheet_title_edit">编辑活动卡片</string>
+    <string name="os_activity_sheet_title_add">新增活动卡片</string>
     <string name="os_google_system_service_sheet_section_card">卡片信息</string>
     <string name="os_google_system_service_sheet_section_target">活动目标</string>
-    <string name="os_google_system_service_sheet_desc">长按卡片可随时编辑该快捷方式，保存后会立即生效。</string>
+    <string name="os_google_system_service_sheet_desc">长按活动卡片可随时编辑快捷方式，保存后会立即生效。</string>
     <string name="os_google_system_service_chip_add">添加</string>
     <string name="os_google_system_service_suggestion_sheet_title">添加推荐小胶囊</string>
     <string name="os_google_system_service_suggestion_sheet_section">%1$s 推荐值</string>
@@ -269,8 +271,9 @@
     <string name="os_google_system_service_value_data_empty">（空）</string>
     <string name="os_google_system_service_value_action_auto_default">（空，自动按目标入口选择默认 Action）</string>
     <string name="os_google_system_service_value_flags_auto_default">（空，自动使用 FLAG_ACTIVITY_NEW_TASK）</string>
-    <string name="os_google_system_service_cd_open_activity">打开 Google系统服务 活动</string>
-    <string name="os_google_system_service_toast_saved">Google系统服务快捷方式已保存</string>
+    <string name="os_google_system_service_cd_open_activity">打开活动</string>
+    <string name="os_google_system_service_toast_saved">活动卡片已保存</string>
+    <string name="os_cd_add_activity_card">新增活动卡片</string>
     <string name="os_google_system_service_toast_invalid_target">快捷方式目标不完整，请检查包名</string>
     <string name="os_google_system_service_toast_open_failed">打开失败: %1$s</string>
     <string name="mcp_skill_page_title">MCP Skill</string>

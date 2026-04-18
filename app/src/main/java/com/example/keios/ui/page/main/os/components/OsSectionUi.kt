@@ -81,7 +81,9 @@ internal fun OsSectionInfoRow(
 }
 
 internal data class OsActivityVisibilityItem(
-    val card: OsSectionCard,
+    val id: String,
     val title: String,
-    val packageName: String
+    val packageName: String,
+    val className: String,
+    val visible: Boolean
 )

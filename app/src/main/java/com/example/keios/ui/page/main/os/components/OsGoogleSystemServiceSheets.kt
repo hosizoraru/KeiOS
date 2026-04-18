@@ -31,6 +31,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun OsGoogleSystemServiceEditorSheet(
     show: Boolean,
+    title: String,
     sheetBackdrop: LayerBackdrop,
     draft: OsGoogleSystemServiceConfig,
     onDraftChange: (OsGoogleSystemServiceConfig) -> Unit,
@@ -40,7 +41,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
 ) {
     SnapshotWindowBottomSheet(
         show = show,
-        title = stringResource(R.string.os_google_system_service_sheet_title),
+        title = title,
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
@@ -739,15 +740,32 @@ internal fun OsGoogleSystemServiceSuggestionSheet(
             }
             orderedSuggestions.forEach { suggestion ->
                 val selected = isCurrentSuggestionSelected(suggestion)
-                val leading = if (target == ShortcutSuggestionField.PackageName) {
-                    @Composable {
-                        AppIcon(
-                            packageName = suggestion.value.trim(),
-                            size = 24.dp
-                        )
+                val leading = when (target) {
+                    ShortcutSuggestionField.PackageName -> {
+                        @Composable {
+                            AppIcon(
+                                packageName = suggestion.value.trim(),
+                                size = 24.dp
+                            )
+                        }
                     }
-                } else {
-                    null
+
+                    ShortcutSuggestionField.ClassName -> {
+                        if (suggestion.value.trim().isBlank()) {
+                            null
+                        } else {
+                            @Composable {
+                                ShortcutActivityIcon(
+                                    packageName = draft.packageName,
+                                    className = suggestion.value,
+                                    size = 24.dp,
+                                    fallbackToPackageIcon = true
+                                )
+                            }
+                        }
+                    }
+
+                    else -> null
                 }
                 SheetChoiceCard(
                     title = suggestion.label,
