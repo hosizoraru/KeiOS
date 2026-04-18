@@ -591,7 +591,7 @@ private fun MainPagerLayout(
             key = { index -> tabs[index].name },
             userScrollEnabled = pagerScrollEnabled,
             overscrollEffect = null,
-            beyondViewportPageCount = UiPerformanceBudget.pagerBeyondViewportPageCount,
+            beyondViewportPageCount = UiPerformanceBudget.mainPagerBeyondViewportPageCount,
             // CRITICAL FIX: NEVER conditionally unmount layerBackdrop.
             // If the node is visible (even during an exit animation), it MUST have the backdrop attached,
             // otherwise consumer composables will attempt to draw a detached Native pointer causing SIGSEGV.
@@ -682,6 +682,7 @@ private fun MainPagerLayout(
                         BAPage(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = baScrollToTopSignal,
+                            isPageActive = pageIndex == pagerState.currentPage || pageIndex == pagerState.settledPage,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onOpenPoolStudentGuide = { sourceUrl ->

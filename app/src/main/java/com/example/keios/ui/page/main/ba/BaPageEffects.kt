@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 internal fun BaPageCommonEffects(
     listState: LazyListState,
     scrollToTopSignal: Int,
+    isPageActive: Boolean,
     consumedScrollToTopSignal: Int,
     onConsumedScrollToTopSignalChange: (Int) -> Unit,
     onDisposeActionBarInteraction: () -> Unit,
@@ -35,22 +36,28 @@ internal fun BaPageCommonEffects(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isPageActive) {
         office.ensureRegenBase()
         office.ensureCafeHourBase()
         office.clampCafeStoredToCap()
         office.applyCafeStorage()
         office.applyApRegen()
         while (true) {
-            delay(BA_AP_REGEN_TICK_MS)
-            office.applyCafeStorage()
-            office.applyApRegen()
+            if (isPageActive) {
+                delay(BA_AP_REGEN_TICK_MS)
+                office.applyCafeStorage()
+                office.applyApRegen()
+            } else {
+                // Keep background overhead low on offscreen pager pages.
+                delay(5_000L)
+            }
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isPageActive) {
         while (true) {
-            delay(1000L)
+            val tick = if (isPageActive) 1_000L else 3_000L
+            delay(tick)
             onUiNowMsChange(System.currentTimeMillis())
         }
     }
@@ -85,6 +92,7 @@ internal fun BaPageCommonEffects(
 @Composable
 internal fun BaCalendarSyncEffect(
     context: Context,
+    isPageActive: Boolean,
     serverIndex: Int,
     reloadSignal: Int,
     calendarRefreshIntervalHours: Int,
@@ -94,7 +102,7 @@ internal fun BaCalendarSyncEffect(
     onEntriesChange: (List<BaCalendarEntry>) -> Unit,
     onLastSyncMsChange: (Long) -> Unit,
 ) {
-    LaunchedEffect(serverIndex, reloadSignal, calendarRefreshIntervalHours, hydrationReady) {
+    LaunchedEffect(serverIndex, reloadSignal, calendarRefreshIntervalHours, hydrationReady, isPageActive) {
         if (!hydrationReady) return@LaunchedEffect
         val now = System.currentTimeMillis()
         val cacheSnapshot = withContext(Dispatchers.IO) {
@@ -134,6 +142,11 @@ internal fun BaCalendarSyncEffect(
         }
 
         if (!shouldRequestNetwork) {
+            onLoadingChange(false)
+            onErrorChange(null)
+            return@LaunchedEffect
+        }
+        if (!isPageActive && hasCache) {
             onLoadingChange(false)
             onErrorChange(null)
             return@LaunchedEffect
@@ -209,6 +222,7 @@ internal fun BaCalendarSyncEffect(
 @Composable
 internal fun BaPoolSyncEffect(
     context: Context,
+    isPageActive: Boolean,
     serverIndex: Int,
     reloadSignal: Int,
     calendarRefreshIntervalHours: Int,
@@ -218,7 +232,7 @@ internal fun BaPoolSyncEffect(
     onEntriesChange: (List<BaPoolEntry>) -> Unit,
     onLastSyncMsChange: (Long) -> Unit,
 ) {
-    LaunchedEffect(serverIndex, reloadSignal, calendarRefreshIntervalHours, hydrationReady) {
+    LaunchedEffect(serverIndex, reloadSignal, calendarRefreshIntervalHours, hydrationReady, isPageActive) {
         if (!hydrationReady) return@LaunchedEffect
         val now = System.currentTimeMillis()
         val cacheSnapshot = withContext(Dispatchers.IO) {
@@ -258,6 +272,11 @@ internal fun BaPoolSyncEffect(
         }
 
         if (!shouldRequestNetwork) {
+            onLoadingChange(false)
+            onErrorChange(null)
+            return@LaunchedEffect
+        }
+        if (!isPageActive && hasCache) {
             onLoadingChange(false)
             onErrorChange(null)
             return@LaunchedEffect

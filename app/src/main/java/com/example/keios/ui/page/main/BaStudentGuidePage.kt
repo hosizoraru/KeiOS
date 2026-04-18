@@ -1145,7 +1145,7 @@ fun BaStudentGuidePage(
             state = pagerState,
             key = { index -> bottomTabs[index].name },
             overscrollEffect = null,
-            beyondViewportPageCount = UiPerformanceBudget.pagerBeyondViewportPageCount,
+            beyondViewportPageCount = UiPerformanceBudget.guidePagerBeyondViewportPageCount,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }

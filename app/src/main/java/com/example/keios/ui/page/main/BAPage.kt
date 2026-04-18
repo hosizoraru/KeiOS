@@ -49,6 +49,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun BAPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
+    isPageActive: Boolean = true,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     onOpenPoolStudentGuide: (String) -> Unit = {},
@@ -161,6 +162,7 @@ fun BAPage(
     BaPageCommonEffects(
         listState = listState,
         scrollToTopSignal = scrollToTopSignal,
+        isPageActive = isPageActive,
         consumedScrollToTopSignal = ui.consumedScrollToTopSignal,
         onConsumedScrollToTopSignalChange = { ui.consumedScrollToTopSignal = it },
         onDisposeActionBarInteraction = { onActionBarInteractingChanged(false) },
@@ -183,6 +185,7 @@ fun BAPage(
 
     BaCalendarSyncEffect(
         context = context,
+        isPageActive = isPageActive,
         serverIndex = ui.serverIndex,
         reloadSignal = ui.baCalendarReloadSignal,
         calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
@@ -195,6 +198,7 @@ fun BAPage(
 
     BaPoolSyncEffect(
         context = context,
+        isPageActive = isPageActive,
         serverIndex = ui.serverIndex,
         reloadSignal = ui.baPoolReloadSignal,
         calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,

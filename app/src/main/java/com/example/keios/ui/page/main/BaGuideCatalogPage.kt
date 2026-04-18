@@ -519,7 +519,7 @@ fun BaGuideCatalogPage(
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }
                 .layerBackdrop(bottomBarBackdrop),
-            beyondViewportPageCount = UiPerformanceBudget.pagerBeyondViewportPageCount
+            beyondViewportPageCount = UiPerformanceBudget.catalogPagerBeyondViewportPageCount
         ) { pageIndex ->
             val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogTab.Student }
             CatalogTabContent(
