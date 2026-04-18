@@ -157,15 +157,19 @@ fun OsPage(
     val googleSystemServiceDefaultTitle = stringResource(R.string.os_section_google_system_service_title)
     val googleSystemServiceDefaultSubtitle = stringResource(R.string.os_google_system_service_default_subtitle)
     val googleSystemServiceDefaultAppName = stringResource(R.string.os_google_system_service_default_app_name)
+    val googleSystemServiceDefaultIntentFlags =
+        stringResource(R.string.os_google_system_service_default_intent_flags)
     val googleSystemServiceDefaults = remember(
         googleSystemServiceDefaultTitle,
         googleSystemServiceDefaultSubtitle,
-        googleSystemServiceDefaultAppName
+        googleSystemServiceDefaultAppName,
+        googleSystemServiceDefaultIntentFlags
     ) {
         OsGoogleSystemServiceConfig(
             title = googleSystemServiceDefaultTitle,
             subtitle = googleSystemServiceDefaultSubtitle,
-            appName = googleSystemServiceDefaultAppName
+            appName = googleSystemServiceDefaultAppName,
+            intentFlags = googleSystemServiceDefaultIntentFlags
         ).normalized()
     }
     val noMatchedResultsText = stringResource(R.string.common_no_matched_results)
@@ -612,8 +616,20 @@ fun OsPage(
                 value = normalized.intentAction
             ),
             InfoRow(
+                key = context.getString(R.string.os_google_system_service_label_intent_category),
+                value = normalized.intentCategory.ifBlank { emptyDataValue }
+            ),
+            InfoRow(
+                key = context.getString(R.string.os_google_system_service_label_intent_flags),
+                value = normalized.intentFlags.ifBlank { emptyDataValue }
+            ),
+            InfoRow(
                 key = context.getString(R.string.os_google_system_service_label_intent_data),
-                value = normalized.intentData.ifBlank { emptyDataValue }
+                value = normalized.intentUriData.ifBlank { emptyDataValue }
+            ),
+            InfoRow(
+                key = context.getString(R.string.os_google_system_service_label_intent_mime_type),
+                value = normalized.intentMimeType.ifBlank { emptyDataValue }
             )
         )
     }
@@ -634,11 +650,20 @@ fun OsPage(
         runCatching {
             val intent = Intent(action).apply {
                 setClassName(packageName, className)
-                val dataText = config.intentData.trim()
-                if (dataText.isNotBlank()) {
+                val dataText = config.intentUriData.trim()
+                val mimeType = config.intentMimeType.trim()
+                if (dataText.isNotBlank() && mimeType.isNotBlank()) {
+                    setDataAndType(Uri.parse(dataText), mimeType)
+                } else if (dataText.isNotBlank()) {
                     data = Uri.parse(dataText)
+                } else if (mimeType.isNotBlank()) {
+                    type = mimeType
                 }
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                parseIntentCategories(config.intentCategory).forEach { category ->
+                    addCategory(category)
+                }
+                val parsedFlags = parseIntentFlags(config.intentFlags)
+                addFlags(parsedFlags.ifBlankUse(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
             context.startActivity(intent)
         }.onFailure { error ->
@@ -978,6 +1003,7 @@ fun OsPage(
                             label = stringResource(R.string.os_google_system_service_hint_title),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -991,6 +1017,7 @@ fun OsPage(
                             label = stringResource(R.string.os_google_system_service_hint_subtitle),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1008,6 +1035,7 @@ fun OsPage(
                             label = stringResource(R.string.os_google_system_service_hint_app_name),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1021,6 +1049,7 @@ fun OsPage(
                             label = stringResource(R.string.os_google_system_service_hint_package_name),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1034,6 +1063,7 @@ fun OsPage(
                             label = stringResource(R.string.os_google_system_service_hint_class_name),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1047,6 +1077,35 @@ fun OsPage(
                             label = stringResource(R.string.os_google_system_service_hint_intent_action),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    SheetFieldBlock(
+                        title = stringResource(R.string.os_google_system_service_field_intent_category)
+                    ) {
+                        GlassSearchField(
+                            value = googleSystemServiceDraft.intentCategory,
+                            onValueChange = { googleSystemServiceDraft = googleSystemServiceDraft.copy(intentCategory = it) },
+                            label = stringResource(R.string.os_google_system_service_hint_intent_category),
+                            backdrop = sheetBackdrop,
+                            variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    SheetFieldBlock(
+                        title = stringResource(R.string.os_google_system_service_field_intent_flags)
+                    ) {
+                        GlassSearchField(
+                            value = googleSystemServiceDraft.intentFlags,
+                            onValueChange = { googleSystemServiceDraft = googleSystemServiceDraft.copy(intentFlags = it) },
+                            label = stringResource(R.string.os_google_system_service_hint_intent_flags),
+                            backdrop = sheetBackdrop,
+                            variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1055,11 +1114,26 @@ fun OsPage(
                         title = stringResource(R.string.os_google_system_service_field_intent_data)
                     ) {
                         GlassSearchField(
-                            value = googleSystemServiceDraft.intentData,
-                            onValueChange = { googleSystemServiceDraft = googleSystemServiceDraft.copy(intentData = it) },
+                            value = googleSystemServiceDraft.intentUriData,
+                            onValueChange = { googleSystemServiceDraft = googleSystemServiceDraft.copy(intentUriData = it) },
                             label = stringResource(R.string.os_google_system_service_hint_intent_data),
                             backdrop = sheetBackdrop,
                             variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    SheetFieldBlock(
+                        title = stringResource(R.string.os_google_system_service_field_intent_mime_type)
+                    ) {
+                        GlassSearchField(
+                            value = googleSystemServiceDraft.intentMimeType,
+                            onValueChange = { googleSystemServiceDraft = googleSystemServiceDraft.copy(intentMimeType = it) },
+                            label = stringResource(R.string.os_google_system_service_hint_intent_mime_type),
+                            backdrop = sheetBackdrop,
+                            variant = GlassVariant.SheetInput,
+                            textColor = MiuixTheme.colorScheme.primary,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1194,9 +1268,6 @@ fun OsPage(
             if (isCardVisible(OsSectionCard.GOOGLE_SYSTEM_SERVICE)) {
                 item {
                     val shortcutConfig = googleSystemServiceConfig.normalized(googleSystemServiceDefaults)
-                    val dataValue = shortcutConfig.intentData.ifBlank {
-                        stringResource(R.string.os_google_system_service_value_data_empty)
-                    }
                     MiuixAccordionCard(
                         backdrop = contentBackdrop,
                         title = shortcutConfig.title,
@@ -1204,7 +1275,7 @@ fun OsPage(
                         expanded = googleSystemServiceExpanded,
                         onExpandedChange = { googleSystemServiceExpanded = it },
                         headerStartAction = {
-                            OsSectionHeaderIcon(card = OsSectionCard.GOOGLE_SYSTEM_SERVICE)
+                            AppIcon(packageName = shortcutConfig.packageName, size = 24.dp)
                         },
                         headerActions = {
                             Icon(
@@ -1238,8 +1309,28 @@ fun OsPage(
                             value = shortcutConfig.intentAction
                         )
                         OsSectionInfoRow(
+                            label = stringResource(R.string.os_google_system_service_label_intent_category),
+                            value = shortcutConfig.intentCategory.ifBlank {
+                                stringResource(R.string.os_google_system_service_value_data_empty)
+                            }
+                        )
+                        OsSectionInfoRow(
+                            label = stringResource(R.string.os_google_system_service_label_intent_flags),
+                            value = shortcutConfig.intentFlags.ifBlank {
+                                stringResource(R.string.os_google_system_service_value_data_empty)
+                            }
+                        )
+                        OsSectionInfoRow(
                             label = stringResource(R.string.os_google_system_service_label_intent_data),
-                            value = dataValue
+                            value = shortcutConfig.intentUriData.ifBlank {
+                                stringResource(R.string.os_google_system_service_value_data_empty)
+                            }
+                        )
+                        OsSectionInfoRow(
+                            label = stringResource(R.string.os_google_system_service_label_intent_mime_type),
+                            value = shortcutConfig.intentMimeType.ifBlank {
+                                stringResource(R.string.os_google_system_service_value_data_empty)
+                            }
                         )
                     }
                 }
@@ -1443,3 +1534,64 @@ private fun OsSectionInfoRow(
         emphasizedValue = true
     )
 }
+
+private fun parseIntentCategories(raw: String): List<String> {
+    return raw.split(',', ';', '\n')
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .distinct()
+}
+
+private fun parseIntentFlags(raw: String): Int {
+    if (raw.isBlank()) return 0
+    return raw.split(',', ';', '|', '\n', ' ')
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .fold(0) { current, token ->
+            current or parseSingleIntentFlag(token)
+        }
+}
+
+private fun parseSingleIntentFlag(token: String): Int {
+    val normalized = token.trim()
+    if (normalized.isBlank()) return 0
+    normalized.toIntOrNull()?.let { return it }
+    normalized.removePrefix("0x").removePrefix("0X")
+        .toLongOrNull(16)
+        ?.toInt()
+        ?.let { return it }
+
+    val compact = normalized
+        .removePrefix("Intent.")
+        .removePrefix("android.content.Intent.")
+        .uppercase(Locale.ROOT)
+    return intentFlagNameValues[compact]
+        ?: intentFlagNameValues["FLAG_ACTIVITY_$compact"]
+        ?: 0
+}
+
+private fun Int.ifBlankUse(fallback: Int): Int {
+    return if (this == 0) fallback else this
+}
+
+private val intentFlagNameValues: Map<String, Int> = mapOf(
+    "FLAG_ACTIVITY_NEW_TASK" to Intent.FLAG_ACTIVITY_NEW_TASK,
+    "FLAG_ACTIVITY_SINGLE_TOP" to Intent.FLAG_ACTIVITY_SINGLE_TOP,
+    "FLAG_ACTIVITY_CLEAR_TOP" to Intent.FLAG_ACTIVITY_CLEAR_TOP,
+    "FLAG_ACTIVITY_FORWARD_RESULT" to Intent.FLAG_ACTIVITY_FORWARD_RESULT,
+    "FLAG_ACTIVITY_PREVIOUS_IS_TOP" to Intent.FLAG_ACTIVITY_PREVIOUS_IS_TOP,
+    "FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS" to Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS,
+    "FLAG_ACTIVITY_BROUGHT_TO_FRONT" to Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT,
+    "FLAG_ACTIVITY_RESET_TASK_IF_NEEDED" to Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED,
+    "FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY" to Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY,
+    "FLAG_ACTIVITY_MULTIPLE_TASK" to Intent.FLAG_ACTIVITY_MULTIPLE_TASK,
+    "FLAG_ACTIVITY_NO_USER_ACTION" to Intent.FLAG_ACTIVITY_NO_USER_ACTION,
+    "FLAG_ACTIVITY_REORDER_TO_FRONT" to Intent.FLAG_ACTIVITY_REORDER_TO_FRONT,
+    "FLAG_ACTIVITY_NO_ANIMATION" to Intent.FLAG_ACTIVITY_NO_ANIMATION,
+    "FLAG_ACTIVITY_CLEAR_TASK" to Intent.FLAG_ACTIVITY_CLEAR_TASK,
+    "FLAG_ACTIVITY_TASK_ON_HOME" to Intent.FLAG_ACTIVITY_TASK_ON_HOME,
+    "FLAG_ACTIVITY_RETAIN_IN_RECENTS" to Intent.FLAG_ACTIVITY_RETAIN_IN_RECENTS,
+    "FLAG_ACTIVITY_REQUIRE_NON_BROWSER" to Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER,
+    "FLAG_ACTIVITY_REQUIRE_DEFAULT" to Intent.FLAG_ACTIVITY_REQUIRE_DEFAULT,
+    "FLAG_ACTIVITY_MATCH_EXTERNAL" to Intent.FLAG_ACTIVITY_MATCH_EXTERNAL
+)

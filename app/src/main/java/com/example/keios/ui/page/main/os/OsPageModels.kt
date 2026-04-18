@@ -142,7 +142,10 @@ internal data class OsGoogleSystemServiceConfig(
     val packageName: String = "com.android.vending",
     val className: String = "com.google.android.finsky.systemservicesactivity.SystemServicesActivity",
     val intentAction: String = "android.intent.action.VIEW",
-    val intentData: String = ""
+    val intentCategory: String = "",
+    val intentFlags: String = "FLAG_ACTIVITY_NEW_TASK",
+    val intentUriData: String = "",
+    val intentMimeType: String = ""
 ) {
     fun normalized(defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig()): OsGoogleSystemServiceConfig {
         return copy(
@@ -152,7 +155,10 @@ internal data class OsGoogleSystemServiceConfig(
             packageName = packageName.trim().ifBlank { defaults.packageName },
             className = className.trim().ifBlank { defaults.className },
             intentAction = intentAction.trim().ifBlank { defaults.intentAction },
-            intentData = intentData.trim()
+            intentCategory = intentCategory.trim(),
+            intentFlags = intentFlags.trim().ifBlank { defaults.intentFlags },
+            intentUriData = intentUriData.trim(),
+            intentMimeType = intentMimeType.trim()
         )
     }
 }

@@ -447,7 +447,11 @@ internal object OsShortcutCardStore {
     private const val KEY_GOOGLE_SYSTEM_SERVICE_PACKAGE = "google_system_service_package"
     private const val KEY_GOOGLE_SYSTEM_SERVICE_CLASS = "google_system_service_class"
     private const val KEY_GOOGLE_SYSTEM_SERVICE_ACTION = "google_system_service_action"
+    private const val KEY_GOOGLE_SYSTEM_SERVICE_CATEGORY = "google_system_service_category"
+    private const val KEY_GOOGLE_SYSTEM_SERVICE_FLAGS = "google_system_service_flags"
+    private const val KEY_GOOGLE_SYSTEM_SERVICE_URI_DATA = "google_system_service_uri_data"
     private const val KEY_GOOGLE_SYSTEM_SERVICE_DATA = "google_system_service_data"
+    private const val KEY_GOOGLE_SYSTEM_SERVICE_MIME_TYPE = "google_system_service_mime_type"
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
 
     fun loadGoogleSystemServiceConfig(
@@ -460,7 +464,17 @@ internal object OsShortcutCardStore {
             packageName = store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_PACKAGE, defaults.packageName).orEmpty(),
             className = store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_CLASS, defaults.className).orEmpty(),
             intentAction = store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_ACTION, defaults.intentAction).orEmpty(),
-            intentData = store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_DATA, defaults.intentData).orEmpty()
+            intentCategory = store.decodeString(
+                KEY_GOOGLE_SYSTEM_SERVICE_CATEGORY,
+                defaults.intentCategory
+            ).orEmpty(),
+            intentFlags = store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_FLAGS, defaults.intentFlags).orEmpty(),
+            intentUriData = store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_URI_DATA)
+                ?: store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_DATA, defaults.intentUriData).orEmpty(),
+            intentMimeType = store.decodeString(
+                KEY_GOOGLE_SYSTEM_SERVICE_MIME_TYPE,
+                defaults.intentMimeType
+            ).orEmpty()
         ).normalized(defaults)
     }
 
@@ -475,6 +489,10 @@ internal object OsShortcutCardStore {
         store.encode(KEY_GOOGLE_SYSTEM_SERVICE_PACKAGE, normalized.packageName)
         store.encode(KEY_GOOGLE_SYSTEM_SERVICE_CLASS, normalized.className)
         store.encode(KEY_GOOGLE_SYSTEM_SERVICE_ACTION, normalized.intentAction)
-        store.encode(KEY_GOOGLE_SYSTEM_SERVICE_DATA, normalized.intentData)
+        store.encode(KEY_GOOGLE_SYSTEM_SERVICE_CATEGORY, normalized.intentCategory)
+        store.encode(KEY_GOOGLE_SYSTEM_SERVICE_FLAGS, normalized.intentFlags)
+        store.encode(KEY_GOOGLE_SYSTEM_SERVICE_URI_DATA, normalized.intentUriData)
+        store.encode(KEY_GOOGLE_SYSTEM_SERVICE_DATA, normalized.intentUriData)
+        store.encode(KEY_GOOGLE_SYSTEM_SERVICE_MIME_TYPE, normalized.intentMimeType)
     }
 }
