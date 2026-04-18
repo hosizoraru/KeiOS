@@ -148,6 +148,7 @@ internal fun GitHubMainContent(
     apkAssetExpanded: SnapshotStateMap<String, Boolean>,
     trackedCardExpanded: SnapshotStateMap<String, Boolean>,
     pendingShareImportTrack: GitHubPendingShareImportTrack?,
+    showPendingShareImportCard: Boolean,
     pendingShareImportRepoOverlapCount: Int,
     onTrackedSearchChange: (String) -> Unit,
     onShowSortPopupChange: (Boolean) -> Unit,
@@ -219,7 +220,7 @@ internal fun GitHubMainContent(
                         onOpenTrackSheetForAdd = onOpenTrackSheetForAdd
                     )
                 }
-                if (pendingShareImportTrack != null) {
+                if (showPendingShareImportCard && pendingShareImportTrack != null) {
                     item {
                         GitHubPendingShareImportCard(
                             pending = pendingShareImportTrack,

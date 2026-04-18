@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -36,10 +37,14 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private const val pendingShareImportCardVisibleWindowMs = 90_000L
+private const val pendingShareImportCardTickMs = 15_000L
 
 @Composable
 fun GitHubPage(
@@ -285,6 +290,29 @@ fun GitHubPage(
             }
         }
     }
+    val pendingShareImportCardNowMillis by produceState(
+        initialValue = System.currentTimeMillis(),
+        key1 = state.pendingShareImportTrack?.armedAtMillis
+    ) {
+        value = System.currentTimeMillis()
+        if (state.pendingShareImportTrack == null) return@produceState
+        while (true) {
+            delay(pendingShareImportCardTickMs)
+            value = System.currentTimeMillis()
+        }
+    }
+    val showPendingShareImportCard by remember(
+        state.pendingShareImportTrack,
+        pendingShareImportRepoOverlapCount,
+        pendingShareImportCardNowMillis
+    ) {
+        derivedStateOf {
+            val pending = state.pendingShareImportTrack ?: return@derivedStateOf false
+            val ageMs = (pendingShareImportCardNowMillis - pending.armedAtMillis).coerceAtLeast(0L)
+            val withinVisibleWindow = ageMs <= pendingShareImportCardVisibleWindowMs
+            withinVisibleWindow || pendingShareImportRepoOverlapCount > 0
+        }
+    }
     val shareImportAttachDuplicateExists by remember(
         state.pendingShareImportAttachCandidate,
         state.trackedItems
@@ -330,6 +358,7 @@ fun GitHubPage(
         apkAssetExpanded = state.apkAssetExpanded,
         trackedCardExpanded = state.trackedCardExpanded,
         pendingShareImportTrack = state.pendingShareImportTrack,
+        showPendingShareImportCard = showPendingShareImportCard,
         pendingShareImportRepoOverlapCount = pendingShareImportRepoOverlapCount,
         onTrackedSearchChange = { state.trackedSearch = it },
         onShowSortPopupChange = { state.showSortPopup = it },
