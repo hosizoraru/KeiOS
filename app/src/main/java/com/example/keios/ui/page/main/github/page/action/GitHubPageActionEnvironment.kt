@@ -31,6 +31,7 @@ internal class GitHubPageActionEnvironment(
     fun saveTrackedItems() {
         state.retainTrackedFirstInstallAtByTrackedItems()
         GitHubTrackStore.save(state.trackedItems.toList())
+        GitHubTrackStore.saveTrackedFirstInstallAtByPackage(state.trackedFirstInstallAtByPackage)
         AppBackgroundScheduler.scheduleGitHubRefresh(context)
     }
 }

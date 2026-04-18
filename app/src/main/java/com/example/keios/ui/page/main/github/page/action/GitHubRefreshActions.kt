@@ -242,6 +242,8 @@ internal class GitHubRefreshActions(
         state.trackedItems.clear()
         state.trackedItems.addAll(trackSnapshot.items)
         state.retainTrackedUiState(trackSnapshot.items.map { it.id }.toSet())
+        state.trackedFirstInstallAtByPackage.clear()
+        state.trackedFirstInstallAtByPackage.putAll(trackSnapshot.trackedFirstInstallAtByPackage)
         state.retainTrackedFirstInstallAtByTrackedItems()
         state.pendingShareImportTrack = trackSnapshot.pendingShareImportTrack?.let { pending ->
             GitHubPendingShareImportTrack(

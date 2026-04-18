@@ -211,8 +211,6 @@ class MainActivity : ComponentActivity() {
 
         incomingGitHubShareText = sharedText
         incomingGitHubShareToken += 1
-        requestedBottomPage = TARGET_BOTTOM_PAGE_GITHUB
-        requestedBottomPageToken += 1
     }
 
     private fun applyPendingMcpServerAction() {

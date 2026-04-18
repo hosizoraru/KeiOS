@@ -906,7 +906,8 @@ internal fun GitHubShareImportAttachConfirmDialog(
     duplicateExists: Boolean,
     onDismissRequest: () -> Unit,
     onCancel: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    onConfirmAndOpenGitHub: (() -> Unit)? = null
 ) {
     WindowDialog(
         show = candidate != null,
@@ -943,28 +944,54 @@ internal fun GitHubShareImportAttachConfirmDialog(
                     text = stringResource(R.string.github_share_import_attach_dialog_duplicate_hint)
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TextButton(
-                    modifier = Modifier.weight(1f),
-                    text = stringResource(R.string.common_cancel),
-                    onClick = onCancel
-                )
-                TextButton(
-                    modifier = Modifier.weight(1f),
-                    text = if (duplicateExists) {
-                        stringResource(R.string.common_close)
-                    } else {
-                        stringResource(R.string.github_share_import_attach_dialog_action_confirm)
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        color = GitHubStatusPalette.Active,
-                        textColor = MiuixTheme.colorScheme.onPrimary
-                    ),
-                    onClick = if (duplicateExists) onCancel else onConfirm
-                )
+            if (duplicateExists) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.common_close),
+                        colors = ButtonDefaults.textButtonColors(
+                            color = GitHubStatusPalette.Active,
+                            textColor = MiuixTheme.colorScheme.onPrimary
+                        ),
+                        onClick = onCancel
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.common_cancel),
+                        onClick = onCancel
+                    )
+                    TextButton(
+                        modifier = Modifier.weight(1f),
+                        text = stringResource(R.string.github_share_import_attach_dialog_action_confirm),
+                        colors = ButtonDefaults.textButtonColors(
+                            color = GitHubStatusPalette.Active,
+                            textColor = MiuixTheme.colorScheme.onPrimary
+                        ),
+                        onClick = onConfirm
+                    )
+                }
+                if (onConfirmAndOpenGitHub != null) {
+                    TextButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringResource(
+                            R.string.github_share_import_attach_dialog_action_confirm_and_open_github
+                        ),
+                        colors = ButtonDefaults.textButtonColors(
+                            color = GitHubStatusPalette.Update,
+                            textColor = MiuixTheme.colorScheme.onPrimary
+                        ),
+                        onClick = onConfirmAndOpenGitHub
+                    )
+                }
             }
         }
     }

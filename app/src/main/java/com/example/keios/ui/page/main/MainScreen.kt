@@ -140,6 +140,10 @@ fun MainScreen(
         if (requestedBottomPage.isNullOrBlank()) return@LaunchedEffect
         navigator.popUntil { it == KeiosRoute.Main }
     }
+    LaunchedEffect(incomingGitHubShareToken, incomingGitHubShareText) {
+        if (incomingGitHubShareText.isNullOrBlank()) return@LaunchedEffect
+        navigator.popUntil { it == KeiosRoute.Main }
+    }
 
     val uiPrefsSnapshot by produceState(
         initialValue = UiPrefs.defaultSnapshot(currentAppThemeMode)
@@ -540,6 +544,12 @@ private fun MainPagerLayout(
             }
         }
     }
+    val openGitHubPage: () -> Unit = {
+        val githubIndex = tabs.indexOf(BottomPage.GitHub)
+        if (githubIndex >= 0) {
+            handlePageSelected(githubIndex)
+        }
+    }
 
     LaunchedEffect(requestedBottomPageToken, requestedBottomPage, tabs) {
         val target = requestedBottomPage ?: return@LaunchedEffect
@@ -783,9 +793,9 @@ private fun MainPagerLayout(
                                 isPageActive = isWarmActive,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                                incomingGitHubShareText = incomingGitHubShareText,
-                                incomingGitHubShareToken = incomingGitHubShareToken,
-                                onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed,
+                                incomingGitHubShareText = null,
+                                incomingGitHubShareToken = 0,
+                                onIncomingGitHubShareConsumed = {},
                                 onActionBarInteractingChanged = { interacting ->
                                     pagerScrollEnabled = !interacting
                                 }
@@ -805,6 +815,13 @@ private fun MainPagerLayout(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+
+            GitHubShareImportOverlayHost(
+                incomingGitHubShareText = incomingGitHubShareText,
+                incomingGitHubShareToken = incomingGitHubShareToken,
+                onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed,
+                onNavigateToGitHubPage = openGitHubPage
+            )
         }
     }
 }
