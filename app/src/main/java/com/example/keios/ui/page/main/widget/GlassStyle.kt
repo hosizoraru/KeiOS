@@ -37,7 +37,7 @@ internal fun glassStyle(
 ): GlassStyle {
     return when (variant) {
         GlassVariant.Bar -> GlassStyle(
-            blur = 8.dp,
+            blur = UiPerformanceBudget.backdropBlur.clampGlassBlur(),
             baseColor = Color.Transparent,
             overlayColor = Color.Transparent,
             borderColor = if (isDark) Color.White.copy(alpha = 0.10f) else Color(0xFFD9E6F8).copy(alpha = 0.78f),
@@ -50,7 +50,7 @@ internal fun glassStyle(
             showBorder = true
         )
         GlassVariant.SheetInput -> {
-            val blur = blurRadius ?: if (isDark) 6.dp else 11.dp
+            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -82,7 +82,7 @@ internal fun glassStyle(
             }
         }
         GlassVariant.SheetAction -> {
-            val blur = blurRadius ?: if (isDark) 6.dp else 11.dp
+            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -114,7 +114,7 @@ internal fun glassStyle(
             }
         }
         GlassVariant.SheetDangerAction -> {
-            val blur = blurRadius ?: if (isDark) 6.dp else 11.dp
+            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -146,7 +146,7 @@ internal fun glassStyle(
             }
         }
         GlassVariant.SheetPrimaryAction -> {
-            val blur = blurRadius ?: if (isDark) 6.dp else 11.dp
+            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -178,7 +178,7 @@ internal fun glassStyle(
             }
         }
         GlassVariant.Floating -> {
-            val blur = blurRadius ?: if (isDark) 8.dp else 11.dp
+            val blur = (blurRadius ?: if (isDark) 8.dp else 11.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -210,7 +210,7 @@ internal fun glassStyle(
             }
         }
         GlassVariant.Compact -> {
-            val blur = blurRadius ?: if (isDark) 5.dp else 6.dp
+            val blur = (blurRadius ?: if (isDark) 5.dp else 6.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -242,7 +242,7 @@ internal fun glassStyle(
             }
         }
         GlassVariant.Content -> {
-            val blur = blurRadius ?: if (isDark) 7.dp else 11.dp
+            val blur = (blurRadius ?: if (isDark) 7.dp else 11.dp).clampGlassBlur()
             if (isDark) {
                 GlassStyle(
                     blur = blur,

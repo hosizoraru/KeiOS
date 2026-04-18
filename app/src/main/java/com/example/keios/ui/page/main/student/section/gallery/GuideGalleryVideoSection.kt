@@ -44,6 +44,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.keios.ui.page.main.widget.AppDropdownAnchorButton
+import com.example.keios.ui.page.main.widget.AppFeatureCard
+import com.example.keios.ui.page.main.widget.AppSurfaceCard
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -53,8 +55,6 @@ import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.capturePopupAnchor
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
@@ -109,153 +109,124 @@ fun GuideGalleryVideoGroupCardItem(
         }
     }
 
-    Card(
+    AppFeatureCard(
+        title = title,
+        subtitle = noteText,
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        onClick = {}
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (items.size > 1) {
-                    var pickerPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
-                    Box(
-                        modifier = Modifier.capturePopupAnchor { pickerPopupAnchorBounds = it }
-                    ) {
-                        AppDropdownAnchorButton(
-                            backdrop = backdrop,
-                            text = optionLabels.getOrElse(selectedIndex) { "视频 1" },
-                            textColor = Color(0xFF3B82F6),
-                            variant = GlassVariant.Compact,
-                            onClick = { showPicker = !showPicker }
-                        )
-                        if (showPicker) {
-                            SnapshotWindowListPopup(
-                                show = showPicker,
-                                alignment = PopupPositionProvider.Align.BottomEnd,
-                                anchorBounds = pickerPopupAnchorBounds,
-                                placement = SnapshotPopupPlacement.ButtonEnd,
-                                onDismissRequest = { showPicker = false },
-                                enableWindowDim = false
-                            ) {
-                                LiquidDropdownColumn {
-                                    optionLabels.forEachIndexed { idx, option ->
-                                        LiquidDropdownImpl(
-                                            text = option,
-                                            optionSize = optionLabels.size,
-                                            isSelected = selectedIndex == idx,
-                                            index = idx,
-                                            onSelectedIndexChange = { selected ->
-                                                selectedIndex = selected
-                                                showPicker = false
-                                            }
-                                        )
-                                    }
+        containerColor = Color(0x223B82F6),
+        headerEndActions = {
+            if (items.size > 1) {
+                var pickerPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
+                Box(
+                    modifier = Modifier.capturePopupAnchor { pickerPopupAnchorBounds = it }
+                ) {
+                    AppDropdownAnchorButton(
+                        backdrop = backdrop,
+                        text = optionLabels.getOrElse(selectedIndex) { "视频 1" },
+                        textColor = Color(0xFF3B82F6),
+                        variant = GlassVariant.Compact,
+                        onClick = { showPicker = !showPicker }
+                    )
+                    if (showPicker) {
+                        SnapshotWindowListPopup(
+                            show = showPicker,
+                            alignment = PopupPositionProvider.Align.BottomEnd,
+                            anchorBounds = pickerPopupAnchorBounds,
+                            placement = SnapshotPopupPlacement.ButtonEnd,
+                            onDismissRequest = { showPicker = false },
+                            enableWindowDim = false
+                        ) {
+                            LiquidDropdownColumn {
+                                optionLabels.forEachIndexed { idx, option ->
+                                    LiquidDropdownImpl(
+                                        text = option,
+                                        optionSize = optionLabels.size,
+                                        isSelected = selectedIndex == idx,
+                                        index = idx,
+                                        onSelectedIndexChange = { selected ->
+                                            selectedIndex = selected
+                                            showPicker = false
+                                        }
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                if (displayMediaUrl.isNotBlank()) {
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        text = "",
-                        leadingIcon = if (videoInlineExpanded && videoInlinePlaying) {
-                            MiuixIcons.Regular.Pause
+            }
+            if (displayMediaUrl.isNotBlank()) {
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = "",
+                    leadingIcon = if (videoInlineExpanded && videoInlinePlaying) {
+                        MiuixIcons.Regular.Pause
+                    } else {
+                        MiuixIcons.Regular.Play
+                    },
+                    textColor = Color(0xFF3B82F6),
+                    variant = GlassVariant.Compact,
+                    onClick = {
+                        if (normalizeGuideMediaSource(displayMediaUrl).isBlank()) {
+                            Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                        } else if (!videoInlineExpanded) {
+                            videoInlineExpanded = true
                         } else {
-                            MiuixIcons.Regular.Play
-                        },
-                        textColor = Color(0xFF3B82F6),
-                        variant = GlassVariant.Compact,
-                        onClick = {
-                            if (normalizeGuideMediaSource(displayMediaUrl).isBlank()) {
-                                Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
-                            } else if (!videoInlineExpanded) {
-                                videoInlineExpanded = true
-                            } else {
-                                videoControlRequestId += 1
-                            }
+                            videoControlRequestId += 1
                         }
-                    )
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        text = "",
-                        leadingIcon = MiuixIcons.Regular.ExpandMore,
-                        textColor = Color(0xFF3B82F6),
-                        variant = GlassVariant.Compact,
-                        onClick = {
-                            val normalized = normalizeGuideMediaSource(displayMediaUrl)
-                            if (normalized.isBlank()) {
-                                Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
-                            } else {
-                                GuideVideoFullscreenActivity.launch(
-                                    context = context,
-                                    mediaUrl = normalized
-                                )
-                            }
-                        }
-                    )
-                }
-                if (saveTargetUrl.isNotBlank()) {
-                    GlassTextButton(
-                        backdrop = backdrop,
-                        text = "",
-                        leadingIcon = MiuixIcons.Regular.Download,
-                        textColor = Color(0xFF3B82F6),
-                        variant = GlassVariant.Compact,
-                        onClick = {
-                            onSaveMedia(
-                                saveTargetUrl,
-                                optionLabels.getOrElse(selectedIndex) { title }
+                    }
+                )
+                GlassTextButton(
+                    backdrop = backdrop,
+                    text = "",
+                    leadingIcon = MiuixIcons.Regular.ExpandMore,
+                    textColor = Color(0xFF3B82F6),
+                    variant = GlassVariant.Compact,
+                    onClick = {
+                        val normalized = normalizeGuideMediaSource(displayMediaUrl)
+                        if (normalized.isBlank()) {
+                            Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                        } else {
+                            GuideVideoFullscreenActivity.launch(
+                                context = context,
+                                mediaUrl = normalized
                             )
                         }
-                    )
-                }
-            }
-
-            if (displayMediaUrl.isBlank()) {
-                Text(
-                    text = "未找到可播放的视频地址",
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                    }
                 )
-            } else {
-                if (noteText.isNotBlank()) {
-                    Text(
-                        text = noteText,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                GuideInlineVideoPlayer(
-                    mediaUrl = displayMediaUrl,
-                    previewImageUrl = displayPreviewUrl,
+            }
+            if (saveTargetUrl.isNotBlank()) {
+                GlassTextButton(
                     backdrop = backdrop,
-                    expanded = videoInlineExpanded,
-                    onExpandedChange = { expanded -> videoInlineExpanded = expanded },
-                    controlAction = GuideVideoControlAction.TogglePlayPause,
-                    controlActionToken = videoControlRequestId,
-                    onIsPlayingChange = { playing -> videoInlinePlaying = playing }
+                    text = "",
+                    leadingIcon = MiuixIcons.Regular.Download,
+                    textColor = Color(0xFF3B82F6),
+                    variant = GlassVariant.Compact,
+                    onClick = {
+                        onSaveMedia(
+                            saveTargetUrl,
+                            optionLabels.getOrElse(selectedIndex) { title }
+                        )
+                    }
                 )
             }
+        }
+    ) {
+        if (displayMediaUrl.isBlank()) {
+            Text(
+                text = "未找到可播放的视频地址",
+                color = MiuixTheme.colorScheme.onBackgroundVariant
+            )
+        } else {
+            GuideInlineVideoPlayer(
+                mediaUrl = displayMediaUrl,
+                previewImageUrl = displayPreviewUrl,
+                backdrop = backdrop,
+                expanded = videoInlineExpanded,
+                onExpandedChange = { expanded -> videoInlineExpanded = expanded },
+                controlAction = GuideVideoControlAction.TogglePlayPause,
+                controlActionToken = videoControlRequestId,
+                onIsPlayingChange = { playing -> videoInlinePlaying = playing }
+            )
         }
     }
 }
@@ -270,13 +241,9 @@ fun GuideGalleryUnlockLevelCardItem(
     val rowCopyPayload = remember(level) {
         buildGuideCopyPayload("回忆大厅解锁等级", level)
     }
-    Card(
+    AppSurfaceCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        onClick = {}
+        containerColor = Color(0x223B82F6)
     ) {
         CopyModeSelectionContainer {
             Row(

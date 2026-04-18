@@ -14,10 +14,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -110,12 +106,16 @@ import com.example.keios.ui.page.main.student.weaponCardForDisplay
 import com.example.keios.ui.page.main.student.clearGuideBgmLoopScope
 import com.example.keios.ui.page.main.student.clearGuideBgmPlaybackScope
 import com.example.keios.ui.perf.ReportPagerPerformanceState
+import com.example.keios.ui.page.main.widget.AppMotionTokens
+import com.example.keios.ui.page.main.widget.UiPerformanceBudget
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
+import com.example.keios.ui.page.main.widget.appFloatingEnter
+import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.core.prefs.UiPrefs
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
 import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
@@ -162,9 +162,6 @@ private fun isGuideAudioPlaybackUrl(raw: String): Boolean {
         scheme.equals("https", ignoreCase = true) ||
         scheme.equals("file", ignoreCase = true)
 }
-
-private const val GUIDE_STATIC_PREFETCH_INITIAL_COUNT = 5
-private const val GUIDE_STATIC_PREFETCH_GALLERY_EXTRA_COUNT = 10
 
 private fun collectGuideStaticImagePrefetchUrls(info: BaStudentGuideInfo): List<String> {
     val orderedUrls = mutableListOf<String>()
@@ -849,7 +846,10 @@ fun BaStudentGuidePage(
                 onFarJumpAfter = {
                     farJumpAlpha.animateTo(
                         targetValue = 1f,
-                        animationSpec = tween(durationMillis = 130, easing = FastOutSlowInEasing)
+                        animationSpec = tween(
+                            durationMillis = AppMotionTokens.farJumpRestoreEmphasisMs,
+                            easing = FastOutSlowInEasing
+                        )
                     )
                 }
             )
@@ -902,7 +902,7 @@ fun BaStudentGuidePage(
         staticImagePrefetchStage = 1
 
         val urls = collectGuideStaticImagePrefetchUrls(guide)
-            .take(GUIDE_STATIC_PREFETCH_INITIAL_COUNT)
+            .take(UiPerformanceBudget.guideStaticPrefetchInitialCount)
         if (urls.isEmpty()) return@LaunchedEffect
 
         withContext(Dispatchers.IO) {
@@ -923,8 +923,8 @@ fun BaStudentGuidePage(
         staticImagePrefetchStage = 2
 
         val urls = collectGuideStaticImagePrefetchUrls(guide)
-            .drop(GUIDE_STATIC_PREFETCH_INITIAL_COUNT)
-            .take(GUIDE_STATIC_PREFETCH_GALLERY_EXTRA_COUNT)
+            .drop(UiPerformanceBudget.guideStaticPrefetchInitialCount)
+            .take(UiPerformanceBudget.guideStaticPrefetchGalleryExtraCount)
         if (urls.isEmpty()) return@LaunchedEffect
 
         withContext(Dispatchers.IO) {
@@ -1048,14 +1048,8 @@ fun BaStudentGuidePage(
             Box(modifier = Modifier.fillMaxWidth()) {
                 AnimatedVisibility(
                     visible = showBottomBar,
-                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
-                        animationSpec = tween(220),
-                        initialOffsetY = { it / 2 }
-                    ),
-                    exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
-                        animationSpec = tween(180),
-                        targetOffsetY = { it / 2 }
-                    ),
+                    enter = appFloatingEnter(),
+                    exit = appFloatingExit(),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     FloatingBottomBar(
@@ -1131,7 +1125,7 @@ fun BaStudentGuidePage(
             state = pagerState,
             key = { index -> bottomTabs[index].name },
             overscrollEffect = null,
-            beyondViewportPageCount = 0,
+            beyondViewportPageCount = UiPerformanceBudget.pagerBeyondViewportPageCount,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }

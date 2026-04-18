@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.keios.R
@@ -36,6 +37,8 @@ fun AppCardHeader(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    eyebrow: String? = null,
+    eyebrowColor: Color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.74f),
     titleColor: Color = MiuixTheme.colorScheme.onBackground,
     subtitleColor: Color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f),
     supportingText: String? = null,
@@ -65,6 +68,7 @@ fun AppCardHeader(
         modifier.combinedClickable(
             interactionSource = interactionSource,
             indication = null,
+            role = Role.Button,
             onClick = { onClick?.invoke() },
             onLongClick = onLongClick
         )
@@ -92,6 +96,15 @@ fun AppCardHeader(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowTextGap)
         ) {
+            eyebrow?.takeIf { it.isNotBlank() }?.let { value ->
+                Text(
+                    text = value,
+                    color = eyebrowColor,
+                    fontSize = AppTypographyTokens.Eyebrow.fontSize,
+                    lineHeight = AppTypographyTokens.Eyebrow.lineHeight,
+                    fontWeight = AppTypographyTokens.Eyebrow.fontWeight
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),

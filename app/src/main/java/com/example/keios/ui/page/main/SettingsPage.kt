@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -45,17 +45,17 @@ import com.example.keios.core.prefs.CacheStores
 import com.example.keios.core.log.AppLogStore
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppControlRow
 import com.example.keios.ui.page.main.widget.AppDualActionRow
 import com.example.keios.ui.page.main.widget.AppDropdownSelector
+import com.example.keios.ui.page.main.widget.AppFeatureCard
 import com.example.keios.ui.page.main.widget.AppInfoRow
-import com.example.keios.ui.page.main.widget.AppTopBarSection
+import com.example.keios.ui.page.main.widget.AppPageLazyColumn
+import com.example.keios.ui.page.main.widget.AppPageScaffold
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
-import com.example.keios.ui.page.main.widget.appPageContentPadding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -63,13 +63,10 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -205,415 +202,346 @@ fun SettingsPage(
     }
 
     val scrollBehavior = MiuixScrollBehavior()
+    val listState = rememberLazyListState()
 
-    Scaffold(
+    AppPageScaffold(
+        title = settingsTitle,
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            AppTopBarSection(
-                title = settingsTitle,
-                scrollBehavior = scrollBehavior,
-                color = Color.Transparent,
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Back,
-                            contentDescription = null,
-                            tint = MiuixTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
+        scrollBehavior = scrollBehavior,
+        topBarColor = Color.Transparent,
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = MiuixIcons.Regular.Back,
+                    contentDescription = null,
+                    tint = MiuixTheme.colorScheme.onSurface
+                )
+            }
         }
     ) { innerPadding ->
-        LazyColumn(
+        AppPageLazyColumn(
+            innerPadding = innerPadding,
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentPadding = appPageContentPadding(innerPadding)
+            sectionSpacing = 12.dp
         ) {
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.defaultColors(
-                        color = if (uiGroupActive) enabledCardColor else disabledCardColor,
-                        contentColor = titleColor
-                    ),
-                    onClick = {}
+                SettingsGroupCard(
+                    header = stringResource(R.string.settings_group_visual_header),
+                    title = stringResource(R.string.settings_group_visual_title),
+                    summary = stringResource(R.string.settings_group_visual_summary),
+                    containerColor = if (uiGroupActive) enabledCardColor else disabledCardColor
                 ) {
-                    SettingsGroupCard(
-                        header = stringResource(R.string.settings_group_visual_header),
-                        title = stringResource(R.string.settings_group_visual_title),
-                        summary = stringResource(R.string.settings_group_visual_summary)
+                    SettingsActionItem(
+                        title = stringResource(R.string.settings_theme_mode_title),
+                        summary = themeSummary
                     ) {
-                        SettingsActionItem(
-                            title = stringResource(R.string.settings_theme_mode_title),
-                            summary = themeSummary
-                        ) {
-                            AppDropdownSelector(
-                                selectedText = currentThemeLabel,
-                                options = themeModeOptions.map { it.second },
-                                selectedIndex = themeModeOptions.indexOfFirst { it.first == appThemeMode }
-                                    .coerceAtLeast(0),
-                                expanded = showThemeModePopup,
-                                anchorBounds = themePopupAnchorBounds,
-                                onExpandedChange = { showThemeModePopup = it },
-                                onSelectedIndexChange = { selectedIndex ->
-                                    onAppThemeModeChanged(themeModeOptions[selectedIndex].first)
+                        AppDropdownSelector(
+                            selectedText = currentThemeLabel,
+                            options = themeModeOptions.map { it.second },
+                            selectedIndex = themeModeOptions.indexOfFirst { it.first == appThemeMode }
+                                .coerceAtLeast(0),
+                            expanded = showThemeModePopup,
+                            anchorBounds = themePopupAnchorBounds,
+                            onExpandedChange = { showThemeModePopup = it },
+                            onSelectedIndexChange = { selectedIndex ->
+                                onAppThemeModeChanged(themeModeOptions[selectedIndex].first)
+                            },
+                            onAnchorBoundsChange = { themePopupAnchorBounds = it },
+                            backdrop = null,
+                            variant = GlassVariant.SheetAction
+                        )
+                    }
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_actionbar_style_title),
+                        summary = if (liquidActionBarLayeredStyleEnabled) {
+                            stringResource(R.string.settings_actionbar_style_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_actionbar_style_summary_disabled)
+                        },
+                        checked = liquidActionBarLayeredStyleEnabled,
+                        onCheckedChange = onLiquidActionBarLayeredStyleChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_actionbar_style_scope)
+                    )
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_bottom_bar_title),
+                        summary = stringResource(R.string.settings_bottom_bar_summary),
+                        checked = liquidBottomBarEnabled,
+                        onCheckedChange = onLiquidBottomBarChanged
+                    )
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_card_feedback_title),
+                        summary = if (cardPressFeedbackEnabled) {
+                            stringResource(R.string.settings_card_feedback_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_card_feedback_summary_disabled)
+                        },
+                        checked = cardPressFeedbackEnabled,
+                        onCheckedChange = onCardPressFeedbackChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_card_feedback_scope)
+                    )
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_home_shine_title),
+                        summary = if (homeIconHdrEnabled) {
+                            stringResource(R.string.settings_home_shine_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_home_shine_summary_disabled)
+                        },
+                        checked = homeIconHdrEnabled,
+                        onCheckedChange = onHomeIconHdrChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_home_shine_scope)
+                    )
+                }
+            }
+            item {
+                SettingsGroupCard(
+                    header = stringResource(R.string.settings_group_log_header),
+                    title = stringResource(R.string.settings_group_log_title),
+                    summary = stringResource(R.string.settings_group_log_summary),
+                    containerColor = if (logGroupActive) enabledCardColor else disabledCardColor
+                ) {
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_log_debug_title),
+                        summary = if (logDebugEnabled) {
+                            stringResource(R.string.settings_log_debug_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_log_debug_summary_disabled)
+                        },
+                        checked = logDebugEnabled,
+                        onCheckedChange = onLogDebugChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_log_scope)
+                    )
+                    SettingsInfoItem(
+                        key = stringResource(R.string.common_note),
+                        value = if (logDebugEnabled) {
+                            stringResource(R.string.settings_log_note_enabled)
+                        } else {
+                            stringResource(R.string.settings_log_note_disabled)
+                        }
+                    )
+                    SettingsInfoItem(
+                        key = stringResource(R.string.settings_log_stat_size),
+                        value = formatBytes(logStats.totalBytes)
+                    )
+                    SettingsInfoItem(
+                        key = stringResource(R.string.settings_log_stat_files),
+                        value = stringResource(R.string.settings_log_stat_files_count, logStats.fileCount)
+                    )
+                    SettingsInfoItem(
+                        key = stringResource(R.string.settings_log_stat_latest),
+                        value = logLatestText
+                    )
+                    AppDualActionRow(
+                        first = { modifier ->
+                            GlassTextButton(
+                                backdrop = contentBackdrop,
+                                variant = GlassVariant.SheetPrimaryAction,
+                                text = if (exportingLogZip) {
+                                    stringResource(R.string.common_processing)
+                                } else {
+                                    stringResource(R.string.settings_log_action_export_zip)
                                 },
-                                onAnchorBoundsChange = { themePopupAnchorBounds = it },
-                                backdrop = null,
-                                variant = GlassVariant.SheetAction
+                                modifier = modifier,
+                                textColor = MiuixTheme.colorScheme.primary,
+                                enabled = !exportingLogZip && !clearingLogs,
+                                onClick = {
+                                    exportingLogZip = true
+                                    val stamp = SimpleDateFormat(
+                                        "yyyyMMdd-HHmmss",
+                                        Locale.getDefault()
+                                    ).format(Date())
+                                    logExportLauncher.launch("keios-logs-$stamp.zip")
+                                }
+                            )
+                        },
+                        second = { modifier ->
+                            GlassTextButton(
+                                backdrop = contentBackdrop,
+                                variant = GlassVariant.SheetDangerAction,
+                                text = if (clearingLogs) {
+                                    stringResource(R.string.common_processing)
+                                } else {
+                                    stringResource(R.string.settings_log_action_clear)
+                                },
+                                modifier = modifier,
+                                textColor = MiuixTheme.colorScheme.error,
+                                enabled = !exportingLogZip && !clearingLogs,
+                                onClick = {
+                                    scope.launch {
+                                        clearingLogs = true
+                                        val result = withContext(Dispatchers.IO) {
+                                            runCatching { AppLogStore.clear(context) }
+                                        }
+                                        clearingLogs = false
+                                        if (result.isSuccess) {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.settings_log_toast_cleared),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                                                ?: context.getString(R.string.common_unknown)
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.settings_log_toast_clear_failed, reason),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        logReloadSignal++
+                                    }
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+            item {
+                SettingsGroupCard(
+                    header = stringResource(R.string.settings_group_notify_header),
+                    title = stringResource(R.string.settings_group_notify_title),
+                    summary = stringResource(R.string.settings_group_notify_summary),
+                    containerColor = if (notifyGroupActive) enabledCardColor else disabledCardColor
+                ) {
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_super_island_style_title),
+                        summary = if (superIslandNotificationEnabled) {
+                            stringResource(R.string.settings_super_island_style_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_super_island_style_summary_disabled)
+                        },
+                        checked = superIslandNotificationEnabled,
+                        onCheckedChange = onSuperIslandNotificationChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_super_island_style_scope)
+                    )
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_super_island_bypass_title),
+                        summary = if (superIslandBypassRestrictionEnabled) {
+                            stringResource(R.string.settings_super_island_bypass_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_super_island_bypass_summary_disabled)
+                        },
+                        checked = superIslandBypassRestrictionEnabled,
+                        onCheckedChange = onSuperIslandBypassRestrictionChanged,
+                        infoKey = stringResource(R.string.common_note),
+                        infoValue = stringResource(R.string.settings_super_island_bypass_note)
+                    )
+                }
+            }
+            item {
+                SettingsGroupCard(
+                    header = stringResource(R.string.settings_group_copy_header),
+                    title = stringResource(R.string.settings_group_copy_title),
+                    summary = stringResource(R.string.settings_group_copy_summary),
+                    containerColor = if (textCopyCapabilityExpanded) enabledCardColor else disabledCardColor
+                ) {
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_copy_capability_title),
+                        summary = if (textCopyCapabilityExpanded) {
+                            stringResource(R.string.settings_copy_capability_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_copy_capability_summary_disabled)
+                        },
+                        checked = textCopyCapabilityExpanded,
+                        onCheckedChange = onTextCopyCapabilityExpandedChanged,
+                        infoKey = stringResource(R.string.common_note),
+                        infoValue = if (textCopyCapabilityExpanded) {
+                            stringResource(R.string.settings_copy_capability_note_enabled)
+                        } else {
+                            stringResource(R.string.settings_copy_capability_note_disabled)
+                        }
+                    )
+                }
+            }
+            item {
+                SettingsGroupCard(
+                    header = stringResource(R.string.settings_cache_header),
+                    title = stringResource(R.string.settings_cache_diagnostics_title),
+                    summary = if (cacheDiagnosticsEnabled) {
+                        stringResource(R.string.settings_cache_diagnostics_summary_enabled)
+                    } else {
+                        stringResource(R.string.settings_cache_diagnostics_summary_disabled)
+                    },
+                    containerColor = if (cacheDiagnosticsEnabled) enabledCardColor else disabledCardColor
+                ) {
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_cache_diagnostics_title),
+                        summary = if (cacheDiagnosticsEnabled) {
+                            stringResource(R.string.settings_cache_diagnostics_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_cache_diagnostics_summary_disabled)
+                        },
+                        checked = cacheDiagnosticsEnabled,
+                        onCheckedChange = onCacheDiagnosticsChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = if (cacheDiagnosticsEnabled) {
+                            stringResource(R.string.settings_cache_scope_enabled)
+                        } else {
+                            stringResource(R.string.settings_cache_scope_disabled)
+                        }
+                    )
+                    when {
+                        !cacheDiagnosticsEnabled -> {
+                            Text(
+                                text = stringResource(R.string.settings_cache_disabled_desc),
+                                color = subtitleColor,
+                                fontSize = AppTypographyTokens.Supporting.fontSize,
+                                lineHeight = AppTypographyTokens.Supporting.lineHeight
                             )
                         }
 
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_actionbar_style_title),
-                            summary = if (liquidActionBarLayeredStyleEnabled) {
-                                stringResource(R.string.settings_actionbar_style_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_actionbar_style_summary_disabled)
-                            },
-                            checked = liquidActionBarLayeredStyleEnabled,
-                            onCheckedChange = onLiquidActionBarLayeredStyleChanged,
-                            infoKey = stringResource(R.string.common_scope),
-                            infoValue = stringResource(R.string.settings_actionbar_style_scope)
-                        )
+                        cacheEntries == null -> {
+                            Text(
+                                text = stringResource(R.string.settings_cache_loading_desc),
+                                color = subtitleColor,
+                                fontSize = AppTypographyTokens.Supporting.fontSize,
+                                lineHeight = AppTypographyTokens.Supporting.lineHeight
+                            )
+                        }
 
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_bottom_bar_title),
-                            summary = stringResource(R.string.settings_bottom_bar_summary),
-                            checked = liquidBottomBarEnabled,
-                            onCheckedChange = onLiquidBottomBarChanged
-                        )
+                        cacheEntries!!.isEmpty() -> {
+                            Text(
+                                text = stringResource(R.string.settings_cache_empty_desc),
+                                color = subtitleColor,
+                                fontSize = AppTypographyTokens.Supporting.fontSize,
+                                lineHeight = AppTypographyTokens.Supporting.lineHeight
+                            )
+                        }
 
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_card_feedback_title),
-                            summary = if (cardPressFeedbackEnabled) {
-                                stringResource(R.string.settings_card_feedback_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_card_feedback_summary_disabled)
-                            },
-                            checked = cardPressFeedbackEnabled,
-                            onCheckedChange = onCardPressFeedbackChanged,
-                            infoKey = stringResource(R.string.common_scope),
-                            infoValue = stringResource(R.string.settings_card_feedback_scope)
-                        )
-
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_home_shine_title),
-                            summary = if (homeIconHdrEnabled) {
-                                stringResource(R.string.settings_home_shine_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_home_shine_summary_disabled)
-                            },
-                            checked = homeIconHdrEnabled,
-                            onCheckedChange = onHomeIconHdrChanged,
-                            infoKey = stringResource(R.string.common_scope),
-                            infoValue = stringResource(R.string.settings_home_shine_scope)
-                        )
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.defaultColors(
-                        color = if (logGroupActive) enabledCardColor else disabledCardColor,
-                        contentColor = titleColor
-                    ),
-                    onClick = {}
-                ) {
-                    SettingsGroupCard(
-                        header = stringResource(R.string.settings_group_log_header),
-                        title = stringResource(R.string.settings_group_log_title),
-                        summary = stringResource(R.string.settings_group_log_summary)
-                    ) {
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_log_debug_title),
-                            summary = if (logDebugEnabled) {
-                                stringResource(R.string.settings_log_debug_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_log_debug_summary_disabled)
-                            },
-                            checked = logDebugEnabled,
-                            onCheckedChange = onLogDebugChanged,
-                            infoKey = stringResource(R.string.common_scope),
-                            infoValue = stringResource(R.string.settings_log_scope)
-                        )
-                        SettingsInfoItem(
-                            key = stringResource(R.string.common_note),
-                            value = if (logDebugEnabled) {
-                                stringResource(R.string.settings_log_note_enabled)
-                            } else {
-                                stringResource(R.string.settings_log_note_disabled)
-                            }
-                        )
-                        SettingsInfoItem(
-                            key = stringResource(R.string.settings_log_stat_size),
-                            value = formatBytes(logStats.totalBytes)
-                        )
-                        SettingsInfoItem(
-                            key = stringResource(R.string.settings_log_stat_files),
-                            value = stringResource(R.string.settings_log_stat_files_count, logStats.fileCount)
-                        )
-                        SettingsInfoItem(
-                            key = stringResource(R.string.settings_log_stat_latest),
-                            value = logLatestText
-                        )
-                        AppDualActionRow(
-                            first = { modifier ->
-                                GlassTextButton(
-                                    backdrop = contentBackdrop,
-                                    variant = GlassVariant.SheetPrimaryAction,
-                                    text = if (exportingLogZip) {
-                                        stringResource(R.string.common_processing)
-                                    } else {
-                                        stringResource(R.string.settings_log_action_export_zip)
-                                    },
-                                    modifier = modifier,
-                                    textColor = MiuixTheme.colorScheme.primary,
-                                    enabled = !exportingLogZip && !clearingLogs,
-                                    onClick = {
-                                        exportingLogZip = true
-                                        val stamp = SimpleDateFormat(
-                                            "yyyyMMdd-HHmmss",
-                                            Locale.getDefault()
-                                        ).format(Date())
-                                        logExportLauncher.launch("keios-logs-$stamp.zip")
-                                    }
-                                )
-                            },
-                            second = { modifier ->
-                                GlassTextButton(
-                                    backdrop = contentBackdrop,
-                                    variant = GlassVariant.SheetDangerAction,
-                                    text = if (clearingLogs) {
-                                        stringResource(R.string.common_processing)
-                                    } else {
-                                        stringResource(R.string.settings_log_action_clear)
-                                    },
-                                    modifier = modifier,
-                                    textColor = MiuixTheme.colorScheme.error,
-                                    enabled = !exportingLogZip && !clearingLogs,
-                                    onClick = {
+                        else -> {
+                            cacheEntries!!.forEachIndexed { index, entry ->
+                                SettingsCacheRow(
+                                    entry = entry,
+                                    clearing = clearingCacheId == entry.id,
+                                    onClear = {
+                                        if (clearingCacheId != null) return@SettingsCacheRow
                                         scope.launch {
-                                            clearingLogs = true
-                                            val result = withContext(Dispatchers.IO) {
-                                                runCatching { AppLogStore.clear(context) }
-                                            }
-                                            clearingLogs = false
-                                            if (result.isSuccess) {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.settings_log_toast_cleared),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            } else {
-                                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
-                                                    ?: context.getString(R.string.common_unknown)
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.settings_log_toast_clear_failed, reason),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                            logReloadSignal++
-                                        }
-                                    }
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.defaultColors(
-                        color = if (notifyGroupActive) enabledCardColor else disabledCardColor,
-                        contentColor = titleColor
-                    ),
-                    onClick = {}
-                ) {
-                    SettingsGroupCard(
-                        header = stringResource(R.string.settings_group_notify_header),
-                        title = stringResource(R.string.settings_group_notify_title),
-                        summary = stringResource(R.string.settings_group_notify_summary)
-                    ) {
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_super_island_style_title),
-                            summary = if (superIslandNotificationEnabled) {
-                                stringResource(R.string.settings_super_island_style_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_super_island_style_summary_disabled)
-                            },
-                            checked = superIslandNotificationEnabled,
-                            onCheckedChange = onSuperIslandNotificationChanged,
-                            infoKey = stringResource(R.string.common_scope),
-                            infoValue = stringResource(R.string.settings_super_island_style_scope)
-                        )
-
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_super_island_bypass_title),
-                            summary = if (superIslandBypassRestrictionEnabled) {
-                                stringResource(R.string.settings_super_island_bypass_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_super_island_bypass_summary_disabled)
-                            },
-                            checked = superIslandBypassRestrictionEnabled,
-                            onCheckedChange = onSuperIslandBypassRestrictionChanged,
-                            infoKey = stringResource(R.string.common_note),
-                            infoValue = stringResource(R.string.settings_super_island_bypass_note)
-                        )
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.defaultColors(
-                        color = if (textCopyCapabilityExpanded) enabledCardColor else disabledCardColor,
-                        contentColor = titleColor
-                    ),
-                    onClick = {}
-                ) {
-                    SettingsGroupCard(
-                        header = stringResource(R.string.settings_group_copy_header),
-                        title = stringResource(R.string.settings_group_copy_title),
-                        summary = stringResource(R.string.settings_group_copy_summary)
-                    ) {
-                        SettingsToggleItem(
-                            title = stringResource(R.string.settings_copy_capability_title),
-                            summary = if (textCopyCapabilityExpanded) {
-                                stringResource(R.string.settings_copy_capability_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_copy_capability_summary_disabled)
-                            },
-                            checked = textCopyCapabilityExpanded,
-                            onCheckedChange = onTextCopyCapabilityExpandedChanged,
-                            infoKey = stringResource(R.string.common_note),
-                            infoValue = if (textCopyCapabilityExpanded) {
-                                stringResource(R.string.settings_copy_capability_note_enabled)
-                            } else {
-                                stringResource(R.string.settings_copy_capability_note_disabled)
-                            }
-                        )
-                    }
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.defaultColors(
-                        color = if (cacheDiagnosticsEnabled) enabledCardColor else disabledCardColor,
-                        contentColor = titleColor
-                    ),
-                    onClick = {}
-                ) {
-                    val metaColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.74f)
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(CardLayoutRhythm.cardContentPadding),
-                        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_cache_header),
-                            color = metaColor,
-                            fontSize = AppTypographyTokens.Eyebrow.fontSize,
-                            fontWeight = AppTypographyTokens.Eyebrow.fontWeight,
-                            lineHeight = AppTypographyTokens.Eyebrow.lineHeight
-                        )
-                        AppControlRow(
-                            title = stringResource(R.string.settings_cache_diagnostics_title),
-                            summary = if (cacheDiagnosticsEnabled) {
-                                stringResource(R.string.settings_cache_diagnostics_summary_enabled)
-                            } else {
-                                stringResource(R.string.settings_cache_diagnostics_summary_disabled)
-                            },
-                            titleColor = titleColor,
-                            minHeight = 48.dp,
-                            onClick = { onCacheDiagnosticsChanged(!cacheDiagnosticsEnabled) },
-                            trailing = {
-                                Switch(
-                                    checked = cacheDiagnosticsEnabled,
-                                    onCheckedChange = { checked -> onCacheDiagnosticsChanged(checked) }
-                                )
-                            }
-                        )
-                        SettingsInfoItem(
-                            key = stringResource(R.string.common_scope),
-                            value = if (cacheDiagnosticsEnabled) {
-                                stringResource(R.string.settings_cache_scope_enabled)
-                            } else {
-                                stringResource(R.string.settings_cache_scope_disabled)
-                            }
-                        )
-                        when {
-                            !cacheDiagnosticsEnabled -> {
-                                Text(
-                                    text = stringResource(R.string.settings_cache_disabled_desc),
-                                    color = subtitleColor,
-                                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                                    lineHeight = AppTypographyTokens.Supporting.lineHeight
-                                )
-                            }
-
-                            cacheEntries == null -> {
-                                Text(
-                                    text = stringResource(R.string.settings_cache_loading_desc),
-                                    color = subtitleColor,
-                                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                                    lineHeight = AppTypographyTokens.Supporting.lineHeight
-                                )
-                            }
-
-                            cacheEntries!!.isEmpty() -> {
-                                Text(
-                                    text = stringResource(R.string.settings_cache_empty_desc),
-                                    color = subtitleColor,
-                                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                                    lineHeight = AppTypographyTokens.Supporting.lineHeight
-                                )
-                            }
-
-                            else -> {
-                                cacheEntries!!.forEachIndexed { index, entry ->
-                                    SettingsCacheRow(
-                                        entry = entry,
-                                        clearing = clearingCacheId == entry.id,
-                                        onClear = {
-                                            if (clearingCacheId != null) return@SettingsCacheRow
-                                            scope.launch {
-                                                clearingCacheId = entry.id
-                                                try {
-                                                    withContext(Dispatchers.IO) {
-                                                        CacheStores.clear(context, entry.id)
-                                                    }
-                                                    cacheReloadSignal++
-                                                } finally {
-                                                    clearingCacheId = null
+                                            clearingCacheId = entry.id
+                                            try {
+                                                withContext(Dispatchers.IO) {
+                                                    CacheStores.clear(context, entry.id)
                                                 }
+                                                cacheReloadSignal++
+                                            } finally {
+                                                clearingCacheId = null
                                             }
                                         }
-                                    )
-                                    if (index < cacheEntries!!.lastIndex) {
-                                        Spacer(modifier = Modifier.height(6.dp))
                                     }
+                                )
+                                if (index < cacheEntries!!.lastIndex) {
+                                    Spacer(modifier = Modifier.height(6.dp))
                                 }
                             }
                         }
@@ -629,48 +557,23 @@ internal fun SettingsGroupCard(
     header: String,
     title: String,
     summary: String,
+    containerColor: Color,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val titleColor = MiuixTheme.colorScheme.onBackground
-    val summaryColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
-    val metaColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.74f)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(CardLayoutRhythm.cardContentPadding),
-        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
-    ) {
-        Text(
-            text = header,
-            color = metaColor,
-            fontSize = AppTypographyTokens.Eyebrow.fontSize,
-            lineHeight = AppTypographyTokens.Eyebrow.lineHeight,
-            fontWeight = AppTypographyTokens.Eyebrow.fontWeight
-        )
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowTextGap)
-        ) {
-            Text(
-                text = title,
-                color = titleColor,
-                fontSize = AppTypographyTokens.SectionTitle.fontSize,
-                fontWeight = AppTypographyTokens.SectionTitle.fontWeight,
-                lineHeight = AppTypographyTokens.SectionTitle.lineHeight
-            )
-            Text(
-                text = summary,
-                color = summaryColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight
-            )
-        }
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap),
-            content = content
-        )
-    }
+    AppFeatureCard(
+        title = title,
+        subtitle = summary,
+        eyebrow = header,
+        containerColor = containerColor,
+        showIndication = false,
+        contentVerticalSpacing = CardLayoutRhythm.denseSectionGap,
+        contentPadding = PaddingValues(
+            start = CardLayoutRhythm.cardHorizontalPadding,
+            end = CardLayoutRhythm.cardHorizontalPadding,
+            bottom = CardLayoutRhythm.cardVerticalPadding
+        ),
+        content = content
+    )
 }
 
 @Composable

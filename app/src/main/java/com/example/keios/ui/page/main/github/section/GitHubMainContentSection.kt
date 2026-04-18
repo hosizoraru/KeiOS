@@ -2,11 +2,6 @@ package com.example.keios.ui.page.main.github.section
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -67,10 +61,11 @@ import com.example.keios.ui.page.main.stableVersionColor
 import com.example.keios.ui.page.main.statusActionUrl
 import com.example.keios.ui.page.main.statusColor
 import com.example.keios.ui.page.main.statusIcon
-import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppInfoListBody
+import com.example.keios.ui.page.main.widget.AppPageLazyColumn
 import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.AppSupportingBlock
+import com.example.keios.ui.page.main.widget.AppSurfaceCard
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.GlassIconButton
@@ -79,8 +74,11 @@ import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.appExpandIn
+import com.example.keios.ui.page.main.widget.appExpandOut
 import com.example.keios.ui.page.main.widget.appPageBottomPaddingWithFloatingOverlay
-import com.example.keios.ui.page.main.widget.appPageContentPadding
+import com.example.keios.ui.page.main.widget.appFloatingEnter
+import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.ui.page.main.github.asset.apkAssetTarget
 import com.example.keios.ui.page.main.github.asset.assetAbiLabel
 import com.example.keios.ui.page.main.github.asset.assetDisplayName
@@ -95,9 +93,6 @@ import com.example.keios.ui.page.main.github.asset.formatReleaseUpdatedAtNoYear
 import com.example.keios.ui.page.main.github.asset.formatAssetSize
 import com.example.keios.ui.page.main.github.asset.prefersApiAssetTransport
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import androidx.compose.foundation.shape.RoundedCornerShape
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -194,15 +189,14 @@ internal fun GitHubMainContent(
                 .fillMaxSize()
                 .nestedScroll(addButtonScrollConnection)
         ) {
-            LazyColumn(
+            AppPageLazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(scrollBehavior.nestedScrollConnection),
                 state = listState,
-                contentPadding = appPageContentPadding(
-                    innerPadding = innerPadding,
-                    bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding)
-                )
+                innerPadding = innerPadding,
+                bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding),
+                topExtra = 0.dp
             ) {
                 item {
                     GitHubOverviewCard(
@@ -217,7 +211,6 @@ internal fun GitHubMainContent(
                         onOpenTrackSheetForAdd = onOpenTrackSheetForAdd
                     )
                 }
-                item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
                 GitHubTrackedItemsSection(
                     trackedItems = trackedItems,
                     filteredTracked = filteredTracked,
@@ -244,14 +237,8 @@ internal fun GitHubMainContent(
 
             AnimatedVisibility(
                 visible = showFloatingAddButton,
-                enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
-                    animationSpec = tween(220),
-                    initialOffsetY = { it / 2 }
-                ),
-                exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
-                    animationSpec = tween(180),
-                    targetOffsetY = { it / 2 }
-                ),
+                enter = appFloatingEnter(),
+                exit = appFloatingExit(),
                 modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
             ) {
                 GlassIconButton(
@@ -471,7 +458,9 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     val alwaysLatestReleaseDownload = item.alwaysShowLatestReleaseDownloadButton
                     val latestReleaseAccent = Color(0xFF06B6D4)
                     AnimatedVisibility(
-                        visible = assetExpanded || assetLoading || assetError.isNotBlank()
+                        visible = assetExpanded || assetLoading || assetError.isNotBlank(),
+                        enter = appExpandIn(),
+                        exit = appExpandOut()
                     ) {
                         Column(
                             modifier = Modifier
@@ -490,38 +479,30 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                 state.recommendsPreRelease || state.hasPreReleaseUpdate -> GitHubStatusPalette.PreRelease
                                 else -> GitHubStatusPalette.Update
                             }
-                            val summaryShape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
                             val summaryContainerColor = GitHubStatusPalette.tonedSurface(
                                 targetAccent,
                                 isDark = isDark
                             ).copy(alpha = if (isDark) 0.30f else 0.18f)
                             val summaryBorderColor = targetAccent.copy(alpha = if (isDark) 0.30f else 0.20f)
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(summaryShape)
-                                    .border(width = 1.dp, color = summaryBorderColor, shape = summaryShape),
-                                colors = CardDefaults.defaultColors(
-                                    color = summaryContainerColor
-                                )
+                            AppSurfaceCard(
+                                containerColor = summaryContainerColor,
+                                borderColor = summaryBorderColor,
+                                onClick = {
+                                    val releaseUrl = assetBundle?.htmlUrl
+                                        ?.takeIf { it.isNotBlank() }
+                                        ?: target?.releaseUrl
+                                        .orEmpty()
+                                    if (releaseUrl.isNotBlank()) {
+                                        onOpenExternalUrl(releaseUrl)
+                                    }
+                                },
+                                onLongClick = {
+                                    onLoadApkAssets(item, state, false, true)
+                                }
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = {
-                                                val releaseUrl = assetBundle?.htmlUrl
-                                                    ?.takeIf { it.isNotBlank() }
-                                                    ?: target?.releaseUrl
-                                                    .orEmpty()
-                                                if (releaseUrl.isNotBlank()) {
-                                                    onOpenExternalUrl(releaseUrl)
-                                                }
-                                            },
-                                            onLongClick = {
-                                                onLoadApkAssets(item, state, false, true)
-                                            }
-                                        )
                                         .padding(
                                             horizontal = CardLayoutRhythm.cardHorizontalPadding,
                                             vertical = CardLayoutRhythm.cardVerticalPadding
@@ -683,7 +664,6 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                             }
                             when {
                                 assetLoading -> {
-                                    val stateShape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
                                     val stateContainerColor = if (alwaysLatestReleaseDownload) {
                                         GitHubStatusPalette.tonedSurface(
                                             targetAccent,
@@ -692,18 +672,9 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                     } else {
                                         MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
                                     }
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(stateShape)
-                                            .border(
-                                                width = 1.dp,
-                                                color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.16f),
-                                                shape = stateShape
-                                            ),
-                                        colors = CardDefaults.defaultColors(
-                                            color = stateContainerColor
-                                        )
+                                    AppSurfaceCard(
+                                        containerColor = stateContainerColor,
+                                        borderColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.16f)
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -746,22 +717,12 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                     }
                                 }
                                 assetError.isNotBlank() -> {
-                                    val errorShape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(errorShape)
-                                            .border(
-                                                width = 1.dp,
-                                                color = GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.34f else 0.22f),
-                                                shape = errorShape
-                                            ),
-                                        colors = CardDefaults.defaultColors(
-                                            color = GitHubStatusPalette.tonedSurface(
-                                                GitHubStatusPalette.Error,
-                                                isDark = isDark
-                                            ).copy(alpha = if (isDark) 0.84f else 0.96f)
-                                        )
+                                    AppSurfaceCard(
+                                        containerColor = GitHubStatusPalette.tonedSurface(
+                                            GitHubStatusPalette.Error,
+                                            isDark = isDark
+                                        ).copy(alpha = if (isDark) 0.84f else 0.96f),
+                                        borderColor = GitHubStatusPalette.Error.copy(alpha = if (isDark) 0.34f else 0.22f)
                                     ) {
                                         Column(
                                             modifier = Modifier
@@ -801,19 +762,13 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                                         val displayName = assetDisplayName(asset.name)
                                         val sizeLabel = formatAssetSize(asset.sizeBytes, context)
                                         val relativeTimeLabel = assetRelativeTimeLabel(asset.updatedAtMillis, context)
-                                        val assetCardShape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
                                         val assetDownloadButtonMinWidth = 100.dp
                                         val assetShareButtonSize = 40.dp
                                         val assetCardContainerColor = summaryContainerColor
                                         val assetCardBorderColor = summaryBorderColor
-                                        Card(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clip(assetCardShape)
-                                                .border(width = 1.dp, color = assetCardBorderColor, shape = assetCardShape),
-                                            colors = CardDefaults.defaultColors(
-                                                color = assetCardContainerColor
-                                            )
+                                        AppSurfaceCard(
+                                            containerColor = assetCardContainerColor,
+                                            borderColor = assetCardBorderColor
                                         ) {
                                             Column(
                                                 modifier = Modifier

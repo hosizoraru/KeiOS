@@ -346,8 +346,8 @@ fun LiquidActionBar(
                 effects = {
                     if (isBlurEnabled) {
                         vibrancy()
-                        blur(8f.dp.toPx())
-                        lens(20f.dp.toPx(), 22f.dp.toPx())
+                        blur(UiPerformanceBudget.backdropBlur.toPx())
+                        lens(UiPerformanceBudget.backdropLens.toPx(), UiPerformanceBudget.backdropLens.toPx())
                     }
                 },
                 highlight = {
@@ -406,8 +406,11 @@ fun LiquidActionBar(
                             if (isBlurEnabled) {
                                 val progress = dampedDragAnimation.pressProgress
                                 vibrancy()
-                                blur(8f.dp.toPx())
-                                lens(20f.dp.toPx() * progress, 22f.dp.toPx() * progress)
+                                blur(UiPerformanceBudget.backdropBlur.toPx())
+                                lens(
+                                    UiPerformanceBudget.backdropLens.toPx() * progress,
+                                    UiPerformanceBudget.backdropLens.toPx() * progress
+                                )
                             }
                         },
                         highlight = {

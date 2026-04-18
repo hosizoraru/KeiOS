@@ -4,18 +4,10 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -44,14 +36,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.mcp.McpServerManager
-import com.example.keios.ui.page.main.widget.AppChromeTokens
+import com.example.keios.ui.page.main.widget.AppPageLazyColumn
+import com.example.keios.ui.page.main.widget.AppPageScaffold
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionItem
+import com.example.keios.ui.page.main.widget.appFloatingEnter
+import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.ui.page.main.widget.appPageBottomPaddingWithFloatingOverlay
-import com.example.keios.ui.page.main.widget.appPageContentPadding
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
@@ -61,7 +55,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Copy
 import top.yukonga.miuix.kmp.icon.extended.Edit
@@ -310,63 +303,59 @@ fun McpPage(
         }
     }
 
-    Scaffold(
+    AppPageScaffold(
+        title = "",
+        largeTitle = mcpTitle,
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            AppTopBarSection(
-                title = "",
-                largeTitle = mcpTitle,
-                scrollBehavior = scrollBehavior,
-                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                actions = {
-                    LiquidActionBar(
-                        backdrop = topBarBackdrop,
-                        layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                        items = listOf(
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Edit,
-                                contentDescription = stringResource(R.string.mcp_action_edit_service_params),
-                                onClick = { showEditSheet = true }
-                            ),
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Notes,
-                                contentDescription = stringResource(R.string.mcp_action_open_skill_md),
-                                onClick = onOpenSkill
-                            ),
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Copy,
-                                contentDescription = stringResource(R.string.mcp_action_copy_current_config),
-                                onClick = {
-                                    val endpoint = if (allowExternal && uiState.addresses.isNotEmpty()) {
-                                        "http://${uiState.addresses.first()}:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
-                                    } else {
-                                        "http://127.0.0.1:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
-                                    }
-                                    val json = mcpServerManager.buildConfigJson(endpoint)
-                                    copyToClipboard(context, "mcp-config", json)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.mcp_toast_config_copied),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            ),
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Refresh,
-                                contentDescription = stringResource(R.string.common_refresh),
-                                onClick = {
-                                    mcpServerManager.refreshNow()
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.common_refreshed),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            )
-                        ),
-                        onInteractionChanged = onActionBarInteractingChanged
+        scrollBehavior = scrollBehavior,
+        topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
+        actions = {
+            LiquidActionBar(
+                backdrop = topBarBackdrop,
+                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                items = listOf(
+                    LiquidActionItem(
+                        icon = MiuixIcons.Regular.Edit,
+                        contentDescription = stringResource(R.string.mcp_action_edit_service_params),
+                        onClick = { showEditSheet = true }
+                    ),
+                    LiquidActionItem(
+                        icon = MiuixIcons.Regular.Notes,
+                        contentDescription = stringResource(R.string.mcp_action_open_skill_md),
+                        onClick = onOpenSkill
+                    ),
+                    LiquidActionItem(
+                        icon = MiuixIcons.Regular.Copy,
+                        contentDescription = stringResource(R.string.mcp_action_copy_current_config),
+                        onClick = {
+                            val endpoint = if (allowExternal && uiState.addresses.isNotEmpty()) {
+                                "http://${uiState.addresses.first()}:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
+                            } else {
+                                "http://127.0.0.1:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
+                            }
+                            val json = mcpServerManager.buildConfigJson(endpoint)
+                            copyToClipboard(context, "mcp-config", json)
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.mcp_toast_config_copied),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    ),
+                    LiquidActionItem(
+                        icon = MiuixIcons.Regular.Refresh,
+                        contentDescription = stringResource(R.string.common_refresh),
+                        onClick = {
+                            mcpServerManager.refreshNow()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.common_refreshed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     )
-                }
+                ),
+                onInteractionChanged = onActionBarInteractingChanged
             )
         }
     ) { innerPadding ->
@@ -375,18 +364,15 @@ fun McpPage(
                 .fillMaxSize()
                 .nestedScroll(toggleButtonScrollConnection)
         ) {
-            LazyColumn(
+            AppPageLazyColumn(
+                innerPadding = innerPadding,
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(scrollBehavior.nestedScrollConnection),
-                state = listState,
-                contentPadding = appPageContentPadding(
-                    innerPadding = innerPadding,
-                    bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding)
-                )
+                bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding),
+                sectionSpacing = 12.dp
             ) {
-                item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
                 item {
                     McpOverviewCardSection(
                         titleColor = titleColor,
@@ -403,9 +389,6 @@ fun McpPage(
                         onOpenEditSheet = { showEditSheet = true }
                     )
                 }
-
-                item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
                 item {
                     McpServiceControlSection(
                         backdrop = contentBackdrop,
@@ -416,9 +399,6 @@ fun McpPage(
                         onShowResetConfigConfirm = { showResetConfigConfirm = true }
                     )
                 }
-
-                item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
                 item {
                     McpToolsSection(
                         backdrop = contentBackdrop,
@@ -427,9 +407,6 @@ fun McpPage(
                         uiState = uiState
                     )
                 }
-
-                item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
                 item {
                     McpLogsSection(
                         backdrop = contentBackdrop,
@@ -465,14 +442,8 @@ fun McpPage(
 
             AnimatedVisibility(
                 visible = showFloatingToggleButton,
-                enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
-                    animationSpec = tween(220),
-                    initialOffsetY = { it / 2 }
-                ),
-                exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
-                    animationSpec = tween(180),
-                    targetOffsetY = { it / 2 }
-                ),
+                enter = appFloatingEnter(),
+                exit = appFloatingExit(),
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
                 GlassIconButton(

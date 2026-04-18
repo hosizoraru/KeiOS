@@ -25,17 +25,17 @@ fun SearchBarHost(
     val density = LocalDensity.current
     val searchBarHeight by animateDpAsState(
         targetValue = if (visible) AppChromeTokens.searchBarHostHeight else 0.dp,
-        animationSpec = tween(durationMillis = 220),
+        animationSpec = tween(durationMillis = AppMotionTokens.searchBarSlideMs),
         label = "${animationLabelPrefix}Height"
     )
     val searchBarAlpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 160),
+        animationSpec = tween(durationMillis = AppMotionTokens.searchBarFadeMs),
         label = "${animationLabelPrefix}Alpha"
     )
     val searchBarOffsetY by animateDpAsState(
         targetValue = if (visible) 0.dp else (-12).dp,
-        animationSpec = tween(durationMillis = 220),
+        animationSpec = tween(durationMillis = AppMotionTokens.searchBarSlideMs),
         label = "${animationLabelPrefix}Offset"
     )
 

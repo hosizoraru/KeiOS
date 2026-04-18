@@ -8,10 +8,6 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -75,8 +71,12 @@ import com.example.keios.ui.page.main.student.BaStudentGuideStore
 import com.example.keios.ui.page.main.student.extractGuideContentIdFromUrl
 import com.example.keios.ui.page.main.student.normalizeGuideUrl
 import com.example.keios.ui.perf.ReportPagerPerformanceState
+import com.example.keios.ui.page.main.widget.AppMotionTokens
+import com.example.keios.ui.page.main.widget.UiPerformanceBudget
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
+import com.example.keios.ui.page.main.widget.appFloatingEnter
+import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.core.log.AppLogger
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.prefs.AppThemeMode
@@ -418,13 +418,13 @@ private fun MainPagerLayout(
                             farJumpAlpha.snapTo(1f)
                             farJumpAlpha.animateTo(
                                 targetValue = 0.92f,
-                                animationSpec = tween(durationMillis = 70)
+                                animationSpec = tween(durationMillis = AppMotionTokens.farJumpDimMs)
                             )
                         },
                         onFarJumpAfter = {
                             farJumpAlpha.animateTo(
                                 targetValue = 1f,
-                                animationSpec = tween(durationMillis = 120)
+                                animationSpec = tween(durationMillis = AppMotionTokens.farJumpRestoreMs)
                             )
                         }
                     )
@@ -450,17 +450,17 @@ private fun MainPagerLayout(
                     onFarJumpBefore = {
                         farJumpAlpha.snapTo(1f)
                         farJumpAlpha.animateTo(
-                            targetValue = 0.92f,
-                            animationSpec = tween(durationMillis = 70)
-                        )
-                    },
-                    onFarJumpAfter = {
-                        farJumpAlpha.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(durationMillis = 120)
-                        )
-                    }
-                )
+                        targetValue = 0.92f,
+                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpDimMs)
+                    )
+                },
+                onFarJumpAfter = {
+                    farJumpAlpha.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpRestoreMs)
+                    )
+                }
+            )
             }
             showBottomBar = true
         }
@@ -476,14 +476,8 @@ private fun MainPagerLayout(
             Box(modifier = Modifier.fillMaxWidth()) {
                 AnimatedVisibility(
                     visible = showBottomBar,
-                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
-                        animationSpec = tween(220),
-                        initialOffsetY = { it / 2 }
-                    ),
-                    exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
-                        animationSpec = tween(180),
-                        targetOffsetY = { it / 2 }
-                    ),
+                    enter = appFloatingEnter(),
+                    exit = appFloatingExit(),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     FloatingBottomBar(
@@ -558,7 +552,7 @@ private fun MainPagerLayout(
             key = { index -> tabs[index].name },
             userScrollEnabled = pagerScrollEnabled,
             overscrollEffect = null,
-            beyondViewportPageCount = 0,
+            beyondViewportPageCount = UiPerformanceBudget.pagerBeyondViewportPageCount,
             // CRITICAL FIX: NEVER conditionally unmount layerBackdrop.
             // If the node is visible (even during an exit animation), it MUST have the backdrop attached,
             // otherwise consumer composables will attempt to draw a detached Native pointer causing SIGSEGV.

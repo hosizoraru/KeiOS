@@ -2,11 +2,7 @@ package com.example.keios.ui.page.main.about
 
 import android.content.pm.PackageInfo
 import android.widget.Toast
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,13 +33,11 @@ import com.example.keios.ui.page.main.about.section.AboutPermissionCardSection
 import com.example.keios.ui.page.main.about.section.AboutRuntimeStatusCardSection
 import com.example.keios.ui.page.main.about.section.AboutUiFrameworkCardSection
 import com.example.keios.ui.page.main.about.util.openExternalUrl
-import com.example.keios.ui.page.main.widget.AppChromeTokens
-import com.example.keios.ui.page.main.widget.AppTopBarSection
-import com.example.keios.ui.page.main.widget.appPageContentPadding
+import com.example.keios.ui.page.main.widget.AppPageLazyColumn
+import com.example.keios.ui.page.main.widget.AppPageScaffold
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -107,39 +101,32 @@ fun AboutPage(
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val openLinkFailed = stringResource(R.string.about_error_open_link)
 
-    Scaffold(
+    AppPageScaffold(
+        title = stringResource(R.string.about_page_title),
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            AppTopBarSection(
-                title = stringResource(R.string.about_page_title),
-                scrollBehavior = scrollBehavior,
-                color = Color.Transparent,
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = MiuixIcons.Regular.Back,
-                                contentDescription = null,
-                                tint = MiuixTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
+        scrollBehavior = scrollBehavior,
+        topBarColor = Color.Transparent,
+        navigationIcon = {
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Back,
+                        contentDescription = null,
+                        tint = MiuixTheme.colorScheme.onSurface
+                    )
                 }
-            )
+            }
         }
     ) { innerPadding ->
-        LazyColumn(
+        AppPageLazyColumn(
+            innerPadding = innerPadding,
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
-            state = listState,
-            contentPadding = appPageContentPadding(
-                innerPadding = innerPadding,
-                bottomExtra = contentBottomPadding + AppChromeTokens.pageBottomInsetExtra
-            )
+            bottomExtra = contentBottomPadding,
+            sectionSpacing = 14.dp
         ) {
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGap)) }
-
             item {
                 AboutAppCardSection(
                     appLabel = appLabel,
@@ -151,9 +138,6 @@ fun AboutPage(
                     onExpandedChange = { appExpanded = it }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutGitHubCardSection(
                     cardColor = Color(0x2248A6FF),
@@ -168,9 +152,6 @@ fun AboutPage(
                     }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutRuntimeStatusCardSection(
                     cardColor = runtimeCardColor,
@@ -188,9 +169,6 @@ fun AboutPage(
                     onCheckShizuku = onCheckShizuku
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutPermissionCardSection(
                     cardColor = Color(0x2248A6FF),
@@ -203,9 +181,6 @@ fun AboutPage(
                     onExpandedChange = { permissionExpanded = it }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutComponentCardSection(
                     cardColor = Color(0x2234D399),
@@ -217,9 +192,6 @@ fun AboutPage(
                     onExpandedChange = { componentExpanded = it }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutBuildSdkCardSection(
                     cardColor = buildCardColor,
@@ -229,9 +201,6 @@ fun AboutPage(
                     onExpandedChange = { buildExpanded = it }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutUiFrameworkCardSection(
                     cardColor = uiFrameworkCardColor,
@@ -241,9 +210,6 @@ fun AboutPage(
                     onExpandedChange = { uiFrameworkExpanded = it }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutNetworkServiceCardSection(
                     cardColor = networkServiceCardColor,
@@ -253,9 +219,6 @@ fun AboutPage(
                     onExpandedChange = { networkExpanded = it }
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(AppChromeTokens.pageSectionGapLarge)) }
-
             item {
                 AboutMediaStorageCardSection(
                     cardColor = mediaStorageCardColor,

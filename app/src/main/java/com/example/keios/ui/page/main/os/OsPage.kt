@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -63,8 +62,9 @@ import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppInfoRow
 import com.example.keios.ui.page.main.widget.AppOverviewCard
 import com.example.keios.ui.page.main.widget.AppChromeTokens
+import com.example.keios.ui.page.main.widget.AppPageLazyColumn
+import com.example.keios.ui.page.main.widget.AppPageScaffold
 import com.example.keios.ui.page.main.widget.AppTopBarSearchField
-import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.LiquidActionBar
@@ -80,7 +80,6 @@ import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.ui.page.main.widget.StatusLabelText
-import com.example.keios.ui.page.main.widget.appPageContentPadding
 import com.example.keios.ui.page.main.widget.copyModeAwareRow
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.system.getAllJavaPropString
@@ -99,8 +98,6 @@ import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -682,50 +679,47 @@ fun OsPage(
         )
     }
 
-    Scaffold(
+    AppPageScaffold(
+        title = "",
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            AppTopBarSection(
-                title = "",
-                largeTitle = "OS",
-                scrollBehavior = scrollBehavior,
-                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                actions = {
-                    LiquidActionBar(
-                        backdrop = topBarBackdrop,
-                        layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                        items = listOf(
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Layers,
-                                contentDescription = "管理卡片显示",
-                                onClick = { showCardManager = true }
-                            ),
-                            LiquidActionItem(
-                                icon = MiuixIcons.Regular.Refresh,
-                                contentDescription = "刷新OS参数",
-                                onClick = {
-                                    if (refreshing) return@LiquidActionItem
-                                    scope.launch { refreshAllSections() }
-                                }
-                            )
-                        ),
-                        onInteractionChanged = onActionBarInteractingChanged
+        largeTitle = "OS",
+        scrollBehavior = scrollBehavior,
+        topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
+        actions = {
+            LiquidActionBar(
+                backdrop = topBarBackdrop,
+                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                items = listOf(
+                    LiquidActionItem(
+                        icon = MiuixIcons.Regular.Layers,
+                        contentDescription = "管理卡片显示",
+                        onClick = { showCardManager = true }
+                    ),
+                    LiquidActionItem(
+                        icon = MiuixIcons.Regular.Refresh,
+                        contentDescription = "刷新OS参数",
+                        onClick = {
+                            if (refreshing) return@LiquidActionItem
+                            scope.launch { refreshAllSections() }
+                        }
                     )
-                },
-                searchBarVisible = enableSearchBar && showSearchBar,
-                searchBarAnimationLabelPrefix = "osSearchBar"
-            ) {
-                Column {
-                    AppTopBarSearchField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
-                        value = queryInput,
-                        onValueChange = { queryInput = it },
-                        label = "搜索OS参数",
-                        backdrop = topBarBackdrop
-                    )
-                }
+                ),
+                onInteractionChanged = onActionBarInteractingChanged
+            )
+        },
+        searchBarVisible = enableSearchBar && showSearchBar,
+        searchBarAnimationLabelPrefix = "osSearchBar",
+        searchBarContent = {
+            Column {
+                AppTopBarSearchField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
+                    value = queryInput,
+                    onValueChange = { queryInput = it },
+                    label = "搜索OS参数",
+                    backdrop = topBarBackdrop
+                )
             }
         }
     ) { innerPadding ->
@@ -791,13 +785,15 @@ fun OsPage(
                 )
             }
         }
-        LazyColumn(
+        AppPageLazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(searchBarScrollConnection)
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
             state = listState,
-            contentPadding = appPageContentPadding(innerPadding)
+            innerPadding = innerPadding,
+            topExtra = 0.dp,
+            sectionSpacing = 0.dp
         ) {
             item {
                 AppOverviewCard(

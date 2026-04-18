@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.Text
@@ -61,7 +62,13 @@ fun AppControlRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .let { base -> if (onClick != null) base.clickable { onClick() } else base }
+            .let { base ->
+                if (onClick != null) {
+                    base.clickable(role = Role.Button, onClick = onClick)
+                } else {
+                    base
+                }
+            }
             .defaultMinSize(minHeight = minHeight)
             .padding(vertical = CardLayoutRhythm.controlRowVerticalPadding),
         horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),

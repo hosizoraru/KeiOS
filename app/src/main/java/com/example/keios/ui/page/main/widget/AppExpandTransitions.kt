@@ -6,21 +6,39 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.ui.Alignment
 
 internal fun appExpandIn(): EnterTransition {
-    return fadeIn(animationSpec = tween(durationMillis = 160)) +
+    return fadeIn(animationSpec = tween(durationMillis = AppMotionTokens.expandFadeInMs)) +
         expandVertically(
-            animationSpec = tween(durationMillis = 220),
+            animationSpec = tween(durationMillis = AppMotionTokens.expandSizeInMs),
             expandFrom = Alignment.Top
         )
 }
 
 internal fun appExpandOut(): ExitTransition {
-    return fadeOut(animationSpec = tween(durationMillis = 120)) +
+    return fadeOut(animationSpec = tween(durationMillis = AppMotionTokens.expandFadeOutMs)) +
         shrinkVertically(
-            animationSpec = tween(durationMillis = 180),
+            animationSpec = tween(durationMillis = AppMotionTokens.expandSizeOutMs),
             shrinkTowards = Alignment.Top
+        )
+}
+
+internal fun appFloatingEnter(): EnterTransition {
+    return fadeIn(animationSpec = tween(durationMillis = AppMotionTokens.floatingFadeInMs)) +
+        slideInVertically(
+            animationSpec = tween(durationMillis = AppMotionTokens.floatingSlideInMs),
+            initialOffsetY = { it / 2 }
+        )
+}
+
+internal fun appFloatingExit(): ExitTransition {
+    return fadeOut(animationSpec = tween(durationMillis = AppMotionTokens.floatingFadeOutMs)) +
+        slideOutVertically(
+            animationSpec = tween(durationMillis = AppMotionTokens.floatingSlideOutMs),
+            targetOffsetY = { it / 2 }
         )
 }

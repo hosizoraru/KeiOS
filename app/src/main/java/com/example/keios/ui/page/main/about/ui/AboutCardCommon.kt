@@ -1,6 +1,5 @@
 package com.example.keios.ui.page.main.about.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -19,23 +18,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow.Companion.Clip
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
-import com.example.keios.ui.page.main.widget.AppCardBodyColumn
 import com.example.keios.ui.page.main.widget.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
+import com.example.keios.ui.page.main.widget.AppFeatureCard
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
-import com.example.keios.ui.page.main.widget.AppCardHeader
 import com.example.keios.ui.page.main.widget.StatusPill
-import com.example.keios.ui.page.main.widget.appExpandIn
-import com.example.keios.ui.page.main.widget.appExpandOut
 import com.example.keios.ui.page.main.widget.buildTextCopyPayload
 import com.example.keios.ui.page.main.widget.rememberLightTextCopyAction
 import com.example.keios.ui.page.main.widget.rememberTextCopyExpandedEnabled
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -54,6 +49,7 @@ fun AboutCompactRow(
         Modifier.combinedClickable(
             interactionSource = interactionSource,
             indication = null,
+            role = Role.Button,
             onClick = { onClick?.invoke() },
             onLongClick = onLongClick
         )
@@ -175,60 +171,16 @@ fun AboutSectionCard(
     onExpandedChange: (Boolean) -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = cardColor,
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
-        onClick = {
-            if (collapsible) onExpandedChange(!expanded)
-        }
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
-        ) {
-            AppCardHeader(
-                title = title,
-                subtitle = subtitle,
-                titleColor = titleColor,
-                subtitleColor = subtitleColor,
-                startAction = if (sectionIcon != null) {
-                    {
-                        top.yukonga.miuix.kmp.basic.Icon(
-                            imageVector = sectionIcon,
-                            contentDescription = null,
-                            tint = titleColor
-                        )
-                    }
-                } else {
-                    null
-                },
-                expandable = collapsible,
-                expanded = expanded,
-                expandTint = titleColor,
-                onClick = if (collapsible) {
-                    { onExpandedChange(!expanded) }
-                } else {
-                    null
-                }
-            )
-            AnimatedVisibility(
-                visible = !collapsible || expanded,
-                enter = appExpandIn(),
-                exit = appExpandOut()
-            ) {
-                AppCardBodyColumn(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        start = CardLayoutRhythm.cardHorizontalPadding,
-                        end = CardLayoutRhythm.cardHorizontalPadding,
-                        bottom = CardLayoutRhythm.cardVerticalPadding
-                    ),
-                    verticalSpacing = CardLayoutRhythm.sectionGap,
-                    content = content
-                )
-            }
-        }
-    }
+    AppFeatureCard(
+        title = title,
+        subtitle = subtitle,
+        containerColor = cardColor,
+        titleColor = titleColor,
+        subtitleColor = subtitleColor,
+        sectionIcon = sectionIcon,
+        collapsible = collapsible,
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        content = content
+    )
 }

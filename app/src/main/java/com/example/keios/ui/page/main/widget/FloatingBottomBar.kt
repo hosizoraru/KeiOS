@@ -244,8 +244,8 @@ fun FloatingBottomBar(
                     effects = {
                         if (isBlurEnabled) {
                             vibrancy()
-                            blur(8f.dp.toPx())
-                            lens(24f.dp.toPx(), 24f.dp.toPx())
+                            blur(UiPerformanceBudget.backdropBlur.toPx())
+                            lens(UiPerformanceBudget.backdropLens.toPx(), UiPerformanceBudget.backdropLens.toPx())
                         }
                     },
                     highlight = {
@@ -292,8 +292,11 @@ fun FloatingBottomBar(
                             if (isBlurEnabled) {
                                 val progress = dampedDragAnimation.pressProgress
                                 vibrancy()
-                                blur(8f.dp.toPx())
-                                lens(24f.dp.toPx() * progress, 24f.dp.toPx() * progress)
+                                blur(UiPerformanceBudget.backdropBlur.toPx())
+                                lens(
+                                    UiPerformanceBudget.backdropLens.toPx() * progress,
+                                    UiPerformanceBudget.backdropLens.toPx() * progress
+                                )
                             }
                         },
                         highlight = {

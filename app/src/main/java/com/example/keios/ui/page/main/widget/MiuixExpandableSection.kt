@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -54,8 +53,8 @@ fun MiuixExpandableSection(
                         shape = { RoundedRectangle(CardLayoutRhythm.cardCornerRadius) },
                         effects = {
                             vibrancy()
-                            blur(8.dp.toPx())
-                            lens(24.dp.toPx(), 24.dp.toPx())
+                            blur(UiPerformanceBudget.backdropBlur.toPx())
+                            lens(UiPerformanceBudget.backdropLens.toPx(), UiPerformanceBudget.backdropLens.toPx())
                         },
                         highlight = { Highlight.Default.copy(alpha = 1f) },
                         shadow = { Shadow.Default.copy(color = shadowColor) },

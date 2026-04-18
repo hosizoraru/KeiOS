@@ -7,10 +7,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -87,6 +83,7 @@ import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogCacheExpir
 import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
 import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.example.keios.ui.page.main.widget.AppChromeTokens
+import com.example.keios.ui.page.main.widget.AppMotionTokens
 import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.AppTopBarSearchField
 import com.example.keios.ui.page.main.widget.AppTopBarSection
@@ -101,10 +98,13 @@ import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
 import com.example.keios.ui.page.main.widget.LiquidDropdownColumn
+import com.example.keios.ui.page.main.widget.appFloatingEnter
+import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.ui.page.main.widget.LiquidDropdownImpl
 import com.example.keios.ui.page.main.widget.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.SnapshotWindowListPopup
 import com.example.keios.ui.page.main.widget.StatusPill
+import com.example.keios.ui.page.main.widget.UiPerformanceBudget
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -257,13 +257,13 @@ fun BaGuideCatalogPage(
                     farJumpAlpha.snapTo(1f)
                     farJumpAlpha.animateTo(
                         targetValue = 0.92f,
-                        animationSpec = tween(durationMillis = 70)
+                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpDimMs)
                     )
                 },
                 onFarJumpAfter = {
                     farJumpAlpha.animateTo(
                         targetValue = 1f,
-                        animationSpec = tween(durationMillis = 120)
+                        animationSpec = tween(durationMillis = AppMotionTokens.farJumpRestoreMs)
                     )
                 }
             )
@@ -424,14 +424,8 @@ fun BaGuideCatalogPage(
             Box(modifier = Modifier.fillMaxWidth()) {
                 AnimatedVisibility(
                     visible = showBottomBar,
-                    enter = fadeIn(animationSpec = tween(180)) + slideInVertically(
-                        animationSpec = tween(220),
-                        initialOffsetY = { it / 2 }
-                    ),
-                    exit = fadeOut(animationSpec = tween(120)) + slideOutVertically(
-                        animationSpec = tween(180),
-                        targetOffsetY = { it / 2 }
-                    ),
+                    enter = appFloatingEnter(),
+                    exit = appFloatingExit(),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     FloatingBottomBar(
@@ -496,7 +490,7 @@ fun BaGuideCatalogPage(
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }
                 .layerBackdrop(bottomBarBackdrop),
-            beyondViewportPageCount = 0
+            beyondViewportPageCount = UiPerformanceBudget.pagerBeyondViewportPageCount
         ) { pageIndex ->
             val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogTab.Student }
             CatalogTabContent(

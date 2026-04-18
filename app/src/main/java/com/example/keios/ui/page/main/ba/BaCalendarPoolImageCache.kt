@@ -3,6 +3,7 @@ package com.example.keios.ui.page.main.ba
 import android.content.Context
 import android.net.Uri
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
+import com.example.keios.ui.page.main.widget.UiPerformanceBudget
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -16,7 +17,6 @@ import java.security.MessageDigest
 
 internal object BaCalendarPoolImageCache {
     private const val ROOT_DIR = "ba_calendar_pool_media"
-    private const val MAX_PARALLEL_DOWNLOADS = 3
     private const val INDEX_KV_ID = "ba_calendar_pool_media_index"
     private const val INDEX_VERSION = 1
     private const val KEY_INDEX_VERSION = "index_version"
@@ -109,7 +109,7 @@ internal object BaCalendarPoolImageCache {
         dir.mkdirs()
 
         coroutineScope {
-            val semaphore = Semaphore(MAX_PARALLEL_DOWNLOADS)
+            val semaphore = Semaphore(UiPerformanceBudget.mediaCacheParallelDownloads)
             targets.map { url ->
                 async(Dispatchers.IO) {
                     semaphore.withPermit {

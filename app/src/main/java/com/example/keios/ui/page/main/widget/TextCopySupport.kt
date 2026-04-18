@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -55,11 +56,13 @@ internal fun Modifier.copyModeAwareRow(
     onLongClick: (() -> Unit)? = null
 ): Modifier = composed {
     val expandedCopyMode = rememberTextCopyExpandedEnabled()
+    val copyLabel = stringResource(R.string.common_copy)
     if (expandedCopyMode) {
         if (onClick != null) {
             this.clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                role = Role.Button,
                 onClick = onClick
             )
         } else {
@@ -72,7 +75,9 @@ internal fun Modifier.copyModeAwareRow(
             this.combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                role = Role.Button,
                 onClick = { onClick?.invoke() },
+                onLongClickLabel = if (resolvedLongClick != null) copyLabel else null,
                 onLongClick = { resolvedLongClick?.invoke() }
             )
         } else {
