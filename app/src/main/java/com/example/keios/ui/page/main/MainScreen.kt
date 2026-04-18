@@ -649,12 +649,6 @@ private fun MainPagerLayout(
                     .padding(contentInsets)
                     .padding(top = topSpacerPadding)
             ) {
-                if (!isHome) {
-                    NonHomePageBackground(
-                        enabled = nonHomeBackgroundEnabled,
-                        imageUri = nonHomeBackgroundUri
-                    )
-                }
                 when (currentPageType) {
                     BottomPage.Home -> {
                         HomePage(
@@ -748,6 +742,14 @@ private fun MainPagerLayout(
                         )
                     }
                 }
+                if (!isHome) {
+                    // Render as a soft foreground overlay so it remains visible even when
+                    // destination pages use opaque surface/background containers.
+                    NonHomePageBackground(
+                        enabled = nonHomeBackgroundEnabled,
+                        imageUri = nonHomeBackgroundUri
+                    )
+                }
             }
         }
     }
@@ -763,7 +765,7 @@ private fun NonHomePageBackground(
         model = imageUri,
         contentDescription = null,
         contentScale = ContentScale.Crop,
-        alpha = 0.26f,
+        alpha = 0.16f,
         modifier = Modifier.fillMaxSize()
     )
 }
