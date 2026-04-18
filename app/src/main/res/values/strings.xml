@@ -587,7 +587,7 @@
     <string name="github_share_import_attach_dialog_label_package">包名</string>
     <string name="github_share_import_attach_dialog_duplicate_hint">本地已存在同仓库同包名追踪，当前操作会自动跳过新增。</string>
     <string name="github_share_import_attach_dialog_action_confirm">新增跟踪</string>
-    <string name="github_share_import_attach_dialog_action_confirm_and_open_github">新增并前往 GitHub</string>
+    <string name="github_share_import_attach_dialog_action_confirm_and_open_github">新增并前往 KeiOS</string>
     <string name="github_share_import_pending_title">分享导入联动进行中</string>
     <string name="github_share_import_pending_armed_minutes">%1$d 分钟前</string>
     <string name="github_share_import_pending_label_target">目标</string>

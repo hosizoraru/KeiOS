@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.annotation.StringRes
 import com.example.keios.core.background.AppBackgroundScheduler
 import com.example.keios.feature.github.data.local.GitHubTrackStore
+import com.example.keios.feature.github.data.local.GitHubTrackStoreSignals
 import com.example.keios.ui.page.main.github.query.DownloaderOption
 import kotlinx.coroutines.CoroutineScope
 
@@ -33,5 +34,6 @@ internal class GitHubPageActionEnvironment(
         GitHubTrackStore.save(state.trackedItems.toList())
         GitHubTrackStore.saveTrackedFirstInstallAtByPackage(state.trackedFirstInstallAtByPackage)
         AppBackgroundScheduler.scheduleGitHubRefresh(context)
+        GitHubTrackStoreSignals.notifyChanged()
     }
 }

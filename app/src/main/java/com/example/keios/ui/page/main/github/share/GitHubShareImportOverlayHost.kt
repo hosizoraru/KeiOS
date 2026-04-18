@@ -23,6 +23,7 @@ import com.example.keios.core.system.AppPackageChangedEvent
 import com.example.keios.core.system.AppPackageChangedEvents
 import com.example.keios.feature.github.data.local.GitHubPendingShareImportTrackRecord
 import com.example.keios.feature.github.data.local.GitHubTrackStore
+import com.example.keios.feature.github.data.local.GitHubTrackStoreSignals
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetRepository
 import com.example.keios.feature.github.data.remote.GitHubShareImportResolver
@@ -95,6 +96,7 @@ internal fun GitHubShareImportOverlayHost(
             withContext(Dispatchers.IO) {
                 GitHubTrackStore.savePendingShareImportTrack(null)
             }
+            GitHubTrackStoreSignals.notifyChanged()
             pendingTrack = null
         } else {
             pendingTrack = loaded
@@ -108,6 +110,7 @@ internal fun GitHubShareImportOverlayHost(
         withContext(Dispatchers.IO) {
             GitHubTrackStore.savePendingShareImportTrack(null)
         }
+        GitHubTrackStoreSignals.notifyChanged()
         pendingTrack = null
     }
 
@@ -151,16 +154,19 @@ internal fun GitHubShareImportOverlayHost(
         resolving = false
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(pendingTrack?.armedAtMillis) {
+        val armedAtMillis = pendingTrack?.armedAtMillis ?: return@LaunchedEffect
         AppPackageChangedEvents.events.collect { event ->
             val packageName = event.packageName.trim()
             if (packageName.isBlank()) return@collect
             val currentPending = pendingTrack ?: return@collect
+            if (currentPending.armedAtMillis != armedAtMillis) return@collect
             val pendingAge = (event.atMillis - currentPending.armedAtMillis).coerceAtLeast(0L)
             if (pendingAge > shareImportTrackMaxAgeMs) {
                 withContext(Dispatchers.IO) {
                     GitHubTrackStore.savePendingShareImportTrack(null)
                 }
+                GitHubTrackStoreSignals.notifyChanged()
                 pendingTrack = null
                 return@collect
             }
@@ -194,6 +200,7 @@ internal fun GitHubShareImportOverlayHost(
                 withContext(Dispatchers.IO) {
                     GitHubTrackStore.savePendingShareImportTrack(null)
                 }
+                GitHubTrackStoreSignals.notifyChanged()
                 pendingTrack = null
                 toast(context, R.string.github_toast_share_import_track_exists)
                 return@collect
@@ -222,6 +229,7 @@ internal fun GitHubShareImportOverlayHost(
             withContext(Dispatchers.IO) {
                 GitHubTrackStore.savePendingShareImportTrack(null)
             }
+            GitHubTrackStoreSignals.notifyChanged()
             pendingTrack = null
         }
     }
@@ -275,6 +283,7 @@ internal fun GitHubShareImportOverlayHost(
                 withContext(Dispatchers.IO) {
                     GitHubTrackStore.savePendingShareImportTrack(pending)
                 }
+                GitHubTrackStoreSignals.notifyChanged()
                 pendingTrack = pending
                 attachCandidate = null
                 pendingPreview = null
@@ -461,6 +470,7 @@ private suspend fun attachCandidateToTracked(
             }
             GitHubTrackStore.saveCheckCache(updatedCache, System.currentTimeMillis())
         }
+        GitHubTrackStoreSignals.notifyChanged()
 
         ShareImportAttachResult.Added(trackedItem.appLabel.ifBlank { trackedItem.packageName })
     }

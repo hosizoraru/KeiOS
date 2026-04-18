@@ -101,6 +101,24 @@ internal class GitHubRefreshActions(
         }
     }
 
+    suspend fun syncSnapshotFromStore(forceRefreshApps: Boolean = true) {
+        applyTrackSnapshot(
+            withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
+        )
+        if (forceRefreshApps) {
+            reloadApps(forceRefresh = true)
+        }
+        val hasTracked = state.trackedItems.isNotEmpty()
+        val hasCachedForTracked = state.trackedItems.any { item ->
+            state.checkStates.containsKey(item.id)
+        }
+        state.overviewRefreshState = when {
+            !hasTracked -> OverviewRefreshState.Idle
+            hasCachedForTracked -> OverviewRefreshState.Cached
+            else -> OverviewRefreshState.Idle
+        }
+    }
+
     fun refreshItem(
         item: com.example.keios.feature.github.model.GitHubTrackedApp,
         showToastOnError: Boolean = false,

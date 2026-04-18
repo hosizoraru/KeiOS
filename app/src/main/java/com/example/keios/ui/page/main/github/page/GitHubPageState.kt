@@ -40,6 +40,7 @@ internal class GitHubPageState(
     var appListLoaded by mutableStateOf(false)
     var hasAutoRequestedPermission by mutableStateOf(false)
     var hasInitialized by mutableStateOf(false)
+    var lastTrackStoreSignalVersion by mutableStateOf(0L)
     var showSortPopup by mutableStateOf(false)
     var showCheckLogicIntervalPopup by mutableStateOf(false)
     var showOnlineShareTargetPopup by mutableStateOf(false)

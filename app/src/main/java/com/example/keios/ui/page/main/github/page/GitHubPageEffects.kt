@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.LazyListState
 import com.example.keios.R
 import com.example.keios.core.system.AppPackageChangedEvents
+import com.example.keios.feature.github.data.local.GitHubTrackStoreSignals
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.ui.page.main.github.query.OnlineShareTargetOption
 
@@ -41,7 +42,19 @@ internal fun BindGitHubPageEffects(
             state.hasInitialized = true
             actions.initializePage()
         }
+        state.lastTrackStoreSignalVersion = GitHubTrackStoreSignals.version.value
         actions.trimExpiredPendingShareImportTrack()
+    }
+
+    LaunchedEffect(isPageActive) {
+        if (!isPageActive) return@LaunchedEffect
+        GitHubTrackStoreSignals.version.collect { version ->
+            if (version <= 0L) return@collect
+            if (version <= state.lastTrackStoreSignalVersion) return@collect
+            state.lastTrackStoreSignalVersion = version
+            if (!state.hasInitialized) return@collect
+            actions.syncTrackSnapshotFromStore(forceRefreshApps = true)
+        }
     }
 
     LaunchedEffect(scrollToTopSignal, isPageActive) {

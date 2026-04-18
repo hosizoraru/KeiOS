@@ -69,6 +69,9 @@ internal class GitHubPageActions(
 
     suspend fun initializePage() = refreshActions.initializePage()
 
+    suspend fun syncTrackSnapshotFromStore(forceRefreshApps: Boolean = true) =
+        refreshActions.syncSnapshotFromStore(forceRefreshApps)
+
     fun refreshAllTracked(showToast: Boolean = true) =
         refreshActions.refreshAllTracked(showToast = showToast) {
             val expandedItemIds = env.state.apkAssetExpanded
