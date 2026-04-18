@@ -341,6 +341,7 @@ fun AboutMediaStorageCardSection(
         AboutInfoRow(R.string.about_row_media3, BuildConfig.MEDIA3_VERSION, MiuixIcons.Regular.Album),
         AboutInfoRow(R.string.about_row_zoomimage, BuildConfig.ZOOMIMAGE_VERSION, MiuixIcons.Regular.GridView),
         AboutInfoRow(R.string.about_row_coil3, BuildConfig.COIL3_VERSION, MiuixIcons.Regular.Album),
+        AboutInfoRow(R.string.about_row_ucrop, BuildConfig.UCROP_VERSION, MiuixIcons.Regular.Album),
         AboutInfoRow(R.string.about_row_documentfile, BuildConfig.DOCUMENTFILE_VERSION, MiuixIcons.Regular.ListView),
         AboutInfoRow(R.string.about_row_mmkv, BuildConfig.MMKV_VERSION, MiuixIcons.Regular.Lock)
     )

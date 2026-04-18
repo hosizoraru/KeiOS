@@ -72,6 +72,7 @@ val media3Version = "1.10.0"
 val coil3Version = "3.4.0"
 val zoomImageVersion = "1.4.0"
 val documentFileVersion = "1.1.0"
+val uCropVersion = "2.2.11"
 val focusApiVersion = "1.4"
 val metricsPerformanceVersion = "1.0.0"
 val lifecycleViewModelComposeVersion = "2.10.0"
@@ -113,6 +114,7 @@ android {
         buildConfigField("String", "MEDIA3_VERSION", "\"$media3Version\"")
         buildConfigField("String", "ZOOMIMAGE_VERSION", "\"$zoomImageVersion\"")
         buildConfigField("String", "COIL3_VERSION", "\"$coil3Version\"")
+        buildConfigField("String", "UCROP_VERSION", "\"$uCropVersion\"")
         buildConfigField("String", "LIFECYCLE_VIEWMODEL_COMPOSE_VERSION", "\"$lifecycleViewModelComposeVersion\"")
         buildConfigField("String", "METRICS_PERFORMANCE_VERSION", "\"$metricsPerformanceVersion\"")
         buildConfigField("String", "DOCUMENTFILE_VERSION", "\"$documentFileVersion\"")
@@ -228,6 +230,7 @@ dependencies {
     implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3:$zoomImageVersion")
     implementation("io.coil-kt.coil3:coil-compose:$coil3Version")
     implementation("io.coil-kt.coil3:coil-gif:$coil3Version")
+    implementation("com.github.yalantis:ucrop:$uCropVersion")
     implementation("androidx.metrics:metrics-performance:$metricsPerformanceVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleViewModelComposeVersion")
     implementation("androidx.documentfile:documentfile:$documentFileVersion")

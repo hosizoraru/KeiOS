@@ -92,6 +92,7 @@
     <string name="about_row_media3">Media3</string>
     <string name="about_row_zoomimage">ZoomImage</string>
     <string name="about_row_coil3">Coil3</string>
+    <string name="about_row_ucrop">uCrop</string>
     <string name="about_row_documentfile">DocumentFile</string>
     <string name="about_row_mmkv">MMKV</string>
 

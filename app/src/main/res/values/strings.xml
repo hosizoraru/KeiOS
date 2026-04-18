@@ -99,7 +99,9 @@
     <string name="settings_non_home_background_image_summary_ready">已设置背景图片，进入非 Home 页面即可生效</string>
     <string name="settings_non_home_background_action_select">选择图片</string>
     <string name="settings_non_home_background_action_clear">清空图片</string>
-    <string name="settings_non_home_background_toast_selected">已选择非 Home 页面背景图</string>
+    <string name="settings_non_home_background_crop_title">裁切背景图</string>
+    <string name="settings_non_home_background_toast_selected">已应用裁切后的非 Home 页面背景图</string>
+    <string name="settings_non_home_background_toast_crop_failed">背景图裁切失败：%1$s</string>
     <string name="settings_non_home_background_toast_cleared">已清空非 Home 页面背景图</string>
     <string name="settings_mcp_notify_header">MCP Notify</string>
     <string name="settings_super_island_bypass_title">超级岛兼容绕过</string>
