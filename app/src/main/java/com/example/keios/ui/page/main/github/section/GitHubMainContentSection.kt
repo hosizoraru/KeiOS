@@ -143,6 +143,7 @@ internal fun GitHubMainContent(
     sortedTracked: List<GitHubTrackedApp>,
     appLastUpdatedAtByTrackId: Map<String, Long>,
     checkStates: SnapshotStateMap<String, VersionCheckUi>,
+    itemRefreshLoading: SnapshotStateMap<String, Boolean>,
     apkAssetBundles: SnapshotStateMap<String, GitHubReleaseAssetBundle>,
     apkAssetLoading: SnapshotStateMap<String, Boolean>,
     apkAssetErrors: SnapshotStateMap<String, String>,
@@ -237,6 +238,7 @@ internal fun GitHubMainContent(
                     sortedTracked = sortedTracked,
                     appLastUpdatedAtByTrackId = appLastUpdatedAtByTrackId,
                     checkStates = checkStates,
+                    itemRefreshLoading = itemRefreshLoading,
                     contentBackdrop = contentBackdrop,
                     isDark = isDark,
                     apkAssetBundles = apkAssetBundles,
@@ -286,6 +288,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
     sortedTracked: List<GitHubTrackedApp>,
     appLastUpdatedAtByTrackId: Map<String, Long>,
     checkStates: SnapshotStateMap<String, VersionCheckUi>,
+    itemRefreshLoading: SnapshotStateMap<String, Boolean>,
     contentBackdrop: LayerBackdrop,
     isDark: Boolean,
     apkAssetBundles: SnapshotStateMap<String, GitHubReleaseAssetBundle>,
@@ -347,6 +350,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                 onHeaderLongClick = { onOpenTrackSheetForEdit(item) },
                 headerActions = {
                     val state = checkStates[item.id] ?: VersionCheckUi()
+                    val isItemRefreshLoading = itemRefreshLoading[item.id] == true
                     val alwaysLatestReleaseDownload = item.alwaysShowLatestReleaseDownloadButton
                     val latestReleaseAccent = Color(0xFF06B6D4)
                     val statusColor = state.statusColor(
@@ -392,7 +396,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                         tint = iconTint,
                         modifier = clickableModifier
                     )
-                    val refreshModifier = if (state.loading) {
+                    val refreshModifier = if (state.loading || isItemRefreshLoading) {
                         Modifier
                     } else {
                         Modifier.clickable { onRefreshTrackedItem(item) }
@@ -400,11 +404,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
                     top.yukonga.miuix.kmp.basic.Icon(
                         imageVector = MiuixIcons.Regular.Refresh,
                         contentDescription = stringResource(R.string.common_refresh),
-                        tint = if (state.loading) {
-                            GitHubStatusPalette.Active
-                        } else {
-                            MiuixTheme.colorScheme.onBackgroundVariant
-                        },
+                        tint = if (isItemRefreshLoading) iconTint.copy(alpha = 0.68f) else iconTint,
                         modifier = refreshModifier
                     )
                 }

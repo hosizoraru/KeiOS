@@ -97,27 +97,37 @@ internal class GitHubPageActions(
         showToastOnError: Boolean = true
     ) {
         if (env.state.trackedItems.none { it.id == item.id }) return
+        if (env.state.itemRefreshLoading[item.id] == true) return
         if (env.state.checkStates[item.id]?.loading == true) return
         env.scope.launch {
-            refreshActions.reloadApps(forceRefresh = true)
-            val wasAssetExpanded = env.state.apkAssetExpanded[item.id] == true
-            val includeAllAssets = env.state.apkAssetIncludeAll[item.id] == true
-            val previousState = env.state.checkStates[item.id] ?: VersionCheckUi()
-            assetActions.clearApkAssetCache(item, previousState)
-            refreshActions.refreshItem(item = item, showToastOnError = showToastOnError) { updatedState ->
-                if (wasAssetExpanded && canLoadApkAssets(item, updatedState)) {
-                    assetActions.clearApkAssetCache(item, updatedState)
-                    assetActions.loadApkAssets(
-                        item = item,
-                        itemState = updatedState,
-                        toggleOnlyWhenCached = false,
-                        includeAllAssets = includeAllAssets
-                    )
-                } else if (wasAssetExpanded) {
-                    assetActions.clearApkAssetUiState(item.id)
-                } else {
-                    assetActions.clearApkAssetRuntimeState(item.id)
+            env.state.itemRefreshLoading[item.id] = true
+            try {
+                refreshActions.reloadApps(forceRefresh = true)
+                val wasAssetExpanded = env.state.apkAssetExpanded[item.id] == true
+                val includeAllAssets = env.state.apkAssetIncludeAll[item.id] == true
+                val previousState = env.state.checkStates[item.id] ?: VersionCheckUi()
+                assetActions.clearApkAssetCache(item, previousState)
+                refreshActions.refreshItemNow(
+                    item = item,
+                    showToastOnError = showToastOnError,
+                    keepCurrentVisualWhileRefreshing = true
+                ) { updatedState ->
+                    if (wasAssetExpanded && canLoadApkAssets(item, updatedState)) {
+                        assetActions.clearApkAssetCache(item, updatedState)
+                        assetActions.loadApkAssets(
+                            item = item,
+                            itemState = updatedState,
+                            toggleOnlyWhenCached = false,
+                            includeAllAssets = includeAllAssets
+                        )
+                    } else if (wasAssetExpanded) {
+                        assetActions.clearApkAssetUiState(item.id)
+                    } else {
+                        assetActions.clearApkAssetRuntimeState(item.id)
+                    }
                 }
+            } finally {
+                env.state.itemRefreshLoading.remove(item.id)
             }
         }
     }

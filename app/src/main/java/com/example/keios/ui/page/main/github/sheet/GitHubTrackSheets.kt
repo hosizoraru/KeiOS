@@ -414,6 +414,15 @@ internal fun GitHubTrackEditSheet(
         ) {
             SheetSectionTitle(stringResource(R.string.github_track_sheet_section_repo_app))
             SheetSectionCard {
+                SheetInputTitle(stringResource(R.string.github_track_sheet_input_repo))
+                GlassSearchField(
+                    value = repoUrlInput,
+                    onValueChange = onRepoUrlInputChange,
+                    label = stringResource(R.string.github_track_sheet_input_repo),
+                    backdrop = backdrop,
+                    variant = GlassVariant.SheetInput,
+                    singleLine = true
+                )
                 SheetInputTitle(stringResource(R.string.github_track_sheet_input_package_title))
                 GlassSearchField(
                     value = packageNameInput,
@@ -426,11 +435,11 @@ internal fun GitHubTrackEditSheet(
                 SheetDescriptionText(
                     text = stringResource(R.string.github_track_sheet_summary_package_optional)
                 )
-                SheetInputTitle(stringResource(R.string.github_track_sheet_input_repo))
+                SheetInputTitle(stringResource(R.string.github_track_sheet_input_app_filter_title))
                 GlassSearchField(
-                    value = repoUrlInput,
-                    onValueChange = onRepoUrlInputChange,
-                    label = stringResource(R.string.github_track_sheet_input_repo),
+                    value = appSearch,
+                    onValueChange = onAppSearchChange,
+                    label = stringResource(R.string.github_track_sheet_input_app_filter),
                     backdrop = backdrop,
                     variant = GlassVariant.SheetInput,
                     singleLine = true
@@ -457,15 +466,6 @@ internal fun GitHubTrackEditSheet(
                 selectedApp?.let { app ->
                     GitHubSelectedAppCard(selectedApp = app)
                 }
-                SheetInputTitle(stringResource(R.string.github_track_sheet_input_app_filter_title))
-                GlassSearchField(
-                    value = appSearch,
-                    onValueChange = onAppSearchChange,
-                    label = stringResource(R.string.github_track_sheet_input_app_filter),
-                    backdrop = backdrop,
-                    variant = GlassVariant.SheetInput,
-                    singleLine = true
-                )
             }
             if (pickerExpanded) {
                 val filteredApps = remember(appList, appSearch) {

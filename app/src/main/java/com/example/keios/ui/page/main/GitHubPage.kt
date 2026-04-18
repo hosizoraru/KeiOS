@@ -352,6 +352,7 @@ fun GitHubPage(
         sortedTracked = trackedUi.sortedTracked,
         appLastUpdatedAtByTrackId = appLastUpdatedAtByTrackId,
         checkStates = state.checkStates,
+        itemRefreshLoading = state.itemRefreshLoading,
         apkAssetBundles = state.apkAssetBundles,
         apkAssetLoading = state.apkAssetLoading,
         apkAssetErrors = state.apkAssetErrors,

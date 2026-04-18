@@ -14,6 +14,7 @@ import com.example.keios.ui.page.main.github.share.GitHubPendingShareImportTrack
 import com.example.keios.ui.page.main.github.state.toCacheEntry
 import com.example.keios.ui.page.main.github.state.toUi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -174,19 +175,43 @@ internal class GitHubRefreshActions(
     fun refreshItem(
         item: com.example.keios.feature.github.model.GitHubTrackedApp,
         showToastOnError: Boolean = false,
+        keepCurrentVisualWhileRefreshing: Boolean = false,
+        onUpdated: ((VersionCheckUi) -> Unit)? = null
+    ): Job {
+        return scope.launch {
+            refreshItemNow(
+                item = item,
+                showToastOnError = showToastOnError,
+                keepCurrentVisualWhileRefreshing = keepCurrentVisualWhileRefreshing,
+                onUpdated = onUpdated
+            )
+        }
+    }
+
+    suspend fun refreshItemNow(
+        item: com.example.keios.feature.github.model.GitHubTrackedApp,
+        showToastOnError: Boolean = false,
+        keepCurrentVisualWhileRefreshing: Boolean = false,
         onUpdated: ((VersionCheckUi) -> Unit)? = null
     ) {
-        scope.launch {
-            state.checkStates[item.id] = VersionCheckUi(loading = true)
-            val itemState = resolveItemState(item)
-            if (state.trackedItems.none { it.id == item.id }) return@launch
-            if (showToastOnError && itemState.failed) {
-                env.toast(itemState.message)
-            }
-            state.checkStates[item.id] = itemState
-            persistCheckCache()
-            onUpdated?.invoke(itemState)
+        val previousState = state.checkStates[item.id] ?: VersionCheckUi()
+        val checkingMessage = context.getString(R.string.github_msg_checking)
+        state.checkStates[item.id] = if (keepCurrentVisualWhileRefreshing) {
+            previousState.copy(message = checkingMessage)
+        } else {
+            previousState.copy(
+                loading = true,
+                message = checkingMessage
+            )
         }
+        val itemState = resolveItemState(item)
+        if (state.trackedItems.none { it.id == item.id }) return
+        if (showToastOnError && itemState.failed) {
+            env.toast(itemState.message)
+        }
+        state.checkStates[item.id] = itemState
+        persistCheckCache()
+        onUpdated?.invoke(itemState)
     }
 
     fun refreshAllTracked(

@@ -332,7 +332,7 @@
     <string name="github_toast_share_import_no_apk">该链接对应的 release 暂无可用 APK</string>
     <string name="github_toast_share_import_wait_install">已发送 %1$s，安装或更新完成后会自动新增跟踪</string>
     <string name="github_toast_share_import_track_added">已新增跟踪：%1$s</string>
-    <string name="github_toast_share_import_track_exists">该项目与应用已在本地追踪，已自动跳过</string>
+    <string name="github_toast_share_import_track_exists">该项目与 App 已在本地追踪，已自动跳过</string>
     <string name="github_toast_share_import_pending_cancelled">已取消本次分享导入联动</string>
     <string name="github_msg_checking">检查中...</string>
     <string name="github_msg_assets_no_downloadable_except_source">%1$s 当前除了 Source code 外没有其它可下载资源</string>
@@ -359,7 +359,7 @@
     <string name="github_topbar_cd_check_logic">检查逻辑</string>
     <string name="github_topbar_cd_sort">排序</string>
     <string name="github_topbar_cd_check">检查</string>
-    <string name="github_topbar_search_label">搜索已跟踪项目（仓库/应用/包名）</string>
+    <string name="github_topbar_search_label">搜索已跟踪项目（仓库/App/包名）</string>
 
     <string name="github_overview_title">项目版本跟踪</string>
     <string name="github_overview_label_strategy">策略</string>
@@ -529,30 +529,30 @@
     <string name="github_check_sheet_note_2">更激进过滤会优先保留 arm64；同一 release 已有 arm64-v8a 时才会过滤 universal。</string>
     <string name="github_check_sheet_note_3">“分享到安装器”只影响分享动作，“下载器”只影响直链打开。</string>
     <string name="github_check_sheet_note_4">该选项只影响“分享”动作，默认不联动。目前仅识别 `com.rosan.installer.x.revived` 与 `io.github.vvb2060.packageinstaller`，可将分享直接发送到支持边下载边安装的安装器。</string>
-    <string name="github_check_sheet_note_5">下载器列表会先扫描支持 `ACTION_VIEW` + `CATEGORY_BROWSABLE` 的候选应用，再优先标记更像下载器的条目；“系统内置下载器”会直接走 Android DownloadManager。</string>
+    <string name="github_check_sheet_note_5">下载器列表会先扫描支持 `ACTION_VIEW` + `CATEGORY_BROWSABLE` 的候选 App，再优先标记更像下载器的条目；“系统内置下载器”会直接走 Android DownloadManager。</string>
 
     <string name="github_track_sheet_title_add">新增跟踪</string>
     <string name="github_track_sheet_title_edit">编辑跟踪</string>
     <string name="github_track_sheet_cd_confirm_add">确认新增</string>
     <string name="github_track_sheet_cd_confirm_save">确认保存</string>
-    <string name="github_track_sheet_section_repo_app">仓库与应用</string>
+    <string name="github_track_sheet_section_repo_app">仓库与 App</string>
     <string name="github_track_sheet_input_repo">GitHub 项目地址</string>
     <string name="github_track_sheet_input_app_filter_title">筛选本机 App</string>
     <string name="github_track_sheet_input_app_filter">名称或包名</string>
     <string name="github_track_sheet_input_package_title">包名（可选）</string>
     <string name="github_track_sheet_input_package">手动填写包名</string>
     <string name="github_track_sheet_summary_package_optional">可留空仅跟踪仓库版本；后续填入包名或安装对应 App 后会自动联动刷新</string>
-    <string name="github_track_sheet_label_selected_app">已选应用</string>
+    <string name="github_track_sheet_label_selected_app">已选 App</string>
     <string name="github_track_sheet_selected_none">未选择</string>
     <string name="github_track_sheet_btn_collapse">收起列表</string>
-    <string name="github_track_sheet_btn_select_app">选择应用</string>
+    <string name="github_track_sheet_btn_select_app">选择 App</string>
     <string name="github_track_sheet_section_check_option">检查选项</string>
     <string name="github_track_sheet_label_prefer_prerelease">优先预发行版本</string>
     <string name="github_track_sheet_summary_prefer_prerelease">仅影响这个项目的推荐更新目标，不影响全局是否检查预发行</string>
     <string name="github_track_sheet_label_always_show_latest_release_download">始终显示最新发布下载</string>
     <string name="github_track_sheet_summary_always_show_latest_release_download">开启后下载入口始终可见，目标按发布日期比较稳定版与预发行后自动定位最新 release</string>
-    <string name="github_track_sheet_section_app_candidates">应用候选</string>
-    <string name="github_track_sheet_label_app_list">应用列表</string>
+    <string name="github_track_sheet_section_app_candidates">App 候选</string>
+    <string name="github_track_sheet_label_app_list">App 列表</string>
     <string name="github_track_sheet_msg_app_no_match">没有匹配结果</string>
     <string name="github_track_sheet_danger_title">危险操作</string>
     <string name="github_track_sheet_btn_delete">删除跟踪</string>
@@ -588,7 +588,7 @@
     <string name="github_share_import_dialog_action_confirm">继续安装</string>
     <string name="github_share_import_attach_dialog_title">确认新增跟踪</string>
     <string name="github_share_import_attach_dialog_summary">检测到安装事件：%1$s/%2$s</string>
-    <string name="github_share_import_attach_dialog_label_app">应用</string>
+    <string name="github_share_import_attach_dialog_label_app">App</string>
     <string name="github_share_import_attach_dialog_label_package">包名</string>
     <string name="github_share_import_attach_dialog_duplicate_hint">本地已存在同仓库同包名追踪，当前操作会自动跳过新增。</string>
     <string name="github_share_import_attach_dialog_action_confirm">新增跟踪</string>
@@ -597,7 +597,7 @@
     <string name="github_share_import_attach_dialog_processing_open">正在新增并前往 KeiOS...</string>
     <string name="github_share_import_pending_title">分享导入联动进行中</string>
     <string name="github_share_import_pending_armed_minutes">%1$d 分钟前</string>
-    <string name="github_share_import_pending_dialog_summary">安装完成后会自动识别新安装或更新的应用，并继续新增跟踪。</string>
+    <string name="github_share_import_pending_dialog_summary">安装完成后会自动识别新安装或更新的 App，并继续新增跟踪。</string>
     <string name="github_share_import_pending_label_target">目标</string>
     <string name="github_share_import_pending_label_release">Release</string>
     <string name="github_share_import_pending_label_asset">APK</string>
