@@ -208,7 +208,8 @@ internal fun GitHubMainContent(
                 state = listState,
                 innerPadding = innerPadding,
                 bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding),
-                topExtra = 0.dp
+                topExtra = 0.dp,
+                sectionSpacing = CardLayoutRhythm.sectionGap
             ) {
                 item {
                     GitHubOverviewCard(

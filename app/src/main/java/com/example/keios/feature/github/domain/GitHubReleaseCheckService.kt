@@ -17,6 +17,8 @@ import com.example.keios.feature.github.model.GitHubTrackedReleaseStatus
 import java.io.IOException
 
 object GitHubReleaseCheckService {
+    private const val transientRetryCount = 1
+
     fun evaluateTrackedApp(
         context: Context,
         item: GitHubTrackedApp,
@@ -167,7 +169,11 @@ object GitHubReleaseCheckService {
         lookupConfig: GitHubLookupConfig,
         allowFallback: Boolean
     ): Result<GitHubRepositoryReleaseSnapshot> {
-        val primaryResult = strategy.loadSnapshot(owner, repo)
+        val primaryResult = loadSnapshotWithTransientRetry(
+            strategy = strategy,
+            owner = owner,
+            repo = repo
+        )
         if (primaryResult.isSuccess) return primaryResult
 
         val primaryError = primaryResult.exceptionOrNull() ?: IllegalStateException("unknown")
@@ -180,7 +186,11 @@ object GitHubReleaseCheckService {
             null
         } ?: return primaryResult
 
-        val fallbackResult = fallbackStrategy.loadSnapshot(owner, repo)
+        val fallbackResult = loadSnapshotWithTransientRetry(
+            strategy = fallbackStrategy,
+            owner = owner,
+            repo = repo
+        )
         if (fallbackResult.isSuccess) return fallbackResult
 
         val fallbackError = fallbackResult.exceptionOrNull()
@@ -199,13 +209,38 @@ object GitHubReleaseCheckService {
         )
     }
 
+    private fun loadSnapshotWithTransientRetry(
+        strategy: GitHubReleaseLookupStrategy,
+        owner: String,
+        repo: String
+    ): Result<GitHubRepositoryReleaseSnapshot> {
+        var latestResult = strategy.loadSnapshot(owner, repo)
+        if (latestResult.isSuccess) return latestResult
+
+        repeat(transientRetryCount) {
+            val error = latestResult.exceptionOrNull() ?: return latestResult
+            if (!error.shouldTryStrategyFallback()) {
+                return latestResult
+            }
+            strategy.clearCaches()
+            latestResult = strategy.loadSnapshot(owner, repo)
+            if (latestResult.isSuccess) return latestResult
+        }
+        return latestResult
+    }
+
     private fun resolveFallbackStrategy(
         primaryStrategyId: String,
         lookupConfig: GitHubLookupConfig
     ): GitHubReleaseLookupStrategy? {
         return when (primaryStrategyId) {
             GitHubLookupStrategyOption.AtomFeed.storageId -> {
-                GitHubApiTokenReleaseStrategy(apiToken = lookupConfig.apiToken.trim())
+                val token = lookupConfig.apiToken.trim()
+                if (token.isBlank()) {
+                    null
+                } else {
+                    GitHubApiTokenReleaseStrategy(apiToken = token)
+                }
             }
 
             GitHubLookupStrategyOption.GitHubApiToken.storageId -> {
