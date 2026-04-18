@@ -411,16 +411,16 @@
     <string name="github_check_sheet_summary_track_count">当前设备本地保存的跟踪项目数量</string>
     <string name="github_check_sheet_value_track_count">%1$d 项</string>
     <string name="github_check_sheet_label_track_transfer">导入与导出</string>
-    <string name="github_check_sheet_summary_track_transfer">导出用于备份；导入会智能合并同一跟踪项并保留现有其他项目</string>
+    <string name="github_check_sheet_summary_track_transfer">导出备份；导入会按同一条目智能合并</string>
     <string name="github_check_sheet_action_export_tracks">导出跟踪</string>
     <string name="github_check_sheet_action_import_tracks">导入跟踪</string>
     <string name="github_check_sheet_action_exporting">导出中</string>
     <string name="github_check_sheet_action_importing">导入中</string>
     <string name="github_check_sheet_section_notes">说明</string>
     <string name="github_check_sheet_note_transfer">导入默认按“owner/repo + 包名”识别同一条目：同 ID 会覆盖更新，新条目会追加，现有未出现在导入文件里的项目会保留。</string>
-    <string name="github_check_sheet_note_1">全局开关只决定是否顺手检查最新预发；单条目的“优先预发行版本”才决定推荐更新时是否偏向预发。</string>
-    <string name="github_check_sheet_note_2">这样就把“想知道有没有新预发”和“真的想装预发”拆开了。</string>
-    <string name="github_check_sheet_note_3">若设备主要只关心 arm64，可开启“更激进的过滤方式”。它会过滤 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；只有同一 release 已存在 `arm64-v8a` 时，才会连带过滤 universal。</string>
+    <string name="github_check_sheet_note_1">全局预发检查只负责发现版本；单条目的“优先预发行版本”才决定推荐目标。</string>
+    <string name="github_check_sheet_note_2">更激进过滤会优先保留 arm64；同一 release 已有 arm64-v8a 时才会过滤 universal。</string>
+    <string name="github_check_sheet_note_3">“分享到安装器”只影响分享动作，“下载器”只影响直链打开。</string>
     <string name="github_check_sheet_note_4">该选项只影响“分享”动作，默认不联动。目前仅识别 `com.rosan.installer.x.revived` 与 `io.github.vvb2060.packageinstaller`，可将分享直接发送到支持边下载边安装的安装器。</string>
     <string name="github_check_sheet_note_5">下载器列表会先扫描支持 `ACTION_VIEW` + `CATEGORY_BROWSABLE` 的候选应用，再优先标记更像下载器的条目；“系统内置下载器”会直接走 Android DownloadManager。</string>
 

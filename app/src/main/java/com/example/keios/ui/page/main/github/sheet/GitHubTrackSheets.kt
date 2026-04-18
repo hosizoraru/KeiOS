@@ -268,14 +268,15 @@ internal fun GitHubCheckLogicSheet(
                         }
                     )
                 }
-                SheetControlRow(
-                    label = stringResource(R.string.github_check_sheet_label_track_transfer),
-                    summary = stringResource(R.string.github_check_sheet_summary_track_transfer)
+                SheetInputTitle(stringResource(R.string.github_check_sheet_label_track_transfer))
+                SheetDescriptionText(
+                    text = stringResource(R.string.github_check_sheet_summary_track_transfer)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Box(modifier = Modifier.weight(1f)) {
                         GlassTextButton(
                             backdrop = backdrop,
                             text = if (exportInProgress) {
@@ -284,10 +285,12 @@ internal fun GitHubCheckLogicSheet(
                                 stringResource(R.string.github_check_sheet_action_export_tracks)
                             },
                             onClick = onExportTrackedItems,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             enabled = !exportInProgress && !importInProgress,
                             variant = GlassVariant.SheetAction
                         )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
                         GlassTextButton(
                             backdrop = backdrop,
                             text = if (importInProgress) {
@@ -296,15 +299,12 @@ internal fun GitHubCheckLogicSheet(
                                 stringResource(R.string.github_check_sheet_action_import_tracks)
                             },
                             onClick = onImportTrackedItems,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             enabled = !exportInProgress && !importInProgress,
                             variant = GlassVariant.SheetAction
                         )
                     }
                 }
-                SheetDescriptionText(
-                    text = stringResource(R.string.github_check_sheet_note_transfer)
-                )
             }
 
             SheetSectionTitle(stringResource(R.string.github_check_sheet_section_notes))
@@ -317,12 +317,6 @@ internal fun GitHubCheckLogicSheet(
                 )
                 SheetDescriptionText(
                     text = stringResource(R.string.github_check_sheet_note_3)
-                )
-                SheetDescriptionText(
-                    text = stringResource(R.string.github_check_sheet_note_4)
-                )
-                SheetDescriptionText(
-                    text = stringResource(R.string.github_check_sheet_note_5)
                 )
             }
         }
