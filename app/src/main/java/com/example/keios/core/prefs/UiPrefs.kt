@@ -60,6 +60,10 @@ object UiPrefs {
 
     private fun kv(): MMKV = store
 
+    private fun buildTypeAwareLogDebugKey(): String {
+        return "${KEY_LOG_DEBUG}_${BuildConfig.BUILD_TYPE}"
+    }
+
     fun isLiquidBottomBarEnabled(defaultValue: Boolean = true): Boolean {
         return kv().decodeBool(KEY_LIQUID_BOTTOM_BAR, defaultValue)
     }
@@ -158,12 +162,12 @@ object UiPrefs {
         kv().encode(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, value)
     }
 
-    fun isLogDebugEnabled(defaultValue: Boolean = BuildConfig.DEBUG): Boolean {
-        return kv().decodeBool(KEY_LOG_DEBUG, defaultValue)
+    fun isLogDebugEnabled(defaultValue: Boolean = BuildConfig.LOG_DEBUG_DEFAULT): Boolean {
+        return kv().decodeBool(buildTypeAwareLogDebugKey(), defaultValue)
     }
 
     fun setLogDebugEnabled(value: Boolean) {
-        kv().encode(KEY_LOG_DEBUG, value)
+        kv().encode(buildTypeAwareLogDebugKey(), value)
     }
 
     fun isTextCopyCapabilityExpanded(defaultValue: Boolean = false): Boolean {
@@ -228,7 +232,7 @@ object UiPrefs {
             nonHomeBackgroundOpacity = NON_HOME_BACKGROUND_OPACITY_DEFAULT,
             superIslandNotificationEnabled = false,
             superIslandBypassRestrictionEnabled = false,
-            logDebugEnabled = BuildConfig.DEBUG,
+            logDebugEnabled = BuildConfig.LOG_DEBUG_DEFAULT,
             textCopyCapabilityExpanded = false,
             cacheDiagnosticsEnabled = true,
             appThemeMode = appThemeMode,
@@ -253,7 +257,7 @@ object UiPrefs {
             ).coerceIn(NON_HOME_BACKGROUND_OPACITY_MIN, NON_HOME_BACKGROUND_OPACITY_MAX),
             superIslandNotificationEnabled = store.decodeBool(KEY_SUPER_ISLAND_NOTIFICATION, false),
             superIslandBypassRestrictionEnabled = store.decodeBool(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, false),
-            logDebugEnabled = store.decodeBool(KEY_LOG_DEBUG, BuildConfig.DEBUG),
+            logDebugEnabled = store.decodeBool(buildTypeAwareLogDebugKey(), BuildConfig.LOG_DEBUG_DEFAULT),
             textCopyCapabilityExpanded = store.decodeBool(KEY_TEXT_COPY_CAPABILITY_EXPANDED, false),
             cacheDiagnosticsEnabled = store.decodeBool(KEY_CACHE_DIAGNOSTICS, true),
             appThemeMode = getAppThemeMode(),

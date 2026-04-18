@@ -14,7 +14,7 @@ object AppLogger {
     private const val MAX_STACK_LENGTH = 6000
 
     @Volatile
-    private var debugEnabled: Boolean = BuildConfig.DEBUG
+    private var debugEnabled: Boolean = BuildConfig.LOG_DEBUG_DEFAULT
 
     private val lineTimeFormatter = object : ThreadLocal<SimpleDateFormat>() {
         override fun initialValue(): SimpleDateFormat {
@@ -23,7 +23,7 @@ object AppLogger {
     }
 
     fun refreshEnabledFromPrefs() {
-        debugEnabled = UiPrefs.isLogDebugEnabled(defaultValue = BuildConfig.DEBUG)
+        debugEnabled = UiPrefs.isLogDebugEnabled(defaultValue = BuildConfig.LOG_DEBUG_DEFAULT)
     }
 
     fun setDebugEnabled(enabled: Boolean) {

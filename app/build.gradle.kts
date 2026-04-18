@@ -130,14 +130,20 @@ android {
         buildConfigField("int", "TARGET_SDK_VERSION", projectTargetSdk.toString())
         buildConfigField("String", "JAVA_VERSION", "\"${projectJavaVersion.majorVersion}\"")
         buildConfigField("String", "JVM_TARGET_VERSION", "\"${projectJvmTarget.target}\"")
+        buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "false")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        getByName("debug") {
+            buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "true")
+        }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -148,6 +154,7 @@ android {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             isDebuggable = false
+            buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "false")
             matchingFallbacks += listOf("release")
         }
     }
