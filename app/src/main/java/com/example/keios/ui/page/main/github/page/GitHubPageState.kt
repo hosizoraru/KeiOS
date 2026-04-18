@@ -80,6 +80,7 @@ internal class GitHubPageState(
     val apkAssetLoading = mutableStateMapOf<String, Boolean>()
     val apkAssetErrors = mutableStateMapOf<String, String>()
     val apkAssetExpanded = mutableStateMapOf<String, Boolean>()
+    val apkAssetIncludeAll = mutableStateMapOf<String, Boolean>()
     val trackedCardExpanded = mutableStateMapOf<String, Boolean>()
 
     val addButtonScrollConnection = object : NestedScrollConnection {
@@ -125,18 +126,25 @@ internal class GitHubPageState(
         apkAssetLoading.clear()
         apkAssetErrors.clear()
         apkAssetExpanded.clear()
+        apkAssetIncludeAll.clear()
     }
 
-    fun clearAssetUiState(itemId: String) {
+    fun clearAssetRuntimeState(itemId: String) {
         apkAssetExpanded.remove(itemId)
         apkAssetLoading.remove(itemId)
         apkAssetErrors.remove(itemId)
         apkAssetBundles.remove(itemId)
     }
 
+    fun clearAssetUiState(itemId: String) {
+        clearAssetRuntimeState(itemId)
+        apkAssetIncludeAll.remove(itemId)
+    }
+
     fun retainTrackedUiState(validItemIds: Set<String>) {
         trackedCardExpanded.keys.retainAll(validItemIds)
         apkAssetExpanded.keys.retainAll(validItemIds)
+        apkAssetIncludeAll.keys.retainAll(validItemIds)
         apkAssetLoading.keys.retainAll(validItemIds)
         apkAssetErrors.keys.retainAll(validItemIds)
         apkAssetBundles.keys.retainAll(validItemIds)

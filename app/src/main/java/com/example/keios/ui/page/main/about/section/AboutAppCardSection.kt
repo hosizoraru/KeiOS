@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.BuildConfig
 import com.example.keios.ui.page.main.AppIcon
 import com.example.keios.ui.page.main.about.ui.AboutCompactInfoRow
 import com.example.keios.ui.page.main.widget.AppCardHeader
@@ -58,6 +59,8 @@ fun AboutAppCardSection(
             it.longVersionCode
         )
     } ?: unknown
+    val buildTime = formatTime(BuildConfig.BUILD_TIME_MILLIS)
+        .ifBlank { unknown }
     val updatedAt = packageInfo?.lastUpdateTime
         ?.let(::formatTime)
         ?.ifBlank { unknown }
@@ -121,9 +124,14 @@ fun AboutAppCardSection(
                         titleIcon = MiuixIcons.Regular.Update
                     )
                     AboutCompactInfoRow(
+                        title = stringResource(R.string.about_label_build_time),
+                        value = buildTime,
+                        titleIcon = MiuixIcons.Regular.Timer
+                    )
+                    AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_last_update),
                         value = updatedAt,
-                        titleIcon = MiuixIcons.Regular.Timer
+                        titleIcon = MiuixIcons.Regular.Update
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_debug),

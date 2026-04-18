@@ -30,6 +30,7 @@ val gitCommitCount = runGitCommandOrNull("rev-list", "--count", "HEAD")?.toIntOr
 val gitShortHash = runGitCommandOrNull("rev-parse", "--short", "HEAD") ?: "nogit"
 val gitBranchName = runGitCommandOrNull("rev-parse", "--abbrev-ref", "HEAD") ?: "unknown"
 val gitDirty = runGitCommandOrNull("status", "--porcelain").isNullOrBlank().not()
+val buildTimestampMillis = System.currentTimeMillis()
 val autoVersionCode = 10_000 + gitCommitCount
 val autoVersionName = buildString {
     append(baseVersionName)
@@ -115,6 +116,7 @@ android {
         buildConfigField("String", "DOCUMENTFILE_VERSION", "\"$documentFileVersion\"")
         buildConfigField("String", "GRADLE_VERSION", "\"$projectGradleVersion\"")
         buildConfigField("String", "BASE_VERSION_NAME", "\"$baseVersionName\"")
+        buildConfigField("long", "BUILD_TIME_MILLIS", "${buildTimestampMillis}L")
         buildConfigField("int", "GIT_COMMIT_COUNT", gitCommitCount.toString())
         buildConfigField("String", "GIT_SHORT_HASH", "\"$gitShortHash\"")
         buildConfigField("String", "GIT_BRANCH_NAME", "\"$gitBranchName\"")

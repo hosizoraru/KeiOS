@@ -50,7 +50,30 @@ internal class GitHubPageActions(
     suspend fun initializePage() = refreshActions.initializePage()
 
     fun refreshAllTracked(showToast: Boolean = true) =
-        refreshActions.refreshAllTracked(showToast = showToast)
+        refreshActions.refreshAllTracked(showToast = showToast) {
+            val expandedItemIds = env.state.apkAssetExpanded
+                .filterValues { it }
+                .keys
+                .toSet()
+            if (expandedItemIds.isEmpty()) return@refreshAllTracked
+
+            env.state.trackedItems.forEach { item ->
+                if (item.id !in expandedItemIds) return@forEach
+                val itemState = env.state.checkStates[item.id] ?: return@forEach
+                val includeAllAssets = env.state.apkAssetIncludeAll[item.id] == true
+                if (canLoadApkAssets(item, itemState)) {
+                    assetActions.clearApkAssetCache(item, itemState)
+                    assetActions.loadApkAssets(
+                        item = item,
+                        itemState = itemState,
+                        toggleOnlyWhenCached = false,
+                        includeAllAssets = includeAllAssets
+                    )
+                } else {
+                    assetActions.clearApkAssetUiState(item.id)
+                }
+            }
+        }
 
     fun runStrategyBenchmark() = configActions.runStrategyBenchmark()
 
@@ -118,23 +141,31 @@ internal class GitHubPageActions(
         refreshActions.reloadApps(forceRefresh = true)
         matchedItems.forEach { item ->
             val wasAssetExpanded = env.state.apkAssetExpanded[item.id] == true
+            val includeAllAssets = env.state.apkAssetIncludeAll[item.id] == true
             val previousState = env.state.checkStates[item.id] ?: VersionCheckUi()
-            assetActions.clearApkAssetUiState(item.id)
             assetActions.clearApkAssetCache(item, previousState)
             refreshActions.refreshItem(item = item, showToastOnError = false) { updatedState ->
-                val canLoadApkAssets = item.alwaysShowLatestReleaseDownloadButton ||
-                    updatedState.hasUpdate == true ||
-                    updatedState.recommendsPreRelease ||
-                    updatedState.hasPreReleaseUpdate
-                if (wasAssetExpanded && canLoadApkAssets) {
+                if (wasAssetExpanded && canLoadApkAssets(item, updatedState)) {
+                    assetActions.clearApkAssetCache(item, updatedState)
                     assetActions.loadApkAssets(
                         item = item,
                         itemState = updatedState,
                         toggleOnlyWhenCached = false,
-                        includeAllAssets = false
+                        includeAllAssets = includeAllAssets
                     )
+                } else if (wasAssetExpanded) {
+                    assetActions.clearApkAssetUiState(item.id)
+                } else {
+                    assetActions.clearApkAssetRuntimeState(item.id)
                 }
             }
         }
+    }
+
+    private fun canLoadApkAssets(item: GitHubTrackedApp, itemState: VersionCheckUi): Boolean {
+        return item.alwaysShowLatestReleaseDownloadButton ||
+            itemState.hasUpdate == true ||
+            itemState.recommendsPreRelease ||
+            itemState.hasPreReleaseUpdate
     }
 }

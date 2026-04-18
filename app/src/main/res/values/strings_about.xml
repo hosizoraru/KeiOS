@@ -37,6 +37,7 @@
     <string name="about_label_package_name">包名</string>
     <string name="about_label_version">版本</string>
     <string name="about_label_project_url">项目地址</string>
+    <string name="about_label_build_time">构建时间</string>
     <string name="about_label_last_update">最后更新</string>
     <string name="about_label_debug">Debug</string>
     <string name="about_label_test_only">TestOnly</string>

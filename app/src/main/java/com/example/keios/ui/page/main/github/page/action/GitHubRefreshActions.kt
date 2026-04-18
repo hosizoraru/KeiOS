@@ -119,7 +119,10 @@ internal class GitHubRefreshActions(
         }
     }
 
-    fun refreshAllTracked(showToast: Boolean = true) {
+    fun refreshAllTracked(
+        showToast: Boolean = true,
+        onFinished: (() -> Unit)? = null
+    ) {
         val snapshot = state.trackedItems.toList()
         if (snapshot.isEmpty()) {
             if (showToast) {
@@ -187,6 +190,7 @@ internal class GitHubRefreshActions(
             state.lastRefreshMs = System.currentTimeMillis()
             state.refreshProgress = 1f
             persistCheckCache(state.lastRefreshMs)
+            onFinished?.invoke()
             GitHubRefreshNotificationHelper.notifyCompleted(
                 context = context,
                 total = totalCount,

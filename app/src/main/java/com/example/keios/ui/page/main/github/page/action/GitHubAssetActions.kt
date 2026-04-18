@@ -116,6 +116,10 @@ internal class GitHubAssetActions(
         state.clearAssetUiState(itemId)
     }
 
+    fun clearApkAssetRuntimeState(itemId: String) {
+        state.clearAssetRuntimeState(itemId)
+    }
+
     fun clearApkAssetCache(item: GitHubTrackedApp, itemState: VersionCheckUi) {
         val target = itemState.apkAssetTarget(
             owner = item.owner,
@@ -179,6 +183,8 @@ internal class GitHubAssetActions(
             }
             return
         }
+
+        state.apkAssetIncludeAll[item.id] = includeAllAssets
 
         val cachedBundle = state.apkAssetBundles[item.id]
         if (
