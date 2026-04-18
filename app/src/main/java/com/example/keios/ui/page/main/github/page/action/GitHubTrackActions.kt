@@ -77,6 +77,8 @@ internal class GitHubTrackActions(
             }
             if (editing.id != newItem.id) {
                 state.checkStates.remove(editing.id)
+                state.trackedCardExpanded.remove(editing.id)
+                state.clearAssetUiState(editing.id)
             }
             env.saveTrackedItems()
             refreshActions.refreshItem(newItem, showToastOnError = true)
@@ -93,6 +95,8 @@ internal class GitHubTrackActions(
                 refreshActions.cancelRefreshAll()
                 state.trackedItems.remove(deleting)
                 state.checkStates.remove(deleting.id)
+                state.trackedCardExpanded.remove(deleting.id)
+                state.clearAssetUiState(deleting.id)
                 env.saveTrackedItems()
                 refreshActions.persistCheckCache()
                 env.toast(R.string.github_toast_track_deleted, deleting.appLabel)

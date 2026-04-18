@@ -210,6 +210,7 @@ fun GitHubPage(
         apkAssetLoading = state.apkAssetLoading,
         apkAssetErrors = state.apkAssetErrors,
         apkAssetExpanded = state.apkAssetExpanded,
+        trackedCardExpanded = state.trackedCardExpanded,
         onTrackedSearchChange = { state.trackedSearch = it },
         onShowSortPopupChange = { state.showSortPopup = it },
         onSortModeChange = { state.sortMode = it },

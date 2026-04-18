@@ -236,6 +236,7 @@ internal class GitHubRefreshActions(
 
         state.trackedItems.clear()
         state.trackedItems.addAll(trackSnapshot.items)
+        state.retainTrackedUiState(trackSnapshot.items.map { it.id }.toSet())
 
         val cachedStates = trackSnapshot.checkCache
         state.checkStates.clear()

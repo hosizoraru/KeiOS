@@ -34,10 +34,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -151,6 +147,7 @@ internal fun GitHubMainContent(
     apkAssetLoading: SnapshotStateMap<String, Boolean>,
     apkAssetErrors: SnapshotStateMap<String, String>,
     apkAssetExpanded: SnapshotStateMap<String, Boolean>,
+    trackedCardExpanded: SnapshotStateMap<String, Boolean>,
     onTrackedSearchChange: (String) -> Unit,
     onShowSortPopupChange: (Boolean) -> Unit,
     onSortModeChange: (GitHubSortMode) -> Unit,
@@ -233,6 +230,7 @@ internal fun GitHubMainContent(
                     apkAssetLoading = apkAssetLoading,
                     apkAssetErrors = apkAssetErrors,
                     apkAssetExpanded = apkAssetExpanded,
+                    trackedCardExpanded = trackedCardExpanded,
                     onOpenTrackSheetForEdit = onOpenTrackSheetForEdit,
                     onClearApkAssetUiState = onClearApkAssetUiState,
                     onCollapseApkAssetPanel = onCollapseApkAssetPanel,
@@ -285,6 +283,7 @@ private fun LazyListScope.GitHubTrackedItemsSection(
     apkAssetLoading: SnapshotStateMap<String, Boolean>,
     apkAssetErrors: SnapshotStateMap<String, String>,
     apkAssetExpanded: SnapshotStateMap<String, Boolean>,
+    trackedCardExpanded: SnapshotStateMap<String, Boolean>,
     onOpenTrackSheetForEdit: (GitHubTrackedApp) -> Unit,
     onClearApkAssetUiState: (String) -> Unit,
     onCollapseApkAssetPanel: (GitHubTrackedApp, VersionCheckUi) -> Unit,
@@ -314,14 +313,14 @@ private fun LazyListScope.GitHubTrackedItemsSection(
             key = { it.id },
             contentType = { "tracked_app" }
         ) { item ->
-            var expanded by remember(item.id) { mutableStateOf(false) }
+            val expanded = trackedCardExpanded[item.id] == true
             MiuixAccordionCard(
                 backdrop = contentBackdrop,
                 title = item.appLabel,
                 subtitle = item.packageName,
                 expanded = expanded,
                 onExpandedChange = {
-                    expanded = it
+                    trackedCardExpanded[item.id] = it
                     if (!it) {
                         val collapseState = checkStates[item.id] ?: VersionCheckUi()
                         if (apkAssetExpanded[item.id] == true) {
