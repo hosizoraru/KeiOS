@@ -5,7 +5,7 @@
 ## 项目概览
 
 - 这是一个聚焦系统工具、GitHub 跟踪、BA 内容页的 Android 应用。
-- UI 技术栈：Compose + Miuix KMP + 液态玻璃风格组件。
+- UI 技术栈：Compose + Miuix KMP + Lifecycle ViewModel Compose + 液态玻璃风格组件。
 - 运行基线：`minSdk=35`、`targetSdk=37`、Java/Kotlin 工具链统一 Java 21。
 
 ## 本地构建说明（Local Build Notes）
@@ -84,7 +84,7 @@ JDK 兜底示例路径：
 ## 运行配置入口（最近变更）
 
 - `设置 > 视觉与交互`  
-  主题模式、ActionBar 分层样式、液态底栏、卡片按压反馈、主页图标 HDR 高光。
+  主题模式、过渡动画、ActionBar 分层样式、液态底栏、卡片按压反馈、主页图标 HDR 高光、非 Home 页面背景图。
 - `设置 > 通知与兼容`  
   超级岛通知样式开关、HyperOS 兼容绕过开关。
 - `设置 > 复制与文本选择`  

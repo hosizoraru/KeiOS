@@ -5,7 +5,7 @@
 ## Project Snapshot
 
 - Android app focused on system utility + GitHub tracking + BA content pages.
-- UI stack: Compose + Miuix KMP + liquid glass style components.
+- UI stack: Compose + Miuix KMP + Lifecycle ViewModel Compose + liquid glass style components.
 - Runtime baseline: `minSdk=35`, `targetSdk=37`, Java/Kotlin toolchain on Java 21.
 
 ## Local Build Notes
@@ -85,7 +85,7 @@ Current baseline scope:
 ## Runtime Settings Map (Recent)
 
 - `Settings > Visual & Interaction`  
-  Theme mode, ActionBar layered style, liquid bottom bar, card press feedback, home icon HDR highlight.
+  Theme mode, transition animations, ActionBar layered style, liquid bottom bar, card press feedback, home icon HDR highlight, non-home page custom background image.
 - `Settings > Notification & Compatibility`  
   Super Island style toggle and HyperOS compatibility bypass toggle.
 - `Settings > Copy & Text Selection`  

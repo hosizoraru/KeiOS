@@ -101,6 +101,14 @@ fun AboutUiFrameworkCardSection(
             MiuixIcons.Regular.ListView
         ),
         AboutInfoRow(
+            R.string.about_row_ui_state_holder,
+            stringResource(
+                R.string.about_value_ui_state_holder,
+                BuildConfig.LIFECYCLE_VIEWMODEL_COMPOSE_VERSION
+            ),
+            MiuixIcons.Regular.Notes
+        ),
+        AboutInfoRow(
             R.string.about_row_glass_material,
             stringResource(
                 R.string.about_value_glass_material,

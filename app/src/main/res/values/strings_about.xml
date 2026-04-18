@@ -10,6 +10,7 @@
     <string name="about_value_ui_framework">Miuix UI %1$s</string>
     <string name="about_value_declarative_ui">Jetpack Compose %1$s</string>
     <string name="about_value_navigation">Navigation3 %1$s</string>
+    <string name="about_value_ui_state_holder">Lifecycle ViewModel Compose %1$s</string>
     <string name="about_value_glass_material">Backdrop %1$s · Capsule %2$s</string>
     <string name="about_value_permission_bridge">Shizuku API %1$s</string>
 
@@ -55,6 +56,7 @@
     <string name="about_row_ui_framework">UI 框架</string>
     <string name="about_row_declarative_ui">声明式界面</string>
     <string name="about_row_navigation">页面导航</string>
+    <string name="about_row_ui_state_holder">界面状态托管</string>
     <string name="about_row_glass_material">玻璃材质</string>
     <string name="about_row_permission_bridge">权限桥接</string>
     <string name="about_row_github_strategy">抓取策略</string>
