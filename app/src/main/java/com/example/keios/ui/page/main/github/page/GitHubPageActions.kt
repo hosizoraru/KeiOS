@@ -88,6 +88,12 @@ internal class GitHubPageActions(
     fun applyCheckLogicSheet(installedOnlineShareTargets: List<OnlineShareTargetOption>) =
         configActions.applyCheckLogicSheet(installedOnlineShareTargets)
 
+    fun buildTrackedItemsExportJson(
+        exportedAtMillis: Long = System.currentTimeMillis()
+    ) = configActions.buildTrackedItemsExportJson(exportedAtMillis)
+
+    fun importTrackedItemsJson(raw: String) = configActions.importTrackedItemsJson(raw)
+
     fun openExternalUrl(url: String, failureMessage: String = env.openLinkFailureMessage) =
         assetActions.openExternalUrl(url = url, failureMessage = failureMessage)
 

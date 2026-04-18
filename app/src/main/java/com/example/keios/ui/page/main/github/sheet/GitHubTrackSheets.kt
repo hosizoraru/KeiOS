@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -59,6 +60,7 @@ internal fun GitHubCheckLogicSheet(
     show: Boolean,
     backdrop: LayerBackdrop,
     lookupConfig: GitHubLookupConfig,
+    trackedCount: Int,
     refreshIntervalHours: Int,
     refreshIntervalHoursInput: Int,
     checkAllTrackedPreReleasesInput: Boolean,
@@ -73,8 +75,12 @@ internal fun GitHubCheckLogicSheet(
     downloaderPopupAnchorBounds: IntRect?,
     onlineShareTargetPopupAnchorBounds: IntRect?,
     downloaderOptions: List<DownloaderOption>,
+    exportInProgress: Boolean,
+    importInProgress: Boolean,
     onDismissRequest: () -> Unit,
     onApply: () -> Unit,
+    onExportTrackedItems: () -> Unit,
+    onImportTrackedItems: () -> Unit,
     onRefreshIntervalHoursInputChange: (Int) -> Unit,
     onCheckAllTrackedPreReleasesInputChange: (Boolean) -> Unit,
     onAggressiveApkFilteringInputChange: (Boolean) -> Unit,
@@ -131,7 +137,7 @@ internal fun GitHubCheckLogicSheet(
             preferredDownloaderPackageInput != lookupConfig.preferredDownloaderPackage
 
         SheetContentColumn(verticalSpacing = 8.dp) {
-            SheetSectionTitle(stringResource(R.string.github_check_sheet_section_summary))
+            SheetSectionTitle(stringResource(R.string.github_check_sheet_section_checks))
             SheetSectionCard {
                 SheetControlRow(
                     label = stringResource(R.string.github_check_sheet_label_refresh_interval),
@@ -172,6 +178,26 @@ internal fun GitHubCheckLogicSheet(
                         onCheckedChange = onAggressiveApkFilteringInputChange
                     )
                 }
+                SheetControlRow(
+                    label = stringResource(R.string.github_check_sheet_label_save_state)
+                ) {
+                    StatusPill(
+                        label = if (logicChanged) {
+                            stringResource(R.string.common_pending_save)
+                        } else {
+                            stringResource(R.string.common_synced)
+                        },
+                        color = if (logicChanged) {
+                            GitHubStatusPalette.PreRelease
+                        } else {
+                            MiuixTheme.colorScheme.onBackgroundVariant
+                        }
+                    )
+                }
+            }
+
+            SheetSectionTitle(stringResource(R.string.github_check_sheet_section_transfer))
+            SheetSectionCard {
                 SheetControlRow(
                     label = stringResource(R.string.github_check_sheet_label_downloader),
                     summary = stringResource(R.string.github_check_sheet_summary_downloader)
@@ -222,20 +248,63 @@ internal fun GitHubCheckLogicSheet(
                         variant = GlassVariant.SheetAction
                     )
                 }
-                SheetControlRow(label = stringResource(R.string.github_check_sheet_label_save_state)) {
+            }
+
+            SheetSectionTitle(stringResource(R.string.github_check_sheet_section_tracks))
+            SheetSectionCard {
+                SheetControlRow(
+                    label = stringResource(R.string.github_check_sheet_label_track_count),
+                    summary = stringResource(R.string.github_check_sheet_summary_track_count)
+                ) {
                     StatusPill(
-                        label = if (logicChanged) {
-                            stringResource(R.string.common_pending_save)
-                        } else {
-                            stringResource(R.string.common_synced)
-                        },
-                        color = if (logicChanged) {
-                            GitHubStatusPalette.PreRelease
+                        label = stringResource(
+                            R.string.github_check_sheet_value_track_count,
+                            trackedCount
+                        ),
+                        color = if (trackedCount > 0) {
+                            GitHubStatusPalette.Active
                         } else {
                             MiuixTheme.colorScheme.onBackgroundVariant
                         }
                     )
                 }
+                SheetControlRow(
+                    label = stringResource(R.string.github_check_sheet_label_track_transfer),
+                    summary = stringResource(R.string.github_check_sheet_summary_track_transfer)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            text = if (exportInProgress) {
+                                stringResource(R.string.github_check_sheet_action_exporting)
+                            } else {
+                                stringResource(R.string.github_check_sheet_action_export_tracks)
+                            },
+                            onClick = onExportTrackedItems,
+                            modifier = Modifier.weight(1f),
+                            enabled = !exportInProgress && !importInProgress,
+                            variant = GlassVariant.SheetAction
+                        )
+                        GlassTextButton(
+                            backdrop = backdrop,
+                            text = if (importInProgress) {
+                                stringResource(R.string.github_check_sheet_action_importing)
+                            } else {
+                                stringResource(R.string.github_check_sheet_action_import_tracks)
+                            },
+                            onClick = onImportTrackedItems,
+                            modifier = Modifier.weight(1f),
+                            enabled = !exportInProgress && !importInProgress,
+                            variant = GlassVariant.SheetAction
+                        )
+                    }
+                }
+                SheetDescriptionText(
+                    text = stringResource(R.string.github_check_sheet_note_transfer)
+                )
             }
 
             SheetSectionTitle(stringResource(R.string.github_check_sheet_section_notes))

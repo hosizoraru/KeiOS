@@ -16,7 +16,14 @@ data class GitHubTrackSnapshot(
     val lookupConfig: GitHubLookupConfig = GitHubLookupConfig()
 )
 
+data class GitHubTrackedItemsImportPayload(
+    val items: List<GitHubTrackedApp> = emptyList(),
+    val invalidCount: Int = 0,
+    val duplicateCount: Int = 0
+)
+
 object GitHubTrackStore {
+    private const val TRACK_EXPORT_FORMAT = "keios.github.tracked/v1"
     private const val KV_ID = "github_track_store"
     private const val KEY_ITEMS = "tracked_items"
     private const val KEY_CHECK_CACHE = "tracked_check_cache"
@@ -43,34 +50,7 @@ object GitHubTrackStore {
             buildList {
                 for (i in 0 until array.length()) {
                     val obj = array.optJSONObject(i) ?: continue
-                    val repoUrl = obj.optString("repoUrl").trim()
-                    val owner = obj.optString("owner").trim()
-                    val repo = obj.optString("repo").trim()
-                    val packageName = obj.optString("packageName").trim()
-                    val appLabel = obj.optString("appLabel").trim()
-                    if (repoUrl.isNotBlank() && owner.isNotBlank() && repo.isNotBlank() && packageName.isNotBlank()) {
-                        add(
-                            GitHubTrackedApp(
-                                repoUrl = repoUrl,
-                                owner = owner,
-                                repo = repo,
-                                packageName = packageName,
-                                appLabel = appLabel.ifBlank { packageName },
-                                preferPreRelease = when {
-                                    obj.has("preferPreRelease") -> obj.optBoolean("preferPreRelease", false)
-                                    obj.has("checkPreRelease") -> obj.optBoolean("checkPreRelease", false)
-                                    else -> false
-                                },
-                                alwaysShowLatestReleaseDownloadButton = when {
-                                    obj.has("alwaysShowLatestReleaseDownloadButton") ->
-                                        obj.optBoolean("alwaysShowLatestReleaseDownloadButton", false)
-                                    obj.has("alwaysShowLatestReleaseDownload") ->
-                                        obj.optBoolean("alwaysShowLatestReleaseDownload", false)
-                                    else -> false
-                                }
-                            )
-                        )
-                    }
+                    parseTrackedItem(obj)?.let(::add)
                 }
             }
         }.getOrDefault(emptyList())
@@ -79,19 +59,64 @@ object GitHubTrackStore {
     fun save(items: List<GitHubTrackedApp>) {
         val array = JSONArray()
         items.forEach { item ->
-            val obj = JSONObject()
-                .put("repoUrl", item.repoUrl)
-                .put("owner", item.owner)
-                .put("repo", item.repo)
-                .put("packageName", item.packageName)
-                .put("appLabel", item.appLabel)
-                .put("preferPreRelease", item.preferPreRelease)
-                .put("checkPreRelease", item.preferPreRelease)
-                .put("alwaysShowLatestReleaseDownloadButton", item.alwaysShowLatestReleaseDownloadButton)
-                .put("alwaysShowLatestReleaseDownload", item.alwaysShowLatestReleaseDownloadButton)
-            array.put(obj)
+            array.put(trackedItemToJson(item))
         }
         kv().encode(KEY_ITEMS, array.toString())
+    }
+
+    fun buildTrackedItemsExportJson(
+        items: List<GitHubTrackedApp>,
+        exportedAtMillis: Long = System.currentTimeMillis()
+    ): String {
+        val array = JSONArray()
+        items.forEach { item ->
+            array.put(trackedItemToJson(item))
+        }
+        return JSONObject()
+            .put("format", TRACK_EXPORT_FORMAT)
+            .put("exportedAtMillis", exportedAtMillis)
+            .put("itemCount", items.size)
+            .put("items", array)
+            .toString(2)
+    }
+
+    fun parseTrackedItemsImport(raw: String): GitHubTrackedItemsImportPayload {
+        val normalized = raw.trim()
+        if (normalized.isBlank()) {
+            return GitHubTrackedItemsImportPayload()
+        }
+        val rootArray = when (normalized.firstOrNull()) {
+            '{' -> {
+                val root = JSONObject(normalized)
+                when {
+                    root.has("items") -> root.optJSONArray("items")
+                    root.has("trackedItems") -> root.optJSONArray("trackedItems")
+                    else -> null
+                } ?: JSONArray()
+            }
+            '[' -> JSONArray(normalized)
+            else -> throw IllegalArgumentException("unsupported github track import format")
+        }
+        val deduplicated = linkedMapOf<String, GitHubTrackedApp>()
+        var invalidCount = 0
+        var duplicateCount = 0
+        for (index in 0 until rootArray.length()) {
+            val itemObject = rootArray.optJSONObject(index)
+            val item = itemObject?.let(::parseTrackedItem)
+            if (item == null) {
+                invalidCount += 1
+                continue
+            }
+            if (deduplicated.containsKey(item.id)) {
+                duplicateCount += 1
+            }
+            deduplicated[item.id] = item
+        }
+        return GitHubTrackedItemsImportPayload(
+            items = deduplicated.values.toList(),
+            invalidCount = invalidCount,
+            duplicateCount = duplicateCount
+        )
     }
 
     fun loadCheckCache(): Pair<Map<String, GitHubCheckCacheEntry>, Long> {
@@ -272,5 +297,48 @@ object GitHubTrackStore {
         kv().encode(KEY_AGGRESSIVE_APK_FILTERING, config.aggressiveApkFiltering)
         kv().encode(KEY_ONLINE_SHARE_TARGET_PACKAGE, config.onlineShareTargetPackage.trim())
         kv().encode(KEY_PREFERRED_DOWNLOADER_PACKAGE, config.preferredDownloaderPackage.trim())
+    }
+
+    private fun parseTrackedItem(obj: JSONObject): GitHubTrackedApp? {
+        val repoUrl = obj.optString("repoUrl").trim()
+        val owner = obj.optString("owner").trim()
+        val repo = obj.optString("repo").trim()
+        val packageName = obj.optString("packageName").trim()
+        val appLabel = obj.optString("appLabel").trim()
+        if (repoUrl.isBlank() || owner.isBlank() || repo.isBlank() || packageName.isBlank()) {
+            return null
+        }
+        return GitHubTrackedApp(
+            repoUrl = repoUrl,
+            owner = owner,
+            repo = repo,
+            packageName = packageName,
+            appLabel = appLabel.ifBlank { packageName },
+            preferPreRelease = when {
+                obj.has("preferPreRelease") -> obj.optBoolean("preferPreRelease", false)
+                obj.has("checkPreRelease") -> obj.optBoolean("checkPreRelease", false)
+                else -> false
+            },
+            alwaysShowLatestReleaseDownloadButton = when {
+                obj.has("alwaysShowLatestReleaseDownloadButton") ->
+                    obj.optBoolean("alwaysShowLatestReleaseDownloadButton", false)
+                obj.has("alwaysShowLatestReleaseDownload") ->
+                    obj.optBoolean("alwaysShowLatestReleaseDownload", false)
+                else -> false
+            }
+        )
+    }
+
+    private fun trackedItemToJson(item: GitHubTrackedApp): JSONObject {
+        return JSONObject()
+            .put("repoUrl", item.repoUrl)
+            .put("owner", item.owner)
+            .put("repo", item.repo)
+            .put("packageName", item.packageName)
+            .put("appLabel", item.appLabel)
+            .put("preferPreRelease", item.preferPreRelease)
+            .put("checkPreRelease", item.preferPreRelease)
+            .put("alwaysShowLatestReleaseDownloadButton", item.alwaysShowLatestReleaseDownloadButton)
+            .put("alwaysShowLatestReleaseDownload", item.alwaysShowLatestReleaseDownloadButton)
     }
 }

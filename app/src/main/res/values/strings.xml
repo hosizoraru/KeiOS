@@ -241,6 +241,11 @@
     <string name="github_toast_track_updated">已更新跟踪</string>
     <string name="github_toast_open_permission_page_failed">无法打开权限页面，请手动到系统设置授权</string>
     <string name="github_toast_track_deleted">已删除 %1$s</string>
+    <string name="github_toast_track_exported">跟踪项目导出成功</string>
+    <string name="github_toast_track_export_failed">跟踪项目导出失败: %1$s</string>
+    <string name="github_toast_track_import_failed">跟踪项目导入失败: %1$s</string>
+    <string name="github_toast_track_import_no_valid">导入文件里没有有效的跟踪项目</string>
+    <string name="github_toast_track_imported_summary">导入完成：新增 %1$d，更新 %2$d，保持 %3$d，忽略 %4$d</string>
     <string name="github_toast_repo_message">%1$s/%2$s: %3$s</string>
 
     <string name="github_cd_add_track">新增跟踪</string>
@@ -387,7 +392,9 @@
 
     <string name="github_check_sheet_title">检查与下载</string>
     <string name="github_check_sheet_cd_save">保存检查逻辑</string>
-    <string name="github_check_sheet_section_summary">当前摘要</string>
+    <string name="github_check_sheet_section_checks">检查策略</string>
+    <string name="github_check_sheet_section_transfer">下载与联动</string>
+    <string name="github_check_sheet_section_tracks">跟踪项目</string>
     <string name="github_check_sheet_label_refresh_interval">更新间隔</string>
     <string name="github_check_sheet_summary_refresh_interval">超时后自动视为过期</string>
     <string name="github_check_sheet_label_prerelease_check">检查所有追踪项的预发行最新版</string>
@@ -400,7 +407,17 @@
     <string name="github_check_sheet_summary_share_available">分享时可直接发送到支持直接边下载边安装的安装器</string>
     <string name="github_check_sheet_summary_share_unavailable">未检测到支持的安装器，默认不联动</string>
     <string name="github_check_sheet_label_save_state">保存状态</string>
+    <string name="github_check_sheet_label_track_count">已追踪项目</string>
+    <string name="github_check_sheet_summary_track_count">当前设备本地保存的跟踪项目数量</string>
+    <string name="github_check_sheet_value_track_count">%1$d 项</string>
+    <string name="github_check_sheet_label_track_transfer">导入与导出</string>
+    <string name="github_check_sheet_summary_track_transfer">导出用于备份；导入会智能合并同一跟踪项并保留现有其他项目</string>
+    <string name="github_check_sheet_action_export_tracks">导出跟踪</string>
+    <string name="github_check_sheet_action_import_tracks">导入跟踪</string>
+    <string name="github_check_sheet_action_exporting">导出中</string>
+    <string name="github_check_sheet_action_importing">导入中</string>
     <string name="github_check_sheet_section_notes">说明</string>
+    <string name="github_check_sheet_note_transfer">导入默认按“owner/repo + 包名”识别同一条目：同 ID 会覆盖更新，新条目会追加，现有未出现在导入文件里的项目会保留。</string>
     <string name="github_check_sheet_note_1">全局开关只决定是否顺手检查最新预发；单条目的“优先预发行版本”才决定推荐更新时是否偏向预发。</string>
     <string name="github_check_sheet_note_2">这样就把“想知道有没有新预发”和“真的想装预发”拆开了。</string>
     <string name="github_check_sheet_note_3">若设备主要只关心 arm64，可开启“更激进的过滤方式”。它会过滤 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；只有同一 release 已存在 `arm64-v8a` 时，才会连带过滤 universal。</string>

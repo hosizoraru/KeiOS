@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main
 
 import com.example.keios.R
 import com.example.keios.feature.github.data.local.GitHubReleaseAssetCacheStore
+import com.example.keios.feature.github.data.local.GitHubTrackedItemsImportPayload
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubApiTokenReleaseStrategy
 import com.example.keios.feature.github.data.remote.GitHubReleaseStrategyRegistry
@@ -14,6 +15,14 @@ import com.example.keios.ui.page.main.github.query.OnlineShareTargetOption
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+internal data class GitHubTrackImportApplyResult(
+    val addedCount: Int,
+    val updatedCount: Int,
+    val unchangedCount: Int,
+    val invalidCount: Int,
+    val duplicateCount: Int
+)
 
 internal class GitHubConfigActions(
     private val env: GitHubPageActionEnvironment,
@@ -58,6 +67,20 @@ internal class GitHubConfigActions(
 
     fun closeCheckLogicSheet() {
         state.dismissCheckLogicSheet()
+    }
+
+    fun buildTrackedItemsExportJson(
+        exportedAtMillis: Long = System.currentTimeMillis()
+    ): String {
+        return GitHubTrackStore.buildTrackedItemsExportJson(
+            items = state.trackedItems.toList(),
+            exportedAtMillis = exportedAtMillis
+        )
+    }
+
+    fun importTrackedItemsJson(raw: String): GitHubTrackImportApplyResult {
+        val payload = GitHubTrackStore.parseTrackedItemsImport(raw)
+        return applyImportedTrackedItems(payload)
     }
 
     fun applyLookupConfig() {
@@ -220,5 +243,82 @@ internal class GitHubConfigActions(
             GitHubTrackStore.saveLookupConfig(updatedConfig)
             state.lookupConfig = updatedConfig
         }
+    }
+
+    private fun applyImportedTrackedItems(
+        payload: GitHubTrackedItemsImportPayload
+    ): GitHubTrackImportApplyResult {
+        if (payload.items.isEmpty()) {
+            return GitHubTrackImportApplyResult(
+                addedCount = 0,
+                updatedCount = 0,
+                unchangedCount = 0,
+                invalidCount = payload.invalidCount,
+                duplicateCount = payload.duplicateCount
+            )
+        }
+        val mergedItems = state.trackedItems.toMutableList()
+        val indexById = mergedItems.withIndex()
+            .associate { it.value.id to it.index }
+            .toMutableMap()
+        val touchedItems = mutableListOf<com.example.keios.feature.github.model.GitHubTrackedApp>()
+        var addedCount = 0
+        var updatedCount = 0
+        var unchangedCount = 0
+        payload.items.forEach { item ->
+            val existingIndex = indexById[item.id]
+            when {
+                existingIndex == null -> {
+                    mergedItems += item
+                    indexById[item.id] = mergedItems.lastIndex
+                    touchedItems += item
+                    addedCount += 1
+                }
+
+                mergedItems[existingIndex] != item -> {
+                    mergedItems[existingIndex] = item
+                    state.checkStates.remove(item.id)
+                    state.clearAssetUiState(item.id)
+                    touchedItems += item
+                    updatedCount += 1
+                }
+
+                else -> {
+                    unchangedCount += 1
+                }
+            }
+        }
+        if (addedCount == 0 && updatedCount == 0) {
+            return GitHubTrackImportApplyResult(
+                addedCount = 0,
+                updatedCount = 0,
+                unchangedCount = unchangedCount,
+                invalidCount = payload.invalidCount,
+                duplicateCount = payload.duplicateCount
+            )
+        }
+        state.trackedItems.clear()
+        state.trackedItems.addAll(mergedItems)
+        env.saveTrackedItems()
+        refreshActions.persistCheckCache()
+
+        val touchedCount = touchedItems.size
+        if (touchedCount in 1..6) {
+            touchedItems.forEach { item ->
+                refreshActions.refreshItem(item = item, showToastOnError = false)
+            }
+        } else {
+            state.lastRefreshMs = 0L
+            state.refreshProgress = 0f
+            state.overviewRefreshState = OverviewRefreshState.Idle
+            refreshActions.refreshAllTracked(showToast = false)
+        }
+        return GitHubTrackImportApplyResult(
+            addedCount = addedCount,
+            updatedCount = updatedCount,
+            unchangedCount = unchangedCount,
+            invalidCount = payload.invalidCount,
+            duplicateCount = payload.duplicateCount
+        )
     }
 }
