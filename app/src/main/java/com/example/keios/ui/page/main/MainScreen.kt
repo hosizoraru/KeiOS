@@ -724,6 +724,7 @@ private fun MainPagerLayout(
                             contentBottomPadding = bottomOverlayPadding,
                             scrollToTopSignal = baScrollToTopSignal,
                             isPageActive = isWarmActive,
+                            preloadingEnabled = preloadingEnabled,
                             cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             onOpenPoolStudentGuide = { sourceUrl ->

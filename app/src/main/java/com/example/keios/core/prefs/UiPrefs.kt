@@ -95,7 +95,7 @@ object UiPrefs {
         kv().encode(KEY_HOME_ICON_HDR, value)
     }
 
-    fun isPreloadingEnabled(defaultValue: Boolean = false): Boolean {
+    fun isPreloadingEnabled(defaultValue: Boolean = true): Boolean {
         return kv().decodeBool(KEY_PRELOADING_ENABLED, defaultValue)
     }
 
@@ -199,7 +199,7 @@ object UiPrefs {
             transitionAnimationsEnabled = true,
             cardPressFeedbackEnabled = true,
             homeIconHdrEnabled = false,
-            preloadingEnabled = false,
+            preloadingEnabled = true,
             nonHomeBackgroundEnabled = false,
             nonHomeBackgroundUri = "",
             superIslandNotificationEnabled = false,
@@ -220,7 +220,7 @@ object UiPrefs {
             transitionAnimationsEnabled = store.decodeBool(KEY_TRANSITION_ANIMATIONS, true),
             cardPressFeedbackEnabled = store.decodeBool(KEY_CARD_PRESS_FEEDBACK, true),
             homeIconHdrEnabled = store.decodeBool(KEY_HOME_ICON_HDR, false),
-            preloadingEnabled = store.decodeBool(KEY_PRELOADING_ENABLED, false),
+            preloadingEnabled = store.decodeBool(KEY_PRELOADING_ENABLED, true),
             nonHomeBackgroundEnabled = store.decodeBool(KEY_NON_HOME_BACKGROUND_ENABLED, false),
             nonHomeBackgroundUri = store.decodeString(KEY_NON_HOME_BACKGROUND_URI, "").orEmpty().trim(),
             superIslandNotificationEnabled = store.decodeBool(KEY_SUPER_ISLAND_NOTIFICATION, false),

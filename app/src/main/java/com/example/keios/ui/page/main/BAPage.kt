@@ -51,6 +51,7 @@ fun BAPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     isPageActive: Boolean = true,
+    preloadingEnabled: Boolean = false,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     onOpenPoolStudentGuide: (String) -> Unit = {},
@@ -126,6 +127,7 @@ fun BAPage(
         baCalendarEntries = baCalendarEntries,
         baPoolEntries = baPoolEntries,
     )
+    val syncPageActive = if (preloadingEnabled) true else isPageActive
 
     fun openSettingsSheet() {
         ui.openSettingsSheet(office)
@@ -190,14 +192,14 @@ fun BAPage(
     )
 
     LaunchedEffect(
-        isPageActive,
+        syncPageActive,
         ui.serverIndex,
         ui.baCalendarReloadSignal,
         ui.calendarRefreshIntervalHours,
         ui.calendarHydrationReady
     ) {
         calendarPoolViewModel.syncCalendar(
-            isPageActive = isPageActive,
+            isPageActive = syncPageActive,
             serverIndex = ui.serverIndex,
             reloadSignal = ui.baCalendarReloadSignal,
             calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
@@ -205,14 +207,14 @@ fun BAPage(
         )
     }
     LaunchedEffect(
-        isPageActive,
+        syncPageActive,
         ui.serverIndex,
         ui.baPoolReloadSignal,
         ui.calendarRefreshIntervalHours,
         ui.poolHydrationReady
     ) {
         calendarPoolViewModel.syncPool(
-            isPageActive = isPageActive,
+            isPageActive = syncPageActive,
             serverIndex = ui.serverIndex,
             reloadSignal = ui.baPoolReloadSignal,
             calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
