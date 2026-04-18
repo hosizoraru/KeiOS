@@ -1616,7 +1616,8 @@ fun OsPage(
                         ShortcutSuggestionItem(
                             label = option.activityName,
                             value = option.className,
-                            summary = option.className
+                            summary = option.className,
+                            classItemExported = option.isExported
                         )
                     }
                 }
@@ -1944,13 +1945,21 @@ fun OsPage(
                         selectedAccentColor = MiuixTheme.colorScheme.primary,
                         unselectedTitleColor = when (googleSystemServiceSuggestionTarget) {
                             ShortcutSuggestionField.ClassName -> {
-                                if (suggestion.value.trim().isBlank()) Color(0xFFDC2626) else Color(0xFF16A34A)
+                                if (suggestion.value.trim().isBlank() || suggestion.classItemExported) {
+                                    Color(0xFFDC2626)
+                                } else {
+                                    Color(0xFF16A34A)
+                                }
                             }
                             else -> MiuixTheme.colorScheme.onBackground
                         },
                         summaryColor = when (googleSystemServiceSuggestionTarget) {
                             ShortcutSuggestionField.ClassName -> {
-                                if (suggestion.value.trim().isBlank()) Color(0xFFDC2626) else Color(0xFF16A34A)
+                                if (suggestion.value.trim().isBlank() || suggestion.classItemExported) {
+                                    Color(0xFFDC2626)
+                                } else {
+                                    Color(0xFF16A34A)
+                                }
                             }
                             else -> MiuixTheme.colorScheme.onBackgroundVariant
                         },
@@ -2395,7 +2404,8 @@ private data class ShortcutSuggestionItem(
     val value: String,
     val summary: String,
     val append: Boolean = false,
-    val relatedAppName: String = ""
+    val relatedAppName: String = "",
+    val classItemExported: Boolean = false
 )
 
 private data class ShortcutInstalledAppOption(
@@ -2405,7 +2415,8 @@ private data class ShortcutInstalledAppOption(
 
 private data class ShortcutActivityClassOption(
     val className: String,
-    val activityName: String
+    val activityName: String,
+    val isExported: Boolean
 )
 
 private fun loadInstalledAppOptions(context: Context): List<ShortcutInstalledAppOption> {
@@ -2476,7 +2487,7 @@ private fun loadActivityClassOptions(
 
     return packageInfo.activities.orEmpty()
         .asSequence()
-        .filter { it.enabled }
+        .filter { it.enabled || it.exported }
         .mapNotNull { info ->
             val raw = info.name.trim()
             if (raw.isBlank()) return@mapNotNull null
@@ -2492,10 +2503,18 @@ private fun loadActivityClassOptions(
             }
             ShortcutActivityClassOption(
                 className = normalized,
-                activityName = activityName
+                activityName = activityName,
+                isExported = info.exported
             )
         }
-        .distinctBy { it.className }
+        .groupBy { it.className }
+        .values
+        .mapNotNull { options ->
+            options.maxWithOrNull(
+                compareBy<ShortcutActivityClassOption> { it.isExported }
+                    .thenBy { it.activityName.length }
+            )
+        }
         .sortedWith(
             compareBy<ShortcutActivityClassOption> { it.activityName.lowercase(Locale.ROOT) }
                 .thenBy { it.className.lowercase(Locale.ROOT) }
