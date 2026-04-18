@@ -3,6 +3,7 @@ package com.example.keios.ui.page.main
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.FeatureInfo
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -153,9 +154,11 @@ fun OsPage(
     val noRefreshableCardText = stringResource(R.string.os_toast_no_refreshable_card)
     val refreshCompletedText = stringResource(R.string.os_toast_refresh_completed)
     val manageCardsContentDescription = stringResource(R.string.os_action_manage_cards)
+    val manageActivitiesContentDescription = stringResource(R.string.os_action_manage_activities)
     val refreshParamsContentDescription = stringResource(R.string.os_action_refresh_params)
     val searchLabel = stringResource(R.string.os_search_label)
     val visibleCardsTitle = stringResource(R.string.os_sheet_visible_cards_title)
+    val visibleActivitiesTitle = stringResource(R.string.os_sheet_visible_activities_title)
     val googleSystemServiceDefaultTitle = stringResource(R.string.os_section_google_system_service_title)
     val googleSystemServiceDefaultSubtitle = stringResource(R.string.os_google_system_service_default_subtitle)
     val googleSystemServiceDefaultAppName = stringResource(R.string.os_google_system_service_default_app_name)
@@ -211,6 +214,7 @@ fun OsPage(
     var googleSystemServicePackageSuggestionQuery by rememberSaveable { mutableStateOf("") }
     var uiStatePersistenceReady by remember { mutableStateOf(false) }
     var showCardManager by rememberSaveable { mutableStateOf(false) }
+    var showActivityVisibilityManager by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
@@ -975,6 +979,11 @@ fun OsPage(
                         onClick = { showCardManager = true }
                     ),
                     LiquidActionItem(
+                        icon = MiuixIcons.Regular.GridView,
+                        contentDescription = manageActivitiesContentDescription,
+                        onClick = { showActivityVisibilityManager = true }
+                    ),
+                    LiquidActionItem(
                         icon = MiuixIcons.Regular.Refresh,
                         contentDescription = refreshParamsContentDescription,
                         onClick = {
@@ -1043,7 +1052,7 @@ fun OsPage(
 
                 SheetSectionTitle("显示控制")
                 SheetSectionCard(verticalSpacing = 10.dp) {
-                    OsSectionCard.entries.forEach { card ->
+                    OsSectionCard.entries.filter { it != OsSectionCard.GOOGLE_SYSTEM_SERVICE }.forEach { card ->
                         SheetControlRow(
                             labelContent = {
                                 CardLabel(card = card, modifier = Modifier.defaultMinSize(minHeight = 24.dp))
@@ -1061,6 +1070,60 @@ fun OsPage(
 
                 SheetDescriptionText(
                     text = "隐藏卡片后会清空对应缓存；重新显示时会立即重新获取并缓存。"
+                )
+            }
+        }
+        SnapshotWindowBottomSheet(
+            show = showActivityVisibilityManager,
+            title = visibleActivitiesTitle,
+            onDismissRequest = { showActivityVisibilityManager = false },
+            startAction = {
+                GlassIconButton(
+                    backdrop = sheetBackdrop,
+                    variant = GlassVariant.Bar,
+                    icon = MiuixIcons.Regular.Close,
+                    contentDescription = stringResource(R.string.common_close),
+                    onClick = { showActivityVisibilityManager = false }
+                )
+            }
+        ) {
+            SheetContentColumn(
+                scrollable = false,
+                verticalSpacing = 10.dp
+            ) {
+                SheetSectionCard(verticalSpacing = 10.dp) {
+                    SheetControlRow(
+                        labelContent = {
+                            Row(
+                                modifier = Modifier.defaultMinSize(minHeight = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = MiuixIcons.Regular.Update,
+                                    contentDescription = googleSystemServiceDefaultTitle,
+                                    tint = MiuixTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .defaultMinSize(minHeight = 18.dp)
+                                )
+                                Text(
+                                    text = googleSystemServiceDefaultTitle,
+                                    color = MiuixTheme.colorScheme.onBackground
+                                )
+                            }
+                        }
+                    ) {
+                        Switch(
+                            checked = isCardVisible(OsSectionCard.GOOGLE_SYSTEM_SERVICE),
+                            onCheckedChange = { checked ->
+                                scope.launch { applyCardVisibility(OsSectionCard.GOOGLE_SYSTEM_SERVICE, checked) }
+                            }
+                        )
+                    }
+                }
+                SheetDescriptionText(
+                    text = stringResource(R.string.os_sheet_visible_activities_desc)
                 )
             }
         }
@@ -2037,10 +2100,14 @@ private data class ShortcutInstalledAppOption(
 private fun loadInstalledAppOptions(context: Context): List<ShortcutInstalledAppOption> {
     val pm = context.packageManager
     val packageInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
+        pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(PackageManager.GET_ACTIVITIES.toLong()))
     } else {
-        pm.getInstalledPackages(0)
+        @Suppress("DEPRECATION")
+        pm.getInstalledPackages(PackageManager.GET_ACTIVITIES)
     }
+    val overlayFlagMask = runCatching {
+        ApplicationInfo::class.java.getField("FLAG_IS_RESOURCE_OVERLAY").getInt(null)
+    }.getOrDefault(0)
     return packageInfos.mapNotNull { info ->
         val packageName = info.packageName.trim()
         if (packageName.isBlank()) return@mapNotNull null
@@ -2051,6 +2118,16 @@ private fun loadInstalledAppOptions(context: Context): List<ShortcutInstalledApp
                 pm.getApplicationInfo(packageName, 0)
             }
         }.getOrNull() ?: return@mapNotNull null
+        if (
+            shouldIgnoreInstalledAppForShortcut(
+                packageName = packageName,
+                appInfo = appInfo,
+                hasAnyEnabledActivity = info.activities?.any { it.enabled } == true,
+                overlayFlagMask = overlayFlagMask
+            )
+        ) {
+            return@mapNotNull null
+        }
 
         val appName = runCatching {
             pm.getApplicationLabel(appInfo).toString()
@@ -2065,6 +2142,24 @@ private fun loadInstalledAppOptions(context: Context): List<ShortcutInstalledApp
             compareBy<ShortcutInstalledAppOption> { it.appName.lowercase(Locale.ROOT) }
                 .thenBy { it.packageName.lowercase(Locale.ROOT) }
         )
+}
+
+private fun shouldIgnoreInstalledAppForShortcut(
+    packageName: String,
+    appInfo: ApplicationInfo,
+    hasAnyEnabledActivity: Boolean,
+    overlayFlagMask: Int
+): Boolean {
+    if (!hasAnyEnabledActivity) return true
+    if (!appInfo.enabled) return true
+    if ((appInfo.flags and ApplicationInfo.FLAG_INSTALLED) == 0) return true
+    if ((appInfo.flags and ApplicationInfo.FLAG_HAS_CODE) == 0) return true
+    if ((appInfo.flags and ApplicationInfo.FLAG_TEST_ONLY) != 0) return true
+    if (overlayFlagMask != 0 && (appInfo.flags and overlayFlagMask) != 0) return true
+    val normalizedPackageName = packageName.lowercase(Locale.ROOT)
+    if (normalizedPackageName.contains(".overlay")) return true
+    if (normalizedPackageName.startsWith("overlay.")) return true
+    return false
 }
 
 private fun parseIntentCategories(raw: String): List<String> {

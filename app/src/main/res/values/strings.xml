@@ -166,9 +166,12 @@
     <string name="home_sheet_visible_pages_title">显示板块</string>
     <string name="home_sheet_visible_pages_desc">Home 固定显示，其他板块可按需隐藏或重新显示。</string>
     <string name="os_action_manage_cards">管理卡片显示</string>
+    <string name="os_action_manage_activities">管理活动显示</string>
     <string name="os_action_refresh_params">刷新 OS 参数</string>
     <string name="os_search_label">搜索 OS 参数</string>
     <string name="os_sheet_visible_cards_title">显示卡片</string>
+    <string name="os_sheet_visible_activities_title">显示活动</string>
+    <string name="os_sheet_visible_activities_desc">关闭活动后会隐藏对应快捷方式卡片，重新开启后会立即显示。</string>
     <string name="os_overview_title">系统参数与属性</string>
     <string name="os_overview_metric_visible_rows">条目视图</string>
     <string name="os_overview_metric_top_info">TopInfo</string>
