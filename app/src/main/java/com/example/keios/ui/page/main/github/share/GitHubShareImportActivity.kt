@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main.github.share
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.keios.MainActivity
+import com.example.keios.R
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.feature.github.data.local.GitHubTrackStore
@@ -48,15 +50,40 @@ class GitHubShareImportActivity : ComponentActivity() {
                         incomingGitHubShareText = null
                     },
                     onNavigateToGitHubPage = {
-                        startActivity(
-                            Intent(this, MainActivity::class.java).apply {
-                                putExtra(
-                                    MainActivity.EXTRA_TARGET_BOTTOM_PAGE,
-                                    MainActivity.TARGET_BOTTOM_PAGE_GITHUB
+                        val targetIntent = Intent(this, MainActivity::class.java).apply {
+                            putExtra(
+                                MainActivity.EXTRA_TARGET_BOTTOM_PAGE,
+                                MainActivity.TARGET_BOTTOM_PAGE_GITHUB
+                            )
+                            addFlags(
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                            )
+                        }
+                        val launched = runCatching {
+                            startActivity(targetIntent)
+                            true
+                        }.getOrElse {
+                            runCatching {
+                                startActivity(
+                                    Intent(this, MainActivity::class.java).apply {
+                                        putExtra(
+                                            MainActivity.EXTRA_TARGET_BOTTOM_PAGE,
+                                            MainActivity.TARGET_BOTTOM_PAGE_GITHUB
+                                        )
+                                    }
                                 )
-                                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                            }
-                        )
+                                true
+                            }.getOrDefault(false)
+                        }
+                        if (!launched) {
+                            Toast.makeText(
+                                this,
+                                getString(R.string.common_open_link_failed),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                         finishSafely()
                     },
                     showPendingArmedSheet = true,

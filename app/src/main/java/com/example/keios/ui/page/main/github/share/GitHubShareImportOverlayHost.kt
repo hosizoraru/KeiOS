@@ -99,6 +99,7 @@ internal fun GitHubShareImportOverlayHost(
     var pendingTrack by remember { mutableStateOf<GitHubPendingShareImportTrackRecord?>(null) }
     var attachCandidate by remember { mutableStateOf<GitHubPendingShareImportAttachCandidate?>(null) }
     var attachDuplicateExists by remember { mutableStateOf(false) }
+    var attachSubmitting by remember { mutableStateOf(false) }
     var idleCallbackDispatched by remember { mutableStateOf(false) }
     val handledAtByPackage = remember { mutableStateMapOf<String, Long>() }
 
@@ -309,6 +310,7 @@ internal fun GitHubShareImportOverlayHost(
         val candidate = attachCandidate
         if (candidate == null) {
             attachDuplicateExists = false
+            attachSubmitting = false
             return@LaunchedEffect
         }
         val candidateId = "${candidate.owner}/${candidate.repo}|${candidate.packageName}"
@@ -417,42 +419,63 @@ internal fun GitHubShareImportOverlayHost(
     GitHubShareImportAttachConfirmDialog(
         candidate = attachCandidate,
         duplicateExists = attachDuplicateExists,
-        onDismissRequest = { attachCandidate = null },
-        onCancel = { attachCandidate = null },
+        submitting = attachSubmitting,
+        onDismissRequest = {
+            if (!attachSubmitting) attachCandidate = null
+        },
+        onCancel = {
+            if (!attachSubmitting) attachCandidate = null
+        },
         onConfirm = {
+            if (attachSubmitting) return@GitHubShareImportAttachConfirmDialog
             val candidate = attachCandidate ?: return@GitHubShareImportAttachConfirmDialog
+            attachSubmitting = true
             scope.launch {
-                when (val result = attachCandidateToTracked(context, candidate)) {
-                    ShareImportAttachResult.Duplicate -> {
-                        toast(context, R.string.github_toast_share_import_track_exists)
-                        attachCandidate = null
+                try {
+                    when (val result = attachCandidateToTracked(context, candidate)) {
+                        ShareImportAttachResult.Duplicate -> {
+                            toast(context, R.string.github_toast_share_import_track_exists)
+                            attachCandidate = null
+                        }
+                        is ShareImportAttachResult.Failed -> {
+                            toast(context, R.string.github_toast_share_import_failed, result.message)
+                        }
+                        is ShareImportAttachResult.Added -> {
+                            toast(context, R.string.github_toast_share_import_track_added, result.appLabel)
+                            attachCandidate = null
+                        }
                     }
-                    is ShareImportAttachResult.Failed -> {
-                        toast(context, R.string.github_toast_share_import_failed, result.message)
-                    }
-                    is ShareImportAttachResult.Added -> {
-                        toast(context, R.string.github_toast_share_import_track_added, result.appLabel)
-                        attachCandidate = null
-                    }
+                } finally {
+                    attachSubmitting = false
                 }
             }
         },
         onConfirmAndOpenGitHub = {
+            if (attachSubmitting) return@GitHubShareImportAttachConfirmDialog
             val candidate = attachCandidate ?: return@GitHubShareImportAttachConfirmDialog
+            attachSubmitting = true
             scope.launch {
-                when (val result = attachCandidateToTracked(context, candidate)) {
-                    ShareImportAttachResult.Duplicate -> {
-                        toast(context, R.string.github_toast_share_import_track_exists)
-                        attachCandidate = null
+                try {
+                    when (val result = attachCandidateToTracked(context, candidate)) {
+                        ShareImportAttachResult.Duplicate -> {
+                            toast(context, R.string.github_toast_share_import_track_exists)
+                            attachCandidate = null
+                        }
+                        is ShareImportAttachResult.Failed -> {
+                            toast(context, R.string.github_toast_share_import_failed, result.message)
+                        }
+                        is ShareImportAttachResult.Added -> {
+                            toast(context, R.string.github_toast_share_import_track_added, result.appLabel)
+                            attachCandidate = null
+                            runCatching {
+                                onNavigateToGitHubPage()
+                            }.onFailure {
+                                toast(context, R.string.common_open_link_failed)
+                            }
+                        }
                     }
-                    is ShareImportAttachResult.Failed -> {
-                        toast(context, R.string.github_toast_share_import_failed, result.message)
-                    }
-                    is ShareImportAttachResult.Added -> {
-                        toast(context, R.string.github_toast_share_import_track_added, result.appLabel)
-                        attachCandidate = null
-                        onNavigateToGitHubPage()
-                    }
+                } finally {
+                    attachSubmitting = false
                 }
             }
         }

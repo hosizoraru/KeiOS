@@ -347,6 +347,7 @@ internal fun GitHubShareImportPendingDialog(
 internal fun GitHubShareImportAttachConfirmDialog(
     candidate: GitHubPendingShareImportAttachCandidate?,
     duplicateExists: Boolean,
+    submitting: Boolean,
     onDismissRequest: () -> Unit,
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
@@ -363,17 +364,14 @@ internal fun GitHubShareImportAttachConfirmDialog(
             modifier = Modifier.shareImportSheetSafeArea(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            SheetDescriptionText(
-                text = stringResource(
-                    R.string.github_share_import_attach_dialog_summary,
-                    attachCandidate.owner,
-                    attachCandidate.repo
-                )
-            )
             SheetSectionCard(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
                 verticalSpacing = 6.dp
             ) {
+                MiuixInfoItem(
+                    key = stringResource(R.string.github_share_import_pending_label_target),
+                    value = "${attachCandidate.owner}/${attachCandidate.repo}"
+                )
                 MiuixInfoItem(
                     key = stringResource(R.string.github_share_import_attach_dialog_label_app),
                     value = attachCandidate.appLabel
@@ -400,7 +398,8 @@ internal fun GitHubShareImportAttachConfirmDialog(
                             color = GitHubStatusPalette.Active,
                             textColor = MiuixTheme.colorScheme.onPrimary
                         ),
-                        onClick = onCancel
+                        onClick = onCancel,
+                        enabled = !submitting
                     )
                 }
             } else {
@@ -411,7 +410,8 @@ internal fun GitHubShareImportAttachConfirmDialog(
                     TextButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.common_cancel),
-                        onClick = onCancel
+                        onClick = onCancel,
+                        enabled = !submitting
                     )
                     TextButton(
                         modifier = Modifier.weight(1f),
@@ -420,7 +420,8 @@ internal fun GitHubShareImportAttachConfirmDialog(
                             color = GitHubStatusPalette.Active,
                             textColor = MiuixTheme.colorScheme.onPrimary
                         ),
-                        onClick = onConfirm
+                        onClick = onConfirm,
+                        enabled = !submitting
                     )
                 }
                 if (onConfirmAndOpenGitHub != null) {
@@ -433,7 +434,8 @@ internal fun GitHubShareImportAttachConfirmDialog(
                             color = GitHubStatusPalette.Update,
                             textColor = MiuixTheme.colorScheme.onPrimary
                         ),
-                        onClick = onConfirmAndOpenGitHub
+                        onClick = onConfirmAndOpenGitHub,
+                        enabled = !submitting
                     )
                 }
             }
