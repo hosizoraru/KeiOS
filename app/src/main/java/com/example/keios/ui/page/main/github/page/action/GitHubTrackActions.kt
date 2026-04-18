@@ -60,8 +60,7 @@ internal class GitHubTrackActions(
                 return
             }
             state.trackedItems.add(newItem)
-            env.saveTrackedItems()
-            refreshActions.refreshItem(newItem, showToastOnError = true)
+            env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
             env.toast(R.string.github_toast_track_added)
         } else {
             val duplicate = state.trackedItems.any { it.id == newItem.id && it.id != editing.id }
@@ -80,8 +79,7 @@ internal class GitHubTrackActions(
                 state.trackedCardExpanded.remove(editing.id)
                 state.clearAssetUiState(editing.id)
             }
-            env.saveTrackedItems()
-            refreshActions.refreshItem(newItem, showToastOnError = true)
+            env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
             env.toast(R.string.github_toast_track_updated)
         }
         state.dismissTrackSheet()

@@ -14,13 +14,19 @@ object GitHubTrackStoreSignals {
         _version.value = atMillis
     }
 
-    fun requestTrackRefresh(trackId: String, atMillis: Long = System.currentTimeMillis()) {
+    fun requestTrackRefresh(
+        trackId: String,
+        atMillis: Long = System.currentTimeMillis(),
+        notifyChangeSignal: Boolean = true
+    ) {
         val normalized = trackId.trim()
         if (normalized.isBlank()) return
         synchronized(trackRefreshLock) {
             _pendingTrackRefreshIds.value = _pendingTrackRefreshIds.value + normalized
         }
-        notifyChanged(atMillis)
+        if (notifyChangeSignal) {
+            notifyChanged(atMillis)
+        }
     }
 
     fun consumeTrackRefreshRequests(existingTrackIds: Set<String>): Set<String> {

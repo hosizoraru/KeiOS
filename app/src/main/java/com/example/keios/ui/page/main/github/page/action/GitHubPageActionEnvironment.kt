@@ -29,11 +29,17 @@ internal class GitHubPageActionEnvironment(
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    fun saveTrackedItems() {
+    fun saveTrackedItems(refreshTrackIds: Set<String> = emptySet()) {
         state.retainTrackedFirstInstallAtByTrackedItems()
         GitHubTrackStore.save(state.trackedItems.toList())
         GitHubTrackStore.saveTrackedFirstInstallAtByPackage(state.trackedFirstInstallAtByPackage)
         AppBackgroundScheduler.scheduleGitHubRefresh(context)
+        refreshTrackIds.forEach { trackId ->
+            GitHubTrackStoreSignals.requestTrackRefresh(
+                trackId = trackId,
+                notifyChangeSignal = false
+            )
+        }
         GitHubTrackStoreSignals.notifyChanged()
     }
 }
