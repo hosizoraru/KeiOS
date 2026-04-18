@@ -3,9 +3,11 @@ package com.example.keios.ui.page.main
 import com.example.keios.R
 import com.example.keios.core.background.AppBackgroundScheduler
 import com.example.keios.feature.github.data.local.AppIconCache
+import com.example.keios.feature.github.data.local.GitHubTrackSnapshot
 import com.example.keios.feature.github.data.local.GitHubTrackStore
 import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.feature.github.domain.GitHubReleaseCheckService
+import com.example.keios.feature.github.model.GitHubLookupStrategyOption
 import com.example.keios.feature.github.notification.GitHubRefreshNotificationHelper
 import com.example.keios.ui.page.main.github.state.toCacheEntry
 import com.example.keios.ui.page.main.github.state.toUi
@@ -69,13 +71,19 @@ internal class GitHubRefreshActions(
                 forceRefresh = forceRefresh
             )
         }
-        withContext(Dispatchers.IO) {
-            AppIconCache.preload(context, state.appList.map { it.packageName })
+        val trackedPackages = state.trackedItems.map { it.packageName }.distinct()
+        if (trackedPackages.isNotEmpty()) {
+            withContext(Dispatchers.IO) {
+                AppIconCache.preload(context, trackedPackages)
+            }
         }
         state.appListLoaded = true
     }
 
     suspend fun initializePage() {
+        applyTrackSnapshot(
+            withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
+        )
         AppBackgroundScheduler.scheduleGitHubRefresh(context)
         reloadApps(forceRefresh = false)
         val hasTracked = state.trackedItems.isNotEmpty()
@@ -199,5 +207,50 @@ internal class GitHubRefreshActions(
         return withContext(Dispatchers.IO) {
             GitHubReleaseCheckService.evaluateTrackedApp(context, item).toUi()
         }
+    }
+
+    private fun applyTrackSnapshot(trackSnapshot: GitHubTrackSnapshot) {
+        val activeStrategyId = trackSnapshot.lookupConfig.selectedStrategy.storageId
+        val snapshotAssetSourceSignature = listOf(
+            "asset-v2",
+            trackSnapshot.lookupConfig.selectedStrategy.storageId,
+            trackSnapshot.lookupConfig.apiToken.isNotBlank().toString(),
+            trackSnapshot.lookupConfig.aggressiveApkFiltering.toString()
+        ).joinToString("|")
+        state.lookupConfig = trackSnapshot.lookupConfig
+        state.selectedStrategyInput = trackSnapshot.lookupConfig.selectedStrategy
+        state.githubApiTokenInput = trackSnapshot.lookupConfig.apiToken
+        state.checkAllTrackedPreReleasesInput = trackSnapshot.lookupConfig.checkAllTrackedPreReleases
+        state.aggressiveApkFilteringInput = trackSnapshot.lookupConfig.aggressiveApkFiltering
+        state.onlineShareTargetPackageInput = trackSnapshot.lookupConfig.onlineShareTargetPackage
+        state.preferredDownloaderPackageInput = trackSnapshot.lookupConfig.preferredDownloaderPackage
+        state.refreshIntervalHours = trackSnapshot.refreshIntervalHours
+        state.refreshIntervalHoursInput = trackSnapshot.refreshIntervalHours
+        if (
+            state.assetSourceSignature.isNotBlank() &&
+            state.assetSourceSignature != snapshotAssetSourceSignature
+        ) {
+            state.clearAllAssetUiState()
+        }
+        state.assetSourceSignature = snapshotAssetSourceSignature
+
+        state.trackedItems.clear()
+        state.trackedItems.addAll(trackSnapshot.items)
+
+        val cachedStates = trackSnapshot.checkCache
+        state.checkStates.clear()
+        trackSnapshot.items.forEach { item ->
+            cachedStates[item.id]
+                ?.takeIf { cache ->
+                    val sourceId = cache.sourceStrategyId.ifBlank {
+                        GitHubLookupStrategyOption.AtomFeed.storageId
+                    }
+                    sourceId == activeStrategyId
+                }
+                ?.let { cached ->
+                    state.checkStates[item.id] = cached.toUi()
+                }
+        }
+        state.lastRefreshMs = trackSnapshot.lastRefreshMs
     }
 }

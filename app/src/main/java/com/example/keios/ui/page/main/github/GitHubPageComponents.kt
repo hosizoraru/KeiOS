@@ -473,7 +473,11 @@ internal fun AppIcon(
 ) {
     val context = LocalContext.current
     val bitmapState = produceState<Bitmap?>(initialValue = AppIconCache.get(packageName), packageName) {
-        value = withContext(Dispatchers.IO) { AppIconCache.getOrLoad(context, packageName) }
+        if (value == null) {
+            value = withContext(Dispatchers.IO) {
+                AppIconCache.getOrLoad(context, packageName)
+            }
+        }
     }
     val bitmap = bitmapState.value
     if (bitmap != null) {

@@ -309,7 +309,11 @@ private fun LazyListScope.GitHubTrackedItemsSection(
             )
         }
     } else {
-        items(sortedTracked, key = { it.id }) { item ->
+        items(
+            items = sortedTracked,
+            key = { it.id },
+            contentType = { "tracked_app" }
+        ) { item ->
             var expanded by remember(item.id) { mutableStateOf(false) }
             MiuixAccordionCard(
                 backdrop = contentBackdrop,

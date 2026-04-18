@@ -5,14 +5,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
@@ -51,29 +47,18 @@ fun GitHubPage(
     val scrollBehavior = MiuixScrollBehavior()
     val isDark = isSystemInDarkTheme()
     val surfaceColor = MiuixTheme.colorScheme.surface
-    var activationCount by rememberSaveable { mutableIntStateOf(0) }
-    DisposableEffect(Unit) {
-        activationCount++
-        onDispose { }
-    }
 
-    val topBarBackdrop: LayerBackdrop = key("github-topbar-$activationCount") {
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
+    val topBarBackdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
     }
-    val contentBackdrop: LayerBackdrop = key("github-content-$activationCount") {
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
+    val contentBackdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
     }
-    val sheetBackdrop: LayerBackdrop = key("github-sheet-$activationCount") {
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
+    val sheetBackdrop: LayerBackdrop = rememberLayerBackdrop {
+        drawRect(surfaceColor)
+        drawContent()
     }
     val topBarColor = rememberMiuixBlurBackdrop(enableBlur = true).getMiuixAppBarColor()
 
@@ -93,15 +78,29 @@ fun GitHubPage(
             openLinkFailureMessage = openLinkFailureMessage
         )
     }
-    val installedOnlineShareTargets = remember(state.appListLoaded, state.appList) {
-        queryOnlineShareTargetOptions(context, state.appList)
+    val shouldResolveOnlineShareTargets by remember(state) {
+        derivedStateOf {
+            state.showCheckLogicSheet ||
+                state.lookupConfig.onlineShareTargetPackage.isNotBlank() ||
+                state.onlineShareTargetPackageInput.isNotBlank()
+        }
+    }
+    val installedOnlineShareTargets = remember(
+        shouldResolveOnlineShareTargets,
+        state.appListLoaded,
+        state.appList
+    ) {
+        if (shouldResolveOnlineShareTargets) {
+            queryOnlineShareTargetOptions(context, state.appList)
+        } else {
+            emptyList()
+        }
     }
     val appListPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             scope.launch { actions.reloadApps(forceRefresh = true) }
         }
 
-    BindGitHubTrackSnapshotEffect(state = state)
     BindGitHubPageEffects(
         context = context,
         listState = listState,
@@ -113,49 +112,70 @@ fun GitHubPage(
         onActionBarInteractingChanged = onActionBarInteractingChanged
     )
 
-    val filteredTracked = state.trackedItems.filter { item ->
-        state.trackedSearch.isBlank() ||
-            item.owner.contains(state.trackedSearch, ignoreCase = true) ||
-            item.repo.contains(state.trackedSearch, ignoreCase = true) ||
-            item.appLabel.contains(state.trackedSearch, ignoreCase = true) ||
-            item.packageName.contains(state.trackedSearch, ignoreCase = true)
+    val trackedUi by remember(state) {
+        derivedStateOf {
+            val filteredTracked = state.trackedItems.filter { item ->
+                state.trackedSearch.isBlank() ||
+                    item.owner.contains(state.trackedSearch, ignoreCase = true) ||
+                    item.repo.contains(state.trackedSearch, ignoreCase = true) ||
+                    item.appLabel.contains(state.trackedSearch, ignoreCase = true) ||
+                    item.packageName.contains(state.trackedSearch, ignoreCase = true)
+            }
+            val isSortUpdatable: (com.example.keios.feature.github.model.GitHubTrackedApp) -> Boolean = { item ->
+                item.alwaysShowLatestReleaseDownloadButton || state.checkStates[item.id]?.hasUpdate == true
+            }
+            val sortedTracked = when (state.sortMode) {
+                GitHubSortMode.UpdateFirst -> filteredTracked.sortedWith(
+                    compareByDescending<com.example.keios.feature.github.model.GitHubTrackedApp> {
+                        isSortUpdatable(it)
+                    }
+                        .thenByDescending { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
+                        .thenBy { it.appLabel.lowercase() }
+                )
+                GitHubSortMode.NameAsc -> filteredTracked.sortedBy { it.appLabel.lowercase() }
+                GitHubSortMode.PreReleaseFirst -> filteredTracked.sortedWith(
+                    compareByDescending<com.example.keios.feature.github.model.GitHubTrackedApp> {
+                        state.checkStates[it.id]?.isPreRelease == true
+                    }
+                        .thenByDescending { isSortUpdatable(it) }
+                        .thenBy { it.appLabel.lowercase() }
+                )
+            }
+            val trackedCount = state.trackedItems.size
+            val updatableCount = state.trackedItems.count { state.checkStates[it.id]?.hasUpdate == true }
+            val preReleaseCount = state.trackedItems.count { state.checkStates[it.id]?.isPreRelease == true }
+            val preReleaseUpdateCount =
+                state.trackedItems.count { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
+            val failedCount = state.trackedItems.count { state.checkStates[it.id]?.failed == true }
+            val stableLatestCount = state.trackedItems.count {
+                val itemState = state.checkStates[it.id]
+                itemState?.hasUpdate == false && itemState.isPreRelease.not()
+            }
+            GitHubPageDerivedState(
+                filteredTracked = filteredTracked,
+                sortedTracked = sortedTracked,
+                overviewMetrics = GitHubOverviewMetrics(
+                    trackedCount = trackedCount,
+                    updatableCount = updatableCount,
+                    stableLatestCount = stableLatestCount,
+                    preReleaseCount = preReleaseCount,
+                    preReleaseUpdateCount = preReleaseUpdateCount,
+                    failedCount = failedCount
+                )
+            )
+        }
     }
     val appLastUpdatedAtByPackage = remember(state.appListLoaded, state.appList) {
         state.appList
             .filter { it.packageName.isNotBlank() && it.lastUpdateTimeMs > 0L }
             .associate { it.packageName to it.lastUpdateTimeMs }
     }
-    val isSortUpdatable: (com.example.keios.feature.github.model.GitHubTrackedApp) -> Boolean = { item ->
-        item.alwaysShowLatestReleaseDownloadButton || state.checkStates[item.id]?.hasUpdate == true
-    }
-    val sortedTracked = when (state.sortMode) {
-        GitHubSortMode.UpdateFirst -> filteredTracked.sortedWith(
-            compareByDescending<com.example.keios.feature.github.model.GitHubTrackedApp> { isSortUpdatable(it) }
-                .thenByDescending { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
-                .thenBy { it.appLabel.lowercase() }
-        )
-        GitHubSortMode.NameAsc -> filteredTracked.sortedBy { it.appLabel.lowercase() }
-        GitHubSortMode.PreReleaseFirst -> filteredTracked.sortedWith(
-            compareByDescending<com.example.keios.feature.github.model.GitHubTrackedApp> {
-                state.checkStates[it.id]?.isPreRelease == true
-            }
-                .thenByDescending { isSortUpdatable(it) }
-                .thenBy { it.appLabel.lowercase() }
-        )
-    }
-
-    val trackedCount = state.trackedItems.size
-    val updatableCount = state.trackedItems.count { state.checkStates[it.id]?.hasUpdate == true }
-    val preReleaseCount = state.trackedItems.count { state.checkStates[it.id]?.isPreRelease == true }
-    val preReleaseUpdateCount =
-        state.trackedItems.count { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
-    val failedCount = state.trackedItems.count { state.checkStates[it.id]?.failed == true }
-    val stableLatestCount = state.trackedItems.count {
-        val itemState = state.checkStates[it.id]
-        itemState?.hasUpdate == false && itemState.isPreRelease.not()
-    }
     val checkLogicDownloaderOptions = remember(state.showCheckLogicSheet) {
-        queryDownloaderOptions(context)
+        if (state.showCheckLogicSheet) {
+            queryDownloaderOptions(context)
+        } else {
+            emptyList()
+        }
     }
 
     GitHubMainContent(
@@ -179,18 +199,11 @@ fun GitHubPage(
         refreshProgress = state.refreshProgress,
         lastRefreshMs = state.lastRefreshMs,
         lookupConfig = state.lookupConfig,
-        overviewMetrics = GitHubOverviewMetrics(
-            trackedCount = trackedCount,
-            updatableCount = updatableCount,
-            stableLatestCount = stableLatestCount,
-            preReleaseCount = preReleaseCount,
-            preReleaseUpdateCount = preReleaseUpdateCount,
-            failedCount = failedCount
-        ),
+        overviewMetrics = trackedUi.overviewMetrics,
         cardPressFeedbackEnabled = cardPressFeedbackEnabled,
         trackedItems = state.trackedItems,
-        filteredTracked = filteredTracked,
-        sortedTracked = sortedTracked,
+        filteredTracked = trackedUi.filteredTracked,
+        sortedTracked = trackedUi.sortedTracked,
         appLastUpdatedAtByPackage = appLastUpdatedAtByPackage,
         checkStates = state.checkStates,
         apkAssetBundles = state.apkAssetBundles,
@@ -237,7 +250,7 @@ fun GitHubPage(
         strategyBenchmarkRunning = state.strategyBenchmarkRunning,
         strategyBenchmarkError = state.strategyBenchmarkError,
         strategyBenchmarkReport = state.strategyBenchmarkReport,
-        trackedCount = state.trackedItems.size,
+        trackedCount = trackedUi.overviewMetrics.trackedCount,
         recommendedTokenGuideExpanded = state.recommendedTokenGuideExpanded,
         onDismissRequest = actions::closeStrategySheet,
         onApply = actions::applyLookupConfig,
