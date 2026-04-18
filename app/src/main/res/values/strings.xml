@@ -328,6 +328,10 @@
     <string name="github_toast_downloader_fallback_system">所选下载器不可用，已回退系统默认值</string>
     <string name="github_toast_open_downloader_failed">无法打开下载器</string>
     <string name="github_toast_no_apk_to_load">当前没有可加载的更新 APK</string>
+    <string name="github_toast_share_import_failed">分享导入失败：%1$s</string>
+    <string name="github_toast_share_import_no_apk">该链接对应的 release 暂无可用 APK</string>
+    <string name="github_toast_share_import_wait_install">已发送 %1$s，安装完成后会自动新增跟踪</string>
+    <string name="github_toast_share_import_track_added">已新增跟踪：%1$s</string>
     <string name="github_msg_checking">检查中...</string>
     <string name="github_msg_assets_no_downloadable_except_source">%1$s 当前除了 Source code 外没有其它可下载资源</string>
     <string name="github_msg_assets_no_downloadable">%1$s 当前没有可直接下载的资源</string>
@@ -500,6 +504,8 @@
     <string name="github_check_sheet_summary_aggressive_filter">忽略 `armeabi-v7a`、`armeabi`、`x86_64`、`x86`；若有 arm64-v8a 也忽略 universal</string>
     <string name="github_check_sheet_label_downloader">下载器</string>
     <string name="github_check_sheet_summary_downloader">用于直链下载跳转；默认跟随系统</string>
+    <string name="github_check_sheet_label_share_import_linkage">分享导入联动</string>
+    <string name="github_check_sheet_summary_share_import_linkage">开启后可从外部分享 GitHub 链接到 KeiOS，自动解析 release APK 并进入安装联动</string>
     <string name="github_check_sheet_label_share_to_installer">分享到安装器</string>
     <string name="github_check_sheet_summary_share_available">分享时可直接发送到支持直接边下载边安装的安装器</string>
     <string name="github_check_sheet_summary_share_unavailable">未检测到支持的安装器，默认不联动</string>
@@ -559,6 +565,16 @@
     <string name="github_import_dialog_label_unchanged_items">保持不变</string>
     <string name="github_import_dialog_label_merged_items">导入后总数</string>
     <string name="github_import_dialog_action_confirm">确认导入</string>
+
+    <string name="github_share_import_dialog_title">分享导入</string>
+    <string name="github_share_import_dialog_summary_parsing">正在解析 GitHub 分享链接...</string>
+    <string name="github_share_import_dialog_summary_ready">%1$s/%2$s · release %3$s</string>
+    <string name="github_share_import_dialog_label_project">项目</string>
+    <string name="github_share_import_dialog_label_strategy">抓取方案</string>
+    <string name="github_share_import_dialog_label_release">Release</string>
+    <string name="github_share_import_dialog_label_assets">可选 APK</string>
+    <string name="github_share_import_dialog_asset_summary">大小：%1$s · 链路：%2$s</string>
+    <string name="github_share_import_dialog_action_confirm">继续安装</string>
 
     <string name="github_token_guide_collapsed">Fine-grained PAT · Contents: Read</string>
     <string name="github_token_guide_summary">建议为 KeiOS 单独建一个 Fine-grained PAT。当前这套 Releases API 与资源下载只需 `Contents: Read`；公开仓库也能正常追踪。</string>

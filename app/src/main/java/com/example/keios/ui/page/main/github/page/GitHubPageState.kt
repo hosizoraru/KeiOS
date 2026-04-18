@@ -47,6 +47,9 @@ internal class GitHubPageState(
     var downloaderPopupAnchorBounds by mutableStateOf<IntRect?>(null)
     var onlineShareTargetPopupAnchorBounds by mutableStateOf<IntRect?>(null)
     var pendingTrackImportPreview by mutableStateOf<GitHubTrackImportPreview?>(null)
+    var pendingShareImportPreview by mutableStateOf<GitHubShareImportPreview?>(null)
+    var pendingShareImportTrack by mutableStateOf<GitHubPendingShareImportTrack?>(null)
+    var shareImportResolving by mutableStateOf(false)
     var sortMode by mutableStateOf(GitHubSortMode.UpdateFirst)
     var pendingDeleteItem by mutableStateOf<GitHubTrackedApp?>(null)
     var overviewRefreshState by mutableStateOf(OverviewRefreshState.Idle)
@@ -58,6 +61,7 @@ internal class GitHubPageState(
     var githubApiTokenInput by mutableStateOf("")
     var checkAllTrackedPreReleasesInput by mutableStateOf(false)
     var aggressiveApkFilteringInput by mutableStateOf(false)
+    var shareImportLinkageEnabledInput by mutableStateOf(false)
     var onlineShareTargetPackageInput by mutableStateOf("")
     var preferredDownloaderPackageInput by mutableStateOf("")
     var refreshIntervalHoursInput by mutableStateOf(refreshIntervalHours)
@@ -169,6 +173,10 @@ internal class GitHubPageState(
 
     fun dismissTrackImportPreview() {
         pendingTrackImportPreview = null
+    }
+
+    fun dismissShareImportPreview() {
+        pendingShareImportPreview = null
     }
 
     fun resetTrackEditor() {

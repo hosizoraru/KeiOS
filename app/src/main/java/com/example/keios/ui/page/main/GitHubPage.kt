@@ -23,6 +23,7 @@ import com.example.keios.ui.page.main.github.section.GitHubMainContent
 import com.example.keios.ui.page.main.github.section.GitHubOverviewMetrics
 import com.example.keios.ui.page.main.github.sheet.GitHubCheckLogicSheet
 import com.example.keios.ui.page.main.github.sheet.GitHubDeleteTrackDialog
+import com.example.keios.ui.page.main.github.sheet.GitHubShareImportDialog
 import com.example.keios.ui.page.main.github.sheet.GitHubStrategySheet
 import com.example.keios.ui.page.main.github.sheet.GitHubTrackEditSheet
 import com.example.keios.ui.page.main.github.sheet.GitHubTrackImportDialog
@@ -47,6 +48,9 @@ fun GitHubPage(
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     enableSearchBar: Boolean = true,
+    incomingGitHubShareText: String? = null,
+    incomingGitHubShareToken: Int = 0,
+    onIncomingGitHubShareConsumed: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -193,10 +197,13 @@ fun GitHubPage(
         listState = listState,
         scrollToTopSignal = scrollToTopSignal,
         isPageActive = isPageActive,
+        incomingGitHubShareText = incomingGitHubShareText,
+        incomingGitHubShareToken = incomingGitHubShareToken,
         state = state,
         actions = actions,
         installedOnlineShareTargets = installedOnlineShareTargets,
         onLaunchAppListPermission = { intent -> appListPermissionLauncher.launch(intent) },
+        onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed,
         onActionBarInteractingChanged = onActionBarInteractingChanged
     )
 
@@ -367,6 +374,7 @@ fun GitHubPage(
         refreshIntervalHoursInput = state.refreshIntervalHoursInput,
         checkAllTrackedPreReleasesInput = state.checkAllTrackedPreReleasesInput,
         aggressiveApkFilteringInput = state.aggressiveApkFilteringInput,
+        shareImportLinkageEnabledInput = state.shareImportLinkageEnabledInput,
         onlineShareTargetPackageInput = state.onlineShareTargetPackageInput,
         preferredDownloaderPackageInput = state.preferredDownloaderPackageInput,
         installedOnlineShareTargets = installedOnlineShareTargets,
@@ -411,6 +419,7 @@ fun GitHubPage(
         onRefreshIntervalHoursInputChange = { state.refreshIntervalHoursInput = it },
         onCheckAllTrackedPreReleasesInputChange = { state.checkAllTrackedPreReleasesInput = it },
         onAggressiveApkFilteringInputChange = { state.aggressiveApkFilteringInput = it },
+        onShareImportLinkageEnabledInputChange = { state.shareImportLinkageEnabledInput = it },
         onPreferredDownloaderPackageInputChange = { state.preferredDownloaderPackageInput = it },
         onOnlineShareTargetPackageInputChange = { state.onlineShareTargetPackageInput = it },
         onShowCheckLogicIntervalPopupChange = { state.showCheckLogicIntervalPopup = it },
@@ -520,6 +529,16 @@ fun GitHubPage(
                     ).show()
                 }
             }
+        }
+    )
+
+    GitHubShareImportDialog(
+        preview = state.pendingShareImportPreview,
+        resolving = state.shareImportResolving,
+        onDismissRequest = actions::dismissShareImportDialog,
+        onCancel = actions::dismissShareImportDialog,
+        onConfirmImport = { asset ->
+            actions.confirmShareImportSelection(asset)
         }
     )
 }

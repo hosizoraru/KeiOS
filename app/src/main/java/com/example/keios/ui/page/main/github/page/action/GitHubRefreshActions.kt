@@ -226,6 +226,7 @@ internal class GitHubRefreshActions(
         state.githubApiTokenInput = trackSnapshot.lookupConfig.apiToken
         state.checkAllTrackedPreReleasesInput = trackSnapshot.lookupConfig.checkAllTrackedPreReleases
         state.aggressiveApkFilteringInput = trackSnapshot.lookupConfig.aggressiveApkFiltering
+        state.shareImportLinkageEnabledInput = trackSnapshot.lookupConfig.shareImportLinkageEnabled
         state.onlineShareTargetPackageInput = trackSnapshot.lookupConfig.onlineShareTargetPackage
         state.preferredDownloaderPackageInput = trackSnapshot.lookupConfig.preferredDownloaderPackage
         state.refreshIntervalHours = trackSnapshot.refreshIntervalHours

@@ -71,6 +71,7 @@ internal class GitHubConfigActions(
         state.lookupConfig = config
         state.checkAllTrackedPreReleasesInput = config.checkAllTrackedPreReleases
         state.aggressiveApkFilteringInput = config.aggressiveApkFiltering
+        state.shareImportLinkageEnabledInput = config.shareImportLinkageEnabled
         state.onlineShareTargetPackageInput = config.onlineShareTargetPackage
         state.preferredDownloaderPackageInput = config.preferredDownloaderPackage
         state.refreshIntervalHoursInput = GitHubTrackStore.loadRefreshIntervalHours()
@@ -114,7 +115,9 @@ internal class GitHubConfigActions(
             apiToken = sanitizedToken,
             checkAllTrackedPreReleases = previousConfig.checkAllTrackedPreReleases,
             aggressiveApkFiltering = previousConfig.aggressiveApkFiltering,
-            onlineShareTargetPackage = previousConfig.onlineShareTargetPackage
+            shareImportLinkageEnabled = previousConfig.shareImportLinkageEnabled,
+            onlineShareTargetPackage = previousConfig.onlineShareTargetPackage,
+            preferredDownloaderPackage = previousConfig.preferredDownloaderPackage
         )
         GitHubTrackStore.saveLookupConfig(newConfig)
         state.lookupConfig = newConfig
@@ -164,6 +167,7 @@ internal class GitHubConfigActions(
         val newConfig = previousConfig.copy(
             checkAllTrackedPreReleases = state.checkAllTrackedPreReleasesInput,
             aggressiveApkFiltering = state.aggressiveApkFilteringInput,
+            shareImportLinkageEnabled = state.shareImportLinkageEnabledInput,
             onlineShareTargetPackage = state.onlineShareTargetPackageInput.trim().takeIf { selected ->
                 installedOnlineShareTargets.any { it.packageName == selected }
             }.orEmpty(),
@@ -179,6 +183,8 @@ internal class GitHubConfigActions(
         val checkScopeChanged =
             previousConfig.checkAllTrackedPreReleases != newConfig.checkAllTrackedPreReleases
         val filteringChanged = previousConfig.aggressiveApkFiltering != newConfig.aggressiveApkFiltering
+        val shareImportChanged =
+            previousConfig.shareImportLinkageEnabled != newConfig.shareImportLinkageEnabled
         val intervalChanged = previousRefreshIntervalHours != state.refreshIntervalHoursInput
         when {
             checkScopeChanged || filteringChanged -> {
@@ -194,6 +200,9 @@ internal class GitHubConfigActions(
                 } else {
                     env.toast(R.string.github_toast_check_logic_saved)
                 }
+            }
+            shareImportChanged -> {
+                env.toast(R.string.github_toast_check_logic_saved)
             }
             intervalChanged -> {
                 env.toast(R.string.github_toast_refresh_interval_saved)

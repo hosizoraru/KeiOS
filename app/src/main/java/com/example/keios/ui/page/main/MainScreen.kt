@@ -119,7 +119,10 @@ fun MainScreen(
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
-    onRequestedBottomPageConsumed: () -> Unit
+    onRequestedBottomPageConsumed: () -> Unit,
+    incomingGitHubShareText: String?,
+    incomingGitHubShareToken: Int,
+    onIncomingGitHubShareConsumed: () -> Unit
 ) {
     val backStack = remember { mutableStateListOf<NavKey>().apply { add(KeiosRoute.Main) } }
     val navigator = remember { Navigator(backStack) }
@@ -223,7 +226,10 @@ fun MainScreen(
                         onOpenGuideDetail = openGuideDetail,
                         requestedBottomPage = requestedBottomPage,
                         requestedBottomPageToken = requestedBottomPageToken,
-                        onRequestedBottomPageConsumed = onRequestedBottomPageConsumed
+                        onRequestedBottomPageConsumed = onRequestedBottomPageConsumed,
+                        incomingGitHubShareText = incomingGitHubShareText,
+                        incomingGitHubShareToken = incomingGitHubShareToken,
+                        onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed
                     )
             }
             entry<KeiosRoute.Settings> {
@@ -381,7 +387,10 @@ private fun MainPagerLayout(
     onOpenGuideDetail: (String) -> Unit,
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
-    onRequestedBottomPageConsumed: () -> Unit
+    onRequestedBottomPageConsumed: () -> Unit,
+    incomingGitHubShareText: String?,
+    incomingGitHubShareToken: Int,
+    onIncomingGitHubShareConsumed: () -> Unit
 ) {
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val preloadPolicy = remember(preloadingEnabled) {
@@ -774,6 +783,9 @@ private fun MainPagerLayout(
                                 isPageActive = isWarmActive,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                incomingGitHubShareText = incomingGitHubShareText,
+                                incomingGitHubShareToken = incomingGitHubShareToken,
+                                onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed,
                                 onActionBarInteractingChanged = { interacting ->
                                     pagerScrollEnabled = !interacting
                                 }

@@ -10,23 +10,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
 import com.example.keios.feature.github.model.GitHubLookupConfig
 import com.example.keios.feature.github.model.GitHubTrackedApp
 import com.example.keios.feature.github.model.InstalledAppItem
+import com.example.keios.ui.page.main.GitHubShareImportPreview
 import com.example.keios.ui.page.main.RefreshIntervalOption
 import com.example.keios.ui.page.main.GitHubAppCandidateRow
 import com.example.keios.ui.page.main.GitHubSelectedAppCard
 import com.example.keios.ui.page.main.GitHubStatusPalette
 import com.example.keios.ui.page.main.GitHubTrackImportPreview
+import com.example.keios.ui.page.main.github.asset.formatAssetSize
 import com.example.keios.ui.page.main.github.query.DownloaderOption
 import com.example.keios.ui.page.main.github.query.OnlineShareTargetOption
 import com.example.keios.ui.page.main.github.query.noOnlineShareTargetOption
@@ -39,6 +46,7 @@ import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.MiuixInfoItem
 import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SheetInputTitle
@@ -48,7 +56,9 @@ import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Switch
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
@@ -66,6 +76,7 @@ internal fun GitHubCheckLogicSheet(
     refreshIntervalHoursInput: Int,
     checkAllTrackedPreReleasesInput: Boolean,
     aggressiveApkFilteringInput: Boolean,
+    shareImportLinkageEnabledInput: Boolean,
     onlineShareTargetPackageInput: String,
     preferredDownloaderPackageInput: String,
     installedOnlineShareTargets: List<OnlineShareTargetOption>,
@@ -85,6 +96,7 @@ internal fun GitHubCheckLogicSheet(
     onRefreshIntervalHoursInputChange: (Int) -> Unit,
     onCheckAllTrackedPreReleasesInputChange: (Boolean) -> Unit,
     onAggressiveApkFilteringInputChange: (Boolean) -> Unit,
+    onShareImportLinkageEnabledInputChange: (Boolean) -> Unit,
     onPreferredDownloaderPackageInputChange: (String) -> Unit,
     onOnlineShareTargetPackageInputChange: (String) -> Unit,
     onShowCheckLogicIntervalPopupChange: (Boolean) -> Unit,
@@ -134,6 +146,7 @@ internal fun GitHubCheckLogicSheet(
         val logicChanged = refreshIntervalHoursInput != refreshIntervalHours ||
             checkAllTrackedPreReleasesInput != lookupConfig.checkAllTrackedPreReleases ||
             aggressiveApkFilteringInput != lookupConfig.aggressiveApkFiltering ||
+            shareImportLinkageEnabledInput != lookupConfig.shareImportLinkageEnabled ||
             onlineShareTargetPackageInput != lookupConfig.onlineShareTargetPackage ||
             preferredDownloaderPackageInput != lookupConfig.preferredDownloaderPackage
 
@@ -199,6 +212,15 @@ internal fun GitHubCheckLogicSheet(
 
             SheetSectionTitle(stringResource(R.string.github_check_sheet_section_transfer))
             SheetSectionCard {
+                SheetControlRow(
+                    label = stringResource(R.string.github_check_sheet_label_share_import_linkage),
+                    summary = stringResource(R.string.github_check_sheet_summary_share_import_linkage)
+                ) {
+                    Switch(
+                        checked = shareImportLinkageEnabledInput,
+                        onCheckedChange = onShareImportLinkageEnabledInputChange
+                    )
+                }
                 SheetControlRow(
                     label = stringResource(R.string.github_check_sheet_label_downloader),
                     summary = stringResource(R.string.github_check_sheet_summary_downloader)
@@ -677,6 +699,141 @@ internal fun GitHubTrackImportDialog(
                     },
                     onClick = if (preview.canImport) onConfirmImport else onDismissRequest,
                     enabled = !importInProgress
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun GitHubShareImportDialog(
+    preview: GitHubShareImportPreview?,
+    resolving: Boolean,
+    onDismissRequest: () -> Unit,
+    onCancel: () -> Unit,
+    onConfirmImport: (GitHubReleaseAssetFile) -> Unit
+) {
+    val context = LocalContext.current
+    val showDialog = resolving || preview != null
+    WindowDialog(
+        show = showDialog,
+        title = stringResource(R.string.github_share_import_dialog_title),
+        summary = when {
+            resolving -> stringResource(R.string.github_share_import_dialog_summary_parsing)
+            preview != null -> stringResource(
+                R.string.github_share_import_dialog_summary_ready,
+                preview.owner,
+                preview.repo,
+                preview.releaseTag
+            )
+            else -> null
+        },
+        onDismissRequest = onDismissRequest
+    ) {
+        if (resolving) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+                Text(
+                    text = stringResource(R.string.github_share_import_dialog_summary_parsing),
+                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                )
+            }
+            return@WindowDialog
+        }
+        if (preview == null) return@WindowDialog
+
+        var selectedIndex by remember(preview.sourceUrl, preview.releaseTag, preview.assets) {
+            mutableIntStateOf(preview.defaultSelectedIndex.coerceAtLeast(0))
+        }
+        val safeSelectedIndex = selectedIndex.coerceIn(0, preview.assets.lastIndex)
+        val selectedAsset = preview.assets.getOrNull(safeSelectedIndex)
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Spacer(modifier = Modifier.height(4.dp))
+            SheetSectionCard(
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                verticalSpacing = 6.dp
+            ) {
+                MiuixInfoItem(
+                    key = stringResource(R.string.github_share_import_dialog_label_project),
+                    value = preview.projectUrl
+                )
+                MiuixInfoItem(
+                    key = stringResource(R.string.github_share_import_dialog_label_strategy),
+                    value = preview.strategyLabel
+                )
+                MiuixInfoItem(
+                    key = stringResource(R.string.github_share_import_dialog_label_release),
+                    value = preview.releaseTag
+                )
+            }
+            SheetSectionTitle(stringResource(R.string.github_share_import_dialog_label_assets))
+            SheetSectionCard(
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                verticalSpacing = 6.dp
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 320.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    itemsIndexed(
+                        items = preview.assets,
+                        key = { _, asset -> asset.name }
+                    ) { index, asset ->
+                        val assetSummary = stringResource(
+                            R.string.github_share_import_dialog_asset_summary,
+                            formatAssetSize(asset.sizeBytes, context),
+                            if (asset.apiAssetUrl.isNotBlank()) {
+                                stringResource(R.string.github_asset_fetch_source_api)
+                            } else {
+                                stringResource(R.string.github_asset_transport_direct)
+                            }
+                        )
+                        SheetChoiceCard(
+                            title = asset.name,
+                            summary = assetSummary,
+                            selected = safeSelectedIndex == index,
+                            onSelect = { selectedIndex = index },
+                            accentColor = GitHubStatusPalette.Active,
+                            selectedLabel = stringResource(R.string.github_strategy_status_selected)
+                        )
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.common_cancel),
+                    onClick = onCancel
+                )
+                TextButton(
+                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.github_share_import_dialog_action_confirm),
+                    colors = ButtonDefaults.textButtonColors(
+                        color = GitHubStatusPalette.Active,
+                        textColor = MiuixTheme.colorScheme.onPrimary
+                    ),
+                    onClick = {
+                        selectedAsset?.let(onConfirmImport)
+                    },
+                    enabled = selectedAsset != null
                 )
             }
         }

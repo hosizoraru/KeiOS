@@ -2,12 +2,16 @@ package com.example.keios.ui.page.main
 
 import android.content.Context
 import android.content.Intent
+import com.example.keios.R
 import com.example.keios.core.system.AppPackageChangedEvent
 import com.example.keios.feature.github.data.remote.GitHubReleaseAssetFile
+import com.example.keios.feature.github.data.remote.GitHubVersionUtils
 import com.example.keios.feature.github.model.GitHubTrackedApp
 import com.example.keios.ui.page.main.github.query.DownloaderOption
 import com.example.keios.ui.page.main.github.query.OnlineShareTargetOption
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 internal class GitHubPageActions(
     context: Context,
@@ -27,13 +31,19 @@ internal class GitHubPageActions(
     private val assetActions = GitHubAssetActions(env)
     private val configActions = GitHubConfigActions(env, refreshActions)
     private val trackActions = GitHubTrackActions(env, refreshActions)
+    private val shareImportActions = GitHubShareImportActions(env, assetActions)
 
     private val minHandleIntervalMs = 1200L
+    private val pendingShareImportTrackMaxAgeMs = 25 * 60 * 1000L
     private val handledAtByPackage = mutableMapOf<String, Long>()
     private val packageUpdateActions = setOf(
         Intent.ACTION_PACKAGE_ADDED,
         Intent.ACTION_PACKAGE_REPLACED,
         Intent.ACTION_PACKAGE_CHANGED
+    )
+    private val packageInstallActions = setOf(
+        Intent.ACTION_PACKAGE_ADDED,
+        Intent.ACTION_PACKAGE_REPLACED
     )
 
     fun openStrategySheet() = configActions.openStrategySheet()
@@ -99,6 +109,14 @@ internal class GitHubPageActions(
 
     fun importTrackedItemsJson(raw: String) = configActions.importTrackedItemsJson(raw)
 
+    fun handleIncomingGitHubShareText(sharedText: String) =
+        shareImportActions.handleIncomingGitHubShareText(sharedText)
+
+    fun dismissShareImportDialog() = shareImportActions.dismissShareImportDialog()
+
+    fun confirmShareImportSelection(asset: GitHubReleaseAssetFile) =
+        shareImportActions.confirmShareImportSelection(asset)
+
     fun openExternalUrl(url: String, failureMessage: String = env.openLinkFailureMessage) =
         assetActions.openExternalUrl(url = url, failureMessage = failureMessage)
 
@@ -138,6 +156,11 @@ internal class GitHubPageActions(
     suspend fun handlePackageChangedEvent(event: AppPackageChangedEvent) {
         val packageName = event.packageName.trim()
         if (packageName.isBlank()) return
+        clearExpiredPendingShareImportTrack(event.atMillis)
+        attachPendingShareImportTrack(
+            event = event,
+            packageName = packageName
+        )
         if (event.action !in packageUpdateActions) return
 
         val matchedItems = env.state.trackedItems.filter { it.packageName == packageName }
@@ -178,5 +201,49 @@ internal class GitHubPageActions(
             itemState.hasUpdate == true ||
             itemState.recommendsPreRelease ||
             itemState.hasPreReleaseUpdate
+    }
+
+    private suspend fun attachPendingShareImportTrack(
+        event: AppPackageChangedEvent,
+        packageName: String
+    ) {
+        val pending = env.state.pendingShareImportTrack ?: return
+        if (event.action !in packageInstallActions) return
+        val candidateId = "${pending.owner}/${pending.repo}|$packageName"
+        if (env.state.trackedItems.any { it.id == candidateId }) {
+            env.state.pendingShareImportTrack = null
+            return
+        }
+        val appLabel = withContext(Dispatchers.IO) {
+            GitHubVersionUtils.queryInstalledLaunchableApps(
+                context = env.context,
+                forceRefresh = true
+            ).firstOrNull { app ->
+                app.packageName == packageName
+            }?.label
+        }.orEmpty().ifBlank { packageName }
+
+        env.state.trackedItems.add(
+            GitHubTrackedApp(
+                repoUrl = pending.projectUrl,
+                owner = pending.owner,
+                repo = pending.repo,
+                packageName = packageName,
+                appLabel = appLabel
+            )
+        )
+        env.saveTrackedItems()
+        env.state.pendingShareImportTrack = null
+        env.toast(
+            R.string.github_toast_share_import_track_added,
+            appLabel
+        )
+    }
+
+    private fun clearExpiredPendingShareImportTrack(nowMillis: Long) {
+        val pending = env.state.pendingShareImportTrack ?: return
+        val age = (nowMillis - pending.armedAtMillis).coerceAtLeast(0L)
+        if (age <= pendingShareImportTrackMaxAgeMs) return
+        env.state.pendingShareImportTrack = null
     }
 }
