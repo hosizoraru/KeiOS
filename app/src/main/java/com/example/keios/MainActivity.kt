@@ -22,8 +22,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.metrics.performance.JankStats
-import com.example.keios.feature.github.data.local.GitHubTrackStore
-import com.example.keios.feature.github.data.remote.GitHubShareIntentParser
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.core.perf.AppJankMonitor
@@ -51,8 +49,6 @@ class MainActivity : ComponentActivity() {
     private var notificationPermissionGranted by mutableStateOf(true)
     private var requestedBottomPage by mutableStateOf<String?>(null)
     private var requestedBottomPageToken by mutableStateOf(0)
-    private var incomingGitHubShareText by mutableStateOf<String?>(null)
-    private var incomingGitHubShareToken by mutableStateOf(0)
     private var pendingMcpServerAction: String? = null
     private val shizukuApiUtils = ShizukuApiUtils()
     private lateinit var localMcpService: LocalMcpService
@@ -129,11 +125,6 @@ class MainActivity : ComponentActivity() {
                     requestedBottomPageToken = requestedBottomPageToken,
                     onRequestedBottomPageConsumed = {
                         requestedBottomPage = null
-                    },
-                    incomingGitHubShareText = incomingGitHubShareText,
-                    incomingGitHubShareToken = incomingGitHubShareToken,
-                    onIncomingGitHubShareConsumed = {
-                        incomingGitHubShareText = null
                     }
                 )
             }
@@ -184,7 +175,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun consumeIntentNavigation(intent: Intent?) {
-        consumeIncomingGitHubShare(intent)
         val target = intent?.getStringExtra(EXTRA_TARGET_BOTTOM_PAGE)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
@@ -196,21 +186,6 @@ class MainActivity : ComponentActivity() {
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
         }
-    }
-
-    private fun consumeIncomingGitHubShare(intent: Intent?) {
-        if (intent?.action != Intent.ACTION_SEND) return
-        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: return
-        if (!GitHubShareIntentParser.looksLikeGitHubShareText(sharedText)) return
-
-        val shareImportEnabled = GitHubTrackStore.loadLookupConfig().shareImportLinkageEnabled
-        if (!shareImportEnabled) return
-
-        incomingGitHubShareText = sharedText
-        incomingGitHubShareToken += 1
     }
 
     private fun applyPendingMcpServerAction() {

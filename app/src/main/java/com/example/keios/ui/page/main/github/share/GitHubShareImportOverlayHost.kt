@@ -8,12 +8,12 @@ import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
@@ -34,9 +34,13 @@ import com.example.keios.feature.github.model.GitHubTrackedApp
 import com.example.keios.ui.page.main.github.query.systemDownloadManagerOption
 import com.example.keios.ui.page.main.github.sheet.GitHubShareImportAttachConfirmDialog
 import com.example.keios.ui.page.main.github.sheet.GitHubShareImportDialog
+import com.example.keios.ui.page.main.github.sheet.GitHubShareImportPendingDialog
 import com.example.keios.ui.page.main.github.state.toCacheEntry
 import com.example.keios.ui.page.main.github.state.toUi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -72,15 +76,26 @@ internal fun GitHubShareImportOverlayHost(
     incomingGitHubShareText: String?,
     incomingGitHubShareToken: Int,
     onIncomingGitHubShareConsumed: () -> Unit,
-    onNavigateToGitHubPage: () -> Unit
+    onNavigateToGitHubPage: () -> Unit,
+    showPendingArmedSheet: Boolean = false,
+    onClosePendingArmedSheet: (() -> Unit)? = null,
+    onIdleWithNoPendingFlow: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val scope = remember {
+        CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            scope.cancel()
+        }
+    }
     var pendingPreview by remember { mutableStateOf<GitHubShareImportPreview?>(null) }
     var resolving by remember { mutableStateOf(false) }
     var pendingTrack by remember { mutableStateOf<GitHubPendingShareImportTrackRecord?>(null) }
     var attachCandidate by remember { mutableStateOf<GitHubPendingShareImportAttachCandidate?>(null) }
     var attachDuplicateExists by remember { mutableStateOf(false) }
+    var idleCallbackDispatched by remember { mutableStateOf(false) }
     val handledAtByPackage = remember { mutableStateMapOf<String, Long>() }
 
     LaunchedEffect(Unit) {
@@ -245,6 +260,28 @@ internal fun GitHubShareImportOverlayHost(
             GitHubTrackStore.load().any { it.id == candidateId }
         }
     }
+    LaunchedEffect(
+        resolving,
+        pendingPreview,
+        pendingTrack?.armedAtMillis,
+        attachCandidate,
+        incomingGitHubShareText,
+        onIdleWithNoPendingFlow
+    ) {
+        val onIdle = onIdleWithNoPendingFlow ?: return@LaunchedEffect
+        val hasIncomingShareText = !incomingGitHubShareText.isNullOrBlank()
+        val hasActiveFlow = resolving ||
+            pendingPreview != null ||
+            pendingTrack != null ||
+            attachCandidate != null
+        if (hasIncomingShareText || hasActiveFlow) {
+            idleCallbackDispatched = false
+            return@LaunchedEffect
+        }
+        if (idleCallbackDispatched) return@LaunchedEffect
+        idleCallbackDispatched = true
+        onIdle()
+    }
 
     GitHubShareImportDialog(
         preview = pendingPreview,
@@ -288,6 +325,33 @@ internal fun GitHubShareImportOverlayHost(
                 attachCandidate = null
                 pendingPreview = null
                 toast(context, R.string.github_toast_share_import_wait_install, selectedAsset.name)
+            }
+        }
+    )
+    GitHubShareImportPendingDialog(
+        pending = if (
+            showPendingArmedSheet &&
+            pendingTrack != null &&
+            pendingPreview == null &&
+            !resolving &&
+            attachCandidate == null
+        ) {
+            pendingTrack
+        } else {
+            null
+        },
+        onDismissRequest = {},
+        onClose = {
+            onClosePendingArmedSheet?.invoke()
+        },
+        onCancel = {
+            scope.launch {
+                withContext(Dispatchers.IO) {
+                    GitHubTrackStore.savePendingShareImportTrack(null)
+                }
+                GitHubTrackStoreSignals.notifyChanged()
+                pendingTrack = null
+                toast(context, R.string.github_toast_share_import_pending_cancelled)
             }
         }
     )

@@ -66,6 +66,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.example.keios.MainActivity
 import com.example.keios.R
 import com.example.keios.mcp.McpNotificationHelper
 import com.example.keios.mcp.McpServerManager
@@ -119,10 +120,7 @@ fun MainScreen(
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
-    onRequestedBottomPageConsumed: () -> Unit,
-    incomingGitHubShareText: String?,
-    incomingGitHubShareToken: Int,
-    onIncomingGitHubShareConsumed: () -> Unit
+    onRequestedBottomPageConsumed: () -> Unit
 ) {
     val backStack = remember { mutableStateListOf<NavKey>().apply { add(KeiosRoute.Main) } }
     val navigator = remember { Navigator(backStack) }
@@ -135,13 +133,11 @@ fun MainScreen(
     val currentOnCheckOrRequestShizuku by rememberUpdatedState(onCheckOrRequestShizuku)
     val currentOnRequestNotificationPermission by rememberUpdatedState(onRequestNotificationPermission)
     val currentOnAppThemeModeChanged by rememberUpdatedState(onAppThemeModeChanged)
+    var overlayRequestedBottomPage by remember { mutableStateOf<String?>(null) }
+    var overlayRequestedBottomPageToken by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(requestedBottomPageToken, requestedBottomPage) {
         if (requestedBottomPage.isNullOrBlank()) return@LaunchedEffect
-        navigator.popUntil { it == KeiosRoute.Main }
-    }
-    LaunchedEffect(incomingGitHubShareToken, incomingGitHubShareText) {
-        if (incomingGitHubShareText.isNullOrBlank()) return@LaunchedEffect
         navigator.popUntil { it == KeiosRoute.Main }
     }
 
@@ -187,6 +183,11 @@ fun MainScreen(
             navigator.push(KeiosRoute.BaStudentGuide(nonce = System.nanoTime()))
         }
     }
+    val openGitHubPageFromShareOverlay: () -> Unit = {
+        navigator.popUntil { it == KeiosRoute.Main }
+        overlayRequestedBottomPage = MainActivity.TARGET_BOTTOM_PAGE_GITHUB
+        overlayRequestedBottomPageToken += 1
+    }
 
     if (!view.isInEditMode) {
         SideEffect {
@@ -226,15 +227,17 @@ fun MainScreen(
                     onCheckOrRequestShizuku = currentOnCheckOrRequestShizuku,
                         notificationPermissionGranted = currentNotificationPermissionGranted,
                         shizukuApiUtils = shizukuApiUtils,
-                        mcpServerManager = mcpServerManager,
-                        onOpenGuideDetail = openGuideDetail,
-                        requestedBottomPage = requestedBottomPage,
-                        requestedBottomPageToken = requestedBottomPageToken,
-                        onRequestedBottomPageConsumed = onRequestedBottomPageConsumed,
-                        incomingGitHubShareText = incomingGitHubShareText,
-                        incomingGitHubShareToken = incomingGitHubShareToken,
-                        onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed
-                    )
+                    mcpServerManager = mcpServerManager,
+                    onOpenGuideDetail = openGuideDetail,
+                    requestedBottomPage = requestedBottomPage,
+                    requestedBottomPageToken = requestedBottomPageToken,
+                    onRequestedBottomPageConsumed = onRequestedBottomPageConsumed,
+                    overlayRequestedBottomPage = overlayRequestedBottomPage,
+                    overlayRequestedBottomPageToken = overlayRequestedBottomPageToken,
+                    onOverlayRequestedBottomPageConsumed = {
+                        overlayRequestedBottomPage = null
+                    }
+                )
             }
             entry<KeiosRoute.Settings> {
                 SettingsPage(
@@ -360,11 +363,19 @@ fun MainScreen(
     )
 
     CompositionLocalProvider(LocalTransitionAnimationsEnabled provides transitionAnimationsEnabled) {
-        NavDisplay(
-            entries = entries,
-            onBack = { navigator.pop() },
-            modifier = Modifier.fillMaxSize()
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavDisplay(
+                entries = entries,
+                onBack = { navigator.pop() },
+                modifier = Modifier.fillMaxSize()
+            )
+            GitHubShareImportOverlayHost(
+                incomingGitHubShareText = null,
+                incomingGitHubShareToken = 0,
+                onIncomingGitHubShareConsumed = {},
+                onNavigateToGitHubPage = openGitHubPageFromShareOverlay
+            )
+        }
     }
 }
 
@@ -392,9 +403,9 @@ private fun MainPagerLayout(
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
     onRequestedBottomPageConsumed: () -> Unit,
-    incomingGitHubShareText: String?,
-    incomingGitHubShareToken: Int,
-    onIncomingGitHubShareConsumed: () -> Unit
+    overlayRequestedBottomPage: String?,
+    overlayRequestedBottomPageToken: Int,
+    onOverlayRequestedBottomPageConsumed: () -> Unit
 ) {
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val preloadPolicy = remember(preloadingEnabled) {
@@ -544,13 +555,6 @@ private fun MainPagerLayout(
             }
         }
     }
-    val openGitHubPage: () -> Unit = {
-        val githubIndex = tabs.indexOf(BottomPage.GitHub)
-        if (githubIndex >= 0) {
-            handlePageSelected(githubIndex)
-        }
-    }
-
     LaunchedEffect(requestedBottomPageToken, requestedBottomPage, tabs) {
         val target = requestedBottomPage ?: return@LaunchedEffect
         val index = tabs.indexOfFirst { it.name == target }
@@ -573,6 +577,33 @@ private fun MainPagerLayout(
             showBottomBar = true
         }
         onRequestedBottomPageConsumed()
+    }
+    LaunchedEffect(
+        overlayRequestedBottomPageToken,
+        overlayRequestedBottomPage,
+        tabs
+    ) {
+        val target = overlayRequestedBottomPage ?: return@LaunchedEffect
+        val index = tabs.indexOfFirst { it.name == target }
+        val stablePageIndex = if (pagerState.isScrollInProgress) {
+            pagerState.targetPage
+        } else {
+            pagerState.settledPage
+        }
+        if (index >= 0 && index != stablePageIndex) {
+            tabJumpJob?.cancel()
+            tabJumpJob = coroutineScope.launch {
+                pagerState.animateTabSwitch(
+                    fromIndex = stablePageIndex,
+                    targetIndex = index,
+                    animationsEnabled = transitionAnimationsEnabled,
+                    onFarJumpBefore = farJumpBefore,
+                    onFarJumpAfter = farJumpAfter
+                )
+            }
+            showBottomBar = true
+        }
+        onOverlayRequestedBottomPageConsumed()
     }
 
     Scaffold(
@@ -815,13 +846,6 @@ private fun MainPagerLayout(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-
-            GitHubShareImportOverlayHost(
-                incomingGitHubShareText = incomingGitHubShareText,
-                incomingGitHubShareToken = incomingGitHubShareToken,
-                onIncomingGitHubShareConsumed = onIncomingGitHubShareConsumed,
-                onNavigateToGitHubPage = openGitHubPage
-            )
         }
     }
 }

@@ -590,6 +590,7 @@
     <string name="github_share_import_attach_dialog_action_confirm_and_open_github">新增并前往 KeiOS</string>
     <string name="github_share_import_pending_title">分享导入联动进行中</string>
     <string name="github_share_import_pending_armed_minutes">%1$d 分钟前</string>
+    <string name="github_share_import_pending_dialog_summary">安装完成后会自动识别新安装或更新的应用，并继续新增跟踪。</string>
     <string name="github_share_import_pending_label_target">目标</string>
     <string name="github_share_import_pending_label_release">Release</string>
     <string name="github_share_import_pending_label_asset">APK</string>

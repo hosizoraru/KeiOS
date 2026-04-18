@@ -57,6 +57,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".ui.page.main.github.share.GitHubShareImportActivity"
+            android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.KeiOS.ShareImportWindow">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
 
