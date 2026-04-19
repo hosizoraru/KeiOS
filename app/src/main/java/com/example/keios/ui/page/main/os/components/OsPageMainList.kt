@@ -70,6 +70,10 @@ internal fun OsPageMainList(
     shellRunnerExpanded: Boolean,
     onShellRunnerExpandedChange: (Boolean) -> Unit,
     onOpenShellRunner: () -> Unit,
+    shellCommandCards: List<OsShellCommandCard>,
+    shellCommandCardExpanded: Map<String, Boolean>,
+    onShellCommandCardExpandedChange: (String, Boolean) -> Unit,
+    onOpenShellCommandCardEditor: (OsShellCommandCard) -> Unit,
     activityShortcutCards: List<OsActivityShortcutCard>,
     defaultActivityCardTitle: String,
     activityCardExpanded: Map<String, Boolean>,
@@ -231,6 +235,14 @@ internal fun OsPageMainList(
                         modifier = Modifier.clickable { onOpenShellRunner() }
                     )
                 }
+            )
+
+            addShellCommandCards(
+                cards = shellCommandCards,
+                contentBackdrop = contentBackdrop,
+                expandedStates = shellCommandCardExpanded,
+                onExpandedChange = onShellCommandCardExpandedChange,
+                onHeaderLongClick = onOpenShellCommandCardEditor
             )
 
             addKeyValueSectionCard(

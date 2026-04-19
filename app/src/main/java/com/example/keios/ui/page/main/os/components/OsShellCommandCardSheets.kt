@@ -1,0 +1,226 @@
+package com.example.keios.ui.page.main
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.example.keios.R
+import com.example.keios.ui.page.main.widget.GlassIconButton
+import com.example.keios.ui.page.main.widget.GlassSearchField
+import com.example.keios.ui.page.main.widget.GlassVariant
+import com.example.keios.ui.page.main.widget.MiuixAccordionCard
+import com.example.keios.ui.page.main.widget.SheetContentColumn
+import com.example.keios.ui.page.main.widget.SheetControlRow
+import com.example.keios.ui.page.main.widget.SheetDescriptionText
+import com.example.keios.ui.page.main.widget.SheetFieldBlock
+import com.example.keios.ui.page.main.widget.SheetSectionCard
+import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
+import com.kyant.backdrop.backdrops.LayerBackdrop
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Switch
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.icon.extended.Tasks
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+internal fun LazyListScope.addShellCommandCards(
+    cards: List<OsShellCommandCard>,
+    contentBackdrop: LayerBackdrop,
+    expandedStates: Map<String, Boolean>,
+    onExpandedChange: (String, Boolean) -> Unit,
+    onHeaderLongClick: (OsShellCommandCard) -> Unit
+) {
+    cards.filter { it.visible }.forEach { card ->
+        item(key = "os-shell-command-${card.id}") {
+            MiuixAccordionCard(
+                backdrop = contentBackdrop,
+                title = card.title.ifBlank { defaultOsShellCommandCardTitle(card.command) },
+                subtitle = card.subtitle,
+                expanded = expandedStates[card.id] == true,
+                onExpandedChange = { expanded -> onExpandedChange(card.id, expanded) },
+                headerStartAction = {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Tasks,
+                        contentDescription = card.title,
+                        tint = MiuixTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .defaultMinSize(minHeight = 22.dp)
+                    )
+                },
+                onHeaderLongClick = { onHeaderLongClick(card) }
+            ) {
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_shell_card_saved_command_label),
+                    value = card.command
+                )
+                OsSectionInfoRow(
+                    label = stringResource(R.string.os_shell_card_updated_at_label),
+                    value = if (card.updatedAtMillis > 0L) {
+                        formatEpochMillis(card.updatedAtMillis)
+                    } else {
+                        stringResource(R.string.common_unknown)
+                    }
+                )
+            }
+        }
+        item(key = "os-shell-command-space-${card.id}") { Spacer(modifier = Modifier.height(8.dp)) }
+    }
+}
+
+@Composable
+internal fun OsShellCommandVisibilityManagerSheet(
+    show: Boolean,
+    title: String,
+    sheetBackdrop: LayerBackdrop,
+    shellHintText: String,
+    cards: List<OsShellCommandCard>,
+    onDismissRequest: () -> Unit,
+    onCardVisibilityChange: (String, Boolean) -> Unit
+) {
+    SnapshotWindowBottomSheet(
+        show = show,
+        title = title,
+        onDismissRequest = onDismissRequest,
+        startAction = {
+            GlassIconButton(
+                backdrop = sheetBackdrop,
+                variant = GlassVariant.Bar,
+                icon = MiuixIcons.Regular.Close,
+                contentDescription = stringResource(R.string.common_close),
+                onClick = onDismissRequest
+            )
+        }
+    ) {
+        SheetContentColumn(
+            scrollable = false,
+            verticalSpacing = 10.dp
+        ) {
+            SheetSectionCard(verticalSpacing = 10.dp) {
+                cards.forEach { item ->
+                    SheetControlRow(
+                        labelContent = {
+                            Row(
+                                modifier = Modifier.defaultMinSize(minHeight = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = MiuixIcons.Regular.Tasks,
+                                    contentDescription = item.title,
+                                    tint = MiuixTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .defaultMinSize(minHeight = 18.dp)
+                                )
+                                Text(
+                                    text = item.title.ifBlank { defaultOsShellCommandCardTitle(item.command) },
+                                    color = MiuixTheme.colorScheme.onBackground,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    ) {
+                        Switch(
+                            checked = item.visible,
+                            onCheckedChange = { checked ->
+                                onCardVisibilityChange(item.id, checked)
+                            }
+                        )
+                    }
+                }
+            }
+            SheetDescriptionText(text = shellHintText)
+        }
+    }
+}
+
+@Composable
+internal fun OsShellCommandCardEditorSheet(
+    show: Boolean,
+    title: String,
+    sheetBackdrop: LayerBackdrop,
+    draft: OsShellCommandCard,
+    onDraftChange: (OsShellCommandCard) -> Unit,
+    onDismissRequest: () -> Unit,
+    onSave: () -> Unit
+) {
+    SnapshotWindowBottomSheet(
+        show = show,
+        title = title,
+        onDismissRequest = onDismissRequest,
+        startAction = {
+            GlassIconButton(
+                backdrop = sheetBackdrop,
+                variant = GlassVariant.Bar,
+                icon = MiuixIcons.Regular.Close,
+                contentDescription = stringResource(R.string.common_close),
+                onClick = onDismissRequest
+            )
+        },
+        endAction = {
+            GlassIconButton(
+                backdrop = sheetBackdrop,
+                variant = GlassVariant.Bar,
+                icon = MiuixIcons.Regular.Ok,
+                contentDescription = stringResource(R.string.common_save),
+                onClick = onSave
+            )
+        }
+    ) {
+        SheetContentColumn(verticalSpacing = 10.dp) {
+            SheetSectionCard(verticalSpacing = 10.dp) {
+                SheetFieldBlock(title = stringResource(R.string.os_shell_card_field_title)) {
+                    GlassSearchField(
+                        value = draft.title,
+                        onValueChange = { onDraftChange(draft.copy(title = it)) },
+                        label = stringResource(R.string.os_shell_card_hint_title),
+                        backdrop = sheetBackdrop,
+                        variant = GlassVariant.SheetInput,
+                        textColor = MiuixTheme.colorScheme.primary,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                SheetFieldBlock(title = stringResource(R.string.os_shell_card_field_subtitle)) {
+                    GlassSearchField(
+                        value = draft.subtitle,
+                        onValueChange = { onDraftChange(draft.copy(subtitle = it)) },
+                        label = stringResource(R.string.os_shell_card_hint_subtitle),
+                        backdrop = sheetBackdrop,
+                        variant = GlassVariant.SheetInput,
+                        textColor = MiuixTheme.colorScheme.primary,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                SheetFieldBlock(title = stringResource(R.string.os_shell_card_field_command)) {
+                    GlassSearchField(
+                        value = draft.command,
+                        onValueChange = { onDraftChange(draft.copy(command = it)) },
+                        label = stringResource(R.string.os_shell_card_hint_command),
+                        backdrop = sheetBackdrop,
+                        variant = GlassVariant.SheetInput,
+                        textColor = MiuixTheme.colorScheme.primary,
+                        singleLine = false,
+                        minHeight = 132.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}

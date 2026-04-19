@@ -49,6 +49,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.GridView
 import top.yukonga.miuix.kmp.icon.extended.Layers
 import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Tasks
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -80,18 +81,20 @@ fun OsPage(
     val refreshCompletedText = stringResource(R.string.os_toast_refresh_completed)
     val manageCardsContentDescription = stringResource(R.string.os_action_manage_cards)
     val manageActivitiesContentDescription = stringResource(R.string.os_action_manage_activities)
+    val manageShellCardsContentDescription = stringResource(R.string.os_action_manage_shell_cards)
     val refreshParamsContentDescription = stringResource(R.string.os_action_refresh_params)
     val searchLabel = stringResource(R.string.os_search_label)
     val visibleCardsTitle = stringResource(R.string.os_sheet_visible_cards_title)
     val visibleActivitiesTitle = stringResource(R.string.os_sheet_visible_activities_title)
+    val visibleShellCardsTitle = stringResource(R.string.os_sheet_visible_shell_cards_title)
+    val visibleShellCardsDesc = stringResource(R.string.os_sheet_visible_shell_cards_desc)
     val googleSystemServiceDefaultTitle = stringResource(R.string.os_section_google_system_service_title)
     val googleSystemServiceDefaultSubtitle = stringResource(R.string.os_google_system_service_default_subtitle)
     val googleSystemServiceDefaultAppName = stringResource(R.string.os_google_system_service_default_app_name)
-    val shellSavedTitleLabel = stringResource(R.string.os_shell_card_saved_title_label)
-    val shellSavedSubtitleLabel = stringResource(R.string.os_shell_card_saved_subtitle_label)
-    val shellSavedCommandLabel = stringResource(R.string.os_shell_card_saved_command_label)
-    val shellSavedCommandEmpty = stringResource(R.string.os_shell_card_saved_command_empty)
-    val shellSavedSubtitleEmpty = stringResource(R.string.os_shell_card_saved_subtitle_empty)
+    val shellSavedCountLabel = stringResource(R.string.os_shell_card_saved_count_label)
+    val shellCardSavedToast = stringResource(R.string.os_shell_card_toast_saved)
+    val shellCardCommandRequiredToast = stringResource(R.string.os_shell_card_toast_command_required)
+    val editShellCommandCardTitle = stringResource(R.string.os_shell_card_sheet_title_edit)
     val editActivityCardTitle = stringResource(R.string.os_activity_sheet_title_edit)
     val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
     val googleSystemServiceDefaultIntentFlags =
@@ -158,13 +161,18 @@ fun OsPage(
     var uiStatePersistenceReady by remember { mutableStateOf(false) }
     var showCardManager by rememberSaveable { mutableStateOf(false) }
     var showActivityVisibilityManager by rememberSaveable { mutableStateOf(false) }
+    var showShellCardVisibilityManager by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var exportingCard by remember { mutableStateOf<OsSectionCard?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }
-    var savedShellCommand by remember { mutableStateOf(OsShellCommandStore.loadSnapshot()) }
+    var shellCommandCards by remember { mutableStateOf(OsShellCommandCardStore.loadCards()) }
+    val shellCommandCardExpanded = remember { mutableStateMapOf<String, Boolean>() }
+    var showShellCommandCardEditor by rememberSaveable { mutableStateOf(false) }
+    var editingShellCommandCardId by rememberSaveable { mutableStateOf<String?>(null) }
+    var shellCommandCardDraft by remember { mutableStateOf(createDefaultShellCommandCardDraft()) }
     var showSearchBar by remember { mutableStateOf(true) }
     var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val surfaceColor = MiuixTheme.colorScheme.surface
@@ -219,7 +227,7 @@ fun OsPage(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                savedShellCommand = OsShellCommandStore.loadSnapshot()
+                shellCommandCards = OsShellCommandCardStore.loadCards()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -358,6 +366,13 @@ fun OsPage(
         }
     }
 
+    suspend fun applyShellCommandCardVisibility(cardId: String, visible: Boolean) {
+        val updatedCards = withContext(Dispatchers.IO) {
+            OsShellCommandCardStore.setCardVisible(cardId = cardId, visible = visible)
+        }
+        shellCommandCards = updatedCards
+    }
+
     suspend fun refreshAllSections() {
         refreshing = true
         refreshProgress = 0f
@@ -393,6 +408,20 @@ fun OsPage(
                     } else {
                         false
                     }
+            }
+        }
+    }
+
+    LaunchedEffect(shellCommandCards) {
+        val currentIds = shellCommandCards.map { it.id }.toSet()
+        shellCommandCardExpanded.keys.toList().forEach { id ->
+            if (!currentIds.contains(id)) {
+                shellCommandCardExpanded.remove(id)
+            }
+        }
+        shellCommandCards.forEach { card ->
+            if (!shellCommandCardExpanded.containsKey(card.id)) {
+                shellCommandCardExpanded[card.id] = false
             }
         }
     }
@@ -593,12 +622,8 @@ fun OsPage(
     val shellRunnerRows = remember(
         shizukuStatus,
         context,
-        shellSavedTitleLabel,
-        shellSavedSubtitleLabel,
-        shellSavedCommandLabel,
-        shellSavedCommandEmpty,
-        shellSavedSubtitleEmpty,
-        savedShellCommand
+        shellSavedCountLabel,
+        shellCommandCards
     ) {
         listOf(
             InfoRow(
@@ -606,18 +631,8 @@ fun OsPage(
                 value = shizukuStatus
             ),
             InfoRow(
-                key = shellSavedTitleLabel,
-                value = savedShellCommand.title.ifBlank {
-                    savedShellCommand.command.ifBlank { shellSavedCommandEmpty }
-                }
-            ),
-            InfoRow(
-                key = shellSavedSubtitleLabel,
-                value = savedShellCommand.subtitle.ifBlank { shellSavedSubtitleEmpty }
-            ),
-            InfoRow(
-                key = shellSavedCommandLabel,
-                value = savedShellCommand.command.ifBlank { shellSavedCommandEmpty }
+                key = shellSavedCountLabel,
+                value = context.getString(R.string.common_item_count, shellCommandCards.size)
             )
         )
     }
@@ -778,6 +793,11 @@ fun OsPage(
                         onClick = { showActivityVisibilityManager = true }
                     ),
                     LiquidActionItem(
+                        icon = MiuixIcons.Regular.Tasks,
+                        contentDescription = manageShellCardsContentDescription,
+                        onClick = { showShellCardVisibilityManager = true }
+                    ),
+                    LiquidActionItem(
                         icon = MiuixIcons.Regular.Refresh,
                         contentDescription = refreshParamsContentDescription,
                         onClick = {
@@ -826,6 +846,45 @@ fun OsPage(
             onDismissRequest = { showActivityVisibilityManager = false },
             onCardVisibilityChange = { cardId, checked ->
                 scope.launch { applyActivityCardVisibility(cardId, checked) }
+            }
+        )
+        OsShellCommandVisibilityManagerSheet(
+            show = showShellCardVisibilityManager,
+            title = visibleShellCardsTitle,
+            sheetBackdrop = sheetBackdrop,
+            shellHintText = visibleShellCardsDesc,
+            cards = shellCommandCards,
+            onDismissRequest = { showShellCardVisibilityManager = false },
+            onCardVisibilityChange = { cardId, checked ->
+                scope.launch { applyShellCommandCardVisibility(cardId, checked) }
+            }
+        )
+        OsShellCommandCardEditorSheet(
+            show = showShellCommandCardEditor,
+            title = editShellCommandCardTitle,
+            sheetBackdrop = sheetBackdrop,
+            draft = shellCommandCardDraft,
+            onDraftChange = { shellCommandCardDraft = it },
+            onDismissRequest = { showShellCommandCardEditor = false },
+            onSave = {
+                val targetId = editingShellCommandCardId.orEmpty().trim()
+                if (targetId.isBlank()) {
+                    Toast.makeText(context, shellCardCommandRequiredToast, Toast.LENGTH_SHORT).show()
+                    return@OsShellCommandCardEditorSheet
+                }
+                val updated = OsShellCommandCardStore.updateCard(
+                    cardId = targetId,
+                    title = shellCommandCardDraft.title,
+                    subtitle = shellCommandCardDraft.subtitle,
+                    command = shellCommandCardDraft.command
+                )
+                if (updated == null) {
+                    Toast.makeText(context, shellCardCommandRequiredToast, Toast.LENGTH_SHORT).show()
+                    return@OsShellCommandCardEditorSheet
+                }
+                shellCommandCards = OsShellCommandCardStore.loadCards()
+                Toast.makeText(context, shellCardSavedToast, Toast.LENGTH_SHORT).show()
+                showShellCommandCardEditor = false
             }
         )
         OsActivityShortcutEditorHost(
@@ -960,6 +1019,16 @@ fun OsPage(
             shellRunnerExpanded = shellRunnerExpanded,
             onShellRunnerExpandedChange = { shellRunnerExpanded = it },
             onOpenShellRunner = { OsShellRunnerActivity.launch(context) },
+            shellCommandCards = shellCommandCards,
+            shellCommandCardExpanded = shellCommandCardExpanded,
+            onShellCommandCardExpandedChange = { cardId, expanded ->
+                shellCommandCardExpanded[cardId] = expanded
+            },
+            onOpenShellCommandCardEditor = { card ->
+                editingShellCommandCardId = card.id
+                shellCommandCardDraft = card
+                showShellCommandCardEditor = true
+            },
             activityShortcutCards = activityShortcutCards,
             defaultActivityCardTitle = googleSystemServiceDefaultTitle,
             activityCardExpanded = activityCardExpanded,
@@ -1044,7 +1113,10 @@ fun OsPage(
             onExportCard = { card -> scope.launch { exportCard(card) } },
             onRefreshAll = { scope.launch { refreshAllSections() } },
             contentBottomPadding = contentBottomPadding,
-            showFloatingAddButton = !showActivityShortcutEditor && !showActivitySuggestionSheet,
+            showFloatingAddButton = !showActivityShortcutEditor &&
+                !showActivitySuggestionSheet &&
+                !showShellCommandCardEditor &&
+                !showShellCardVisibilityManager,
             onOpenAddActivityShortcutCard = {
                 activityCardEditMode = OsActivityCardEditMode.Add
                 editingActivityShortcutCardId = null

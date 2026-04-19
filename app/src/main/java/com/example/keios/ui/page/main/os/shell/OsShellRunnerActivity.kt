@@ -123,11 +123,11 @@ class OsShellRunnerActivity : ComponentActivity() {
                         shizukuApiUtils.execCommandCancellable(command = command, timeoutMs = 300_000L)
                     },
                     onSaveShellCommand = { command, title, subtitle ->
-                        OsShellCommandStore.saveCommand(
+                        OsShellCommandCardStore.createCard(
                             command = command,
                             title = title,
                             subtitle = subtitle
-                        ).command.isNotBlank()
+                        ) != null
                     },
                     onClose = { finish() }
                 )
@@ -276,14 +276,14 @@ private fun OsShellRunnerPage(
             Toast.makeText(context, commandSaveEmptyToast, Toast.LENGTH_SHORT).show()
             return
         }
-        val currentSnapshot = OsShellCommandStore.loadSnapshot()
-        saveTitleInput = if (currentSnapshot.command == command && currentSnapshot.title.isNotBlank()) {
-            currentSnapshot.title
+        val currentCard = OsShellCommandCardStore.findLatestByCommand(command)
+        saveTitleInput = if (currentCard?.title?.isNotBlank() == true) {
+            currentCard.title
         } else {
-            defaultShellCommandCardTitle(command)
+            defaultOsShellCommandCardTitle(command)
         }
-        saveSubtitleInput = if (currentSnapshot.command == command) {
-            currentSnapshot.subtitle
+        saveSubtitleInput = if (currentCard != null) {
+            currentCard.subtitle
         } else {
             ""
         }
@@ -296,7 +296,7 @@ private fun OsShellRunnerPage(
             Toast.makeText(context, commandSaveEmptyToast, Toast.LENGTH_SHORT).show()
             return
         }
-        val title = saveTitleInput.trim().ifBlank { defaultShellCommandCardTitle(command) }
+        val title = saveTitleInput.trim().ifBlank { defaultOsShellCommandCardTitle(command) }
         val subtitle = saveSubtitleInput.trim()
         val saved = onSaveShellCommand(command, title, subtitle)
         if (saved) {
@@ -740,9 +740,4 @@ private fun lineLooksLikeSectionHeading(line: String): Boolean {
     if (line.length !in 2..80) return false
     if (line.startsWith(" ") || line.startsWith("\t")) return false
     return line.endsWith(":")
-}
-
-private fun defaultShellCommandCardTitle(command: String): String {
-    val normalized = command.trim().replace(Regex("\\s+"), " ")
-    return if (normalized.length <= 36) normalized else "${normalized.take(35)}…"
 }
