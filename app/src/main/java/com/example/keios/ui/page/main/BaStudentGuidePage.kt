@@ -121,8 +121,8 @@ import com.example.keios.ui.page.main.widget.appFloatingEnter
 import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.ui.page.main.widget.resolvedMotionDuration
-import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
-import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop

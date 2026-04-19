@@ -1,50 +1,67 @@
 package com.example.keios.ui.page.main.widget
 
+import android.os.Build
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
-import kotlin.math.roundToInt
+import androidx.compose.ui.util.fastRoundToInt
+import androidx.compose.ui.util.lerp
+import com.example.keios.ui.animation.DampedDragAnimation
+import com.example.keios.ui.animation.InteractiveHighlight
+import kotlin.math.abs
+import kotlin.math.sign
+import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+val LocalLiquidGlassBottomBarTabScale = staticCompositionLocalOf { { 1.02f } }
 
 @Composable
 fun RowScope.LiquidGlassBottomBarItem(
@@ -55,9 +72,10 @@ fun RowScope.LiquidGlassBottomBarItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val selectedScale = LocalLiquidGlassBottomBarTabScale.current
     val targetScale = when {
         pressed -> 0.96f
-        selected -> 1.02f
+        selected -> selectedScale()
         else -> 1f
     }
     val scale by animateFloatAsState(
@@ -67,7 +85,7 @@ fun RowScope.LiquidGlassBottomBarItem(
     )
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(percent = 50))
+            .clip(AppBottomBarShapes.capsule)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -96,168 +114,324 @@ fun LiquidGlassBottomBar(
     content: @Composable RowScope.() -> Unit
 ) {
     val density = LocalDensity.current
+    val viewConfiguration = LocalViewConfiguration.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val isInLightTheme = !isSystemInDarkTheme()
     val safeTabsCount = tabsCount.coerceAtLeast(1)
-    val selectedTabIndex = selectedIndex().coerceIn(0, safeTabsCount - 1)
-    val shape = RoundedCornerShape(percent = 50)
+    val clampedSelectedIndex = selectedIndex().coerceIn(0, safeTabsCount - 1)
+    val currentSelectedIndex by rememberUpdatedState(clampedSelectedIndex)
+    val currentOnSelected by rememberUpdatedState(onSelected)
+    val animationScope = rememberCoroutineScope()
     val primary = MiuixTheme.colorScheme.primary
     val horizontalPadding = AppChromeTokens.floatingBottomBarHorizontalPadding
 
-    val containerFallbackColor = if (isLiquidEffectEnabled) {
-        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.36f)
-    } else {
-        MiuixTheme.colorScheme.surfaceContainer
+    val containerFallbackColor = when {
+        !isLiquidEffectEnabled -> MiuixTheme.colorScheme.surfaceContainer
+        isInLightTheme -> Color.White.copy(alpha = 0.30f)
+        else -> MiuixTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.30f)
     }
-    val containerBorderColor = MiuixTheme.colorScheme.outline.copy(alpha = if (isLiquidEffectEnabled) 0.30f else 0.42f)
-    val indicatorFallbackColor = primary.copy(alpha = if (isLiquidEffectEnabled) 0.22f else 0.26f)
-    val indicatorBorderColor = primary.copy(alpha = if (isLiquidEffectEnabled) 0.56f else 0.64f)
+    val containerBorderColor = when {
+        !isLiquidEffectEnabled -> MiuixTheme.colorScheme.outline.copy(alpha = 0.22f)
+        isInLightTheme -> Color.White.copy(alpha = 0.56f)
+        else -> Color.White.copy(alpha = 0.14f)
+    }
+    val indicatorFallbackColor = when {
+        !isLiquidEffectEnabled -> primary.copy(alpha = 0.18f)
+        isInLightTheme -> Color.White.copy(alpha = 0.18f)
+        else -> Color.White.copy(alpha = 0.08f)
+    }
+    val indicatorBorderColor = when {
+        !isLiquidEffectEnabled -> primary.copy(alpha = 0.34f)
+        isInLightTheme -> Color.White.copy(alpha = 0.86f)
+        else -> Color.White.copy(alpha = 0.24f)
+    }
+    val indicatorShadowColor = if (isInLightTheme) {
+        Color.Black.copy(alpha = 0.14f)
+    } else {
+        Color.Black.copy(alpha = 0.30f)
+    }
+    val neutralTintChannel = if (isInLightTheme) 1f else 0.98f
 
-    var dragging by remember { mutableStateOf(false) }
-    var dragProgress by remember { mutableFloatStateOf(selectedTabIndex.toFloat()) }
-    var dragDistancePx by remember { mutableFloatStateOf(0f) }
-    var barWidthPx by remember { mutableFloatStateOf(0f) }
+    var tabWidthPx by remember { mutableFloatStateOf(0f) }
+    var totalWidthPx by remember { mutableFloatStateOf(0f) }
+    var gestureActive by remember { mutableStateOf(false) }
+    var dragMoved by remember { mutableStateOf(false) }
+    var dragTravelPx by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(selectedTabIndex, safeTabsCount) {
-        if (!dragging) {
-            dragProgress = selectedTabIndex.toFloat()
+    val dragActivationThresholdPx = remember(viewConfiguration.touchSlop) {
+        (viewConfiguration.touchSlop * 1.15f).coerceAtLeast(8f)
+    }
+    val offsetAnimation = remember { Animatable(0f) }
+    val panelOffset by remember(density) {
+        derivedStateOf {
+            if (totalWidthPx == 0f) {
+                0f
+            } else {
+                val fraction = (offsetAnimation.value / totalWidthPx).fastCoerceIn(-1f, 1f)
+                with(density) {
+                    4f.dp.toPx() * fraction.sign * EaseOut.transform(abs(fraction))
+                }
+            }
         }
     }
 
-    val settledProgress by animateFloatAsState(
-        targetValue = selectedTabIndex.toFloat(),
-        animationSpec = spring(dampingRatio = 0.76f, stiffness = 520f),
-        label = "liquid_bottom_bar_progress"
-    )
-    val activeProgress = if (dragging) dragProgress else settledProgress
-
-    val tabWidthPx = remember(barWidthPx, safeTabsCount, density, horizontalPadding) {
-        val horizontalInsets = with(density) { (horizontalPadding * 2).toPx() }
-        ((barWidthPx - horizontalInsets).coerceAtLeast(0f) / safeTabsCount).coerceAtLeast(0.0001f)
-    }
-    val swayTargetPx = if (dragging) {
-        val normalized = (dragDistancePx / tabWidthPx).fastCoerceIn(-1f, 1f)
-        with(density) { 4.dp.toPx() } * normalized
-    } else {
-        0f
-    }
-    val swayPx by animateFloatAsState(
-        targetValue = swayTargetPx,
-        animationSpec = spring(dampingRatio = 0.70f, stiffness = 600f),
-        label = "liquid_bottom_bar_sway"
-    )
-    val swayDp = with(density) { swayPx.toDp() }
-    val indicatorScale by animateFloatAsState(
-        targetValue = if (dragging) 1.03f else 1f,
-        animationSpec = spring(dampingRatio = 0.70f, stiffness = 620f),
-        label = "liquid_bottom_bar_indicator_scale"
-    )
-
-    BoxWithConstraints(
-        modifier = modifier
-            .height(AppChromeTokens.floatingBottomBarOuterHeight)
-            .fillMaxWidth()
-            .onSizeChanged { barWidthPx = it.width.toFloat() }
-            .clip(shape)
-            .background(containerFallbackColor)
-            .border(width = 1.dp, color = containerBorderColor, shape = shape)
-            .pointerInput(safeTabsCount, tabWidthPx, isLtr, selectedTabIndex) {
-                if (safeTabsCount <= 1 || tabWidthPx <= 0f) return@pointerInput
-                detectHorizontalDragGestures(
-                    onDragStart = {
-                        dragging = true
-                        dragProgress = activeProgress
-                        dragDistancePx = 0f
-                    },
-                    onHorizontalDrag = { change, dragAmount ->
-                        change.consume()
-                        val direction = if (isLtr) 1f else -1f
-                        dragDistancePx += dragAmount
-                        dragProgress = (dragProgress + (dragAmount / tabWidthPx) * direction)
-                            .fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
-                    },
-                    onDragCancel = {
-                        dragging = false
-                        dragDistancePx = 0f
-                        dragProgress = selectedTabIndex.toFloat()
-                    },
-                    onDragEnd = {
-                        val nextIndex = dragProgress.roundToInt().coerceIn(0, safeTabsCount - 1)
-                        dragging = false
-                        dragDistancePx = 0f
-                        dragProgress = nextIndex.toFloat()
-                        if (nextIndex != selectedTabIndex) {
-                            onSelected(nextIndex)
-                        }
+    val dampedDragAnimation = remember(animationScope, safeTabsCount, density, isLtr) {
+        DampedDragAnimation(
+            animationScope = animationScope,
+            initialValue = clampedSelectedIndex.toFloat(),
+            valueRange = 0f..(safeTabsCount - 1).toFloat(),
+            visibilityThreshold = 0.001f,
+            initialScale = 1f,
+            pressedScale = 78f / 56f,
+            canDrag = { tabWidthPx > 0f && totalWidthPx > 0f },
+            onDragStarted = {
+                gestureActive = true
+                dragMoved = false
+                dragTravelPx = 0f
+            },
+            onDragStopped = {
+                if (!gestureActive) return@DampedDragAnimation
+                gestureActive = false
+                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, safeTabsCount - 1)
+                if (dragMoved) {
+                    animateToValue(targetIndex.toFloat())
+                    if (targetIndex != currentSelectedIndex) {
+                        currentOnSelected(targetIndex)
                     }
-                )
-            }
-    ) {
-        val tabWidth = maxWidth / safeTabsCount
-        val indicatorWidth = (tabWidth - horizontalPadding * 2).coerceAtLeast(28.dp)
-        val minOffset = horizontalPadding
-        val maxOffset = (maxWidth - indicatorWidth - horizontalPadding).coerceAtLeast(minOffset)
-        val indicatorOffset = (tabWidth * activeProgress + horizontalPadding + swayDp)
-            .coerceIn(minOffset, maxOffset)
-
-        val containerSpec = LiquidBackdropSpec(
-            cornerRadiusPx = with(density) { (AppChromeTokens.floatingBottomBarOuterHeight / 2).toPx() },
-            refractionHeightPx = with(density) { 20.dp.toPx() },
-            refractionOffsetPx = with(density) { 70.dp.toPx() },
-            blurRadiusPx = 14f,
-            dispersion = 0.50f,
-            tintAlpha = 0.07f,
-            tintRed = primary.red,
-            tintGreen = primary.green,
-            tintBlue = primary.blue
-        )
-        val indicatorSpec = LiquidBackdropSpec(
-            cornerRadiusPx = with(density) { (AppChromeTokens.floatingBottomBarInnerHeight / 2).toPx() },
-            refractionHeightPx = with(density) { 16.dp.toPx() },
-            refractionOffsetPx = with(density) { 54.dp.toPx() },
-            blurRadiusPx = 18f,
-            dispersion = 0.58f,
-            tintAlpha = 0.13f,
-            tintRed = primary.red,
-            tintGreen = primary.green,
-            tintBlue = primary.blue
-        )
-
-        LiquidBackdropLayer(
-            modifier = Modifier.fillMaxSize(),
-            enabled = isLiquidEffectEnabled,
-            fallbackColor = containerFallbackColor,
-            spec = containerSpec
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = indicatorOffset)
-                .height(AppChromeTokens.floatingBottomBarInnerHeight)
-                .width(indicatorWidth)
-                .graphicsLayer {
-                    scaleX = indicatorScale
-                    scaleY = indicatorScale
+                } else {
+                    updateValue(currentSelectedIndex.toFloat())
                 }
-                .clip(shape)
-                .background(indicatorFallbackColor)
-                .border(width = 1.dp, color = indicatorBorderColor, shape = shape)
-        ) {
-            LiquidBackdropLayer(
-                modifier = Modifier.fillMaxSize(),
-                enabled = isLiquidEffectEnabled,
-                fallbackColor = indicatorFallbackColor,
-                spec = indicatorSpec
+                animationScope.launch {
+                    offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
+                }
+            },
+            onDrag = { _, dragAmount ->
+                if (tabWidthPx == 0f) return@DampedDragAnimation
+                dragTravelPx += abs(dragAmount.x)
+                if (!dragMoved && dragTravelPx >= dragActivationThresholdPx) {
+                    dragMoved = true
+                }
+                updateValue(
+                    (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
+                        .fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
+                )
+                animationScope.launch {
+                    offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
+                }
+            }
+        )
+    }
+
+    LaunchedEffect(clampedSelectedIndex, safeTabsCount) {
+        dampedDragAnimation.updateValue(clampedSelectedIndex.toFloat())
+    }
+
+    val pressProgress = if (isLiquidEffectEnabled) dampedDragAnimation.pressProgress else 0f
+    val interactionHighlightColor = Color.White
+    val interactionHighlightStrength = if (isInLightTheme) 0.88f else 1f
+    val interactionHighlightRadiusScale = if (isInLightTheme) 0.90f else 1.12f
+    val interactiveHighlight = if (isLiquidEffectEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        remember(animationScope, tabWidthPx, isLtr) {
+            InteractiveHighlight(
+                animationScope = animationScope,
+                position = { size, _ ->
+                    Offset(
+                        if (isLtr) (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset
+                        else size.width - (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset,
+                        size.height / 2f
+                    )
+                },
+                highlightColor = interactionHighlightColor,
+                highlightStrength = interactionHighlightStrength,
+                highlightRadiusScale = interactionHighlightRadiusScale
             )
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AppChromeTokens.floatingBottomBarOuterHeight)
-                .padding(horizontal = horizontalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content
-        )
+    } else {
+        null
     }
+
+    val containerScale by remember(density) {
+        derivedStateOf {
+            if (!isLiquidEffectEnabled || totalWidthPx <= 0f) {
+                1f
+            } else {
+                lerp(
+                    1f,
+                    1f + with(density) { 12.dp.toPx() / totalWidthPx },
+                    pressProgress
+                )
+            }
+        }
+    }
+
+    val containerSpec = LiquidBackdropSpec(
+        cornerRadiusPx = with(density) { (AppChromeTokens.floatingBottomBarOuterHeight / 2).toPx() },
+        refractionHeightPx = with(density) { lerp(18f, 22f, pressProgress).dp.toPx() },
+        refractionOffsetPx = with(density) { lerp(54f, 68f, pressProgress).dp.toPx() },
+        blurRadiusPx = lerp(11.5f, 14f, pressProgress),
+        dispersion = lerp(0.14f, 0.24f, pressProgress),
+        tintAlpha = if (isInLightTheme) {
+            lerp(0.010f, 0.022f, pressProgress)
+        } else {
+            lerp(0.014f, 0.026f, pressProgress)
+        },
+        tintRed = neutralTintChannel,
+        tintGreen = neutralTintChannel,
+        tintBlue = neutralTintChannel
+    )
+    val indicatorSpec = LiquidBackdropSpec(
+        cornerRadiusPx = with(density) { (AppChromeTokens.floatingBottomBarInnerHeight / 2).toPx() },
+        refractionHeightPx = with(density) { lerp(16f, 22f, pressProgress).dp.toPx() },
+        refractionOffsetPx = with(density) { lerp(42f, 58f, pressProgress).dp.toPx() },
+        blurRadiusPx = lerp(13f, 18f, pressProgress),
+        dispersion = lerp(0.18f, 0.34f, pressProgress),
+        tintAlpha = if (isInLightTheme) {
+            lerp(0.014f, 0.036f, pressProgress)
+        } else {
+            lerp(0.018f, 0.042f, pressProgress)
+        },
+        tintRed = neutralTintChannel,
+        tintGreen = neutralTintChannel,
+        tintBlue = neutralTintChannel
+    )
+
+    CompositionLocalProvider(
+        LocalLiquidGlassBottomBarTabScale provides {
+            if (isLiquidEffectEnabled) lerp(1.02f, 1.14f, pressProgress) else 1.02f
+        }
+    ) {
+        Box(
+            modifier = modifier.width(IntrinsicSize.Min),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .onGloballyPositioned { coords ->
+                        totalWidthPx = coords.size.width.toFloat()
+                        val contentWidthPx = totalWidthPx - with(density) { (horizontalPadding * 2).toPx() }
+                        tabWidthPx = (contentWidthPx / safeTabsCount).coerceAtLeast(0f)
+                    }
+                    .graphicsLayer {
+                        translationX = panelOffset
+                        scaleX = containerScale
+                        scaleY = containerScale
+                    }
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+                    .clip(AppBottomBarShapes.capsule)
+                    .border(width = 1.dp, color = containerBorderColor, shape = AppBottomBarShapes.capsule)
+                    .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
+                    .drawWithContent {
+                        drawContent()
+                        if (isLiquidEffectEnabled) {
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = if (isInLightTheme) {
+                                        listOf(
+                                            Color.White.copy(alpha = 0.16f),
+                                            Color.White.copy(alpha = 0.05f),
+                                            Color.Transparent
+                                        )
+                                    } else {
+                                        listOf(
+                                            Color.White.copy(alpha = 0.08f),
+                                            Color.White.copy(alpha = 0.03f),
+                                            Color.Transparent
+                                        )
+                                    }
+                                ),
+                                blendMode = BlendMode.Plus
+                            )
+                        }
+                    }
+                    .height(AppChromeTokens.floatingBottomBarOuterHeight)
+            ) {
+                LiquidBackdropLayer(
+                    modifier = Modifier.fillMaxSize(),
+                    enabled = isLiquidEffectEnabled,
+                    fallbackColor = containerFallbackColor,
+                    spec = containerSpec
+                )
+                Row(
+                    modifier = Modifier
+                        .height(AppChromeTokens.floatingBottomBarOuterHeight)
+                        .padding(horizontal = horizontalPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = content
+                )
+            }
+
+            if (tabWidthPx > 0f) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = horizontalPadding)
+                        .graphicsLayer {
+                            val progressOffset = dampedDragAnimation.value * tabWidthPx
+                            translationX = if (isLtr) {
+                                progressOffset + panelOffset
+                            } else {
+                                -progressOffset + panelOffset
+                            }
+                            scaleX = dampedDragAnimation.scaleX / (1f - (dampedDragAnimation.velocity / 10f * 0.75f).fastCoerceIn(-0.2f, 0.2f))
+                            scaleY = dampedDragAnimation.scaleY * (1f - (dampedDragAnimation.velocity / 10f * 0.25f).fastCoerceIn(-0.2f, 0.2f))
+                            shadowElevation = with(density) { lerp(3f, 14f, pressProgress).dp.toPx() }
+                            ambientShadowColor = indicatorShadowColor
+                            spotShadowColor = indicatorShadowColor
+                            shape = AppBottomBarShapes.capsule
+                            clip = false
+                        }
+                        .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
+                        .then(dampedDragAnimation.modifier)
+                        .clip(AppBottomBarShapes.capsule)
+                        .border(width = 1.dp, color = indicatorBorderColor, shape = AppBottomBarShapes.capsule)
+                        .drawWithContent {
+                            drawContent()
+                            if (isLiquidEffectEnabled) {
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        colors = if (isInLightTheme) {
+                                            listOf(
+                                                Color.White.copy(alpha = lerp(0.18f, 0.28f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.08f, 0.12f, pressProgress)),
+                                                Color.Transparent
+                                            )
+                                        } else {
+                                            listOf(
+                                                Color.White.copy(alpha = lerp(0.08f, 0.14f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.03f, 0.06f, pressProgress)),
+                                                Color.Transparent
+                                            )
+                                        }
+                                    ),
+                                    blendMode = BlendMode.Plus
+                                )
+                                drawRect(
+                                    color = if (isInLightTheme) {
+                                        Color.Black.copy(alpha = lerp(0.028f, 0.018f, pressProgress))
+                                    } else {
+                                        Color.Black.copy(alpha = lerp(0.080f, 0.060f, pressProgress))
+                                    }
+                                )
+                            }
+                        }
+                        .height(AppChromeTokens.floatingBottomBarInnerHeight)
+                        .width(with(density) { tabWidthPx.toDp() })
+                ) {
+                    LiquidBackdropLayer(
+                        modifier = Modifier.fillMaxSize(),
+                        enabled = isLiquidEffectEnabled,
+                        fallbackColor = indicatorFallbackColor,
+                        spec = indicatorSpec
+                    )
+                }
+            }
+        }
+    }
+}
+
+private object AppBottomBarShapes {
+    val capsule = androidx.compose.foundation.shape.RoundedCornerShape(percent = 50)
 }

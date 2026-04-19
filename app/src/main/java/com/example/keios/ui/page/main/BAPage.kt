@@ -39,8 +39,8 @@ import com.example.keios.ui.page.main.ba.rememberBaPageUiController
 import com.example.keios.ui.page.main.ba.saveBaPageSettings
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
-import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold

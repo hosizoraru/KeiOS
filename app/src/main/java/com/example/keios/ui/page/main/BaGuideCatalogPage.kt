@@ -115,8 +115,8 @@ import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
-import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

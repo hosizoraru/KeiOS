@@ -24,8 +24,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.keios.R
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.ui.page.main.os.OsPageViewModel
-import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
-import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.Deferred

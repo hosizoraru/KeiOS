@@ -54,8 +54,8 @@ import com.example.keios.ui.page.main.widget.StatusPill
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.system.getAllJavaPropString
 import com.example.keios.core.system.getAllSystemProperties
-import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
-import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.tencent.mmkv.MMKV

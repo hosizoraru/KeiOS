@@ -29,8 +29,8 @@ import com.example.keios.ui.page.main.github.sheet.GitHubTrackEditSheet
 import com.example.keios.ui.page.main.github.sheet.GitHubTrackImportDialog
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.rosan.installer.ui.library.effect.getMiuixAppBarColor
-import com.rosan.installer.ui.library.effect.rememberMiuixBlurBackdrop
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
