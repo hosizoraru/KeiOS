@@ -1,0 +1,33 @@
+<resources>
+    <string name="main_toast_pool_guide_missing">该卡池暂未关联学生图鉴</string>
+    <string name="home_cd_edit_bottom_pages">编辑底栏板块</string>
+    <string name="home_sheet_bottom_pages_title">底栏板块</string>
+    <string name="home_sheet_visible_pages_title">显示板块</string>
+    <string name="home_sheet_visible_pages_desc">Home 固定显示，其他板块可按需隐藏或重新显示。</string>
+    <string name="home_status_loading">读取中</string>
+    <string name="home_app_version_unknown_fallback">unknown</string>
+    <string name="home_app_version_unknown">版本未知</string>
+    <string name="home_header_tagline">OS · MCP · GitHub · BA · 图鉴 一体化工具台</string>
+    <string name="home_status_ba">BA</string>
+    <string name="home_status_shizuku">Shizuku</string>
+    <string name="home_card_title_mcp">MCP</string>
+    <string name="home_card_title_github_cache">GitHub Cache</string>
+    <string name="home_card_title_ba">BA</string>
+    <string name="home_time_just_now">刚刚</string>
+    <string name="home_mcp_status_running">运行中</string>
+    <string name="home_mcp_status_stopped">未运行</string>
+    <string name="home_mcp_line_status_clients">状态：%1$s   在线设备：%2$d</string>
+    <string name="home_mcp_line_port_mode">端口：%1$d   网络模式：%2$s</string>
+    <string name="home_mcp_line_priority_primary">状态：%1$s   运行时长：%2$s</string>
+    <string name="home_mcp_line_priority_secondary">在线设备：%1$d   网络：%2$s   端口：%3$d</string>
+    <string name="home_mcp_line_priority_tertiary">路径：%1$s   服务：%2$s   Token：%3$s</string>
+    <string name="home_github_status_unconfigured">未配置</string>
+    <string name="home_github_status_no_cache">暂无缓存</string>
+    <string name="home_github_status_pending_refresh">待刷新</string>
+    <string name="home_github_line_last_update">上次更新：%1$s</string>
+    <string name="home_github_line_track_update">追踪：%1$d 项   可更新：%2$s</string>
+    <string name="home_github_line_priority_primary">稳定可更新：%1$s   预发可更新：%2$s</string>
+    <string name="home_github_line_priority_secondary">追踪：%1$s   缓存：%2$s</string>
+    <string name="home_github_line_priority_tertiary">策略：%1$s   API：%2$s   上次更新：%3$s</string>
+    <string name="home_ba_line_ap">AP：%1$d/%2$d   咖啡厅AP：%3$d/%4$d</string>
+</resources>

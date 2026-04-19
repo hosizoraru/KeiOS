@@ -101,7 +101,7 @@ fun AboutPage(
         shizukuApiUtils.detailedRows().toMap()
     }
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
-    val openLinkFailed = stringResource(R.string.about_error_open_link)
+    val openLinkFailed = stringResource(R.string.common_open_link_failed)
 
     AppPageScaffold(
         title = stringResource(R.string.about_page_title),

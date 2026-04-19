@@ -1,8 +1,5 @@
 <resources>
     <string name="about_page_title">About</string>
-    <string name="about_action_expand">展开</string>
-    <string name="about_action_collapse">收起</string>
-    <string name="about_error_open_link">无法打开链接</string>
     <string name="about_project_url">https://github.com/hosizoraru/KeiOS</string>
     <string name="about_value_yes">是</string>
     <string name="about_value_no">否</string>
