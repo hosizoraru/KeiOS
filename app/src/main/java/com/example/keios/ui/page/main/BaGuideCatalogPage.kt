@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -95,6 +96,7 @@ import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
 import com.example.keios.ui.page.main.widget.FrostedBlock
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.GlassIconButton
+import com.example.keios.ui.page.main.widget.LiquidGlassBottomBar
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.LiquidActionItem
@@ -225,6 +227,7 @@ fun BaGuideCatalogPage(
 
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
+    val newBottomBarTransitionEnabled = remember { UiPrefs.isNewBottomBarTransitionEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
     var showSearchBar by remember { mutableStateOf(true) }
@@ -455,27 +458,15 @@ fun BaGuideCatalogPage(
             Box(modifier = Modifier.fillMaxWidth()) {
                 AnimatedVisibility(
                     visible = showBottomBar,
-                    enter = appFloatingEnter(),
-                    exit = appFloatingExit(),
+                    enter = appFloatingEnter(useNewBottomBarTransition = newBottomBarTransitionEnabled),
+                    exit = appFloatingExit(useNewBottomBarTransition = newBottomBarTransitionEnabled),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
-                    FloatingBottomBar(
-                        modifier = Modifier
-                            .padding(
-                                horizontal = AppChromeTokens.pageHorizontalPadding,
-                                vertical = AppChromeTokens.pageSectionGap + navigationBarBottom
-                            ),
-                        selectedIndex = { pagerState.targetPage },
-                        onSelected = { index ->
-                            // Ignore mirror callbacks emitted after pager state sync.
-                            if (index != pagerState.targetPage) {
-                                selectCatalogTab(index)
-                            }
-                        },
-                        backdrop = bottomBarBackdrop,
-                        tabsCount = tabs.size,
-                        isBlurEnabled = liquidBottomBarEnabled
-                    ) {
+                    val bottomBarModifier = Modifier.padding(
+                        horizontal = AppChromeTokens.pageHorizontalPadding,
+                        vertical = AppChromeTokens.pageSectionGap + navigationBarBottom
+                    )
+                    val bottomBarTabs: @Composable RowScope.() -> Unit = {
                         tabs.forEachIndexed { index, tab ->
                             FloatingBottomBarItem(
                                 onClick = { selectCatalogTab(index) },
@@ -503,6 +494,36 @@ fun BaGuideCatalogPage(
                                 )
                             }
                         }
+                    }
+
+                    if (newBottomBarTransitionEnabled) {
+                        LiquidGlassBottomBar(
+                            modifier = bottomBarModifier,
+                            selectedIndex = { pagerState.targetPage },
+                            onSelected = { index ->
+                                if (index != pagerState.targetPage) {
+                                    selectCatalogTab(index)
+                                }
+                            },
+                            tabsCount = tabs.size,
+                            isLiquidEffectEnabled = liquidBottomBarEnabled,
+                            content = bottomBarTabs
+                        )
+                    } else {
+                        FloatingBottomBar(
+                            modifier = bottomBarModifier,
+                            selectedIndex = { pagerState.targetPage },
+                            onSelected = { index ->
+                                // Ignore mirror callbacks emitted after pager state sync.
+                                if (index != pagerState.targetPage) {
+                                    selectCatalogTab(index)
+                                }
+                            },
+                            backdrop = bottomBarBackdrop,
+                            tabsCount = tabs.size,
+                            isBlurEnabled = liquidBottomBarEnabled,
+                            content = bottomBarTabs
+                        )
                     }
                 }
             }

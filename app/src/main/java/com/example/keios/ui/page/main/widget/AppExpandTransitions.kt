@@ -33,21 +33,29 @@ internal fun appExpandOut(): ExitTransition {
 }
 
 @Composable
-internal fun appFloatingEnter(): EnterTransition {
+internal fun appFloatingEnter(useNewBottomBarTransition: Boolean = false): EnterTransition {
     if (!LocalTransitionAnimationsEnabled.current) return EnterTransition.None
-    return fadeIn(animationSpec = tween(durationMillis = AppMotionTokens.floatingFadeInMs)) +
+    val fadeInDuration = if (useNewBottomBarTransition) 130 else AppMotionTokens.floatingFadeInMs
+    val slideInDuration = if (useNewBottomBarTransition) 260 else AppMotionTokens.floatingSlideInMs
+    return fadeIn(animationSpec = tween(durationMillis = fadeInDuration)) +
         slideInVertically(
-            animationSpec = tween(durationMillis = AppMotionTokens.floatingSlideInMs),
-            initialOffsetY = { it / 2 }
+            animationSpec = tween(durationMillis = slideInDuration),
+            initialOffsetY = { fullHeight ->
+                if (useNewBottomBarTransition) (fullHeight * 0.32f).toInt() else fullHeight / 2
+            }
         )
 }
 
 @Composable
-internal fun appFloatingExit(): ExitTransition {
+internal fun appFloatingExit(useNewBottomBarTransition: Boolean = false): ExitTransition {
     if (!LocalTransitionAnimationsEnabled.current) return ExitTransition.None
-    return fadeOut(animationSpec = tween(durationMillis = AppMotionTokens.floatingFadeOutMs)) +
+    val fadeOutDuration = if (useNewBottomBarTransition) 100 else AppMotionTokens.floatingFadeOutMs
+    val slideOutDuration = if (useNewBottomBarTransition) 220 else AppMotionTokens.floatingSlideOutMs
+    return fadeOut(animationSpec = tween(durationMillis = fadeOutDuration)) +
         slideOutVertically(
-            animationSpec = tween(durationMillis = AppMotionTokens.floatingSlideOutMs),
-            targetOffsetY = { it / 2 }
+            animationSpec = tween(durationMillis = slideOutDuration),
+            targetOffsetY = { fullHeight ->
+                if (useNewBottomBarTransition) (fullHeight * 0.36f).toInt() else fullHeight / 2
+            }
         )
 }

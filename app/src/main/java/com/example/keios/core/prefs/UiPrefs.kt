@@ -14,6 +14,7 @@ enum class AppThemeMode {
 
 data class UiPrefsSnapshot(
     val liquidBottomBarEnabled: Boolean,
+    val newBottomBarTransitionEnabled: Boolean,
     val liquidActionBarLayeredStyleEnabled: Boolean,
     val transitionAnimationsEnabled: Boolean,
     val cardPressFeedbackEnabled: Boolean,
@@ -34,6 +35,7 @@ data class UiPrefsSnapshot(
 object UiPrefs {
     private const val KV_ID = "ui_prefs"
     private const val KEY_LIQUID_BOTTOM_BAR = "liquid_bottom_bar"
+    private const val KEY_NEW_BOTTOM_BAR_TRANSITION = "new_bottom_bar_transition"
     private const val KEY_LIQUID_ACTION_BAR_LAYERED_STYLE = "liquid_action_bar_layered_style"
     private const val KEY_TRANSITION_ANIMATIONS = "transition_animations"
     private const val KEY_CARD_PRESS_FEEDBACK = "card_press_feedback"
@@ -70,6 +72,14 @@ object UiPrefs {
 
     fun setLiquidBottomBarEnabled(value: Boolean) {
         kv().encode(KEY_LIQUID_BOTTOM_BAR, value)
+    }
+
+    fun isNewBottomBarTransitionEnabled(defaultValue: Boolean = false): Boolean {
+        return kv().decodeBool(KEY_NEW_BOTTOM_BAR_TRANSITION, defaultValue)
+    }
+
+    fun setNewBottomBarTransitionEnabled(value: Boolean) {
+        kv().encode(KEY_NEW_BOTTOM_BAR_TRANSITION, value)
     }
 
     fun isLiquidActionBarLayeredStyleEnabled(defaultValue: Boolean = true): Boolean {
@@ -222,6 +232,7 @@ object UiPrefs {
     fun defaultSnapshot(appThemeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM): UiPrefsSnapshot {
         return UiPrefsSnapshot(
             liquidBottomBarEnabled = true,
+            newBottomBarTransitionEnabled = false,
             liquidActionBarLayeredStyleEnabled = true,
             transitionAnimationsEnabled = true,
             cardPressFeedbackEnabled = true,
@@ -244,6 +255,7 @@ object UiPrefs {
         val store = kv()
         return UiPrefsSnapshot(
             liquidBottomBarEnabled = store.decodeBool(KEY_LIQUID_BOTTOM_BAR, true),
+            newBottomBarTransitionEnabled = store.decodeBool(KEY_NEW_BOTTOM_BAR_TRANSITION, false),
             liquidActionBarLayeredStyleEnabled = store.decodeBool(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, true),
             transitionAnimationsEnabled = store.decodeBool(KEY_TRANSITION_ANIMATIONS, true),
             cardPressFeedbackEnabled = store.decodeBool(KEY_CARD_PRESS_FEEDBACK, true),

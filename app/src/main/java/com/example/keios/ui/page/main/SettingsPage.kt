@@ -88,6 +88,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun SettingsPage(
     liquidBottomBarEnabled: Boolean,
     onLiquidBottomBarChanged: (Boolean) -> Unit,
+    newBottomBarTransitionEnabled: Boolean,
+    onNewBottomBarTransitionChanged: (Boolean) -> Unit,
     liquidActionBarLayeredStyleEnabled: Boolean,
     onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
     transitionAnimationsEnabled: Boolean,
@@ -187,6 +189,7 @@ fun SettingsPage(
     val animationGroupActive = transitionAnimationsEnabled
     val componentEffectsGroupActive = liquidActionBarLayeredStyleEnabled ||
         liquidBottomBarEnabled ||
+        newBottomBarTransitionEnabled ||
         cardPressFeedbackEnabled
     val backgroundGroupActive = nonHomeBackgroundEnabled || nonHomeBackgroundUri.isNotBlank()
     val notifyGroupActive = superIslandNotificationEnabled || superIslandBypassRestrictionEnabled
@@ -431,6 +434,19 @@ fun SettingsPage(
                         summary = stringResource(R.string.settings_bottom_bar_summary),
                         checked = liquidBottomBarEnabled,
                         onCheckedChange = onLiquidBottomBarChanged
+                    )
+
+                    SettingsToggleItem(
+                        title = stringResource(R.string.settings_bottom_bar_new_transition_title),
+                        summary = if (newBottomBarTransitionEnabled) {
+                            stringResource(R.string.settings_bottom_bar_new_transition_summary_enabled)
+                        } else {
+                            stringResource(R.string.settings_bottom_bar_new_transition_summary_disabled)
+                        },
+                        checked = newBottomBarTransitionEnabled,
+                        onCheckedChange = onNewBottomBarTransitionChanged,
+                        infoKey = stringResource(R.string.common_scope),
+                        infoValue = stringResource(R.string.settings_bottom_bar_new_transition_scope)
                     )
 
                     SettingsToggleItem(

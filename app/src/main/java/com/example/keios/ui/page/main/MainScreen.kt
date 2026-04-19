@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -81,6 +82,7 @@ import com.example.keios.ui.page.main.widget.AppMotionTokens
 import com.example.keios.ui.page.main.widget.UiPerformanceBudget
 import com.example.keios.ui.page.main.widget.FloatingBottomBar
 import com.example.keios.ui.page.main.widget.FloatingBottomBarItem
+import com.example.keios.ui.page.main.widget.LiquidGlassBottomBar
 import com.example.keios.ui.page.main.widget.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.appFloatingEnter
 import com.example.keios.ui.page.main.widget.appFloatingExit
@@ -144,6 +146,9 @@ fun MainScreen(
         value = withContext(Dispatchers.IO) { UiPrefs.loadSnapshot() }
     }
     var liquidBottomBarEnabled by remember(uiPrefsSnapshot) { mutableStateOf(uiPrefsSnapshot.liquidBottomBarEnabled) }
+    var newBottomBarTransitionEnabled by remember(uiPrefsSnapshot) {
+        mutableStateOf(uiPrefsSnapshot.newBottomBarTransitionEnabled)
+    }
     var liquidActionBarLayeredStyleEnabled by remember(uiPrefsSnapshot) {
         mutableStateOf(uiPrefsSnapshot.liquidActionBarLayeredStyleEnabled)
     }
@@ -200,6 +205,7 @@ fun MainScreen(
                 MainPagerLayout(
                     navigator = navigator,
                     liquidBottomBarEnabled = liquidBottomBarEnabled,
+                    newBottomBarTransitionEnabled = newBottomBarTransitionEnabled,
                     liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                     homeIconHdrEnabled = homeIconHdrEnabled,
@@ -231,6 +237,11 @@ fun MainScreen(
                     onLiquidBottomBarChanged = {
                         liquidBottomBarEnabled = it
                         UiPrefs.setLiquidBottomBarEnabled(it)
+                    },
+                    newBottomBarTransitionEnabled = newBottomBarTransitionEnabled,
+                    onNewBottomBarTransitionChanged = {
+                        newBottomBarTransitionEnabled = it
+                        UiPrefs.setNewBottomBarTransitionEnabled(it)
                     },
                     liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     onLiquidActionBarLayeredStyleChanged = {
@@ -361,6 +372,7 @@ fun MainScreen(
 private fun MainPagerLayout(
     navigator: Navigator,
     liquidBottomBarEnabled: Boolean,
+    newBottomBarTransitionEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
@@ -562,33 +574,21 @@ private fun MainPagerLayout(
             Box(modifier = Modifier.fillMaxWidth()) {
                 AnimatedVisibility(
                     visible = showBottomBar,
-                    enter = appFloatingEnter(),
-                    exit = appFloatingExit(),
+                    enter = appFloatingEnter(useNewBottomBarTransition = newBottomBarTransitionEnabled),
+                    exit = appFloatingExit(useNewBottomBarTransition = newBottomBarTransitionEnabled),
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
-                    FloatingBottomBar(
-                        modifier = Modifier
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {},
-                            )
-                            .padding(
-                                horizontal = 12.dp,
-                                vertical = 12.dp + navigationBarBottom
-                            ),
-                        selectedIndex = { pagerState.targetPage },
-                        onSelected = { index ->
-                            // Ignore mirror callbacks emitted after pager page sync.
-                            // Keep explicit tab click behavior (including reselect-to-top) unchanged.
-                            if (index != pagerState.targetPage) {
-                                handlePageSelected(index)
-                            }
-                        },
-                        backdrop = backdrop,
-                        tabsCount = tabs.size,
-                        isBlurEnabled = liquidBottomBarEnabled
-                    ) {
+                    val bottomBarModifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                        )
+                        .padding(
+                            horizontal = 12.dp,
+                            vertical = 12.dp + navigationBarBottom
+                        )
+                    val bottomBarTabs: @Composable RowScope.() -> Unit = {
                         tabs.forEachIndexed { index, page ->
                             FloatingBottomBarItem(
                                 onClick = { handlePageSelected(index) },
@@ -628,6 +628,37 @@ private fun MainPagerLayout(
                                 )
                             }
                         }
+                    }
+
+                    if (newBottomBarTransitionEnabled) {
+                        LiquidGlassBottomBar(
+                            modifier = bottomBarModifier,
+                            selectedIndex = { pagerState.targetPage },
+                            onSelected = { index ->
+                                if (index != pagerState.targetPage) {
+                                    handlePageSelected(index)
+                                }
+                            },
+                            tabsCount = tabs.size,
+                            isLiquidEffectEnabled = liquidBottomBarEnabled,
+                            content = bottomBarTabs
+                        )
+                    } else {
+                        FloatingBottomBar(
+                            modifier = bottomBarModifier,
+                            selectedIndex = { pagerState.targetPage },
+                            onSelected = { index ->
+                                // Ignore mirror callbacks emitted after pager page sync.
+                                // Keep explicit tab click behavior (including reselect-to-top) unchanged.
+                                if (index != pagerState.targetPage) {
+                                    handlePageSelected(index)
+                                }
+                            },
+                            backdrop = backdrop,
+                            tabsCount = tabs.size,
+                            isBlurEnabled = liquidBottomBarEnabled,
+                            content = bottomBarTabs
+                        )
                     }
                 }
             }
