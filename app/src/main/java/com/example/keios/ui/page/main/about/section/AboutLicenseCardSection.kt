@@ -52,6 +52,15 @@ fun AboutLicenseCardSection(
             icon = appLucideLayersIcon()
         ),
         AboutLicenseEntry(
+            titleRes = R.string.about_license_row_liquid_glass,
+            value = stringResource(
+                R.string.about_license_value_liquid_glass,
+                BuildConfig.LIQUID_GLASS_VERSION
+            ),
+            sourceUrl = stringResource(R.string.about_license_url_liquid_glass),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
             titleRes = R.string.about_license_row_installerx,
             value = stringResource(R.string.about_license_value_installerx),
             sourceUrl = stringResource(R.string.about_license_url_installerx),

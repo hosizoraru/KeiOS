@@ -401,8 +401,17 @@ private fun MainPagerLayout(
             page == BottomPage.Home || visibleBottomPageNames.contains(page.name)
         }
     }
+    val initialPageIndex = remember(tabs, requestedBottomPage, requestedBottomPageToken) {
+        val target = requestedBottomPage?.trim().orEmpty()
+        tabs.indexOfFirst { it.name == target }
+            .takeIf { it >= 0 }
+            ?: 0
+    }
     val visibleTabsSnapshot = remember(tabs) { tabs.toSet() }
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val pagerState = rememberPagerState(
+        initialPage = initialPageIndex,
+        pageCount = { tabs.size }
+    )
     val coroutineScope = rememberCoroutineScope()
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
     val mcpUiState by mcpServerManager.uiState.collectAsState()
