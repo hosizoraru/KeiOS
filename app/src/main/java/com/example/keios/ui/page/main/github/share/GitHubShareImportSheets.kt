@@ -195,14 +195,12 @@ internal fun GitHubShareImportSheet(
                     ) { index, asset ->
                         val preferredForDevice = assetIsPreferredForDevice(asset.name, supportedAbis)
                         val likelyCompatible = assetLikelyCompatibleWithDevice(asset.name, supportedAbis)
-                        val compatibilityHint = when {
-                            preferredForDevice -> stringResource(
-                                R.string.github_share_import_dialog_asset_hint_device_recommended
-                            )
-                            !likelyCompatible -> stringResource(
+                        val compatibilityHint = if (!likelyCompatible) {
+                            stringResource(
                                 R.string.github_share_import_dialog_asset_hint_maybe_incompatible
                             )
-                            else -> null
+                        } else {
+                            null
                         }
                         val baseAssetSummary = stringResource(
                             R.string.github_share_import_dialog_asset_summary,
