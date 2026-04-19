@@ -117,8 +117,20 @@ fun AboutUiFrameworkCardSection(
             appLucideMediaIcon()
         ),
         AboutInfoRow(
+            R.string.about_row_icon_set,
+            stringResource(
+                R.string.about_value_icon_set,
+                BuildConfig.LUCIDE_ICONS_VERSION
+            ),
+            appLucideAppWindowIcon()
+        ),
+        AboutInfoRow(
             R.string.about_row_permission_bridge,
-            stringResource(R.string.about_value_permission_bridge, ShizukuApiUtils.API_VERSION),
+            stringResource(
+                R.string.about_value_permission_bridge,
+                BuildConfig.SHIZUKU_VERSION,
+                ShizukuApiUtils.API_VERSION
+            ),
             appLucideLockIcon()
         )
     )
@@ -156,7 +168,8 @@ fun AboutNetworkServiceCardSection(
     val rows = listOf(
         AboutInfoRow(R.string.about_row_mcp_sdk, BuildConfig.MCP_KOTLIN_SDK_VERSION, appLucideInfoIcon()),
         AboutInfoRow(R.string.about_row_ktor, BuildConfig.KTOR_VERSION, osLucideSettingsIcon()),
-        AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, osLucideSettingsIcon())
+        AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, osLucideSettingsIcon()),
+        AboutInfoRow(R.string.about_row_focus_api, BuildConfig.FOCUS_API_VERSION, appLucideAlertIcon())
     )
     AboutSectionCard(
         cardColor = cardColor,

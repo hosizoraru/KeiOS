@@ -12,7 +12,8 @@
     <string name="about_value_navigation">Navigation3 %1$s</string>
     <string name="about_value_ui_state_holder">Lifecycle ViewModel Compose %1$s</string>
     <string name="about_value_glass_material">Backdrop %1$s · Capsule %2$s</string>
-    <string name="about_value_permission_bridge">Shizuku API %1$s</string>
+    <string name="about_value_permission_bridge">Shizuku SDK %1$s · API %2$s</string>
+    <string name="about_value_icon_set">Lucide Icons %1$s</string>
 
     <string name="about_card_app_title">App</string>
     <string name="about_card_app_subtitle">应用身份与运行时信息</string>
@@ -32,6 +33,8 @@
     <string name="about_card_network_subtitle">MCP 与请求服务栈</string>
     <string name="about_card_media_title">媒体与存储</string>
     <string name="about_card_media_subtitle">播放器、图像与本地存储能力</string>
+    <string name="about_card_license_title">开源依赖与许可证</string>
+    <string name="about_card_license_subtitle">第三方依赖、引用代码与授权入口</string>
 
     <string name="about_label_status">状态</string>
     <string name="about_label_name">名称</string>
@@ -75,6 +78,8 @@
     <string name="about_row_mcp_sdk">MCP SDK</string>
     <string name="about_row_ktor">Ktor</string>
     <string name="about_row_okhttp">OkHttp</string>
+    <string name="about_row_focus_api">Focus API</string>
+    <string name="about_row_icon_set">图标库</string>
     <string name="about_row_broadcast_handler">Broadcast Handler</string>
     <string name="about_row_foreground_info_handler">ForegroundInfo Handler</string>
     <string name="about_value_github_strategy">Atom Feed / Releases API（可选 Token）</string>
@@ -95,6 +100,35 @@
     <string name="about_row_ucrop">uCrop</string>
     <string name="about_row_documentfile">DocumentFile</string>
     <string name="about_row_mmkv">MMKV</string>
+
+    <string name="about_license_row_mix">授权分布</string>
+    <string name="about_license_value_mix">Apache-2.0 为主，含 MIT / BSD-3-Clause / GPL-3.0-only</string>
+    <string name="about_license_row_compliance">履约方式</string>
+    <string name="about_license_value_compliance">展示依赖、版本、许可证与源码入口</string>
+    <string name="about_license_row_miuix">Miuix UI</string>
+    <string name="about_license_value_miuix">v%1$s · Apache-2.0</string>
+    <string name="about_license_row_lucide">Lucide Icons</string>
+    <string name="about_license_value_lucide">v%1$s · MIT</string>
+    <string name="about_license_row_installerx">InstallerX-Revived 引用代码</string>
+    <string name="about_license_value_installerx">GPL-3.0-only / Apache-2.0（按 SPDX 文件头）</string>
+    <string name="about_license_row_shizuku">Shizuku API</string>
+    <string name="about_license_value_shizuku">v%1$s · MIT</string>
+    <string name="about_license_row_mmkv">MMKV</string>
+    <string name="about_license_value_mmkv">v%1$s · BSD-3-Clause</string>
+    <string name="about_license_row_mcp">MCP Kotlin SDK</string>
+    <string name="about_license_value_mcp">v%1$s · MIT</string>
+    <string name="about_license_row_network_stack">网络与通知栈</string>
+    <string name="about_license_value_network_stack">Ktor %1$s · OkHttp %2$s · Focus API %3$s · Apache-2.0</string>
+    <string name="about_license_row_media_stack">媒体与图像栈</string>
+    <string name="about_license_value_media_stack">Media3 %1$s · Coil %2$s · ZoomImage %3$s · uCrop %4$s · Apache-2.0</string>
+    <string name="about_license_url_miuix">https://github.com/compose-miuix-ui/miuix/blob/main/LICENSE</string>
+    <string name="about_license_url_lucide">https://github.com/composablehorizons/composeicons/blob/main/LICENSE</string>
+    <string name="about_license_url_installerx">https://github.com/wxxsfxyzm/InstallerX-Revived/</string>
+    <string name="about_license_url_shizuku">https://github.com/RikkaApps/Shizuku-API/blob/master/LICENSE</string>
+    <string name="about_license_url_mmkv">https://github.com/Tencent/MMKV/blob/master/LICENSE.TXT</string>
+    <string name="about_license_url_mcp">https://github.com/modelcontextprotocol/kotlin-sdk/blob/main/LICENSE</string>
+    <string name="about_license_url_network_stack">https://github.com/square/okhttp/blob/master/LICENSE.txt</string>
+    <string name="about_license_url_media_stack">https://www.apache.org/licenses/LICENSE-2.0.txt</string>
 
     <string name="about_runtime_label_notification_permission">通知权限</string>
     <string name="about_runtime_label_selinux">SELinux</string>

@@ -27,6 +27,7 @@ import com.example.keios.ui.page.main.about.section.AboutAppCardSection
 import com.example.keios.ui.page.main.about.section.AboutBuildSdkCardSection
 import com.example.keios.ui.page.main.about.section.AboutComponentCardSection
 import com.example.keios.ui.page.main.about.section.AboutGitHubCardSection
+import com.example.keios.ui.page.main.about.section.AboutLicenseCardSection
 import com.example.keios.ui.page.main.about.section.AboutMediaStorageCardSection
 import com.example.keios.ui.page.main.about.section.AboutNetworkServiceCardSection
 import com.example.keios.ui.page.main.about.section.AboutPermissionCardSection
@@ -63,6 +64,7 @@ fun AboutPage(
     val uiFrameworkCardColor = Color(0x2233A1F4)
     val networkServiceCardColor = Color(0x2222C55E)
     val mediaStorageCardColor = Color(0x2260A5FA)
+    val licenseCardColor = Color(0x2243A047)
     val runtimeCardColor = if (shizukuStatus.contains("granted", ignoreCase = true)) {
         Color(0x2222C55E)
     } else {
@@ -80,6 +82,7 @@ fun AboutPage(
     var githubExpanded by rememberSaveable { mutableStateOf(false) }
     var networkExpanded by rememberSaveable { mutableStateOf(false) }
     var mediaExpanded by rememberSaveable { mutableStateOf(false) }
+    var licenseExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(scrollToTopSignal) {
         if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
@@ -225,6 +228,20 @@ fun AboutPage(
                     subtitleColor = subtitleColor,
                     expanded = mediaExpanded,
                     onExpandedChange = { mediaExpanded = it }
+                )
+            }
+            item {
+                AboutLicenseCardSection(
+                    cardColor = licenseCardColor,
+                    accent = accent,
+                    subtitleColor = subtitleColor,
+                    expanded = licenseExpanded,
+                    onExpandedChange = { licenseExpanded = it },
+                    onOpenSourceUrl = { url ->
+                        if (!openExternalUrl(context, url)) {
+                            Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             }
         }
