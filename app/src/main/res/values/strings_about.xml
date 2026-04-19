@@ -102,7 +102,7 @@
     <string name="about_row_mmkv">MMKV</string>
 
     <string name="about_license_row_mix">授权分布</string>
-    <string name="about_license_value_mix">Apache-2.0 为主，含 MIT / BSD-3-Clause / GPL-3.0-only</string>
+    <string name="about_license_value_mix">Apache-2.0 为主，含 MIT / BSD-3-Clause</string>
     <string name="about_license_row_compliance">履约方式</string>
     <string name="about_license_value_compliance">展示依赖、版本、许可证与源码入口</string>
     <string name="about_license_row_miuix">Miuix UI</string>

@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.BuildConfig
 import com.example.keios.R
 import com.example.keios.ui.page.main.os.appLucideAppWindowIcon
-import com.example.keios.ui.page.main.os.appLucideBranchIcon
 import com.example.keios.ui.page.main.os.appLucideInfoIcon
 import com.example.keios.ui.page.main.os.appLucideLayersIcon
 import com.example.keios.ui.page.main.os.appLucideLockIcon
@@ -59,12 +58,6 @@ fun AboutLicenseCardSection(
             ),
             sourceUrl = stringResource(R.string.about_license_url_liquid_glass),
             icon = appLucideAppWindowIcon()
-        ),
-        AboutLicenseEntry(
-            titleRes = R.string.about_license_row_installerx,
-            value = stringResource(R.string.about_license_value_installerx),
-            sourceUrl = stringResource(R.string.about_license_url_installerx),
-            icon = appLucideBranchIcon()
         ),
         AboutLicenseEntry(
             titleRes = R.string.about_license_row_shizuku,
