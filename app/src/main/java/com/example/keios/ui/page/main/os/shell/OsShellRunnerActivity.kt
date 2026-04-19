@@ -429,6 +429,22 @@ private fun OsShellRunnerPage(
         latestRunResultOutput = ""
         Toast.makeText(context, clearAllToast, Toast.LENGTH_SHORT).show()
     }
+    val clearAllIcon = osLucideClearAllIcon()
+    val settingsIcon = osLucideSettingsIcon()
+    val actionItems = remember(clearAllActionDescription, settingsActionDescription) {
+        listOf(
+            LiquidActionItem(
+                icon = clearAllIcon,
+                contentDescription = clearAllActionDescription,
+                onClick = { clearAllContent() }
+            ),
+            LiquidActionItem(
+                icon = settingsIcon,
+                contentDescription = settingsActionDescription,
+                onClick = { showSettingsSheet = true }
+            )
+        )
+    }
 
     LaunchedEffect(persistInputEnabled) {
         OsShellRunnerPrefsStore.savePersistInput(persistInputEnabled)
@@ -481,18 +497,7 @@ private fun OsShellRunnerPage(
             LiquidActionBar(
                 backdrop = topBarBackdrop,
                 layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                items = listOf(
-                    LiquidActionItem(
-                        icon = osLucideClearAllIcon(),
-                        contentDescription = clearAllActionDescription,
-                        onClick = { clearAllContent() }
-                    ),
-                    LiquidActionItem(
-                        icon = osLucideSettingsIcon(),
-                        contentDescription = settingsActionDescription,
-                        onClick = { showSettingsSheet = true }
-                    )
-                )
+                items = actionItems
             )
         }
     ) { innerPadding ->

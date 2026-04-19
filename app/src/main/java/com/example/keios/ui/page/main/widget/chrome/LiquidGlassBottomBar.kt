@@ -142,7 +142,7 @@ fun RowScope.LiquidGlassBottomBarItem(
 @Composable
 fun LiquidGlassBottomBar(
     modifier: Modifier = Modifier,
-    selectedIndex: () -> Int,
+    selectedIndex: Int,
     onSelected: (index: Int) -> Unit,
     backdrop: Backdrop,
     tabsCount: Int,
@@ -182,8 +182,8 @@ fun LiquidGlassBottomBar(
         }
     }
 
-    var currentIndex by remember(selectedIndex) {
-        mutableIntStateOf(selectedIndex().fastCoerceIn(0, safeTabsCount - 1))
+    var currentIndex by remember(safeTabsCount) {
+        mutableIntStateOf(selectedIndex.fastCoerceIn(0, safeTabsCount - 1))
     }
 
     class DampedDragAnimationHolder {
@@ -237,10 +237,7 @@ fun LiquidGlassBottomBar(
     holder.instance = dampedDragAnimation
 
     LaunchedEffect(selectedIndex, safeTabsCount) {
-        snapshotFlow { selectedIndex().fastCoerceIn(0, safeTabsCount - 1) }
-            .collectLatest { index ->
-                currentIndex = index
-            }
+        currentIndex = selectedIndex.fastCoerceIn(0, safeTabsCount - 1)
     }
 
     LaunchedEffect(dampedDragAnimation) {
@@ -279,6 +276,7 @@ fun LiquidGlassBottomBar(
     } else {
         null
     }
+    val combinedBackdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop)
 
     CompositionLocalProvider(
         LocalLiquidGlassBottomBarTabScale provides {
@@ -295,18 +293,19 @@ fun LiquidGlassBottomBar(
             Row(
                 modifier = Modifier
                     .onGloballyPositioned { coords ->
-                        totalWidthPx = coords.size.width.toFloat()
-                        val contentWidthPx = totalWidthPx - with(density) {
+                        val measuredTotalWidthPx = coords.size.width.toFloat()
+                        if (abs(totalWidthPx - measuredTotalWidthPx) > 0.5f) {
+                            totalWidthPx = measuredTotalWidthPx
+                        }
+                        val contentWidthPx = measuredTotalWidthPx - with(density) {
                             (horizontalPadding * 2).toPx()
                         }
-                        tabWidthPx = (contentWidthPx / safeTabsCount).coerceAtLeast(0f)
+                        val measuredTabWidthPx = (contentWidthPx / safeTabsCount).coerceAtLeast(0f)
+                        if (abs(tabWidthPx - measuredTabWidthPx) > 0.5f) {
+                            tabWidthPx = measuredTabWidthPx
+                        }
                     }
                     .graphicsLayer { translationX = panelOffset }
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    )
                     .drawBackdrop(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
@@ -363,7 +362,6 @@ fun LiquidGlassBottomBar(
                             },
                             onDrawSurface = { drawRect(palette.baseFillColor) }
                         )
-                        .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                         .height(AppChromeTokens.floatingBottomBarInnerHeight)
                         .padding(horizontal = horizontalPadding),
                     verticalAlignment = Alignment.CenterVertically,
@@ -390,10 +388,10 @@ fun LiquidGlassBottomBar(
                         .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
                         .then(dampedDragAnimation.modifier)
                         .drawBackdrop(
-                            backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                            backdrop = combinedBackdrop,
                             shape = { ContinuousCapsule },
                             effects = {
-                                if (isLiquidEffectEnabled) {
+                                if (isLiquidEffectEnabled && dampedDragAnimation.pressProgress > 0f) {
                                     val progress = dampedDragAnimation.pressProgress
                                     lens(10f.dp.toPx() * progress, 14f.dp.toPx() * progress, true)
                                 }

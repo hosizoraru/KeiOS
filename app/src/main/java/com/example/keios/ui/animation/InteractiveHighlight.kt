@@ -18,6 +18,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.util.fastCoerceIn
 import com.example.keios.core.ui.gesture.inspectDragGestures
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 import org.intellij.lang.annotations.Language
 
@@ -36,6 +38,8 @@ class InteractiveHighlight(
     private val positionAnimation = Animatable(Offset.Zero, Offset.VectorConverter, Offset.VisibilityThreshold)
 
     private var startPosition = Offset.Zero
+    private var pendingDragPosition: Offset? = null
+    private var dragPositionSyncJob: Job? = null
     val offset: Offset get() = positionAnimation.value - startPosition
 
     @Language("AGSL")
@@ -85,25 +89,50 @@ class InteractiveHighlight(
         inspectDragGestures(
             onDragStart = { down ->
                 startPosition = down.position
+                pendingDragPosition = down.position
+                dragPositionSyncJob?.cancel()
+                dragPositionSyncJob = null
                 animationScope.launch {
                     launch { pressProgressAnimation.animateTo(1f, pressProgressAnimationSpec) }
                     launch { positionAnimation.snapTo(startPosition) }
                 }
             },
             onDragEnd = {
+                pendingDragPosition = null
+                dragPositionSyncJob?.cancel()
+                dragPositionSyncJob = null
                 animationScope.launch {
                     launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
                     launch { positionAnimation.animateTo(startPosition, positionAnimationSpec) }
                 }
             },
             onDragCancel = {
+                pendingDragPosition = null
+                dragPositionSyncJob?.cancel()
+                dragPositionSyncJob = null
                 animationScope.launch {
                     launch { pressProgressAnimation.animateTo(0f, pressProgressAnimationSpec) }
                     launch { positionAnimation.animateTo(startPosition, positionAnimationSpec) }
                 }
             }
         ) { change, _ ->
-            animationScope.launch { positionAnimation.snapTo(change.position) }
+            pendingDragPosition = change.position
+            if (dragPositionSyncJob?.isActive != true) {
+                dragPositionSyncJob = animationScope.launch {
+                    try {
+                        while (true) {
+                            awaitFrame()
+                            val nextPosition = pendingDragPosition ?: break
+                            pendingDragPosition = null
+                            positionAnimation.snapTo(nextPosition)
+                        }
+                    } finally {
+                        if (dragPositionSyncJob?.isActive != true) {
+                            dragPositionSyncJob = null
+                        }
+                    }
+                }
+            }
         }
     }
 }

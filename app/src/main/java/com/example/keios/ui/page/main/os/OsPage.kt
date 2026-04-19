@@ -255,8 +255,12 @@ fun OsPage(
                     }
                 }
                 if (available.y > 1f) {
-                    showSearchBar = true
-                    searchBarHideOffsetPx = 0f
+                    if (!showSearchBar) {
+                        showSearchBar = true
+                    }
+                    if (searchBarHideOffsetPx != 0f) {
+                        searchBarHideOffsetPx = 0f
+                    }
                 }
                 return Offset.Zero
             }

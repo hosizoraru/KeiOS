@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main.ba
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.example.keios.R
@@ -37,6 +38,49 @@ internal fun BaTopBar(
     onCalendarRefreshIntervalSelected: (Int) -> Unit,
     onInteractionChanged: (Boolean) -> Unit,
 ) {
+    val editIcon = appLucideEditIcon()
+    val refreshIntervalIcon = appLucideConfigIcon()
+    val copyFriendCodeIcon = osLucideCopyIcon()
+    val refreshIcon = appLucideRefreshIcon()
+    val editContentDescription = stringResource(R.string.ba_cd_edit)
+    val refreshIntervalContentDescription = stringResource(R.string.ba_cd_refresh_interval)
+    val copyFriendCodeContentDescription = stringResource(R.string.ba_cd_copy_friend_code)
+    val refreshContentDescription = stringResource(R.string.ba_cd_refresh)
+    val actionItems = remember(
+        editContentDescription,
+        refreshIntervalContentDescription,
+        copyFriendCodeContentDescription,
+        refreshContentDescription,
+        showCalendarIntervalPopup,
+        onShowSettings,
+        onShowCalendarIntervalPopupChange,
+        onCopyFriendCode,
+        onRefreshAll
+    ) {
+        listOf(
+            LiquidActionItem(
+                icon = editIcon,
+                contentDescription = editContentDescription,
+                onClick = onShowSettings,
+            ),
+            LiquidActionItem(
+                icon = refreshIntervalIcon,
+                contentDescription = refreshIntervalContentDescription,
+                onClick = { onShowCalendarIntervalPopupChange(!showCalendarIntervalPopup) },
+            ),
+            LiquidActionItem(
+                icon = copyFriendCodeIcon,
+                contentDescription = copyFriendCodeContentDescription,
+                onClick = onCopyFriendCode,
+            ),
+            LiquidActionItem(
+                icon = refreshIcon,
+                contentDescription = refreshContentDescription,
+                onClick = onRefreshAll,
+            ),
+        )
+    }
+
     AppTopBarSection(
         title = "",
         largeTitle = stringResource(R.string.ba_topbar_title),
@@ -47,28 +91,7 @@ internal fun BaTopBar(
                 LiquidActionBar(
                     backdrop = backdrop,
                     layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                    items = listOf(
-                        LiquidActionItem(
-                            icon = appLucideEditIcon(),
-                            contentDescription = stringResource(R.string.ba_cd_edit),
-                            onClick = onShowSettings,
-                        ),
-                        LiquidActionItem(
-                            icon = appLucideConfigIcon(),
-                            contentDescription = stringResource(R.string.ba_cd_refresh_interval),
-                            onClick = { onShowCalendarIntervalPopupChange(!showCalendarIntervalPopup) },
-                        ),
-                        LiquidActionItem(
-                            icon = osLucideCopyIcon(),
-                            contentDescription = stringResource(R.string.ba_cd_copy_friend_code),
-                            onClick = onCopyFriendCode,
-                        ),
-                        LiquidActionItem(
-                            icon = appLucideRefreshIcon(),
-                            contentDescription = stringResource(R.string.ba_cd_refresh),
-                            onClick = onRefreshAll,
-                        ),
-                    ),
+                    items = actionItems,
                     onInteractionChanged = onInteractionChanged,
                 )
 

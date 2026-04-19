@@ -86,6 +86,10 @@ fun McpPage(
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val mcpTitle = stringResource(R.string.page_mcp_title)
+    val editServiceParamsContentDescription = stringResource(R.string.mcp_action_edit_service_params)
+    val openSkillContentDescription = stringResource(R.string.mcp_action_open_skill_md)
+    val copyConfigContentDescription = stringResource(R.string.mcp_action_copy_current_config)
+    val refreshContentDescription = stringResource(R.string.common_refresh)
     val unknownText = stringResource(R.string.common_unknown)
     val runtimePendingText = stringResource(R.string.mcp_runtime_pending)
     val titleColor = MiuixTheme.colorScheme.onBackground
@@ -186,8 +190,12 @@ fun McpPage(
     val toggleButtonScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) showFloatingToggleButton = false
-                if (available.y > 1f) showFloatingToggleButton = true
+                if (available.y < -1f && showFloatingToggleButton) {
+                    showFloatingToggleButton = false
+                }
+                if (available.y > 1f && !showFloatingToggleButton) {
+                    showFloatingToggleButton = true
+                }
                 return Offset.Zero
             }
         }
@@ -314,6 +322,66 @@ fun McpPage(
             }
         }
     }
+    val onOpenSkillState = rememberUpdatedState(onOpenSkill)
+    val uiStateSnapshot = rememberUpdatedState(uiState)
+    val portTextSnapshot = rememberUpdatedState(portText)
+    val allowExternalSnapshot = rememberUpdatedState(allowExternal)
+    val contextSnapshot = rememberUpdatedState(context)
+    val editIcon = appLucideEditIcon()
+    val notesIcon = appLucideNotesIcon()
+    val copyIcon = osLucideCopyIcon()
+    val refreshIcon = appLucideRefreshIcon()
+    val actionItems = remember(
+        editServiceParamsContentDescription,
+        openSkillContentDescription,
+        copyConfigContentDescription,
+        refreshContentDescription
+    ) {
+        listOf(
+            LiquidActionItem(
+                icon = editIcon,
+                contentDescription = editServiceParamsContentDescription,
+                onClick = { showEditSheet = true }
+            ),
+            LiquidActionItem(
+                icon = notesIcon,
+                contentDescription = openSkillContentDescription,
+                onClick = { onOpenSkillState.value() }
+            ),
+            LiquidActionItem(
+                icon = copyIcon,
+                contentDescription = copyConfigContentDescription,
+                onClick = {
+                    val snapshot = uiStateSnapshot.value
+                    val port = portTextSnapshot.value.toIntOrNull() ?: snapshot.port
+                    val endpoint = if (allowExternalSnapshot.value && snapshot.addresses.isNotEmpty()) {
+                        "http://${snapshot.addresses.first()}:$port${snapshot.endpointPath}"
+                    } else {
+                        "http://127.0.0.1:$port${snapshot.endpointPath}"
+                    }
+                    val json = mcpServerManager.buildConfigJson(endpoint)
+                    copyToClipboard(contextSnapshot.value, "mcp-config", json)
+                    Toast.makeText(
+                        contextSnapshot.value,
+                        contextSnapshot.value.getString(R.string.mcp_toast_config_copied),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            ),
+            LiquidActionItem(
+                icon = refreshIcon,
+                contentDescription = refreshContentDescription,
+                onClick = {
+                    mcpServerManager.refreshNow()
+                    Toast.makeText(
+                        contextSnapshot.value,
+                        contextSnapshot.value.getString(R.string.common_refreshed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            )
+        )
+    }
 
     AppPageScaffold(
         title = "",
@@ -325,48 +393,7 @@ fun McpPage(
             LiquidActionBar(
                 backdrop = topBarBackdrop,
                 layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                items = listOf(
-                    LiquidActionItem(
-                        icon = appLucideEditIcon(),
-                        contentDescription = stringResource(R.string.mcp_action_edit_service_params),
-                        onClick = { showEditSheet = true }
-                    ),
-                    LiquidActionItem(
-                        icon = appLucideNotesIcon(),
-                        contentDescription = stringResource(R.string.mcp_action_open_skill_md),
-                        onClick = onOpenSkill
-                    ),
-                    LiquidActionItem(
-                        icon = osLucideCopyIcon(),
-                        contentDescription = stringResource(R.string.mcp_action_copy_current_config),
-                        onClick = {
-                            val endpoint = if (allowExternal && uiState.addresses.isNotEmpty()) {
-                                "http://${uiState.addresses.first()}:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
-                            } else {
-                                "http://127.0.0.1:${portText.toIntOrNull() ?: uiState.port}${uiState.endpointPath}"
-                            }
-                            val json = mcpServerManager.buildConfigJson(endpoint)
-                            copyToClipboard(context, "mcp-config", json)
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.mcp_toast_config_copied),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    ),
-                    LiquidActionItem(
-                        icon = appLucideRefreshIcon(),
-                        contentDescription = stringResource(R.string.common_refresh),
-                        onClick = {
-                            mcpServerManager.refreshNow()
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.common_refreshed),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    )
-                ),
+                items = actionItems,
                 onInteractionChanged = onActionBarInteractingChanged
             )
         }

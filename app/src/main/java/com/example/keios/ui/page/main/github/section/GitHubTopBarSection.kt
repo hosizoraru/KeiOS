@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,50 @@ internal fun GitHubTopBarSection(
     onRefreshAllTracked: () -> Unit,
     onActionBarInteractingChanged: (Boolean) -> Unit
 ) {
+    val editStrategyIcon = appLucideEditIcon()
+    val checkLogicIcon = appLucideConfigIcon()
+    val sortIcon = appLucideSortIcon()
+    val refreshIcon = appLucideRefreshIcon()
+    val editStrategyContentDescription = stringResource(R.string.github_topbar_cd_edit_strategy)
+    val checkLogicContentDescription = stringResource(R.string.github_topbar_cd_check_logic)
+    val sortContentDescription = stringResource(R.string.github_topbar_cd_sort)
+    val refreshContentDescription = stringResource(R.string.github_topbar_cd_check)
+    val actionItems = remember(
+        editStrategyContentDescription,
+        checkLogicContentDescription,
+        sortContentDescription,
+        refreshContentDescription,
+        showSortPopup,
+        deleteInProgress,
+        onOpenStrategySheet,
+        onOpenCheckLogicSheet,
+        onShowSortPopupChange,
+        onRefreshAllTracked
+    ) {
+        listOf(
+            LiquidActionItem(
+                icon = editStrategyIcon,
+                contentDescription = editStrategyContentDescription,
+                onClick = onOpenStrategySheet
+            ),
+            LiquidActionItem(
+                icon = checkLogicIcon,
+                contentDescription = checkLogicContentDescription,
+                onClick = onOpenCheckLogicSheet
+            ),
+            LiquidActionItem(
+                icon = sortIcon,
+                contentDescription = sortContentDescription,
+                onClick = { onShowSortPopupChange(!showSortPopup) }
+            ),
+            LiquidActionItem(
+                icon = refreshIcon,
+                contentDescription = refreshContentDescription,
+                onClick = onRefreshAllTracked,
+                enabled = !deleteInProgress
+            )
+        )
+    }
     AppTopBarSection(
         title = "",
         largeTitle = stringResource(R.string.github_page_title),
@@ -58,29 +103,7 @@ internal fun GitHubTopBarSection(
                 LiquidActionBar(
                     backdrop = backdrop,
                     layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                    items = listOf(
-                        LiquidActionItem(
-                            icon = appLucideEditIcon(),
-                            contentDescription = stringResource(R.string.github_topbar_cd_edit_strategy),
-                            onClick = onOpenStrategySheet
-                        ),
-                        LiquidActionItem(
-                            icon = appLucideConfigIcon(),
-                            contentDescription = stringResource(R.string.github_topbar_cd_check_logic),
-                            onClick = onOpenCheckLogicSheet
-                        ),
-                        LiquidActionItem(
-                            icon = appLucideSortIcon(),
-                            contentDescription = stringResource(R.string.github_topbar_cd_sort),
-                            onClick = { onShowSortPopupChange(!showSortPopup) }
-                        ),
-                        LiquidActionItem(
-                            icon = appLucideRefreshIcon(),
-                            contentDescription = stringResource(R.string.github_topbar_cd_check),
-                            onClick = onRefreshAllTracked,
-                            enabled = !deleteInProgress
-                        )
-                    ),
+                    items = actionItems,
                     onInteractionChanged = onActionBarInteractingChanged
                 )
 

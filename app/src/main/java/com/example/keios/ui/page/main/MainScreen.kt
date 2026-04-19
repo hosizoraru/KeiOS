@@ -10,7 +10,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -414,7 +413,6 @@ private fun MainPagerLayout(
     )
     val coroutineScope = rememberCoroutineScope()
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
-    val mcpUiState by mcpServerManager.uiState.collectAsState()
 
     var osScrollToTopSignal by remember { mutableIntStateOf(0) }
     var baScrollToTopSignal by remember { mutableIntStateOf(0) }
@@ -475,8 +473,12 @@ private fun MainPagerLayout(
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) showBottomBar = false
-                if (available.y > 1f) showBottomBar = true
+                if (available.y < -1f && showBottomBar) {
+                    showBottomBar = false
+                }
+                if (available.y > 1f && !showBottomBar) {
+                    showBottomBar = true
+                }
                 return Offset.Zero
             }
         }
@@ -571,11 +573,6 @@ private fun MainPagerLayout(
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     val bottomBarModifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {},
-                        )
                         .padding(
                             horizontal = 12.dp,
                             vertical = 12.dp + navigationBarBottom
@@ -628,7 +625,7 @@ private fun MainPagerLayout(
 
                     LiquidGlassBottomBar(
                         modifier = bottomBarModifier,
-                        selectedIndex = { pagerState.targetPage },
+                        selectedIndex = pagerState.targetPage,
                         onSelected = { index ->
                             if (index != pagerState.targetPage) {
                                 handlePageSelected(index)
@@ -691,6 +688,7 @@ private fun MainPagerLayout(
                 ) {
                     when (currentPageType) {
                         BottomPage.Home -> {
+                            val mcpUiState by mcpServerManager.uiState.collectAsState()
                             HomePage(
                                 shizukuStatus = shizukuStatus,
                                 mcpRunning = mcpUiState.running,

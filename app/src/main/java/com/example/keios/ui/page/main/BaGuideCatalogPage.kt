@@ -200,6 +200,22 @@ fun BaGuideCatalogPage(
     var sortMode by rememberSaveable { mutableStateOf(BaGuideCatalogSortMode.Default) }
     var showSortPopup by remember { mutableStateOf(false) }
     var favoriteCatalogEntries by remember { mutableStateOf(BaGuideCatalogStore.loadFavorites()) }
+    val sortIcon = appLucideSortIcon()
+    val refreshIcon = appLucideRefreshIcon()
+    val actionItems = remember(sortActionContentDescription, refreshActionContentDescription, showSortPopup) {
+        listOf(
+            LiquidActionItem(
+                icon = sortIcon,
+                contentDescription = sortActionContentDescription,
+                onClick = { showSortPopup = !showSortPopup }
+            ),
+            LiquidActionItem(
+                icon = refreshIcon,
+                contentDescription = refreshActionContentDescription,
+                onClick = { refreshSignal += 1 }
+            )
+        )
+    }
     val emptySubtitle = if (searchQuery.isBlank()) {
         stringResource(R.string.ba_catalog_empty_subtitle_default)
     } else {
@@ -237,7 +253,9 @@ fun BaGuideCatalogPage(
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (available.y < -1f) {
-                    showBottomBar = false
+                    if (showBottomBar) {
+                        showBottomBar = false
+                    }
                     if (showSearchBar) {
                         searchBarHideOffsetPx =
                             (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
@@ -248,9 +266,15 @@ fun BaGuideCatalogPage(
                     }
                 }
                 if (available.y > 1f) {
-                    showBottomBar = true
-                    showSearchBar = true
-                    searchBarHideOffsetPx = 0f
+                    if (!showBottomBar) {
+                        showBottomBar = true
+                    }
+                    if (!showSearchBar) {
+                        showSearchBar = true
+                    }
+                    if (searchBarHideOffsetPx != 0f) {
+                        searchBarHideOffsetPx = 0f
+                    }
                 }
                 return Offset.Zero
             }
@@ -396,18 +420,7 @@ fun BaGuideCatalogPage(
                         LiquidActionBar(
                             backdrop = topBarBackdrop,
                             layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            items = listOf(
-                                LiquidActionItem(
-                                    icon = appLucideSortIcon(),
-                                    contentDescription = sortActionContentDescription,
-                                    onClick = { showSortPopup = !showSortPopup }
-                                ),
-                                LiquidActionItem(
-                                    icon = appLucideRefreshIcon(),
-                                    contentDescription = refreshActionContentDescription,
-                                    onClick = { refreshSignal += 1 }
-                                )
-                            )
+                            items = actionItems
                         )
                         LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
                             if (slotIndex == 0 && showSortPopup) {
@@ -503,7 +516,7 @@ fun BaGuideCatalogPage(
 
                     LiquidGlassBottomBar(
                         modifier = bottomBarModifier,
-                        selectedIndex = { pagerState.targetPage },
+                        selectedIndex = pagerState.targetPage,
                         onSelected = { index ->
                             if (index != pagerState.targetPage) {
                                 selectCatalogTab(index)

@@ -638,6 +638,46 @@ fun HomePage(
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
     }
+    val layersIcon = appLucideLayersIcon()
+    val aboutIcon = appLucideInfoIcon()
+    val settingsIcon = osLucideSettingsIcon()
+    val editBottomPagesContentDescription = stringResource(R.string.home_cd_edit_bottom_pages)
+    val aboutContentDescription = stringResource(R.string.about_page_title)
+    val settingsContentDescription = stringResource(R.string.settings_title)
+    val homeActionItems = remember(
+        editBottomPagesContentDescription,
+        aboutContentDescription,
+        settingsContentDescription,
+        onOpenAbout,
+        onOpenSettings
+    ) {
+        listOf(
+            LiquidActionItem(
+                icon = layersIcon,
+                contentDescription = editBottomPagesContentDescription,
+                onClick = {
+                    actionBarSelectedIndex = 0
+                    showBottomPageEditor = true
+                }
+            ),
+            LiquidActionItem(
+                icon = aboutIcon,
+                contentDescription = aboutContentDescription,
+                onClick = {
+                    actionBarSelectedIndex = 1
+                    onOpenAbout()
+                }
+            ),
+            LiquidActionItem(
+                icon = settingsIcon,
+                contentDescription = settingsContentDescription,
+                onClick = {
+                    actionBarSelectedIndex = 2
+                    onOpenSettings()
+                }
+            )
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -650,32 +690,7 @@ fun HomePage(
                     LiquidActionBar(
                         backdrop = actionBarBackdrop,
                         layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                        items = listOf(
-                            LiquidActionItem(
-                                icon = appLucideLayersIcon(),
-                                contentDescription = stringResource(R.string.home_cd_edit_bottom_pages),
-                                onClick = {
-                                    actionBarSelectedIndex = 0
-                                    showBottomPageEditor = true
-                                }
-                            ),
-                            LiquidActionItem(
-                                icon = appLucideInfoIcon(),
-                                contentDescription = stringResource(R.string.about_page_title),
-                                onClick = {
-                                    actionBarSelectedIndex = 1
-                                    onOpenAbout()
-                                }
-                            ),
-                            LiquidActionItem(
-                                icon = osLucideSettingsIcon(),
-                                contentDescription = stringResource(R.string.settings_title),
-                                onClick = {
-                                    actionBarSelectedIndex = 2
-                                    onOpenSettings()
-                                }
-                            )
-                        ),
+                        items = homeActionItems,
                         selectedIndex = actionBarSelectedIndex,
                         onInteractionChanged = onActionBarInteractingChanged
                     )

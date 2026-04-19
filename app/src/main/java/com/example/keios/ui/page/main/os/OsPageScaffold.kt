@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.example.keios.ui.page.main.widget.chrome.AppChromeTokens
@@ -38,6 +39,48 @@ internal fun OsPageScaffoldShell(
     searchLabel: String,
     content: @Composable (PaddingValues) -> Unit
 ) {
+    val manageCardsIcon = appLucideLayersIcon()
+    val manageActivitiesIcon = appLucideAppWindowIcon()
+    val manageShellCardsIcon = osLucideShellIcon()
+    val refreshIcon = appLucideRefreshIcon()
+    val actionItems = remember(
+        manageCardsContentDescription,
+        manageActivitiesContentDescription,
+        manageShellCardsContentDescription,
+        refreshParamsContentDescription,
+        refreshing,
+        onOpenCardManager,
+        onOpenActivityVisibilityManager,
+        onOpenShellCardVisibilityManager,
+        onRefresh
+    ) {
+        listOf(
+            LiquidActionItem(
+                icon = manageCardsIcon,
+                contentDescription = manageCardsContentDescription,
+                onClick = onOpenCardManager
+            ),
+            LiquidActionItem(
+                icon = manageActivitiesIcon,
+                contentDescription = manageActivitiesContentDescription,
+                onClick = onOpenActivityVisibilityManager
+            ),
+            LiquidActionItem(
+                icon = manageShellCardsIcon,
+                contentDescription = manageShellCardsContentDescription,
+                onClick = onOpenShellCardVisibilityManager
+            ),
+            LiquidActionItem(
+                icon = refreshIcon,
+                contentDescription = refreshParamsContentDescription,
+                onClick = {
+                    if (refreshing) return@LiquidActionItem
+                    onRefresh()
+                }
+            )
+        )
+    }
+
     AppPageScaffold(
         title = "",
         modifier = Modifier.fillMaxSize(),
@@ -48,31 +91,7 @@ internal fun OsPageScaffoldShell(
             LiquidActionBar(
                 backdrop = topBarBackdrop,
                 layeredStyleEnabled = layeredStyleEnabled,
-                items = listOf(
-                    LiquidActionItem(
-                        icon = appLucideLayersIcon(),
-                        contentDescription = manageCardsContentDescription,
-                        onClick = onOpenCardManager
-                    ),
-                    LiquidActionItem(
-                        icon = appLucideAppWindowIcon(),
-                        contentDescription = manageActivitiesContentDescription,
-                        onClick = onOpenActivityVisibilityManager
-                    ),
-                    LiquidActionItem(
-                        icon = osLucideShellIcon(),
-                        contentDescription = manageShellCardsContentDescription,
-                        onClick = onOpenShellCardVisibilityManager
-                    ),
-                    LiquidActionItem(
-                        icon = appLucideRefreshIcon(),
-                        contentDescription = refreshParamsContentDescription,
-                        onClick = {
-                            if (refreshing) return@LiquidActionItem
-                            onRefresh()
-                        }
-                    )
-                ),
+                items = actionItems,
                 onInteractionChanged = onActionBarInteractingChanged
             )
         },

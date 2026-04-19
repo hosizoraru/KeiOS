@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -121,12 +122,15 @@ fun LiquidActionBarPopupAnchors(
                             .matchParentSize()
                             .onGloballyPositioned { coordinates ->
                                 val position = coordinates.positionInWindow()
-                                anchorBounds[index] = IntRect(
+                                val measuredBounds = IntRect(
                                     left = position.x.roundToInt(),
                                     top = position.y.roundToInt(),
                                     right = (position.x + coordinates.size.width).roundToInt(),
                                     bottom = (position.y + coordinates.size.height).roundToInt()
                                 )
+                                if (anchorBounds[index] != measuredBounds) {
+                                    anchorBounds[index] = measuredBounds
+                                }
                             }
                     )
                     content(index, anchorBounds.getOrNull(index))
@@ -202,6 +206,7 @@ fun LiquidActionBar(
     val viewConfiguration = LocalViewConfiguration.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
+    val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
     val pressedScale = remember {
         62f / 44f
     }
@@ -243,12 +248,12 @@ fun LiquidActionBar(
                 gestureActive = true
                 dragMoved = false
                 dragTravelPx = 0f
-                onInteractionChanged(true)
+                onInteractionChangedState.value(true)
             },
             onDragStopped = {
                 if (!gestureActive) return@DampedDragAnimation
                 gestureActive = false
-                onInteractionChanged(false)
+                onInteractionChangedState.value(false)
                 if (!dragMoved) {
                     if (layeredStyleEnabled) {
                         val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
@@ -274,7 +279,7 @@ fun LiquidActionBar(
                     }
                     val raw = (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
                         .fastCoerceIn(0f, items.lastIndex.toFloat())
-                    updateValue(raw)
+                    snapToValue(raw)
                     animationScope.launch {
                         offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
                     }
@@ -323,6 +328,7 @@ fun LiquidActionBar(
     } else {
         null
     }
+    val combinedBackdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop)
 
     val minimumWidth = if (compactSingleItem && items.size == 1) {
         AppChromeTokens.liquidActionBarSingleWidth
@@ -332,16 +338,16 @@ fun LiquidActionBar(
     val barWidth = remember(items.size, compactSingleItem) {
         maxOf(minimumWidth, (items.size * AppChromeTokens.liquidActionBarItemStep.value).dp)
     }
-    val interactionLockModifier = Modifier.pointerInput(onInteractionChanged) {
+    val interactionLockModifier = Modifier.pointerInput(Unit) {
         awaitEachGesture {
             awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-            onInteractionChanged(true)
+            onInteractionChangedState.value(true)
             try {
                 do {
                     val event = awaitPointerEvent(pass = PointerEventPass.Initial)
                 } while (event.changes.any { it.pressed })
             } finally {
-                onInteractionChanged(false)
+                onInteractionChangedState.value(false)
             }
         }
     }
@@ -356,9 +362,15 @@ fun LiquidActionBar(
         val primaryRowModifier = Modifier
             .fillMaxWidth()
             .onGloballyPositioned { coords ->
-                totalWidthPx = coords.size.width.toFloat()
-                val contentWidthPx = totalWidthPx - with(density) { 8.dp.toPx() }
-                tabWidthPx = contentWidthPx / items.size
+                val measuredTotalWidthPx = coords.size.width.toFloat()
+                if (abs(totalWidthPx - measuredTotalWidthPx) > 0.5f) {
+                    totalWidthPx = measuredTotalWidthPx
+                }
+                val contentWidthPx = measuredTotalWidthPx - with(density) { 8.dp.toPx() }
+                val measuredTabWidthPx = contentWidthPx / items.size
+                if (abs(tabWidthPx - measuredTabWidthPx) > 0.5f) {
+                    tabWidthPx = measuredTabWidthPx
+                }
             }
             .graphicsLayer {
                 translationX = effectivePanelOffset
@@ -475,7 +487,6 @@ fun LiquidActionBar(
                         },
                         onDrawSurface = { drawRect(palette.baseFillColor) }
                     )
-                    .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .height(AppChromeTokens.liquidActionBarInnerHeight)
                     .padding(horizontal = AppChromeTokens.liquidActionBarHorizontalPadding)
                     .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
@@ -504,10 +515,10 @@ fun LiquidActionBar(
                         .then(if (isBlurEnabled && interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
                         .then(dampedDragAnimation.modifier)
                         .drawBackdrop(
-                            backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                            backdrop = combinedBackdrop,
                             shape = { ContinuousCapsule },
                             effects = {
-                                if (isBlurEnabled) {
+                                if (isBlurEnabled && dampedDragAnimation.pressProgress > 0f) {
                                     val progress = dampedDragAnimation.pressProgress
                                     lens(9f.dp.toPx() * progress, 12f.dp.toPx() * progress, true)
                                 }

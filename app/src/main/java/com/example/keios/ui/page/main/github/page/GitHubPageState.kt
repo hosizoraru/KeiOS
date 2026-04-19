@@ -107,7 +107,9 @@ internal class GitHubPageState(
     val addButtonScrollConnection = object : NestedScrollConnection {
         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
             if (available.y < -1f) {
-                showFloatingAddButton = false
+                if (showFloatingAddButton) {
+                    showFloatingAddButton = false
+                }
                 if (showSearchBar) {
                     searchBarHideOffsetPx =
                         (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
@@ -118,9 +120,15 @@ internal class GitHubPageState(
                 }
             }
             if (available.y > 1f) {
-                showFloatingAddButton = true
-                showSearchBar = true
-                searchBarHideOffsetPx = 0f
+                if (!showFloatingAddButton) {
+                    showFloatingAddButton = true
+                }
+                if (!showSearchBar) {
+                    showSearchBar = true
+                }
+                if (searchBarHideOffsetPx != 0f) {
+                    searchBarHideOffsetPx = 0f
+                }
             }
             return Offset.Zero
         }

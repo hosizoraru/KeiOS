@@ -17,7 +17,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -455,6 +454,7 @@ fun BaStudentGuidePage(
     val shareSourceFailedText = stringResource(R.string.common_share_failed)
     val openLinkFailedText = stringResource(R.string.common_open_link_failed)
     val shareSourceContentDescription = stringResource(R.string.guide_cd_share_source)
+    val refreshContentDescription = stringResource(R.string.common_refresh)
     val accent = MiuixTheme.colorScheme.primary
     val surfaceColor = MiuixTheme.colorScheme.surface
     // Keep backdrop allocation stable per page lifecycle to avoid RenderThread native crashes
@@ -524,8 +524,12 @@ fun BaStudentGuidePage(
     val bottomBarNestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) showBottomBar = false
-                if (available.y > 1f) showBottomBar = true
+                if (available.y < -1f && showBottomBar) {
+                    showBottomBar = false
+                }
+                if (available.y > 1f && !showBottomBar) {
+                    showBottomBar = true
+                }
                 return Offset.Zero
             }
         }
@@ -1006,6 +1010,25 @@ fun BaStudentGuidePage(
         if (requestUrl != sourceUrl) return@LaunchedEffect
         loading = false
     }
+    val shareIcon = appLucideShareIcon()
+    val refreshIcon = appLucideRefreshIcon()
+    val actionItems = remember(shareSourceContentDescription, refreshContentDescription) {
+        listOf(
+            LiquidActionItem(
+                icon = shareIcon,
+                contentDescription = shareSourceContentDescription,
+                onClick = { shareSource() }
+            ),
+            LiquidActionItem(
+                icon = refreshIcon,
+                contentDescription = refreshContentDescription,
+                onClick = {
+                    manualRefreshRequested = true
+                    refreshSignal += 1
+                }
+            )
+        )
+    }
 
     Scaffold(
         modifier = Modifier
@@ -1032,21 +1055,7 @@ fun BaStudentGuidePage(
                         LiquidActionBar(
                             backdrop = topBarBackdrop,
                             layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            items = listOf(
-                                LiquidActionItem(
-                                    icon = appLucideShareIcon(),
-                                    contentDescription = shareSourceContentDescription,
-                                    onClick = ::shareSource
-                                ),
-                                LiquidActionItem(
-                                    icon = appLucideRefreshIcon(),
-                                    contentDescription = stringResource(R.string.common_refresh),
-                                    onClick = {
-                                        manualRefreshRequested = true
-                                        refreshSignal += 1
-                                    }
-                                )
-                            )
+                            items = actionItems
                         )
                     }
                 }
@@ -1061,11 +1070,6 @@ fun BaStudentGuidePage(
                     modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
                     val bottomBarModifier = Modifier
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {}
-                        )
                         .padding(
                             horizontal = 12.dp,
                             vertical = 12.dp + navigationBarBottom
@@ -1124,7 +1128,7 @@ fun BaStudentGuidePage(
 
                     LiquidGlassBottomBar(
                         modifier = bottomBarModifier,
-                        selectedIndex = { pagerState.targetPage },
+                        selectedIndex = pagerState.targetPage,
                         onSelected = { index ->
                             if (index != pagerState.targetPage) {
                                 selectBottomTab(index)
