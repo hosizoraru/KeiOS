@@ -92,9 +92,13 @@ import top.yukonga.miuix.kmp.icon.extended.Tune
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val shellAnsiEscapeRegex = Regex("""\u001B\[[;\d]*[ -/]*[@-~]""")
 private val shellKeyValueRegex = Regex("""\b[^\s=]+=[^\s=]+\b""")
+private val shellDisplayTimeLineRegex = Regex("""^\[\d{2}:\d{2}:\d{2}]$""")
 private const val shellPersistDebounceMs = 220L
 private const val shellOutputMaxChars = 120_000
 
@@ -260,6 +264,7 @@ private fun OsShellRunnerPage(
     fun appendOutput(command: String, result: String) {
         val normalizedResult = result.trimEnd()
         latestRunResultOutput = normalizedResult
+        val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
         val previousOutput = outputText.trimEnd()
         outputText = trimShellOutputHistory(buildString {
             if (previousOutput.isNotBlank()) {
@@ -269,7 +274,9 @@ private fun OsShellRunnerPage(
             }
             appendLine("$ $command")
             appendLine()
-            append(normalizedResult)
+            appendLine(normalizedResult)
+            appendLine()
+            append("[$timestamp]")
         })
     }
 
@@ -768,6 +775,16 @@ private fun ShellOutputGlassPanel(
                                     maxLines = Int.MAX_VALUE,
                                     overflow = TextOverflow.Clip
                                 )
+                                if (entry.timeLabel.isNotBlank()) {
+                                    Text(
+                                        text = entry.timeLabel,
+                                        color = successOutputColor,
+                                        fontSize = AppTypographyTokens.Body.fontSize,
+                                        lineHeight = AppTypographyTokens.Body.lineHeight,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Clip
+                                    )
+                                }
                             }
                         }
                     }
@@ -856,7 +873,8 @@ private fun trimShellOutputHistory(raw: String): String {
 private data class ShellOutputDisplayEntry(
     val command: String,
     val result: String,
-    val isStopped: Boolean
+    val isStopped: Boolean,
+    val timeLabel: String = ""
 )
 
 private fun parseShellOutputDisplayEntries(
@@ -886,16 +904,34 @@ private fun parseShellOutputDisplayEntries(
                 outputResultLabel = outputResultLabel,
                 outputTimeLabel = outputTimeLabel
             )
-            val result = outputLines.joinToString("\n").trimEnd()
+            val (resultLines, timeLabel) = splitShellOutputResultAndTime(outputLines)
+            val result = resultLines.joinToString("\n").trimEnd()
             add(
                 ShellOutputDisplayEntry(
                     command = command,
                     result = result,
-                    isStopped = result.trim() == stoppedMarker
+                    isStopped = result.trim() == stoppedMarker,
+                    timeLabel = timeLabel.orEmpty()
                 )
             )
         }
     }
+}
+
+private fun splitShellOutputResultAndTime(lines: List<String>): Pair<List<String>, String?> {
+    if (lines.isEmpty()) return emptyList<String>() to null
+    val trimmed = lines.map { it.trimEnd() }.toMutableList()
+    while (trimmed.isNotEmpty() && trimmed.last().isBlank()) {
+        trimmed.removeLast()
+    }
+    val time = trimmed.lastOrNull()?.trim()?.takeIf { shellDisplayTimeLineRegex.matches(it) }
+    if (time != null) {
+        trimmed.removeLast()
+    }
+    while (trimmed.isNotEmpty() && trimmed.last().isBlank()) {
+        trimmed.removeLast()
+    }
+    return trimmed to time
 }
 
 private fun normalizeShellOutputBlockLines(
