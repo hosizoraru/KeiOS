@@ -116,10 +116,6 @@ import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop as rememberMiuixLayerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Close
-import top.yukonga.miuix.kmp.icon.extended.Info
-import top.yukonga.miuix.kmp.icon.extended.Layers
-import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private fun formatGitHubCacheAgo(
@@ -654,7 +650,7 @@ fun HomePage(
                         layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                         items = listOf(
                             LiquidActionItem(
-                                icon = MiuixIcons.Regular.Layers,
+                                icon = appLucideLayersIcon(),
                                 contentDescription = stringResource(R.string.home_cd_edit_bottom_pages),
                                 onClick = {
                                     actionBarSelectedIndex = 0
@@ -662,7 +658,7 @@ fun HomePage(
                                 }
                             ),
                             LiquidActionItem(
-                                icon = MiuixIcons.Regular.Info,
+                                icon = appLucideInfoIcon(),
                                 contentDescription = stringResource(R.string.about_page_title),
                                 onClick = {
                                     actionBarSelectedIndex = 1
@@ -670,7 +666,7 @@ fun HomePage(
                                 }
                             ),
                             LiquidActionItem(
-                                icon = MiuixIcons.Regular.Settings,
+                                icon = osLucideSettingsIcon(),
                                 contentDescription = stringResource(R.string.settings_title),
                                 onClick = {
                                     actionBarSelectedIndex = 2
@@ -693,7 +689,7 @@ fun HomePage(
                 GlassIconButton(
                     backdrop = actionBarBackdrop,
                     variant = GlassVariant.Bar,
-                    icon = MiuixIcons.Regular.Close,
+                    icon = appLucideCloseIcon(),
                     contentDescription = stringResource(R.string.common_close),
                     onClick = { showBottomPageEditor = false }
                 )

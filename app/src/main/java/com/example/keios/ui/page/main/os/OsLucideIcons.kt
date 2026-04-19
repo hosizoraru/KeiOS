@@ -106,10 +106,22 @@ internal fun appLucideAppWindowIcon(): ImageVector = osLucideVector(LucideR.draw
 internal fun appLucideFilterIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_list_filter)
 
 @Composable
-internal fun appLucideUpdateIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_move_right)
+internal fun appLucideExternalLinkIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_external_link)
 
 @Composable
-internal fun appLucideExternalLinkIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_external_link)
+internal fun appLucideBackIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_arrow_left)
+
+@Composable
+internal fun appLucideTimeIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_clock_3)
+
+@Composable
+internal fun appLucideVersionIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_tag)
+
+@Composable
+internal fun appLucideMediaIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_image)
+
+@Composable
+internal fun appLucideBranchIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_git_branch)
 
 @Composable
 private fun osLucideVector(@DrawableRes drawableRes: Int): ImageVector = ImageVector.vectorResource(drawableRes)

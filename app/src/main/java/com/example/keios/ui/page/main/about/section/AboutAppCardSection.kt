@@ -16,6 +16,13 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.BuildConfig
 import com.example.keios.ui.page.main.AppIcon
+import com.example.keios.ui.page.main.appLucideAlertIcon
+import com.example.keios.ui.page.main.appLucideFilterIcon
+import com.example.keios.ui.page.main.appLucideInfoIcon
+import com.example.keios.ui.page.main.appLucideLockIcon
+import com.example.keios.ui.page.main.appLucideNotesIcon
+import com.example.keios.ui.page.main.appLucideTimeIcon
+import com.example.keios.ui.page.main.appLucideVersionIcon
 import com.example.keios.ui.page.main.about.ui.AboutCompactInfoRow
 import com.example.keios.ui.page.main.widget.AppCardHeader
 import com.example.keios.ui.page.main.widget.AppInfoListBody
@@ -26,14 +33,6 @@ import com.example.keios.ui.page.main.widget.appExpandIn
 import com.example.keios.ui.page.main.widget.appExpandOut
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Filter
-import top.yukonga.miuix.kmp.icon.extended.Info
-import top.yukonga.miuix.kmp.icon.extended.Lock
-import top.yukonga.miuix.kmp.icon.extended.Notes
-import top.yukonga.miuix.kmp.icon.extended.Report
-import top.yukonga.miuix.kmp.icon.extended.Timer
-import top.yukonga.miuix.kmp.icon.extended.Update
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -111,52 +110,52 @@ fun AboutAppCardSection(
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_name),
                         value = appLabel,
-                        titleIcon = MiuixIcons.Regular.Info
+                        titleIcon = appLucideInfoIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_package_name),
                         value = packageName,
-                        titleIcon = MiuixIcons.Regular.Notes
+                        titleIcon = appLucideNotesIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_version),
                         value = versionText,
-                        titleIcon = MiuixIcons.Regular.Update
+                        titleIcon = appLucideVersionIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_build_type),
                         value = BuildConfig.BUILD_TYPE,
-                        titleIcon = MiuixIcons.Regular.Filter
+                        titleIcon = appLucideFilterIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_build_time),
                         value = buildTime,
-                        titleIcon = MiuixIcons.Regular.Timer
+                        titleIcon = appLucideTimeIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_last_update),
                         value = updatedAt,
-                        titleIcon = MiuixIcons.Regular.Update
+                        titleIcon = appLucideTimeIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_debug),
                         value = if (debugEnabled) yesText else noText,
-                        titleIcon = MiuixIcons.Regular.Report
+                        titleIcon = appLucideAlertIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_test_only),
                         value = if (testOnlyEnabled) yesText else noText,
-                        titleIcon = MiuixIcons.Regular.Report
+                        titleIcon = appLucideAlertIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_api_level),
                         value = android.os.Build.VERSION.SDK_INT.toString(),
-                        titleIcon = MiuixIcons.Regular.Filter
+                        titleIcon = appLucideFilterIcon()
                     )
                     AboutCompactInfoRow(
                         title = stringResource(R.string.about_label_security_patch),
                         value = android.os.Build.VERSION.SECURITY_PATCH ?: unknown,
-                        titleIcon = MiuixIcons.Regular.Lock
+                        titleIcon = appLucideLockIcon()
                     )
                 }
             }

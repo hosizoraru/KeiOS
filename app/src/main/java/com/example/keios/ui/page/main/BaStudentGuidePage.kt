@@ -139,10 +139,6 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Back
-import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Share
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private fun normalizeGuidePlaybackSource(raw: String): String {
@@ -1040,7 +1036,7 @@ fun BaStudentGuidePage(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = MiuixIcons.Regular.Back,
+                            imageVector = appLucideBackIcon(),
                             contentDescription = null,
                             tint = MiuixTheme.colorScheme.onSurface
                         )
@@ -1053,12 +1049,12 @@ fun BaStudentGuidePage(
                             layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             items = listOf(
                                 LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Share,
+                                    icon = appLucideShareIcon(),
                                     contentDescription = shareSourceContentDescription,
                                     onClick = ::shareSource
                                 ),
                                 LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Refresh,
+                                    icon = appLucideRefreshIcon(),
                                     contentDescription = stringResource(R.string.common_refresh),
                                     onClick = {
                                         manualRefreshRequested = true

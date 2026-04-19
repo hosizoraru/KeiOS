@@ -13,6 +13,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.ui.page.main.appLucideAlertIcon
+import com.example.keios.ui.page.main.appLucideAppWindowIcon
+import com.example.keios.ui.page.main.appLucideCloseIcon
+import com.example.keios.ui.page.main.appLucideConfigIcon
+import com.example.keios.ui.page.main.appLucideConfirmIcon
+import com.example.keios.ui.page.main.appLucideFilterIcon
+import com.example.keios.ui.page.main.appLucideInfoIcon
+import com.example.keios.ui.page.main.appLucideLayersIcon
+import com.example.keios.ui.page.main.appLucideListIcon
+import com.example.keios.ui.page.main.appLucideLockIcon
+import com.example.keios.ui.page.main.appLucideNotesIcon
+import com.example.keios.ui.page.main.appLucideRefreshIcon
+import com.example.keios.ui.page.main.osLucideSettingsIcon
 import com.example.keios.ui.page.main.about.model.AboutComponentEntry
 import com.example.keios.ui.page.main.about.model.AboutComponentType
 import com.example.keios.ui.page.main.about.model.AboutPermissionEntry
@@ -22,20 +35,6 @@ import com.example.keios.ui.page.main.about.ui.AboutSectionCard
 import com.example.keios.ui.page.main.widget.CardLayoutRhythm
 import com.example.keios.ui.page.main.widget.StatusLabelText
 import java.util.Locale
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Close
-import top.yukonga.miuix.kmp.icon.extended.Filter
-import top.yukonga.miuix.kmp.icon.extended.GridView
-import top.yukonga.miuix.kmp.icon.extended.Info
-import top.yukonga.miuix.kmp.icon.extended.Layers
-import top.yukonga.miuix.kmp.icon.extended.ListView
-import top.yukonga.miuix.kmp.icon.extended.Lock
-import top.yukonga.miuix.kmp.icon.extended.Notes
-import top.yukonga.miuix.kmp.icon.extended.Ok
-import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Report
-import top.yukonga.miuix.kmp.icon.extended.Settings
-import top.yukonga.miuix.kmp.icon.extended.Tune
 
 @Composable
 fun AboutRuntimeStatusCardSection(
@@ -61,7 +60,7 @@ fun AboutRuntimeStatusCardSection(
         subtitle = stringResource(R.string.about_card_runtime_subtitle),
         titleColor = titleColor,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.Info,
+        sectionIcon = appLucideInfoIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -79,32 +78,32 @@ fun AboutRuntimeStatusCardSection(
                 } else {
                     StatusLabelText.Unauthorized
                 },
-                titleIcon = MiuixIcons.Regular.Report,
+                titleIcon = appLucideAlertIcon(),
                 color = if (notificationPermissionGranted) readyColor else notReadyColor
             )
             AboutCompactPillRow(
                 title = stringResource(R.string.about_runtime_label_selinux),
                 label = StatusLabelText.selinux(selinuxRaw),
-                titleIcon = MiuixIcons.Regular.Lock,
+                titleIcon = appLucideLockIcon(),
                 color = selinuxStatusColor(selinuxRaw),
                 onClick = onCheckShizuku
             )
             AboutCompactInfoRow(
                 title = stringResource(R.string.about_runtime_label_uname),
                 value = shizukuDetailMap["Shizuku uname"] ?: stringResource(R.string.common_na),
-                titleIcon = MiuixIcons.Regular.Notes,
+                titleIcon = appLucideNotesIcon(),
                 valueColor = accent,
                 onClick = onCheckShizuku
             )
             AboutCompactInfoRow(
                 title = stringResource(R.string.about_runtime_label_permission_count),
                 value = permissionCount.toString(),
-                titleIcon = MiuixIcons.Regular.ListView
+                titleIcon = appLucideListIcon()
             )
             AboutCompactInfoRow(
                 title = stringResource(R.string.about_runtime_label_component_count),
                 value = componentCount.toString(),
-                titleIcon = MiuixIcons.Regular.Layers
+                titleIcon = appLucideLayersIcon()
             )
         }
     }
@@ -127,7 +126,7 @@ fun AboutPermissionCardSection(
         subtitle = stringResource(R.string.about_card_permission_subtitle),
         titleColor = accent,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.Lock,
+        sectionIcon = appLucideLockIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -171,7 +170,7 @@ fun AboutComponentCardSection(
         subtitle = stringResource(R.string.about_card_component_subtitle),
         titleColor = titleColor,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.ListView,
+        sectionIcon = appLucideListIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -219,29 +218,29 @@ private fun AboutPermissionEntryView(
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_permission),
             value = entry.title,
-            titleIcon = MiuixIcons.Regular.Lock,
+            titleIcon = appLucideLockIcon(),
             valueColor = accent
         )
         AboutCompactPillRow(
             title = stringResource(R.string.about_permission_label_granted),
             label = statusLabel,
-            titleIcon = if (entry.granted) MiuixIcons.Regular.Ok else MiuixIcons.Regular.Close,
+            titleIcon = if (entry.granted) appLucideConfirmIcon() else appLucideCloseIcon(),
             color = statusColor
         )
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_system_name),
             value = entry.name,
-            titleIcon = MiuixIcons.Regular.Notes
+            titleIcon = appLucideNotesIcon()
         )
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_purpose),
             value = entry.purpose,
-            titleIcon = MiuixIcons.Regular.Tune
+            titleIcon = appLucideConfigIcon()
         )
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_used_in),
             value = entry.usedIn,
-            titleIcon = MiuixIcons.Regular.Layers
+            titleIcon = appLucideLayersIcon()
         )
     }
 }
@@ -271,18 +270,18 @@ private fun AboutComponentEntryView(
             } else {
                 stringResource(R.string.about_component_state_internal)
             },
-            titleIcon = if (entry.exported) MiuixIcons.Regular.Report else MiuixIcons.Regular.Lock,
+            titleIcon = if (entry.exported) appLucideAlertIcon() else appLucideLockIcon(),
             color = exportColor
         )
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_purpose),
             value = entry.purpose,
-            titleIcon = MiuixIcons.Regular.Tune
+            titleIcon = appLucideConfigIcon()
         )
         AboutCompactInfoRow(
             title = stringResource(R.string.about_permission_label_used_in),
             value = entry.usedIn,
-            titleIcon = MiuixIcons.Regular.Layers
+            titleIcon = appLucideLayersIcon()
         )
         entry.extra.forEach { extra ->
             AboutCompactInfoRow(
@@ -294,20 +293,22 @@ private fun AboutComponentEntryView(
     }
 }
 
+@Composable
 private fun componentTypeIcon(type: AboutComponentType): ImageVector {
     return when (type) {
-        AboutComponentType.Service -> MiuixIcons.Regular.Settings
-        AboutComponentType.Receiver -> MiuixIcons.Regular.Refresh
-        AboutComponentType.Provider -> MiuixIcons.Regular.GridView
+        AboutComponentType.Service -> osLucideSettingsIcon()
+        AboutComponentType.Receiver -> appLucideRefreshIcon()
+        AboutComponentType.Provider -> appLucideAppWindowIcon()
     }
 }
 
+@Composable
 private fun componentExtraIcon(labelRes: Int): ImageVector {
     return when (labelRes) {
-        R.string.about_component_label_class -> MiuixIcons.Regular.Notes
-        R.string.about_component_label_fgs_type -> MiuixIcons.Regular.Filter
-        R.string.about_component_label_authority -> MiuixIcons.Regular.Info
-        else -> MiuixIcons.Regular.Info
+        R.string.about_component_label_class -> appLucideNotesIcon()
+        R.string.about_component_label_fgs_type -> appLucideFilterIcon()
+        R.string.about_component_label_authority -> appLucideInfoIcon()
+        else -> appLucideInfoIcon()
     }
 }
 

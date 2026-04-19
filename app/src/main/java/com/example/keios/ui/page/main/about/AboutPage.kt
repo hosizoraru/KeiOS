@@ -33,13 +33,12 @@ import com.example.keios.ui.page.main.about.section.AboutPermissionCardSection
 import com.example.keios.ui.page.main.about.section.AboutRuntimeStatusCardSection
 import com.example.keios.ui.page.main.about.section.AboutUiFrameworkCardSection
 import com.example.keios.ui.page.main.about.util.openExternalUrl
+import com.example.keios.ui.page.main.appLucideBackIcon
 import com.example.keios.ui.page.main.widget.AppPageLazyColumn
 import com.example.keios.ui.page.main.widget.AppPageScaffold
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -110,7 +109,7 @@ fun AboutPage(
             if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = MiuixIcons.Regular.Back,
+                        imageVector = appLucideBackIcon(),
                         contentDescription = null,
                         tint = MiuixTheme.colorScheme.onSurface
                     )

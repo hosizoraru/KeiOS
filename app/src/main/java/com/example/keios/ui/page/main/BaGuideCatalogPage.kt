@@ -134,10 +134,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
-import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val CATALOG_BATCH_SIZE = 20
@@ -386,7 +383,7 @@ fun BaGuideCatalogPage(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = MiuixIcons.Regular.Back,
+                            imageVector = appLucideBackIcon(),
                             contentDescription = null,
                             tint = MiuixTheme.colorScheme.onSurface
                         )
@@ -399,12 +396,12 @@ fun BaGuideCatalogPage(
                             layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                             items = listOf(
                                 LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Sort,
+                                    icon = appLucideSortIcon(),
                                     contentDescription = sortActionContentDescription,
                                     onClick = { showSortPopup = !showSortPopup }
                                 ),
                                 LiquidActionItem(
-                                    icon = MiuixIcons.Regular.Refresh,
+                                    icon = appLucideRefreshIcon(),
                                     contentDescription = refreshActionContentDescription,
                                     onClick = { refreshSignal += 1 }
                                 )

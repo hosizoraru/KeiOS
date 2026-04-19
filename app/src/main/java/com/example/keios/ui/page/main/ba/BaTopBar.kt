@@ -5,6 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.example.keios.R
+import com.example.keios.ui.page.main.appLucideConfigIcon
+import com.example.keios.ui.page.main.appLucideEditIcon
+import com.example.keios.ui.page.main.appLucideRefreshIcon
+import com.example.keios.ui.page.main.osLucideCopyIcon
 import com.example.keios.ui.page.main.widget.AppTopBarSection
 import com.example.keios.ui.page.main.widget.LiquidActionBar
 import com.example.keios.ui.page.main.widget.LiquidActionBarPopupAnchors
@@ -16,11 +20,6 @@ import com.example.keios.ui.page.main.widget.LiquidDropdownImpl
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Copy
-import top.yukonga.miuix.kmp.icon.extended.Edit
-import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Timer
 
 @Composable
 internal fun BaTopBar(
@@ -49,22 +48,22 @@ internal fun BaTopBar(
                     layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     items = listOf(
                         LiquidActionItem(
-                            icon = MiuixIcons.Regular.Edit,
+                            icon = appLucideEditIcon(),
                             contentDescription = stringResource(R.string.ba_cd_edit),
                             onClick = onShowSettings,
                         ),
                         LiquidActionItem(
-                            icon = MiuixIcons.Regular.Timer,
+                            icon = appLucideConfigIcon(),
                             contentDescription = stringResource(R.string.ba_cd_refresh_interval),
                             onClick = { onShowCalendarIntervalPopupChange(!showCalendarIntervalPopup) },
                         ),
                         LiquidActionItem(
-                            icon = MiuixIcons.Regular.Copy,
+                            icon = osLucideCopyIcon(),
                             contentDescription = stringResource(R.string.ba_cd_copy_friend_code),
                             onClick = onCopyFriendCode,
                         ),
                         LiquidActionItem(
-                            icon = MiuixIcons.Regular.Refresh,
+                            icon = appLucideRefreshIcon(),
                             contentDescription = stringResource(R.string.ba_cd_refresh),
                             onClick = onRefreshAll,
                         ),

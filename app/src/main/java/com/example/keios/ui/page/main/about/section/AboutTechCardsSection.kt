@@ -12,22 +12,21 @@ import androidx.compose.ui.unit.dp
 import com.example.keios.BuildConfig
 import com.example.keios.R
 import com.example.keios.core.system.ShizukuApiUtils
+import com.example.keios.ui.page.main.appLucideAlertIcon
+import com.example.keios.ui.page.main.appLucideAppWindowIcon
+import com.example.keios.ui.page.main.appLucideConfigIcon
+import com.example.keios.ui.page.main.appLucideFilterIcon
+import com.example.keios.ui.page.main.appLucideInfoIcon
+import com.example.keios.ui.page.main.appLucideLayersIcon
+import com.example.keios.ui.page.main.appLucideListIcon
+import com.example.keios.ui.page.main.appLucideLockIcon
+import com.example.keios.ui.page.main.appLucideMediaIcon
+import com.example.keios.ui.page.main.appLucideNotesIcon
+import com.example.keios.ui.page.main.appLucideRefreshIcon
+import com.example.keios.ui.page.main.appLucideVersionIcon
+import com.example.keios.ui.page.main.osLucideSettingsIcon
 import com.example.keios.ui.page.main.about.ui.AboutCompactInfoRow
 import com.example.keios.ui.page.main.about.ui.AboutSectionCard
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Album
-import top.yukonga.miuix.kmp.icon.extended.Filter
-import top.yukonga.miuix.kmp.icon.extended.GridView
-import top.yukonga.miuix.kmp.icon.extended.Info
-import top.yukonga.miuix.kmp.icon.extended.Layers
-import top.yukonga.miuix.kmp.icon.extended.ListView
-import top.yukonga.miuix.kmp.icon.extended.Lock
-import top.yukonga.miuix.kmp.icon.extended.Notes
-import top.yukonga.miuix.kmp.icon.extended.Report
-import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.icon.extended.Settings
-import top.yukonga.miuix.kmp.icon.extended.Tune
-import top.yukonga.miuix.kmp.icon.extended.Update
 
 private data class AboutInfoRow(
     @StringRes val titleRes: Int,
@@ -44,14 +43,14 @@ fun AboutBuildSdkCardSection(
     onExpandedChange: (Boolean) -> Unit
 ) {
     val rows = listOf(
-        AboutInfoRow(R.string.about_row_kotlin, KotlinVersion.CURRENT.toString(), MiuixIcons.Regular.Tune),
-        AboutInfoRow(R.string.about_row_gradle, BuildConfig.GRADLE_VERSION, MiuixIcons.Regular.Tune),
-        AboutInfoRow(R.string.about_row_java, BuildConfig.JAVA_VERSION, MiuixIcons.Regular.Tune),
-        AboutInfoRow(R.string.about_row_jvm_target, BuildConfig.JVM_TARGET_VERSION, MiuixIcons.Regular.Tune),
-        AboutInfoRow(R.string.about_row_compile_sdk, BuildConfig.COMPILE_SDK_VERSION.toString(), MiuixIcons.Regular.Filter),
-        AboutInfoRow(R.string.about_row_min_sdk, BuildConfig.MIN_SDK_VERSION.toString(), MiuixIcons.Regular.Filter),
-        AboutInfoRow(R.string.about_row_target_sdk, BuildConfig.TARGET_SDK_VERSION.toString(), MiuixIcons.Regular.Filter),
-        AboutInfoRow(R.string.about_row_runtime_api, Build.VERSION.SDK_INT.toString(), MiuixIcons.Regular.Filter)
+        AboutInfoRow(R.string.about_row_kotlin, KotlinVersion.CURRENT.toString(), appLucideConfigIcon()),
+        AboutInfoRow(R.string.about_row_gradle, BuildConfig.GRADLE_VERSION, appLucideConfigIcon()),
+        AboutInfoRow(R.string.about_row_java, BuildConfig.JAVA_VERSION, appLucideConfigIcon()),
+        AboutInfoRow(R.string.about_row_jvm_target, BuildConfig.JVM_TARGET_VERSION, appLucideConfigIcon()),
+        AboutInfoRow(R.string.about_row_compile_sdk, BuildConfig.COMPILE_SDK_VERSION.toString(), appLucideFilterIcon()),
+        AboutInfoRow(R.string.about_row_min_sdk, BuildConfig.MIN_SDK_VERSION.toString(), appLucideFilterIcon()),
+        AboutInfoRow(R.string.about_row_target_sdk, BuildConfig.TARGET_SDK_VERSION.toString(), appLucideFilterIcon()),
+        AboutInfoRow(R.string.about_row_runtime_api, Build.VERSION.SDK_INT.toString(), appLucideFilterIcon())
     )
     AboutSectionCard(
         cardColor = cardColor,
@@ -59,7 +58,7 @@ fun AboutBuildSdkCardSection(
         subtitle = stringResource(R.string.about_card_build_subtitle),
         titleColor = accent,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.Tune,
+        sectionIcon = appLucideConfigIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -88,17 +87,17 @@ fun AboutUiFrameworkCardSection(
         AboutInfoRow(
             R.string.about_row_ui_framework,
             stringResource(R.string.about_value_ui_framework, BuildConfig.MIUIX_VERSION),
-            MiuixIcons.Regular.GridView
+            appLucideAppWindowIcon()
         ),
         AboutInfoRow(
             R.string.about_row_declarative_ui,
             stringResource(R.string.about_value_declarative_ui, BuildConfig.COMPOSE_VERSION),
-            MiuixIcons.Regular.Layers
+            appLucideLayersIcon()
         ),
         AboutInfoRow(
             R.string.about_row_navigation,
             stringResource(R.string.about_value_navigation, BuildConfig.NAVIGATION3_VERSION),
-            MiuixIcons.Regular.ListView
+            appLucideListIcon()
         ),
         AboutInfoRow(
             R.string.about_row_ui_state_holder,
@@ -106,7 +105,7 @@ fun AboutUiFrameworkCardSection(
                 R.string.about_value_ui_state_holder,
                 BuildConfig.LIFECYCLE_VIEWMODEL_COMPOSE_VERSION
             ),
-            MiuixIcons.Regular.Notes
+            appLucideNotesIcon()
         ),
         AboutInfoRow(
             R.string.about_row_glass_material,
@@ -115,12 +114,12 @@ fun AboutUiFrameworkCardSection(
                 BuildConfig.BACKDROP_VERSION,
                 BuildConfig.CAPSULE_VERSION
             ),
-            MiuixIcons.Regular.Album
+            appLucideMediaIcon()
         ),
         AboutInfoRow(
             R.string.about_row_permission_bridge,
             stringResource(R.string.about_value_permission_bridge, ShizukuApiUtils.API_VERSION),
-            MiuixIcons.Regular.Lock
+            appLucideLockIcon()
         )
     )
     AboutSectionCard(
@@ -129,7 +128,7 @@ fun AboutUiFrameworkCardSection(
         subtitle = stringResource(R.string.about_card_ui_subtitle),
         titleColor = accent,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.GridView,
+        sectionIcon = appLucideAppWindowIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -155,9 +154,9 @@ fun AboutNetworkServiceCardSection(
     onExpandedChange: (Boolean) -> Unit
 ) {
     val rows = listOf(
-        AboutInfoRow(R.string.about_row_mcp_sdk, BuildConfig.MCP_KOTLIN_SDK_VERSION, MiuixIcons.Regular.Info),
-        AboutInfoRow(R.string.about_row_ktor, BuildConfig.KTOR_VERSION, MiuixIcons.Regular.Settings),
-        AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, MiuixIcons.Regular.Settings)
+        AboutInfoRow(R.string.about_row_mcp_sdk, BuildConfig.MCP_KOTLIN_SDK_VERSION, appLucideInfoIcon()),
+        AboutInfoRow(R.string.about_row_ktor, BuildConfig.KTOR_VERSION, osLucideSettingsIcon()),
+        AboutInfoRow(R.string.about_row_okhttp, BuildConfig.OKHTTP_VERSION, osLucideSettingsIcon())
     )
     AboutSectionCard(
         cardColor = cardColor,
@@ -165,7 +164,7 @@ fun AboutNetworkServiceCardSection(
         subtitle = stringResource(R.string.about_card_network_subtitle),
         titleColor = titleColor,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.Settings,
+        sectionIcon = osLucideSettingsIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -216,77 +215,77 @@ fun AboutGitHubCardSection(
         AboutInfoRow(
             R.string.about_row_github_repo_id,
             repoId,
-            MiuixIcons.Regular.Layers
+            appLucideLayersIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_build_version,
             buildVersionText,
-            MiuixIcons.Regular.Update
+            appLucideVersionIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_branch,
             BuildConfig.GIT_BRANCH_NAME,
-            MiuixIcons.Regular.GridView
+            appLucideAppWindowIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_commit_count,
             BuildConfig.GIT_COMMIT_COUNT.toString(),
-            MiuixIcons.Regular.ListView
+            appLucideListIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_commit_hash,
             BuildConfig.GIT_SHORT_HASH,
-            MiuixIcons.Regular.Notes
+            appLucideNotesIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_worktree,
             worktreeState,
-            MiuixIcons.Regular.Report
+            appLucideAlertIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_data_source,
             stringResource(R.string.about_value_github_data_source),
-            MiuixIcons.Regular.Info
+            appLucideInfoIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_version_source,
             versionSourceText,
-            MiuixIcons.Regular.Tune
+            appLucideConfigIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_strategy,
             stringResource(R.string.about_value_github_strategy),
-            MiuixIcons.Regular.Filter
+            appLucideFilterIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_tracking,
             stringResource(R.string.about_value_github_tracking),
-            MiuixIcons.Regular.Layers
+            appLucideLayersIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_notify,
             stringResource(R.string.about_value_github_notify),
-            MiuixIcons.Regular.Report
+            appLucideAlertIcon()
         ),
         AboutInfoRow(
             R.string.about_row_broadcast_handler,
             stringResource(R.string.about_value_broadcast_handler),
-            MiuixIcons.Regular.Refresh
+            appLucideRefreshIcon()
         ),
         AboutInfoRow(
             R.string.about_row_foreground_info_handler,
             stringResource(R.string.about_value_foreground_info_handler),
-            MiuixIcons.Regular.Info
+            appLucideInfoIcon()
         ),
         AboutInfoRow(
             R.string.about_row_background_jobs,
             stringResource(R.string.about_value_background_jobs),
-            MiuixIcons.Regular.Tune
+            appLucideConfigIcon()
         ),
         AboutInfoRow(
             R.string.about_row_github_cache,
             stringResource(R.string.about_value_github_cache),
-            MiuixIcons.Regular.Lock
+            appLucideLockIcon()
         )
     )
     AboutSectionCard(
@@ -295,7 +294,7 @@ fun AboutGitHubCardSection(
         subtitle = stringResource(R.string.about_card_github_subtitle),
         titleColor = accent,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.Layers,
+        sectionIcon = appLucideLayersIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
@@ -304,7 +303,7 @@ fun AboutGitHubCardSection(
             AboutCompactInfoRow(
                 title = stringResource(R.string.about_label_project_url),
                 value = projectUrl,
-                titleIcon = MiuixIcons.Regular.Layers,
+                titleIcon = appLucideLayersIcon(),
                 valueColor = accent,
                 onClick = { onOpenProjectUrl(projectUrl) }
             )
@@ -338,12 +337,12 @@ fun AboutMediaStorageCardSection(
     onExpandedChange: (Boolean) -> Unit
 ) {
     val rows = listOf(
-        AboutInfoRow(R.string.about_row_media3, BuildConfig.MEDIA3_VERSION, MiuixIcons.Regular.Album),
-        AboutInfoRow(R.string.about_row_zoomimage, BuildConfig.ZOOMIMAGE_VERSION, MiuixIcons.Regular.GridView),
-        AboutInfoRow(R.string.about_row_coil3, BuildConfig.COIL3_VERSION, MiuixIcons.Regular.Album),
-        AboutInfoRow(R.string.about_row_ucrop, BuildConfig.UCROP_VERSION, MiuixIcons.Regular.Album),
-        AboutInfoRow(R.string.about_row_documentfile, BuildConfig.DOCUMENTFILE_VERSION, MiuixIcons.Regular.ListView),
-        AboutInfoRow(R.string.about_row_mmkv, BuildConfig.MMKV_VERSION, MiuixIcons.Regular.Lock)
+        AboutInfoRow(R.string.about_row_media3, BuildConfig.MEDIA3_VERSION, appLucideMediaIcon()),
+        AboutInfoRow(R.string.about_row_zoomimage, BuildConfig.ZOOMIMAGE_VERSION, appLucideAppWindowIcon()),
+        AboutInfoRow(R.string.about_row_coil3, BuildConfig.COIL3_VERSION, appLucideMediaIcon()),
+        AboutInfoRow(R.string.about_row_ucrop, BuildConfig.UCROP_VERSION, appLucideMediaIcon()),
+        AboutInfoRow(R.string.about_row_documentfile, BuildConfig.DOCUMENTFILE_VERSION, appLucideListIcon()),
+        AboutInfoRow(R.string.about_row_mmkv, BuildConfig.MMKV_VERSION, appLucideLockIcon())
     )
     AboutSectionCard(
         cardColor = cardColor,
@@ -351,7 +350,7 @@ fun AboutMediaStorageCardSection(
         subtitle = stringResource(R.string.about_card_media_subtitle),
         titleColor = accent,
         subtitleColor = subtitleColor,
-        sectionIcon = MiuixIcons.Regular.Album,
+        sectionIcon = appLucideMediaIcon(),
         collapsible = true,
         expanded = expanded,
         onExpandedChange = onExpandedChange
