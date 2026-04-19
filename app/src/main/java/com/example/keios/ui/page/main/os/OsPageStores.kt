@@ -457,6 +457,48 @@ internal object OsUiStateStore {
     }
 }
 
+internal data class OsShellCommandSnapshot(
+    val command: String = "",
+    val savedAtMillis: Long = 0L
+)
+
+internal object OsShellCommandStore {
+    private const val KV_ID = "os_ui_state"
+    private const val KEY_SHELL_COMMAND = "shell_runner_saved_command"
+    private const val KEY_SHELL_COMMAND_SAVED_AT = "shell_runner_saved_command_saved_at"
+    private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
+
+    fun loadSnapshot(): OsShellCommandSnapshot {
+        val command = store.decodeString(KEY_SHELL_COMMAND).orEmpty().trim()
+        val savedAtMillis = store.decodeLong(KEY_SHELL_COMMAND_SAVED_AT, 0L)
+        if (command.isBlank()) return OsShellCommandSnapshot()
+        return OsShellCommandSnapshot(
+            command = command,
+            savedAtMillis = savedAtMillis
+        )
+    }
+
+    fun saveCommand(command: String): OsShellCommandSnapshot {
+        val normalized = command.trim()
+        if (normalized.isBlank()) {
+            clear()
+            return OsShellCommandSnapshot()
+        }
+        val savedAtMillis = System.currentTimeMillis()
+        store.encode(KEY_SHELL_COMMAND, normalized)
+        store.encode(KEY_SHELL_COMMAND_SAVED_AT, savedAtMillis)
+        return OsShellCommandSnapshot(
+            command = normalized,
+            savedAtMillis = savedAtMillis
+        )
+    }
+
+    fun clear() {
+        store.removeValueForKey(KEY_SHELL_COMMAND)
+        store.removeValueForKey(KEY_SHELL_COMMAND_SAVED_AT)
+    }
+}
+
 internal object OsShortcutCardStore {
     private const val KV_ID = "os_ui_state"
     private const val KEY_GOOGLE_SYSTEM_SERVICE_TITLE = "google_system_service_title"

@@ -2,10 +2,13 @@ package com.example.keios.core.system
 
 import android.content.pm.PackageManager
 import com.example.keios.core.log.AppLogger
+import kotlinx.coroutines.suspendCancellableCoroutine
 import rikka.shizuku.Shizuku
 import java.lang.reflect.Method
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class ShizukuApiUtils(
     private val requestCode: Int = DEFAULT_REQUEST_CODE
@@ -126,6 +129,63 @@ class ShizukuApiUtils(
                 "execCommand failed: ${it.javaClass.simpleName}${it.message?.let { msg -> ": $msg" }.orEmpty()}"
             )
         }.getOrNull()
+    }
+
+    suspend fun execCommandCancellable(command: String, timeoutMs: Long = 2000L): String? {
+        if (!canUseCommand()) return null
+        val resolved = rewriteUiAutomatorDumpCommand(command)
+        if (!resolved.redirectedPath.isNullOrBlank()) {
+            publishStatus("UI dump redirected: ${resolved.redirectedPath}")
+        }
+        val processMethod = resolveNewProcessMethod() ?: run {
+            publishStatus("Shizuku process API unavailable")
+            AppLogger.w(TAG, "execCommandCancellable skipped: Shizuku newProcess method unavailable")
+            return null
+        }
+        val process = runCatching {
+            processMethod.invoke(
+                null,
+                arrayOf("sh", "-c", resolved.command),
+                null,
+                null
+            ) as? Process
+        }.onFailure {
+            AppLogger.w(
+                TAG,
+                "execCommandCancellable start failed: ${it.javaClass.simpleName}${it.message?.let { msg -> ": $msg" }.orEmpty()}"
+            )
+        }.getOrNull() ?: return null
+
+        return suspendCancellableCoroutine { continuation ->
+            val worker = Thread(
+                {
+                    val result = runCatching {
+                        val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
+                        if (!finished) {
+                            process.destroy()
+                            process.destroyForcibly()
+                        }
+                        val out = process.inputStream.bufferedReader().use { it.readText() }
+                        val err = process.errorStream.bufferedReader().use { it.readText() }
+                        (out.ifBlank { err }).trim().ifBlank { null }
+                    }
+                    if (!continuation.isActive) return@Thread
+                    result.onSuccess { output ->
+                        continuation.resume(output)
+                    }.onFailure { throwable ->
+                        continuation.resumeWithException(throwable)
+                    }
+                },
+                "KeiOS-ShizukuExec"
+            ).apply { isDaemon = true }
+            worker.start()
+
+            continuation.invokeOnCancellation {
+                runCatching { process.destroy() }
+                runCatching { process.destroyForcibly() }
+                runCatching { worker.interrupt() }
+            }
+        }
     }
 
     private fun resolveNewProcessMethod(): Method? {

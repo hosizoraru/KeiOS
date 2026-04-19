@@ -24,6 +24,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppPageScaffold
@@ -84,6 +87,8 @@ fun OsPage(
     val googleSystemServiceDefaultTitle = stringResource(R.string.os_section_google_system_service_title)
     val googleSystemServiceDefaultSubtitle = stringResource(R.string.os_google_system_service_default_subtitle)
     val googleSystemServiceDefaultAppName = stringResource(R.string.os_google_system_service_default_app_name)
+    val shellSavedCommandLabel = stringResource(R.string.os_shell_card_saved_command_label)
+    val shellSavedCommandEmpty = stringResource(R.string.os_shell_card_saved_command_empty)
     val editActivityCardTitle = stringResource(R.string.os_activity_sheet_title_edit)
     val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
     val googleSystemServiceDefaultIntentFlags =
@@ -104,6 +109,7 @@ fun OsPage(
     val noMatchedResultsText = stringResource(R.string.common_no_matched_results)
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val initialUiSnapshot = remember { OsUiStateStore.loadSnapshot() }
+    val lifecycleOwner = LocalLifecycleOwner.current
     var cacheLoaded by remember { mutableStateOf(false) }
     var cachePersisted by remember { mutableStateOf(false) }
     val osPageViewModel: OsPageViewModel = viewModel()
@@ -155,6 +161,7 @@ fun OsPage(
     var exportingCard by remember { mutableStateOf<OsSectionCard?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }
+    var savedShellCommand by remember { mutableStateOf(OsShellCommandStore.loadSnapshot()) }
     var showSearchBar by remember { mutableStateOf(true) }
     var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val surfaceColor = MiuixTheme.colorScheme.surface
@@ -205,6 +212,17 @@ fun OsPage(
     }
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                savedShellCommand = OsShellCommandStore.loadSnapshot()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -569,11 +587,21 @@ fun OsPage(
     val groupedTopInfoRows = remember(displayedTopInfoRows, topInfoExpanded, q) {
         if (q.isBlank() && !topInfoExpanded) emptyList() else groupTopInfoRows(displayedTopInfoRows)
     }
-    val shellRunnerRows = remember(shizukuStatus, context) {
+    val shellRunnerRows = remember(
+        shizukuStatus,
+        context,
+        shellSavedCommandLabel,
+        shellSavedCommandEmpty,
+        savedShellCommand
+    ) {
         listOf(
             InfoRow(
                 key = context.getString(R.string.os_shell_card_status_label),
                 value = shizukuStatus
+            ),
+            InfoRow(
+                key = shellSavedCommandLabel,
+                value = savedShellCommand.command.ifBlank { shellSavedCommandEmpty }
             )
         )
     }
