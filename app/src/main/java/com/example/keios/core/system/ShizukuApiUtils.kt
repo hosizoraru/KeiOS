@@ -7,7 +7,6 @@ import rikka.shizuku.Shizuku
 import java.io.InputStream
 import java.lang.reflect.Method
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -180,20 +179,38 @@ class ShizukuApiUtils(
             stream = process.errorStream,
             sink = stderr
         )
-        val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
-        if (!finished) {
+
+        var waitThrowable: Throwable? = null
+        val waiter = Thread(
+            {
+                runCatching { process.waitFor() }
+                    .onFailure { throwable -> waitThrowable = throwable }
+            },
+            "KeiOS-ShizukuWait"
+        ).apply {
+            isDaemon = true
+            start()
+        }
+
+        waiter.join(timeoutMs)
+        if (waiter.isAlive) {
             runCatching { process.destroy() }
             runCatching {
-                if (!process.waitFor(200, TimeUnit.MILLISECONDS)) process.destroyForcibly()
+                waiter.join(300)
+                if (waiter.isAlive) {
+                    process.destroyForcibly()
+                    waiter.join(300)
+                }
             }
-            stdoutReader.join(120)
-            stderrReader.join(120)
+            stdoutReader.join(300)
+            stderrReader.join(300)
             val partialOutput = stdout.toString().trim().ifBlank { stderr.toString().trim() }
             if (partialOutput.isNotBlank()) return partialOutput
             throw IllegalStateException("command timed out after ${timeoutMs}ms")
         }
-        stdoutReader.join(220)
-        stderrReader.join(220)
+        waitThrowable?.let { throw it }
+        stdoutReader.join(600)
+        stderrReader.join(600)
         return stdout.toString().trim().ifBlank { stderr.toString().trim() }.ifBlank { null }
     }
 

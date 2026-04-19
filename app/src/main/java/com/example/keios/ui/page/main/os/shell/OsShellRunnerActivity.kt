@@ -72,7 +72,6 @@ import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Copy
 import top.yukonga.miuix.kmp.icon.extended.Download
 import top.yukonga.miuix.kmp.icon.extended.Play
-import top.yukonga.miuix.kmp.icon.extended.Replace
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -369,7 +368,7 @@ private fun OsShellRunnerPage(
                             )
                             GlassIconButton(
                                 backdrop = null,
-                                icon = MiuixIcons.Regular.Replace,
+                                icon = MiuixIcons.Regular.Close,
                                 contentDescription = clearOutputActionDescription,
                                 onClick = { outputText = "" },
                                 iconTint = MiuixTheme.colorScheme.onBackgroundVariant,
