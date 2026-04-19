@@ -555,23 +555,6 @@ fun OsPage(
     val groupedTopInfoRows = remember(displayedTopInfoRows, topInfoExpanded, q) {
         if (q.isBlank() && !topInfoExpanded) emptyList() else groupTopInfoRows(displayedTopInfoRows)
     }
-    val totalRowsCount = remember(
-        topInfoRows.size,
-        prunedSystemRows.size,
-        prunedSecureRows.size,
-        prunedGlobalRows.size,
-        prunedAndroidRows.size,
-        prunedJavaRows.size,
-        prunedLinuxRows.size
-    ) {
-        topInfoRows.size +
-            prunedSystemRows.size +
-            prunedSecureRows.size +
-            prunedGlobalRows.size +
-            prunedAndroidRows.size +
-            prunedJavaRows.size +
-            prunedLinuxRows.size
-    }
     val visibleRowsCount = remember(
         displayedTopInfoRows.size,
         displayedSystemRows.size,
@@ -679,27 +662,30 @@ fun OsPage(
         SystemOverviewState.Cached -> Color(0x55F59E0B)
         SystemOverviewState.Idle -> MiuixTheme.colorScheme.surface
     }
-    val activityOverviewStats = remember(activityShortcutCards, googleSystemServiceDefaults) {
+    val totalParameterCardCount = remember {
+        OsSectionCard.entries.count { it != OsSectionCard.GOOGLE_SYSTEM_SERVICE }
+    }
+    val visibleParameterCardCount = remember(visibleCards) {
+        visibleCards.count { it != OsSectionCard.GOOGLE_SYSTEM_SERVICE }
+    }
+    val activityOverviewStats = remember(activityShortcutCards) {
         buildOsActivityOverviewStats(
-            cards = activityShortcutCards,
-            defaults = googleSystemServiceDefaults
+            cards = activityShortcutCards
         )
     }
     val overviewMetrics = remember(
         topInfoRows.size,
-        totalRowsCount,
         visibleRowsCount,
-        sectionCount,
-        cachedSectionCount,
+        totalParameterCardCount,
+        visibleParameterCardCount,
         activityOverviewStats
     ) {
         buildOsOverviewMetrics(
             context = context,
-            visibleRowsCount = visibleRowsCount,
-            totalRowsCount = totalRowsCount,
             topInfoCount = topInfoRows.size,
-            cachedSectionCount = cachedSectionCount,
-            sectionCount = sectionCount,
+            visibleRowsCount = visibleRowsCount,
+            visibleParameterCardCount = visibleParameterCardCount,
+            totalParameterCardCount = totalParameterCardCount,
             activityStats = activityOverviewStats
         )
     }

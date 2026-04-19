@@ -5,53 +5,27 @@ import com.example.keios.R
 
 internal data class OsActivityOverviewStats(
     val totalCount: Int,
-    val visibleCount: Int,
-    val packageConfiguredCount: Int,
-    val extrasConfiguredCardCount: Int
+    val visibleCount: Int
 )
 
 internal fun buildOsActivityOverviewStats(
-    cards: List<OsActivityShortcutCard>,
-    defaults: OsGoogleSystemServiceConfig
+    cards: List<OsActivityShortcutCard>
 ): OsActivityOverviewStats {
-    var packageConfiguredCount = 0
-    var extrasConfiguredCardCount = 0
-    cards.forEach { card ->
-        val normalized = normalizeActivityShortcutConfig(
-            config = card.config,
-            defaults = defaults
-        )
-        if (normalized.packageName.isNotBlank()) packageConfiguredCount++
-        if (normalized.intentExtras.isNotEmpty()) {
-            extrasConfiguredCardCount++
-        }
-    }
     return OsActivityOverviewStats(
         totalCount = cards.size,
-        visibleCount = cards.count { it.visible },
-        packageConfiguredCount = packageConfiguredCount,
-        extrasConfiguredCardCount = extrasConfiguredCardCount
+        visibleCount = cards.count { it.visible }
     )
 }
 
 internal fun buildOsOverviewMetrics(
     context: Context,
-    visibleRowsCount: Int,
-    totalRowsCount: Int,
     topInfoCount: Int,
-    cachedSectionCount: Int,
-    sectionCount: Int,
+    visibleRowsCount: Int,
+    visibleParameterCardCount: Int,
+    totalParameterCardCount: Int,
     activityStats: OsActivityOverviewStats
 ): List<OsOverviewMetric> {
     return listOf(
-        OsOverviewMetric(
-            label = context.getString(R.string.os_overview_metric_rows_compact),
-            value = context.getString(
-                R.string.os_overview_metric_rows_compact_value,
-                visibleRowsCount,
-                totalRowsCount
-            )
-        ),
         OsOverviewMetric(
             label = context.getString(R.string.os_overview_metric_top_info),
             value = context.getString(
@@ -61,11 +35,11 @@ internal fun buildOsOverviewMetrics(
             )
         ),
         OsOverviewMetric(
-            label = context.getString(R.string.os_overview_metric_cached_sections),
+            label = context.getString(R.string.os_overview_metric_rows_compact),
             value = context.getString(
-                R.string.os_overview_metric_cached_sections_value,
-                cachedSectionCount,
-                sectionCount
+                R.string.os_overview_metric_rows_compact_value,
+                visibleParameterCardCount,
+                totalParameterCardCount
             )
         ),
         OsOverviewMetric(
@@ -73,22 +47,6 @@ internal fun buildOsOverviewMetrics(
             value = context.getString(
                 R.string.os_overview_metric_activity_cards_value,
                 activityStats.visibleCount,
-                activityStats.totalCount
-            )
-        ),
-        OsOverviewMetric(
-            label = context.getString(R.string.os_overview_metric_activity_target_ready),
-            value = context.getString(
-                R.string.os_overview_metric_activity_target_ready_value,
-                activityStats.packageConfiguredCount,
-                activityStats.totalCount
-            )
-        ),
-        OsOverviewMetric(
-            label = context.getString(R.string.os_overview_metric_activity_extras_cards),
-            value = context.getString(
-                R.string.os_overview_metric_activity_extras_cards_value,
-                activityStats.extrasConfiguredCardCount,
                 activityStats.totalCount
             )
         )
