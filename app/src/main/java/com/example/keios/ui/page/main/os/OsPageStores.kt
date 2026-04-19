@@ -282,10 +282,12 @@ internal object OsInfoCache {
 }
 
 internal object OsCardVisibilityStore {
-    private const val KV_ID = "os_ui_state"
+    private const val KV_ID = "os_card_visibility_state"
+    private const val LEGACY_KV_ID = "os_ui_state"
     private const val KEY_VISIBLE_CARDS = "visible_os_cards"
     private val DEFAULT_VISIBLE = OsSectionCard.entries.map { it.name }.toSet()
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
+    private val legacyStore: MMKV by lazy { MMKV.mmkvWithID(LEGACY_KV_ID) }
 
     private fun resolveVisibleCards(raw: String): Set<OsSectionCard> {
         if (raw.isBlank()) return emptySet()
@@ -294,9 +296,18 @@ internal object OsCardVisibilityStore {
         return if (resolved.isEmpty() && names == DEFAULT_VISIBLE) OsSectionCard.entries.toSet() else resolved
     }
 
-    fun loadVisibleCards(kv: MMKV = store): Set<OsSectionCard> {
-        if (!kv.containsKey(KEY_VISIBLE_CARDS)) return OsSectionCard.entries.toSet()
-        return resolveVisibleCards(kv.decodeString(KEY_VISIBLE_CARDS, "").orEmpty())
+    fun loadVisibleCards(): Set<OsSectionCard> {
+        val newStore = store
+        if (newStore.containsKey(KEY_VISIBLE_CARDS)) {
+            return resolveVisibleCards(newStore.decodeString(KEY_VISIBLE_CARDS, "").orEmpty())
+                .ifEmpty { OsSectionCard.entries.toSet() }
+        }
+        val legacy = legacyStore
+        if (!legacy.containsKey(KEY_VISIBLE_CARDS)) return OsSectionCard.entries.toSet()
+        val migrated = resolveVisibleCards(legacy.decodeString(KEY_VISIBLE_CARDS, "").orEmpty())
+            .ifEmpty { OsSectionCard.entries.toSet() }
+        saveVisibleCards(migrated)
+        return migrated
     }
 
     fun saveVisibleCards(cards: Set<OsSectionCard>) {
@@ -304,6 +315,7 @@ internal object OsCardVisibilityStore {
             KEY_VISIBLE_CARDS,
             cards.map { it.name }.sorted().joinToString(",")
         )
+        legacyStore.removeValueForKey(KEY_VISIBLE_CARDS)
     }
 }
 
@@ -371,7 +383,7 @@ internal object OsUiStateStore {
             androidPropsExpanded = readBool(kv, legacyKv, KEY_ANDROID_PROPS, LEGACY_KEY_ANDROID_PROPS, false),
             javaPropsExpanded = readBool(kv, legacyKv, KEY_JAVA_PROPS, LEGACY_KEY_JAVA_PROPS, false),
             linuxEnvExpanded = readBool(kv, legacyKv, KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, false),
-            visibleCards = OsCardVisibilityStore.loadVisibleCards(kv)
+            visibleCards = OsCardVisibilityStore.loadVisibleCards()
         )
     }
 

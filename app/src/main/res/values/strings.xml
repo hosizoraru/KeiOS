@@ -359,6 +359,13 @@
     <string name="os_activity_card_delete_dialog_title">删除活动卡片</string>
     <string name="os_activity_card_delete_dialog_summary">将删除“%1$s”，这张活动 card 会从 OS 页面移除。</string>
     <string name="os_activity_card_toast_deleted">活动卡片已删除</string>
+    <string name="os_activity_card_builtin_badge">内置</string>
+    <string name="os_activity_card_builtin_sample_desc">内置 sample，可编辑可删除。</string>
+    <string name="os_activity_builtin_google_settings_title">Google设置</string>
+    <string name="os_activity_builtin_google_settings_subtitle">Google 服务设置入口（Sample）</string>
+    <string name="os_activity_builtin_google_settings_app_name">Google设置</string>
+    <string name="os_activity_builtin_google_settings_package">com.google.android.gms</string>
+    <string name="os_activity_builtin_google_settings_class">com.google.android.gms.app.settings.GoogleSettingsActivity</string>
     <string name="os_google_system_service_toast_invalid_target">快捷方式目标不完整，请检查包名</string>
     <string name="os_google_system_service_toast_open_failed">打开失败: %1$s</string>
     <string name="os_google_system_service_cd_remove_intent_extra">删除 Intent Extra</string>

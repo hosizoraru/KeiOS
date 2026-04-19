@@ -90,5 +90,6 @@ internal data class OsActivityVisibilityItem(
     val title: String,
     val packageName: String,
     val className: String,
+    val builtInSample: Boolean,
     val visible: Boolean
 )

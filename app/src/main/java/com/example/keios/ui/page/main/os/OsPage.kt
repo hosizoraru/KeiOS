@@ -85,6 +85,16 @@ fun OsPage(
     val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
     val activityCardDeletedToast = stringResource(R.string.os_activity_card_toast_deleted)
     val activityCardDeleteDialogTitle = stringResource(R.string.os_activity_card_delete_dialog_title)
+    val activityBuiltInGoogleSettingsTitle =
+        stringResource(R.string.os_activity_builtin_google_settings_title)
+    val activityBuiltInGoogleSettingsSubtitle =
+        stringResource(R.string.os_activity_builtin_google_settings_subtitle)
+    val activityBuiltInGoogleSettingsAppName =
+        stringResource(R.string.os_activity_builtin_google_settings_app_name)
+    val activityBuiltInGoogleSettingsPackage =
+        stringResource(R.string.os_activity_builtin_google_settings_package)
+    val activityBuiltInGoogleSettingsClass =
+        stringResource(R.string.os_activity_builtin_google_settings_class)
     val googleSystemServiceDefaultIntentFlags =
         stringResource(R.string.os_google_system_service_default_intent_flags)
     val googleSystemServiceDefaults = remember(
@@ -99,6 +109,24 @@ fun OsPage(
             appName = googleSystemServiceDefaultAppName,
             intentFlags = googleSystemServiceDefaultIntentFlags
         ).normalized()
+    }
+    val googleSettingsBuiltInSampleDefaults = remember(
+        activityBuiltInGoogleSettingsTitle,
+        activityBuiltInGoogleSettingsSubtitle,
+        activityBuiltInGoogleSettingsAppName,
+        activityBuiltInGoogleSettingsPackage,
+        activityBuiltInGoogleSettingsClass,
+        googleSystemServiceDefaultIntentFlags
+    ) {
+        OsGoogleSystemServiceConfig(
+            title = activityBuiltInGoogleSettingsTitle,
+            subtitle = activityBuiltInGoogleSettingsSubtitle,
+            appName = activityBuiltInGoogleSettingsAppName,
+            packageName = activityBuiltInGoogleSettingsPackage,
+            className = activityBuiltInGoogleSettingsClass,
+            intentAction = Intent.ACTION_VIEW,
+            intentFlags = googleSystemServiceDefaultIntentFlags
+        ).normalized(googleSystemServiceDefaults)
     }
     val noMatchedResultsText = stringResource(R.string.common_no_matched_results)
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
@@ -121,7 +149,8 @@ fun OsPage(
     var activityShortcutCards by remember {
         mutableStateOf(
             OsActivityShortcutCardStore.loadCards(
-                defaults = googleSystemServiceDefaults
+                defaults = googleSystemServiceDefaults,
+                builtInSampleDefaults = googleSettingsBuiltInSampleDefaults
             )
         )
     }
@@ -133,6 +162,7 @@ fun OsPage(
     var showActivitySuggestionSheet by rememberSaveable { mutableStateOf(false) }
     var activityCardEditMode by rememberSaveable { mutableStateOf(OsActivityCardEditMode.Edit) }
     var editingActivityShortcutCardId by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingActivityShortcutBuiltIn by rememberSaveable { mutableStateOf(false) }
     var googleSystemServiceSuggestionTarget by remember {
         mutableStateOf(ShortcutSuggestionField.IntentAction)
     }
@@ -717,6 +747,7 @@ fun OsPage(
                 }
                 showActivitySuggestionSheet = true
             },
+            showBuiltInActivityCardBadge = editingActivityShortcutBuiltIn,
             showDeleteActivityAction = activityCardEditMode == OsActivityCardEditMode.Edit &&
                 !editingActivityShortcutCardId.isNullOrBlank(),
             onDeleteActivityCard = {
@@ -731,6 +762,7 @@ fun OsPage(
             onDismissActivityEditor = {
                 showActivityShortcutEditor = false
                 showActivityCardDeleteConfirm = false
+                editingActivityShortcutBuiltIn = false
             },
             onSaveActivityEditor = {
                 val normalized = normalizeActivityShortcutConfig(
@@ -741,6 +773,7 @@ fun OsPage(
                     activityShortcutCards + OsActivityShortcutCard(
                         id = newOsActivityShortcutCardId(),
                         visible = true,
+                        isBuiltInSample = false,
                         config = normalized
                     )
                 } else {
@@ -749,6 +782,7 @@ fun OsPage(
                         activityShortcutCards + OsActivityShortcutCard(
                             id = newOsActivityShortcutCardId(),
                             visible = true,
+                            isBuiltInSample = false,
                             config = normalized
                         )
                     } else {
@@ -769,6 +803,7 @@ fun OsPage(
                 ).show()
                 showActivityShortcutEditor = false
                 showActivityCardDeleteConfirm = false
+                editingActivityShortcutBuiltIn = false
             },
             showActivitySuggestionSheet = showActivitySuggestionSheet,
             suggestionTarget = googleSystemServiceSuggestionTarget,
@@ -853,6 +888,7 @@ fun OsPage(
                 editingActivityShortcutCardId = null
                 showActivityShortcutEditor = false
                 showActivitySuggestionSheet = false
+                editingActivityShortcutBuiltIn = false
                 Toast.makeText(context, activityCardDeletedToast, Toast.LENGTH_SHORT).show()
             }
         )
@@ -938,6 +974,7 @@ fun OsPage(
             onOpenActivityShortcutCardEditor = { card ->
                 activityCardEditMode = OsActivityCardEditMode.Edit
                 editingActivityShortcutCardId = card.id
+                editingActivityShortcutBuiltIn = card.isBuiltInSample
                 activityShortcutDraft = ensureEditorActivityShortcutDraft(
                     normalizeActivityShortcutConfig(
                         config = card.config,
@@ -990,6 +1027,7 @@ fun OsPage(
             onOpenAddActivityShortcutCard = {
                 activityCardEditMode = OsActivityCardEditMode.Add
                 editingActivityShortcutCardId = null
+                editingActivityShortcutBuiltIn = false
                 activityShortcutDraft = createDefaultActivityShortcutDraft(googleSystemServiceDefaults)
                 showActivityShortcutEditor = true
             }

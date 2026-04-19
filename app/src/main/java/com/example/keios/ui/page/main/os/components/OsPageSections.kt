@@ -17,9 +17,11 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -29,6 +31,7 @@ import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Switch
@@ -343,6 +346,7 @@ internal fun OsActivityVisibilityManagerSheet(
                     title = card.config.title.ifBlank { defaultCardTitle },
                     packageName = card.config.packageName,
                     className = card.config.className,
+                    builtInSample = card.isBuiltInSample,
                     visible = card.visible
                 )
             }
@@ -375,6 +379,13 @@ internal fun OsActivityVisibilityManagerSheet(
                                     text = item.title,
                                     color = MiuixTheme.colorScheme.onBackground
                                 )
+                                if (item.builtInSample) {
+                                    StatusPill(
+                                        label = stringResource(R.string.os_activity_card_builtin_badge),
+                                        color = Color(0xFF3B82F6),
+                                        size = AppStatusPillSize.Compact
+                                    )
+                                }
                             }
                         }
                     ) {

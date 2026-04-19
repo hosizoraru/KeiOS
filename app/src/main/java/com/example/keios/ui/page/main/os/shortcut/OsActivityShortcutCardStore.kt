@@ -5,11 +5,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 internal object OsActivityShortcutCardStore {
-    private const val KV_ID = "os_ui_state"
+    private const val KV_ID = "os_activity_shortcut_cards"
+    private const val LEGACY_KV_ID = "os_ui_state"
     private const val KEY_ACTIVITY_SHORTCUT_CARDS = "activity_shortcut_cards_v1"
 
     private const val KEY_ID = "id"
     private const val KEY_VISIBLE = "visible"
+    private const val KEY_IS_BUILT_IN_SAMPLE = "isBuiltInSample"
     private const val KEY_TITLE = "title"
     private const val KEY_SUBTITLE = "subtitle"
     private const val KEY_APP_NAME = "appName"
@@ -27,24 +29,55 @@ internal object OsActivityShortcutCardStore {
     private const val KEY_EXTRA_VALUE = "value"
 
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
+    private val legacyStore: MMKV by lazy { MMKV.mmkvWithID(LEGACY_KV_ID) }
 
     fun loadCards(
-        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig()
+        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
     ): List<OsActivityShortcutCard> {
         val persistedRaw = store.decodeString(KEY_ACTIVITY_SHORTCUT_CARDS).orEmpty().trim()
         if (persistedRaw.isNotBlank()) {
-            decodeCards(raw = persistedRaw, defaults = defaults).takeIf { it.isNotEmpty() }?.let {
-                return it
+            decodeCards(raw = persistedRaw, defaults = defaults).takeIf { it.isNotEmpty() }?.let { decoded ->
+                val migrated = migrateBuiltInSampleCards(decoded, builtInSampleDefaults)
+                if (migrated != decoded) {
+                    saveCards(cards = migrated, defaults = defaults)
+                }
+                return migrated
             }
         }
 
-        val legacy = OsShortcutCardStore.loadGoogleSystemServiceConfig(defaults)
-        val migrated = listOf(
+        val legacyRaw = legacyStore.decodeString(KEY_ACTIVITY_SHORTCUT_CARDS).orEmpty().trim()
+        if (legacyRaw.isNotBlank()) {
+            decodeCards(raw = legacyRaw, defaults = defaults).takeIf { it.isNotEmpty() }?.let { decoded ->
+                val migrated = migrateBuiltInSampleCards(decoded, builtInSampleDefaults)
+                saveCards(cards = migrated, defaults = defaults)
+                return migrated
+            }
+        }
+
+        val legacy = normalizeActivityShortcutConfig(
+            OsShortcutCardStore.loadGoogleSystemServiceConfig(defaults),
+            defaults
+        )
+        val defaultLegacy = normalizeActivityShortcutConfig(defaults, defaults)
+        val initialCard = if (legacy != defaultLegacy) {
             OsActivityShortcutCard(
                 id = LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID,
                 visible = true,
-                config = normalizeActivityShortcutConfig(legacy, defaults)
+                isBuiltInSample = false,
+                config = legacy
             )
+        } else {
+            OsActivityShortcutCard(
+                id = BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID,
+                visible = true,
+                isBuiltInSample = true,
+                config = normalizeActivityShortcutConfig(builtInSampleDefaults, defaults)
+            )
+        }
+        val migrated = migrateBuiltInSampleCards(
+            cards = listOf(initialCard),
+            builtInSampleDefaults = builtInSampleDefaults
         )
         saveCards(cards = migrated, defaults = defaults)
         return migrated
@@ -58,6 +91,7 @@ internal object OsActivityShortcutCardStore {
             card.copy(config = normalizeActivityShortcutConfig(card.config, defaults))
         }
         store.encode(KEY_ACTIVITY_SHORTCUT_CARDS, encodeCards(normalized))
+        legacyStore.removeValueForKey(KEY_ACTIVITY_SHORTCUT_CARDS)
         normalized.firstOrNull()?.let { first ->
             OsShortcutCardStore.saveGoogleSystemServiceConfig(first.config, defaults)
         }
@@ -71,6 +105,7 @@ internal object OsActivityShortcutCardStore {
             val json = JSONObject().apply {
                 put(KEY_ID, normalizedId)
                 put(KEY_VISIBLE, card.visible)
+                put(KEY_IS_BUILT_IN_SAMPLE, card.isBuiltInSample)
                 put(KEY_TITLE, normalizedConfig.title)
                 put(KEY_SUBTITLE, normalizedConfig.subtitle)
                 put(KEY_APP_NAME, normalizedConfig.appName)
@@ -114,6 +149,7 @@ internal object OsActivityShortcutCardStore {
                         OsActivityShortcutCard(
                             id = item.optString(KEY_ID).trim().ifBlank { newOsActivityShortcutCardId() },
                             visible = item.optBoolean(KEY_VISIBLE, true),
+                            isBuiltInSample = item.optBoolean(KEY_IS_BUILT_IN_SAMPLE, false),
                             config = normalizeActivityShortcutConfig(config, defaults)
                         )
                     )
@@ -151,5 +187,39 @@ internal object OsActivityShortcutCardStore {
                 )
             }
         }.let(::normalizeShortcutIntentExtras)
+    }
+
+    private fun migrateBuiltInSampleCards(
+        cards: List<OsActivityShortcutCard>,
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): List<OsActivityShortcutCard> {
+        if (cards.isEmpty()) return emptyList()
+        var sampleMigrated = false
+        return cards.map { card ->
+            val isGoogleSettingsSample = isGoogleSettingsSampleCard(
+                card = card,
+                builtInSampleDefaults = builtInSampleDefaults
+            )
+            if (isGoogleSettingsSample && !sampleMigrated) {
+                sampleMigrated = true
+                card.copy(
+                    id = BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID,
+                    isBuiltInSample = true
+                )
+            } else {
+                card.copy(isBuiltInSample = false)
+            }
+        }
+    }
+
+    private fun isGoogleSettingsSampleCard(
+        card: OsActivityShortcutCard,
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): Boolean {
+        if (card.isBuiltInSample) return true
+        if (card.id == BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID) return true
+        val targetTitle = builtInSampleDefaults.title.trim()
+        if (targetTitle.isBlank()) return false
+        return card.config.title.trim() == targetTitle
     }
 }

@@ -144,7 +144,12 @@ internal fun BindOsCardExpandedStateMaps(
         activityShortcutCards.forEachIndexed { index, card ->
             if (!activityCardExpanded.containsKey(card.id)) {
                 activityCardExpanded[card.id] =
-                    if (index == 0 && card.id == LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID) {
+                    if (
+                        index == 0 && (
+                            card.id == LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID ||
+                                card.id == BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID
+                            )
+                    ) {
                         initialGoogleSystemServiceExpanded
                     } else {
                         false

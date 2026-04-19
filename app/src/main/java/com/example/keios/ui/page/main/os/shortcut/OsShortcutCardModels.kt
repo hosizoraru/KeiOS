@@ -5,6 +5,7 @@ import java.util.Locale
 import java.util.UUID
 
 internal const val LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID = "legacy-google-system-service"
+internal const val BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID = "builtin-google-settings-sample"
 
 internal enum class OsActivityCardEditMode {
     Add,
@@ -14,6 +15,7 @@ internal enum class OsActivityCardEditMode {
 internal data class OsActivityShortcutCard(
     val id: String,
     val visible: Boolean = true,
+    val isBuiltInSample: Boolean = false,
     val config: OsGoogleSystemServiceConfig
 )
 

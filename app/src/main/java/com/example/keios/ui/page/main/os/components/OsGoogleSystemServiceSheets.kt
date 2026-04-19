@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppDropdownSelector
+import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassTextButton
@@ -26,6 +27,7 @@ import com.example.keios.ui.page.main.widget.SheetFieldBlock
 import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Text
@@ -43,6 +45,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
     draft: OsGoogleSystemServiceConfig,
     onDraftChange: (OsGoogleSystemServiceConfig) -> Unit,
     onOpenSuggestionSheet: (ShortcutSuggestionField) -> Unit,
+    showBuiltInBadge: Boolean,
     showDeleteAction: Boolean,
     onDelete: () -> Unit,
     onDismissRequest: () -> Unit,
@@ -101,6 +104,21 @@ internal fun OsGoogleSystemServiceEditorSheet(
         }
     ) {
         SheetContentColumn(verticalSpacing = 10.dp) {
+            if (showBuiltInBadge) {
+                SheetSectionCard {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.os_activity_card_builtin_sample_desc),
+                            color = MiuixTheme.colorScheme.onBackground
+                        )
+                        StatusPill(
+                            label = stringResource(R.string.os_activity_card_builtin_badge),
+                            color = Color(0xFF3B82F6),
+                            size = AppStatusPillSize.Compact
+                        )
+                    }
+                }
+            }
             SheetSectionTitle(stringResource(R.string.os_google_system_service_sheet_section_card))
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetFieldBlock(
