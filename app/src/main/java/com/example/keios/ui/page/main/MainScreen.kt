@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -43,6 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -66,6 +68,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.example.keios.R
 import com.example.keios.mcp.notification.McpNotificationHelper
 import com.example.keios.mcp.server.McpServerManager
@@ -101,6 +105,7 @@ import com.example.keios.ui.page.main.mcp.McpPage
 import com.example.keios.ui.page.main.os.OsPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon
@@ -135,6 +140,16 @@ fun MainScreen(
     val currentOnCheckOrRequestShizuku by rememberUpdatedState(onCheckOrRequestShizuku)
     val currentOnRequestNotificationPermission by rememberUpdatedState(onRequestNotificationPermission)
     val currentOnAppThemeModeChanged by rememberUpdatedState(onAppThemeModeChanged)
+    var mainResumeFromSettingsToken by rememberSaveable { mutableIntStateOf(0) }
+    var previousTopRoute by remember { mutableStateOf<NavKey?>(null) }
+
+    LaunchedEffect(backStack.lastOrNull()) {
+        val currentTopRoute = backStack.lastOrNull()
+        if (previousTopRoute == KeiosRoute.Settings && currentTopRoute == KeiosRoute.Main) {
+            mainResumeFromSettingsToken++
+        }
+        previousTopRoute = currentTopRoute
+    }
 
     LaunchedEffect(requestedBottomPageToken, requestedBottomPage) {
         if (requestedBottomPage.isNullOrBlank()) return@LaunchedEffect
@@ -205,6 +220,7 @@ fun MainScreen(
                 // Removed the dangerous isTopRoute check. The route should manage its own state naturally.
                 MainPagerLayout(
                     navigator = navigator,
+                    settingsReturnToken = mainResumeFromSettingsToken,
                     liquidBottomBarEnabled = liquidBottomBarEnabled,
                     liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                     cardPressFeedbackEnabled = cardPressFeedbackEnabled,
@@ -371,6 +387,7 @@ fun MainScreen(
 @Composable
 private fun MainPagerLayout(
     navigator: Navigator,
+    settingsReturnToken: Int,
     liquidBottomBarEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
@@ -393,6 +410,7 @@ private fun MainPagerLayout(
     requestedBottomPageToken: Int,
     onRequestedBottomPageConsumed: () -> Unit
 ) {
+    val context = LocalContext.current
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val preloadPolicy = remember(preloadingEnabled) {
         UiPerformanceBudget.resolvePreloadPolicy(preloadingEnabled)
@@ -428,6 +446,10 @@ private fun MainPagerLayout(
     var githubScrollToTopSignal by remember { mutableIntStateOf(0) }
     var pagerScrollEnabled by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
+    var temporaryBeyondViewportCount by remember { mutableStateOf<Int?>(null) }
+    var homeGitHubOverview by remember { mutableStateOf(HomeGitHubOverview()) }
+    var homeBaOverview by remember { mutableStateOf(HomeBaOverview()) }
+    var homeOverviewInitialized by rememberSaveable { mutableStateOf(false) }
     val shouldRenderNonHomeBackground by remember(hasNonHomeBackground, tabs, pagerState) {
         derivedStateOf {
             if (!hasNonHomeBackground) return@derivedStateOf false
@@ -446,6 +468,25 @@ private fun MainPagerLayout(
         } else {
             current || settled || (preloadPolicy.includeTargetPageInHeavyRender && target)
         }
+    }
+    LaunchedEffect(settingsReturnToken, transitionAnimationsEnabled) {
+        if (settingsReturnToken <= 0) return@LaunchedEffect
+        temporaryBeyondViewportCount = 0
+        withFrameNanos { }
+        delay(resolvedMotionDuration(220, transitionAnimationsEnabled).toLong())
+        temporaryBeyondViewportCount = null
+    }
+    LaunchedEffect(Unit) {
+        if (homeOverviewInitialized) return@LaunchedEffect
+        homeBaOverview = withContext(Dispatchers.IO) { loadHomeBaOverview() }
+        homeGitHubOverview = withContext(Dispatchers.IO) { loadHomeGitHubOverview() }
+        homeOverviewInitialized = true
+    }
+    LaunchedEffect(settingsReturnToken) {
+        if (settingsReturnToken <= 0) return@LaunchedEffect
+        homeBaOverview = withContext(Dispatchers.IO) { loadHomeBaOverview() }
+        homeGitHubOverview = withContext(Dispatchers.IO) { loadHomeGitHubOverview() }
+        homeOverviewInitialized = true
     }
     val farJumpBefore: suspend () -> Unit = {
         farJumpAlpha.snapTo(1f)
@@ -492,16 +533,31 @@ private fun MainPagerLayout(
         }
     }
 
-    // This is the ONLY hack needed: track ReusableContentHost lifecycle to prevent memory leaks or stale nodes.
-    // It forces a fresh GraphicsLayer allocation when returning from the background.
-    var activationCount by rememberSaveable { mutableIntStateOf(0) }
-    DisposableEffect(Unit) {
-        activationCount++
-        onDispose { }
+    // Keep the backdrop stable during in-app route switches.
+    // Rebuild only after real app background -> foreground transitions.
+    var backdropGeneration by rememberSaveable { mutableIntStateOf(0) }
+    val activityLifecycle = remember(context) { (context as? ComponentActivity)?.lifecycle }
+    DisposableEffect(activityLifecycle) {
+        val lifecycle = activityLifecycle ?: return@DisposableEffect onDispose { }
+        var appWentBackground = false
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> appWentBackground = true
+                Lifecycle.Event.ON_START -> {
+                    if (appWentBackground) {
+                        backdropGeneration++
+                        appWentBackground = false
+                    }
+                }
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
     }
 
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop: LayerBackdrop = key(activationCount) {
+    val backdrop: LayerBackdrop = key("main-backdrop-$backdropGeneration") {
         rememberLayerBackdrop {
             drawRect(surfaceColor)
             drawContent()
@@ -654,7 +710,8 @@ private fun MainPagerLayout(
                 key = { index -> tabs[index].name },
                 userScrollEnabled = pagerScrollEnabled,
                 overscrollEffect = null,
-                beyondViewportPageCount = preloadPolicy.mainPagerBeyondViewportPageCount,
+                beyondViewportPageCount = temporaryBeyondViewportCount
+                    ?: preloadPolicy.mainPagerBeyondViewportPageCount,
                 // CRITICAL FIX: NEVER conditionally unmount layerBackdrop.
                 // If the node is visible (even during an exit animation), it MUST have the backdrop attached,
                 // otherwise consumer composables will attempt to draw a detached Native pointer causing SIGSEGV.
@@ -707,6 +764,8 @@ private fun MainPagerLayout(
                                 mcpAuthTokenConfigured = mcpUiState.authToken.isNotBlank(),
                                 mcpConnectedClients = mcpUiState.connectedClients,
                                 mcpAllowExternal = mcpUiState.allowExternal,
+                                homeGitHubOverview = homeGitHubOverview,
+                                homeBaOverview = homeBaOverview,
                                 homeIconHdrEnabled = homeIconHdrEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                                 visibleBottomPages = visibleTabsSnapshot,

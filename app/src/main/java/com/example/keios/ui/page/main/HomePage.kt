@@ -104,10 +104,7 @@ import com.kyant.shapes.RoundedRectangle
 import com.tencent.mmkv.MMKV
 import java.util.concurrent.TimeUnit
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
 import com.rosan.installer.ui.library.effect.BgEffectBackground
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -150,7 +147,7 @@ private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
     Color(0xFFFF5893)
 )
 
-private data class HomeGitHubOverview(
+data class HomeGitHubOverview(
     val trackedCount: Int = 0,
     val cacheHitCount: Int = 0,
     val updatableCount: Int = 0,
@@ -161,7 +158,7 @@ private data class HomeGitHubOverview(
     val loaded: Boolean = false
 )
 
-private data class HomeBaOverview(
+data class HomeBaOverview(
     val activated: Boolean = false,
     val apCurrent: Int = 0,
     val apLimit: Int = HOME_BA_AP_LIMIT_MAX,
@@ -170,7 +167,7 @@ private data class HomeBaOverview(
     val loaded: Boolean = false
 )
 
-private fun loadHomeGitHubOverview(): HomeGitHubOverview {
+fun loadHomeGitHubOverview(): HomeGitHubOverview {
     val snapshot = GitHubTrackStore.loadSnapshot()
     return HomeGitHubOverview(
         trackedCount = snapshot.items.size,
@@ -184,7 +181,7 @@ private fun loadHomeGitHubOverview(): HomeGitHubOverview {
     )
 }
 
-private fun loadHomeBaOverview(): HomeBaOverview {
+fun loadHomeBaOverview(): HomeBaOverview {
     val kv = MMKV.mmkvWithID(HOME_BA_KV_ID)
 
     val friendCode = kv.decodeString("id_friend_code", HOME_BA_DEFAULT_FRIEND_CODE)
@@ -425,6 +422,8 @@ fun HomePage(
     mcpAuthTokenConfigured: Boolean,
     mcpConnectedClients: Int,
     mcpAllowExternal: Boolean,
+    homeGitHubOverview: HomeGitHubOverview = HomeGitHubOverview(),
+    homeBaOverview: HomeBaOverview = HomeBaOverview(),
     homeIconHdrEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     visibleBottomPages: Set<BottomPage>,
@@ -470,13 +469,8 @@ fun HomePage(
         }.getOrDefault(homeAppVersionUnknown)
     }
 
-    var githubOverview by remember { mutableStateOf(HomeGitHubOverview()) }
-    var baOverview by remember { mutableStateOf(HomeBaOverview()) }
-    LaunchedEffect(Unit) {
-        baOverview = withContext(Dispatchers.IO) { loadHomeBaOverview() }
-        delay(72)
-        githubOverview = withContext(Dispatchers.IO) { loadHomeGitHubOverview() }
-    }
+    val githubOverview = homeGitHubOverview
+    val baOverview = homeBaOverview
     val trackedCount = githubOverview.trackedCount
     val cacheHitCount = githubOverview.cacheHitCount
     val updatableCount = githubOverview.updatableCount
