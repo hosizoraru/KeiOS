@@ -209,12 +209,17 @@ private fun OsShellRunnerPage(
     val saveSheetFieldSubtitle = stringResource(R.string.os_shell_save_sheet_field_subtitle)
     val saveSheetTitleHint = stringResource(R.string.os_shell_save_sheet_title_hint)
     val saveSheetSubtitleHint = stringResource(R.string.os_shell_save_sheet_subtitle_hint)
+    val saveSheetTitleRequiredToast = stringResource(R.string.os_shell_toast_save_title_empty)
+    val saveSheetTimePlaceholder = stringResource(R.string.os_shell_save_sheet_time_placeholder)
     val outputFormattedToast = stringResource(R.string.os_shell_toast_output_formatted)
     val outputFormatEmptyToast = stringResource(R.string.os_shell_toast_output_format_empty)
     val outputCopiedToast = stringResource(R.string.os_shell_toast_output_copied)
     val outputCopyEmptyToast = stringResource(R.string.os_shell_toast_output_empty)
     val clearAllToast = stringResource(R.string.os_shell_toast_cleared_all)
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val shellCommandAccentColor = if (isDark) Color(0xFF7AB8FF) else Color(0xFF2563EB)
+    val shellSuccessAccentColor = if (isDark) Color(0xFF7EE7A8) else Color(0xFF15803D)
+    val shellStoppedAccentColor = if (isDark) Color(0xFFFF9E9E) else Color(0xFFDC2626)
     val surfaceColor = MiuixTheme.colorScheme.surface
     val topBarBackdrop = rememberLayerBackdrop {
         drawRect(surfaceColor)
@@ -257,6 +262,14 @@ private fun OsShellRunnerPage(
     var saveSubtitleInput by rememberSaveable { mutableStateOf("") }
     var persistInputEnabled by rememberSaveable { mutableStateOf(initialPersistSettings.persistInput) }
     var persistOutputEnabled by rememberSaveable { mutableStateOf(initialPersistSettings.persistOutput) }
+    val latestOutputEntry = remember(outputText, commandStoppedText, outputResultLabel, outputTimeLabel) {
+        parseShellOutputDisplayEntries(
+            raw = outputText,
+            stoppedOutputText = commandStoppedText,
+            outputResultLabel = outputResultLabel,
+            outputTimeLabel = outputTimeLabel
+        ).lastOrNull()
+    }
     val outputScrollState = rememberScrollState()
     BackHandler(enabled = showSaveSheet) { showSaveSheet = false }
     BackHandler(enabled = !showSaveSheet && showSettingsSheet) { showSettingsSheet = false }
@@ -334,11 +347,7 @@ private fun OsShellRunnerPage(
             return
         }
         val currentCard = OsShellCommandCardStore.findLatestByCommand(command)
-        saveTitleInput = if (currentCard?.title?.isNotBlank() == true) {
-            currentCard.title
-        } else {
-            defaultOsShellCommandCardTitle(command)
-        }
+        saveTitleInput = ""
         saveSubtitleInput = if (currentCard != null) {
             currentCard.subtitle
         } else {
@@ -353,7 +362,11 @@ private fun OsShellRunnerPage(
             Toast.makeText(context, commandSaveEmptyToast, Toast.LENGTH_SHORT).show()
             return
         }
-        val title = saveTitleInput.trim().ifBlank { defaultOsShellCommandCardTitle(command) }
+        val title = saveTitleInput.trim()
+        if (title.isBlank()) {
+            Toast.makeText(context, saveSheetTitleRequiredToast, Toast.LENGTH_SHORT).show()
+            return
+        }
         val subtitle = saveSubtitleInput.trim()
         val saved = onSaveShellCommand(command, title, subtitle, latestRunResultOutput)
         if (saved) {
@@ -621,15 +634,43 @@ private fun OsShellRunnerPage(
         }
     ) {
         SheetContentColumn(verticalSpacing = 10.dp) {
+            val commandPreview = commandInput.trim()
+            val previewEntry = latestOutputEntry?.takeIf { it.command == commandPreview }
+            val previewResult = previewEntry?.result
+                ?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.os_shell_card_run_output_not_ran)
+            val previewTime = previewEntry?.timeLabel
+                ?.takeIf { it.isNotBlank() }
+                ?: saveSheetTimePlaceholder
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetSectionTitle(text = saveSheetCommandLabel)
                 Text(
-                    text = commandInput.trim(),
-                    color = MiuixTheme.colorScheme.onBackground,
+                    text = "$ $commandPreview",
+                    color = shellCommandAccentColor,
                     fontSize = AppTypographyTokens.Body.fontSize,
                     lineHeight = AppTypographyTokens.Body.lineHeight,
                     maxLines = 5,
                     overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = previewResult,
+                    color = if (previewEntry?.isStopped == true) {
+                        shellStoppedAccentColor
+                    } else {
+                        shellSuccessAccentColor
+                    },
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                    maxLines = Int.MAX_VALUE,
+                    overflow = TextOverflow.Clip
+                )
+                Text(
+                    text = previewTime,
+                    color = shellSuccessAccentColor,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
                 )
             }
             SheetSectionCard(verticalSpacing = 10.dp) {
