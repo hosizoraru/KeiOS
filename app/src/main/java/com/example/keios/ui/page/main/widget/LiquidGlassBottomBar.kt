@@ -58,6 +58,7 @@ import com.example.keios.ui.animation.DampedDragAnimation
 import com.example.keios.ui.animation.InteractiveHighlight
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -127,31 +128,27 @@ fun LiquidGlassBottomBar(
 
     val containerFallbackColor = when {
         !isLiquidEffectEnabled -> MiuixTheme.colorScheme.surfaceContainer
-        isInLightTheme -> Color.White.copy(alpha = 0.30f)
-        else -> MiuixTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.30f)
+        else -> Color.Transparent
     }
     val containerBorderColor = when {
         !isLiquidEffectEnabled -> MiuixTheme.colorScheme.outline.copy(alpha = 0.22f)
-        isInLightTheme -> Color.White.copy(alpha = 0.56f)
-        else -> Color.White.copy(alpha = 0.14f)
+        isInLightTheme -> Color.White.copy(alpha = 0.22f)
+        else -> Color.White.copy(alpha = 0.10f)
     }
     val indicatorFallbackColor = when {
         !isLiquidEffectEnabled -> primary.copy(alpha = 0.18f)
-        isInLightTheme -> Color.White.copy(alpha = 0.18f)
-        else -> Color.White.copy(alpha = 0.08f)
+        else -> Color.Transparent
     }
     val indicatorBorderColor = when {
         !isLiquidEffectEnabled -> primary.copy(alpha = 0.34f)
-        isInLightTheme -> Color.White.copy(alpha = 0.86f)
-        else -> Color.White.copy(alpha = 0.24f)
+        isInLightTheme -> Color.White.copy(alpha = 0.34f)
+        else -> Color.White.copy(alpha = 0.16f)
     }
     val indicatorShadowColor = if (isInLightTheme) {
         Color.Black.copy(alpha = 0.14f)
     } else {
         Color.Black.copy(alpha = 0.30f)
     }
-    val neutralTintChannel = if (isInLightTheme) 1f else 0.98f
-
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
     var gestureActive by remember { mutableStateOf(false) }
@@ -211,11 +208,11 @@ fun LiquidGlassBottomBar(
                 if (!dragMoved && dragTravelPx >= dragActivationThresholdPx) {
                     dragMoved = true
                 }
-                updateValue(
+                snapToValue(
                     (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
                         .fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
                 )
-                animationScope.launch {
+                animationScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
                 }
             }
@@ -268,31 +265,23 @@ fun LiquidGlassBottomBar(
         cornerRadiusPx = with(density) { (AppChromeTokens.floatingBottomBarOuterHeight / 2).toPx() },
         refractionHeightPx = with(density) { lerp(18f, 22f, pressProgress).dp.toPx() },
         refractionOffsetPx = with(density) { lerp(54f, 68f, pressProgress).dp.toPx() },
-        blurRadiusPx = lerp(11.5f, 14f, pressProgress),
+        blurRadiusPx = lerp(9.5f, 12.5f, pressProgress),
         dispersion = lerp(0.14f, 0.24f, pressProgress),
-        tintAlpha = if (isInLightTheme) {
-            lerp(0.010f, 0.022f, pressProgress)
-        } else {
-            lerp(0.014f, 0.026f, pressProgress)
-        },
-        tintRed = neutralTintChannel,
-        tintGreen = neutralTintChannel,
-        tintBlue = neutralTintChannel
+        tintAlpha = 0f,
+        tintRed = 1f,
+        tintGreen = 1f,
+        tintBlue = 1f
     )
     val indicatorSpec = LiquidBackdropSpec(
         cornerRadiusPx = with(density) { (AppChromeTokens.floatingBottomBarInnerHeight / 2).toPx() },
         refractionHeightPx = with(density) { lerp(16f, 22f, pressProgress).dp.toPx() },
         refractionOffsetPx = with(density) { lerp(42f, 58f, pressProgress).dp.toPx() },
-        blurRadiusPx = lerp(13f, 18f, pressProgress),
+        blurRadiusPx = lerp(10.5f, 14.5f, pressProgress),
         dispersion = lerp(0.18f, 0.34f, pressProgress),
-        tintAlpha = if (isInLightTheme) {
-            lerp(0.014f, 0.036f, pressProgress)
-        } else {
-            lerp(0.018f, 0.042f, pressProgress)
-        },
-        tintRed = neutralTintChannel,
-        tintGreen = neutralTintChannel,
-        tintBlue = neutralTintChannel
+        tintAlpha = 0f,
+        tintRed = 1f,
+        tintGreen = 1f,
+        tintBlue = 1f
     )
 
     CompositionLocalProvider(
@@ -326,19 +315,19 @@ fun LiquidGlassBottomBar(
                     .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .drawWithContent {
                         drawContent()
-                        if (isLiquidEffectEnabled) {
+                        if (isLiquidEffectEnabled && pressProgress > 0.02f) {
                             drawRect(
                                 brush = Brush.verticalGradient(
                                     colors = if (isInLightTheme) {
                                         listOf(
-                                            Color.White.copy(alpha = 0.16f),
-                                            Color.White.copy(alpha = 0.05f),
+                                            Color.White.copy(alpha = 0.05f * pressProgress),
+                                            Color.White.copy(alpha = 0.015f * pressProgress),
                                             Color.Transparent
                                         )
                                     } else {
                                         listOf(
-                                            Color.White.copy(alpha = 0.08f),
-                                            Color.White.copy(alpha = 0.03f),
+                                            Color.White.copy(alpha = 0.035f * pressProgress),
+                                            Color.White.copy(alpha = 0.012f * pressProgress),
                                             Color.Transparent
                                         )
                                     }
@@ -394,14 +383,14 @@ fun LiquidGlassBottomBar(
                                     brush = Brush.verticalGradient(
                                         colors = if (isInLightTheme) {
                                             listOf(
-                                                Color.White.copy(alpha = lerp(0.18f, 0.28f, pressProgress)),
-                                                Color.White.copy(alpha = lerp(0.08f, 0.12f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.035f, 0.10f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.010f, 0.030f, pressProgress)),
                                                 Color.Transparent
                                             )
                                         } else {
                                             listOf(
-                                                Color.White.copy(alpha = lerp(0.08f, 0.14f, pressProgress)),
-                                                Color.White.copy(alpha = lerp(0.03f, 0.06f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.020f, 0.050f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.006f, 0.020f, pressProgress)),
                                                 Color.Transparent
                                             )
                                         }
@@ -410,9 +399,9 @@ fun LiquidGlassBottomBar(
                                 )
                                 drawRect(
                                     color = if (isInLightTheme) {
-                                        Color.Black.copy(alpha = lerp(0.028f, 0.018f, pressProgress))
+                                        Color.Black.copy(alpha = lerp(0.012f, 0.020f, pressProgress))
                                     } else {
-                                        Color.Black.copy(alpha = lerp(0.080f, 0.060f, pressProgress))
+                                        Color.Black.copy(alpha = lerp(0.045f, 0.060f, pressProgress))
                                     }
                                 )
                             }

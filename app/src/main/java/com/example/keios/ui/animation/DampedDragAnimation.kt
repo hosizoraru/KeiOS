@@ -10,6 +10,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.IntSize
 import com.example.keios.core.ui.gesture.inspectDragGestures
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.flow.filter
@@ -102,6 +103,16 @@ class DampedDragAnimation(
         val targetValue = value.coerceIn(valueRange)
         animationScope.launch {
             launch { valueAnimation.animateTo(targetValue, valueAnimationSpec) { updateVelocity() } }
+        }
+    }
+
+    fun snapToValue(value: Float) {
+        val targetValue = value.coerceIn(valueRange)
+        animationScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            mutatorMutex.mutate {
+                valueAnimation.snapTo(targetValue)
+                updateVelocity()
+            }
         }
     }
 
