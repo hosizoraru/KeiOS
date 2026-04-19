@@ -183,7 +183,7 @@
     <string name="os_shell_card_subtitle">输入并运行 Shell 命令</string>
     <string name="os_shell_card_status_label">Shizuku 状态</string>
     <string name="os_shell_card_hint_label">说明</string>
-    <string name="os_shell_card_hint_value">点击右上角播放图标进入 Shell 控制台。</string>
+    <string name="os_shell_card_hint_value">点右上角播放进入控制台。</string>
     <string name="os_shell_card_cd_open">打开 Shell 控制台</string>
     <string name="os_shell_page_title">Shell</string>
     <string name="os_shell_input_title">命令输入</string>

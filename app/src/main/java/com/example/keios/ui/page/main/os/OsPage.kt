@@ -381,14 +381,20 @@ fun OsPage(
     }
 
     LaunchedEffect(Unit) {
-        if (!visibleCards.contains(OsSectionCard.GOOGLE_SYSTEM_SERVICE)) {
-            val ensuredVisibleCards = visibleCards + OsSectionCard.GOOGLE_SYSTEM_SERVICE
+        var ensuredVisibleCards = visibleCards
+        if (!ensuredVisibleCards.contains(OsSectionCard.GOOGLE_SYSTEM_SERVICE)) {
+            ensuredVisibleCards = ensuredVisibleCards + OsSectionCard.GOOGLE_SYSTEM_SERVICE
+        }
+        if (!ensuredVisibleCards.contains(OsSectionCard.SHELL_RUNNER)) {
+            ensuredVisibleCards = ensuredVisibleCards + OsSectionCard.SHELL_RUNNER
+        }
+        if (ensuredVisibleCards != visibleCards) {
             visibleCards = ensuredVisibleCards
             withContext(Dispatchers.IO) {
                 OsCardVisibilityStore.saveVisibleCards(ensuredVisibleCards)
             }
         }
-        val visibleSections = visibleSectionKinds(visibleCards)
+        val visibleSections = visibleSectionKinds(ensuredVisibleCards)
         val snapshot = withContext(Dispatchers.IO) {
             OsInfoCache.readSnapshot(visibleSections)
         }

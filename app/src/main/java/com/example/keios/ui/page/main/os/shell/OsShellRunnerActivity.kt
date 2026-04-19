@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +42,7 @@ import com.example.keios.ui.page.main.widget.AppChromeTokens
 import com.example.keios.ui.page.main.widget.AppPageScaffold
 import com.example.keios.ui.page.main.widget.AppSurfaceCard
 import com.example.keios.ui.page.main.widget.AppTypographyTokens
+import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.appPageContentPadding
@@ -152,6 +154,23 @@ private fun OsShellRunnerPage(
     var runningCommand by remember { mutableStateOf(false) }
     val outputScrollState = rememberScrollState()
 
+    fun appendOutput(command: String, result: String) {
+        val timestamp = SimpleDateFormat(
+            "HH:mm:ss",
+            Locale.getDefault()
+        ).format(Date())
+        val previousOutput = outputText
+        outputText = buildString {
+            if (previousOutput.isNotBlank()) {
+                appendLine(previousOutput)
+                appendLine()
+            }
+            appendLine("$ $command")
+            appendLine(result)
+            append("[$timestamp]")
+        }
+    }
+
     AppPageScaffold(
         title = "",
         largeTitle = shellPageTitle,
@@ -178,75 +197,70 @@ private fun OsShellRunnerPage(
             AppSurfaceCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
             ) {
                 AppCardHeader(
                     title = inputTitle,
                     subtitle = shizukuStatus,
                     endActions = {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Play,
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = MiuixIcons.Regular.Play,
                             contentDescription = runActionDescription,
-                            tint = if (runningCommand) {
+                            onClick = {
+                                if (runningCommand) return@GlassIconButton
+                                val command = commandInput.trim()
+                                if (command.isBlank()) {
+                                    outputText = emptyCommandText
+                                    return@GlassIconButton
+                                }
+                                if (!canRunShellCommand) {
+                                    outputText = missingPermissionText
+                                    return@GlassIconButton
+                                }
+                                scope.launch {
+                                    runningCommand = true
+                                    try {
+                                        val output = onRunShellCommand(command)
+                                            ?.takeIf { it.isNotBlank() }
+                                            ?: noOutputText
+                                        appendOutput(command, output)
+                                        outputScrollState.scrollTo(outputScrollState.maxValue)
+                                    } finally {
+                                        runningCommand = false
+                                    }
+                                }
+                            },
+                            iconTint = if (runningCommand) {
                                 MiuixTheme.colorScheme.onBackgroundVariant
                             } else {
                                 MiuixTheme.colorScheme.primary
                             },
-                            modifier = Modifier.clickable(enabled = !runningCommand) {
-                                val command = commandInput.trim()
-                                if (command.isBlank()) {
-                                    outputText = emptyCommandText
-                                    return@clickable
-                                }
-                                if (!canRunShellCommand) {
-                                    outputText = missingPermissionText
-                                    return@clickable
-                                }
-                                scope.launch {
-                                    runningCommand = true
-                                    val previousOutput = outputText
-                                    val result = onRunShellCommand(command)
-                                    val timestamp = SimpleDateFormat(
-                                        "HH:mm:ss",
-                                        Locale.getDefault()
-                                    ).format(Date())
-                                    val resolvedOutput = result?.takeIf { it.isNotBlank() } ?: noOutputText
-                                    outputText = buildString {
-                                        if (previousOutput.isNotBlank()) {
-                                            appendLine(previousOutput)
-                                            appendLine()
-                                        }
-                                        appendLine("$ $command")
-                                        appendLine(resolvedOutput)
-                                        append("[$timestamp]")
-                                    }
-                                    outputScrollState.scrollTo(outputScrollState.maxValue)
-                                    runningCommand = false
-                                }
-                            }
+                            variant = GlassVariant.Bar
                         )
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Lock,
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = MiuixIcons.Regular.Lock,
                             contentDescription = requestPermissionDescription,
-                            tint = MiuixTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { onRequestShizukuPermission() }
+                            onClick = onRequestShizukuPermission,
+                            iconTint = MiuixTheme.colorScheme.primary,
+                            variant = GlassVariant.Bar
                         )
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Replace,
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = MiuixIcons.Regular.Replace,
                             contentDescription = clearInputDescription,
-                            tint = MiuixTheme.colorScheme.onBackgroundVariant,
-                            modifier = Modifier.clickable(enabled = commandInput.isNotBlank()) {
-                                commandInput = ""
-                            }
+                            onClick = { commandInput = "" },
+                            iconTint = MiuixTheme.colorScheme.onBackgroundVariant,
+                            variant = GlassVariant.Bar
                         )
                     }
                 )
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
                         .padding(horizontal = 14.dp)
                         .padding(bottom = 14.dp)
+                        .heightIn(min = 220.dp)
                 ) {
                     GlassSearchField(
                         value = commandInput,
@@ -256,10 +270,9 @@ private fun OsShellRunnerPage(
                         variant = GlassVariant.SheetInput,
                         singleLine = false,
                         textColor = MiuixTheme.colorScheme.primary,
-                        minHeight = 140.dp,
+                        minHeight = 220.dp,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
+                            .fillMaxSize()
                     )
                 }
             }
@@ -273,20 +286,20 @@ private fun OsShellRunnerPage(
                     title = outputTitle,
                     subtitle = if (runningCommand) outputRunningSubtitle else outputReadySubtitle,
                     endActions = {
-                        Icon(
-                            imageVector = MiuixIcons.Regular.Replace,
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = MiuixIcons.Regular.Replace,
                             contentDescription = clearOutputDescription,
-                            tint = MiuixTheme.colorScheme.onBackgroundVariant,
-                            modifier = Modifier.clickable(enabled = outputText.isNotBlank()) {
-                                outputText = ""
-                            }
+                            onClick = { outputText = "" },
+                            iconTint = MiuixTheme.colorScheme.onBackgroundVariant,
+                            variant = GlassVariant.Bar
                         )
                     }
                 )
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .heightIn(min = 220.dp)
                         .padding(horizontal = 14.dp)
                         .padding(bottom = 14.dp)
                         .background(
