@@ -128,7 +128,8 @@ fun LiquidGlassBottomBar(
 
     val containerFallbackColor = when {
         !isLiquidEffectEnabled -> MiuixTheme.colorScheme.surfaceContainer
-        else -> Color.Transparent
+        isInLightTheme -> Color.White.copy(alpha = 0.055f)
+        else -> Color.White.copy(alpha = 0.045f)
     }
     val containerBorderColor = when {
         !isLiquidEffectEnabled -> MiuixTheme.colorScheme.outline.copy(alpha = 0.22f)
@@ -137,7 +138,8 @@ fun LiquidGlassBottomBar(
     }
     val indicatorFallbackColor = when {
         !isLiquidEffectEnabled -> primary.copy(alpha = 0.18f)
-        else -> Color.Transparent
+        isInLightTheme -> Color.White.copy(alpha = 0.028f)
+        else -> Color.White.copy(alpha = 0.022f)
     }
     val indicatorBorderColor = when {
         !isLiquidEffectEnabled -> primary.copy(alpha = 0.34f)
@@ -154,6 +156,7 @@ fun LiquidGlassBottomBar(
     var gestureActive by remember { mutableStateOf(false) }
     var dragMoved by remember { mutableStateOf(false) }
     var dragTravelPx by remember { mutableFloatStateOf(0f) }
+    var dragIndicatorValue by remember { mutableFloatStateOf(clampedSelectedIndex.toFloat()) }
 
     val dragActivationThresholdPx = remember(viewConfiguration.touchSlop) {
         (viewConfiguration.touchSlop * 1.15f).coerceAtLeast(8f)
@@ -185,17 +188,20 @@ fun LiquidGlassBottomBar(
                 gestureActive = true
                 dragMoved = false
                 dragTravelPx = 0f
+                dragIndicatorValue = value
             },
             onDragStopped = {
                 if (!gestureActive) return@DampedDragAnimation
                 gestureActive = false
-                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, safeTabsCount - 1)
+                val targetIndex = dragIndicatorValue.fastRoundToInt().fastCoerceIn(0, safeTabsCount - 1)
                 if (dragMoved) {
+                    dragIndicatorValue = targetIndex.toFloat()
                     animateToValue(targetIndex.toFloat())
                     if (targetIndex != currentSelectedIndex) {
                         currentOnSelected(targetIndex)
                     }
                 } else {
+                    dragIndicatorValue = currentSelectedIndex.toFloat()
                     updateValue(currentSelectedIndex.toFloat())
                 }
                 animationScope.launch {
@@ -208,10 +214,10 @@ fun LiquidGlassBottomBar(
                 if (!dragMoved && dragTravelPx >= dragActivationThresholdPx) {
                     dragMoved = true
                 }
-                snapToValue(
-                    (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
-                        .fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
-                )
+                dragIndicatorValue = (
+                    dragIndicatorValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f
+                    ).fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
+                snapToValue(dragIndicatorValue)
                 animationScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
                 }
@@ -221,9 +227,13 @@ fun LiquidGlassBottomBar(
 
     LaunchedEffect(clampedSelectedIndex, safeTabsCount) {
         dampedDragAnimation.updateValue(clampedSelectedIndex.toFloat())
+        if (!gestureActive) {
+            dragIndicatorValue = clampedSelectedIndex.toFloat()
+        }
     }
 
     val pressProgress = if (isLiquidEffectEnabled) dampedDragAnimation.pressProgress else 0f
+    val activeIndicatorValue = if (gestureActive) dragIndicatorValue else dampedDragAnimation.value
     val interactionHighlightColor = Color.White
     val interactionHighlightStrength = if (isInLightTheme) 0.88f else 1f
     val interactionHighlightRadiusScale = if (isInLightTheme) 0.90f else 1.12f
@@ -233,8 +243,8 @@ fun LiquidGlassBottomBar(
                 animationScope = animationScope,
                 position = { size, _ ->
                     Offset(
-                        if (isLtr) (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset
-                        else size.width - (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset,
+                        if (isLtr) (activeIndicatorValue + 0.5f) * tabWidthPx + panelOffset
+                        else size.width - (activeIndicatorValue + 0.5f) * tabWidthPx + panelOffset,
                         size.height / 2f
                     )
                 },
@@ -315,24 +325,42 @@ fun LiquidGlassBottomBar(
                     .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .drawWithContent {
                         drawContent()
-                        if (isLiquidEffectEnabled && pressProgress > 0.02f) {
+                        if (isLiquidEffectEnabled) {
                             drawRect(
                                 brush = Brush.verticalGradient(
                                     colors = if (isInLightTheme) {
                                         listOf(
-                                            Color.White.copy(alpha = 0.05f * pressProgress),
-                                            Color.White.copy(alpha = 0.015f * pressProgress),
+                                            Color.White.copy(alpha = 0.030f + 0.030f * pressProgress),
+                                            Color.White.copy(alpha = 0.010f + 0.010f * pressProgress),
                                             Color.Transparent
                                         )
                                     } else {
                                         listOf(
-                                            Color.White.copy(alpha = 0.035f * pressProgress),
-                                            Color.White.copy(alpha = 0.012f * pressProgress),
+                                            Color.White.copy(alpha = 0.018f + 0.018f * pressProgress),
+                                            Color.White.copy(alpha = 0.006f + 0.008f * pressProgress),
                                             Color.Transparent
                                         )
                                     }
                                 ),
                                 blendMode = BlendMode.Plus
+                            )
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = if (isInLightTheme) {
+                                        listOf(
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.010f + 0.008f * pressProgress)
+                                        )
+                                    } else {
+                                        listOf(
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.025f + 0.010f * pressProgress)
+                                        )
+                                    }
+                                ),
+                                blendMode = BlendMode.Multiply
                             )
                         }
                     }
@@ -358,7 +386,7 @@ fun LiquidGlassBottomBar(
                     modifier = Modifier
                         .padding(horizontal = horizontalPadding)
                         .graphicsLayer {
-                            val progressOffset = dampedDragAnimation.value * tabWidthPx
+                            val progressOffset = activeIndicatorValue * tabWidthPx
                             translationX = if (isLtr) {
                                 progressOffset + panelOffset
                             } else {
@@ -383,14 +411,14 @@ fun LiquidGlassBottomBar(
                                     brush = Brush.verticalGradient(
                                         colors = if (isInLightTheme) {
                                             listOf(
-                                                Color.White.copy(alpha = lerp(0.035f, 0.10f, pressProgress)),
-                                                Color.White.copy(alpha = lerp(0.010f, 0.030f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.055f, 0.11f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.018f, 0.040f, pressProgress)),
                                                 Color.Transparent
                                             )
                                         } else {
                                             listOf(
-                                                Color.White.copy(alpha = lerp(0.020f, 0.050f, pressProgress)),
-                                                Color.White.copy(alpha = lerp(0.006f, 0.020f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.030f, 0.060f, pressProgress)),
+                                                Color.White.copy(alpha = lerp(0.010f, 0.024f, pressProgress)),
                                                 Color.Transparent
                                             )
                                         }
