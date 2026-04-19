@@ -313,6 +313,7 @@ internal object OsUiStateStore {
 
     private const val KEY_OVERVIEW = "expanded_os_overview"
     private const val KEY_TOP_INFO = "expanded_os_top_info"
+    private const val KEY_SHELL_RUNNER = "expanded_os_shell_runner"
     private const val KEY_GOOGLE_SYSTEM_SERVICE = "expanded_os_google_system_service"
     private const val KEY_SYSTEM_TABLE = "expanded_os_system_table"
     private const val KEY_SECURE_TABLE = "expanded_os_secure_table"
@@ -323,6 +324,7 @@ internal object OsUiStateStore {
 
     private const val LEGACY_KEY_OVERVIEW = "expanded_overview"
     private const val LEGACY_KEY_TOP_INFO = "expanded_top_info"
+    private const val LEGACY_KEY_SHELL_RUNNER = "expanded_shell_runner"
     private const val LEGACY_KEY_GOOGLE_SYSTEM_SERVICE = "expanded_google_system_service"
     private const val LEGACY_KEY_SYSTEM_TABLE = "expanded_system_table"
     private const val LEGACY_KEY_SECURE_TABLE = "expanded_secure_table"
@@ -349,6 +351,13 @@ internal object OsUiStateStore {
         val legacyKv = legacyStore
         return OsUiSnapshot(
             topInfoExpanded = readBool(kv, legacyKv, KEY_TOP_INFO, LEGACY_KEY_TOP_INFO, true),
+            shellRunnerExpanded = readBool(
+                kv,
+                legacyKv,
+                KEY_SHELL_RUNNER,
+                LEGACY_KEY_SHELL_RUNNER,
+                false
+            ),
             googleSystemServiceExpanded = readBool(
                 kv,
                 legacyKv,
@@ -371,6 +380,9 @@ internal object OsUiStateStore {
 
     fun overviewExpanded(defaultValue: Boolean = true): Boolean =
         readBool(KEY_OVERVIEW, LEGACY_KEY_OVERVIEW, defaultValue)
+
+    fun shellRunnerExpanded(defaultValue: Boolean = false): Boolean =
+        readBool(KEY_SHELL_RUNNER, LEGACY_KEY_SHELL_RUNNER, defaultValue)
 
     fun osSystemTableExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_SYSTEM_TABLE, LEGACY_KEY_SYSTEM_TABLE, defaultValue)
@@ -399,6 +411,10 @@ internal object OsUiStateStore {
 
     fun setOverviewExpanded(value: Boolean) {
         store.encode(KEY_OVERVIEW, value)
+    }
+
+    fun setShellRunnerExpanded(value: Boolean) {
+        store.encode(KEY_SHELL_RUNNER, value)
     }
 
     fun setOsSystemTableExpanded(value: Boolean) {
@@ -437,7 +453,7 @@ internal object OsUiStateStore {
         val snapshot = loadSnapshot()
         val boolBytes = 8L
         val cardBytes = snapshot.visibleCards.sumOf { it.name.length.toLong() * 2 + 4L }
-        return boolBytes * 8 + cardBytes
+        return boolBytes * 9 + cardBytes
     }
 }
 

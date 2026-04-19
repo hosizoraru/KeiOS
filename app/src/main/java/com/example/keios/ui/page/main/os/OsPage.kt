@@ -110,6 +110,7 @@ fun OsPage(
     val queryInput by osPageViewModel.queryInput.collectAsState()
     val queryApplied by osPageViewModel.queryApplied.collectAsState()
     var topInfoExpanded by remember { mutableStateOf(initialUiSnapshot.topInfoExpanded) }
+    var shellRunnerExpanded by remember { mutableStateOf(initialUiSnapshot.shellRunnerExpanded) }
     var systemTableExpanded by remember { mutableStateOf(initialUiSnapshot.systemTableExpanded) }
     var secureTableExpanded by remember { mutableStateOf(initialUiSnapshot.secureTableExpanded) }
     var globalTableExpanded by remember { mutableStateOf(initialUiSnapshot.globalTableExpanded) }
@@ -271,6 +272,9 @@ fun OsPage(
             OsSectionCard.TOP_INFO -> {
                 if (!visible) topInfoExpanded = false
             }
+            OsSectionCard.SHELL_RUNNER -> {
+                if (!visible) shellRunnerExpanded = false
+            }
             OsSectionCard.GOOGLE_SYSTEM_SERVICE -> Unit
             OsSectionCard.SYSTEM -> {
                 if (!visible) {
@@ -418,6 +422,10 @@ fun OsPage(
         if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setTopInfoExpanded(topInfoExpanded) }
     }
+    LaunchedEffect(shellRunnerExpanded) {
+        if (!uiStatePersistenceReady) return@LaunchedEffect
+        withContext(Dispatchers.IO) { OsUiStateStore.setShellRunnerExpanded(shellRunnerExpanded) }
+    }
     LaunchedEffect(systemTableExpanded) {
         if (!uiStatePersistenceReady) return@LaunchedEffect
         withContext(Dispatchers.IO) { OsUiStateStore.setOsSystemTableExpanded(systemTableExpanded) }
@@ -554,6 +562,18 @@ fun OsPage(
     }
     val groupedTopInfoRows = remember(displayedTopInfoRows, topInfoExpanded, q) {
         if (q.isBlank() && !topInfoExpanded) emptyList() else groupTopInfoRows(displayedTopInfoRows)
+    }
+    val shellRunnerRows = remember(shizukuStatus, context) {
+        listOf(
+            InfoRow(
+                key = context.getString(R.string.os_shell_card_status_label),
+                value = shizukuStatus
+            ),
+            InfoRow(
+                key = context.getString(R.string.os_shell_card_hint_label),
+                value = context.getString(R.string.os_shell_card_hint_value)
+            )
+        )
     }
     val visibleRowsCount = remember(
         displayedTopInfoRows.size,
@@ -890,6 +910,10 @@ fun OsPage(
             groupedTopInfoRows = groupedTopInfoRows,
             topInfoExpanded = topInfoExpanded,
             onTopInfoExpandedChange = { topInfoExpanded = it },
+            shellRunnerRows = shellRunnerRows,
+            shellRunnerExpanded = shellRunnerExpanded,
+            onShellRunnerExpandedChange = { shellRunnerExpanded = it },
+            onOpenShellRunner = { OsShellRunnerActivity.launch(context) },
             activityShortcutCards = activityShortcutCards,
             defaultActivityCardTitle = googleSystemServiceDefaultTitle,
             activityCardExpanded = activityCardExpanded,

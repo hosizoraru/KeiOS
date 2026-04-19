@@ -98,6 +98,7 @@ internal data class InfoRow(
 
 internal enum class OsSectionCard(val title: String) {
     TOP_INFO("TopInfo"),
+    SHELL_RUNNER("Shell 控制台"),
     GOOGLE_SYSTEM_SERVICE("Google系统服务"),
     SYSTEM("System Table"),
     SECURE("Secure Table"),
@@ -125,6 +126,7 @@ internal enum class SystemOverviewState {
 
 internal data class OsUiSnapshot(
     val topInfoExpanded: Boolean = true,
+    val shellRunnerExpanded: Boolean = false,
     val googleSystemServiceExpanded: Boolean = false,
     val systemTableExpanded: Boolean = false,
     val secureTableExpanded: Boolean = false,

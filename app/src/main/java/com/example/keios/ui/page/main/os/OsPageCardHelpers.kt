@@ -43,6 +43,7 @@ internal fun sectionSubtitle(
 
 internal fun sectionKindByCard(card: OsSectionCard): SectionKind? = when (card) {
     OsSectionCard.TOP_INFO -> null
+    OsSectionCard.SHELL_RUNNER -> null
     OsSectionCard.GOOGLE_SYSTEM_SERVICE -> null
     OsSectionCard.SYSTEM -> SectionKind.SYSTEM
     OsSectionCard.SECURE -> SectionKind.SECURE
@@ -70,6 +71,8 @@ internal fun currentRowsForCard(
             buildTopInfoRows(system, secure, global, android, java, linux)
         }
 
+        OsSectionCard.SHELL_RUNNER -> emptyList()
+
         OsSectionCard.GOOGLE_SYSTEM_SERVICE -> {
             buildGoogleSystemServiceRows(
                 context = context,
@@ -87,6 +90,7 @@ internal fun currentRowsForCard(
 
 internal fun exportSlug(card: OsSectionCard): String = when (card) {
     OsSectionCard.TOP_INFO -> "top-info"
+    OsSectionCard.SHELL_RUNNER -> "shell-runner"
     OsSectionCard.GOOGLE_SYSTEM_SERVICE -> "google-system-service"
     OsSectionCard.SYSTEM -> "system-table"
     OsSectionCard.SECURE -> "secure-table"

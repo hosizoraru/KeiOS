@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,9 +33,11 @@ import com.example.keios.ui.page.main.widget.appFloatingEnter
 import com.example.keios.ui.page.main.widget.appFloatingExit
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.AddCircle
+import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -63,6 +66,10 @@ internal fun OsPageMainList(
     groupedTopInfoRows: List<Pair<String, List<InfoRow>>>,
     topInfoExpanded: Boolean,
     onTopInfoExpandedChange: (Boolean) -> Unit,
+    shellRunnerRows: List<InfoRow>,
+    shellRunnerExpanded: Boolean,
+    onShellRunnerExpandedChange: (Boolean) -> Unit,
+    onOpenShellRunner: () -> Unit,
     activityShortcutCards: List<OsActivityShortcutCard>,
     defaultActivityCardTitle: String,
     activityCardExpanded: Map<String, Boolean>,
@@ -202,6 +209,26 @@ internal fun OsPageMainList(
                         card = OsSectionCard.TOP_INFO,
                         exportingCard = exportingCard,
                         onExportClick = { onExportCard(OsSectionCard.TOP_INFO) }
+                    )
+                }
+            )
+
+            addKeyValueSectionCard(
+                visible = isCardVisible(OsSectionCard.SHELL_RUNNER),
+                card = OsSectionCard.SHELL_RUNNER,
+                contentBackdrop = contentBackdrop,
+                title = context.getString(R.string.os_shell_card_title),
+                subtitle = context.getString(R.string.os_shell_card_subtitle),
+                expanded = shellRunnerExpanded,
+                onExpandedChange = onShellRunnerExpandedChange,
+                rows = shellRunnerRows,
+                noMatchedResultsText = noMatchedResultsText,
+                exportAction = {
+                    Icon(
+                        imageVector = MiuixIcons.Regular.Play,
+                        contentDescription = stringResource(R.string.os_shell_card_cd_open),
+                        tint = MiuixTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { onOpenShellRunner() }
                     )
                 }
             )
