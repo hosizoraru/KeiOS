@@ -682,6 +682,7 @@ private fun MainPagerLayout(
                                     handlePageSelected(index)
                                 }
                             },
+                            backdrop = backdrop,
                             tabsCount = tabs.size,
                             isLiquidEffectEnabled = liquidBottomBarEnabled,
                             content = bottomBarTabs

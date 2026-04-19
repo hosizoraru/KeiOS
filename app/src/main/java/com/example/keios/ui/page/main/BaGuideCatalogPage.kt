@@ -525,6 +525,7 @@ fun BaGuideCatalogPage(
                                     selectCatalogTab(index)
                                 }
                             },
+                            backdrop = bottomBarBackdrop,
                             tabsCount = tabs.size,
                             isLiquidEffectEnabled = liquidBottomBarEnabled,
                             content = bottomBarTabs

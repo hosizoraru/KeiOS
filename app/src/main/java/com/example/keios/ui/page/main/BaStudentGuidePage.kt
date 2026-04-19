@@ -1146,6 +1146,7 @@ fun BaStudentGuidePage(
                                     selectBottomTab(index)
                                 }
                             },
+                            backdrop = navBackdrop,
                             tabsCount = bottomTabs.size,
                             isLiquidEffectEnabled = liquidBottomBarEnabled,
                             content = bottomBarTabs
