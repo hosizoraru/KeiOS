@@ -110,7 +110,8 @@ class MiIslandNotificationBuilder(
             val displayIconKey = if (showAppIcon) lightLogoKey else darkLogoKey
 
             islandFirstFloat = true
-            enableFloat = !state.ongoing
+            // Keep island clickable in status bar even for ongoing sessions.
+            enableFloat = true
             updatable = true
             ticker = state.title(context)
             tickerPic = lightLogoKey

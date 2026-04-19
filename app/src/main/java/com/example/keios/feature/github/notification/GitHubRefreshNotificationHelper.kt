@@ -324,7 +324,8 @@ object GitHubRefreshNotificationHelper {
             val dark = createPicture("github_logo_dark", darkLogoIcon)
 
             islandFirstFloat = true
-            enableFloat = !ongoing
+            // Keep island clickable in status bar even for ongoing refresh.
+            enableFloat = true
             updatable = true
             ticker = title
             tickerPic = light
