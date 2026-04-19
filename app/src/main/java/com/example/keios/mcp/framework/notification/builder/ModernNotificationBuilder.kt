@@ -9,28 +9,41 @@ import com.example.keios.mcp.notification.McpNotificationPayload
 class ModernNotificationBuilder(
     private val context: Context
 ) : SessionNotificationBuilder {
+    private val baseNotificationBuilder by lazy {
+        NotificationCompat.Builder(context, com.example.keios.mcp.notification.McpNotificationHelper.LIVE_CHANNEL_ID)
+            .setSmallIcon(com.example.keios.R.drawable.ic_kei_logo_color)
+            .setSilent(true)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setRequestPromotedOngoing(true)
+    }
 
     override fun build(payload: NotificationPayload): Notification {
         val state = payload.state
         val spec = ModernNotificationSpecResolver.resolve(state)
-        return NotificationCompat.Builder(context, payload.environment.channelId)
+        return baseNotificationBuilder
+            .clearActions()
+            // Prevent state leakage between updates.
+            .setContentText(null)
+            .setOnlyAlertOnce(state.onlyAlertOnce)
+            .setSilent(true)
+            .setOngoing(spec.ongoing)
+            .setRequestPromotedOngoing(spec.requestPromotedOngoing)
             .setSmallIcon(spec.iconResId)
             .setContentTitle(state.title(context))
             .setContentText(state.content(context).ifBlank { " " })
             .setContentIntent(state.openPendingIntent)
             .setCategory(spec.category)
-            .setOnlyAlertOnce(state.onlyAlertOnce)
-            .setSilent(true)
             .setAutoCancel(false)
-            .setOngoing(spec.ongoing)
-            .setRequestPromotedOngoing(spec.requestPromotedOngoing)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setStyle(buildProgressStyle(spec))
-            .apply {
-                resolveShortCriticalText(spec, state)?.let(::setShortCriticalText)
-                addAction(0, context.getString(R.string.common_open), state.openPendingIntent)
+            .also { builder ->
                 if (state.running) {
-                    addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
+                    resolveShortCriticalText(spec, state)?.let(builder::setShortCriticalText)
+                }
+                builder.addAction(0, context.getString(R.string.common_open), state.openPendingIntent)
+                if (state.running) {
+                    builder.addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
                 }
             }
             .build()
