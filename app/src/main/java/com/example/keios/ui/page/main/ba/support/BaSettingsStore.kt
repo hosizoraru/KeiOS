@@ -15,6 +15,8 @@ internal object BASettingsStore {
     private const val KEY_AP_NOTIFY_ENABLED = "ap_notify_enabled"
     private const val KEY_AP_NOTIFY_THRESHOLD = "ap_notify_threshold"
     private const val KEY_AP_LAST_NOTIFIED_LEVEL = "ap_last_notified_level"
+    private const val KEY_CAFE_VISIT_NOTIFY_ENABLED = "cafe_visit_notify_enabled"
+    private const val KEY_CAFE_VISIT_LAST_NOTIFIED_SLOT_MS = "cafe_visit_last_notified_slot_ms"
     private const val KEY_AP_CURRENT = "ap_current"
     private const val KEY_AP_CURRENT_EXACT = "ap_current_exact"
     private const val KEY_AP_REGEN_BASE_MS = "ap_regen_base_ms"
@@ -185,6 +187,8 @@ internal object BASettingsStore {
             apNotifyEnabled = store.decodeBool(KEY_AP_NOTIFY_ENABLED, false),
             apNotifyThreshold = store.decodeInt(KEY_AP_NOTIFY_THRESHOLD, DEFAULT_AP_NOTIFY_THRESHOLD).coerceIn(0, BA_AP_MAX),
             apLastNotifiedLevel = store.decodeInt(KEY_AP_LAST_NOTIFIED_LEVEL, -1).coerceIn(-1, BA_AP_MAX),
+            cafeVisitNotifyEnabled = store.decodeBool(KEY_CAFE_VISIT_NOTIFY_ENABLED, false),
+            cafeVisitLastNotifiedSlotMs = store.decodeLong(KEY_CAFE_VISIT_LAST_NOTIFIED_SLOT_MS, 0L).coerceAtLeast(0L),
             coffeeHeadpatMs = store.decodeLong(KEY_COFFEE_HEADPAT_MS, 0L),
             coffeeInvite1UsedMs = store.decodeLong(KEY_COFFEE_INVITE1_USED_MS, 0L),
             coffeeInvite2UsedMs = store.decodeLong(KEY_COFFEE_INVITE2_USED_MS, 0L),
@@ -289,6 +293,18 @@ internal object BASettingsStore {
 
     fun saveApLastNotifiedLevel(level: Int) {
         kv().encode(KEY_AP_LAST_NOTIFIED_LEVEL, level.coerceIn(-1, BA_AP_MAX))
+    }
+
+    fun loadCafeVisitNotifyEnabled(): Boolean = kv().decodeBool(KEY_CAFE_VISIT_NOTIFY_ENABLED, false)
+    fun saveCafeVisitNotifyEnabled(enabled: Boolean) {
+        kv().encode(KEY_CAFE_VISIT_NOTIFY_ENABLED, enabled)
+    }
+
+    fun loadCafeVisitLastNotifiedSlotMs(): Long =
+        kv().decodeLong(KEY_CAFE_VISIT_LAST_NOTIFIED_SLOT_MS, 0L).coerceAtLeast(0L)
+
+    fun saveCafeVisitLastNotifiedSlotMs(slotMs: Long) {
+        kv().encode(KEY_CAFE_VISIT_LAST_NOTIFIED_SLOT_MS, slotMs.coerceAtLeast(0L))
     }
 
     fun loadApCurrent(): Double {

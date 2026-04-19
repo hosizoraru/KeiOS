@@ -9,7 +9,10 @@ import com.example.keios.feature.github.notification.GitHubRefreshNotificationHe
 import com.example.keios.ui.page.main.ba.BASettingsStore
 import com.example.keios.ui.page.main.ba.BA_AP_MAX
 import com.example.keios.ui.page.main.ba.BaApNotificationDispatcher
+import com.example.keios.ui.page.main.ba.BaCafeVisitNotificationDispatcher
+import com.example.keios.ui.page.main.ba.BaPageSnapshot
 import com.example.keios.ui.page.main.ba.applyBaApRegenTick
+import com.example.keios.ui.page.main.ba.currentCafeStudentRefreshSlotMs
 import com.example.keios.ui.page.main.ba.displayAp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -64,44 +67,95 @@ object AppForegroundInfoHandler {
     suspend fun handleBaApTick(context: Context) {
         baApTickMutex.withLock {
             val snapshot = withContext(Dispatchers.IO) { BASettingsStore.loadSnapshot() }
-            if (!snapshot.apNotifyEnabled) {
-                withContext(Dispatchers.IO) { BASettingsStore.saveApLastNotifiedLevel(-1) }
+            val shouldHandleApNotify = snapshot.apNotifyEnabled
+            val shouldHandleCafeVisitNotify = snapshot.cafeVisitNotifyEnabled
+            if (!shouldHandleApNotify && !shouldHandleCafeVisitNotify) {
+                withContext(Dispatchers.IO) {
+                    BASettingsStore.saveApLastNotifiedLevel(-1)
+                    BASettingsStore.saveCafeVisitLastNotifiedSlotMs(0L)
+                }
                 return
             }
 
             val nowMs = System.currentTimeMillis()
-            val (nextAp, nextBase) = applyBaApRegenTick(
-                apLimit = snapshot.apLimit,
-                apCurrent = snapshot.apCurrent,
-                apRegenBaseMs = snapshot.apRegenBaseMs,
-                nowMs = nowMs
-            )
-            if (nextAp != snapshot.apCurrent) {
+            if (shouldHandleApNotify) {
+                handleBaApThresholdTick(context = context, snapshot = snapshot, nowMs = nowMs)
+            } else {
                 withContext(Dispatchers.IO) {
-                    BASettingsStore.saveApCurrent(nextAp)
-                    BASettingsStore.saveApRegenBaseMs(nextBase)
+                    BASettingsStore.saveApLastNotifiedLevel(-1)
                 }
             }
 
-            val threshold = snapshot.apNotifyThreshold.coerceIn(0, BA_AP_MAX)
-            val currentDisplay = displayAp(nextAp)
-            if (currentDisplay < threshold) {
-                withContext(Dispatchers.IO) { BASettingsStore.saveApLastNotifiedLevel(-1) }
-                return
+            if (shouldHandleCafeVisitNotify) {
+                handleBaCafeVisitTick(context = context, snapshot = snapshot, nowMs = nowMs)
+            } else {
+                withContext(Dispatchers.IO) {
+                    BASettingsStore.saveCafeVisitLastNotifiedSlotMs(0L)
+                }
             }
+        }
+    }
 
-            val lastNotifiedLevel = withContext(Dispatchers.IO) { BASettingsStore.loadApLastNotifiedLevel() }
-            if (currentDisplay == lastNotifiedLevel) return
-
-            val sent = BaApNotificationDispatcher.send(
-                context = context,
-                currentDisplay = currentDisplay,
-                limitDisplay = snapshot.apLimit.coerceIn(0, BA_AP_MAX),
-                thresholdDisplay = threshold
-            )
-            if (sent) {
-                withContext(Dispatchers.IO) { BASettingsStore.saveApLastNotifiedLevel(currentDisplay) }
+    private suspend fun handleBaApThresholdTick(
+        context: Context,
+        snapshot: BaPageSnapshot,
+        nowMs: Long,
+    ) {
+        val (nextAp, nextBase) = applyBaApRegenTick(
+            apLimit = snapshot.apLimit,
+            apCurrent = snapshot.apCurrent,
+            apRegenBaseMs = snapshot.apRegenBaseMs,
+            nowMs = nowMs
+        )
+        if (nextAp != snapshot.apCurrent) {
+            withContext(Dispatchers.IO) {
+                BASettingsStore.saveApCurrent(nextAp)
+                BASettingsStore.saveApRegenBaseMs(nextBase)
             }
+        }
+
+        val threshold = snapshot.apNotifyThreshold.coerceIn(0, BA_AP_MAX)
+        val currentDisplay = displayAp(nextAp)
+        if (currentDisplay < threshold) {
+            withContext(Dispatchers.IO) { BASettingsStore.saveApLastNotifiedLevel(-1) }
+            return
+        }
+
+        val lastNotifiedLevel = withContext(Dispatchers.IO) { BASettingsStore.loadApLastNotifiedLevel() }
+        if (currentDisplay == lastNotifiedLevel) return
+
+        val sent = BaApNotificationDispatcher.send(
+            context = context,
+            currentDisplay = currentDisplay,
+            limitDisplay = snapshot.apLimit.coerceIn(0, BA_AP_MAX),
+            thresholdDisplay = threshold
+        )
+        if (sent) {
+            withContext(Dispatchers.IO) { BASettingsStore.saveApLastNotifiedLevel(currentDisplay) }
+        }
+    }
+
+    private suspend fun handleBaCafeVisitTick(
+        context: Context,
+        snapshot: BaPageSnapshot,
+        nowMs: Long,
+    ) {
+        val currentSlotMs = currentCafeStudentRefreshSlotMs(
+            nowMs = nowMs,
+            serverIndex = snapshot.serverIndex
+        )
+        val lastSlotMs = withContext(Dispatchers.IO) { BASettingsStore.loadCafeVisitLastNotifiedSlotMs() }
+        if (lastSlotMs <= 0L) {
+            withContext(Dispatchers.IO) { BASettingsStore.saveCafeVisitLastNotifiedSlotMs(currentSlotMs) }
+            return
+        }
+        if (currentSlotMs <= lastSlotMs) {
+            return
+        }
+
+        val sent = BaCafeVisitNotificationDispatcher.send(context)
+        if (sent) {
+            withContext(Dispatchers.IO) { BASettingsStore.saveCafeVisitLastNotifiedSlotMs(currentSlotMs) }
         }
     }
 }

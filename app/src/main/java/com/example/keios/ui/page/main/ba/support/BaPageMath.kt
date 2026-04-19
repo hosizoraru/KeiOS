@@ -13,6 +13,7 @@ internal const val BA_AP_LIMIT_MAX = 240
 internal const val BA_AP_REGEN_INTERVAL_MS = 6 * 60 * 1000L
 internal const val BA_AP_REGEN_TICK_MS = 30_000L
 internal const val BA_CAFE_HOURLY_INTERVAL_MS = 60 * 60 * 1000L
+internal const val BA_CAFE_STUDENT_REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000L
 internal const val BA_HEADPAT_COOLDOWN_MS = 3 * 60 * 60 * 1000L
 internal const val BA_INVITE_COOLDOWN_MS = 20 * 60 * 60 * 1000L
 internal const val BA_DEFAULT_NICKNAME = "Kei"
@@ -113,6 +114,11 @@ internal fun nextCafeStudentRefreshMs(fromMs: Long, serverIndex: Int): Long {
             nowCal.timeInMillis
         }
     }
+}
+
+internal fun currentCafeStudentRefreshSlotMs(nowMs: Long, serverIndex: Int): Long {
+    val nextRefreshAt = nextCafeStudentRefreshMs(nowMs, serverIndex)
+    return (nextRefreshAt - BA_CAFE_STUDENT_REFRESH_INTERVAL_MS).coerceAtLeast(0L)
 }
 
 internal fun nextArenaRefreshMs(fromMs: Long, serverIndex: Int): Long {

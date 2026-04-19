@@ -17,15 +17,40 @@ data class McpNotificationPayload(
     val secondaryActionLabel: String? = null,
     val outerGlow: Boolean = true
 ) {
+    companion object {
+        const val BA_AP_SERVER_NAME = "BlueArchive AP"
+        const val BA_CAFE_VISIT_SERVER_NAME = "BlueArchive Cafe Visit"
+        const val BA_CAFE_VISIT_PATH = "student_visit"
+
+        fun isBaApServerName(serverName: String): Boolean {
+            return serverName.trim() == BA_AP_SERVER_NAME
+        }
+
+        fun isBaCafeVisitServerName(serverName: String): Boolean {
+            return serverName.trim() == BA_CAFE_VISIT_SERVER_NAME
+        }
+
+        fun isBaNotificationServerName(serverName: String): Boolean {
+            return isBaApServerName(serverName) || isBaCafeVisitServerName(serverName)
+        }
+    }
+
     private val normalizedServerName: String
         get() = serverName.trim().ifBlank { "KeiOS MCP" }
 
     private val isBlueArchiveAp: Boolean
-        get() = normalizedServerName == "BlueArchive AP"
+        get() = isBaApServerName(normalizedServerName)
+
+    private val isBlueArchiveCafeVisit: Boolean
+        get() = isBaCafeVisitServerName(normalizedServerName)
 
     fun title(context: Context): String {
         return if (running) {
-            normalizedServerName
+            if (isBlueArchiveCafeVisit) {
+                context.getString(R.string.ba_cafe_visit_notification_title)
+            } else {
+                normalizedServerName
+            }
         } else {
             context.getString(R.string.mcp_notification_title_stopped, normalizedServerName)
         }
@@ -33,7 +58,9 @@ data class McpNotificationPayload(
 
     fun content(context: Context): String {
         return if (running) {
-            if (isBlueArchiveAp) {
+            if (isBlueArchiveCafeVisit) {
+                context.getString(R.string.ba_cafe_visit_notification_content)
+            } else if (isBlueArchiveAp) {
                 context.getString(R.string.mcp_notification_content_ap, port, path, clients)
             } else {
                 context.getString(R.string.mcp_notification_content_default, port, path, clients)
@@ -52,7 +79,9 @@ data class McpNotificationPayload(
     }
 
     fun onlineText(context: Context): String {
-        return if (isBlueArchiveAp) {
+        return if (isBlueArchiveCafeVisit) {
+            context.getString(R.string.ba_cafe_visit_notification_island_text)
+        } else if (isBlueArchiveAp) {
             context.getString(R.string.mcp_online_text_ap_limit, clients)
         } else {
             context.getString(R.string.mcp_online_text_clients, clients)
@@ -79,7 +108,7 @@ data class McpNotificationPayload(
 
     fun stopActionTitle(context: Context): String {
         secondaryActionLabel?.takeIf { it.isNotBlank() }?.let { return it }
-        return if (isBlueArchiveAp) {
+        return if (isBlueArchiveAp || isBlueArchiveCafeVisit) {
             context.getString(R.string.common_mark_read)
         } else {
             context.getString(R.string.mcp_action_toggle_service)
@@ -91,7 +120,9 @@ data class McpNotificationPayload(
 
     fun expandedContent(context: Context): String {
         return if (running) {
-            if (isBlueArchiveAp) {
+            if (isBlueArchiveCafeVisit) {
+                context.getString(R.string.ba_cafe_visit_notification_content)
+            } else if (isBlueArchiveAp) {
                 context.getString(R.string.mcp_notification_content_ap, port, path, clients)
             } else {
                 context.getString(R.string.mcp_notification_content_default, port, path, clients)

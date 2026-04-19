@@ -19,6 +19,8 @@ internal data class BaPageSnapshot(
     val apNotifyEnabled: Boolean = false,
     val apNotifyThreshold: Int = 120,
     val apLastNotifiedLevel: Int = -1,
+    val cafeVisitNotifyEnabled: Boolean = false,
+    val cafeVisitLastNotifiedSlotMs: Long = 0L,
     val coffeeHeadpatMs: Long = 0L,
     val coffeeInvite1UsedMs: Long = 0L,
     val coffeeInvite2UsedMs: Long = 0L,

@@ -40,6 +40,7 @@ internal data class BaPageUiState(
     val poolHydrationReady: Boolean,
     val sheetCafeLevel: Int,
     val sheetApNotifyEnabled: Boolean,
+    val sheetCafeVisitNotifyEnabled: Boolean,
     val sheetApNotifyThresholdText: String,
     val sheetMediaAdaptiveRotationEnabled: Boolean,
     val sheetMediaSaveCustomEnabled: Boolean,
@@ -80,6 +81,7 @@ internal class BaPageUiController(snapshot: BaPageSnapshot) {
     var poolHydrationReady by mutableStateOf(false)
     var sheetCafeLevel by mutableIntStateOf(snapshot.cafeLevel)
     var sheetApNotifyEnabled by mutableStateOf(snapshot.apNotifyEnabled)
+    var sheetCafeVisitNotifyEnabled by mutableStateOf(snapshot.cafeVisitNotifyEnabled)
     var sheetApNotifyThresholdText by mutableStateOf(snapshot.apNotifyThreshold.toString())
     var sheetMediaAdaptiveRotationEnabled by mutableStateOf(snapshot.mediaAdaptiveRotationEnabled)
     var sheetMediaSaveCustomEnabled by mutableStateOf(snapshot.mediaSaveCustomEnabled)
@@ -119,6 +121,7 @@ internal class BaPageUiController(snapshot: BaPageSnapshot) {
             poolHydrationReady = poolHydrationReady,
             sheetCafeLevel = sheetCafeLevel,
             sheetApNotifyEnabled = sheetApNotifyEnabled,
+            sheetCafeVisitNotifyEnabled = sheetCafeVisitNotifyEnabled,
             sheetApNotifyThresholdText = sheetApNotifyThresholdText,
             sheetMediaAdaptiveRotationEnabled = sheetMediaAdaptiveRotationEnabled,
             sheetMediaSaveCustomEnabled = sheetMediaSaveCustomEnabled,
@@ -143,6 +146,7 @@ internal class BaPageUiController(snapshot: BaPageSnapshot) {
         showCafeLevelPopup = false
         sheetCafeLevel = office.cafeLevel
         sheetApNotifyEnabled = office.apNotifyEnabled
+        sheetCafeVisitNotifyEnabled = office.cafeVisitNotifyEnabled
         sheetApNotifyThresholdText = office.apNotifyThreshold.toString()
         sheetMediaAdaptiveRotationEnabled = mediaAdaptiveRotationEnabled
         sheetMediaSaveCustomEnabled = mediaSaveCustomEnabled
@@ -158,6 +162,7 @@ internal class BaPageUiController(snapshot: BaPageSnapshot) {
         showCafeLevelPopup = false
         sheetCafeLevel = office.cafeLevel
         sheetApNotifyEnabled = office.apNotifyEnabled
+        sheetCafeVisitNotifyEnabled = office.cafeVisitNotifyEnabled
         sheetApNotifyThresholdText = office.apNotifyThreshold.toString()
         sheetMediaAdaptiveRotationEnabled = mediaAdaptiveRotationEnabled
         sheetMediaSaveCustomEnabled = mediaSaveCustomEnabled

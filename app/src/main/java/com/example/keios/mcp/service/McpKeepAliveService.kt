@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.keios.mcp.McpNotificationPayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,6 +38,7 @@ class McpKeepAliveService : Service() {
                 val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID)
                 NotificationManagerCompat.from(this).cancel(notificationId)
                 val shouldForceStop = notificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID ||
+                    notificationId == McpNotificationHelper.BA_CAFE_VISIT_NOTIFICATION_ID ||
                     intent.getBooleanExtra(EXTRA_FORCE_STOP_ON_DISMISS, false)
                 if (shouldForceStop || !currentRunning) {
                     stopHeartbeat()
@@ -67,14 +69,14 @@ class McpKeepAliveService : Service() {
                     McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID
                 ) ?: McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID
                 val heartbeatEnabled = intent?.getBooleanExtra(EXTRA_HEARTBEAT_ENABLED, true) == true
-                val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
+                val isBlueArchiveNotification = McpNotificationPayload.isBaNotificationServerName(serverName)
                 currentRunning = running
                 currentPort = port
                 currentPath = path
                 currentServerName = serverName
                 currentClients = clients
                 currentNotificationId = notificationId
-                currentHeartbeatEnabled = if (isBlueArchiveAp) false else heartbeatEnabled
+                currentHeartbeatEnabled = if (isBlueArchiveNotification) false else heartbeatEnabled
                 val notification = buildNotification(
                     serverName = serverName,
                     running = running,
@@ -91,7 +93,7 @@ class McpKeepAliveService : Service() {
                 } else {
                     startForeground(notificationId, notification)
                 }
-                if (!isBlueArchiveAp) {
+                if (!isBlueArchiveNotification) {
                     McpNotificationHelper.refreshForegroundAsIsland(
                         context = this,
                         notificationId = notificationId,
@@ -194,7 +196,11 @@ class McpKeepAliveService : Service() {
                 putExtra(EXTRA_CLIENTS, clients)
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
                 putExtra(EXTRA_HEARTBEAT_ENABLED, heartbeatEnabled)
-                putExtra(EXTRA_FORCE_STOP_ON_DISMISS, notificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID)
+                putExtra(
+                    EXTRA_FORCE_STOP_ON_DISMISS,
+                    notificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID ||
+                        notificationId == McpNotificationHelper.BA_CAFE_VISIT_NOTIFICATION_ID
+                )
             }
             ContextCompat.startForegroundService(context, intent)
         }

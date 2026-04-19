@@ -13,6 +13,8 @@
     <string name="ba_settings_card_ap_title">AP设置</string>
     <string name="ba_settings_card_media_title">媒体设置</string>
     <string name="ba_settings_label_ap_notify">AP 通知</string>
+    <string name="ba_settings_label_cafe_visit_notify">咖啡厅学生来访通知</string>
+    <string name="ba_settings_summary_cafe_visit_notify">按当前服务器时区在 04:00 / 16:00 各提醒一次</string>
     <string name="ba_settings_label_ap_threshold">AP 提醒阈值</string>
     <string name="ba_settings_summary_ap_threshold">建议 0-%1$d</string>
     <string name="ba_settings_label_media_adaptive_rotation">媒体自适应旋转</string>
@@ -28,6 +30,14 @@
     <string name="ba_settings_label_show_ended_pool">显示已结束卡池</string>
     <string name="ba_settings_label_show_images">显示活动/卡池图片</string>
     <string name="ba_settings_note_timezone">不同服务器时区不同，建议按实际游玩服务器设置。</string>
+    <string name="ba_debug_action_ap_notification">AP 通知</string>
+    <string name="ba_debug_action_cafe_visit_notification">咖啡厅学生访问通知</string>
+    <string name="ba_debug_action_cafe_plus_3h_ap">咖啡厅 3h AP</string>
+    <string name="ba_toast_notification_permission_required">请先授予通知权限</string>
+    <string name="ba_toast_cafe_visit_notification_sent">已发送咖啡厅学生访问通知</string>
+    <string name="ba_cafe_visit_notification_title">咖啡厅学生来访问啦</string>
+    <string name="ba_cafe_visit_notification_content">咖啡厅学生来访问啦</string>
+    <string name="ba_cafe_visit_notification_island_text">学生访问</string>
 
     <string name="ba_catalog_page_title">图鉴</string>
     <string name="ba_catalog_tab_title">当前分区：%1$s</string>

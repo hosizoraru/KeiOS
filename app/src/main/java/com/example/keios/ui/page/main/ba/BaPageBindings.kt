@@ -10,6 +10,7 @@ internal fun buildBaSettingsSheetState(
     return BaSettingsSheetState(
         cafeLevel = ui.sheetCafeLevel,
         apNotifyEnabled = ui.sheetApNotifyEnabled,
+        cafeVisitNotifyEnabled = ui.sheetCafeVisitNotifyEnabled,
         apNotifyThresholdText = ui.sheetApNotifyThresholdText,
         mediaAdaptiveRotationEnabled = ui.sheetMediaAdaptiveRotationEnabled,
         mediaSaveCustomEnabled = ui.sheetMediaSaveCustomEnabled,
@@ -78,8 +79,21 @@ internal fun saveBaPageSettings(
 
     office.cafeLevel = persisted.savedCafeLevel
     office.clampCafeStoredToCap()
+    val previousCafeVisitNotifyEnabled = office.cafeVisitNotifyEnabled
     office.apNotifyEnabled = settingsSheetState.apNotifyEnabled
+    office.cafeVisitNotifyEnabled = persisted.cafeVisitNotifyEnabled
     office.apNotifyThreshold = persisted.savedThreshold
+    if (!office.cafeVisitNotifyEnabled) {
+        office.cafeVisitLastNotifiedSlotMs = 0L
+        BASettingsStore.saveCafeVisitLastNotifiedSlotMs(0L)
+    } else if (!previousCafeVisitNotifyEnabled) {
+        val baselineSlotMs = currentCafeStudentRefreshSlotMs(
+            nowMs = System.currentTimeMillis(),
+            serverIndex = ui.serverIndex
+        )
+        office.cafeVisitLastNotifiedSlotMs = baselineSlotMs
+        BASettingsStore.saveCafeVisitLastNotifiedSlotMs(baselineSlotMs)
+    }
     ui.showEndedPools = persisted.showEndedPools
     ui.showEndedActivities = persisted.showEndedActivities
     ui.showCalendarPoolImages = persisted.showCalendarPoolImages
@@ -145,6 +159,14 @@ internal fun buildBaPageContentActions(
         onServerSelected = { selected ->
             ui.serverIndex = selected
             BASettingsStore.saveServerIndex(selected)
+            if (office.cafeVisitNotifyEnabled) {
+                val baselineSlotMs = currentCafeStudentRefreshSlotMs(
+                    nowMs = System.currentTimeMillis(),
+                    serverIndex = selected
+                )
+                office.cafeVisitLastNotifiedSlotMs = baselineSlotMs
+                BASettingsStore.saveCafeVisitLastNotifiedSlotMs(baselineSlotMs)
+            }
             onRefreshCalendar()
             onRefreshPool()
             ui.showOverviewServerPopup = false
@@ -168,6 +190,9 @@ internal fun buildBaPageContentActions(
         onSaveIdFriendCode = { office.saveIdFriendCodeFromInput(context) },
         onSendApTestNotification = {
             office.sendApTestNotification(context = context, showToast = true)
+        },
+        onSendCafeVisitTestNotification = {
+            office.sendCafeVisitTestNotification(context = context, showToast = true)
         },
         onTestCafePlus3Hours = { office.testCafePlus3Hours(context) },
     )

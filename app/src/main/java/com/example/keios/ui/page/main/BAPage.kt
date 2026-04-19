@@ -281,6 +281,7 @@ fun BAPage(
         backdrop = sheetBackdrop,
         state = settingsSheetState,
         onApNotifyEnabledChange = { ui.sheetApNotifyEnabled = it },
+        onCafeVisitNotifyEnabledChange = { ui.sheetCafeVisitNotifyEnabled = it },
         onApNotifyThresholdTextChange = { ui.sheetApNotifyThresholdText = it },
         onApNotifyThresholdDone = {
             val normalized = ui.sheetApNotifyThresholdText.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 120

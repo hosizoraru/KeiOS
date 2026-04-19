@@ -19,6 +19,7 @@ class ModernNotificationBuilder(
         private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
         private const val ICON_DEFAULT = R.drawable.ic_kei_logo_color
         private const val ICON_AP = R.drawable.ba_ap_icon
+        private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale
     }
 
     private val baseNotificationBuilder by lazy {
@@ -42,8 +43,13 @@ class ModernNotificationBuilder(
 
     private fun createBaseBuilder(state: McpNotificationPayload): NotificationCompat.Builder {
         val progress = computeProgress(state)
-        val isBlueArchiveAp = state.serverName.trim() == "BlueArchive AP"
-        val iconRes = if (isBlueArchiveAp) ICON_AP else ICON_DEFAULT
+        val isBlueArchiveAp = McpNotificationPayload.isBaApServerName(state.serverName)
+        val isBlueArchiveCafeVisit = McpNotificationPayload.isBaCafeVisitServerName(state.serverName)
+        val iconRes = when {
+            isBlueArchiveAp -> ICON_AP
+            isBlueArchiveCafeVisit -> ICON_BA_CAFE_VISIT
+            else -> ICON_DEFAULT
+        }
         val baseBuilder = baseNotificationBuilder
         baseBuilder
             .clearActions()
@@ -76,7 +82,10 @@ class ModernNotificationBuilder(
 
     private fun computeProgress(state: McpNotificationPayload): Int {
         if (!state.running) return 0
-        val isBlueArchiveAp = state.serverName.trim() == "BlueArchive AP"
+        val isBlueArchiveAp = McpNotificationPayload.isBaApServerName(state.serverName)
+        if (McpNotificationPayload.isBaCafeVisitServerName(state.serverName)) {
+            return 100
+        }
         if (isBlueArchiveAp) {
             val apLimit = state.clients.coerceAtLeast(1)
             val apCurrent = state.port.coerceAtLeast(0).coerceAtMost(apLimit)

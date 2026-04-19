@@ -38,6 +38,7 @@ import top.yukonga.miuix.kmp.icon.extended.Ok
 internal data class BaSettingsSheetState(
     val cafeLevel: Int,
     val apNotifyEnabled: Boolean,
+    val cafeVisitNotifyEnabled: Boolean,
     val apNotifyThresholdText: String,
     val mediaAdaptiveRotationEnabled: Boolean,
     val mediaSaveCustomEnabled: Boolean,
@@ -53,6 +54,7 @@ internal fun BaSettingsSheet(
     backdrop: Backdrop?,
     state: BaSettingsSheetState,
     onApNotifyEnabledChange: (Boolean) -> Unit,
+    onCafeVisitNotifyEnabledChange: (Boolean) -> Unit,
     onApNotifyThresholdTextChange: (String) -> Unit,
     onApNotifyThresholdDone: () -> Unit,
     onMediaAdaptiveRotationEnabledChange: (Boolean) -> Unit,
@@ -118,6 +120,15 @@ internal fun BaSettingsSheet(
                     Switch(
                         checked = state.apNotifyEnabled,
                         onCheckedChange = onApNotifyEnabledChange,
+                    )
+                }
+                SheetControlRow(
+                    label = stringResource(R.string.ba_settings_label_cafe_visit_notify),
+                    summary = stringResource(R.string.ba_settings_summary_cafe_visit_notify),
+                ) {
+                    Switch(
+                        checked = state.cafeVisitNotifyEnabled,
+                        onCheckedChange = onCafeVisitNotifyEnabledChange,
                     )
                 }
                 if (state.apNotifyEnabled) {

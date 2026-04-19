@@ -3,6 +3,7 @@ package com.example.keios.mcp.framework.notification.builder
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import com.example.keios.R
+import com.example.keios.mcp.McpNotificationPayload
 import kotlin.math.roundToInt
 
 class LegacyNotificationBuilder(
@@ -12,6 +13,7 @@ class LegacyNotificationBuilder(
     private companion object {
         private const val ICON_DEFAULT = R.drawable.ic_kei_logo_color
         private const val ICON_AP = R.drawable.ba_ap_icon
+        private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale
     }
 
     private data class LiveProgressState(
@@ -21,9 +23,14 @@ class LegacyNotificationBuilder(
 
     override fun build(payload: NotificationPayload): android.app.Notification {
         val state = payload.state
-        val isBlueArchiveAp = state.serverName.trim() == "BlueArchive AP"
+        val isBlueArchiveAp = McpNotificationPayload.isBaApServerName(state.serverName)
+        val isBlueArchiveCafeVisit = McpNotificationPayload.isBaCafeVisitServerName(state.serverName)
         val progressState = computeProgressState(state = state, isBlueArchiveAp = isBlueArchiveAp)
-        val iconRes = if (isBlueArchiveAp) ICON_AP else ICON_DEFAULT
+        val iconRes = when {
+            isBlueArchiveAp -> ICON_AP
+            isBlueArchiveCafeVisit -> ICON_BA_CAFE_VISIT
+            else -> ICON_DEFAULT
+        }
         val builder = NotificationCompat.Builder(context, payload.environment.channelId)
             .setSmallIcon(iconRes)
             .setContentTitle(state.title(context))
@@ -59,6 +66,9 @@ class LegacyNotificationBuilder(
     ): LiveProgressState {
         if (!state.running) {
             return LiveProgressState(current = 0, indeterminate = false)
+        }
+        if (McpNotificationPayload.isBaCafeVisitServerName(state.serverName)) {
+            return LiveProgressState(current = 100, indeterminate = false)
         }
         if (isBlueArchiveAp) {
             val apLimit = state.clients.coerceAtLeast(1)

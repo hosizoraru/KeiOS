@@ -13,6 +13,7 @@ import kotlin.math.roundToInt
 internal data class BaSettingsPersistenceResult(
     val savedCafeLevel: Int,
     val savedThreshold: Int,
+    val cafeVisitNotifyEnabled: Boolean,
     val showEndedPools: Boolean,
     val showEndedActivities: Boolean,
     val showCalendarPoolImages: Boolean,
@@ -86,6 +87,7 @@ internal fun persistBaSettingsDraft(
 
     BASettingsStore.saveCafeLevel(savedCafeLevel)
     BASettingsStore.saveApNotifyEnabled(sheetState.apNotifyEnabled)
+    BASettingsStore.saveCafeVisitNotifyEnabled(sheetState.cafeVisitNotifyEnabled)
     BASettingsStore.saveApNotifyThreshold(savedThreshold)
     BASettingsStore.savePoolShowEnded(sheetState.showEndedPools)
     BASettingsStore.saveActivityShowEnded(sheetState.showEndedActivities)
@@ -97,6 +99,7 @@ internal fun persistBaSettingsDraft(
     return BaSettingsPersistenceResult(
         savedCafeLevel = savedCafeLevel,
         savedThreshold = savedThreshold,
+        cafeVisitNotifyEnabled = sheetState.cafeVisitNotifyEnabled,
         showEndedPools = sheetState.showEndedPools,
         showEndedActivities = sheetState.showEndedActivities,
         showCalendarPoolImages = sheetState.showCalendarPoolImages,

@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.keios.R
 import kotlin.math.roundToInt
 
 @Stable
@@ -25,6 +26,8 @@ internal data class BaOfficeState(
     val apSyncMs: Long,
     val apNotifyEnabled: Boolean,
     val apNotifyThreshold: Int,
+    val cafeVisitNotifyEnabled: Boolean,
+    val cafeVisitLastNotifiedSlotMs: Long,
     val coffeeHeadpatMs: Long,
     val coffeeInvite1UsedMs: Long,
     val coffeeInvite2UsedMs: Long,
@@ -50,6 +53,8 @@ internal class BaOfficeController(
     var apSyncMs by mutableLongStateOf(snapshot.apSyncMs)
     var apNotifyEnabled by mutableStateOf(snapshot.apNotifyEnabled)
     var apNotifyThreshold by mutableIntStateOf(snapshot.apNotifyThreshold)
+    var cafeVisitNotifyEnabled by mutableStateOf(snapshot.cafeVisitNotifyEnabled)
+    var cafeVisitLastNotifiedSlotMs by mutableLongStateOf(snapshot.cafeVisitLastNotifiedSlotMs)
     var coffeeHeadpatMs by mutableLongStateOf(snapshot.coffeeHeadpatMs)
     var coffeeInvite1UsedMs by mutableLongStateOf(snapshot.coffeeInvite1UsedMs)
     var coffeeInvite2UsedMs by mutableLongStateOf(snapshot.coffeeInvite2UsedMs)
@@ -75,6 +80,8 @@ internal class BaOfficeController(
             apSyncMs = apSyncMs,
             apNotifyEnabled = apNotifyEnabled,
             apNotifyThreshold = apNotifyThreshold,
+            cafeVisitNotifyEnabled = cafeVisitNotifyEnabled,
+            cafeVisitLastNotifiedSlotMs = cafeVisitLastNotifiedSlotMs,
             coffeeHeadpatMs = coffeeHeadpatMs,
             coffeeInvite1UsedMs = coffeeInvite1UsedMs,
             coffeeInvite2UsedMs = coffeeInvite2UsedMs,
@@ -292,12 +299,43 @@ internal class BaOfficeController(
             thresholdDisplay = thresholdDisplay
         )
         if (!sent) {
-            if (showToast) Toast.makeText(context, "请先授予通知权限", Toast.LENGTH_SHORT).show()
+            if (showToast) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.ba_toast_notification_permission_required),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             return false
         }
         if (showToast) {
             val notifyText = if (thresholdTriggered) "已发送AP阈值提醒" else "已发送AP通知"
             Toast.makeText(context, notifyText, Toast.LENGTH_SHORT).show()
+        }
+        return true
+    }
+
+    fun sendCafeVisitTestNotification(
+        context: Context,
+        showToast: Boolean = true,
+    ): Boolean {
+        val sent = BaCafeVisitNotificationDispatcher.send(context)
+        if (!sent) {
+            if (showToast) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.ba_toast_notification_permission_required),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            return false
+        }
+        if (showToast) {
+            Toast.makeText(
+                context,
+                context.getString(R.string.ba_toast_cafe_visit_notification_sent),
+                Toast.LENGTH_SHORT
+            ).show()
         }
         return true
     }

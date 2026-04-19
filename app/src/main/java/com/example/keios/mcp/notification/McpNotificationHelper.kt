@@ -32,6 +32,7 @@ object McpNotificationHelper {
     private const val LEGACY_CHANNEL_ID = "mcp_keepalive_channel"
     const val KEEPALIVE_NOTIFICATION_ID = 38888
     const val BA_AP_NOTIFICATION_ID = 38889
+    const val BA_CAFE_VISIT_NOTIFICATION_ID = 38890
     private const val TEST_NOTIFICATION_ID = KEEPALIVE_NOTIFICATION_ID
     private const val ACTION_DISMISS = "com.example.keios.mcp.keepalive.DISMISS"
     private const val EXTRA_NOTIFICATION_ID = "notification_id"
@@ -59,6 +60,8 @@ object McpNotificationHelper {
     private var keepAliveSnapshot: CachedNotificationSnapshot? = null
     @Volatile
     private var baApSnapshot: CachedNotificationSnapshot? = null
+    @Volatile
+    private var baCafeVisitSnapshot: CachedNotificationSnapshot? = null
 
     private data class CachedNotificationSnapshot(
         val serverName: String,
@@ -127,6 +130,12 @@ object McpNotificationHelper {
             notificationId = BA_AP_NOTIFICATION_ID,
             snapshot = baApSnapshot
         )
+        refreshCachedNotificationIfActive(
+            context = context,
+            manager = manager,
+            notificationId = BA_CAFE_VISIT_NOTIFICATION_ID,
+            snapshot = baCafeVisitSnapshot
+        )
     }
 
     fun buildForegroundNotification(
@@ -163,12 +172,12 @@ object McpNotificationHelper {
         secondaryActionMode: SecondaryActionMode = SecondaryActionMode.DEFAULT,
         notificationId: Int = KEEPALIVE_NOTIFICATION_ID
     ): SessionNotifier.NotificationBuildResult {
-        val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
+        val isBlueArchiveNotification = McpNotificationPayload.isBaNotificationServerName(serverName)
         val openIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             putExtra(
                 MainActivity.EXTRA_TARGET_BOTTOM_PAGE,
-                if (isBlueArchiveAp) {
+                if (isBlueArchiveNotification) {
                     MainActivity.TARGET_BOTTOM_PAGE_BA
                 } else {
                     MainActivity.TARGET_BOTTOM_PAGE_MCP
@@ -181,10 +190,10 @@ object McpNotificationHelper {
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val (stopPendingIntent, secondaryActionLabel) = if (isBlueArchiveAp) {
+        val (stopPendingIntent, secondaryActionLabel) = if (isBlueArchiveNotification) {
             val dismissIntent = Intent(context, McpKeepAliveService::class.java).apply {
                 action = ACTION_DISMISS
-                putExtra(EXTRA_NOTIFICATION_ID, BA_AP_NOTIFICATION_ID)
+                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
             }
             PendingIntent.getService(
                 context,
@@ -241,9 +250,16 @@ object McpNotificationHelper {
         path: String,
         clients: Int
     ) {
-        val isBlueArchiveAp = serverName.trim() == "BlueArchive AP"
-        val runningForNotification = if (isBlueArchiveAp) running else true
-        if (isBlueArchiveAp) {
+        val isBlueArchiveAp = McpNotificationPayload.isBaApServerName(serverName)
+        val isBlueArchiveCafeVisit = McpNotificationPayload.isBaCafeVisitServerName(serverName)
+        val isBlueArchiveNotification = isBlueArchiveAp || isBlueArchiveCafeVisit
+        val runningForNotification = if (isBlueArchiveNotification) running else true
+        val baNotificationId = when {
+            isBlueArchiveAp -> BA_AP_NOTIFICATION_ID
+            isBlueArchiveCafeVisit -> BA_CAFE_VISIT_NOTIFICATION_ID
+            else -> TEST_NOTIFICATION_ID
+        }
+        if (isBlueArchiveNotification) {
             runCatching {
                 McpKeepAliveService.startOrUpdate(
                     context = context,
@@ -253,13 +269,13 @@ object McpNotificationHelper {
                     path = path,
                     clients = clients,
                     forceStart = true,
-                    notificationId = BA_AP_NOTIFICATION_ID,
+                    notificationId = baNotificationId,
                     heartbeatEnabled = false
                 )
             }.onSuccess {
                 return
             }.onFailure {
-                AppLogger.w(TAG, "AP notifyTest fallback to direct notify: ${it.message ?: it.javaClass.simpleName}")
+                AppLogger.w(TAG, "BA notifyTest fallback to direct notify: ${it.message ?: it.javaClass.simpleName}")
             }
         }
         ensureChannel(context)
@@ -273,7 +289,7 @@ object McpNotificationHelper {
             ongoing = runningForNotification,
             onlyAlertOnce = false,
             secondaryActionMode = SecondaryActionMode.MARK_READ,
-            notificationId = if (isBlueArchiveAp) BA_AP_NOTIFICATION_ID else TEST_NOTIFICATION_ID
+            notificationId = baNotificationId
         )
         val snapshot = CachedNotificationSnapshot(
             serverName = serverName,
@@ -286,11 +302,7 @@ object McpNotificationHelper {
             style = buildResult.style,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )
-        val notificationId = if (isBlueArchiveAp) {
-            BA_AP_NOTIFICATION_ID
-        } else {
-            TEST_NOTIFICATION_ID
-        }
+        val notificationId = baNotificationId
         cacheNotificationSnapshot(notificationId, snapshot)
         notifyWithResolvedDispatcher(
             context = context,
@@ -440,6 +452,7 @@ object McpNotificationHelper {
         when (notificationId) {
             KEEPALIVE_NOTIFICATION_ID -> keepAliveSnapshot = snapshot
             BA_AP_NOTIFICATION_ID -> baApSnapshot = snapshot
+            BA_CAFE_VISIT_NOTIFICATION_ID -> baCafeVisitSnapshot = snapshot
         }
     }
 
