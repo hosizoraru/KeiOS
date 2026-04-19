@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.PlatformTextStyle
@@ -63,6 +64,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -152,6 +154,7 @@ private fun OsShellRunnerPage(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pageListState = rememberLazyListState()
+    val scrollBehavior = MiuixScrollBehavior()
     val shellPageTitle = stringResource(R.string.os_shell_page_title)
     val inputTitle = stringResource(R.string.os_shell_input_title)
     val outputTitle = stringResource(R.string.os_shell_output_title)
@@ -176,6 +179,7 @@ private fun OsShellRunnerPage(
     var runningCommand by remember { mutableStateOf(false) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
     val outputScrollState = rememberScrollState()
+    val shellOutputStateText = if (runningCommand) outputRunningSubtitle else outputReadySubtitle
 
     fun appendOutput(command: String, result: String) {
         val timestamp = SimpleDateFormat(
@@ -263,8 +267,9 @@ private fun OsShellRunnerPage(
     }
 
     AppPageScaffold(
-        title = "",
+        title = shellPageTitle,
         largeTitle = shellPageTitle,
+        scrollBehavior = scrollBehavior,
         navigationIcon = {
             Icon(
                 imageVector = MiuixIcons.Regular.Back,
@@ -277,6 +282,9 @@ private fun OsShellRunnerPage(
         AppPageLazyColumn(
             innerPadding = innerPadding,
             state = pageListState,
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             topExtra = 0.dp,
             sectionSpacing = AppChromeTokens.pageSectionGap
         ) {
@@ -287,7 +295,7 @@ private fun OsShellRunnerPage(
                 ) {
                     AppCardHeader(
                         title = inputTitle,
-                        subtitle = "",
+                        subtitle = shellOutputStateText,
                         endActions = {
                             GlassIconButton(
                                 backdrop = null,
@@ -347,7 +355,7 @@ private fun OsShellRunnerPage(
                 ) {
                     AppCardHeader(
                         title = outputTitle,
-                        subtitle = if (runningCommand) outputRunningSubtitle else outputReadySubtitle,
+                        subtitle = "",
                         endActions = {
                             GlassIconButton(
                                 backdrop = null,
