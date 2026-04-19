@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -67,6 +68,8 @@ import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -93,6 +96,8 @@ import java.util.Locale
 
 private val shellAnsiEscapeRegex = Regex("""\u001B\[[;\d]*[ -/]*[@-~]""")
 private val shellKeyValueRegex = Regex("""\b[^\s=]+=[^\s=]+\b""")
+private const val shellPersistDebounceMs = 220L
+private const val shellOutputMaxChars = 120_000
 
 class OsShellRunnerActivity : ComponentActivity() {
     private var shizukuStatus by mutableStateOf("Shizuku status: initializing...")
@@ -232,6 +237,7 @@ private fun OsShellRunnerPage(
     var outputText by rememberSaveable { mutableStateOf(initialOutputText) }
     var runningCommand by remember { mutableStateOf(false) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
+    var suppressStopOutputAppend by remember { mutableStateOf(false) }
     var showSaveSheet by rememberSaveable { mutableStateOf(false) }
     var showSettingsSheet by rememberSaveable { mutableStateOf(false) }
     var saveTitleInput by rememberSaveable { mutableStateOf("") }
@@ -249,7 +255,7 @@ private fun OsShellRunnerPage(
             Locale.getDefault()
         ).format(Date())
         val previousOutput = outputText.trimEnd()
-        outputText = buildString {
+        outputText = trimShellOutputHistory(buildString {
             if (previousOutput.isNotBlank()) {
                 append(previousOutput)
                 appendLine()
@@ -262,7 +268,7 @@ private fun OsShellRunnerPage(
             appendLine(result.trimEnd())
             appendLine()
             append("$outputTimeLabel: $timestamp")
-        }
+        })
     }
 
     fun runCommand() {
@@ -290,7 +296,11 @@ private fun OsShellRunnerPage(
                     ?: noOutputText
                 appendOutput(command, output)
             } catch (_: CancellationException) {
-                appendOutput(command, commandStoppedText)
+                if (suppressStopOutputAppend) {
+                    suppressStopOutputAppend = false
+                } else {
+                    appendOutput(command, commandStoppedText)
+                }
             } finally {
                 runningCommand = false
                 runningJob = null
@@ -299,8 +309,11 @@ private fun OsShellRunnerPage(
         runningJob = job
     }
 
-    fun stopCommand() {
+    fun stopCommand(showStoppedOutput: Boolean = true) {
         val job = runningJob ?: return
+        if (!showStoppedOutput) {
+            suppressStopOutputAppend = true
+        }
         job.cancel(CancellationException("user-stop"))
     }
 
@@ -361,6 +374,7 @@ private fun OsShellRunnerPage(
     }
 
     fun clearAllContent() {
+        stopCommand(showStoppedOutput = false)
         commandInput = ""
         outputText = ""
         Toast.makeText(context, clearAllToast, Toast.LENGTH_SHORT).show()
@@ -378,15 +392,21 @@ private fun OsShellRunnerPage(
             OsShellRunnerPrefsStore.clearSavedOutput()
         }
     }
-    LaunchedEffect(commandInput, persistInputEnabled) {
-        if (persistInputEnabled) {
-            OsShellRunnerPrefsStore.saveInput(commandInput)
-        }
+    LaunchedEffect(persistInputEnabled) {
+        if (!persistInputEnabled) return@LaunchedEffect
+        snapshotFlow { commandInput }
+            .debounce(shellPersistDebounceMs)
+            .collectLatest { input ->
+                OsShellRunnerPrefsStore.saveInput(input)
+            }
     }
-    LaunchedEffect(outputText, persistOutputEnabled) {
-        if (persistOutputEnabled) {
-            OsShellRunnerPrefsStore.saveOutput(outputText)
-        }
+    LaunchedEffect(persistOutputEnabled) {
+        if (!persistOutputEnabled) return@LaunchedEffect
+        snapshotFlow { outputText }
+            .debounce(shellPersistDebounceMs)
+            .collectLatest { output ->
+                OsShellRunnerPrefsStore.saveOutput(output)
+            }
     }
 
     LaunchedEffect(outputText) {
@@ -757,4 +777,12 @@ private fun lineLooksLikeSectionHeading(line: String): Boolean {
     if (line.length !in 2..80) return false
     if (line.startsWith(" ") || line.startsWith("\t")) return false
     return line.endsWith(":")
+}
+
+private fun trimShellOutputHistory(raw: String): String {
+    val normalized = raw.trimEnd()
+    if (normalized.length <= shellOutputMaxChars) return normalized
+    return normalized
+        .takeLast(shellOutputMaxChars)
+        .trimStart()
 }

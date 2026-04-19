@@ -846,65 +846,60 @@ fun OsPage(
             }
         }
     ) { innerPadding ->
-        OsCardVisibilityManagerSheet(
-            show = showCardManager,
-            title = visibleCardsTitle,
+        OsPageOverlaySheets(
+            showCardManager = showCardManager,
+            visibleCardsTitle = visibleCardsTitle,
             sheetBackdrop = sheetBackdrop,
             cardsHintText = "隐藏卡片后会清空对应缓存；重新显示时会立即重新获取并缓存。",
-            onDismissRequest = { showCardManager = false },
-            isCardVisible = { card -> isCardVisible(visibleCards, card) },
+            visibleCards = visibleCards,
+            onDismissCardManager = { showCardManager = false },
             onCardVisibilityChange = { card, checked ->
                 scope.launch { applyCardVisibility(card, checked) }
-            }
-        )
-        OsActivityVisibilityManagerSheet(
-            show = showActivityVisibilityManager,
-            title = visibleActivitiesTitle,
-            sheetBackdrop = sheetBackdrop,
+            },
+            showActivityVisibilityManager = showActivityVisibilityManager,
+            visibleActivitiesTitle = visibleActivitiesTitle,
             activityHintText = stringResource(R.string.os_sheet_visible_activities_desc),
-            cards = activityShortcutCards,
-            defaultCardTitle = googleSystemServiceDefaultTitle,
-            onDismissRequest = { showActivityVisibilityManager = false },
-            onCardVisibilityChange = { cardId, checked ->
+            activityShortcutCards = activityShortcutCards,
+            defaultActivityCardTitle = googleSystemServiceDefaultTitle,
+            onDismissActivityVisibilityManager = { showActivityVisibilityManager = false },
+            onActivityCardVisibilityChange = { cardId, checked ->
                 scope.launch { applyActivityCardVisibility(cardId, checked) }
-            }
-        )
-        OsShellCommandVisibilityManagerSheet(
-            show = showShellCardVisibilityManager,
-            title = visibleShellCardsTitle,
-            sheetBackdrop = sheetBackdrop,
-            shellHintText = visibleShellCardsDesc,
+            },
+            showShellCardVisibilityManager = showShellCardVisibilityManager,
+            visibleShellCardsTitle = visibleShellCardsTitle,
+            visibleShellCardsDesc = visibleShellCardsDesc,
             shellRunnerVisible = visibleCards.contains(OsSectionCard.SHELL_RUNNER),
             onShellRunnerVisibilityChange = { checked ->
                 scope.launch { applyCardVisibility(OsSectionCard.SHELL_RUNNER, checked) }
             },
-            cards = shellCommandCards,
-            onDismissRequest = { showShellCardVisibilityManager = false },
-            onCardVisibilityChange = { cardId, checked ->
+            shellCommandCards = shellCommandCards,
+            onDismissShellVisibilityManager = { showShellCardVisibilityManager = false },
+            onShellCommandCardVisibilityChange = { cardId, checked ->
                 scope.launch { applyShellCommandCardVisibility(cardId, checked) }
-            }
-        )
-        OsShellCommandCardEditorSheet(
-            show = showShellCommandCardEditor,
-            title = editShellCommandCardTitle,
-            sheetBackdrop = sheetBackdrop,
-            draft = shellCommandCardDraft,
-            onDraftChange = { shellCommandCardDraft = it },
-            showDeleteAction = !editingShellCommandCardId.isNullOrBlank(),
-            onDelete = {
+            },
+            showShellCommandCardEditor = showShellCommandCardEditor,
+            editShellCommandCardTitle = editShellCommandCardTitle,
+            shellCommandCardDraft = shellCommandCardDraft,
+            onShellCommandCardDraftChange = { shellCommandCardDraft = it },
+            showShellCardDeleteAction = !editingShellCommandCardId.isNullOrBlank(),
+            onDeleteShellCommandCard = {
                 val targetId = editingShellCommandCardId.orEmpty().trim()
                 if (targetId.isBlank()) {
                     showShellCommandCardEditor = false
-                    return@OsShellCommandCardEditorSheet
+                    showShellCardDeleteConfirm = false
+                    return@OsPageOverlaySheets
                 }
                 showShellCardDeleteConfirm = true
             },
-            onDismissRequest = { showShellCommandCardEditor = false },
-            onSave = {
+            onDismissShellCommandCardEditor = {
+                showShellCommandCardEditor = false
+                showShellCardDeleteConfirm = false
+            },
+            onSaveShellCommandCard = {
                 val targetId = editingShellCommandCardId.orEmpty().trim()
                 if (targetId.isBlank()) {
                     Toast.makeText(context, shellCardCommandRequiredToast, Toast.LENGTH_SHORT).show()
-                    return@OsShellCommandCardEditorSheet
+                    return@OsPageOverlaySheets
                 }
                 val updated = OsShellCommandCardStore.updateCard(
                     cardId = targetId,
@@ -914,24 +909,22 @@ fun OsPage(
                 )
                 if (updated == null) {
                     Toast.makeText(context, shellCardCommandRequiredToast, Toast.LENGTH_SHORT).show()
-                    return@OsShellCommandCardEditorSheet
+                    return@OsPageOverlaySheets
                 }
                 shellCommandCards = OsShellCommandCardStore.loadCards()
                 Toast.makeText(context, shellCardSavedToast, Toast.LENGTH_SHORT).show()
                 showShellCommandCardEditor = false
-            }
-        )
-        OsActivityShortcutEditorHost(
-            showEditor = showActivityShortcutEditor,
-            editorTitle = if (activityCardEditMode == OsActivityCardEditMode.Add) {
+                showShellCardDeleteConfirm = false
+            },
+            showActivityShortcutEditor = showActivityShortcutEditor,
+            activityEditorTitle = if (activityCardEditMode == OsActivityCardEditMode.Add) {
                 addActivityCardTitle
             } else {
                 editActivityCardTitle
             },
-            sheetBackdrop = sheetBackdrop,
-            draft = activityShortcutDraft,
-            onDraftChange = { activityShortcutDraft = it },
-            onOpenSuggestionSheet = { target ->
+            activityShortcutDraft = activityShortcutDraft,
+            onActivityShortcutDraftChange = { activityShortcutDraft = it },
+            onOpenActivitySuggestionSheet = { target ->
                 googleSystemServiceSuggestionTarget = target
                 when (target) {
                     ShortcutSuggestionField.PackageName -> googleSystemServicePackageSuggestionQuery = ""
@@ -940,18 +933,22 @@ fun OsPage(
                 }
                 showActivitySuggestionSheet = true
             },
-            showDeleteAction = activityCardEditMode == OsActivityCardEditMode.Edit &&
+            showDeleteActivityAction = activityCardEditMode == OsActivityCardEditMode.Edit &&
                 !editingActivityShortcutCardId.isNullOrBlank(),
-            onDeleteEditor = {
+            onDeleteActivityCard = {
                 val targetId = editingActivityShortcutCardId.orEmpty().trim()
                 if (targetId.isBlank()) {
                     showActivityShortcutEditor = false
-                    return@OsActivityShortcutEditorHost
+                    showActivityCardDeleteConfirm = false
+                    return@OsPageOverlaySheets
                 }
                 showActivityCardDeleteConfirm = true
             },
-            onDismissEditor = { showActivityShortcutEditor = false },
-            onSaveEditor = {
+            onDismissActivityEditor = {
+                showActivityShortcutEditor = false
+                showActivityCardDeleteConfirm = false
+            },
+            onSaveActivityEditor = {
                 val normalized = normalizeActivityShortcutConfig(
                     config = activityShortcutDraft,
                     defaults = googleSystemServiceDefaults
@@ -977,20 +974,19 @@ fun OsPage(
                     }
                 }
                 activityShortcutCards = updatedCards
-                scope.launch(Dispatchers.IO) {
-                    OsActivityShortcutCardStore.saveCards(
-                        cards = updatedCards,
-                        defaults = googleSystemServiceDefaults
-                    )
-                }
+                OsActivityShortcutCardStore.saveCards(
+                    cards = updatedCards,
+                    defaults = googleSystemServiceDefaults
+                )
                 Toast.makeText(
                     context,
                     context.getString(R.string.os_google_system_service_toast_saved),
                     Toast.LENGTH_SHORT
                 ).show()
                 showActivityShortcutEditor = false
+                showActivityCardDeleteConfirm = false
             },
-            showSuggestionSheet = showActivitySuggestionSheet,
+            showActivitySuggestionSheet = showActivitySuggestionSheet,
             suggestionTarget = googleSystemServiceSuggestionTarget,
             packageSuggestions = googleSystemServicePackageSuggestions,
             packageSuggestionsLoading = googleSystemServicePackageSuggestionsLoading,
@@ -1032,50 +1028,44 @@ fun OsPage(
                     draft = activityShortcutDraft,
                     defaultIntentFlags = googleSystemServiceDefaultIntentFlags
                 )
-            }
-        )
-        OsDeleteConfirmDialog(
-            show = showShellCardDeleteConfirm,
-            title = shellCardDeleteDialogTitle,
-            summary = context.getString(
+            },
+            showShellCardDeleteConfirm = showShellCardDeleteConfirm,
+            shellCardDeleteDialogTitle = shellCardDeleteDialogTitle,
+            shellCardDeleteDialogSummary = context.getString(
                 R.string.os_shell_card_delete_dialog_summary,
                 shellCommandCardDraft.title.ifBlank {
                     defaultOsShellCommandCardTitle(shellCommandCardDraft.command)
                 }
             ),
-            onDismissRequest = { showShellCardDeleteConfirm = false },
-            onConfirmDelete = {
+            onDismissShellCardDeleteConfirm = { showShellCardDeleteConfirm = false },
+            onConfirmShellCardDelete = {
                 val targetId = editingShellCommandCardId.orEmpty().trim()
                 showShellCardDeleteConfirm = false
-                if (targetId.isBlank()) return@OsDeleteConfirmDialog
+                if (targetId.isBlank()) return@OsPageOverlaySheets
                 shellCommandCards = OsShellCommandCardStore.deleteCard(targetId)
                 shellCommandCardExpanded.remove(targetId)
                 editingShellCommandCardId = null
                 showShellCommandCardEditor = false
                 Toast.makeText(context, shellCardDeletedToast, Toast.LENGTH_SHORT).show()
-            }
-        )
-        OsDeleteConfirmDialog(
-            show = showActivityCardDeleteConfirm,
-            title = activityCardDeleteDialogTitle,
-            summary = context.getString(
+            },
+            showActivityCardDeleteConfirm = showActivityCardDeleteConfirm,
+            activityCardDeleteDialogTitle = activityCardDeleteDialogTitle,
+            activityCardDeleteDialogSummary = context.getString(
                 R.string.os_activity_card_delete_dialog_summary,
                 activityShortcutDraft.title.ifBlank { googleSystemServiceDefaultTitle }
             ),
-            onDismissRequest = { showActivityCardDeleteConfirm = false },
-            onConfirmDelete = {
+            onDismissActivityCardDeleteConfirm = { showActivityCardDeleteConfirm = false },
+            onConfirmActivityCardDelete = {
                 val targetId = editingActivityShortcutCardId.orEmpty().trim()
                 showActivityCardDeleteConfirm = false
-                if (targetId.isBlank()) return@OsDeleteConfirmDialog
+                if (targetId.isBlank()) return@OsPageOverlaySheets
                 val updatedCards = activityShortcutCards.filterNot { card -> card.id == targetId }
                 activityShortcutCards = updatedCards
                 activityCardExpanded.remove(targetId)
-                scope.launch(Dispatchers.IO) {
-                    OsActivityShortcutCardStore.saveCards(
-                        cards = updatedCards,
-                        defaults = googleSystemServiceDefaults
-                    )
-                }
+                OsActivityShortcutCardStore.saveCards(
+                    cards = updatedCards,
+                    defaults = googleSystemServiceDefaults
+                )
                 editingActivityShortcutCardId = null
                 showActivityShortcutEditor = false
                 showActivitySuggestionSheet = false
