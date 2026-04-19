@@ -47,10 +47,10 @@ internal fun BaDebugCard(
                 )
                 GlassTextButton(
                     backdrop = backdrop,
-                    text = stringResource(R.string.ba_debug_action_cafe_visit_notification),
+                    text = stringResource(R.string.ba_debug_action_arena_refresh_notification),
                     textColor = Color(0xFF3B82F6),
                     variant = GlassVariant.SheetPrimaryAction,
-                    onClick = onSendCafeVisitTestNotification,
+                    onClick = onSendArenaRefreshTestNotification,
                 )
             }
             Row(
@@ -67,10 +67,10 @@ internal fun BaDebugCard(
                 )
                 GlassTextButton(
                     backdrop = backdrop,
-                    text = stringResource(R.string.ba_debug_action_arena_refresh_notification),
+                    text = stringResource(R.string.ba_debug_action_cafe_visit_notification),
                     textColor = Color(0xFF3B82F6),
                     variant = GlassVariant.SheetPrimaryAction,
-                    onClick = onSendArenaRefreshTestNotification,
+                    onClick = onSendCafeVisitTestNotification,
                 )
             }
         }

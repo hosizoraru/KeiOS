@@ -145,7 +145,8 @@ internal data class OsGoogleSystemServiceConfig(
     val intentCategory: String = "",
     val intentFlags: String = "FLAG_ACTIVITY_NEW_TASK",
     val intentUriData: String = "",
-    val intentMimeType: String = ""
+    val intentMimeType: String = "",
+    val intentExtras: List<ShortcutIntentExtra> = emptyList()
 ) {
     fun normalized(defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig()): OsGoogleSystemServiceConfig {
         return copy(
@@ -158,7 +159,8 @@ internal data class OsGoogleSystemServiceConfig(
             intentCategory = intentCategory.trim(),
             intentFlags = intentFlags.trim(),
             intentUriData = intentUriData.trim(),
-            intentMimeType = intentMimeType.trim()
+            intentMimeType = intentMimeType.trim(),
+            intentExtras = normalizeShortcutIntentExtras(intentExtras)
         )
     }
 }

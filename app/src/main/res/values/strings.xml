@@ -248,6 +248,7 @@
     <string name="os_google_system_service_field_intent_flags">Intent Flags</string>
     <string name="os_google_system_service_field_intent_data">Intent Uri Data</string>
     <string name="os_google_system_service_field_intent_mime_type">Intent MimeType</string>
+    <string name="os_google_system_service_field_intent_extras">Intent Extras</string>
     <string name="os_google_system_service_hint_title">例如：Google系统服务</string>
     <string name="os_google_system_service_hint_subtitle">可留空；例如：更新Google系统服务App</string>
     <string name="os_google_system_service_hint_app_name">例如：Google Play 商店</string>
@@ -259,6 +260,8 @@
     <string name="os_google_system_service_hint_intent_flags">可留空；留空时自动补 FLAG_ACTIVITY_NEW_TASK，多个用逗号分隔</string>
     <string name="os_google_system_service_hint_intent_data">可留空，示例：market://details?id=com.android.vending</string>
     <string name="os_google_system_service_hint_intent_mime_type">可留空，示例：text/plain</string>
+    <string name="os_google_system_service_hint_intent_extra_key">Extra Key，例如：source</string>
+    <string name="os_google_system_service_hint_intent_extra_value">Extra Value，例如：keios</string>
     <string name="os_google_system_service_hint_package_suggestion_search">搜索 App 名称或包名</string>
     <string name="os_google_system_service_label_app_name">App 名称</string>
     <string name="os_google_system_service_label_package_name">包名</string>
@@ -268,6 +271,8 @@
     <string name="os_google_system_service_label_intent_flags">Intent Flags</string>
     <string name="os_google_system_service_label_intent_data">Intent Uri Data</string>
     <string name="os_google_system_service_label_intent_mime_type">Intent MimeType</string>
+    <string name="os_google_system_service_label_intent_extras">Intent Extras</string>
+    <string name="os_google_system_service_label_intent_extra_indexed">Intent Extra #%1$d</string>
     <string name="os_google_system_service_value_data_empty">（空）</string>
     <string name="os_google_system_service_value_action_auto_default">（空，自动按目标入口选择默认 Action）</string>
     <string name="os_google_system_service_value_flags_auto_default">（空，自动使用 FLAG_ACTIVITY_NEW_TASK）</string>
@@ -276,6 +281,14 @@
     <string name="os_cd_add_activity_card">新增活动卡片</string>
     <string name="os_google_system_service_toast_invalid_target">快捷方式目标不完整，请检查包名</string>
     <string name="os_google_system_service_toast_open_failed">打开失败: %1$s</string>
+    <string name="os_google_system_service_cd_remove_intent_extra">删除 Intent Extra</string>
+    <string name="os_google_system_service_intent_extra_type_string">String</string>
+    <string name="os_google_system_service_intent_extra_type_boolean">Boolean</string>
+    <string name="os_google_system_service_intent_extra_type_int">Int</string>
+    <string name="os_google_system_service_intent_extra_type_long">Long</string>
+    <string name="os_google_system_service_intent_extra_type_float">Float</string>
+    <string name="os_google_system_service_intent_extra_type_double">Double</string>
+    <string name="os_google_system_service_intent_extra_type_uri">Uri</string>
     <string name="mcp_skill_page_title">MCP Skill</string>
     <string name="mcp_skill_page_subtitle">SKILL.md</string>
     <string name="mcp_skill_markdown_empty"># MCP Skill\n\n暂无内容</string>

@@ -1,14 +1,20 @@
 package com.example.keios.ui.page.main
 
 import android.content.Intent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.ui.page.main.widget.AppDropdownSelector
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
@@ -39,6 +45,35 @@ internal fun OsGoogleSystemServiceEditorSheet(
     onDismissRequest: () -> Unit,
     onSave: () -> Unit
 ) {
+    val intentExtraTypePopupExpanded = remember { mutableStateMapOf<Int, Boolean>() }
+    val intentExtraTypePopupAnchors = remember { mutableStateMapOf<Int, IntRect?>() }
+
+    fun cleanupIntentExtraPopupState(size: Int) {
+        intentExtraTypePopupExpanded.keys
+            .filter { it >= size }
+            .forEach { key ->
+                intentExtraTypePopupExpanded.remove(key)
+                intentExtraTypePopupAnchors.remove(key)
+            }
+    }
+
+    fun commitIntentExtras(next: List<ShortcutIntentExtra>) {
+        val finalList = if (next.isEmpty()) {
+            listOf(ShortcutIntentExtra())
+        } else {
+            next
+        }
+        cleanupIntentExtraPopupState(finalList.size)
+        onDraftChange(draft.copy(intentExtras = finalList))
+    }
+
+    fun updateIntentExtra(index: Int, transform: (ShortcutIntentExtra) -> ShortcutIntentExtra) {
+        val current = ensureEditorShortcutIntentExtras(draft.intentExtras).toMutableList()
+        if (index !in current.indices) return
+        current[index] = transform(current[index])
+        commitIntentExtras(current)
+    }
+
     SnapshotWindowBottomSheet(
         show = show,
         title = title,
@@ -299,6 +334,110 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                SheetFieldBlock(
+                    title = stringResource(R.string.os_google_system_service_field_intent_extras),
+                    trailing = {
+                        GlassIconButton(
+                            backdrop = sheetBackdrop,
+                            variant = GlassVariant.SheetAction,
+                            icon = MiuixIcons.Regular.AddCircle,
+                            contentDescription = stringResource(R.string.os_google_system_service_chip_add),
+                            width = 40.dp,
+                            height = 32.dp,
+                            onClick = {
+                                val current = ensureEditorShortcutIntentExtras(draft.intentExtras)
+                                commitIntentExtras(current + ShortcutIntentExtra())
+                            }
+                        )
+                    }
+                ) {
+                    val editableExtras = ensureEditorShortcutIntentExtras(draft.intentExtras)
+                    val intentExtraTypeOptions = ShortcutIntentExtraType.entries.map { type ->
+                        stringResource(type.labelResId)
+                    }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        editableExtras.forEachIndexed { index, extra ->
+                            val selectedTypeIndex = ShortcutIntentExtraType.entries.indexOf(extra.type)
+                                .coerceAtLeast(0)
+                            SheetSectionCard(verticalSpacing = 8.dp) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    GlassSearchField(
+                                        value = extra.key,
+                                        onValueChange = { input ->
+                                            updateIntentExtra(index) { current ->
+                                                current.copy(key = input)
+                                            }
+                                        },
+                                        label = stringResource(R.string.os_google_system_service_hint_intent_extra_key),
+                                        backdrop = sheetBackdrop,
+                                        variant = GlassVariant.SheetInput,
+                                        textColor = MiuixTheme.colorScheme.primary,
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    AppDropdownSelector(
+                                        selectedText = intentExtraTypeOptions[selectedTypeIndex],
+                                        options = intentExtraTypeOptions,
+                                        selectedIndex = selectedTypeIndex,
+                                        expanded = intentExtraTypePopupExpanded[index] == true,
+                                        anchorBounds = intentExtraTypePopupAnchors[index],
+                                        onExpandedChange = { expanded ->
+                                            intentExtraTypePopupExpanded[index] = expanded
+                                        },
+                                        onSelectedIndexChange = { selected ->
+                                            val nextType = ShortcutIntentExtraType.entries[selected]
+                                            updateIntentExtra(index) { current ->
+                                                current.copy(type = nextType)
+                                            }
+                                        },
+                                        onAnchorBoundsChange = { bounds ->
+                                            intentExtraTypePopupAnchors[index] = bounds
+                                        },
+                                        backdrop = sheetBackdrop,
+                                        variant = GlassVariant.SheetAction
+                                    )
+                                    GlassIconButton(
+                                        backdrop = sheetBackdrop,
+                                        variant = GlassVariant.SheetDangerAction,
+                                        icon = MiuixIcons.Regular.Close,
+                                        contentDescription = stringResource(
+                                            R.string.os_google_system_service_cd_remove_intent_extra
+                                        ),
+                                        width = 40.dp,
+                                        height = 32.dp,
+                                        onClick = {
+                                            val current = ensureEditorShortcutIntentExtras(draft.intentExtras)
+                                                .toMutableList()
+                                            if (index !in current.indices) return@GlassIconButton
+                                            current.removeAt(index)
+                                            commitIntentExtras(current)
+                                        }
+                                    )
+                                }
+                                GlassSearchField(
+                                    value = extra.value,
+                                    onValueChange = { input ->
+                                        updateIntentExtra(index) { current ->
+                                            current.copy(value = input)
+                                        }
+                                    },
+                                    label = stringResource(R.string.os_google_system_service_hint_intent_extra_value),
+                                    backdrop = sheetBackdrop,
+                                    variant = GlassVariant.SheetInput,
+                                    textColor = MiuixTheme.colorScheme.primary,
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
                 }
             }
             SheetDescriptionText(

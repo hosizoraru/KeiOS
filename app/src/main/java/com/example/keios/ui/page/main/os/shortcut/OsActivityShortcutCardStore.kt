@@ -20,6 +20,11 @@ internal object OsActivityShortcutCardStore {
     private const val KEY_INTENT_FLAGS = "intentFlags"
     private const val KEY_INTENT_URI_DATA = "intentUriData"
     private const val KEY_INTENT_MIME_TYPE = "intentMimeType"
+    private const val KEY_INTENT_EXTRAS = "intentExtras"
+
+    private const val KEY_EXTRA_KEY = "key"
+    private const val KEY_EXTRA_TYPE = "type"
+    private const val KEY_EXTRA_VALUE = "value"
 
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
 
@@ -76,6 +81,7 @@ internal object OsActivityShortcutCardStore {
                 put(KEY_INTENT_FLAGS, normalizedConfig.intentFlags)
                 put(KEY_INTENT_URI_DATA, normalizedConfig.intentUriData)
                 put(KEY_INTENT_MIME_TYPE, normalizedConfig.intentMimeType)
+                put(KEY_INTENT_EXTRAS, encodeIntentExtras(normalizedConfig.intentExtras))
             }
             array.put(json)
         }
@@ -101,7 +107,8 @@ internal object OsActivityShortcutCardStore {
                         intentCategory = item.optString(KEY_INTENT_CATEGORY),
                         intentFlags = item.optString(KEY_INTENT_FLAGS),
                         intentUriData = item.optString(KEY_INTENT_URI_DATA),
-                        intentMimeType = item.optString(KEY_INTENT_MIME_TYPE)
+                        intentMimeType = item.optString(KEY_INTENT_MIME_TYPE),
+                        intentExtras = decodeIntentExtras(item.optJSONArray(KEY_INTENT_EXTRAS))
                     )
                     add(
                         OsActivityShortcutCard(
@@ -113,5 +120,36 @@ internal object OsActivityShortcutCardStore {
                 }
             }
         }.getOrDefault(emptyList())
+    }
+
+    private fun encodeIntentExtras(extras: List<ShortcutIntentExtra>): JSONArray {
+        val normalized = normalizeShortcutIntentExtras(extras)
+        val array = JSONArray()
+        normalized.forEach { extra ->
+            array.put(
+                JSONObject().apply {
+                    put(KEY_EXTRA_KEY, extra.key)
+                    put(KEY_EXTRA_TYPE, extra.type.rawValue)
+                    put(KEY_EXTRA_VALUE, extra.value)
+                }
+            )
+        }
+        return array
+    }
+
+    private fun decodeIntentExtras(raw: JSONArray?): List<ShortcutIntentExtra> {
+        if (raw == null) return emptyList()
+        return buildList {
+            for (index in 0 until raw.length()) {
+                val item = raw.optJSONObject(index) ?: continue
+                add(
+                    ShortcutIntentExtra(
+                        key = item.optString(KEY_EXTRA_KEY),
+                        type = ShortcutIntentExtraType.fromRaw(item.optString(KEY_EXTRA_TYPE)),
+                        value = item.optString(KEY_EXTRA_VALUE)
+                    )
+                )
+            }
+        }.let(::normalizeShortcutIntentExtras)
     }
 }

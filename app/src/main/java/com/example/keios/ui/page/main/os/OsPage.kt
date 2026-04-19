@@ -945,9 +945,11 @@ fun OsPage(
             onOpenActivityShortcutCardEditor = { card ->
                 activityCardEditMode = OsActivityCardEditMode.Edit
                 editingActivityShortcutCardId = card.id
-                activityShortcutDraft = normalizeActivityShortcutConfig(
-                    config = card.config,
-                    defaults = googleSystemServiceDefaults
+                activityShortcutDraft = ensureEditorActivityShortcutDraft(
+                    normalizeActivityShortcutConfig(
+                        config = card.config,
+                        defaults = googleSystemServiceDefaults
+                    )
                 )
                 showActivityShortcutEditor = true
             },

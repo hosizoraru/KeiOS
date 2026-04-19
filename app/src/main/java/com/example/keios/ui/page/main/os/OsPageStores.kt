@@ -87,6 +87,8 @@ import top.yukonga.miuix.kmp.icon.extended.Lock
 import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Tune
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -452,6 +454,10 @@ internal object OsShortcutCardStore {
     private const val KEY_GOOGLE_SYSTEM_SERVICE_URI_DATA = "google_system_service_uri_data"
     private const val KEY_GOOGLE_SYSTEM_SERVICE_DATA = "google_system_service_data"
     private const val KEY_GOOGLE_SYSTEM_SERVICE_MIME_TYPE = "google_system_service_mime_type"
+    private const val KEY_GOOGLE_SYSTEM_SERVICE_INTENT_EXTRAS = "google_system_service_intent_extras"
+    private const val KEY_EXTRA_KEY = "key"
+    private const val KEY_EXTRA_TYPE = "type"
+    private const val KEY_EXTRA_VALUE = "value"
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
 
     fun loadGoogleSystemServiceConfig(
@@ -474,7 +480,10 @@ internal object OsShortcutCardStore {
             intentMimeType = store.decodeString(
                 KEY_GOOGLE_SYSTEM_SERVICE_MIME_TYPE,
                 defaults.intentMimeType
-            ).orEmpty()
+            ).orEmpty(),
+            intentExtras = decodeIntentExtras(
+                store.decodeString(KEY_GOOGLE_SYSTEM_SERVICE_INTENT_EXTRAS)
+            )
         ).normalized(defaults)
     }
 
@@ -494,5 +503,43 @@ internal object OsShortcutCardStore {
         store.encode(KEY_GOOGLE_SYSTEM_SERVICE_URI_DATA, normalized.intentUriData)
         store.encode(KEY_GOOGLE_SYSTEM_SERVICE_DATA, normalized.intentUriData)
         store.encode(KEY_GOOGLE_SYSTEM_SERVICE_MIME_TYPE, normalized.intentMimeType)
+        store.encode(
+            KEY_GOOGLE_SYSTEM_SERVICE_INTENT_EXTRAS,
+            encodeIntentExtras(normalized.intentExtras)
+        )
+    }
+
+    private fun encodeIntentExtras(extras: List<ShortcutIntentExtra>): String {
+        val normalized = normalizeShortcutIntentExtras(extras)
+        val array = JSONArray()
+        normalized.forEach { extra ->
+            array.put(
+                JSONObject().apply {
+                    put(KEY_EXTRA_KEY, extra.key)
+                    put(KEY_EXTRA_TYPE, extra.type.rawValue)
+                    put(KEY_EXTRA_VALUE, extra.value)
+                }
+            )
+        }
+        return array.toString()
+    }
+
+    private fun decodeIntentExtras(raw: String?): List<ShortcutIntentExtra> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    add(
+                        ShortcutIntentExtra(
+                            key = item.optString(KEY_EXTRA_KEY),
+                            type = ShortcutIntentExtraType.fromRaw(item.optString(KEY_EXTRA_TYPE)),
+                            value = item.optString(KEY_EXTRA_VALUE)
+                        )
+                    )
+                }
+            }.let(::normalizeShortcutIntentExtras)
+        }.getOrDefault(emptyList())
     }
 }

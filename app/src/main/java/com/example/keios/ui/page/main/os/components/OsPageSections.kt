@@ -155,6 +155,24 @@ internal fun LazyListScope.addShortcutActivityCards(
                     label = stringResource(R.string.os_google_system_service_label_intent_mime_type),
                     value = shortcutConfig.intentMimeType.ifBlank { emptyValueText }
                 )
+                val normalizedExtras = normalizeShortcutIntentExtras(shortcutConfig.intentExtras)
+                if (normalizedExtras.isEmpty()) {
+                    OsSectionInfoRow(
+                        label = stringResource(R.string.os_google_system_service_label_intent_extras),
+                        value = emptyValueText
+                    )
+                } else {
+                    normalizedExtras.forEachIndexed { index, extra ->
+                        val typeLabel = stringResource(extra.type.labelResId)
+                        OsSectionInfoRow(
+                            label = stringResource(
+                                R.string.os_google_system_service_label_intent_extra_indexed,
+                                index + 1
+                            ),
+                            value = "[$typeLabel] ${extra.key} = ${extra.value.ifBlank { emptyValueText }}"
+                        )
+                    }
+                }
             }
         }
         item(key = "os-activity-space-${card.id}") { Spacer(modifier = Modifier.height(8.dp)) }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.example.keios.R
+import java.util.Locale
 
 internal fun buildGoogleSystemServiceRows(
     context: Context,
@@ -51,6 +52,9 @@ internal fun buildGoogleSystemServiceRows(
             key = context.getString(R.string.os_google_system_service_label_intent_mime_type),
             value = normalized.intentMimeType.ifBlank { emptyDataValue }
         )
+    ) + buildIntentExtraRows(
+        context = context,
+        extras = normalized.intentExtras
     )
 }
 
@@ -99,8 +103,103 @@ internal fun launchGoogleSystemServiceActivity(
         }
         val parsedFlags = parseIntentFlags(normalized.intentFlags)
         addFlags(parsedFlags.ifBlankUse(Intent.FLAG_ACTIVITY_NEW_TASK))
+        normalized.intentExtras.forEach { extra ->
+            putShortcutIntentExtra(extra)
+        }
     }
     context.startActivity(intent)
+}
+
+private fun buildIntentExtraRows(
+    context: Context,
+    extras: List<ShortcutIntentExtra>
+): List<InfoRow> {
+    val emptyDataValue = context.getString(R.string.os_google_system_service_value_data_empty)
+    val normalizedExtras = normalizeShortcutIntentExtras(extras)
+    if (normalizedExtras.isEmpty()) {
+        return listOf(
+            InfoRow(
+                key = context.getString(R.string.os_google_system_service_label_intent_extras),
+                value = emptyDataValue
+            )
+        )
+    }
+    return normalizedExtras.mapIndexed { index, extra ->
+        val typeLabel = context.getString(extra.type.labelResId)
+        val valueText = extra.value.ifBlank { emptyDataValue }
+        InfoRow(
+            key = context.getString(
+                R.string.os_google_system_service_label_intent_extra_indexed,
+                index + 1
+            ),
+            value = "[$typeLabel] ${extra.key} = $valueText"
+        )
+    }
+}
+
+private fun Intent.putShortcutIntentExtra(extra: ShortcutIntentExtra) {
+    val key = extra.key.trim()
+    if (key.isBlank()) return
+    val rawValue = extra.value.trim()
+    when (extra.type) {
+        ShortcutIntentExtraType.String -> putExtra(key, rawValue)
+        ShortcutIntentExtraType.Boolean -> {
+            val parsed = parseShortcutBooleanExtra(rawValue)
+            if (parsed != null) {
+                putExtra(key, parsed)
+            } else {
+                putExtra(key, rawValue)
+            }
+        }
+        ShortcutIntentExtraType.Int -> {
+            val parsed = rawValue.toIntOrNull()
+            if (parsed != null) {
+                putExtra(key, parsed)
+            } else {
+                putExtra(key, rawValue)
+            }
+        }
+        ShortcutIntentExtraType.Long -> {
+            val parsed = rawValue.toLongOrNull()
+            if (parsed != null) {
+                putExtra(key, parsed)
+            } else {
+                putExtra(key, rawValue)
+            }
+        }
+        ShortcutIntentExtraType.Float -> {
+            val parsed = rawValue.toFloatOrNull()
+            if (parsed != null) {
+                putExtra(key, parsed)
+            } else {
+                putExtra(key, rawValue)
+            }
+        }
+        ShortcutIntentExtraType.Double -> {
+            val parsed = rawValue.toDoubleOrNull()
+            if (parsed != null) {
+                putExtra(key, parsed)
+            } else {
+                putExtra(key, rawValue)
+            }
+        }
+        ShortcutIntentExtraType.Uri -> {
+            val parsed = runCatching { Uri.parse(rawValue) }.getOrNull()
+            if (parsed != null) {
+                putExtra(key, parsed)
+            } else {
+                putExtra(key, rawValue)
+            }
+        }
+    }
+}
+
+private fun parseShortcutBooleanExtra(raw: String): Boolean? {
+    return when (raw.trim().lowercase(Locale.ROOT)) {
+        "1", "true", "yes", "y", "on" -> true
+        "0", "false", "no", "n", "off" -> false
+        else -> null
+    }
 }
 
 internal fun currentGoogleSystemServiceSuggestionFieldValue(
