@@ -190,6 +190,7 @@
     <string name="os_shell_card_run_output_not_ran">未运行过</string>
     <string name="os_shell_card_saved_command_empty">暂无</string>
     <string name="os_shell_card_updated_at_label">最近更新</string>
+    <string name="os_shell_card_builtin_badge">内置</string>
     <string name="os_shell_card_cd_open">打开 Shell 控制台</string>
     <string name="os_shell_card_sheet_title_edit">编辑 shell card</string>
     <string name="os_shell_card_field_title">标题</string>
@@ -199,6 +200,8 @@
     <string name="os_shell_card_hint_subtitle">例如：系统参数调整</string>
     <string name="os_shell_card_hint_command">例如：settings put system status_bar_show_notification_icon 2</string>
     <string name="os_shell_card_danger_title">危险操作</string>
+    <string name="os_shell_card_delete_dialog_title">删除 shell card</string>
+    <string name="os_shell_card_delete_dialog_summary">将删除“%1$s”，已保存命令和运行结果会一起移除。</string>
     <string name="os_shell_card_toast_saved">shell card 已保存</string>
     <string name="os_shell_card_toast_deleted">shell card 已删除</string>
     <string name="os_shell_card_toast_command_required">请填写有效的 shell 命令</string>
@@ -215,6 +218,9 @@
     <string name="os_shell_action_clear_output_history">清空输出历史</string>
     <string name="os_shell_output_subtitle_running">正在执行…</string>
     <string name="os_shell_output_subtitle_ready">等待执行</string>
+    <string name="os_shell_output_block_input">shell 输入</string>
+    <string name="os_shell_output_block_result">输出结果</string>
+    <string name="os_shell_output_block_time">时间</string>
     <string name="os_shell_run_requires_permission">Shizuku 尚未授权，请先在弹出的授权请求里允许。</string>
     <string name="os_shell_run_empty_output">命令执行完成，无输出。</string>
     <string name="os_shell_run_empty_command">请输入命令后再运行。</string>
@@ -336,6 +342,8 @@
     <string name="os_google_system_service_toast_saved">活动卡片已保存</string>
     <string name="os_cd_add_activity_card">新增活动卡片</string>
     <string name="os_activity_card_danger_title">危险操作</string>
+    <string name="os_activity_card_delete_dialog_title">删除活动卡片</string>
+    <string name="os_activity_card_delete_dialog_summary">将删除“%1$s”，这张活动 card 会从 OS 页面移除。</string>
     <string name="os_activity_card_toast_deleted">活动卡片已删除</string>
     <string name="os_google_system_service_toast_invalid_target">快捷方式目标不完整，请检查包名</string>
     <string name="os_google_system_service_toast_open_failed">打开失败: %1$s</string>

@@ -1,6 +1,7 @@
 package com.example.keios.ui.page.main
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,10 +10,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
+import com.example.keios.ui.page.main.widget.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
@@ -25,6 +28,7 @@ import com.example.keios.ui.page.main.widget.SheetFieldBlock
 import com.example.keios.ui.page.main.widget.SheetSectionCard
 import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
+import com.example.keios.ui.page.main.widget.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Switch
@@ -118,7 +122,21 @@ internal fun OsShellCommandVisibilityManagerSheet(
         ) {
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetControlRow(
-                    label = stringResource(R.string.os_shell_card_title)
+                    labelContent = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.os_shell_card_title),
+                                color = MiuixTheme.colorScheme.onBackground
+                            )
+                            StatusPill(
+                                label = stringResource(R.string.os_shell_card_builtin_badge),
+                                color = Color(0xFF3B82F6),
+                                size = AppStatusPillSize.Compact
+                            )
+                        }
+                    }
                 ) {
                     Switch(
                         checked = shellRunnerVisible,

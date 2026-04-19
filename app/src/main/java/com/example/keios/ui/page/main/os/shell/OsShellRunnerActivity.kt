@@ -174,6 +174,9 @@ private fun OsShellRunnerPage(
     val inputTitle = stringResource(R.string.os_shell_input_title)
     val outputTitle = stringResource(R.string.os_shell_output_title)
     val outputHint = stringResource(R.string.os_shell_output_hint)
+    val outputInputLabel = stringResource(R.string.os_shell_output_block_input)
+    val outputResultLabel = stringResource(R.string.os_shell_output_block_result)
+    val outputTimeLabel = stringResource(R.string.os_shell_output_block_time)
     val runActionDescription = stringResource(R.string.os_shell_action_run)
     val stopActionDescription = stringResource(R.string.os_shell_action_stop)
     val saveCommandActionDescription = stringResource(R.string.os_shell_action_save_command)
@@ -214,15 +217,20 @@ private fun OsShellRunnerPage(
             "HH:mm:ss",
             Locale.getDefault()
         ).format(Date())
-        val previousOutput = outputText
+        val previousOutput = outputText.trimEnd()
         outputText = buildString {
             if (previousOutput.isNotBlank()) {
-                appendLine(previousOutput)
+                append(previousOutput)
+                appendLine()
                 appendLine()
             }
+            appendLine("$outputInputLabel:")
             appendLine("$ $command")
-            appendLine(result)
-            append("[$timestamp]")
+            appendLine()
+            appendLine("$outputResultLabel:")
+            appendLine(result.trimEnd())
+            appendLine()
+            append("$outputTimeLabel: $timestamp")
         }
     }
 

@@ -95,10 +95,12 @@ fun OsPage(
     val shellCardSavedToast = stringResource(R.string.os_shell_card_toast_saved)
     val shellCardDeletedToast = stringResource(R.string.os_shell_card_toast_deleted)
     val shellCardCommandRequiredToast = stringResource(R.string.os_shell_card_toast_command_required)
+    val shellCardDeleteDialogTitle = stringResource(R.string.os_shell_card_delete_dialog_title)
     val editShellCommandCardTitle = stringResource(R.string.os_shell_card_sheet_title_edit)
     val editActivityCardTitle = stringResource(R.string.os_activity_sheet_title_edit)
     val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
     val activityCardDeletedToast = stringResource(R.string.os_activity_card_toast_deleted)
+    val activityCardDeleteDialogTitle = stringResource(R.string.os_activity_card_delete_dialog_title)
     val googleSystemServiceDefaultIntentFlags =
         stringResource(R.string.os_google_system_service_default_intent_flags)
     val googleSystemServiceDefaults = remember(
@@ -175,6 +177,8 @@ fun OsPage(
     var showShellCommandCardEditor by rememberSaveable { mutableStateOf(false) }
     var editingShellCommandCardId by rememberSaveable { mutableStateOf<String?>(null) }
     var shellCommandCardDraft by remember { mutableStateOf(createDefaultShellCommandCardDraft()) }
+    var showShellCardDeleteConfirm by rememberSaveable { mutableStateOf(false) }
+    var showActivityCardDeleteConfirm by rememberSaveable { mutableStateOf(false) }
     var showSearchBar by remember { mutableStateOf(true) }
     var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val surfaceColor = MiuixTheme.colorScheme.surface
@@ -893,11 +897,7 @@ fun OsPage(
                     showShellCommandCardEditor = false
                     return@OsShellCommandCardEditorSheet
                 }
-                shellCommandCards = OsShellCommandCardStore.deleteCard(targetId)
-                shellCommandCardExpanded.remove(targetId)
-                editingShellCommandCardId = null
-                showShellCommandCardEditor = false
-                Toast.makeText(context, shellCardDeletedToast, Toast.LENGTH_SHORT).show()
+                showShellCardDeleteConfirm = true
             },
             onDismissRequest = { showShellCommandCardEditor = false },
             onSave = {
@@ -948,19 +948,7 @@ fun OsPage(
                     showActivityShortcutEditor = false
                     return@OsActivityShortcutEditorHost
                 }
-                val updatedCards = activityShortcutCards.filterNot { card -> card.id == targetId }
-                activityShortcutCards = updatedCards
-                activityCardExpanded.remove(targetId)
-                scope.launch(Dispatchers.IO) {
-                    OsActivityShortcutCardStore.saveCards(
-                        cards = updatedCards,
-                        defaults = googleSystemServiceDefaults
-                    )
-                }
-                editingActivityShortcutCardId = null
-                showActivityShortcutEditor = false
-                showActivitySuggestionSheet = false
-                Toast.makeText(context, activityCardDeletedToast, Toast.LENGTH_SHORT).show()
+                showActivityCardDeleteConfirm = true
             },
             onDismissEditor = { showActivityShortcutEditor = false },
             onSaveEditor = {
@@ -1044,6 +1032,54 @@ fun OsPage(
                     draft = activityShortcutDraft,
                     defaultIntentFlags = googleSystemServiceDefaultIntentFlags
                 )
+            }
+        )
+        OsDeleteConfirmDialog(
+            show = showShellCardDeleteConfirm,
+            title = shellCardDeleteDialogTitle,
+            summary = context.getString(
+                R.string.os_shell_card_delete_dialog_summary,
+                shellCommandCardDraft.title.ifBlank {
+                    defaultOsShellCommandCardTitle(shellCommandCardDraft.command)
+                }
+            ),
+            onDismissRequest = { showShellCardDeleteConfirm = false },
+            onConfirmDelete = {
+                val targetId = editingShellCommandCardId.orEmpty().trim()
+                showShellCardDeleteConfirm = false
+                if (targetId.isBlank()) return@OsDeleteConfirmDialog
+                shellCommandCards = OsShellCommandCardStore.deleteCard(targetId)
+                shellCommandCardExpanded.remove(targetId)
+                editingShellCommandCardId = null
+                showShellCommandCardEditor = false
+                Toast.makeText(context, shellCardDeletedToast, Toast.LENGTH_SHORT).show()
+            }
+        )
+        OsDeleteConfirmDialog(
+            show = showActivityCardDeleteConfirm,
+            title = activityCardDeleteDialogTitle,
+            summary = context.getString(
+                R.string.os_activity_card_delete_dialog_summary,
+                activityShortcutDraft.title.ifBlank { googleSystemServiceDefaultTitle }
+            ),
+            onDismissRequest = { showActivityCardDeleteConfirm = false },
+            onConfirmDelete = {
+                val targetId = editingActivityShortcutCardId.orEmpty().trim()
+                showActivityCardDeleteConfirm = false
+                if (targetId.isBlank()) return@OsDeleteConfirmDialog
+                val updatedCards = activityShortcutCards.filterNot { card -> card.id == targetId }
+                activityShortcutCards = updatedCards
+                activityCardExpanded.remove(targetId)
+                scope.launch(Dispatchers.IO) {
+                    OsActivityShortcutCardStore.saveCards(
+                        cards = updatedCards,
+                        defaults = googleSystemServiceDefaults
+                    )
+                }
+                editingActivityShortcutCardId = null
+                showActivityShortcutEditor = false
+                showActivitySuggestionSheet = false
+                Toast.makeText(context, activityCardDeletedToast, Toast.LENGTH_SHORT).show()
             }
         )
         OsPageMainList(
