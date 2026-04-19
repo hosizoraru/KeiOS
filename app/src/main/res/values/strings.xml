@@ -193,6 +193,7 @@
     <string name="os_shell_action_run">运行命令</string>
     <string name="os_shell_action_stop">停止运行</string>
     <string name="os_shell_action_save_command">保存命令到 OS 卡片</string>
+    <string name="os_shell_action_format_output">格式化输出</string>
     <string name="os_shell_action_copy_output">复制命令输出</string>
     <string name="os_shell_action_clear_output_history">清空输出历史</string>
     <string name="os_shell_output_subtitle_running">正在执行…</string>
@@ -203,6 +204,8 @@
     <string name="os_shell_run_stopped">命令已停止。</string>
     <string name="os_shell_toast_command_saved">命令已保存到 OS 卡片</string>
     <string name="os_shell_toast_command_save_empty">请输入命令后再保存</string>
+    <string name="os_shell_toast_output_formatted">输出已格式化</string>
+    <string name="os_shell_toast_output_format_empty">当前没有可格式化的输出</string>
     <string name="os_shell_toast_output_copied">命令输出已复制</string>
     <string name="os_shell_toast_output_empty">当前没有可复制的输出</string>
     <string name="os_toast_no_refreshable_card">当前没有可刷新的卡片</string>

@@ -13,6 +13,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
@@ -63,8 +64,12 @@ import com.example.keios.ui.page.main.widget.GlassVariant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -72,12 +77,16 @@ import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Copy
 import top.yukonga.miuix.kmp.icon.extended.Download
 import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.icon.extended.Tune
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private val shellAnsiEscapeRegex = Regex("""\u001B\[[;\d]*[ -/]*[@-~]""")
+private val shellKeyValueRegex = Regex("""\b[^\s=]+=[^\s=]+\b""")
 
 class OsShellRunnerActivity : ComponentActivity() {
     private var shizukuStatus by mutableStateOf("Shizuku status: initializing...")
@@ -162,25 +171,26 @@ private fun OsShellRunnerPage(
     val runActionDescription = stringResource(R.string.os_shell_action_run)
     val stopActionDescription = stringResource(R.string.os_shell_action_stop)
     val saveCommandActionDescription = stringResource(R.string.os_shell_action_save_command)
+    val formatOutputActionDescription = stringResource(R.string.os_shell_action_format_output)
     val copyOutputActionDescription = stringResource(R.string.os_shell_action_copy_output)
     val clearOutputActionDescription = stringResource(R.string.os_shell_action_clear_output_history)
-    val outputRunningSubtitle = stringResource(R.string.os_shell_output_subtitle_running)
-    val outputReadySubtitle = stringResource(R.string.os_shell_output_subtitle_ready)
     val noOutputText = stringResource(R.string.os_shell_run_empty_output)
     val missingPermissionText = stringResource(R.string.os_shell_run_requires_permission)
     val emptyCommandText = stringResource(R.string.os_shell_run_empty_command)
     val commandStoppedText = stringResource(R.string.os_shell_run_stopped)
     val commandSavedToast = stringResource(R.string.os_shell_toast_command_saved)
     val commandSaveEmptyToast = stringResource(R.string.os_shell_toast_command_save_empty)
+    val outputFormattedToast = stringResource(R.string.os_shell_toast_output_formatted)
+    val outputFormatEmptyToast = stringResource(R.string.os_shell_toast_output_format_empty)
     val outputCopiedToast = stringResource(R.string.os_shell_toast_output_copied)
     val outputCopyEmptyToast = stringResource(R.string.os_shell_toast_output_empty)
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
     var commandInput by rememberSaveable { mutableStateOf("") }
     var outputText by rememberSaveable { mutableStateOf("") }
     var runningCommand by remember { mutableStateOf(false) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
     val outputScrollState = rememberScrollState()
-    val shellOutputStateText = if (runningCommand) outputRunningSubtitle else outputReadySubtitle
 
     fun appendOutput(command: String, result: String) {
         val timestamp = SimpleDateFormat(
@@ -261,6 +271,16 @@ private fun OsShellRunnerPage(
         Toast.makeText(context, outputCopiedToast, Toast.LENGTH_SHORT).show()
     }
 
+    fun formatOutput() {
+        val output = outputText.trim()
+        if (output.isBlank()) {
+            Toast.makeText(context, outputFormatEmptyToast, Toast.LENGTH_SHORT).show()
+            return
+        }
+        outputText = formatShellOutputForReadability(outputText)
+        Toast.makeText(context, outputFormattedToast, Toast.LENGTH_SHORT).show()
+    }
+
     LaunchedEffect(outputText) {
         if (outputText.isNotBlank()) {
             outputScrollState.scrollTo(outputScrollState.maxValue)
@@ -296,7 +316,22 @@ private fun OsShellRunnerPage(
                 ) {
                     AppCardHeader(
                         title = inputTitle,
-                        subtitle = shellOutputStateText,
+                        subtitle = "",
+                        titleAccessory = {
+                            if (runningCommand) {
+                                CircularProgressIndicator(
+                                    progress = 0.42f,
+                                    size = 14.dp,
+                                    strokeWidth = 2.dp,
+                                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                                        foregroundColor = MiuixTheme.colorScheme.primary,
+                                        backgroundColor = MiuixTheme.colorScheme.primary.copy(
+                                            alpha = if (isDark) 0.28f else 0.22f
+                                        )
+                                    )
+                                )
+                            }
+                        },
                         endActions = {
                             GlassIconButton(
                                 backdrop = null,
@@ -360,6 +395,14 @@ private fun OsShellRunnerPage(
                         endActions = {
                             GlassIconButton(
                                 backdrop = null,
+                                icon = MiuixIcons.Regular.Tune,
+                                contentDescription = formatOutputActionDescription,
+                                onClick = { formatOutput() },
+                                iconTint = MiuixTheme.colorScheme.primary,
+                                variant = GlassVariant.Bar
+                            )
+                            GlassIconButton(
+                                backdrop = null,
                                 icon = MiuixIcons.Regular.Copy,
                                 contentDescription = copyOutputActionDescription,
                                 onClick = { copyOutput() },
@@ -376,42 +419,16 @@ private fun OsShellRunnerPage(
                             )
                         }
                     )
-                    Box(
+                    ShellOutputGlassPanel(
+                        text = outputText,
+                        hint = outputHint,
+                        scrollState = outputScrollState,
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 260.dp, max = 520.dp)
                             .padding(horizontal = 14.dp)
                             .padding(bottom = 14.dp)
-                            .background(
-                                color = MiuixTheme.colorScheme.surface.copy(alpha = 0.55f),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        if (outputText.isBlank()) {
-                            Text(
-                                text = outputHint,
-                                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                fontSize = AppTypographyTokens.Body.fontSize,
-                                lineHeight = AppTypographyTokens.Body.lineHeight,
-                            )
-                        } else {
-                            SelectionContainer(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(outputScrollState)
-                            ) {
-                                Text(
-                                    text = outputText,
-                                    color = MiuixTheme.colorScheme.onBackground,
-                                    fontSize = AppTypographyTokens.Body.fontSize,
-                                    lineHeight = AppTypographyTokens.Body.lineHeight,
-                                    maxLines = Int.MAX_VALUE,
-                                    overflow = TextOverflow.Clip
-                                )
-                            }
-                        }
-                    }
+                    )
                 }
             }
         }
@@ -487,4 +504,131 @@ private fun ShellCommandInputField(
             }
         )
     }
+}
+
+@Composable
+private fun ShellOutputGlassPanel(
+    text: String,
+    hint: String,
+    scrollState: ScrollState,
+    modifier: Modifier = Modifier
+) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val shape: CornerBasedShape = RoundedCornerShape(18.dp)
+    val borderColor = if (isDark) {
+        Color(0xFF9CCBFF).copy(alpha = 0.24f)
+    } else {
+        Color(0xFFC4DCF9).copy(alpha = 0.90f)
+    }
+    val baseColor = if (isDark) {
+        Color(0xFF121A24).copy(alpha = 0.40f)
+    } else {
+        Color.White.copy(alpha = 0.66f)
+    }
+    val overlayColor = if (isDark) {
+        Color(0xFF82B6F5).copy(alpha = 0.07f)
+    } else {
+        Color(0xFFE4F1FF).copy(alpha = 0.22f)
+    }
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(baseColor, shape)
+            .background(overlayColor, shape)
+            .border(width = 1.dp, color = borderColor, shape = shape)
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        if (text.isBlank()) {
+            Text(
+                text = hint,
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
+            )
+        } else {
+            SelectionContainer(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            ) {
+                Text(
+                    text = text,
+                    color = MiuixTheme.colorScheme.onBackground,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                    maxLines = Int.MAX_VALUE,
+                    overflow = TextOverflow.Clip
+                )
+            }
+        }
+    }
+}
+
+private fun formatShellOutputForReadability(raw: String): String {
+    val normalized = raw
+        .replace("\r\n", "\n")
+        .replace('\r', '\n')
+    val jsonPretty = tryFormatShellOutputAsJson(normalized)
+    if (jsonPretty != null) return jsonPretty
+
+    val noAnsi = shellAnsiEscapeRegex.replace(normalized, "")
+    val lines = mutableListOf<String>()
+    var previousBlank = true
+
+    noAnsi.lines().forEach { source ->
+        val reflowed = reflowShellVerboseLine(
+            source.replace("\t", "    ").trimEnd()
+        )
+        reflowed.lines().forEach { lineRaw ->
+            val line = lineRaw.trimEnd()
+            if (line.isBlank()) {
+                if (!previousBlank) {
+                    lines += ""
+                    previousBlank = true
+                }
+            } else {
+                if (lineLooksLikeSectionHeading(line) && lines.isNotEmpty() && lines.last().isNotBlank()) {
+                    lines += ""
+                }
+                lines += line
+                previousBlank = false
+            }
+        }
+    }
+
+    return lines.joinToString("\n").trim()
+}
+
+private fun tryFormatShellOutputAsJson(raw: String): String? {
+    val trimmed = raw.trim()
+    if (trimmed.isBlank()) return null
+    return runCatching {
+        when {
+            trimmed.startsWith("{") && trimmed.endsWith("}") -> JSONObject(trimmed).toString(2)
+            trimmed.startsWith("[") && trimmed.endsWith("]") -> JSONArray(trimmed).toString(2)
+            else -> null
+        }
+    }.getOrNull()
+}
+
+private fun reflowShellVerboseLine(line: String): String {
+    if (line.length <= 120) return line
+    val keyValues = shellKeyValueRegex.findAll(line).map { it.value }.toList()
+    if (keyValues.size >= 6) {
+        return keyValues.joinToString(separator = "\n") { token -> "  $token" }
+    }
+    if (line.contains(", ") && line.count { it == ',' } >= 5) {
+        return line.replace(", ", ",\n  ")
+    }
+    if (line.contains("; ") && line.count { it == ';' } >= 4) {
+        return line.replace("; ", ";\n  ")
+    }
+    return line
+}
+
+private fun lineLooksLikeSectionHeading(line: String): Boolean {
+    if (line.length !in 2..80) return false
+    if (line.startsWith(" ") || line.startsWith("\t")) return false
+    return line.endsWith(":")
 }
