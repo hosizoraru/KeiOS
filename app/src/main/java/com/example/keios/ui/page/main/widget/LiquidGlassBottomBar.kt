@@ -1,13 +1,10 @@
 package com.example.keios.ui.page.main.widget
 
 import android.os.Build
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,11 +43,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -118,7 +111,6 @@ fun LiquidGlassBottomBar(
     content: @Composable RowScope.() -> Unit
 ) {
     val density = LocalDensity.current
-    val viewConfiguration = LocalViewConfiguration.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val isInLightTheme = !isSystemInDarkTheme()
     val safeTabsCount = tabsCount.coerceAtLeast(1)
@@ -131,8 +123,8 @@ fun LiquidGlassBottomBar(
 
     val containerFallbackColor = when {
         !isLiquidEffectEnabled -> MiuixTheme.colorScheme.surfaceContainer
-        isInLightTheme -> Color.White.copy(alpha = 0.055f)
-        else -> Color.White.copy(alpha = 0.045f)
+        isInLightTheme -> Color.White.copy(alpha = 0.080f)
+        else -> Color.White.copy(alpha = 0.060f)
     }
     val containerBorderColor = when {
         !isLiquidEffectEnabled -> MiuixTheme.colorScheme.outline.copy(alpha = 0.22f)
@@ -141,8 +133,8 @@ fun LiquidGlassBottomBar(
     }
     val indicatorFallbackColor = when {
         !isLiquidEffectEnabled -> primary.copy(alpha = 0.18f)
-        isInLightTheme -> Color.White.copy(alpha = 0.028f)
-        else -> Color.White.copy(alpha = 0.022f)
+        isInLightTheme -> Color.White.copy(alpha = 0.040f)
+        else -> Color.White.copy(alpha = 0.030f)
     }
     val indicatorBorderColor = when {
         !isLiquidEffectEnabled -> primary.copy(alpha = 0.34f)
@@ -156,14 +148,6 @@ fun LiquidGlassBottomBar(
     }
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
-    var gestureActive by remember { mutableStateOf(false) }
-    var dragMoved by remember { mutableStateOf(false) }
-    var dragTravelPx by remember { mutableFloatStateOf(0f) }
-    var dragIndicatorValue by remember { mutableFloatStateOf(clampedSelectedIndex.toFloat()) }
-
-    val dragActivationThresholdPx = remember(viewConfiguration.touchSlop) {
-        (viewConfiguration.touchSlop * 1.15f).coerceAtLeast(8f)
-    }
     val horizontalPaddingPx = with(density) { horizontalPadding.toPx() }
     val offsetAnimation = remember { Animatable(0f) }
     val panelOffset by remember(density) {
@@ -178,6 +162,10 @@ fun LiquidGlassBottomBar(
             }
         }
     }
+    class DampedDragAnimationHolder {
+        var instance: DampedDragAnimation? = null
+    }
+    val holder = remember { DampedDragAnimationHolder() }
 
     val dampedDragAnimation = remember(animationScope, safeTabsCount, density, isLtr) {
         DampedDragAnimation(
@@ -187,96 +175,51 @@ fun LiquidGlassBottomBar(
             visibilityThreshold = 0.001f,
             initialScale = 1f,
             pressedScale = 78f / 56f,
-            canDrag = { true },
-            onDragStarted = {},
-            onDragStopped = {},
-            onDrag = { _, _ -> }
-        )
-    }
-
-    LaunchedEffect(clampedSelectedIndex, safeTabsCount) {
-        dampedDragAnimation.updateValue(clampedSelectedIndex.toFloat())
-        if (!gestureActive) {
-            dragIndicatorValue = clampedSelectedIndex.toFloat()
-        }
-    }
-
-    val pressProgress = if (isLiquidEffectEnabled) dampedDragAnimation.pressProgress else 0f
-    val activeIndicatorValue = if (gestureActive) dragIndicatorValue else dampedDragAnimation.value
-    val barGestureModifier = Modifier.pointerInput(
-        safeTabsCount,
-        totalWidthPx,
-        tabWidthPx,
-        isLtr,
-        currentSelectedIndex,
-        horizontalPaddingPx
-    ) {
-        if (tabWidthPx <= 0f || totalWidthPx <= 0f) return@pointerInput
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-            gestureActive = true
-            dragMoved = false
-            dragTravelPx = 0f
-            dragIndicatorValue = activeIndicatorValue
-            dampedDragAnimation.press()
-
-            val currentCenterX = if (isLtr) {
-                horizontalPaddingPx + (dragIndicatorValue + 0.5f) * tabWidthPx
-            } else {
-                totalWidthPx - horizontalPaddingPx - (dragIndicatorValue + 0.5f) * tabWidthPx
-            }
-            val fingerOffsetFromIndicatorCenter = down.position.x - currentCenterX
-
-            try {
-                while (true) {
-                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                    val change = event.changes.firstOrNull { it.id == down.id } ?: event.changes.firstOrNull { it.pressed }
-                    if (change == null || !change.pressed) break
-
-                    val dragAmount = change.position - change.previousPosition
-                    if (dragAmount.x != 0f || dragAmount.y != 0f) {
-                        dragTravelPx += abs(dragAmount.x)
-                        if (!dragMoved && dragTravelPx >= dragActivationThresholdPx) {
-                            dragMoved = true
-                        }
-                        if (dragMoved) {
-                            val desiredCenterX = (change.position.x - fingerOffsetFromIndicatorCenter).fastCoerceIn(
-                                horizontalPaddingPx + tabWidthPx * 0.5f,
-                                totalWidthPx - horizontalPaddingPx - tabWidthPx * 0.5f
-                            )
-                            val rawValue = if (isLtr) {
-                                ((desiredCenterX - horizontalPaddingPx) / tabWidthPx) - 0.5f
-                            } else {
-                                ((totalWidthPx - horizontalPaddingPx - desiredCenterX) / tabWidthPx) - 0.5f
-                            }.fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
-                            dragIndicatorValue = rawValue
-                            dampedDragAnimation.snapToValue(rawValue)
-                            animationScope.launch {
-                                offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
-                            }
-                        }
-                    }
-                    if (!event.changes.any { it.pressed }) break
+            canDrag = { offset ->
+                if (tabWidthPx == 0f || totalWidthPx == 0f) {
+                    return@DampedDragAnimation false
                 }
-            } finally {
-                gestureActive = false
-                val targetIndex = if (dragMoved) {
-                    dragIndicatorValue.fastRoundToInt().fastCoerceIn(0, safeTabsCount - 1)
+                val currentValue = holder.instance?.value ?: clampedSelectedIndex.toFloat()
+                val indicatorX = currentValue * tabWidthPx
+                val globalTouchX = if (isLtr) {
+                    horizontalPaddingPx + indicatorX + offset.x
                 } else {
-                    currentSelectedIndex
+                    totalWidthPx - horizontalPaddingPx - tabWidthPx - indicatorX + offset.x
                 }
-                dragIndicatorValue = targetIndex.toFloat()
-                dampedDragAnimation.updateValue(targetIndex.toFloat())
-                dampedDragAnimation.release()
-                if (dragMoved && targetIndex != currentSelectedIndex) {
+                globalTouchX in 0f..totalWidthPx
+            },
+            onDragStarted = {},
+            onDragStopped = {
+                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, safeTabsCount - 1)
+                animateToValue(targetIndex.toFloat())
+                if (targetIndex != currentSelectedIndex) {
                     currentOnSelected(targetIndex)
                 }
                 animationScope.launch {
                     offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
                 }
+            },
+            onDrag = { _, dragAmount ->
+                if (tabWidthPx > 0f) {
+                    val delta = if (isLtr) dragAmount.x else -dragAmount.x
+                    updateValue(
+                        (targetValue + delta / tabWidthPx)
+                            .fastCoerceIn(0f, (safeTabsCount - 1).toFloat())
+                    )
+                    animationScope.launch {
+                        offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
+                    }
+                }
             }
-        }
+        )
     }
+    holder.instance = dampedDragAnimation
+
+    LaunchedEffect(clampedSelectedIndex, safeTabsCount) {
+        dampedDragAnimation.updateValue(clampedSelectedIndex.toFloat())
+    }
+
+    val pressProgress = if (isLiquidEffectEnabled) dampedDragAnimation.pressProgress else 0f
     val interactionHighlightColor = Color.White
     val interactionHighlightStrength = if (isInLightTheme) 0.68f else 0.92f
     val interactionHighlightRadiusScale = if (isInLightTheme) 0.90f else 1.12f
@@ -286,8 +229,8 @@ fun LiquidGlassBottomBar(
                 animationScope = animationScope,
                 position = { size, _ ->
                     Offset(
-                        if (isLtr) (activeIndicatorValue + 0.5f) * tabWidthPx + panelOffset
-                        else size.width - (activeIndicatorValue + 0.5f) * tabWidthPx + panelOffset,
+                        if (isLtr) (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset
+                        else size.width - (dampedDragAnimation.value + 0.5f) * tabWidthPx + panelOffset,
                         size.height / 2f
                     )
                 },
@@ -363,11 +306,9 @@ fun LiquidGlassBottomBar(
                         indication = null,
                         onClick = {}
                     )
-                    .then(barGestureModifier)
                     .clip(AppBottomBarShapes.capsule)
                     .border(width = 1.dp, color = containerBorderColor, shape = AppBottomBarShapes.capsule)
                     .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
-                    .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
                     .drawWithContent {
                         drawContent()
                         if (isLiquidEffectEnabled) {
@@ -375,8 +316,8 @@ fun LiquidGlassBottomBar(
                                 brush = Brush.verticalGradient(
                                         colors = if (isInLightTheme) {
                                             listOf(
-                                                Color.White.copy(alpha = 0.026f + 0.022f * pressProgress),
-                                                Color.White.copy(alpha = 0.008f + 0.008f * pressProgress),
+                                                Color.White.copy(alpha = 0.020f + 0.014f * pressProgress),
+                                                Color.White.copy(alpha = 0.006f + 0.006f * pressProgress),
                                                 Color.Transparent
                                             )
                                         } else {
@@ -417,6 +358,72 @@ fun LiquidGlassBottomBar(
                     fallbackColor = containerFallbackColor,
                     spec = containerSpec
                 )
+
+                if (tabWidthPx > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = horizontalPadding)
+                            .graphicsLayer {
+                                val progressOffset = dampedDragAnimation.value * tabWidthPx
+                                translationX = if (isLtr) {
+                                    progressOffset + panelOffset
+                                } else {
+                                    -progressOffset + panelOffset
+                                }
+                                scaleX = dampedDragAnimation.scaleX / (1f - (dampedDragAnimation.velocity / 10f * 0.75f).fastCoerceIn(-0.2f, 0.2f))
+                                scaleY = dampedDragAnimation.scaleY * (1f - (dampedDragAnimation.velocity / 10f * 0.25f).fastCoerceIn(-0.2f, 0.2f))
+                                shadowElevation = with(density) { lerp(3f, 14f, pressProgress).dp.toPx() }
+                                ambientShadowColor = indicatorShadowColor
+                                spotShadowColor = indicatorShadowColor
+                                shape = AppBottomBarShapes.capsule
+                                clip = false
+                            }
+                            .clip(AppBottomBarShapes.capsule)
+                            .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
+                            .then(dampedDragAnimation.modifier)
+                            .border(width = 1.dp, color = indicatorBorderColor, shape = AppBottomBarShapes.capsule)
+                            .drawWithContent {
+                                drawContent()
+                                if (isLiquidEffectEnabled) {
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            colors = if (isInLightTheme) {
+                                                listOf(
+                                                    Color.White.copy(alpha = lerp(0.032f, 0.060f, pressProgress)),
+                                                    Color.White.copy(alpha = lerp(0.010f, 0.020f, pressProgress)),
+                                                    Color.Transparent
+                                                )
+                                            } else {
+                                                listOf(
+                                                    Color.White.copy(alpha = lerp(0.030f, 0.060f, pressProgress)),
+                                                    Color.White.copy(alpha = lerp(0.010f, 0.024f, pressProgress)),
+                                                    Color.Transparent
+                                                )
+                                            }
+                                        ),
+                                        blendMode = BlendMode.Plus
+                                    )
+                                    drawRect(
+                                        color = if (isInLightTheme) {
+                                            Color.Black.copy(alpha = lerp(0.012f, 0.020f, pressProgress))
+                                        } else {
+                                            Color.Black.copy(alpha = lerp(0.045f, 0.060f, pressProgress))
+                                        }
+                                    )
+                                }
+                            }
+                            .height(AppChromeTokens.floatingBottomBarInnerHeight)
+                            .width(with(density) { tabWidthPx.toDp() })
+                    ) {
+                        LiquidBackdropLayer(
+                            modifier = Modifier.fillMaxSize(),
+                            enabled = isLiquidEffectEnabled,
+                            fallbackColor = indicatorFallbackColor,
+                            spec = indicatorSpec
+                        )
+                    }
+                }
+
                 Row(
                     modifier = Modifier
                         .height(AppChromeTokens.floatingBottomBarOuterHeight)
@@ -424,69 +431,6 @@ fun LiquidGlassBottomBar(
                     verticalAlignment = Alignment.CenterVertically,
                     content = content
                 )
-            }
-
-            if (tabWidthPx > 0f) {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = horizontalPadding)
-                        .graphicsLayer {
-                            val progressOffset = activeIndicatorValue * tabWidthPx
-                            translationX = if (isLtr) {
-                                progressOffset + panelOffset
-                            } else {
-                                -progressOffset + panelOffset
-                            }
-                            scaleX = dampedDragAnimation.scaleX / (1f - (dampedDragAnimation.velocity / 10f * 0.75f).fastCoerceIn(-0.2f, 0.2f))
-                            scaleY = dampedDragAnimation.scaleY * (1f - (dampedDragAnimation.velocity / 10f * 0.25f).fastCoerceIn(-0.2f, 0.2f))
-                            shadowElevation = with(density) { lerp(3f, 14f, pressProgress).dp.toPx() }
-                            ambientShadowColor = indicatorShadowColor
-                            spotShadowColor = indicatorShadowColor
-                            shape = AppBottomBarShapes.capsule
-                            clip = false
-                        }
-                        .clip(AppBottomBarShapes.capsule)
-                        .border(width = 1.dp, color = indicatorBorderColor, shape = AppBottomBarShapes.capsule)
-                        .drawWithContent {
-                            drawContent()
-                            if (isLiquidEffectEnabled) {
-                                drawRect(
-                                    brush = Brush.verticalGradient(
-                                        colors = if (isInLightTheme) {
-                                            listOf(
-                                                Color.White.copy(alpha = lerp(0.040f, 0.082f, pressProgress)),
-                                                Color.White.copy(alpha = lerp(0.012f, 0.028f, pressProgress)),
-                                                Color.Transparent
-                                            )
-                                        } else {
-                                            listOf(
-                                                Color.White.copy(alpha = lerp(0.030f, 0.060f, pressProgress)),
-                                                Color.White.copy(alpha = lerp(0.010f, 0.024f, pressProgress)),
-                                                Color.Transparent
-                                            )
-                                        }
-                                    ),
-                                    blendMode = BlendMode.Plus
-                                )
-                                drawRect(
-                                    color = if (isInLightTheme) {
-                                        Color.Black.copy(alpha = lerp(0.012f, 0.020f, pressProgress))
-                                    } else {
-                                        Color.Black.copy(alpha = lerp(0.045f, 0.060f, pressProgress))
-                                    }
-                                )
-                            }
-                        }
-                        .height(AppChromeTokens.floatingBottomBarInnerHeight)
-                        .width(with(density) { tabWidthPx.toDp() })
-                ) {
-                    LiquidBackdropLayer(
-                        modifier = Modifier.fillMaxSize(),
-                        enabled = isLiquidEffectEnabled,
-                        fallbackColor = indicatorFallbackColor,
-                        spec = indicatorSpec
-                    )
-                }
             }
         }
     }

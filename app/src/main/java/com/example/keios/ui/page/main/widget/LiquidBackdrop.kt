@@ -2,6 +2,7 @@ package com.example.keios.ui.page.main.widget
 
 import android.view.View
 import android.view.ViewGroup
+import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,10 +40,15 @@ internal fun LiquidBackdropLayer(
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->
-                    LiquidGlassView(context).apply {
+                    PassthroughLiquidGlassView(context).apply {
                         setDraggableEnabled(false)
                         setElasticEnabled(false)
                         setTouchEffectEnabled(false)
+                        isClickable = false
+                        isLongClickable = false
+                        isFocusable = false
+                        isFocusableInTouchMode = false
+                        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                     }
                 },
                 update = { view ->
@@ -60,6 +66,14 @@ internal fun LiquidBackdropLayer(
             )
         }
     }
+}
+
+private class PassthroughLiquidGlassView(context: android.content.Context) : LiquidGlassView(context) {
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean = false
+
+    override fun onInterceptTouchEvent(event: MotionEvent): Boolean = false
+
+    override fun onTouchEvent(event: MotionEvent): Boolean = false
 }
 
 private object LiquidBackdropSourceRegistry {
