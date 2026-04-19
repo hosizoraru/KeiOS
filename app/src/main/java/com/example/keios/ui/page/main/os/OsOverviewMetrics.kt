@@ -85,7 +85,6 @@ internal fun buildOsOverviewMetrics(
             value = context.getString(
                 R.string.os_overview_metric_activity_targets_value,
                 activityStats.packageConfiguredCount,
-                activityStats.totalCount,
                 activityStats.explicitClassCount
             )
         ),
@@ -94,8 +93,7 @@ internal fun buildOsOverviewMetrics(
             value = context.getString(
                 R.string.os_overview_metric_activity_extras_value,
                 activityStats.totalExtrasCount,
-                activityStats.extrasConfiguredCardCount,
-                activityStats.totalCount
+                activityStats.extrasConfiguredCardCount
             )
         )
     )
