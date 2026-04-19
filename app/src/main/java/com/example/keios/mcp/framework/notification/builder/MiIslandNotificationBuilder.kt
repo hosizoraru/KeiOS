@@ -13,7 +13,7 @@ import com.xzakota.hyper.notification.focus.FocusNotification
 
 class MiIslandNotificationBuilder(
     private val context: Context
-) : InstallerNotificationBuilder {
+) : SessionNotificationBuilder {
 
     private data class IslandAction(
         val key: String,

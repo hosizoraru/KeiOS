@@ -8,7 +8,7 @@ import kotlin.math.roundToInt
 
 class LegacyNotificationBuilder(
     private val context: Context
-) : InstallerNotificationBuilder {
+) : SessionNotificationBuilder {
 
     private companion object {
         private const val ICON_DEFAULT = R.drawable.ic_kei_logo_color
