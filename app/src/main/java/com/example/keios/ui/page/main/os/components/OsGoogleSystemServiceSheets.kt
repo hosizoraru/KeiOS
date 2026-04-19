@@ -17,6 +17,7 @@ import com.example.keios.R
 import com.example.keios.ui.page.main.widget.AppDropdownSelector
 import com.example.keios.ui.page.main.widget.GlassIconButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
+import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.SheetChoiceCard
 import com.example.keios.ui.page.main.widget.SheetContentColumn
@@ -42,6 +43,8 @@ internal fun OsGoogleSystemServiceEditorSheet(
     draft: OsGoogleSystemServiceConfig,
     onDraftChange: (OsGoogleSystemServiceConfig) -> Unit,
     onOpenSuggestionSheet: (ShortcutSuggestionField) -> Unit,
+    showDeleteAction: Boolean,
+    onDelete: () -> Unit,
     onDismissRequest: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -443,6 +446,21 @@ internal fun OsGoogleSystemServiceEditorSheet(
             SheetDescriptionText(
                 text = stringResource(R.string.os_google_system_service_sheet_desc)
             )
+            if (showDeleteAction) {
+                SheetSectionTitle(
+                    text = stringResource(R.string.os_activity_card_danger_title),
+                    danger = true
+                )
+                SheetSectionCard {
+                    GlassTextButton(
+                        backdrop = sheetBackdrop,
+                        variant = GlassVariant.SheetDangerAction,
+                        text = stringResource(R.string.common_delete),
+                        textColor = MiuixTheme.colorScheme.error,
+                        onClick = onDelete
+                    )
+                }
+            }
         }
     }
 }

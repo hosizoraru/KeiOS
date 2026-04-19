@@ -93,10 +93,12 @@ fun OsPage(
     val googleSystemServiceDefaultAppName = stringResource(R.string.os_google_system_service_default_app_name)
     val shellSavedCountLabel = stringResource(R.string.os_shell_card_saved_count_label)
     val shellCardSavedToast = stringResource(R.string.os_shell_card_toast_saved)
+    val shellCardDeletedToast = stringResource(R.string.os_shell_card_toast_deleted)
     val shellCardCommandRequiredToast = stringResource(R.string.os_shell_card_toast_command_required)
     val editShellCommandCardTitle = stringResource(R.string.os_shell_card_sheet_title_edit)
     val editActivityCardTitle = stringResource(R.string.os_activity_sheet_title_edit)
     val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
+    val activityCardDeletedToast = stringResource(R.string.os_activity_card_toast_deleted)
     val googleSystemServiceDefaultIntentFlags =
         stringResource(R.string.os_google_system_service_default_intent_flags)
     val googleSystemServiceDefaults = remember(
@@ -884,6 +886,19 @@ fun OsPage(
             sheetBackdrop = sheetBackdrop,
             draft = shellCommandCardDraft,
             onDraftChange = { shellCommandCardDraft = it },
+            showDeleteAction = !editingShellCommandCardId.isNullOrBlank(),
+            onDelete = {
+                val targetId = editingShellCommandCardId.orEmpty().trim()
+                if (targetId.isBlank()) {
+                    showShellCommandCardEditor = false
+                    return@OsShellCommandCardEditorSheet
+                }
+                shellCommandCards = OsShellCommandCardStore.deleteCard(targetId)
+                shellCommandCardExpanded.remove(targetId)
+                editingShellCommandCardId = null
+                showShellCommandCardEditor = false
+                Toast.makeText(context, shellCardDeletedToast, Toast.LENGTH_SHORT).show()
+            },
             onDismissRequest = { showShellCommandCardEditor = false },
             onSave = {
                 val targetId = editingShellCommandCardId.orEmpty().trim()
@@ -924,6 +939,28 @@ fun OsPage(
                     else -> Unit
                 }
                 showActivitySuggestionSheet = true
+            },
+            showDeleteAction = activityCardEditMode == OsActivityCardEditMode.Edit &&
+                !editingActivityShortcutCardId.isNullOrBlank(),
+            onDeleteEditor = {
+                val targetId = editingActivityShortcutCardId.orEmpty().trim()
+                if (targetId.isBlank()) {
+                    showActivityShortcutEditor = false
+                    return@OsActivityShortcutEditorHost
+                }
+                val updatedCards = activityShortcutCards.filterNot { card -> card.id == targetId }
+                activityShortcutCards = updatedCards
+                activityCardExpanded.remove(targetId)
+                scope.launch(Dispatchers.IO) {
+                    OsActivityShortcutCardStore.saveCards(
+                        cards = updatedCards,
+                        defaults = googleSystemServiceDefaults
+                    )
+                }
+                editingActivityShortcutCardId = null
+                showActivityShortcutEditor = false
+                showActivitySuggestionSheet = false
+                Toast.makeText(context, activityCardDeletedToast, Toast.LENGTH_SHORT).show()
             },
             onDismissEditor = { showActivityShortcutEditor = false },
             onSaveEditor = {

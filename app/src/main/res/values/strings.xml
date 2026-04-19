@@ -198,7 +198,9 @@
     <string name="os_shell_card_hint_title">例如：状态栏通知图标</string>
     <string name="os_shell_card_hint_subtitle">例如：系统参数调整</string>
     <string name="os_shell_card_hint_command">例如：settings put system status_bar_show_notification_icon 2</string>
+    <string name="os_shell_card_danger_title">危险操作</string>
     <string name="os_shell_card_toast_saved">shell card 已保存</string>
+    <string name="os_shell_card_toast_deleted">shell card 已删除</string>
     <string name="os_shell_card_toast_command_required">请填写有效的 shell 命令</string>
     <string name="os_shell_page_title">Shell</string>
     <string name="os_shell_input_title">shell 输入</string>
@@ -333,6 +335,8 @@
     <string name="os_google_system_service_cd_open_activity">打开活动</string>
     <string name="os_google_system_service_toast_saved">活动卡片已保存</string>
     <string name="os_cd_add_activity_card">新增活动卡片</string>
+    <string name="os_activity_card_danger_title">危险操作</string>
+    <string name="os_activity_card_toast_deleted">活动卡片已删除</string>
     <string name="os_google_system_service_toast_invalid_target">快捷方式目标不完整，请检查包名</string>
     <string name="os_google_system_service_toast_open_failed">打开失败: %1$s</string>
     <string name="os_google_system_service_cd_remove_intent_extra">删除 Intent Extra</string>

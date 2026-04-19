@@ -141,6 +141,14 @@ internal object OsShellCommandCardStore {
         return updated
     }
 
+    fun deleteCard(cardId: String): List<OsShellCommandCard> {
+        val targetId = cardId.trim()
+        if (targetId.isBlank()) return loadCards()
+        val updated = loadCards().filterNot { card -> card.id == targetId }
+        saveCards(updated)
+        return updated
+    }
+
     fun findLatestByCommand(command: String): OsShellCommandCard? {
         val normalized = command.trim()
         if (normalized.isBlank()) return null

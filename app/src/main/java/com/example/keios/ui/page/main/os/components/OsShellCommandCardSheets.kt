@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.keios.R
 import com.example.keios.ui.page.main.widget.GlassIconButton
+import com.example.keios.ui.page.main.widget.GlassTextButton
 import com.example.keios.ui.page.main.widget.GlassSearchField
 import com.example.keios.ui.page.main.widget.GlassVariant
 import com.example.keios.ui.page.main.widget.MiuixAccordionCard
@@ -22,6 +23,7 @@ import com.example.keios.ui.page.main.widget.SheetControlRow
 import com.example.keios.ui.page.main.widget.SheetDescriptionText
 import com.example.keios.ui.page.main.widget.SheetFieldBlock
 import com.example.keios.ui.page.main.widget.SheetSectionCard
+import com.example.keios.ui.page.main.widget.SheetSectionTitle
 import com.example.keios.ui.page.main.widget.SnapshotWindowBottomSheet
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
@@ -156,6 +158,8 @@ internal fun OsShellCommandCardEditorSheet(
     sheetBackdrop: LayerBackdrop,
     draft: OsShellCommandCard,
     onDraftChange: (OsShellCommandCard) -> Unit,
+    showDeleteAction: Boolean,
+    onDelete: () -> Unit,
     onDismissRequest: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -215,6 +219,21 @@ internal fun OsShellCommandCardEditorSheet(
                         label = stringResource(R.string.os_shell_card_hint_command),
                         minHeight = 132.dp,
                         modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+            if (showDeleteAction) {
+                SheetSectionTitle(
+                    text = stringResource(R.string.os_shell_card_danger_title),
+                    danger = true
+                )
+                SheetSectionCard {
+                    GlassTextButton(
+                        backdrop = sheetBackdrop,
+                        variant = GlassVariant.SheetDangerAction,
+                        text = stringResource(R.string.common_delete),
+                        textColor = MiuixTheme.colorScheme.error,
+                        onClick = onDelete
                     )
                 }
             }

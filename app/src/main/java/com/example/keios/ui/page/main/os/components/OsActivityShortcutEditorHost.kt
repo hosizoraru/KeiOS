@@ -11,6 +11,8 @@ internal fun OsActivityShortcutEditorHost(
     draft: OsGoogleSystemServiceConfig,
     onDraftChange: (OsGoogleSystemServiceConfig) -> Unit,
     onOpenSuggestionSheet: (ShortcutSuggestionField) -> Unit,
+    showDeleteAction: Boolean,
+    onDeleteEditor: () -> Unit,
     onDismissEditor: () -> Unit,
     onSaveEditor: () -> Unit,
     showSuggestionSheet: Boolean,
@@ -38,6 +40,8 @@ internal fun OsActivityShortcutEditorHost(
         draft = draft,
         onDraftChange = onDraftChange,
         onOpenSuggestionSheet = onOpenSuggestionSheet,
+        showDeleteAction = showDeleteAction,
+        onDelete = onDeleteEditor,
         onDismissRequest = onDismissEditor,
         onSave = onSaveEditor
     )
