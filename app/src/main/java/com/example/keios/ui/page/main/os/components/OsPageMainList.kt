@@ -206,16 +206,6 @@ internal fun OsPageMainList(
                 }
             )
 
-            addShortcutActivityCards(
-                cards = activityShortcutCards,
-                contentBackdrop = contentBackdrop,
-                defaultCardTitle = defaultActivityCardTitle,
-                expandedStates = activityCardExpanded,
-                onExpandedChange = onActivityCardExpandedChange,
-                onOpenActivity = onOpenActivityShortcutCard,
-                onHeaderLongClick = onOpenActivityShortcutCardEditor
-            )
-
             addKeyValueSectionCard(
                 visible = isCardVisible(OsSectionCard.SYSTEM),
                 card = OsSectionCard.SYSTEM,
@@ -346,6 +336,16 @@ internal fun OsPageMainList(
                         onExportClick = { onExportCard(OsSectionCard.LINUX) }
                     )
                 }
+            )
+
+            addShortcutActivityCards(
+                cards = activityShortcutCards,
+                contentBackdrop = contentBackdrop,
+                defaultCardTitle = defaultActivityCardTitle,
+                expandedStates = activityCardExpanded,
+                onExpandedChange = onActivityCardExpandedChange,
+                onOpenActivity = onOpenActivityShortcutCard,
+                onHeaderLongClick = onOpenActivityShortcutCardEditor
             )
         }
 
