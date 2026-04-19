@@ -146,7 +146,8 @@ object McpNotificationHelper {
         path: String,
         clients: Int,
         ongoing: Boolean,
-        onlyAlertOnce: Boolean = true
+        onlyAlertOnce: Boolean = true,
+        notificationId: Int = KEEPALIVE_NOTIFICATION_ID,
     ): android.app.Notification {
         return buildForegroundNotificationResult(
             context = context,
@@ -156,7 +157,8 @@ object McpNotificationHelper {
             path = path,
             clients = clients,
             ongoing = ongoing,
-            onlyAlertOnce = onlyAlertOnce
+            onlyAlertOnce = onlyAlertOnce,
+            notificationId = notificationId
         ).notification
     }
 

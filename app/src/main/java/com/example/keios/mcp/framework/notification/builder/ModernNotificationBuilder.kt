@@ -74,7 +74,12 @@ class ModernNotificationBuilder(
         baseBuilder.setContentTitle(state.title(context))
         baseBuilder.setContentText(state.content(context).ifBlank { " " })
         if (state.running) {
-            baseBuilder.setShortCriticalText(state.shortText)
+            val shortCriticalText = if (McpNotificationPayload.isBaCafeVisitServerName(state.serverName)) {
+                state.onlineText(context)
+            } else {
+                state.shortText
+            }
+            baseBuilder.setShortCriticalText(shortCriticalText)
         }
         baseBuilder.setStyle(progressStyle)
         return baseBuilder

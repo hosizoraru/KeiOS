@@ -35,10 +35,21 @@ class McpKeepAliveService : Service() {
         McpNotificationHelper.ensureChannel(this)
         when (intent?.action) {
             ACTION_DISMISS -> {
-                val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID)
-                NotificationManagerCompat.from(this).cancel(notificationId)
-                val shouldForceStop = notificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID ||
-                    notificationId == McpNotificationHelper.BA_CAFE_VISIT_NOTIFICATION_ID ||
+                val requestedNotificationId = intent.getIntExtra(
+                    EXTRA_NOTIFICATION_ID,
+                    McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID
+                )
+                val resolvedNotificationId = if (
+                    requestedNotificationId == McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID &&
+                    currentNotificationId != McpNotificationHelper.KEEPALIVE_NOTIFICATION_ID
+                ) {
+                    currentNotificationId
+                } else {
+                    requestedNotificationId
+                }
+                NotificationManagerCompat.from(this).cancel(resolvedNotificationId)
+                val shouldForceStop = resolvedNotificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID ||
+                    resolvedNotificationId == McpNotificationHelper.BA_CAFE_VISIT_NOTIFICATION_ID ||
                     intent.getBooleanExtra(EXTRA_FORCE_STOP_ON_DISMISS, false)
                 if (shouldForceStop || !currentRunning) {
                     stopHeartbeat()
@@ -133,7 +144,8 @@ class McpKeepAliveService : Service() {
             path = path,
             clients = clients,
             ongoing = true,
-            onlyAlertOnce = false
+            onlyAlertOnce = false,
+            notificationId = currentNotificationId
         )
     }
 
