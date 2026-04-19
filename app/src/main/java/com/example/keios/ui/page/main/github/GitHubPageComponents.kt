@@ -101,7 +101,11 @@ internal fun GitHubOverviewMetricItem(
     modifier: Modifier = Modifier,
     valueColor: Color = MiuixTheme.colorScheme.onBackground,
     titleColor: Color = MiuixTheme.colorScheme.onBackgroundVariant,
-    emphasized: Boolean = false
+    emphasized: Boolean = false,
+    labelMaxLines: Int = 2,
+    valueMaxLines: Int = 2,
+    labelWeight: Float = 0.58f,
+    valueWeight: Float = 0.42f
 ) {
     AppOverviewInlineMetricTile(
         label = label,
@@ -109,7 +113,10 @@ internal fun GitHubOverviewMetricItem(
         modifier = modifier,
         labelColor = titleColor,
         valueColor = valueColor,
-        valueMaxLines = 2,
+        labelMaxLines = labelMaxLines,
+        valueMaxLines = valueMaxLines,
+        labelWeight = labelWeight,
+        valueWeight = valueWeight,
         emphasizedValue = emphasized
     )
 }

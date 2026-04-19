@@ -173,6 +173,7 @@ fun AppOverviewInlineMetricTile(
     valueColor: Color = MiuixTheme.colorScheme.onBackground,
     containerColor: Color? = null,
     borderColor: Color? = null,
+    labelMaxLines: Int = 2,
     valueMaxLines: Int = 2,
     labelWeight: Float = 0.58f,
     valueWeight: Float = 0.42f,
@@ -220,7 +221,7 @@ fun AppOverviewInlineMetricTile(
                 fontSize = AppTypographyTokens.Caption.fontSize,
                 lineHeight = AppTypographyTokens.Caption.lineHeight,
                 modifier = Modifier.weight(labelWeight),
-                maxLines = 2,
+                maxLines = labelMaxLines,
                 overflow = TextOverflow.Ellipsis
             )
             top.yukonga.miuix.kmp.basic.Text(

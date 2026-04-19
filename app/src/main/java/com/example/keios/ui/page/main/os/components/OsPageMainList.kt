@@ -159,6 +159,10 @@ internal fun OsPageMainList(
                                     value = pair[0].value,
                                     titleColor = if (isDark) Color.White else MiuixTheme.colorScheme.onBackgroundVariant,
                                     valueColor = pair[0].valueColor ?: MiuixTheme.colorScheme.onBackground,
+                                    labelMaxLines = 1,
+                                    valueMaxLines = 1,
+                                    labelWeight = 0.42f,
+                                    valueWeight = 0.58f,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (pair.size > 1) {
@@ -167,6 +171,10 @@ internal fun OsPageMainList(
                                         value = pair[1].value,
                                         titleColor = if (isDark) Color.White else MiuixTheme.colorScheme.onBackgroundVariant,
                                         valueColor = pair[1].valueColor ?: MiuixTheme.colorScheme.onBackground,
+                                        labelMaxLines = 1,
+                                        valueMaxLines = 1,
+                                        labelWeight = 0.42f,
+                                        valueWeight = 0.58f,
                                         modifier = Modifier.weight(1f)
                                     )
                                 } else {

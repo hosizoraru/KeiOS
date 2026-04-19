@@ -59,17 +59,31 @@ internal fun buildOsOverviewMetrics(
             value = context.getString(
                 R.string.os_overview_metric_rows_compact_value,
                 visibleRowsCount,
-                totalRowsCount,
-                topInfoCount
+                totalRowsCount
             )
         ),
         OsOverviewMetric(
-            label = context.getString(R.string.os_overview_metric_section_sync),
+            label = context.getString(R.string.os_overview_metric_top_info),
             value = context.getString(
-                R.string.os_overview_metric_section_sync_value,
+                R.string.os_overview_metric_top_info_value,
+                topInfoCount,
+                visibleRowsCount
+            )
+        ),
+        OsOverviewMetric(
+            label = context.getString(R.string.os_overview_metric_fresh_sections),
+            value = context.getString(
+                R.string.os_overview_metric_fresh_sections_value,
                 loadedFreshCount,
-                sectionCount,
-                cachedSectionCount
+                sectionCount
+            )
+        ),
+        OsOverviewMetric(
+            label = context.getString(R.string.os_overview_metric_cached_sections),
+            value = context.getString(
+                R.string.os_overview_metric_cached_sections_value,
+                cachedSectionCount,
+                sectionCount
             )
         ),
         OsOverviewMetric(
@@ -85,15 +99,8 @@ internal fun buildOsOverviewMetrics(
             value = context.getString(
                 R.string.os_overview_metric_activity_targets_value,
                 activityStats.packageConfiguredCount,
-                activityStats.explicitClassCount
-            )
-        ),
-        OsOverviewMetric(
-            label = context.getString(R.string.os_overview_metric_activity_extras),
-            value = context.getString(
-                R.string.os_overview_metric_activity_extras_value,
-                activityStats.totalExtrasCount,
-                activityStats.extrasConfiguredCardCount
+                activityStats.explicitClassCount,
+                activityStats.totalCount
             )
         )
     )
