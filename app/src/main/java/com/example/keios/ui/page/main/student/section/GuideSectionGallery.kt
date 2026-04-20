@@ -320,19 +320,32 @@ fun GuideGalleryCardItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (isMemoryHallBgmTitle && (audioIsBuffering || audioIsPlaying)) {
-                    val indicatorProgress = if (audioIsBuffering) {
-                        0.35f
+                if (isMemoryHallBgmTitle && audioTargetUrl.isNotBlank()) {
+                    val resolvedAudioSource = normalizeGuideMediaSource(displayMediaUrl)
+                    val cachedAudioReady = resolvedAudioSource.startsWith("file://", ignoreCase = true)
+                    val indicatorProgress = when {
+                        audioIsBuffering -> 0.35f
+                        audioIsPlaying -> audioPlayProgress.coerceIn(0f, 1f).coerceAtLeast(0.06f)
+                        cachedAudioReady || audioDurationMs > 0L -> 1f
+                        else -> 0.06f
+                    }
+                    val progressForegroundColor = if (indicatorProgress >= 0.999f) {
+                        Color(0xFF34C759)
                     } else {
-                        audioPlayProgress.coerceIn(0f, 1f)
+                        Color(0xFF3B82F6)
+                    }
+                    val progressBackgroundColor = if (indicatorProgress >= 0.999f) {
+                        Color(0x5534C759)
+                    } else {
+                        Color(0x553B82F6)
                     }
                     CircularProgressIndicator(
                         progress = indicatorProgress,
                         size = 18.dp,
                         strokeWidth = 2.dp,
                         colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = Color(0xFF3B82F6),
-                            backgroundColor = Color(0x553B82F6)
+                            foregroundColor = progressForegroundColor,
+                            backgroundColor = progressBackgroundColor
                         )
                     )
                 }
