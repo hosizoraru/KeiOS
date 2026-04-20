@@ -1,12 +1,12 @@
 package com.example.keios.ui.page.main.widget.chrome
 
-import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -192,9 +191,7 @@ fun LiquidActionBar(
     if (items.isEmpty()) return
     val clampedSelectedIndex = selectedIndex.coerceIn(0, items.lastIndex)
 
-    val configuration = LocalConfiguration.current
-    val isInLightTheme = (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) !=
-        Configuration.UI_MODE_NIGHT_YES
+    val isInLightTheme = !isSystemInDarkTheme()
     val accentColor = MiuixTheme.colorScheme.primary
     val palette = rememberLiquidActionBarPalette(
         layeredStyleEnabled = layeredStyleEnabled,
@@ -423,6 +420,11 @@ fun LiquidActionBar(
                     )
                 },
                 onDrawSurface = { drawRect(palette.baseFillColor) }
+            )
+            .border(
+                width = 1.dp,
+                color = palette.outlineColor,
+                shape = ContinuousCapsule
             )
             .then(
                 if (!layeredStyleEnabled) {

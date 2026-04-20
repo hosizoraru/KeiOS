@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
@@ -72,12 +73,28 @@ internal fun rememberLiquidActionBarPalette(
     surfaceContainer
 ) {
     if (layeredStyleEnabled) {
+        if (isInLightTheme) {
+            return@remember LiquidActionBarPalette(
+                baseFillColor = if (isBlurEnabled) surfaceContainer.copy(alpha = 0.40f) else surfaceContainer,
+                inactiveContentColor = onSurface.copy(alpha = if (isBlurEnabled) 0.92f else 0.90f),
+                activeContentColor = primary,
+                selectionGlowColor = Color.White,
+                selectionCoreColor = Color.White,
+                outlineColor = Color.White.copy(alpha = if (isBlurEnabled) 0.24f else 0.18f)
+            )
+        }
+
         return@remember LiquidActionBarPalette(
-            baseFillColor = if (isBlurEnabled) surfaceContainer.copy(alpha = 0.40f) else surfaceContainer,
-            inactiveContentColor = onSurface,
-            activeContentColor = primary,
-            selectionGlowColor = Color.White,
-            selectionCoreColor = Color.White
+            baseFillColor = if (isBlurEnabled) {
+                lerp(surfaceContainer, onSurface, 0.18f).copy(alpha = 0.58f)
+            } else {
+                lerp(surfaceContainer, onSurface, 0.14f)
+            },
+            inactiveContentColor = onSurface.copy(alpha = 0.94f),
+            activeContentColor = primary.copy(alpha = 0.98f),
+            selectionGlowColor = Color.White.copy(alpha = 0.26f),
+            selectionCoreColor = Color.White.copy(alpha = 0.18f),
+            outlineColor = Color.White.copy(alpha = if (isBlurEnabled) 0.16f else 0.12f)
         )
     }
 
@@ -87,7 +104,12 @@ internal fun rememberLiquidActionBarPalette(
             inactiveContentColor = onSurface.copy(alpha = 0.68f),
             activeContentColor = onSurface.copy(alpha = 0.94f),
             selectionGlowColor = Color.White.copy(alpha = 0.10f),
-            selectionCoreColor = Color.White.copy(alpha = 0.08f)
+            selectionCoreColor = Color.White.copy(alpha = 0.08f),
+            outlineColor = if (isInLightTheme) {
+                Color.White.copy(alpha = 0.12f)
+            } else {
+                Color.White.copy(alpha = 0.10f)
+            }
         )
     }
 
@@ -97,16 +119,18 @@ internal fun rememberLiquidActionBarPalette(
             inactiveContentColor = onSurface.copy(alpha = 0.60f),
             activeContentColor = onSurface.copy(alpha = 0.92f),
             selectionGlowColor = Color.White.copy(alpha = 0.14f),
-            selectionCoreColor = Color.White.copy(alpha = 0.10f)
+            selectionCoreColor = Color.White.copy(alpha = 0.10f),
+            outlineColor = Color.White.copy(alpha = 0.14f)
         )
     }
 
     return@remember LiquidActionBarPalette(
-        baseFillColor = surfaceContainer.copy(alpha = 0.15f),
-        inactiveContentColor = onSurface.copy(alpha = 0.76f),
-        activeContentColor = onSurface.copy(alpha = 0.95f),
-        selectionGlowColor = onSurface.copy(alpha = 0.09f),
-        selectionCoreColor = surfaceContainer.copy(alpha = 0.16f)
+        baseFillColor = surfaceContainer.copy(alpha = 0.22f),
+        inactiveContentColor = onSurface.copy(alpha = 0.82f),
+        activeContentColor = onSurface.copy(alpha = 0.97f),
+        selectionGlowColor = onSurface.copy(alpha = 0.13f),
+        selectionCoreColor = surfaceContainer.copy(alpha = 0.20f),
+        outlineColor = Color.White.copy(alpha = 0.10f)
     )
 }
 
@@ -189,5 +213,6 @@ internal class LiquidActionBarPalette(
     val inactiveContentColor: Color,
     val activeContentColor: Color,
     val selectionGlowColor: Color,
-    val selectionCoreColor: Color
+    val selectionCoreColor: Color,
+    val outlineColor: Color
 )
