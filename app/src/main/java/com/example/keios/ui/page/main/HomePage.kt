@@ -141,6 +141,7 @@ private const val HOME_BA_DEFAULT_FRIEND_CODE = "ARISUKEI"
 private const val HOME_BA_AP_LIMIT_MAX = 240
 private const val HOME_BA_AP_MAX = 999
 private const val HOME_HEADER_SINK_PER_HIDDEN_CARD_DP = 22
+private const val HOME_CARD_HORIZONTAL_PADDING_DP = 12
 private val HOME_BA_CAFE_DAILY_AP_BY_LEVEL = intArrayOf(92, 152, 222, 302, 390, 460, 530, 600, 570, 740)
 private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
     Color(0xFFFFD2DE),
@@ -300,7 +301,7 @@ private fun HomeInfoCard(
 
     Box(
         modifier = Modifier
-            .padding(horizontal = 6.dp)
+            .padding(horizontal = HOME_CARD_HORIZONTAL_PADDING_DP.dp)
             .padding(bottom = 6.dp)
             .drawBackdrop(
                 backdrop = backdrop,
