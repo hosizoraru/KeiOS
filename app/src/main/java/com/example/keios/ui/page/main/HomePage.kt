@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.alignByBaseline
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -352,7 +354,8 @@ private fun HomeInlineInfoItem(
     headline: String,
     detail: String = "",
     extraDetail: String = "",
-    naText: String
+    naText: String,
+    titleSlotWidth: Dp = 96.dp
 ) {
     val summaryColor = if (isSystemInDarkTheme()) {
         Color(0xFF8AB8FF)
@@ -368,6 +371,7 @@ private fun HomeInlineInfoItem(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -376,9 +380,11 @@ private fun HomeInlineInfoItem(
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .width(titleSlotWidth)
+                    .alignByBaseline()
             )
-            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = headline.ifBlank { naText },
                 color = summaryColor,
@@ -387,7 +393,9 @@ private fun HomeInlineInfoItem(
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .alignByBaseline()
             )
         }
         if (detail.isNotBlank()) {
