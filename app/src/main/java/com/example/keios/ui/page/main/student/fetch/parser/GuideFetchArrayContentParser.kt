@@ -36,96 +36,12 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
     if (raw.isBlank()) return GuideDetailExtract()
     return runCatching {
         val root = JSONArray(raw)
-        val profileRows = mutableListOf<BaGuideRow>()
-        val galleryItems = mutableListOf<BaGuideGalleryItem>()
-        val stats = mutableListOf<Pair<String, String>>()
+        val accumulator = ArrayGuideParseAccumulator(sourceUrl)
         val voiceAccumulators = linkedMapOf<String, ArrayVoiceEntryAccumulator>()
         val rawVoiceLanguageHeaders = mutableListOf<String>()
-        val summaryCandidates = mutableListOf<String>()
 
-        var firstImage = ""
-        var tabGalleryIconUrl = ""
         var summary = ""
         var voiceOrder = 0
-
-        fun pushProfileRow(
-            key: String,
-            value: String,
-            imageUrl: String = "",
-            imageUrls: List<String> = emptyList()
-        ) {
-            val normalizedKey = normalizeArrayProfileKey(key)
-            val normalizedValue = value.trim()
-            val normalizedImageUrl = normalizeImageUrl(sourceUrl, imageUrl)
-            val normalizedImages = buildList {
-                if (normalizedImageUrl.isNotBlank()) add(normalizedImageUrl)
-                imageUrls.forEach { rawImage ->
-                    val normalized = normalizeImageUrl(sourceUrl, rawImage)
-                    if (normalized.isNotBlank()) add(normalized)
-                }
-            }.filter { looksLikeImageUrl(it) }.distinct()
-            if (normalizedKey.isBlank() && normalizedValue.isBlank() && normalizedImages.isEmpty()) return
-            profileRows += BaGuideRow(
-                key = normalizedKey.ifBlank { "信息" },
-                value = normalizedValue,
-                imageUrl = normalizedImages.firstOrNull().orEmpty(),
-                imageUrls = normalizedImages
-            )
-            if (normalizedKey.isNotBlank() &&
-                isMeaningfulGuideRowValue(normalizedValue) &&
-                stats.none { it.first == normalizedKey }
-            ) {
-                stats += normalizedKey to normalizedValue
-                if (summaryCandidates.size < 4) {
-                    summaryCandidates += "$normalizedKey：$normalizedValue"
-                }
-            }
-        }
-
-        fun pushGalleryItems(rawTitle: String, rawAny: Any?) {
-            val title = normalizeArrayGalleryTitle(rawTitle)
-            val imageUrls = extractImageUrlsFromAny(sourceUrl, rawAny)
-            val videoUrls = extractVideoUrlsFromAny(sourceUrl, rawAny)
-            val audioUrls = extractAudioUrlsFromAny(sourceUrl, rawAny)
-
-            if (firstImage.isBlank()) {
-                firstImage = imageUrls.firstOrNull().orEmpty()
-            }
-            if (tabGalleryIconUrl.isBlank()) {
-                tabGalleryIconUrl = imageUrls.firstOrNull().orEmpty()
-            }
-
-            if (imageUrls.isNotEmpty()) {
-                galleryItems += imageUrls.mapIndexed { index, url ->
-                    BaGuideGalleryItem(
-                        title = if (imageUrls.size > 1) "$title ${index + 1}" else title,
-                        imageUrl = url,
-                        mediaType = "image",
-                        mediaUrl = url
-                    )
-                }
-            }
-            if (videoUrls.isNotEmpty()) {
-                galleryItems += videoUrls.mapIndexed { index, url ->
-                    BaGuideGalleryItem(
-                        title = if (videoUrls.size > 1) "$title ${index + 1}" else title,
-                        imageUrl = imageUrls.firstOrNull().orEmpty(),
-                        mediaType = "video",
-                        mediaUrl = url
-                    )
-                }
-            }
-            if (audioUrls.isNotEmpty()) {
-                galleryItems += audioUrls.mapIndexed { index, url ->
-                    BaGuideGalleryItem(
-                        title = if (audioUrls.size > 1) "$title ${index + 1}" else title,
-                        imageUrl = imageUrls.firstOrNull().orEmpty(),
-                        mediaType = "audio",
-                        mediaUrl = url
-                    )
-                }
-            }
-        }
 
         fun ensureVoiceHeader(rawLabel: String): String {
             val canonical = canonicalVoiceLanguageLabel(rawLabel).ifBlank { stripHtml(rawLabel).trim() }
@@ -215,7 +131,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
             val data = node.optJSONObject("data") ?: return
             val profileName = extractEditorText(data.opt("name")).trim()
             if (profileName.isNotBlank()) {
-                pushProfileRow(
+                accumulator.pushProfileRow(
                     key = "角色名称",
                     value = profileName
                 )
@@ -228,7 +144,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                     val key = extractEditorText(item.opt("title")).trim()
                     val value = extractEditorText(item.opt("content"), separator = " / ").trim()
                     val icons = extractImageUrlsFromAny(sourceUrl, item.opt("content"))
-                    pushProfileRow(
+                    accumulator.pushProfileRow(
                         key = key,
                         value = value,
                         imageUrl = icons.firstOrNull().orEmpty(),
@@ -243,7 +159,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                 .filter { it.isNotBlank() }
             val descValue = descLines.joinToString("\n").trim()
             if (descValue.isNotBlank()) {
-                pushProfileRow(
+                accumulator.pushProfileRow(
                     key = descTitle,
                     value = descValue
                 )
@@ -257,9 +173,9 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                 addAll(extractImageUrlsFromAny(sourceUrl, data.opt("imagesList")))
             }.distinct()
             if (images.isNotEmpty()) {
-                if (firstImage.isBlank()) firstImage = images.first()
-                if (tabGalleryIconUrl.isBlank()) tabGalleryIconUrl = images.first()
-                galleryItems += images.mapIndexed { index, url ->
+                if (accumulator.firstImage.isBlank()) accumulator.firstImage = images.first()
+                if (accumulator.tabGalleryIconUrl.isBlank()) accumulator.tabGalleryIconUrl = images.first()
+                accumulator.galleryItems += images.mapIndexed { index, url ->
                     BaGuideGalleryItem(
                         title = if (images.size > 1) "立绘 ${index + 1}" else "立绘",
                         imageUrl = url,
@@ -277,7 +193,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                 val group = list.optJSONObject(groupIndex) ?: continue
                 val relationTitle = extractEditorText(group.opt("title")).ifBlank { "相关人物" }
                 if (relationTitle.contains("同名")) {
-                    pushProfileRow(
+                    accumulator.pushProfileRow(
                         key = "相关同名角色",
                         value = relationTitle
                     )
@@ -296,7 +212,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                         }
                     }.trim()
                     if (value.isBlank() && avatar.isBlank()) continue
-                    pushProfileRow(
+                    accumulator.pushProfileRow(
                         key = "同名角色名称",
                         value = value,
                         imageUrl = avatar,
@@ -314,7 +230,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
             val name = extractEditorText(data.opt("name"), separator = " / ").trim()
             val desc = extractEditorText(data.opt("desc"), separator = " / ").trim()
             if (name.isNotBlank() || icon.isNotBlank()) {
-                pushProfileRow(
+                accumulator.pushProfileRow(
                     key = "巧克力",
                     value = name.ifBlank { title },
                     imageUrl = icon,
@@ -322,13 +238,13 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                 )
             }
             if (desc.isNotBlank()) {
-                pushProfileRow(
+                accumulator.pushProfileRow(
                     key = "巧克力简介",
                     value = desc
                 )
             }
             if (icon.isNotBlank() && looksLikeImageUrl(icon)) {
-                galleryItems += BaGuideGalleryItem(
+                accumulator.galleryItems += BaGuideGalleryItem(
                     title = "巧克力图",
                     imageUrl = icon,
                     mediaType = "image",
@@ -346,7 +262,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                     .ifBlank { tab.optString("title").trim() }
                     .ifBlank { "影画" }
                 val galleryRaw = tab.opt("content") ?: tab
-                pushGalleryItems(
+                accumulator.pushGalleryItems(
                     rawTitle = title,
                     rawAny = galleryRaw
                 )
@@ -364,7 +280,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
                     }
                 }.distinct()
                 links.forEach { link ->
-                    pushProfileRow(
+                    accumulator.pushProfileRow(
                         key = "影画相关链接",
                         value = if (title.isNotBlank()) "$title / $link" else link
                     )
@@ -399,7 +315,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
 
         walk(root)
 
-        val cvFromProfile = profileRows.asSequence()
+        val cvFromProfile = accumulator.profileRows.asSequence()
             .firstOrNull { row -> row.key.contains("声优") && row.value.isNotBlank() }
             ?.value
             .orEmpty()
@@ -442,7 +358,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
         )
         val (voiceCvJp, voiceCvCn) = deriveVoiceCvLegacyFields(voiceCvByLanguage)
 
-        val distinctGallery = galleryItems
+        val distinctGallery = accumulator.galleryItems
             .filter {
                 val media = it.mediaUrl.ifBlank { it.imageUrl }
                 media.isNotBlank()
@@ -458,23 +374,23 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
             )
             .take(100)
 
-        val mergedProfileRows = profileRows
+        val mergedProfileRows = accumulator.profileRows
             .distinctBy { row ->
                 val packedImages = row.imageUrls.joinToString("|")
                 "${row.key.trim()}|${row.value.trim()}|${row.imageUrl.trim()}|$packedImages"
             }
             .take(180)
 
-        val resolvedFirstImage = firstImage
+        val resolvedFirstImage = accumulator.firstImage
             .ifBlank { distinctGallery.firstOrNull { it.imageUrl.isNotBlank() }?.imageUrl.orEmpty() }
         val resolvedSummary = summary
-            .ifBlank { summaryCandidates.joinToString(" · ") }
+            .ifBlank { accumulator.summaryCandidates.joinToString(" · ") }
             .ifBlank { "NPC及卫星图鉴条目数据较少，已展示可用信息。" }
 
         GuideDetailExtract(
             imageUrl = resolvedFirstImage,
             summary = resolvedSummary,
-            stats = stats.take(14),
+            stats = accumulator.stats.take(14),
             skillRows = emptyList(),
             profileRows = mergedProfileRows,
             galleryItems = distinctGallery,
@@ -489,7 +405,7 @@ internal fun parseGuideDetailFromArrayContentJson(raw: String, sourceUrl: String
             tabSkillIconUrl = "",
             tabProfileIconUrl = resolvedFirstImage,
             tabVoiceIconUrl = "",
-            tabGalleryIconUrl = tabGalleryIconUrl.ifBlank { resolvedFirstImage },
+            tabGalleryIconUrl = accumulator.tabGalleryIconUrl.ifBlank { resolvedFirstImage },
             tabSimulateIconUrl = ""
         )
     }.getOrDefault(GuideDetailExtract())

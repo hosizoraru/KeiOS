@@ -21,11 +21,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.keios.ui.page.main.host.pager.MainPageRuntime
 import com.example.keios.ui.page.main.host.pager.rememberMainPageBackdropSet
 import com.example.keios.ui.page.main.os.components.OsPageMainList
-import com.example.keios.ui.page.main.os.components.OsPageOverlayHost
+import com.example.keios.ui.page.main.os.components.OsPageOverlayCoordinator
 import com.example.keios.ui.page.main.os.state.createOsPageActionState
 import com.example.keios.ui.page.main.os.state.rememberOsPageCardTransferState
 import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayState
 import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayTransferActions
+import com.example.keios.ui.page.main.os.state.rememberOsPageSectionStateStore
 import com.example.keios.ui.page.main.os.state.rememberOsPageTextBundle
 import com.example.keios.ui.page.main.os.state.rememberOsPageUiContext
 import com.example.keios.ui.page.main.os.shell.OsShellCommandCardStore
@@ -154,24 +155,9 @@ fun OsPage(
         shellCommandCards = shellCommandCards,
         googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults
     )
-    var sectionStates by remember {
-        mutableStateOf(
-            mapOf(
-                SectionKind.SYSTEM to SectionState(),
-                SectionKind.SECURE to SectionState(),
-                SectionKind.GLOBAL to SectionState(),
-                SectionKind.ANDROID to SectionState(),
-                SectionKind.JAVA to SectionState(),
-                SectionKind.LINUX to SectionState()
-            )
-        )
-    }
-    fun updateSection(section: SectionKind, transform: (SectionState) -> SectionState) {
-        sectionStates = sectionStates.toMutableMap().also { map ->
-            val old = map[section] ?: SectionState()
-            map[section] = transform(old)
-        }
-    }
+    val sectionStateStore = rememberOsPageSectionStateStore()
+    val sectionStates = sectionStateStore.sectionStates
+    val updateSection = sectionStateStore.updateSection
     val actionState = createOsPageActionState(
         context = context,
         scope = scope,
@@ -181,7 +167,7 @@ fun OsPage(
         sectionLoadDeferreds = sectionLoadDeferreds,
         visibleCardsProvider = { visibleCards },
         sectionStatesProvider = { sectionStates },
-        updateSection = ::updateSection,
+        updateSection = updateSection,
         onCachePersistedChanged = { cachePersisted = it },
         updateVisibleCards = { visibleCards = it },
         setTopInfoExpanded = { topInfoExpanded = it },
@@ -223,7 +209,7 @@ fun OsPage(
     BindOsInitialCacheLoad(
         visibleCards = visibleCards,
         onVisibleCardsChange = { visibleCards = it },
-        onSectionStatesChange = { sectionStates = it },
+        onSectionStatesChange = sectionStateStore.onSectionStatesChange,
         onCachePersistedChange = { cachePersisted = it },
         onCacheLoadedChange = { cacheLoaded = it },
         onUiStatePersistenceReadyChange = { uiStatePersistenceReady = it },
@@ -233,7 +219,7 @@ fun OsPage(
 
     BindOsShizukuInvalidation(
         shizukuReady = shizukuReady,
-        updateSection = ::updateSection
+        updateSection = updateSection
     )
 
     BindOsExpandedStatePersistence(
@@ -332,47 +318,22 @@ fun OsPage(
         onQueryInputChange = osPageViewModel::updateQueryInput,
         searchLabel = textBundle.searchLabel
     ) { innerPadding ->
-        OsPageOverlayHost(
+        OsPageOverlayCoordinator(
             context = context,
             scope = scope,
             sheetBackdrop = backdrops.sheet,
             overlayState = overlayState,
-            visibleCardsTitle = textBundle.visibleCardsTitle,
-            visibleCardsHint = "隐藏卡片后会清空对应缓存；重新显示时会立即重新获取并缓存。",
             visibleCards = visibleCards,
-            applyCardVisibility = actionState.applyCardVisibility,
-            visibleActivitiesTitle = textBundle.visibleActivitiesTitle,
-            visibleActivitiesDesc = stringResource(R.string.os_sheet_visible_activities_desc),
             activityShortcutCards = activityShortcutCards,
-            defaultActivityCardTitle = textBundle.googleSystemServiceDefaultTitle,
-            cardTransferInProgress = overlayState.cardTransferInProgress,
-            onExportAllActivityCards = overlayTransferActions.onExportAllActivityCards,
-            onImportAllActivityCards = overlayTransferActions.onImportAllActivityCards,
-            applyActivityCardVisibility = actionState.applyActivityCardVisibility,
-            visibleShellCardsTitle = textBundle.visibleShellCardsTitle,
-            visibleShellCardsDesc = textBundle.visibleShellCardsDesc,
-            shellRunnerVisible = visibleCards.contains(OsSectionCard.SHELL_RUNNER),
             shellCommandCards = shellCommandCards,
-            onExportAllShellCards = overlayTransferActions.onExportAllShellCards,
-            onImportAllShellCards = overlayTransferActions.onImportAllShellCards,
-            applyShellCommandCardVisibility = actionState.applyShellCommandCardVisibility,
-            editShellCommandCardTitle = textBundle.editShellCommandCardTitle,
+            actionState = actionState,
+            overlayTransferActions = overlayTransferActions,
+            cardTransferState = cardTransferState,
+            textBundle = textBundle,
             onShellCommandCardsChange = { shellCommandCards = it },
             onRemoveShellCommandCardExpanded = { shellCommandCardExpanded.remove(it) },
-            shellCardCommandRequiredToast = textBundle.shellCardCommandRequiredToast,
-            shellCardSavedToast = textBundle.shellCardSavedToast,
-            shellCardDeletedToast = textBundle.shellCardDeletedToast,
-            shellCardDeleteDialogTitle = textBundle.shellCardDeleteDialogTitle,
-            addActivityCardTitle = textBundle.addActivityCardTitle,
-            editActivityCardTitle = textBundle.editActivityCardTitle,
-            noMatchedResultsText = textBundle.noMatchedResultsText,
             onActivityShortcutCardsChange = { activityShortcutCards = it },
-            onRemoveActivityCardExpanded = { activityCardExpanded.remove(it) },
-            googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
-            googleSystemServiceDefaultTitle = textBundle.googleSystemServiceDefaultTitle,
-            googleSystemServiceDefaultIntentFlags = textBundle.googleSystemServiceDefaultIntentFlags,
-            activityCardDeletedToast = textBundle.activityCardDeletedToast,
-            activityCardDeleteDialogTitle = textBundle.activityCardDeleteDialogTitle
+            onRemoveActivityCardExpanded = { activityCardExpanded.remove(it) }
         )
         OsPageMainList(
             context = context,
