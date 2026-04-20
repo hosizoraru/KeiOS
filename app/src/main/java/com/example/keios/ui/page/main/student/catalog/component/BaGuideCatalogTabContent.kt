@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +85,7 @@ internal fun BaGuideCatalogTabContent(
     } else {
         stringResource(R.string.ba_catalog_empty_subtitle_search)
     }
+    val loadingMoreText = stringResource(R.string.ba_catalog_loading_more)
 
     LazyColumn(
         state = tabListState.listState,
@@ -145,43 +145,15 @@ internal fun BaGuideCatalogTabContent(
                 )
             }
         } else {
-            items(
-                items = tabListState.displayedEntries,
-                key = { "${it.tab.name}-${it.entryId}-${it.contentId}" }
-            ) { entry ->
-                BaGuideCatalogEntryCard(
-                    entry = entry,
-                    isFavorite = filterSortState.favoriteCatalogEntries.containsKey(entry.contentId),
-                    onOpenGuide = onOpenGuide,
-                    onToggleFavorite = filterSortState::toggleFavorite
-                )
-            }
-            if (tabListState.hasMoreEntries) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(
-                            progress = 0.3f,
-                            size = 16.dp,
-                            strokeWidth = 2.dp,
-                            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                foregroundColor = accent,
-                                backgroundColor = accent.copy(alpha = 0.30f),
-                            ),
-                        )
-                        Text(
-                            text = stringResource(R.string.ba_catalog_loading_more),
-                            color = MiuixTheme.colorScheme.onBackgroundVariant,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
+            renderBaGuideCatalogEntryListAdapter(
+                displayedEntries = tabListState.displayedEntries,
+                hasMoreEntries = tabListState.hasMoreEntries,
+                favoriteCatalogEntries = filterSortState.favoriteCatalogEntries,
+                accent = accent,
+                loadingMoreText = loadingMoreText,
+                onOpenGuide = onOpenGuide,
+                onToggleFavorite = filterSortState::toggleFavorite
+            )
         }
     }
 }

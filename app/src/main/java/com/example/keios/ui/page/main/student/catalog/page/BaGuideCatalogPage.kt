@@ -56,6 +56,7 @@ import com.example.keios.ui.page.main.os.appLucideRefreshIcon
 import com.example.keios.ui.page.main.os.appLucideSortIcon
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
+import com.example.keios.ui.page.main.student.catalog.component.BaGuideCatalogSortActionPopup
 import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
 import com.example.keios.ui.page.main.student.catalog.component.BaGuideCatalogTabContent
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
@@ -76,16 +77,12 @@ import com.example.keios.ui.page.main.widget.chrome.LiquidActionItem
 import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import com.example.keios.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
-import com.example.keios.ui.page.main.widget.glass.LiquidDropdownColumn
-import com.example.keios.ui.page.main.widget.glass.LiquidDropdownImpl
 import com.example.keios.ui.page.main.widget.glass.UiPerformanceBudget
 import com.example.keios.ui.page.main.widget.motion.AppMotionTokens
 import com.example.keios.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.motion.appFloatingEnter
 import com.example.keios.ui.page.main.widget.motion.appFloatingExit
 import com.example.keios.ui.page.main.widget.motion.resolvedMotionDuration
-import com.example.keios.ui.page.main.widget.sheet.SnapshotPopupPlacement
-import com.example.keios.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -98,7 +95,6 @@ import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -362,31 +358,14 @@ fun BaGuideCatalogPage(
                             items = actionItems
                         )
                         LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
-                            if (slotIndex == 0 && filterSortState.showSortPopup) {
-                                SnapshotWindowListPopup(
-                                    show = filterSortState.showSortPopup,
-                                    alignment = PopupPositionProvider.Align.BottomStart,
-                                    anchorBounds = popupAnchorBounds,
-                                    placement = SnapshotPopupPlacement.ActionBarCenter,
-                                    onDismissRequest = { filterSortState.showSortPopup = false },
-                                    enableWindowDim = false
-                                ) {
-                                    LiquidDropdownColumn {
-                                        val modes = BaGuideCatalogSortMode.entries
-                                        modes.forEachIndexed { index, mode ->
-                                            LiquidDropdownImpl(
-                                                text = stringResource(mode.labelRes),
-                                                optionSize = modes.size,
-                                                isSelected = filterSortState.sortMode == mode,
-                                                index = index,
-                                                onSelectedIndexChange = { selectedIndex ->
-                                                    filterSortState.selectSortMode(modes[selectedIndex])
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            if (slotIndex != 0) return@LiquidActionBarPopupAnchors
+                            BaGuideCatalogSortActionPopup(
+                                show = filterSortState.showSortPopup,
+                                anchorBounds = popupAnchorBounds,
+                                sortMode = filterSortState.sortMode,
+                                onDismissRequest = { filterSortState.showSortPopup = false },
+                                onSelectSortMode = filterSortState::selectSortMode
+                            )
                         }
                     }
                 },

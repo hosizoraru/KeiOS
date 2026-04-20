@@ -25,10 +25,10 @@ import com.example.keios.ui.page.main.host.pager.MainPageRuntime
 import com.example.keios.ui.page.main.host.pager.rememberMainPageBackdropSet
 import com.example.keios.ui.page.main.os.components.OsPageMainList
 import com.example.keios.ui.page.main.os.components.OsPageOverlayHost
-import com.example.keios.ui.page.main.os.state.OsCardImportTarget
 import com.example.keios.ui.page.main.os.state.createOsPageActionState
 import com.example.keios.ui.page.main.os.state.rememberOsPageCardTransferState
 import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayState
+import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayTransferActions
 import com.example.keios.ui.page.main.os.state.rememberOsPageTextBundle
 import com.example.keios.ui.page.main.os.shell.OsShellCommandCardStore
 import com.example.keios.ui.page.main.os.shell.OsShellRunnerActivity
@@ -179,6 +179,14 @@ fun OsPage(
         googleSettingsBuiltInSampleDefaults = googleSettingsBuiltInSampleDefaults,
         cardImportFailedWithReason = cardImportFailedWithReason,
         exportSuccessText = exportSuccessText
+    )
+    val overlayTransferActions = rememberOsPageOverlayTransferActions(
+        context = context,
+        overlayState = overlayState,
+        cardTransferState = cardTransferState,
+        activityShortcutCards = activityShortcutCards,
+        shellCommandCards = shellCommandCards,
+        googleSystemServiceDefaults = googleSystemServiceDefaults
     )
     var sectionStates by remember {
         mutableStateOf(
@@ -372,56 +380,15 @@ fun OsPage(
             activityShortcutCards = activityShortcutCards,
             defaultActivityCardTitle = googleSystemServiceDefaultTitle,
             cardTransferInProgress = overlayState.cardTransferInProgress,
-            onExportAllActivityCards = {
-                runCatching {
-                    val payload = OsActivityShortcutCardStore.buildCardsExportJson(
-                        cards = activityShortcutCards,
-                        defaults = googleSystemServiceDefaults
-                    )
-                    overlayState.onPendingExportContentChange(payload)
-                    cardTransferState.exportLauncher.launch("keios-os-activity-cards.json")
-                }.onFailure { error ->
-                    Toast.makeText(
-                        context,
-                        context.getString(
-                            R.string.common_export_failed_with_reason,
-                            error.message ?: error.javaClass.simpleName
-                        ),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            },
-            onImportAllActivityCards = {
-                overlayState.onPendingImportTargetChange(OsCardImportTarget.Activity)
-                overlayState.onCardTransferInProgressChange(true)
-                cardTransferState.importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-            },
+            onExportAllActivityCards = overlayTransferActions.onExportAllActivityCards,
+            onImportAllActivityCards = overlayTransferActions.onImportAllActivityCards,
             applyActivityCardVisibility = actionState.applyActivityCardVisibility,
             visibleShellCardsTitle = visibleShellCardsTitle,
             visibleShellCardsDesc = visibleShellCardsDesc,
             shellRunnerVisible = visibleCards.contains(OsSectionCard.SHELL_RUNNER),
             shellCommandCards = shellCommandCards,
-            onExportAllShellCards = {
-                runCatching {
-                    val payload = OsShellCommandCardStore.buildCardsExportJson(shellCommandCards)
-                    overlayState.onPendingExportContentChange(payload)
-                    cardTransferState.exportLauncher.launch("keios-os-shell-cards.json")
-                }.onFailure { error ->
-                    Toast.makeText(
-                        context,
-                        context.getString(
-                            R.string.common_export_failed_with_reason,
-                            error.message ?: error.javaClass.simpleName
-                        ),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            },
-            onImportAllShellCards = {
-                overlayState.onPendingImportTargetChange(OsCardImportTarget.Shell)
-                overlayState.onCardTransferInProgressChange(true)
-                cardTransferState.importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-            },
+            onExportAllShellCards = overlayTransferActions.onExportAllShellCards,
+            onImportAllShellCards = overlayTransferActions.onImportAllShellCards,
             applyShellCommandCardVisibility = actionState.applyShellCommandCardVisibility,
             editShellCommandCardTitle = editShellCommandCardTitle,
             onShellCommandCardsChange = { shellCommandCards = it },

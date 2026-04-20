@@ -10,14 +10,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,8 @@ import androidx.compose.ui.unit.sp
 import com.example.keios.R
 import com.example.keios.ui.page.main.student.BaStudentGuideInfo
 import com.example.keios.ui.page.main.student.GuideBottomTab
+import com.example.keios.ui.page.main.student.page.state.buildBaStudentGuidePagerHeaderState
+import com.example.keios.ui.page.main.student.page.state.resolveBaStudentGuideTabRenderState
 import com.example.keios.ui.page.main.student.tabcontent.renderBaStudentGuideTabContent
 import com.example.keios.ui.page.main.widget.glass.FrostedBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -83,15 +86,34 @@ internal fun BaStudentGuidePagerContent(
             .graphicsLayer { alpha = farJumpAlpha }
             .layerBackdrop(navBackdrop)
     ) { pageIndex ->
-        val pageBottomTab = bottomTabs.getOrElse(pageIndex) { GuideBottomTab.Archive }
-        val isVoiceTab = pageBottomTab == GuideBottomTab.Voice
-        val shouldRenderHeavyContent =
-            pageIndex == pagerState.currentPage ||
-                pageIndex == pagerState.settledPage ||
-                (includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+        val tabRenderState = remember(
+            pageIndex,
+            bottomTabs,
+            pagerState.currentPage,
+            pagerState.settledPage,
+            pagerState.targetPage,
+            includeTargetPageInHeavyRender,
+            playingVoiceUrl,
+            isVoicePlaying,
+            voicePlayProgress,
+            selectedVoiceLanguage
+        ) {
+            resolveBaStudentGuideTabRenderState(
+                pageIndex = pageIndex,
+                bottomTabs = bottomTabs,
+                currentPage = pagerState.currentPage,
+                settledPage = pagerState.settledPage,
+                targetPage = pagerState.targetPage,
+                includeTargetPageInHeavyRender = includeTargetPageInHeavyRender,
+                playingVoiceUrl = playingVoiceUrl,
+                isVoicePlaying = isVoicePlaying,
+                voicePlayProgress = voicePlayProgress,
+                selectedVoiceLanguage = selectedVoiceLanguage
+            )
+        }
         val pageListState = rememberSaveable(
             sourceUrl,
-            pageBottomTab.name,
+            tabRenderState.activeBottomTab.name,
             saver = LazyListState.Saver
         ) {
             LazyListState()
@@ -102,8 +124,23 @@ internal fun BaStudentGuidePagerContent(
                 drawContent()
             }
         }
+
         Box(modifier = Modifier.fillMaxSize()) {
-            if (shouldRenderHeavyContent) {
+            if (tabRenderState.shouldRenderHeavyContent) {
+                val headerState = remember(
+                    tabRenderState.activeBottomTab,
+                    sourceUrl,
+                    info,
+                    error
+                ) {
+                    buildBaStudentGuidePagerHeaderState(
+                        tab = tabRenderState.activeBottomTab,
+                        sourceUrl = sourceUrl,
+                        info = info,
+                        error = error
+                    )
+                }
+
                 LazyColumn(
                     state = pageListState,
                     modifier = Modifier
@@ -125,21 +162,16 @@ internal fun BaStudentGuidePagerContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Box(modifier = Modifier.weight(1f)) {
-                                SmallTitle(pageBottomTab.label)
+                                SmallTitle(headerState.title)
                             }
-                            if (sourceUrl.isNotBlank()) {
-                                val foregroundColor = when {
-                                    info == null && error.isNullOrBlank() -> Color(0xFF3B82F6)
-                                    !error.isNullOrBlank() -> Color(0xFFEF4444)
-                                    else -> Color(0xFF22C55E)
-                                }
+                            if (headerState.showSyncIndicator) {
                                 CircularProgressIndicator(
                                     progress = syncProgress,
                                     size = 18.dp,
                                     strokeWidth = 2.dp,
                                     colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                        foregroundColor = foregroundColor,
-                                        backgroundColor = foregroundColor.copy(alpha = 0.30f),
+                                        foregroundColor = headerState.indicatorColor,
+                                        backgroundColor = headerState.indicatorColor.copy(alpha = 0.30f),
                                     ),
                                 )
                             }
@@ -157,7 +189,7 @@ internal fun BaStudentGuidePagerContent(
                         }
                     } else {
                         renderBaStudentGuideTabContent(
-                            activeBottomTab = pageBottomTab,
+                            activeBottomTab = tabRenderState.activeBottomTab,
                             info = info,
                             error = error,
                             backdrop = pageBackdrop,
@@ -165,22 +197,28 @@ internal fun BaStudentGuidePagerContent(
                             context = context,
                             sourceUrl = sourceUrl,
                             galleryCacheRevision = galleryCacheRevision,
-                            playingVoiceUrl = if (isVoiceTab) playingVoiceUrl else "",
-                            isVoicePlaying = isVoiceTab && isVoicePlaying,
-                            voicePlayProgress = if (isVoiceTab) voicePlayProgress else 0f,
-                            selectedVoiceLanguage = if (isVoiceTab) selectedVoiceLanguage else "",
+                            playingVoiceUrl = tabRenderState.playingVoiceUrl,
+                            isVoicePlaying = tabRenderState.isVoicePlaying,
+                            voicePlayProgress = tabRenderState.voicePlayProgress,
+                            selectedVoiceLanguage = tabRenderState.selectedVoiceLanguage,
                             onOpenExternal = onOpenExternal,
                             onOpenGuide = onOpenGuide,
                             onSaveMedia = onSaveMedia,
-                            onToggleVoicePlayback = if (isVoiceTab) onToggleVoicePlayback else { _ -> },
-                            onSelectedVoiceLanguageChange = if (isVoiceTab) onSelectedVoiceLanguageChange else { _ -> }
+                            onToggleVoicePlayback = onToggleVoicePlayback,
+                            onSelectedVoiceLanguageChange = onSelectedVoiceLanguageChange
                         )
                     }
                 }
             } else {
                 Spacer(modifier = Modifier.fillMaxSize())
             }
-            if (shouldRenderHeavyContent && sourceUrl.isNotBlank() && info == null && error.isNullOrBlank()) {
+
+            if (
+                tabRenderState.shouldRenderHeavyContent &&
+                sourceUrl.isNotBlank() &&
+                info == null &&
+                error.isNullOrBlank()
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -199,8 +237,7 @@ internal fun BaStudentGuidePagerContent(
                         Image(
                             painter = painterResource(R.drawable.q_862c2944),
                             contentDescription = null,
-                            modifier = Modifier
-                                .size(112.dp)
+                            modifier = Modifier.size(112.dp)
                         )
                         Text(
                             text = stringResource(R.string.guide_loading_title),
