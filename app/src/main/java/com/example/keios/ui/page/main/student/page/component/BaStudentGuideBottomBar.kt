@@ -34,6 +34,7 @@ internal fun BaStudentGuideBottomBar(
     navigationBarBottom: Dp,
     bottomTabs: List<GuideBottomTab>,
     selectedPage: Int,
+    selectedPageProvider: () -> Int,
     backdrop: LayerBackdrop,
     isLiquidEffectEnabled: Boolean,
     onSelectTab: (Int) -> Unit
@@ -104,7 +105,7 @@ internal fun BaStudentGuideBottomBar(
                 modifier = bottomBarModifier,
                 selectedIndex = selectedPage,
                 onSelected = { index ->
-                    if (index != selectedPage) {
+                    if (index != selectedPageProvider()) {
                         onSelectTab(index)
                     }
                 },

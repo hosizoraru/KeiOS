@@ -337,6 +337,7 @@ fun BaStudentGuidePage(
                 navigationBarBottom = navigationBarBottom,
                 bottomTabs = bottomTabsList,
                 selectedPage = pagerState.targetPage,
+                selectedPageProvider = { pagerState.targetPage },
                 backdrop = navBackdrop,
                 isLiquidEffectEnabled = liquidBottomBarEnabled,
                 onSelectTab = selectBottomTabAction
