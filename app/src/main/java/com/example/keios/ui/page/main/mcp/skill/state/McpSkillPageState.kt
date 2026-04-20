@@ -35,7 +35,8 @@ internal fun rememberMcpSkillPageContentState(
             mcpServerManager.getSkillMarkdown()
         }
     }
-    val sections = remember(
+    val sections by produceState(
+        initialValue = emptyList<SkillSection>(),
         markdown,
         emptyMarkdown,
         defaultRootTitle,
@@ -43,14 +44,16 @@ internal fun rememberMcpSkillPageContentState(
         defaultContentTitle,
         emptyContentText
     ) {
-        val blocks = parseMarkdownBlocks(markdown.ifBlank { emptyMarkdown })
-        buildSkillSections(
-            blocks = blocks,
-            defaultRootTitle = defaultRootTitle,
-            defaultOverviewTitle = defaultOverviewTitle,
-            defaultContentTitle = defaultContentTitle,
-            emptyContentText = emptyContentText
-        )
+        value = withContext(Dispatchers.Default) {
+            val blocks = parseMarkdownBlocks(markdown.ifBlank { emptyMarkdown })
+            buildSkillSections(
+                blocks = blocks,
+                defaultRootTitle = defaultRootTitle,
+                defaultOverviewTitle = defaultOverviewTitle,
+                defaultContentTitle = defaultContentTitle,
+                emptyContentText = emptyContentText
+            )
+        }
     }
 
     val subtitleVisibleTarget = if (

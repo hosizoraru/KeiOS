@@ -9,17 +9,12 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.keios.mcp.server.McpServerManager
@@ -28,10 +23,8 @@ import com.example.keios.ui.page.main.home.model.HomeGitHubOverview
 import com.example.keios.ui.page.main.home.model.HomeMcpOverview
 import com.example.keios.ui.page.main.model.BottomPage
 import com.example.keios.ui.page.main.widget.glass.UiPerformanceBudget
-import com.example.keios.ui.page.main.widget.motion.resolvedMotionDuration
 import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import kotlinx.coroutines.delay
 
 internal data class MainPagerInsets(
     val navigationBarBottom: Dp,
@@ -96,26 +89,19 @@ internal fun rememberMainPagerCoordinator(
     val preloadPolicy = remember(preloadingEnabled) {
         UiPerformanceBudget.resolvePreloadPolicy(preloadingEnabled)
     }
-    val effectiveNonHomeBackgroundUri = remember(nonHomeBackgroundEnabled, nonHomeBackgroundUri) {
-        if (nonHomeBackgroundEnabled) nonHomeBackgroundUri.trim() else ""
-    }
-    val hasNonHomeBackground = remember(effectiveNonHomeBackgroundUri) {
-        effectiveNonHomeBackgroundUri.isNotBlank()
-    }
-    val tabs = remember(visibleBottomPageNames) {
-        BottomPage.entries.filter { page ->
-            page == BottomPage.Home || visibleBottomPageNames.contains(page.name)
-        }
-    }
-    val initialPageIndex = remember(tabs, requestedBottomPage, requestedBottomPageToken) {
-        val target = requestedBottomPage?.trim().orEmpty()
-        tabs.indexOfFirst { it.name == target }
-            .takeIf { it >= 0 }
-            ?: 0
-    }
-    val visibleTabsSnapshot = remember(tabs) { tabs.toSet() }
+    val backgroundState = rememberMainPagerBackgroundState(
+        nonHomeBackgroundEnabled = nonHomeBackgroundEnabled,
+        nonHomeBackgroundUri = nonHomeBackgroundUri
+    )
+    val tabsState = rememberMainPagerTabsState(
+        visibleBottomPageNames = visibleBottomPageNames,
+        requestedBottomPage = requestedBottomPage,
+        requestedBottomPageToken = requestedBottomPageToken
+    )
+    val tabs = tabsState.tabs
+    val visibleTabsSnapshot = tabsState.visibleTabsSnapshot
     val pagerState = rememberPagerState(
-        initialPage = initialPageIndex,
+        initialPage = tabsState.initialPageIndex,
         pageCount = { tabs.size }
     )
     var temporaryBeyondViewportCount by remember { mutableStateOf<Int?>(null) }
@@ -133,22 +119,15 @@ internal fun rememberMainPagerCoordinator(
         isPagerScrollInProgress = pagerState.isScrollInProgress,
         preloadPolicy = preloadPolicy,
         temporaryBeyondViewportCount = temporaryBeyondViewportCount,
-        hasNonHomeBackground = hasNonHomeBackground
+        hasNonHomeBackground = backgroundState.hasNonHomeBackground
     )
-
-    LaunchedEffect(settingsReturnToken, transitionAnimationsEnabled) {
-        if (settingsReturnToken <= 0) return@LaunchedEffect
-        temporaryBeyondViewportCount = 0
-        withFrameNanos { }
-        delay(resolvedMotionDuration(220, transitionAnimationsEnabled).toLong())
-        temporaryBeyondViewportCount = null
-    }
-    LaunchedEffect(tabs.size) {
-        val lastIndex = tabs.lastIndex
-        if (lastIndex >= 0 && pagerState.currentPage > lastIndex) {
-            pagerState.scrollToPage(lastIndex)
-        }
-    }
+    BindMainPagerCoordinatorEffects(
+        settingsReturnToken = settingsReturnToken,
+        transitionAnimationsEnabled = transitionAnimationsEnabled,
+        tabsSize = tabs.size,
+        pagerState = pagerState,
+        onTemporaryBeyondViewportCountChange = { temporaryBeyondViewportCount = it }
+    )
     val tabJumpController = rememberMainPagerTabJumpController(
         tabs = tabs,
         pagerState = pagerState,
@@ -158,16 +137,14 @@ internal fun rememberMainPagerCoordinator(
         requestedBottomPageToken = requestedBottomPageToken,
         onRequestedBottomPageConsumed = onRequestedBottomPageConsumed
     )
-    val onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit = { page, visible ->
-        if (page != BottomPage.Home) {
-            val updated = visibleBottomPageNames
-                .toMutableSet()
-                .apply {
-                    if (visible) add(page.name) else remove(page.name)
-                }
-                .toSet()
-            onVisibleBottomPageNamesChange(updated)
-        }
+    val onBottomPageVisibilityChange = remember(
+        visibleBottomPageNames,
+        onVisibleBottomPageNamesChange
+    ) {
+        buildMainPagerVisibilityChangeAction(
+            visibleBottomPageNames = visibleBottomPageNames,
+            onVisibleBottomPageNamesChange = onVisibleBottomPageNamesChange
+        )
     }
 
     ReportPagerPerformanceState(
@@ -186,8 +163,8 @@ internal fun rememberMainPagerCoordinator(
         tabJumpController,
         backdrop,
         tabJumpController.farJumpAlpha,
-        hasNonHomeBackground,
-        effectiveNonHomeBackgroundUri,
+        backgroundState.hasNonHomeBackground,
+        backgroundState.effectiveNonHomeBackgroundUri,
         onBottomPageVisibilityChange
     ) {
         MainPagerCoordinatorState(
@@ -203,8 +180,8 @@ internal fun rememberMainPagerCoordinator(
             nestedScrollConnection = tabJumpController.nestedScrollConnection,
             backdrop = backdrop,
             farJumpAlpha = tabJumpController.farJumpAlpha,
-            hasNonHomeBackground = hasNonHomeBackground,
-            effectiveNonHomeBackgroundUri = effectiveNonHomeBackgroundUri,
+            hasNonHomeBackground = backgroundState.hasNonHomeBackground,
+            effectiveNonHomeBackgroundUri = backgroundState.effectiveNonHomeBackgroundUri,
             onPageSelected = tabJumpController.onPageSelected,
             onActionBarInteractingChanged = tabJumpController.onActionBarInteractingChanged,
             onBottomPageVisibilityChange = onBottomPageVisibilityChange,

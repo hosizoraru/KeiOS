@@ -1,0 +1,66 @@
+package com.example.keios.ui.page.main.settings.section
+
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.unit.IntRect
+import com.example.keios.core.prefs.AppThemeMode
+
+@Immutable
+internal data class SettingsVisualSectionState(
+    val preloadingEnabled: Boolean,
+    val homeIconHdrEnabled: Boolean,
+    val appThemeMode: AppThemeMode,
+    val showThemeModePopup: Boolean,
+    val themePopupAnchorBounds: IntRect?
+)
+
+internal data class SettingsVisualSectionActions(
+    val onPreloadingEnabledChanged: (Boolean) -> Unit,
+    val onHomeIconHdrChanged: (Boolean) -> Unit,
+    val onAppThemeModeChanged: (AppThemeMode) -> Unit,
+    val onShowThemeModePopupChange: (Boolean) -> Unit,
+    val onThemePopupAnchorBoundsChange: (IntRect?) -> Unit
+)
+
+@Immutable
+internal data class SettingsAnimationSectionState(
+    val transitionAnimationsEnabled: Boolean
+)
+
+internal data class SettingsAnimationSectionActions(
+    val onTransitionAnimationsChanged: (Boolean) -> Unit
+)
+
+@Immutable
+internal data class SettingsComponentEffectsSectionState(
+    val liquidActionBarLayeredStyleEnabled: Boolean,
+    val liquidBottomBarEnabled: Boolean,
+    val liquidGlassSwitchEnabled: Boolean,
+    val cardPressFeedbackEnabled: Boolean
+)
+
+internal data class SettingsComponentEffectsSectionActions(
+    val onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
+    val onLiquidBottomBarChanged: (Boolean) -> Unit,
+    val onLiquidGlassSwitchChanged: (Boolean) -> Unit,
+    val onCardPressFeedbackChanged: (Boolean) -> Unit
+)
+
+@Immutable
+internal data class SettingsNotifySectionState(
+    val superIslandNotificationEnabled: Boolean,
+    val superIslandBypassRestrictionEnabled: Boolean
+)
+
+internal data class SettingsNotifySectionActions(
+    val onSuperIslandNotificationChanged: (Boolean) -> Unit,
+    val onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit
+)
+
+@Immutable
+internal data class SettingsCopySectionState(
+    val textCopyCapabilityExpanded: Boolean
+)
+
+internal data class SettingsCopySectionActions(
+    val onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit
+)

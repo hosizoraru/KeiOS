@@ -10,6 +10,12 @@ import com.example.keios.ui.page.main.mcp.skill.model.MarkdownBlock
 import com.example.keios.ui.page.main.mcp.skill.model.SkillSection
 import com.example.keios.ui.page.main.mcp.skill.model.SkillSectionItem
 
+private val ORDERED_LIST_PREFIX_REGEX = Regex("^\\d+\\.\\s+")
+private val ORDERED_LIST_CONTENT_REGEX = Regex("^(\\d+)\\.\\s+(.*)$")
+private val INLINE_TOKEN_REGEX = Regex(
+    "`([^`]+)`|\\*\\*([^*]+)\\*\\*|\\*([^*]+)\\*|\\[(.+?)]\\((https?://[^)\\s]+)\\)"
+)
+
 internal fun buildSkillSections(
     blocks: List<MarkdownBlock>,
     defaultRootTitle: String,
@@ -178,9 +184,9 @@ internal fun parseMarkdownBlocks(markdown: String): List<MarkdownBlock> {
                 blocks += MarkdownBlock.Bullet(trimmed.drop(2).trim())
             }
 
-            Regex("^\\d+\\.\\s+").containsMatchIn(trimmed) -> {
+            ORDERED_LIST_PREFIX_REGEX.containsMatchIn(trimmed) -> {
                 flushParagraph()
-                val match = Regex("^(\\d+)\\.\\s+(.*)$").find(trimmed)
+                val match = ORDERED_LIST_CONTENT_REGEX.find(trimmed)
                 val index = match?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 1
                 val text = match?.groupValues?.getOrNull(2).orEmpty()
                 blocks += MarkdownBlock.Ordered(index, text)
@@ -223,10 +229,9 @@ internal fun buildInlineStyledText(
 }
 
 internal fun parseInlineTokens(text: String): List<InlineToken> {
-    val regex = Regex("`([^`]+)`|\\*\\*([^*]+)\\*\\*|\\*([^*]+)\\*|\\[(.+?)]\\((https?://[^)\\s]+)\\)")
     val tokens = mutableListOf<InlineToken>()
     var cursor = 0
-    regex.findAll(text).forEach { match ->
+    INLINE_TOKEN_REGEX.findAll(text).forEach { match ->
         val range = match.range
         if (range.first > cursor) {
             tokens += InlineToken.Plain(text.substring(cursor, range.first))

@@ -20,9 +20,19 @@ import com.example.keios.ui.page.main.settings.section.SettingsBackgroundSection
 import com.example.keios.ui.page.main.settings.section.SettingsCacheSection
 import com.example.keios.ui.page.main.settings.section.SettingsComponentEffectsSection
 import com.example.keios.ui.page.main.settings.section.SettingsCopySection
+import com.example.keios.ui.page.main.settings.section.SettingsCopySectionActions
+import com.example.keios.ui.page.main.settings.section.SettingsCopySectionState
 import com.example.keios.ui.page.main.settings.section.SettingsLogSection
 import com.example.keios.ui.page.main.settings.section.SettingsNotifySection
+import com.example.keios.ui.page.main.settings.section.SettingsNotifySectionActions
+import com.example.keios.ui.page.main.settings.section.SettingsNotifySectionState
+import com.example.keios.ui.page.main.settings.section.SettingsAnimationSectionActions
+import com.example.keios.ui.page.main.settings.section.SettingsAnimationSectionState
+import com.example.keios.ui.page.main.settings.section.SettingsComponentEffectsSectionActions
+import com.example.keios.ui.page.main.settings.section.SettingsComponentEffectsSectionState
 import com.example.keios.ui.page.main.settings.section.SettingsVisualSection
+import com.example.keios.ui.page.main.settings.section.SettingsVisualSectionActions
+import com.example.keios.ui.page.main.settings.section.SettingsVisualSectionState
 import com.example.keios.ui.page.main.settings.state.rememberSettingsBackgroundController
 import com.example.keios.ui.page.main.settings.state.rememberSettingsCacheController
 import com.example.keios.ui.page.main.settings.state.rememberSettingsLogController
@@ -92,6 +102,96 @@ fun SettingsPage(
         context = context,
         cacheDiagnosticsEnabled = cacheDiagnosticsEnabled
     )
+    val visualSectionState = remember(
+        preloadingEnabled,
+        homeIconHdrEnabled,
+        appThemeMode,
+        pageUiState.showThemeModePopup,
+        pageUiState.themePopupAnchorBounds
+    ) {
+        SettingsVisualSectionState(
+            preloadingEnabled = preloadingEnabled,
+            homeIconHdrEnabled = homeIconHdrEnabled,
+            appThemeMode = appThemeMode,
+            showThemeModePopup = pageUiState.showThemeModePopup,
+            themePopupAnchorBounds = pageUiState.themePopupAnchorBounds
+        )
+    }
+    val visualSectionActions = remember(
+        onPreloadingEnabledChanged,
+        onHomeIconHdrChanged,
+        onAppThemeModeChanged
+    ) {
+        SettingsVisualSectionActions(
+            onPreloadingEnabledChanged = onPreloadingEnabledChanged,
+            onHomeIconHdrChanged = onHomeIconHdrChanged,
+            onAppThemeModeChanged = onAppThemeModeChanged,
+            onShowThemeModePopupChange = { pageUiState.showThemeModePopup = it },
+            onThemePopupAnchorBoundsChange = { pageUiState.themePopupAnchorBounds = it }
+        )
+    }
+    val animationSectionState = remember(transitionAnimationsEnabled) {
+        SettingsAnimationSectionState(
+            transitionAnimationsEnabled = transitionAnimationsEnabled
+        )
+    }
+    val animationSectionActions = remember(onTransitionAnimationsChanged) {
+        SettingsAnimationSectionActions(
+            onTransitionAnimationsChanged = onTransitionAnimationsChanged
+        )
+    }
+    val componentEffectsState = remember(
+        liquidActionBarLayeredStyleEnabled,
+        liquidBottomBarEnabled,
+        liquidGlassSwitchEnabled,
+        cardPressFeedbackEnabled
+    ) {
+        SettingsComponentEffectsSectionState(
+            liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+            liquidBottomBarEnabled = liquidBottomBarEnabled,
+            liquidGlassSwitchEnabled = liquidGlassSwitchEnabled,
+            cardPressFeedbackEnabled = cardPressFeedbackEnabled
+        )
+    }
+    val componentEffectsActions = remember(
+        onLiquidActionBarLayeredStyleChanged,
+        onLiquidBottomBarChanged,
+        onLiquidGlassSwitchChanged,
+        onCardPressFeedbackChanged
+    ) {
+        SettingsComponentEffectsSectionActions(
+            onLiquidActionBarLayeredStyleChanged = onLiquidActionBarLayeredStyleChanged,
+            onLiquidBottomBarChanged = onLiquidBottomBarChanged,
+            onLiquidGlassSwitchChanged = onLiquidGlassSwitchChanged,
+            onCardPressFeedbackChanged = onCardPressFeedbackChanged
+        )
+    }
+    val notifySectionState = remember(
+        superIslandNotificationEnabled,
+        superIslandBypassRestrictionEnabled
+    ) {
+        SettingsNotifySectionState(
+            superIslandNotificationEnabled = superIslandNotificationEnabled,
+            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled
+        )
+    }
+    val notifySectionActions = remember(
+        onSuperIslandNotificationChanged,
+        onSuperIslandBypassRestrictionChanged
+    ) {
+        SettingsNotifySectionActions(
+            onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
+            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged
+        )
+    }
+    val copySectionState = remember(textCopyCapabilityExpanded) {
+        SettingsCopySectionState(textCopyCapabilityExpanded = textCopyCapabilityExpanded)
+    }
+    val copySectionActions = remember(onTextCopyCapabilityExpandedChanged) {
+        SettingsCopySectionActions(
+            onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged
+        )
+    }
 
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
@@ -124,38 +224,24 @@ fun SettingsPage(
             ) {
                 item {
                     SettingsVisualSection(
-                        preloadingEnabled = preloadingEnabled,
-                        onPreloadingEnabledChanged = onPreloadingEnabledChanged,
-                        homeIconHdrEnabled = homeIconHdrEnabled,
-                        onHomeIconHdrChanged = onHomeIconHdrChanged,
-                        appThemeMode = appThemeMode,
-                        onAppThemeModeChanged = onAppThemeModeChanged,
-                        showThemeModePopup = pageUiState.showThemeModePopup,
-                        onShowThemeModePopupChange = { pageUiState.showThemeModePopup = it },
-                        themePopupAnchorBounds = pageUiState.themePopupAnchorBounds,
-                        onThemePopupAnchorBoundsChange = { pageUiState.themePopupAnchorBounds = it },
+                        state = visualSectionState,
+                        actions = visualSectionActions,
                         enabledCardColor = enabledCardColor,
                         disabledCardColor = disabledCardColor
                     )
                 }
                 item {
                     SettingsAnimationSection(
-                        transitionAnimationsEnabled = transitionAnimationsEnabled,
-                        onTransitionAnimationsChanged = onTransitionAnimationsChanged,
+                        state = animationSectionState,
+                        actions = animationSectionActions,
                         enabledCardColor = enabledCardColor,
                         disabledCardColor = disabledCardColor
                     )
                 }
                 item {
                     SettingsComponentEffectsSection(
-                        liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                        onLiquidActionBarLayeredStyleChanged = onLiquidActionBarLayeredStyleChanged,
-                        liquidBottomBarEnabled = liquidBottomBarEnabled,
-                        onLiquidBottomBarChanged = onLiquidBottomBarChanged,
-                        liquidGlassSwitchEnabled = liquidGlassSwitchEnabled,
-                        onLiquidGlassSwitchChanged = onLiquidGlassSwitchChanged,
-                        cardPressFeedbackEnabled = cardPressFeedbackEnabled,
-                        onCardPressFeedbackChanged = onCardPressFeedbackChanged,
+                        state = componentEffectsState,
+                        actions = componentEffectsActions,
                         enabledCardColor = enabledCardColor,
                         disabledCardColor = disabledCardColor
                     )
@@ -188,18 +274,16 @@ fun SettingsPage(
                 }
                 item {
                     SettingsNotifySection(
-                        superIslandNotificationEnabled = superIslandNotificationEnabled,
-                        onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
-                        superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
-                        onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
+                        state = notifySectionState,
+                        actions = notifySectionActions,
                         enabledCardColor = enabledCardColor,
                         disabledCardColor = disabledCardColor
                     )
                 }
                 item {
                     SettingsCopySection(
-                        textCopyCapabilityExpanded = textCopyCapabilityExpanded,
-                        onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged,
+                        state = copySectionState,
+                        actions = copySectionActions,
                         enabledCardColor = enabledCardColor,
                         disabledCardColor = disabledCardColor
                     )

@@ -2,7 +2,6 @@ package com.example.keios.ui.page.main.settings.section
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.res.stringResource
 import com.example.keios.R
 import com.example.keios.core.prefs.AppThemeMode
@@ -19,29 +18,21 @@ import com.example.keios.ui.page.main.widget.glass.GlassVariant
 
 @Composable
 internal fun SettingsVisualSection(
-    preloadingEnabled: Boolean,
-    onPreloadingEnabledChanged: (Boolean) -> Unit,
-    homeIconHdrEnabled: Boolean,
-    onHomeIconHdrChanged: (Boolean) -> Unit,
-    appThemeMode: AppThemeMode,
-    onAppThemeModeChanged: (AppThemeMode) -> Unit,
-    showThemeModePopup: Boolean,
-    onShowThemeModePopupChange: (Boolean) -> Unit,
-    themePopupAnchorBounds: IntRect?,
-    onThemePopupAnchorBoundsChange: (IntRect?) -> Unit,
+    state: SettingsVisualSectionState,
+    actions: SettingsVisualSectionActions,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val visualGroupActive = preloadingEnabled || homeIconHdrEnabled
+    val visualGroupActive = state.preloadingEnabled || state.homeIconHdrEnabled
     val themeModeOptions = listOf(
         AppThemeMode.FOLLOW_SYSTEM to stringResource(R.string.settings_theme_follow_system),
         AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light_mode),
         AppThemeMode.DARK to stringResource(R.string.settings_theme_dark_mode)
     )
     val currentThemeLabel =
-        themeModeOptions.firstOrNull { it.first == appThemeMode }?.second
+        themeModeOptions.firstOrNull { it.first == state.appThemeMode }?.second
             ?: stringResource(R.string.settings_theme_follow_system)
-    val themeSummary = when (appThemeMode) {
+    val themeSummary = when (state.appThemeMode) {
         AppThemeMode.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_summary_follow_system)
         AppThemeMode.LIGHT -> stringResource(R.string.settings_theme_summary_light)
         AppThemeMode.DARK -> stringResource(R.string.settings_theme_summary_dark)
@@ -59,40 +50,40 @@ internal fun SettingsVisualSection(
             AppDropdownSelector(
                 selectedText = currentThemeLabel,
                 options = themeModeOptions.map { it.second },
-                selectedIndex = themeModeOptions.indexOfFirst { it.first == appThemeMode }
+                selectedIndex = themeModeOptions.indexOfFirst { it.first == state.appThemeMode }
                     .coerceAtLeast(0),
-                expanded = showThemeModePopup,
-                anchorBounds = themePopupAnchorBounds,
-                onExpandedChange = onShowThemeModePopupChange,
+                expanded = state.showThemeModePopup,
+                anchorBounds = state.themePopupAnchorBounds,
+                onExpandedChange = actions.onShowThemeModePopupChange,
                 onSelectedIndexChange = { selectedIndex ->
-                    onAppThemeModeChanged(themeModeOptions[selectedIndex].first)
+                    actions.onAppThemeModeChanged(themeModeOptions[selectedIndex].first)
                 },
-                onAnchorBoundsChange = onThemePopupAnchorBoundsChange,
+                onAnchorBoundsChange = actions.onThemePopupAnchorBoundsChange,
                 backdrop = null,
                 variant = GlassVariant.SheetAction
             )
         }
         SettingsToggleItem(
             title = stringResource(R.string.settings_preloading_title),
-            summary = if (preloadingEnabled) {
+            summary = if (state.preloadingEnabled) {
                 stringResource(R.string.settings_preloading_summary_enabled)
             } else {
                 stringResource(R.string.settings_preloading_summary_disabled)
             },
-            checked = preloadingEnabled,
-            onCheckedChange = onPreloadingEnabledChanged,
+            checked = state.preloadingEnabled,
+            onCheckedChange = actions.onPreloadingEnabledChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_preloading_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_home_shine_title),
-            summary = if (homeIconHdrEnabled) {
+            summary = if (state.homeIconHdrEnabled) {
                 stringResource(R.string.settings_home_shine_summary_enabled)
             } else {
                 stringResource(R.string.settings_home_shine_summary_disabled)
             },
-            checked = homeIconHdrEnabled,
-            onCheckedChange = onHomeIconHdrChanged,
+            checked = state.homeIconHdrEnabled,
+            onCheckedChange = actions.onHomeIconHdrChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_home_shine_scope)
         )
@@ -101,8 +92,8 @@ internal fun SettingsVisualSection(
 
 @Composable
 internal fun SettingsAnimationSection(
-    transitionAnimationsEnabled: Boolean,
-    onTransitionAnimationsChanged: (Boolean) -> Unit,
+    state: SettingsAnimationSectionState,
+    actions: SettingsAnimationSectionActions,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
@@ -110,17 +101,17 @@ internal fun SettingsAnimationSection(
         header = stringResource(R.string.settings_group_animation_header),
         title = stringResource(R.string.settings_group_animation_title),
         sectionIcon = appLucideTimeIcon(),
-        containerColor = if (transitionAnimationsEnabled) enabledCardColor else disabledCardColor
+        containerColor = if (state.transitionAnimationsEnabled) enabledCardColor else disabledCardColor
     ) {
         SettingsToggleItem(
             title = stringResource(R.string.settings_transition_animations_title),
-            summary = if (transitionAnimationsEnabled) {
+            summary = if (state.transitionAnimationsEnabled) {
                 stringResource(R.string.settings_transition_animations_summary_enabled)
             } else {
                 stringResource(R.string.settings_transition_animations_summary_disabled)
             },
-            checked = transitionAnimationsEnabled,
-            onCheckedChange = onTransitionAnimationsChanged,
+            checked = state.transitionAnimationsEnabled,
+            onCheckedChange = actions.onTransitionAnimationsChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_transition_animations_scope)
         )
@@ -129,21 +120,15 @@ internal fun SettingsAnimationSection(
 
 @Composable
 internal fun SettingsComponentEffectsSection(
-    liquidActionBarLayeredStyleEnabled: Boolean,
-    onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
-    liquidBottomBarEnabled: Boolean,
-    onLiquidBottomBarChanged: (Boolean) -> Unit,
-    liquidGlassSwitchEnabled: Boolean,
-    onLiquidGlassSwitchChanged: (Boolean) -> Unit,
-    cardPressFeedbackEnabled: Boolean,
-    onCardPressFeedbackChanged: (Boolean) -> Unit,
+    state: SettingsComponentEffectsSectionState,
+    actions: SettingsComponentEffectsSectionActions,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val componentEffectsGroupActive = liquidActionBarLayeredStyleEnabled ||
-        liquidBottomBarEnabled ||
-        liquidGlassSwitchEnabled ||
-        cardPressFeedbackEnabled
+    val componentEffectsGroupActive = state.liquidActionBarLayeredStyleEnabled ||
+        state.liquidBottomBarEnabled ||
+        state.liquidGlassSwitchEnabled ||
+        state.cardPressFeedbackEnabled
     SettingsGroupCard(
         header = stringResource(R.string.settings_group_component_effects_header),
         title = stringResource(R.string.settings_group_component_effects_title),
@@ -152,43 +137,43 @@ internal fun SettingsComponentEffectsSection(
     ) {
         SettingsToggleItem(
             title = stringResource(R.string.settings_actionbar_style_title),
-            summary = if (liquidActionBarLayeredStyleEnabled) {
+            summary = if (state.liquidActionBarLayeredStyleEnabled) {
                 stringResource(R.string.settings_actionbar_style_summary_enabled)
             } else {
                 stringResource(R.string.settings_actionbar_style_summary_disabled)
             },
-            checked = liquidActionBarLayeredStyleEnabled,
-            onCheckedChange = onLiquidActionBarLayeredStyleChanged,
+            checked = state.liquidActionBarLayeredStyleEnabled,
+            onCheckedChange = actions.onLiquidActionBarLayeredStyleChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_actionbar_style_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_bottom_bar_title),
             summary = stringResource(R.string.settings_bottom_bar_summary),
-            checked = liquidBottomBarEnabled,
-            onCheckedChange = onLiquidBottomBarChanged
+            checked = state.liquidBottomBarEnabled,
+            onCheckedChange = actions.onLiquidBottomBarChanged
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_liquid_switch_title),
-            summary = if (liquidGlassSwitchEnabled) {
+            summary = if (state.liquidGlassSwitchEnabled) {
                 stringResource(R.string.settings_liquid_switch_summary_enabled)
             } else {
                 stringResource(R.string.settings_liquid_switch_summary_disabled)
             },
-            checked = liquidGlassSwitchEnabled,
-            onCheckedChange = onLiquidGlassSwitchChanged,
+            checked = state.liquidGlassSwitchEnabled,
+            onCheckedChange = actions.onLiquidGlassSwitchChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_liquid_switch_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_card_feedback_title),
-            summary = if (cardPressFeedbackEnabled) {
+            summary = if (state.cardPressFeedbackEnabled) {
                 stringResource(R.string.settings_card_feedback_summary_enabled)
             } else {
                 stringResource(R.string.settings_card_feedback_summary_disabled)
             },
-            checked = cardPressFeedbackEnabled,
-            onCheckedChange = onCardPressFeedbackChanged,
+            checked = state.cardPressFeedbackEnabled,
+            onCheckedChange = actions.onCardPressFeedbackChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_card_feedback_scope)
         )
@@ -197,14 +182,12 @@ internal fun SettingsComponentEffectsSection(
 
 @Composable
 internal fun SettingsNotifySection(
-    superIslandNotificationEnabled: Boolean,
-    onSuperIslandNotificationChanged: (Boolean) -> Unit,
-    superIslandBypassRestrictionEnabled: Boolean,
-    onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
+    state: SettingsNotifySectionState,
+    actions: SettingsNotifySectionActions,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val notifyGroupActive = superIslandNotificationEnabled || superIslandBypassRestrictionEnabled
+    val notifyGroupActive = state.superIslandNotificationEnabled || state.superIslandBypassRestrictionEnabled
     SettingsGroupCard(
         header = stringResource(R.string.settings_group_notify_header),
         title = stringResource(R.string.settings_group_notify_title),
@@ -213,25 +196,25 @@ internal fun SettingsNotifySection(
     ) {
         SettingsToggleItem(
             title = stringResource(R.string.settings_super_island_style_title),
-            summary = if (superIslandNotificationEnabled) {
+            summary = if (state.superIslandNotificationEnabled) {
                 stringResource(R.string.settings_super_island_style_summary_enabled)
             } else {
                 stringResource(R.string.settings_super_island_style_summary_disabled)
             },
-            checked = superIslandNotificationEnabled,
-            onCheckedChange = onSuperIslandNotificationChanged,
+            checked = state.superIslandNotificationEnabled,
+            onCheckedChange = actions.onSuperIslandNotificationChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_super_island_style_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_super_island_bypass_title),
-            summary = if (superIslandBypassRestrictionEnabled) {
+            summary = if (state.superIslandBypassRestrictionEnabled) {
                 stringResource(R.string.settings_super_island_bypass_summary_enabled)
             } else {
                 stringResource(R.string.settings_super_island_bypass_summary_disabled)
             },
-            checked = superIslandBypassRestrictionEnabled,
-            onCheckedChange = onSuperIslandBypassRestrictionChanged,
+            checked = state.superIslandBypassRestrictionEnabled,
+            onCheckedChange = actions.onSuperIslandBypassRestrictionChanged,
             infoKey = stringResource(R.string.common_note),
             infoValue = stringResource(R.string.settings_super_island_bypass_note)
         )
@@ -240,8 +223,8 @@ internal fun SettingsNotifySection(
 
 @Composable
 internal fun SettingsCopySection(
-    textCopyCapabilityExpanded: Boolean,
-    onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit,
+    state: SettingsCopySectionState,
+    actions: SettingsCopySectionActions,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
@@ -249,19 +232,19 @@ internal fun SettingsCopySection(
         header = stringResource(R.string.settings_group_copy_header),
         title = stringResource(R.string.settings_group_copy_title),
         sectionIcon = osLucideCopyIcon(),
-        containerColor = if (textCopyCapabilityExpanded) enabledCardColor else disabledCardColor
+        containerColor = if (state.textCopyCapabilityExpanded) enabledCardColor else disabledCardColor
     ) {
         SettingsToggleItem(
             title = stringResource(R.string.settings_copy_capability_title),
-            summary = if (textCopyCapabilityExpanded) {
+            summary = if (state.textCopyCapabilityExpanded) {
                 stringResource(R.string.settings_copy_capability_summary_enabled)
             } else {
                 stringResource(R.string.settings_copy_capability_summary_disabled)
             },
-            checked = textCopyCapabilityExpanded,
-            onCheckedChange = onTextCopyCapabilityExpandedChanged,
+            checked = state.textCopyCapabilityExpanded,
+            onCheckedChange = actions.onTextCopyCapabilityExpandedChanged,
             infoKey = stringResource(R.string.common_note),
-            infoValue = if (textCopyCapabilityExpanded) {
+            infoValue = if (state.textCopyCapabilityExpanded) {
                 stringResource(R.string.settings_copy_capability_note_enabled)
             } else {
                 stringResource(R.string.settings_copy_capability_note_disabled)
