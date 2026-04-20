@@ -49,6 +49,7 @@ private fun Modifier.baGlassSurface(
     accentColor: Color,
     accentAlpha: Float,
     variant: GlassVariant,
+    effectsEnabled: Boolean,
 ): Modifier {
     val isDark = isSystemInDarkTheme()
     val glass = glassStyle(
@@ -64,7 +65,7 @@ private fun Modifier.baGlassSurface(
         .compositeOver(glass.borderColor)
     val accentTint = accentColor.copy(alpha = (accentAlpha * 0.35f).coerceIn(0f, 0.05f))
 
-    val surfaceModifier = if (backdrop != null) {
+    val surfaceModifier = if (backdrop != null && effectsEnabled) {
         Modifier.drawBackdrop(
             backdrop = backdrop,
             shape = { RoundedRectangle(cornerRadius) },
@@ -111,6 +112,7 @@ internal fun BaGlassCard(
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
     accentAlpha: Float = 0f,
+    effectsEnabled: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     verticalSpacing: Dp = 8.dp,
     onClick: (() -> Unit)? = null,
@@ -139,6 +141,7 @@ internal fun BaGlassCard(
                 accentColor = accentColor,
                 accentAlpha = accentAlpha,
                 variant = GlassVariant.Bar,
+                effectsEnabled = effectsEnabled,
             )
             .then(interactionModifier)
             .padding(contentPadding),
@@ -153,6 +156,7 @@ internal fun BaGlassPanel(
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
     accentAlpha: Float = 0.05f,
+    effectsEnabled: Boolean = true,
     variant: GlassVariant = GlassVariant.Compact,
     contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 9.dp),
     verticalSpacing: Dp = 6.dp,
@@ -181,6 +185,7 @@ internal fun BaGlassPanel(
                 accentColor = accentColor,
                 accentAlpha = accentAlpha,
                 variant = variant,
+                effectsEnabled = effectsEnabled,
             )
             .then(interactionModifier)
             .padding(contentPadding),
