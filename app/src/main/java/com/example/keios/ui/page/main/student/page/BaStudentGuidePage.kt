@@ -3,9 +3,6 @@ package com.example.keios.ui.page.main.student.page
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.keios.R
-import com.example.keios.ui.page.main.host.pager.animateTabSwitch
 import com.example.keios.ui.page.main.student.BaStudentGuideInfo
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
 import com.example.keios.ui.page.main.student.createGameKeeMediaSourceFactory
@@ -67,27 +63,24 @@ import com.example.keios.ui.page.main.student.page.support.rememberGuideSyncProg
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuideInfoLoadEffect
 import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideMediaSaveAction
 import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuidePageActions
+import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideTabSelectCoordinator
+import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideTopBarActionItems
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuidePagerSyncEffects
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuidePlayerLifecycleEffects
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuidePrefetchEffects
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuideSourceRestoreEffect
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuideVoiceListenerEffect
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuideVoiceProgressEffect
-import com.example.keios.ui.page.main.student.clearGuideBgmLoopScope
-import com.example.keios.ui.page.main.student.clearGuideBgmPlaybackScope
 import com.example.keios.ui.perf.ReportPagerPerformanceState
-import com.example.keios.ui.page.main.widget.motion.AppMotionTokens
 import com.example.keios.ui.page.main.widget.glass.UiPerformanceBudget
 import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import com.example.keios.ui.page.main.widget.chrome.LiquidActionBar
-import com.example.keios.ui.page.main.widget.chrome.LiquidActionItem
 import com.example.keios.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.motion.appFloatingEnter
 import com.example.keios.ui.page.main.widget.motion.appFloatingExit
 import com.example.keios.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
 import com.example.keios.core.prefs.UiPrefs
-import com.example.keios.ui.page.main.widget.motion.resolvedMotionDuration
 import com.example.keios.core.ui.effect.getMiuixAppBarColor
 import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import com.example.keios.ui.page.main.os.appLucideBackIcon
@@ -96,9 +89,6 @@ import com.example.keios.ui.page.main.os.appLucideShareIcon
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -167,6 +157,7 @@ fun BaStudentGuidePage(
     var staticImagePrefetchStage by rememberSaveable(sourceUrl, guideSyncToken) { mutableIntStateOf(0) }
     var galleryCacheRevision by remember(sourceUrl) { mutableIntStateOf(0) }
     val bottomTabs = GuideBottomTab.entries
+    val bottomTabsList = remember { bottomTabs.toList() }
     val pagerState = rememberPagerState(
         initialPage = selectedBottomTabIndex,
         pageCount = { bottomTabs.size }
@@ -179,7 +170,6 @@ fun BaStudentGuidePage(
     )
     val activeBottomTab = bottomTabs.getOrElse(pagerState.currentPage) { GuideBottomTab.Archive }
     val pageScope = rememberCoroutineScope()
-    var tabJumpJob by remember { mutableStateOf<Job?>(null) }
     val syncProgress = rememberGuideSyncProgress(
         loading = loading,
         animationsEnabled = transitionAnimationsEnabled
@@ -188,6 +178,14 @@ fun BaStudentGuidePage(
     val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
+    val selectBottomTabAction = rememberBaStudentGuideTabSelectCoordinator(
+        bottomTabs = bottomTabsList,
+        pagerState = pagerState,
+        transitionAnimationsEnabled = transitionAnimationsEnabled,
+        farJumpAlpha = farJumpAlpha,
+        onShowBottomBarChange = { showBottomBar = it },
+        onSelectedBottomTabIndexChange = { selectedBottomTabIndex = it }
+    )
     val bottomBarNestedScrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -244,43 +242,6 @@ fun BaStudentGuidePage(
         saveGuideMedia = saveGuideMediaAction
     )
 
-    fun selectBottomTab(index: Int) {
-        if (index !in bottomTabs.indices) return
-        val fromIndex = if (pagerState.isScrollInProgress) {
-            pagerState.targetPage
-        } else {
-            pagerState.settledPage
-        }
-        if (index == fromIndex && !pagerState.isScrollInProgress) return
-        showBottomBar = true
-        selectedBottomTabIndex = index
-        tabJumpJob?.cancel()
-        tabJumpJob = pageScope.launch {
-            pagerState.animateTabSwitch(
-                fromIndex = fromIndex,
-                targetIndex = index,
-                animationsEnabled = transitionAnimationsEnabled,
-                onFarJumpBefore = {
-                    // Keep far jump immediate: dim instantly, jump, then fade in.
-                    // This avoids lingering on the previous tab for an extra frame.
-                    farJumpAlpha.snapTo(0.94f)
-                },
-                onFarJumpAfter = {
-                    farJumpAlpha.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(
-                            durationMillis = resolvedMotionDuration(
-                                AppMotionTokens.farJumpRestoreEmphasisMs,
-                                transitionAnimationsEnabled
-                            ),
-                            easing = if (transitionAnimationsEnabled) FastOutSlowInEasing else LinearEasing
-                        )
-                    )
-                }
-            )
-        }
-    }
-
     BindBaStudentGuideSourceRestoreEffect(
         sourceUrl = sourceUrl,
         onSourceUrlChange = { sourceUrl = it },
@@ -330,20 +291,14 @@ fun BaStudentGuidePage(
     )
     val shareIcon = appLucideShareIcon()
     val refreshIcon = appLucideRefreshIcon()
-    val actionItems = remember(shareSourceContentDescription, refreshContentDescription) {
-        listOf(
-            LiquidActionItem(
-                icon = shareIcon,
-                contentDescription = shareSourceContentDescription,
-                onClick = pageActions.shareSource
-            ),
-            LiquidActionItem(
-                icon = refreshIcon,
-                contentDescription = refreshContentDescription,
-                onClick = pageActions.requestRefresh
-            )
-        )
-    }
+    val actionItems = rememberBaStudentGuideTopBarActionItems(
+        shareIcon = shareIcon,
+        refreshIcon = refreshIcon,
+        shareSourceContentDescription = shareSourceContentDescription,
+        refreshContentDescription = refreshContentDescription,
+        onShareSource = pageActions.shareSource,
+        onRefresh = pageActions.requestRefresh
+    )
 
     Scaffold(
         modifier = Modifier
@@ -380,11 +335,11 @@ fun BaStudentGuidePage(
             BaStudentGuideBottomBar(
                 visible = showBottomBar,
                 navigationBarBottom = navigationBarBottom,
-                bottomTabs = bottomTabs.toList(),
+                bottomTabs = bottomTabsList,
                 selectedPage = pagerState.targetPage,
                 backdrop = navBackdrop,
                 isLiquidEffectEnabled = liquidBottomBarEnabled,
-                onSelectTab = ::selectBottomTab
+                onSelectTab = selectBottomTabAction
             )
         }
     ) { innerPadding ->
@@ -393,7 +348,7 @@ fun BaStudentGuidePage(
             info = info,
             error = error,
             pagerState = pagerState,
-            bottomTabs = bottomTabs.toList(),
+            bottomTabs = bottomTabsList,
             syncProgress = syncProgress,
             activationCount = activationCount,
             surfaceColor = surfaceColor,

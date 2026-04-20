@@ -47,22 +47,13 @@ import com.example.keios.R
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.core.ui.effect.getMiuixAppBarColor
 import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
-import com.example.keios.ui.page.main.ba.support.BASettingsStore
 import com.example.keios.ui.page.main.os.appLucideBackIcon
 import com.example.keios.ui.page.main.os.appLucideRefreshIcon
 import com.example.keios.ui.page.main.os.appLucideSortIcon
-import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.student.catalog.component.BaGuideCatalogSortActionPopup
-import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
 import com.example.keios.ui.page.main.student.catalog.component.BaGuideCatalogTabContent
-import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
-import com.example.keios.ui.page.main.student.catalog.hydrateBaGuideCatalogReleaseDateIndex
-import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogBundleComplete
-import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
-import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
-import com.example.keios.ui.page.main.student.catalog.state.BaGuideCatalogSortMode
-import com.example.keios.ui.page.main.student.catalog.state.CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS
+import com.example.keios.ui.page.main.student.catalog.state.rememberBaGuideCatalogDataController
 import com.example.keios.ui.page.main.student.catalog.state.rememberBaGuideCatalogFilterSortState
 import com.example.keios.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabSelectCoordinator
 import com.example.keios.ui.page.main.student.catalog.state.rememberBaGuideCatalogTopBarActionItems
@@ -83,10 +74,6 @@ import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -134,10 +121,18 @@ fun BaGuideCatalogPage(
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val scrollBehavior = MiuixScrollBehavior()
 
-    var refreshSignal by remember { mutableIntStateOf(0) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var catalog by remember { mutableStateOf(BaGuideCatalogBundle.EMPTY) }
+    val loadFailedText = stringResource(R.string.ba_catalog_load_failed)
+    val refreshFailedKeepCacheText = stringResource(R.string.ba_catalog_refresh_failed_keep_cached)
+    val catalogData = rememberBaGuideCatalogDataController(
+        context = context,
+        transitionAnimationsEnabled = transitionAnimationsEnabled,
+        initialFetchDelayMs = preloadPolicy.initialFetchDelayMs,
+        loadFailedText = loadFailedText,
+        refreshFailedKeepCacheText = refreshFailedKeepCacheText
+    )
+    val catalog = catalogData.catalog
+    val loading = catalogData.loading
+    val error = catalogData.error
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val filterSortState = rememberBaGuideCatalogFilterSortState()
 
@@ -150,7 +145,7 @@ fun BaGuideCatalogPage(
         refreshActionContentDescription = refreshActionContentDescription,
         showSortPopup = filterSortState.showSortPopup,
         onShowSortPopupChange = { filterSortState.showSortPopup = it },
-        onRefreshRequest = { refreshSignal += 1 }
+        onRefreshRequest = catalogData.requestRefresh
     )
 
     val tabs = BaGuideCatalogTab.entries
@@ -217,65 +212,6 @@ fun BaGuideCatalogPage(
                 return Offset.Zero
             }
         }
-    }
-
-    LaunchedEffect(refreshSignal) {
-        if (refreshSignal == 0 && transitionAnimationsEnabled && preloadPolicy.initialFetchDelayMs > 0) {
-            delay(preloadPolicy.initialFetchDelayMs.toLong())
-        }
-        val manualRefresh = refreshSignal > 0
-        val now = System.currentTimeMillis()
-        loading = true
-
-        val refreshIntervalHours = withContext(Dispatchers.IO) {
-            BASettingsStore.loadCalendarRefreshIntervalHours()
-        }
-        val cachedBundle = withContext(Dispatchers.IO) { loadCachedBaGuideCatalogBundle() }
-        val cacheComplete = isBaGuideCatalogBundleComplete(cachedBundle)
-        val cacheExpired = isBaGuideCatalogCacheExpired(
-            bundle = cachedBundle,
-            refreshIntervalHours = refreshIntervalHours,
-            nowMs = now
-        )
-
-        if (!manualRefresh && cacheComplete && !cacheExpired) {
-            catalog = cachedBundle!!
-            error = null
-            loading = false
-            return@LaunchedEffect
-        }
-
-        val shouldClearLocalCache = manualRefresh || (cachedBundle != null && (cacheExpired || !cacheComplete))
-        if (shouldClearLocalCache) {
-            withContext(Dispatchers.IO) { clearBaGuideCatalogCache(context) }
-        }
-
-        val result = withContext(Dispatchers.IO) {
-            runCatching { fetchBaGuideCatalogBundle(forceRefresh = true) }
-        }
-        result.onSuccess { latest ->
-            catalog = latest
-            error = null
-        }.onFailure {
-            error = if (catalog.entriesByTab.values.all { it.isEmpty() }) {
-                "图鉴列表加载失败"
-            } else {
-                "刷新失败，已显示上次列表"
-            }
-        }
-        loading = false
-    }
-
-    LaunchedEffect(catalog.syncedAtMs, loading) {
-        if (loading) return@LaunchedEffect
-        if (catalog.entriesByTab.values.all { it.isEmpty() }) return@LaunchedEffect
-        hydrateBaGuideCatalogReleaseDateIndex(
-            source = catalog,
-            maxNetworkFetchPerPass = CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS,
-            onBundleUpdated = { updated ->
-                catalog = updated
-            }
-        )
     }
 
     Scaffold(

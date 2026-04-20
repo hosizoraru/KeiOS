@@ -55,6 +55,8 @@
     <string name="ba_catalog_search_label">搜索名称 / 别名 / ID</string>
     <string name="ba_catalog_sync_status_title">同步状态</string>
     <string name="ba_catalog_sync_status_body_retry">可通过右上角刷新按钮重试</string>
+    <string name="ba_catalog_load_failed">图鉴列表加载失败</string>
+    <string name="ba_catalog_refresh_failed_keep_cached">刷新失败，已显示上次列表</string>
     <string name="ba_catalog_empty_title">暂无结果</string>
     <string name="ba_catalog_empty_subtitle_default">当前分类没有可显示条目</string>
     <string name="ba_catalog_empty_subtitle_search">未匹配到相关条目</string>

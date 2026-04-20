@@ -78,3 +78,6 @@ tmp/
 
 # Root-level preview screenshots
 /keios_*.png
+
+# Local QA checklists (keep local only)
+/docs/qa/mainscreen_fivepages_regression_checklist.md
