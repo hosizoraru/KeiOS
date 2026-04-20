@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -170,17 +171,21 @@ fun SettingsPage(
         AppThemeMode.LIGHT -> stringResource(R.string.settings_theme_summary_light)
         AppThemeMode.DARK -> stringResource(R.string.settings_theme_summary_dark)
     }
-    val cacheEntries by produceState<List<CacheEntrySummary>?>(
-        initialValue = if (cacheDiagnosticsEnabled) null else emptyList(),
-        cacheDiagnosticsEnabled,
-        cacheReloadSignal
-    ) {
+    var cacheEntries by remember(cacheDiagnosticsEnabled) {
+        mutableStateOf<List<CacheEntrySummary>?>(if (cacheDiagnosticsEnabled) null else emptyList())
+    }
+    var cacheEntriesLoading by remember(cacheDiagnosticsEnabled) {
+        mutableStateOf(cacheDiagnosticsEnabled)
+    }
+    LaunchedEffect(cacheDiagnosticsEnabled, cacheReloadSignal) {
         if (!cacheDiagnosticsEnabled) {
-            value = emptyList()
-            return@produceState
+            cacheEntries = emptyList()
+            cacheEntriesLoading = false
+            return@LaunchedEffect
         }
-        value = null
-        value = withContext(Dispatchers.IO) { CacheStores.list(context) }
+        cacheEntriesLoading = cacheEntries == null
+        cacheEntries = withContext(Dispatchers.IO) { CacheStores.list(context) }
+        cacheEntriesLoading = false
     }
     val logStats by produceState(
         initialValue = AppLogStore.Stats.Empty,
@@ -766,7 +771,7 @@ fun SettingsPage(
                             )
                         }
 
-                        cacheEntries == null -> {
+                        cacheEntries == null && cacheEntriesLoading -> {
                             Text(
                                 text = stringResource(R.string.settings_cache_loading_desc),
                                 color = subtitleColor,
@@ -775,7 +780,7 @@ fun SettingsPage(
                             )
                         }
 
-                        cacheEntries!!.isEmpty() -> {
+                        cacheEntries.isNullOrEmpty() -> {
                             Text(
                                 text = stringResource(R.string.settings_cache_empty_desc),
                                 color = subtitleColor,

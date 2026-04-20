@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.media3.exoplayer.ExoPlayer
 import coil3.compose.AsyncImage
@@ -523,16 +524,32 @@ fun GuideRemoteIcon(
     iconHeight: androidx.compose.ui.unit.Dp = iconWidth
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val target = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
     if (target.isBlank()) return
-    val bitmap by produceState<Bitmap?>(initialValue = null, target) {
-        value = withContext(Dispatchers.IO) {
-            runCatching {
-                loadGuideBitmapSource(
-                    context = context,
-                    source = target
-                )
-            }.getOrNull()
+    val iconDecodeDimension = remember(iconWidth, iconHeight, density) {
+        val widthPx = with(density) { iconWidth.roundToPx() }
+        val heightPx = with(density) { iconHeight.roundToPx() }
+        (maxOf(widthPx, heightPx) * 2).coerceIn(96, 768)
+    }
+    val bitmap by produceState<Bitmap?>(
+        initialValue = BaGuideImageCache.peekBitmap(
+            source = target,
+            maxDecodeDimension = iconDecodeDimension
+        ),
+        target,
+        iconDecodeDimension
+    ) {
+        if (value == null) {
+            value = withContext(Dispatchers.IO) {
+                runCatching {
+                    loadGuideBitmapSource(
+                        context = context,
+                        source = target,
+                        maxDecodeDimension = iconDecodeDimension
+                    )
+                }.getOrNull()
+            }
         }
     }
     val rendered = bitmap ?: return

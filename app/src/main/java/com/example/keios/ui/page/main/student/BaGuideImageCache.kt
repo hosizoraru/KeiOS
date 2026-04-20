@@ -166,4 +166,14 @@ internal object BaGuideImageCache {
         }
         return fallback
     }
+
+    fun peekBitmap(
+        source: String,
+        maxDecodeDimension: Int = 2048
+    ): Bitmap? {
+        val normalized = normalizeTarget(source)
+        if (normalized.isBlank()) return null
+        val key = memoryKey(normalized, maxDecodeDimension)
+        return synchronized(memory) { memory.get(key) }
+    }
 }
