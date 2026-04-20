@@ -116,6 +116,9 @@ fun GuideGalleryCardItem(
     val displayTitle = remember(item.title, normalizedMediaType) {
         normalizeGalleryDisplayTitle(item.title, normalizedMediaType)
     }
+    val isMemoryHallBgmTitle = remember(displayTitle, normalizedMediaType) {
+        normalizedMediaType == "audio" && displayTitle.startsWith("回忆大厅BGM")
+    }
     val saveTargetUrl = remember(
         normalizedMediaType,
         displayImageUrl,
@@ -317,6 +320,22 @@ fun GuideGalleryCardItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (isMemoryHallBgmTitle && (audioIsBuffering || audioIsPlaying)) {
+                    val indicatorProgress = if (audioIsBuffering) {
+                        0.35f
+                    } else {
+                        audioPlayProgress.coerceIn(0f, 1f)
+                    }
+                    CircularProgressIndicator(
+                        progress = indicatorProgress,
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = Color(0xFF3B82F6),
+                            backgroundColor = Color(0x553B82F6)
+                        )
+                    )
+                }
                 if (showMediaTypeLabel && mediaTypeLabel.isNotBlank()) {
                     GlassTextButton(
                         backdrop = backdrop,

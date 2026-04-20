@@ -70,6 +70,8 @@ import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Replace
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.runtime.collectAsState
 
 @Composable
 fun GuideGalleryVideoGroupCardItem(
@@ -99,7 +101,15 @@ fun GuideGalleryVideoGroupCardItem(
     }
     var videoInlineExpanded by remember(displayMediaUrl) { mutableStateOf(false) }
     var videoInlinePlaying by remember(displayMediaUrl) { mutableStateOf(false) }
+    var videoInlineBuffering by remember(displayMediaUrl) { mutableStateOf(false) }
     var videoControlRequestId by remember(displayMediaUrl) { mutableIntStateOf(0) }
+    val previewProgressState = remember(displayPreviewUrl) {
+        MutableStateFlow(if (displayPreviewUrl.isBlank()) 1f else 0f)
+    }
+    val previewProgress by previewProgressState.collectAsState()
+    var previewLoading by remember(displayPreviewUrl) {
+        mutableStateOf(displayPreviewUrl.isNotBlank())
+    }
     val noteText = selectedItem.note.trim()
     val optionLabels = remember(title, items) {
         if (items.size <= 1) {
@@ -118,6 +128,26 @@ fun GuideGalleryVideoGroupCardItem(
         modifier = modifier.fillMaxWidth(),
         containerColor = Color(0x223B82F6),
         headerEndActions = {
+            val isMemoryHallVideoTitle = title.trim().startsWith("回忆大厅视频")
+            if (isMemoryHallVideoTitle) {
+                val showProgressRing = videoInlineBuffering || previewLoading
+                if (showProgressRing) {
+                    val indicatorProgress = if (videoInlineBuffering) {
+                        0.35f
+                    } else {
+                        previewProgress.coerceIn(0f, 1f)
+                    }
+                    CircularProgressIndicator(
+                        progress = indicatorProgress,
+                        size = 18.dp,
+                        strokeWidth = 2.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = Color(0xFF3B82F6),
+                            backgroundColor = Color(0x553B82F6)
+                        )
+                    )
+                }
+            }
             if (items.size > 1) {
                 var pickerPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
                 Box(
@@ -228,7 +258,10 @@ fun GuideGalleryVideoGroupCardItem(
                 onExpandedChange = { expanded -> videoInlineExpanded = expanded },
                 controlAction = GuideVideoControlAction.TogglePlayPause,
                 controlActionToken = videoControlRequestId,
-                onIsPlayingChange = { playing -> videoInlinePlaying = playing }
+                onIsPlayingChange = { playing -> videoInlinePlaying = playing },
+                onBufferingChange = { buffering -> videoInlineBuffering = buffering },
+                previewProgressState = previewProgressState,
+                onPreviewLoadingChanged = { loading -> previewLoading = loading }
             )
         }
     }
@@ -286,7 +319,10 @@ internal fun GuideInlineVideoPlayer(
     onExpandedChange: (Boolean) -> Unit,
     controlAction: GuideVideoControlAction? = null,
     controlActionToken: Int = 0,
-    onIsPlayingChange: (Boolean) -> Unit = {}
+    onIsPlayingChange: (Boolean) -> Unit = {},
+    onBufferingChange: (Boolean) -> Unit = {},
+    previewProgressState: MutableStateFlow<Float>? = null,
+    onPreviewLoadingChanged: ((Boolean) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val normalizedUrl = remember(mediaUrl) { normalizeGuideMediaSource(mediaUrl) }
@@ -318,10 +354,16 @@ internal fun GuideInlineVideoPlayer(
                 }
             ) {
                 GuideRemoteImageAdaptive(
-                    imageUrl = normalizedPreviewUrl
+                    imageUrl = normalizedPreviewUrl,
+                    progressState = previewProgressState,
+                    onLoadingChanged = onPreviewLoadingChanged
                 )
             }
+        } else {
+            previewProgressState?.value = 1f
+            onPreviewLoadingChanged?.invoke(false)
         }
+        onBufferingChange(false)
         return
     }
 
@@ -348,6 +390,7 @@ internal fun GuideInlineVideoPlayer(
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 isBuffering = playbackState == Player.STATE_BUFFERING
+                onBufferingChange(isBuffering)
             }
 
             override fun onIsPlayingChanged(isPlayingNow: Boolean) {
@@ -366,6 +409,7 @@ internal fun GuideInlineVideoPlayer(
             runCatching { boundPlayer.release() }
             isBuffering = false
             isPlaying = false
+            onBufferingChange(false)
             onIsPlayingChange(false)
         }
     }
