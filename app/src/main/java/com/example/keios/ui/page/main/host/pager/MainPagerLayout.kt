@@ -123,11 +123,7 @@ internal fun MainPagerLayout(
                 backdrop = coordinator.backdrop,
                 reduceEffectsDuringPagerScroll = coordinator.pagerState.isScrollInProgress,
                 liquidBottomBarEnabled = liquidBottomBarEnabled,
-                onPageSelected = { index ->
-                    if (index != coordinator.pagerState.targetPage) {
-                        coordinator.onPageSelected(index)
-                    }
-                }
+                onPageSelected = coordinator.onPageSelected
             )
         }
     ) { _ ->

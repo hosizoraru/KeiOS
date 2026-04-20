@@ -1,6 +1,5 @@
 package com.example.keios.ui.page.main.host.pager
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
@@ -137,6 +136,11 @@ internal fun rememberMainPagerCoordinator(
         requestedBottomPageToken = requestedBottomPageToken,
         onRequestedBottomPageConsumed = onRequestedBottomPageConsumed
     )
+    val scrollSignalController = rememberMainPagerScrollSignalController(
+        tabs = tabs,
+        pagerRuntime = pagerRuntime,
+        onPageSelected = tabJumpController.onPageSelected
+    )
     val onBottomPageVisibilityChange = remember(
         visibleBottomPageNames,
         onVisibleBottomPageNamesChange
@@ -161,6 +165,7 @@ internal fun rememberMainPagerCoordinator(
         pagerRuntime,
         homeOverviewState,
         tabJumpController,
+        scrollSignalController,
         backdrop,
         tabJumpController.farJumpAlpha,
         backgroundState.hasNonHomeBackground,
@@ -182,13 +187,13 @@ internal fun rememberMainPagerCoordinator(
             farJumpAlpha = tabJumpController.farJumpAlpha,
             hasNonHomeBackground = backgroundState.hasNonHomeBackground,
             effectiveNonHomeBackgroundUri = backgroundState.effectiveNonHomeBackgroundUri,
-            onPageSelected = tabJumpController.onPageSelected,
+            onPageSelected = scrollSignalController.onPageSelected,
             onActionBarInteractingChanged = tabJumpController.onActionBarInteractingChanged,
             onBottomPageVisibilityChange = onBottomPageVisibilityChange,
-            osScrollToTopSignal = 0,
-            baScrollToTopSignal = 0,
-            mcpScrollToTopSignal = 0,
-            githubScrollToTopSignal = 0
+            osScrollToTopSignal = scrollSignalController.osScrollToTopSignal,
+            baScrollToTopSignal = scrollSignalController.baScrollToTopSignal,
+            mcpScrollToTopSignal = scrollSignalController.mcpScrollToTopSignal,
+            githubScrollToTopSignal = scrollSignalController.githubScrollToTopSignal
         )
     }
 }
