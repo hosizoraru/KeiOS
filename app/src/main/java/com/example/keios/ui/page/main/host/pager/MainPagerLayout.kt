@@ -120,6 +120,7 @@ internal fun MainPagerLayout(
                 navigationBarBottom = insets.navigationBarBottom,
                 tabs = coordinator.tabs,
                 selectedPageIndex = coordinator.pagerState.targetPage,
+                selectedPageIndexProvider = { coordinator.pagerState.targetPage },
                 backdrop = coordinator.backdrop,
                 reduceEffectsDuringPagerScroll = coordinator.pagerState.isScrollInProgress,
                 liquidBottomBarEnabled = liquidBottomBarEnabled,

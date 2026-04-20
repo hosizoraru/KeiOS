@@ -103,7 +103,7 @@ internal fun rememberMainPagerTabJumpController(
             } else {
                 pagerState.settledPage
             }.coerceIn(0, tabs.lastIndex)
-            if (index != stablePageIndex || pagerState.isScrollInProgress) {
+            if (index != stablePageIndex) {
                 tabJumpJob?.cancel()
                 tabJumpJob = coroutineScope.launch {
                     pagerState.animateTabSwitch(

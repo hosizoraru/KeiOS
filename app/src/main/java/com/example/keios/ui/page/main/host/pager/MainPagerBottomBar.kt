@@ -33,6 +33,7 @@ internal fun MainPagerBottomBar(
     navigationBarBottom: Dp,
     tabs: List<BottomPage>,
     selectedPageIndex: Int,
+    selectedPageIndexProvider: () -> Int,
     backdrop: LayerBackdrop,
     reduceEffectsDuringPagerScroll: Boolean,
     liquidBottomBarEnabled: Boolean,
@@ -99,7 +100,7 @@ internal fun MainPagerBottomBar(
                 modifier = bottomBarModifier,
                 selectedIndex = selectedPageIndex,
                 onSelected = { index ->
-                    if (index != selectedPageIndex) {
+                    if (index != selectedPageIndexProvider()) {
                         onPageSelected(index)
                     }
                 },
