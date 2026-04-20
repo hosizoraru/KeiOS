@@ -59,6 +59,12 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".core.shortcut.ShortcutDispatchActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.KeiOS.ShortcutDispatch" />
+        <activity
             android:name=".ui.page.main.github.share.GitHubShareImportActivity"
             android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
             android:excludeFromRecents="true"
@@ -103,6 +109,11 @@
 
         <receiver
             android:name=".feature.notification.NotificationActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".core.shortcut.ShortcutActionReceiver"
             android:enabled="true"
             android:exported="false" />
 

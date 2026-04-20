@@ -28,9 +28,9 @@ import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.core.perf.AppJankMonitor
 import com.example.keios.core.shortcut.AppShortcuts
 import com.example.keios.core.system.ShizukuApiUtils
-import com.example.keios.mcp.server.LocalMcpService
 import com.example.keios.mcp.notification.McpNotificationHelper
 import com.example.keios.mcp.server.McpServerManager
+import com.example.keios.mcp.server.McpServerRuntime
 import com.example.keios.ui.page.main.ba.BaApNotificationDispatcher
 import com.example.keios.ui.page.main.ba.support.BASettingsStore
 import com.example.keios.ui.page.main.MainScreen
@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
         const val TARGET_BOTTOM_PAGE_BA = "Ba"
         const val MCP_SERVER_ACTION_TOGGLE = "toggle"
         const val SHORTCUT_ACTION_BA_AP_ISLAND = "ba_ap_island"
+        const val SHORTCUT_ACTION_MCP_TOGGLE = "mcp_toggle"
         const val SHORTCUT_ACTION_GITHUB_REFRESH_TRACKED = "github_refresh_tracked"
     }
 
@@ -60,7 +61,6 @@ class MainActivity : ComponentActivity() {
     private var pendingMcpServerAction: String? = null
     private var pendingShortcutAction: String? = null
     private val shizukuApiUtils = ShizukuApiUtils()
-    private lateinit var localMcpService: LocalMcpService
     private lateinit var mcpServerManager: McpServerManager
     private var jankStats: JankStats? = null
     private val requestNotificationPermissionLauncher =
@@ -85,18 +85,7 @@ class MainActivity : ComponentActivity() {
         val packageInfo = runCatching {
             packageManager.getPackageInfoCompat(packageName)
         }.getOrNull()
-        localMcpService = LocalMcpService(
-            appContext = applicationContext,
-            shizukuApiUtils = shizukuApiUtils,
-            appVersionName = packageInfo?.versionName ?: "unknown",
-            appVersionCode = packageInfo?.longVersionCode ?: -1L,
-            appPackageName = packageName,
-            appLabel = appLabel
-        )
-        mcpServerManager = McpServerManager(
-            appContext = applicationContext,
-            localMcpService = localMcpService
-        )
+        mcpServerManager = McpServerRuntime.getOrCreate(applicationContext)
         applyPendingShortcutActions()
         McpNotificationHelper.restoreXiaomiNetworkIfNeeded(this)
         runCatching { AppShortcuts.sync(this) }
@@ -104,7 +93,7 @@ class MainActivity : ComponentActivity() {
         shizukuApiUtils.attach { status ->
             shizukuStatus.value = status
         }
-        runCatching { localMcpService.getOrCreateServer() }
+        runCatching { mcpServerManager.refreshNow() }
 
         setContent {
             val appThemeMode = appThemeModeState.value

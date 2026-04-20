@@ -27,42 +27,23 @@ object AppForegroundInfoHandler {
 
     suspend fun handleGitHubTick(context: Context) {
         githubTickMutex.withLock {
-            val snapshot = withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
-            val tracked = snapshot.items
-            if (tracked.isEmpty()) return
+            performGitHubRefresh(
+                context = context,
+                force = false,
+                showProgressNotification = false,
+                notifyOnCompleteWithoutChange = false
+            )
+        }
+    }
 
-            val intervalMs = snapshot.refreshIntervalHours.coerceIn(1, 12) * 60L * 60L * 1000L
-            val nowMs = System.currentTimeMillis()
-            if (snapshot.lastRefreshMs > 0L &&
-                (nowMs - snapshot.lastRefreshMs).coerceAtLeast(0L) < intervalMs
-            ) {
-                return
-            }
-
-            val states = LinkedHashMap<String, GitHubCheckCacheEntry>()
-            var updatableCount = 0
-            var failedCount = 0
-            tracked.forEach { item ->
-                val check = withContext(Dispatchers.IO) {
-                    GitHubReleaseCheckService.evaluateTrackedApp(context, item)
-                }
-                if (check.hasUpdate == true) updatableCount += 1
-                if (check.status == GitHubTrackedReleaseStatus.Failed) failedCount += 1
-                states[item.id] = with(GitHubReleaseCheckService) { check.toCacheEntry() }
-            }
-
-            withContext(Dispatchers.IO) {
-                GitHubTrackStore.saveCheckCache(states, nowMs)
-            }
-            if (updatableCount > 0 || failedCount > 0) {
-                GitHubRefreshNotificationHelper.notifyCompleted(
-                    context = context,
-                    total = tracked.size,
-                    trackedCount = tracked.size,
-                    updatableCount = updatableCount,
-                    failedCount = failedCount
-                )
-            }
+    suspend fun handleGitHubShortcutRefresh(context: Context) {
+        githubTickMutex.withLock {
+            performGitHubRefresh(
+                context = context,
+                force = true,
+                showProgressNotification = true,
+                notifyOnCompleteWithoutChange = true
+            )
         }
     }
 
@@ -200,6 +181,76 @@ object AppForegroundInfoHandler {
         )
         if (sent) {
             withContext(Dispatchers.IO) { BASettingsStore.saveArenaRefreshLastNotifiedSlotMs(currentSlotMs) }
+        }
+    }
+
+    private suspend fun performGitHubRefresh(
+        context: Context,
+        force: Boolean,
+        showProgressNotification: Boolean,
+        notifyOnCompleteWithoutChange: Boolean
+    ) {
+        val snapshot = withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
+        val tracked = snapshot.items
+        if (tracked.isEmpty()) {
+            GitHubRefreshNotificationHelper.cancel(context)
+            return
+        }
+
+        val nowMs = System.currentTimeMillis()
+        if (!force) {
+            val intervalMs = snapshot.refreshIntervalHours.coerceIn(1, 12) * 60L * 60L * 1000L
+            if (
+                snapshot.lastRefreshMs > 0L &&
+                (nowMs - snapshot.lastRefreshMs).coerceAtLeast(0L) < intervalMs
+            ) {
+                return
+            }
+        }
+
+        val states = LinkedHashMap<String, GitHubCheckCacheEntry>()
+        var updatableCount = 0
+        var failedCount = 0
+        if (showProgressNotification) {
+            GitHubRefreshNotificationHelper.notifyProgress(
+                context = context,
+                current = 0,
+                total = tracked.size,
+                trackedCount = tracked.size,
+                updatableCount = 0,
+                failedCount = 0
+            )
+        }
+        tracked.forEachIndexed { index, item ->
+            val check = withContext(Dispatchers.IO) {
+                GitHubReleaseCheckService.evaluateTrackedApp(context, item)
+            }
+            if (check.hasUpdate == true) updatableCount += 1
+            if (check.status == GitHubTrackedReleaseStatus.Failed) failedCount += 1
+            states[item.id] = with(GitHubReleaseCheckService) { check.toCacheEntry() }
+            if (showProgressNotification) {
+                GitHubRefreshNotificationHelper.notifyProgress(
+                    context = context,
+                    current = index + 1,
+                    total = tracked.size,
+                    trackedCount = tracked.size,
+                    updatableCount = updatableCount,
+                    failedCount = failedCount
+                )
+            }
+        }
+
+        withContext(Dispatchers.IO) {
+            GitHubTrackStore.saveCheckCache(states, nowMs)
+        }
+        if (updatableCount > 0 || failedCount > 0 || notifyOnCompleteWithoutChange) {
+            GitHubRefreshNotificationHelper.notifyCompleted(
+                context = context,
+                total = tracked.size,
+                trackedCount = tracked.size,
+                updatableCount = updatableCount,
+                failedCount = failedCount
+            )
         }
     }
 }
