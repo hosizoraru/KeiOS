@@ -30,6 +30,8 @@
     <string name="about_card_network_subtitle">MCP 与请求服务栈</string>
     <string name="about_card_media_title">媒体与存储</string>
     <string name="about_card_media_subtitle">播放器、图像与本地存储能力</string>
+    <string name="about_card_project_license_title">项目许可证</string>
+    <string name="about_card_project_license_subtitle">KeiOS 项目自身授权与许可证文件入口</string>
     <string name="about_card_license_title">开源依赖与许可证</string>
     <string name="about_card_license_subtitle">第三方依赖、引用代码与授权入口</string>
 
@@ -129,6 +131,17 @@
     <string name="about_license_url_mcp">https://github.com/modelcontextprotocol/kotlin-sdk/blob/main/LICENSE</string>
     <string name="about_license_url_network_stack">https://github.com/square/okhttp/blob/master/LICENSE.txt</string>
     <string name="about_license_url_media_stack">https://www.apache.org/licenses/LICENSE-2.0.txt</string>
+
+    <string name="about_project_license_row_name">许可证</string>
+    <string name="about_project_license_value_name">Apache License 2.0</string>
+    <string name="about_project_license_row_spdx">SPDX</string>
+    <string name="about_project_license_value_spdx">Apache-2.0</string>
+    <string name="about_project_license_row_file">许可证文件</string>
+    <string name="about_project_license_value_file">LICENSE（项目根目录）</string>
+    <string name="about_project_license_row_copyright">版权声明</string>
+    <string name="about_project_license_value_copyright">Copyright 2026 KeiOS contributors</string>
+    <string name="about_project_license_row_url">官方文本</string>
+    <string name="about_project_license_url">https://www.apache.org/licenses/LICENSE-2.0</string>
 
     <string name="about_runtime_label_notification_permission">通知权限</string>
     <string name="about_runtime_label_selinux">SELinux</string>

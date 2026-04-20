@@ -31,6 +31,7 @@ import com.example.keios.ui.page.main.about.section.AboutLicenseCardSection
 import com.example.keios.ui.page.main.about.section.AboutMediaStorageCardSection
 import com.example.keios.ui.page.main.about.section.AboutNetworkServiceCardSection
 import com.example.keios.ui.page.main.about.section.AboutPermissionCardSection
+import com.example.keios.ui.page.main.about.section.AboutProjectLicenseCardSection
 import com.example.keios.ui.page.main.about.section.AboutRuntimeStatusCardSection
 import com.example.keios.ui.page.main.about.section.AboutUiFrameworkCardSection
 import com.example.keios.ui.page.main.about.util.openExternalUrl
@@ -64,6 +65,7 @@ fun AboutPage(
     val uiFrameworkCardColor = Color(0x2233A1F4)
     val networkServiceCardColor = Color(0x2222C55E)
     val mediaStorageCardColor = Color(0x2260A5FA)
+    val projectLicenseCardColor = Color(0x2243A047)
     val licenseCardColor = Color(0x2243A047)
     val runtimeCardColor = if (shizukuStatus.contains("granted", ignoreCase = true)) {
         Color(0x2222C55E)
@@ -82,6 +84,7 @@ fun AboutPage(
     var githubExpanded by rememberSaveable { mutableStateOf(false) }
     var networkExpanded by rememberSaveable { mutableStateOf(false) }
     var mediaExpanded by rememberSaveable { mutableStateOf(false) }
+    var projectLicenseExpanded by rememberSaveable { mutableStateOf(false) }
     var licenseExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(scrollToTopSignal) {
@@ -228,6 +231,20 @@ fun AboutPage(
                     subtitleColor = subtitleColor,
                     expanded = mediaExpanded,
                     onExpandedChange = { mediaExpanded = it }
+                )
+            }
+            item {
+                AboutProjectLicenseCardSection(
+                    cardColor = projectLicenseCardColor,
+                    accent = accent,
+                    subtitleColor = subtitleColor,
+                    expanded = projectLicenseExpanded,
+                    onExpandedChange = { projectLicenseExpanded = it },
+                    onOpenLicenseUrl = { url ->
+                        if (!openExternalUrl(context, url)) {
+                            Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             }
             item {
