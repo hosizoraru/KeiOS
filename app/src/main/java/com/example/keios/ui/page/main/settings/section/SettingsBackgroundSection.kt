@@ -32,7 +32,6 @@ internal fun SettingsBackgroundSection(
     nonHomeBackgroundEnabled: Boolean,
     onNonHomeBackgroundEnabledChanged: (Boolean) -> Unit,
     nonHomeBackgroundUri: String,
-    onNonHomeBackgroundUriChanged: (String) -> Unit,
     nonHomeBackgroundOpacity: Float,
     onNonHomeBackgroundOpacityChanged: (Float) -> Unit,
     backgroundPickerLauncher: ActivityResultLauncher<Array<String>>,
@@ -88,7 +87,6 @@ internal fun SettingsBackgroundSection(
                     enabled = nonHomeBackgroundUri.isNotBlank(),
                     onClick = {
                         onClearBackground()
-                        onNonHomeBackgroundUriChanged("")
                     }
                 )
             }

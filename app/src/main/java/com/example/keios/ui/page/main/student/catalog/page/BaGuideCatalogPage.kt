@@ -1,19 +1,13 @@
 package com.example.keios.ui.page.main.student.catalog.page
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -23,12 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -36,106 +26,82 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.keios.R
+import com.example.keios.core.prefs.UiPrefs
+import com.example.keios.core.ui.effect.getMiuixAppBarColor
+import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
+import com.example.keios.ui.page.main.ba.support.BASettingsStore
 import com.example.keios.ui.page.main.host.pager.animateTabSwitch
-import com.example.keios.ui.page.main.student.catalog.component.BaGuideCatalogEntryCard
+import com.example.keios.ui.page.main.os.appLucideBackIcon
+import com.example.keios.ui.page.main.os.appLucideRefreshIcon
+import com.example.keios.ui.page.main.os.appLucideSortIcon
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogBundle
-import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogEntry
-import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogStore
 import com.example.keios.ui.page.main.student.catalog.BaGuideCatalogTab
 import com.example.keios.ui.page.main.student.catalog.clearBaGuideCatalogCache
+import com.example.keios.ui.page.main.student.catalog.component.BaGuideCatalogTabContent
 import com.example.keios.ui.page.main.student.catalog.fetchBaGuideCatalogBundle
-import com.example.keios.ui.page.main.student.catalog.filterByQuery
 import com.example.keios.ui.page.main.student.catalog.hydrateBaGuideCatalogReleaseDateIndex
 import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogBundleComplete
 import com.example.keios.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
 import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
 import com.example.keios.ui.page.main.student.catalog.state.BaGuideCatalogSortMode
+import com.example.keios.ui.page.main.student.catalog.state.CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS
+import com.example.keios.ui.page.main.student.catalog.state.rememberBaGuideCatalogFilterSortState
 import com.example.keios.ui.page.main.student.catalog.state.rememberCatalogSyncProgress
-import com.example.keios.ui.page.main.student.catalog.state.sortedByMode
-import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.example.keios.ui.page.main.widget.chrome.AppChromeTokens
-import com.example.keios.ui.page.main.widget.motion.AppMotionTokens
 import com.example.keios.ui.page.main.widget.chrome.AppTopBarSearchField
 import com.example.keios.ui.page.main.widget.chrome.AppTopBarSection
-import com.example.keios.ui.page.main.widget.core.AppTypographyTokens
-import com.example.keios.ui.page.main.widget.core.CardLayoutRhythm
-import com.example.keios.ui.page.main.widget.glass.FrostedBlock
-import com.example.keios.ui.page.main.widget.glass.GlassVariant
-import com.example.keios.ui.page.main.widget.glass.GlassIconButton
-import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBar
-import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import com.example.keios.ui.page.main.widget.chrome.LiquidActionBar
 import com.example.keios.ui.page.main.widget.chrome.LiquidActionBarPopupAnchors
 import com.example.keios.ui.page.main.widget.chrome.LiquidActionItem
+import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBar
+import com.example.keios.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
+import com.example.keios.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
 import com.example.keios.ui.page.main.widget.glass.LiquidDropdownColumn
+import com.example.keios.ui.page.main.widget.glass.LiquidDropdownImpl
+import com.example.keios.ui.page.main.widget.glass.UiPerformanceBudget
+import com.example.keios.ui.page.main.widget.motion.AppMotionTokens
 import com.example.keios.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import com.example.keios.ui.page.main.widget.motion.appFloatingEnter
 import com.example.keios.ui.page.main.widget.motion.appFloatingExit
-import com.example.keios.ui.page.main.widget.glass.LiquidDropdownImpl
+import com.example.keios.ui.page.main.widget.motion.resolvedMotionDuration
 import com.example.keios.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import com.example.keios.ui.page.main.widget.sheet.SnapshotWindowListPopup
-import com.example.keios.ui.page.main.widget.status.StatusPill
-import com.example.keios.ui.page.main.widget.glass.UiPerformanceBudget
-import com.example.keios.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
-import com.example.keios.ui.page.main.widget.motion.resolvedMotionDuration
-import com.example.keios.core.prefs.UiPrefs
-import com.example.keios.ui.page.main.ba.support.BASettingsStore
+import com.example.keios.ui.perf.ReportPagerPerformanceState
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.example.keios.core.ui.effect.getMiuixAppBarColor
-import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
-import com.example.keios.ui.page.main.os.appLucideBackIcon
-import com.example.keios.ui.page.main.os.appLucideRefreshIcon
-import com.example.keios.ui.page.main.os.appLucideSortIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import kotlin.math.max
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-
-private const val CATALOG_BATCH_SIZE = 20
-private const val CATALOG_LOAD_MORE_THRESHOLD = 10
-private const val CATALOG_RELEASE_DATE_FETCH_LIMIT_PER_PASS = 24
 
 @Composable
 fun BaGuideCatalogPage(
@@ -154,11 +120,9 @@ fun BaGuideCatalogPage(
     val sortActionContentDescription = stringResource(R.string.ba_catalog_action_sort)
     val refreshActionContentDescription = stringResource(R.string.ba_catalog_action_refresh)
     val searchLabel = stringResource(R.string.ba_catalog_search_label)
-    val syncStatusTitle = stringResource(R.string.ba_catalog_sync_status_title)
-    val syncStatusBody = stringResource(R.string.ba_catalog_sync_status_body_retry)
-    val emptyTitle = stringResource(R.string.ba_catalog_empty_title)
     val accent = MiuixTheme.colorScheme.primary
     val surfaceColor = MiuixTheme.colorScheme.surface
+
     var activationCount by rememberSaveable { mutableIntStateOf(0) }
     DisposableEffect(Unit) {
         activationCount++
@@ -184,18 +148,20 @@ fun BaGuideCatalogPage(
     var error by remember { mutableStateOf<String?>(null) }
     var catalog by remember { mutableStateOf(BaGuideCatalogBundle.EMPTY) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    var sortMode by rememberSaveable { mutableStateOf(BaGuideCatalogSortMode.Default) }
-    var showSortPopup by remember { mutableStateOf(false) }
-    var favoriteCatalogEntries by remember { mutableStateOf(BaGuideCatalogStore.loadFavorites()) }
+    val filterSortState = rememberBaGuideCatalogFilterSortState()
+
     val sortIcon = appLucideSortIcon()
     val refreshIcon = appLucideRefreshIcon()
-    val actionItems = remember(sortActionContentDescription, refreshActionContentDescription, showSortPopup) {
+    val actionItems = remember(
+        sortActionContentDescription,
+        refreshActionContentDescription,
+        filterSortState.showSortPopup
+    ) {
         listOf(
             LiquidActionItem(
                 icon = sortIcon,
                 contentDescription = sortActionContentDescription,
-                onClick = { showSortPopup = !showSortPopup }
+                onClick = { filterSortState.showSortPopup = !filterSortState.showSortPopup }
             ),
             LiquidActionItem(
                 icon = refreshIcon,
@@ -203,11 +169,6 @@ fun BaGuideCatalogPage(
                 onClick = { refreshSignal += 1 }
             )
         )
-    }
-    val emptySubtitle = if (searchQuery.isBlank()) {
-        stringResource(R.string.ba_catalog_empty_subtitle_default)
-    } else {
-        stringResource(R.string.ba_catalog_empty_subtitle_search)
     }
 
     val tabs = BaGuideCatalogTab.entries
@@ -221,6 +182,7 @@ fun BaGuideCatalogPage(
         targetPage = tabs.getOrElse(pagerState.targetPage) { BaGuideCatalogTab.Student }.name,
         scrolling = pagerState.isScrollInProgress
     )
+
     val pagerScope = rememberCoroutineScope()
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
     LaunchedEffect(pagerState.settledPage) {
@@ -277,8 +239,9 @@ fun BaGuideCatalogPage(
             pagerState.settledPage
         }
         if (index == stablePageIndex) return
+
         selectedTabIndex = index
-        showSortPopup = false
+        filterSortState.showSortPopup = false
         tabJumpJob?.cancel()
         tabJumpJob = pagerScope.launch {
             pagerState.animateTabSwitch(
@@ -312,19 +275,6 @@ fun BaGuideCatalogPage(
         }
     }
 
-    fun toggleCatalogFavorite(contentId: Long) {
-        if (contentId <= 0L) return
-        val next = favoriteCatalogEntries.toMutableMap()
-        if (next.containsKey(contentId)) {
-            next.remove(contentId)
-        } else {
-            next[contentId] = System.currentTimeMillis().coerceAtLeast(1L)
-        }
-        val frozen = next.toMap()
-        favoriteCatalogEntries = frozen
-        BaGuideCatalogStore.saveFavorites(frozen)
-    }
-
     LaunchedEffect(refreshSignal) {
         if (refreshSignal == 0 && transitionAnimationsEnabled && preloadPolicy.initialFetchDelayMs > 0) {
             delay(preloadPolicy.initialFetchDelayMs.toLong())
@@ -332,6 +282,7 @@ fun BaGuideCatalogPage(
         val manualRefresh = refreshSignal > 0
         val now = System.currentTimeMillis()
         loading = true
+
         val refreshIntervalHours = withContext(Dispatchers.IO) {
             BASettingsStore.loadCalendarRefreshIntervalHours()
         }
@@ -411,13 +362,13 @@ fun BaGuideCatalogPage(
                             items = actionItems
                         )
                         LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
-                            if (slotIndex == 0 && showSortPopup) {
+                            if (slotIndex == 0 && filterSortState.showSortPopup) {
                                 SnapshotWindowListPopup(
-                                    show = showSortPopup,
+                                    show = filterSortState.showSortPopup,
                                     alignment = PopupPositionProvider.Align.BottomStart,
                                     anchorBounds = popupAnchorBounds,
                                     placement = SnapshotPopupPlacement.ActionBarCenter,
-                                    onDismissRequest = { showSortPopup = false },
+                                    onDismissRequest = { filterSortState.showSortPopup = false },
                                     enableWindowDim = false
                                 ) {
                                     LiquidDropdownColumn {
@@ -426,11 +377,10 @@ fun BaGuideCatalogPage(
                                             LiquidDropdownImpl(
                                                 text = stringResource(mode.labelRes),
                                                 optionSize = modes.size,
-                                                isSelected = sortMode == mode,
+                                                isSelected = filterSortState.sortMode == mode,
                                                 index = index,
                                                 onSelectedIndexChange = { selectedIndex ->
-                                                    sortMode = modes[selectedIndex]
-                                                    showSortPopup = false
+                                                    filterSortState.selectSortMode(modes[selectedIndex])
                                                 }
                                             )
                                         }
@@ -447,8 +397,8 @@ fun BaGuideCatalogPage(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                        value = filterSortState.searchQuery,
+                        onValueChange = { filterSortState.searchQuery = it },
                         label = searchLabel
                     )
                 }
@@ -528,6 +478,7 @@ fun BaGuideCatalogPage(
             !error.isNullOrBlank() -> Color(0xFFEF4444)
             else -> Color(0xFF22C55E)
         }
+
         HorizontalPager(
             state = pagerState,
             key = { index -> tabs[index].name },
@@ -538,12 +489,10 @@ fun BaGuideCatalogPage(
             beyondViewportPageCount = preloadPolicy.catalogPagerBeyondViewportPageCount
         ) { pageIndex ->
             val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogTab.Student }
-            CatalogTabContent(
+            BaGuideCatalogTabContent(
                 tab = pageTab,
                 catalog = catalog,
-                sortMode = sortMode,
-                favoriteCatalogEntries = favoriteCatalogEntries,
-                searchQuery = searchQuery,
+                filterSortState = filterSortState,
                 loading = loading,
                 error = error,
                 progress = progress,
@@ -555,196 +504,8 @@ fun BaGuideCatalogPage(
                 renderHeavyContent = pageIndex == pagerState.currentPage ||
                     pageIndex == pagerState.settledPage ||
                     (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage),
-                onOpenGuide = onOpenGuide,
-                onToggleFavorite = ::toggleCatalogFavorite
+                onOpenGuide = onOpenGuide
             )
         }
-    }
-}
-
-@Composable
-private fun CatalogTabContent(
-    tab: BaGuideCatalogTab,
-    catalog: BaGuideCatalogBundle,
-    sortMode: BaGuideCatalogSortMode,
-    favoriteCatalogEntries: Map<Long, Long>,
-    searchQuery: String,
-    loading: Boolean,
-    error: String?,
-    progress: Float,
-    progressColor: Color,
-    accent: Color,
-    innerPadding: PaddingValues,
-    nestedScrollConnection: NestedScrollConnection,
-    isPageActive: Boolean,
-    renderHeavyContent: Boolean,
-    onOpenGuide: (String) -> Unit,
-    onToggleFavorite: (Long) -> Unit,
-) {
-    if (!renderHeavyContent) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding() + AppChromeTokens.pageSectionGap,
-                    start = AppChromeTokens.pageHorizontalPadding,
-                    end = AppChromeTokens.pageHorizontalPadding
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = tab.label,
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                fontSize = 13.sp
-            )
-        }
-        return
-    }
-
-    val currentEntries = remember(catalog, tab, sortMode, favoriteCatalogEntries) {
-        catalog.entries(tab).sortedByMode(sortMode, favoriteCatalogEntries)
-    }
-    val filteredEntries = remember(currentEntries, searchQuery) {
-        currentEntries.filterByQuery(searchQuery)
-    }
-    val listState = rememberLazyListState()
-    var visibleCount by rememberSaveable(tab, searchQuery) { mutableIntStateOf(0) }
-    LaunchedEffect(filteredEntries.size) {
-        visibleCount = minOf(filteredEntries.size, CATALOG_BATCH_SIZE)
-    }
-    LaunchedEffect(isPageActive, listState, filteredEntries.size, loading) {
-        if (!isPageActive) return@LaunchedEffect
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            lastVisible to layoutInfo.totalItemsCount
-        }
-            .distinctUntilChanged()
-            .collect { (lastVisible, totalCount) ->
-            if (loading) return@collect
-            if (visibleCount >= filteredEntries.size) return@collect
-            if (totalCount <= 0) return@collect
-            val triggerIndex = (totalCount - 1 - CATALOG_LOAD_MORE_THRESHOLD).coerceAtLeast(0)
-            if (lastVisible < triggerIndex) return@collect
-
-            val viewportItems = listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(6)
-            val appendBatch = max(CATALOG_BATCH_SIZE, viewportItems * 3)
-                .coerceAtMost(CATALOG_BATCH_SIZE * 3)
-            visibleCount = minOf(visibleCount + appendBatch, filteredEntries.size)
-        }
-    }
-    val displayedEntries = remember(filteredEntries, visibleCount) {
-        if (visibleCount >= filteredEntries.size) {
-            filteredEntries
-        } else {
-            filteredEntries.subList(0, visibleCount)
-        }
-    }
-    val syncStatusTitle = stringResource(R.string.ba_catalog_sync_status_title)
-    val syncStatusBody = stringResource(R.string.ba_catalog_sync_status_body_retry)
-    val emptyTitle = stringResource(R.string.ba_catalog_empty_title)
-    val emptySubtitle = if (searchQuery.isBlank()) {
-        stringResource(R.string.ba_catalog_empty_subtitle_default)
-    } else {
-        stringResource(R.string.ba_catalog_empty_subtitle_search)
-    }
-
-    LazyColumn(
-        state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(nestedScrollConnection),
-        contentPadding = PaddingValues(
-            top = innerPadding.calculateTopPadding(),
-            bottom = innerPadding.calculateBottomPadding() + AppChromeTokens.pageSectionGap,
-            start = AppChromeTokens.pageHorizontalPadding,
-            end = AppChromeTokens.pageHorizontalPadding
-        ),
-        verticalArrangement = Arrangement.spacedBy(AppChromeTokens.pageSectionGap)
-    ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        SmallTitle(stringResource(R.string.ba_catalog_tab_title, tab.label))
-                    }
-                    CircularProgressIndicator(
-                        progress = progress,
-                        size = 18.dp,
-                        strokeWidth = 2.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = progressColor,
-                            backgroundColor = progressColor.copy(alpha = 0.30f),
-                        ),
-                    )
-                }
-            }
-
-                if (!error.isNullOrBlank()) {
-                    item {
-                        FrostedBlock(
-                            backdrop = null,
-                            title = syncStatusTitle,
-                            subtitle = error.orEmpty(),
-                            body = syncStatusBody,
-                            accent = Color(0xFFEF4444)
-                        )
-                    }
-            }
-
-                if (!loading && filteredEntries.isEmpty()) {
-                    item {
-                        FrostedBlock(
-                            backdrop = null,
-                            title = emptyTitle,
-                            subtitle = emptySubtitle,
-                            accent = accent
-                        )
-                    }
-            } else {
-                items(
-                    items = displayedEntries,
-                    key = { "${it.tab.name}-${it.entryId}-${it.contentId}" }
-                ) { entry ->
-                    BaGuideCatalogEntryCard(
-                        entry = entry,
-                        isFavorite = favoriteCatalogEntries.containsKey(entry.contentId),
-                        onOpenGuide = onOpenGuide,
-                        onToggleFavorite = onToggleFavorite
-                    )
-                }
-                if (visibleCount < filteredEntries.size) {
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 10.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularProgressIndicator(
-                                progress = 0.3f,
-                                size = 16.dp,
-                                strokeWidth = 2.dp,
-                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                    foregroundColor = accent,
-                                    backgroundColor = accent.copy(alpha = 0.30f),
-                                ),
-                            )
-                            Text(
-                                text = " 继续加载更多条目…",
-                                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-                }
-            }
     }
 }

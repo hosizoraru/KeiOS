@@ -1,9 +1,6 @@
 package com.example.keios.ui.page.main.settings.section
 
-import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.example.keios.R
@@ -17,12 +14,6 @@ import com.example.keios.ui.page.main.settings.support.formatLogTime
 import com.example.keios.ui.page.main.widget.core.AppDualActionRow
 import com.example.keios.ui.page.main.widget.glass.GlassTextButton
 import com.example.keios.ui.page.main.widget.glass.GlassVariant
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -31,16 +22,12 @@ internal fun SettingsLogSection(
     onLogDebugChanged: (Boolean) -> Unit,
     logStats: AppLogStore.Stats,
     exportingLogZip: Boolean,
-    onExportingLogZipChange: (Boolean) -> Unit,
     clearingLogs: Boolean,
-    onClearingLogsChange: (Boolean) -> Unit,
-    onLogReloadSignal: () -> Unit,
-    logExportLauncher: ActivityResultLauncher<String>,
+    onExportZipClick: () -> Unit,
+    onClearLogsClick: () -> Unit,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
     val logGroupActive = logDebugEnabled || logStats.fileCount > 0
     val logLatestText = if (logStats.latestModifiedAtMs <= 0L) {
         stringResource(R.string.settings_log_stat_latest_empty)
@@ -98,14 +85,7 @@ internal fun SettingsLogSection(
                     modifier = modifier,
                     textColor = MiuixTheme.colorScheme.primary,
                     enabled = !exportingLogZip && !clearingLogs,
-                    onClick = {
-                        onExportingLogZipChange(true)
-                        val stamp = SimpleDateFormat(
-                            "yyyyMMdd-HHmmss",
-                            Locale.getDefault()
-                        ).format(Date())
-                        logExportLauncher.launch("keios-logs-$stamp.zip")
-                    }
+                    onClick = onExportZipClick
                 )
             },
             second = { modifier ->
@@ -120,31 +100,7 @@ internal fun SettingsLogSection(
                     modifier = modifier,
                     textColor = MiuixTheme.colorScheme.error,
                     enabled = !exportingLogZip && !clearingLogs,
-                    onClick = {
-                        scope.launch {
-                            onClearingLogsChange(true)
-                            val result = withContext(Dispatchers.IO) {
-                                runCatching { AppLogStore.clear(context) }
-                            }
-                            onClearingLogsChange(false)
-                            if (result.isSuccess) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.settings_log_toast_cleared),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
-                                    ?: context.getString(R.string.common_unknown)
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.settings_log_toast_clear_failed, reason),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            onLogReloadSignal()
-                        }
-                    }
+                    onClick = onClearLogsClick
                 )
             }
         )

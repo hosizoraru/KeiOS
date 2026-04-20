@@ -58,6 +58,7 @@
     <string name="ba_catalog_empty_title">暂无结果</string>
     <string name="ba_catalog_empty_subtitle_default">当前分类没有可显示条目</string>
     <string name="ba_catalog_empty_subtitle_search">未匹配到相关条目</string>
+    <string name="ba_catalog_loading_more">继续加载更多条目…</string>
     <string name="ba_catalog_cd_favorite_student">收藏学生</string>
     <string name="ba_catalog_cd_unfavorite_student">取消收藏</string>
     <string name="ba_catalog_sort_default">默认排序</string>
