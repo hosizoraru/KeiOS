@@ -7,6 +7,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,10 +26,13 @@ import androidx.metrics.performance.JankStats
 import com.example.keios.core.prefs.AppThemeMode
 import com.example.keios.core.prefs.UiPrefs
 import com.example.keios.core.perf.AppJankMonitor
+import com.example.keios.core.shortcut.AppShortcuts
 import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.mcp.server.LocalMcpService
 import com.example.keios.mcp.notification.McpNotificationHelper
 import com.example.keios.mcp.server.McpServerManager
+import com.example.keios.ui.page.main.ba.BaApNotificationDispatcher
+import com.example.keios.ui.page.main.ba.support.BASettingsStore
 import com.example.keios.ui.page.main.MainScreen
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -38,10 +42,13 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_TARGET_BOTTOM_PAGE = "com.example.keios.extra.TARGET_BOTTOM_PAGE"
         const val EXTRA_MCP_SERVER_ACTION = "com.example.keios.extra.MCP_SERVER_ACTION"
+        const val EXTRA_SHORTCUT_ACTION = "com.example.keios.extra.SHORTCUT_ACTION"
         const val TARGET_BOTTOM_PAGE_GITHUB = "GitHub"
         const val TARGET_BOTTOM_PAGE_MCP = "Mcp"
         const val TARGET_BOTTOM_PAGE_BA = "Ba"
         const val MCP_SERVER_ACTION_TOGGLE = "toggle"
+        const val SHORTCUT_ACTION_BA_AP_ISLAND = "ba_ap_island"
+        const val SHORTCUT_ACTION_GITHUB_REFRESH_TRACKED = "github_refresh_tracked"
     }
 
     private var shizukuStatus = mutableStateOf("Shizuku status: initializing...")
@@ -49,7 +56,9 @@ class MainActivity : ComponentActivity() {
     private var notificationPermissionGranted by mutableStateOf(true)
     private var requestedBottomPage by mutableStateOf<String?>(null)
     private var requestedBottomPageToken by mutableStateOf(0)
+    private var requestedGitHubRefreshToken by mutableStateOf(0)
     private var pendingMcpServerAction: String? = null
+    private var pendingShortcutAction: String? = null
     private val shizukuApiUtils = ShizukuApiUtils()
     private lateinit var localMcpService: LocalMcpService
     private lateinit var mcpServerManager: McpServerManager
@@ -88,8 +97,9 @@ class MainActivity : ComponentActivity() {
             appContext = applicationContext,
             localMcpService = localMcpService
         )
-        applyPendingMcpServerAction()
+        applyPendingShortcutActions()
         McpNotificationHelper.restoreXiaomiNetworkIfNeeded(this)
+        runCatching { AppShortcuts.sync(this) }
 
         shizukuApiUtils.attach { status ->
             shizukuStatus.value = status
@@ -123,6 +133,7 @@ class MainActivity : ComponentActivity() {
                     },
                     requestedBottomPage = requestedBottomPage,
                     requestedBottomPageToken = requestedBottomPageToken,
+                    requestedGitHubRefreshToken = requestedGitHubRefreshToken,
                     onRequestedBottomPageConsumed = {
                         requestedBottomPage = null
                     }
@@ -139,7 +150,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         consumeIntentNavigation(intent)
-        applyPendingMcpServerAction()
+        applyPendingShortcutActions()
     }
 
     override fun onDestroy() {
@@ -186,6 +197,16 @@ class MainActivity : ComponentActivity() {
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
         }
+        pendingShortcutAction = intent.getStringExtra(EXTRA_SHORTCUT_ACTION)
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    private fun applyPendingShortcutActions() {
+        applyPendingMcpServerAction()
+        applyPendingBaApIslandAction()
+        applyPendingGitHubRefreshAction()
+        pendingShortcutAction = null
     }
 
     private fun applyPendingMcpServerAction() {
@@ -203,6 +224,33 @@ class MainActivity : ComponentActivity() {
                 allowExternal = state.allowExternal
             )
         }
+    }
+
+    private fun applyPendingBaApIslandAction() {
+        val action = pendingShortcutAction ?: return
+        if (action != SHORTCUT_ACTION_BA_AP_ISLAND) return
+        pendingShortcutAction = null
+        val snapshot = BASettingsStore.loadSnapshot()
+        val sent = BaApNotificationDispatcher.send(
+            context = this,
+            currentDisplay = snapshot.apCurrent.coerceAtLeast(0.0).toInt(),
+            limitDisplay = snapshot.apLimit.coerceAtLeast(0),
+            thresholdDisplay = snapshot.apNotifyThreshold.coerceAtLeast(0)
+        )
+        if (!sent) {
+            Toast.makeText(
+                this,
+                getString(R.string.ba_toast_notification_permission_required),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun applyPendingGitHubRefreshAction() {
+        val action = pendingShortcutAction ?: return
+        if (action != SHORTCUT_ACTION_GITHUB_REFRESH_TRACKED) return
+        pendingShortcutAction = null
+        requestedGitHubRefreshToken += 1
     }
 }
 

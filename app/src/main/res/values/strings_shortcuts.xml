@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_label_ap_island_short">AP上岛</string>
+    <string name="shortcut_label_ap_island_long">AP上岛通知</string>
+    <string name="shortcut_label_mcp_toggle_short">开关MCP</string>
+    <string name="shortcut_label_mcp_toggle_long">MCP服务开关</string>
+    <string name="shortcut_label_github_refresh_short">刷GitHub</string>
+    <string name="shortcut_label_github_refresh_long">刷新追踪</string>
+</resources>

@@ -54,6 +54,7 @@ fun GitHubPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     isPageActive: Boolean = true,
+    externalRefreshTriggerToken: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     enableSearchBar: Boolean = true,
@@ -104,6 +105,10 @@ fun GitHubPage(
             systemDmOption = systemDmOption,
             openLinkFailureMessage = openLinkFailureMessage
         )
+    }
+    androidx.compose.runtime.LaunchedEffect(externalRefreshTriggerToken) {
+        if (externalRefreshTriggerToken <= 0) return@LaunchedEffect
+        actions.refreshAllTracked(showToast = true)
     }
     val shouldResolveOnlineShareTargets by remember(state) {
         derivedStateOf {

@@ -127,6 +127,7 @@ fun MainScreen(
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
+    requestedGitHubRefreshToken: Int,
     onRequestedBottomPageConsumed: () -> Unit
 ) {
     val backStack = remember { mutableStateListOf<NavKey>().apply { add(KeiosRoute.Main) } }
@@ -244,6 +245,7 @@ fun MainScreen(
                     onOpenGuideDetail = openGuideDetail,
                     requestedBottomPage = requestedBottomPage,
                     requestedBottomPageToken = requestedBottomPageToken,
+                    requestedGitHubRefreshToken = requestedGitHubRefreshToken,
                     onRequestedBottomPageConsumed = onRequestedBottomPageConsumed
                 )
             }
@@ -408,6 +410,7 @@ private fun MainPagerLayout(
     onOpenGuideDetail: (String) -> Unit,
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
+    requestedGitHubRefreshToken: Int,
     onRequestedBottomPageConsumed: () -> Unit
 ) {
     val context = LocalContext.current
@@ -844,6 +847,7 @@ private fun MainPagerLayout(
                                 contentBottomPadding = bottomOverlayPadding,
                                 scrollToTopSignal = githubScrollToTopSignal,
                                 isPageActive = isWarmActive,
+                                externalRefreshTriggerToken = requestedGitHubRefreshToken,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                                 onActionBarInteractingChanged = { interacting ->
