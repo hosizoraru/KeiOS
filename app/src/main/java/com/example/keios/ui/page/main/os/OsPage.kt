@@ -1,14 +1,11 @@
 package com.example.keios.ui.page.main.os
 
 import android.widget.Toast
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
@@ -30,6 +27,7 @@ import com.example.keios.ui.page.main.os.state.rememberOsPageCardTransferState
 import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayState
 import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayTransferActions
 import com.example.keios.ui.page.main.os.state.rememberOsPageTextBundle
+import com.example.keios.ui.page.main.os.state.rememberOsPageUiContext
 import com.example.keios.ui.page.main.os.shell.OsShellCommandCardStore
 import com.example.keios.ui.page.main.os.shell.OsShellRunnerActivity
 import com.example.keios.ui.page.main.os.shortcut.OsActivityCardEditMode
@@ -48,16 +46,17 @@ fun OsPage(
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
-    val inactive = MiuixTheme.colorScheme.onBackgroundVariant
-    val titleColor = MiuixTheme.colorScheme.onBackground
-    val cachedColor = Color(0xFFF59E0B)
-    val refreshingColor = Color(0xFF3B82F6)
-    val syncedColor = Color(0xFF22C55E)
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    val scope = rememberCoroutineScope()
-    val textBundle = rememberOsPageTextBundle()
+    val uiContext = rememberOsPageUiContext()
+    val context = uiContext.context
+    val density = uiContext.density
+    val scope = uiContext.scope
+    val textBundle = uiContext.textBundle
+    val isDark = uiContext.isDark
+    val inactive = uiContext.inactiveColor
+    val titleColor = uiContext.titleColor
+    val cachedColor = uiContext.cachedColor
+    val refreshingColor = uiContext.refreshingColor
+    val syncedColor = uiContext.syncedColor
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val initialUiSnapshot = remember { OsUiStateStore.loadSnapshot() }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -97,13 +96,10 @@ fun OsPage(
     val sectionLoadDeferreds = remember { mutableStateMapOf<SectionKind, Deferred<List<InfoRow>>>() }
     var showSearchBar by remember { mutableStateOf(true) }
     var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
-    val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrops = rememberMainPageBackdropSet(
-        keyPrefix = "os",
-        refreshOnCompositionEnter = true
-    )
-    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
-    val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
+    val surfaceColor = uiContext.surfaceColor
+    val backdrops = uiContext.backdrops
+    val topBarMaterialBackdrop = uiContext.topBarMaterialBackdrop
+    val searchBarHideThresholdPx = uiContext.searchBarHideThresholdPx
     val searchBarScrollConnection = remember(searchBarHideThresholdPx) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
