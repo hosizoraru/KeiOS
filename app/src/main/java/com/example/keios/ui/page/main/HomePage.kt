@@ -348,83 +348,81 @@ private fun HomeBottomPageLabel(
 }
 
 @Composable
-private fun HomeInlineInfoItem(
+private fun HomeInfoGridCard(
     title: String,
-    headline: String,
-    detail: String = "",
-    extraDetail: String = "",
+    stats: List<HomeCardStatItem>,
     naText: String,
-    titleSlotWidth: Dp = 96.dp
+    columns: Int = 2
 ) {
     val summaryColor = if (isSystemInDarkTheme()) {
         Color(0xFF8AB8FF)
     } else {
         Color(0xFF1E63D6)
     }
-
-    val contentColumnStartPadding = titleSlotWidth + 6.dp
+    val labelColor = MiuixTheme.colorScheme.onSurfaceVariantSummary
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 1.dp),
-        verticalArrangement = Arrangement.spacedBy(1.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                fontWeight = FontWeight.Medium,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .width(titleSlotWidth)
-            )
-            Text(
-                text = headline.ifBlank { naText },
-                color = summaryColor,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f)
-            )
-        }
-        if (detail.isNotBlank()) {
-            Text(
-                text = detail,
-                color = summaryColor,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = contentColumnStartPadding)
-            )
-        }
-        if (extraDetail.isNotBlank()) {
-            Text(
-                text = extraDetail,
-                color = summaryColor,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = contentColumnStartPadding)
-            )
+        Text(
+            text = title,
+            color = MiuixTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            lineHeight = 18.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        stats.chunked(columns).forEach { rowStats ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                rowStats.forEach { stat ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 1.dp),
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                    ) {
+                        Text(
+                            text = stat.label,
+                            color = labelColor,
+                            fontSize = 11.sp,
+                            lineHeight = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = stat.value.ifBlank { naText },
+                            color = if (stat.emphasize) summaryColor else MiuixTheme.colorScheme.onSurface,
+                            fontSize = 13.sp,
+                            lineHeight = 17.sp,
+                            fontWeight = if (stat.emphasize) FontWeight.SemiBold else FontWeight.Medium,
+                            maxLines = stat.valueMaxLines,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                repeat(columns - rowStats.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
+
+private data class HomeCardStatItem(
+    val label: String,
+    val value: String,
+    val emphasize: Boolean = false,
+    val valueMaxLines: Int = 2
+)
 
 @Composable
 fun HomePage(
@@ -511,6 +509,26 @@ fun HomePage(
     val homeCardMcp = stringResource(R.string.home_card_title_mcp)
     val homeCardGitHub = stringResource(R.string.home_card_title_github_cache)
     val homeCardBa = stringResource(R.string.home_card_title_ba)
+    val homeStatStatus = stringResource(R.string.home_stat_status)
+    val homeStatRuntime = stringResource(R.string.home_stat_runtime)
+    val homeStatClients = stringResource(R.string.home_stat_clients)
+    val homeStatNetwork = stringResource(R.string.home_stat_network)
+    val homeStatPort = stringResource(R.string.home_stat_port)
+    val homeStatPath = stringResource(R.string.home_stat_path)
+    val homeStatService = stringResource(R.string.home_stat_service)
+    val homeStatToken = stringResource(R.string.home_stat_token)
+    val homeStatStableUpdates = stringResource(R.string.home_stat_stable_updates)
+    val homeStatPreReleaseUpdates = stringResource(R.string.home_stat_prerelease_updates)
+    val homeStatTracked = stringResource(R.string.home_stat_tracked)
+    val homeStatCached = stringResource(R.string.home_stat_cached)
+    val homeStatStrategy = stringResource(R.string.home_stat_strategy)
+    val homeStatApi = stringResource(R.string.home_stat_api)
+    val homeStatLastUpdate = stringResource(R.string.home_stat_last_update)
+    val homeStatAp = stringResource(R.string.home_stat_ap)
+    val homeStatCafeAp = stringResource(R.string.home_stat_cafe_ap)
+    val homeStatApRemaining = stringResource(R.string.home_stat_ap_remaining)
+    val homeBaStatusActive = stringResource(R.string.home_ba_status_active)
+    val homeBaStatusInactive = stringResource(R.string.home_ba_status_inactive)
     val homeMcpRuntimePending = stringResource(R.string.mcp_runtime_pending)
     val homeCommonFilled = stringResource(R.string.common_filled)
     val homeCommonNotUsed = stringResource(R.string.common_not_used)
@@ -560,6 +578,28 @@ fun HomePage(
         !githubOverview.loaded || trackedCount == 0 || cacheHitCount == 0 ->
             stringResource(R.string.github_overview_value_count, 0)
         else -> stringResource(R.string.github_overview_value_count, preReleaseUpdateCount)
+    }
+    val trackedCountLine = stringResource(R.string.github_overview_value_count, trackedCount)
+    val cacheHitCountLine = stringResource(R.string.github_overview_value_count, cacheHitCount)
+    val baApLine = if (baOverview.loaded) {
+        stringResource(R.string.home_value_fraction, baOverview.apCurrent, baOverview.apLimit)
+    } else {
+        homeStatusLoading
+    }
+    val baCafeApLine = if (baOverview.loaded) {
+        stringResource(R.string.home_value_fraction, baOverview.cafeStored, baOverview.cafeCap)
+    } else {
+        homeStatusLoading
+    }
+    val baActivationLine = if (baOverview.loaded) {
+        if (baOverview.activated) homeBaStatusActive else homeBaStatusInactive
+    } else {
+        homeStatusLoading
+    }
+    val baApRemainingLine = if (baOverview.loaded) {
+        (baOverview.apLimit - baOverview.apCurrent).coerceAtLeast(0).toString()
+    } else {
+        homeStatusLoading
     }
 
     var logoHeightPx by remember { mutableIntStateOf(0) }
@@ -967,26 +1007,46 @@ fun HomePage(
                             backdrop = homeCardBackdrop,
                             blurEnabled = blurEnabled
                         ) {
-                            HomeInlineInfoItem(
+                            HomeInfoGridCard(
                                 title = homeCardMcp,
-                                headline = stringResource(
-                                    R.string.home_mcp_line_priority_primary,
-                                    mcpStatusText,
-                                    mcpRuntimeText
-                                ),
-                                detail = stringResource(
-                                    R.string.home_mcp_line_priority_secondary,
-                                    mcpConnectedClients,
-                                    networkModeText,
-                                    mcpPort
-                                ),
-                                extraDetail = stringResource(
-                                    R.string.home_mcp_line_priority_tertiary,
-                                    mcpEndpointPath,
-                                    mcpServerName,
-                                    mcpTokenStatusText
-                                ),
-                                naText = homeNa
+                                naText = homeNa,
+                                stats = listOf(
+                                    HomeCardStatItem(
+                                        label = homeStatStatus,
+                                        value = mcpStatusText,
+                                        emphasize = true
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatRuntime,
+                                        value = mcpRuntimeText,
+                                        emphasize = true
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatClients,
+                                        value = mcpConnectedClients.toString()
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatNetwork,
+                                        value = networkModeText
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatPort,
+                                        value = mcpPort.toString()
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatToken,
+                                        value = mcpTokenStatusText
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatService,
+                                        value = mcpServerName
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatPath,
+                                        value = mcpEndpointPath,
+                                        valueMaxLines = 3
+                                    )
+                                )
                             )
                         }
 
@@ -994,33 +1054,42 @@ fun HomePage(
                             backdrop = homeCardBackdrop,
                             blurEnabled = blurEnabled
                         ) {
-                            HomeInlineInfoItem(
+                            HomeInfoGridCard(
                                 title = homeCardGitHub,
-                                headline = if (!githubOverview.loaded) {
-                                    homeStatusLoading
-                                } else if (trackedCount == 0) {
-                                    homeGitHubUnconfigured
-                                } else if (cacheHitCount == 0) {
-                                    homeGitHubPendingRefresh
-                                } else {
-                                    stringResource(
-                                        R.string.home_github_line_priority_primary,
-                                        githubUpdatableLine,
-                                        githubPreReleaseUpdateLine
+                                naText = homeNa,
+                                stats = listOf(
+                                    HomeCardStatItem(
+                                        label = homeStatStableUpdates,
+                                        value = githubUpdatableLine,
+                                        emphasize = true
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatPreReleaseUpdates,
+                                        value = githubPreReleaseUpdateLine,
+                                        emphasize = true
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatTracked,
+                                        value = trackedCountLine
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatCached,
+                                        value = cacheHitCountLine
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatStrategy,
+                                        value = githubStrategyText
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatApi,
+                                        value = githubApiText
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatLastUpdate,
+                                        value = githubLastUpdateLine,
+                                        valueMaxLines = 3
                                     )
-                                },
-                                detail = stringResource(
-                                    R.string.home_github_line_priority_secondary,
-                                    stringResource(R.string.github_overview_value_count, trackedCount),
-                                    stringResource(R.string.github_overview_value_count, cacheHitCount)
-                                ),
-                                extraDetail = stringResource(
-                                    R.string.home_github_line_priority_tertiary,
-                                    githubStrategyText,
-                                    githubApiText,
-                                    githubLastUpdateLine
-                                ),
-                                naText = homeNa
+                                )
                             )
                         }
 
@@ -1028,20 +1097,29 @@ fun HomePage(
                             backdrop = homeCardBackdrop,
                             blurEnabled = blurEnabled
                         ) {
-                            HomeInlineInfoItem(
+                            HomeInfoGridCard(
                                 title = homeCardBa,
-                                headline = if (baOverview.loaded) {
-                                    stringResource(
-                                        R.string.home_ba_line_ap,
-                                        baOverview.apCurrent,
-                                        baOverview.apLimit,
-                                        baOverview.cafeStored,
-                                        baOverview.cafeCap
+                                naText = homeNa,
+                                stats = listOf(
+                                    HomeCardStatItem(
+                                        label = homeStatStatus,
+                                        value = baActivationLine,
+                                        emphasize = true
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatAp,
+                                        value = baApLine,
+                                        emphasize = true
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatCafeAp,
+                                        value = baCafeApLine
+                                    ),
+                                    HomeCardStatItem(
+                                        label = homeStatApRemaining,
+                                        value = baApRemainingLine
                                     )
-                                } else {
-                                    homeStatusLoading
-                                },
-                                naText = homeNa
+                                )
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))

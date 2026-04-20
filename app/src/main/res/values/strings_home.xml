@@ -11,8 +11,10 @@
     <string name="home_status_ba">BA</string>
     <string name="home_status_shizuku">Shizuku</string>
     <string name="home_card_title_mcp">MCP</string>
-    <string name="home_card_title_github_cache">GitHub Cache</string>
+    <string name="home_card_title_github_cache">GitHub</string>
     <string name="home_card_title_ba">BA</string>
+    <string name="home_ba_status_active">已激活</string>
+    <string name="home_ba_status_inactive">未激活</string>
     <string name="home_time_just_now">刚刚</string>
     <string name="home_mcp_status_running">运行中</string>
     <string name="home_mcp_status_stopped">未运行</string>
@@ -30,4 +32,23 @@
     <string name="home_github_line_priority_secondary">追踪：%1$s   缓存：%2$s</string>
     <string name="home_github_line_priority_tertiary">策略：%1$s   API：%2$s   上次更新：%3$s</string>
     <string name="home_ba_line_ap">AP：%1$d/%2$d   咖啡厅AP：%3$d/%4$d</string>
+    <string name="home_stat_status">状态</string>
+    <string name="home_stat_runtime">运行时长</string>
+    <string name="home_stat_clients">在线设备</string>
+    <string name="home_stat_network">网络</string>
+    <string name="home_stat_port">端口</string>
+    <string name="home_stat_path">路径</string>
+    <string name="home_stat_service">服务</string>
+    <string name="home_stat_token">Token</string>
+    <string name="home_stat_stable_updates">稳定可更新</string>
+    <string name="home_stat_prerelease_updates">预发可更新</string>
+    <string name="home_stat_tracked">追踪</string>
+    <string name="home_stat_cached">缓存</string>
+    <string name="home_stat_strategy">策略</string>
+    <string name="home_stat_api">API</string>
+    <string name="home_stat_last_update">上次更新</string>
+    <string name="home_stat_ap">AP</string>
+    <string name="home_stat_cafe_ap">咖啡厅AP</string>
+    <string name="home_stat_ap_remaining">AP余量</string>
+    <string name="home_value_fraction">%1$d/%2$d</string>
 </resources>
