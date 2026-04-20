@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.keios.R
+import com.example.keios.ui.page.main.os.appLucidePackageIcon
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
 import com.example.keios.ui.page.main.student.section.GuidePressableMediaSurface
 import com.example.keios.ui.page.main.student.GuideRemoteImageAdaptive
@@ -213,6 +214,7 @@ fun GuideGalleryExpressionCardItem(
     }
     val imageProgress by imageProgressState.collectAsState()
     var imageLoading by remember(displayImageUrl) { mutableStateOf(displayImageUrl.isNotBlank()) }
+    val packDownloadIcon = appLucidePackageIcon()
     val expressionPackTargets = remember(items, optionLabels, mediaUrlResolver) {
         items.mapIndexedNotNull { index, item ->
             val rawImage = mediaUrlResolver(item.imageUrl)
@@ -354,7 +356,8 @@ fun GuideGalleryExpressionCardItem(
                 if (expressionPackTargets.size > 1) {
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = stringResource(R.string.guide_expression_action_pack_download),
+                        text = "",
+                        leadingIcon = packDownloadIcon,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
                         onClick = {

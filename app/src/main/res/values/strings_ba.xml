@@ -72,7 +72,6 @@
     <string name="guide_loading_title">阿罗娜帮老师连接中！</string>
     <string name="guide_toast_voice_play_failed_with_reason">语音播放失败：%1$s</string>
     <string name="guide_expression_swipe_hint">左右滑动切换表情</string>
-    <string name="guide_expression_action_pack_download">打包</string>
     <string name="guide_expression_pack_download_started">已触发表情打包下载（%1$d项）</string>
     <string name="guide_share_source_empty">暂无可分享的来源链接</string>
     <string name="guide_share_source_chooser_title">分享来源</string>

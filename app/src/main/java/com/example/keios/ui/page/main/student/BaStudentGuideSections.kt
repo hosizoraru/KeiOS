@@ -360,6 +360,8 @@ fun GuideRemoteImageAdaptive(
         onLoadingChanged?.invoke(false)
         return
     }
+    val fallbackRatio = remember(target) { detectMediaRatioFromUrl(target) ?: (16f / 9f) }
+    var stableRatio by remember { mutableStateOf(fallbackRatio.coerceIn(0.4f, 4f)) }
     val isGifSource = remember(target) { isGifMediaSource(target) }
     if (isGifSource) {
         val resolvedGifTarget by produceState(
@@ -430,10 +432,11 @@ fun GuideRemoteImageAdaptive(
         )
         return
     }
-    val bitmap by produceState<Bitmap?>(initialValue = null, target) {
+    var retainedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val bitmap by produceState<Bitmap?>(initialValue = retainedBitmap, target) {
         progressState?.value = 0f
         onLoadingChanged?.invoke(true)
-        value = withContext(Dispatchers.IO) {
+        val loadedBitmap = withContext(Dispatchers.IO) {
             runCatching {
                 loadGuideBitmapSource(
                     context = context,
@@ -447,18 +450,35 @@ fun GuideRemoteImageAdaptive(
                 }
             }.getOrNull()
         }
-        if (value != null) {
+        if (loadedBitmap != null) {
+            retainedBitmap = loadedBitmap
+            value = loadedBitmap
+            progressState?.value = 1f
+        } else {
+            value = retainedBitmap
             progressState?.value = 1f
         }
         onLoadingChanged?.invoke(false)
     }
-    val rendered = bitmap ?: return
+    val rendered = bitmap
+    if (rendered == null) {
+        Spacer(
+            modifier = modifier
+                .fillMaxWidth()
+                .aspectRatio(stableRatio)
+                .clip(RoundedCornerShape(14.dp))
+        )
+        return
+    }
     val ratio = remember(rendered.width, rendered.height) {
         if (rendered.width > 0 && rendered.height > 0) {
             rendered.width.toFloat() / rendered.height.toFloat()
         } else {
-            1f
+            stableRatio
         }
+    }.coerceIn(0.4f, 4f)
+    if (kotlin.math.abs(ratio - stableRatio) > 0.001f) {
+        stableRatio = ratio
     }
     Image(
         bitmap = rendered.asImageBitmap(),
