@@ -135,6 +135,8 @@ private fun formatGitHubCacheAgo(
 }
 
 private const val HOME_BA_KV_ID = "ba_page_settings"
+private const val HOME_PAGE_PREFS_KV_ID = "home_page_prefs"
+private const val HOME_VISIBLE_OVERVIEW_CARDS_KEY = "home_visible_overview_cards"
 private const val HOME_BA_DEFAULT_FRIEND_CODE = "ARISUKEI"
 private const val HOME_BA_AP_LIMIT_MAX = 240
 private const val HOME_BA_AP_MAX = 999
@@ -147,6 +149,30 @@ private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
     Color(0xFFFF6098),
     Color(0xFFFF5893)
 )
+
+private enum class HomeOverviewCard {
+    MCP,
+    GITHUB,
+    BA
+}
+
+private fun loadHomeVisibleOverviewCards(): Set<HomeOverviewCard> {
+    val kv = MMKV.mmkvWithID(HOME_PAGE_PREFS_KV_ID)
+    val raw = kv.decodeString(HOME_VISIBLE_OVERVIEW_CARDS_KEY, "").orEmpty().trim()
+    if (raw.isBlank()) return HomeOverviewCard.entries.toSet()
+    val parsed = raw.split(',')
+        .mapNotNull { name ->
+            HomeOverviewCard.entries.firstOrNull { it.name == name.trim() }
+        }
+        .toSet()
+    return parsed.ifEmpty { HomeOverviewCard.entries.toSet() }
+}
+
+private fun saveHomeVisibleOverviewCards(cards: Set<HomeOverviewCard>) {
+    val kv = MMKV.mmkvWithID(HOME_PAGE_PREFS_KV_ID)
+    val serialized = cards.joinToString(",") { it.name }
+    kv.encode(HOME_VISIBLE_OVERVIEW_CARDS_KEY, serialized)
+}
 
 data class HomeGitHubOverview(
     val trackedCount: Int = 0,
@@ -511,6 +537,8 @@ fun HomePage(
     val homeCardMcp = stringResource(R.string.home_card_title_mcp)
     val homeCardGitHub = stringResource(R.string.home_card_title_github_cache)
     val homeCardBa = stringResource(R.string.home_card_title_ba)
+    val homeVisibleCardsTitle = stringResource(R.string.home_sheet_visible_cards_title)
+    val homeVisibleCardsDesc = stringResource(R.string.home_sheet_visible_cards_desc)
     val homeStatStatus = stringResource(R.string.home_stat_status)
     val homeStatRuntime = stringResource(R.string.home_stat_runtime)
     val homeStatClients = stringResource(R.string.home_stat_clients)
@@ -655,6 +683,15 @@ fun HomePage(
     var summaryProgress by remember { mutableFloatStateOf(0f) }
     var actionBarSelectedIndex by rememberSaveable { mutableIntStateOf(1) }
     var showBottomPageEditor by rememberSaveable { mutableStateOf(false) }
+    var visibleOverviewCards by remember { mutableStateOf(loadHomeVisibleOverviewCards()) }
+
+    fun setHomeOverviewCardVisible(card: HomeOverviewCard, visible: Boolean) {
+        val updated = visibleOverviewCards.toMutableSet().apply {
+            if (visible) add(card) else remove(card)
+        }.toSet()
+        visibleOverviewCards = updated
+        saveHomeVisibleOverviewCards(updated)
+    }
 
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.firstVisibleItemIndex to lazyListState.firstVisibleItemScrollOffset }
@@ -806,6 +843,34 @@ fun HomePage(
                 SheetDescriptionText(
                     text = stringResource(R.string.home_sheet_visible_pages_desc)
                 )
+                SheetSectionTitle(homeVisibleCardsTitle)
+                SheetSectionCard(verticalSpacing = 10.dp) {
+                    SheetControlRow(label = homeCardMcp) {
+                        Switch(
+                            checked = visibleOverviewCards.contains(HomeOverviewCard.MCP),
+                            onCheckedChange = { checked ->
+                                setHomeOverviewCardVisible(HomeOverviewCard.MCP, checked)
+                            }
+                        )
+                    }
+                    SheetControlRow(label = homeCardGitHub) {
+                        Switch(
+                            checked = visibleOverviewCards.contains(HomeOverviewCard.GITHUB),
+                            onCheckedChange = { checked ->
+                                setHomeOverviewCardVisible(HomeOverviewCard.GITHUB, checked)
+                            }
+                        )
+                    }
+                    SheetControlRow(label = homeCardBa) {
+                        Switch(
+                            checked = visibleOverviewCards.contains(HomeOverviewCard.BA),
+                            onCheckedChange = { checked ->
+                                setHomeOverviewCardVisible(HomeOverviewCard.BA, checked)
+                            }
+                        )
+                    }
+                }
+                SheetDescriptionText(text = homeVisibleCardsDesc)
             }
         }
 
@@ -1005,124 +1070,130 @@ fun HomePage(
                             .fillMaxWidth()
                             .padding(bottom = listContentPadding.calculateBottomPadding())
                     ) {
-                        HomeInfoCard(
-                            backdrop = homeCardBackdrop,
-                            blurEnabled = blurEnabled
-                        ) {
-                            HomeInfoGridCard(
-                                title = homeCardMcp,
-                                naText = homeNa,
-                                columns = 3,
-                                stats = listOf(
-                                    HomeCardStatItem(
-                                        label = homeStatStatus,
-                                        value = mcpStatusText,
-                                        emphasize = true
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatRuntime,
-                                        value = mcpRuntimeText,
-                                        emphasize = true
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatClients,
-                                        value = mcpConnectedClients.toString()
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatNetwork,
-                                        value = networkModeText
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatPort,
-                                        value = mcpPort.toString()
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatToken,
-                                        value = mcpTokenStatusText
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatService,
-                                        value = mcpServerName
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatPath,
-                                        value = mcpEndpointPath
+                        if (visibleOverviewCards.contains(HomeOverviewCard.MCP)) {
+                            HomeInfoCard(
+                                backdrop = homeCardBackdrop,
+                                blurEnabled = blurEnabled
+                            ) {
+                                HomeInfoGridCard(
+                                    title = homeCardMcp,
+                                    naText = homeNa,
+                                    columns = 3,
+                                    stats = listOf(
+                                        HomeCardStatItem(
+                                            label = homeStatStatus,
+                                            value = mcpStatusText,
+                                            emphasize = true
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatRuntime,
+                                            value = mcpRuntimeText,
+                                            emphasize = true
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatClients,
+                                            value = mcpConnectedClients.toString()
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatNetwork,
+                                            value = networkModeText
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatPort,
+                                            value = mcpPort.toString()
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatToken,
+                                            value = mcpTokenStatusText
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatService,
+                                            value = mcpServerName
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatPath,
+                                            value = mcpEndpointPath
+                                        )
                                     )
                                 )
-                            )
+                            }
                         }
 
-                        HomeInfoCard(
-                            backdrop = homeCardBackdrop,
-                            blurEnabled = blurEnabled
-                        ) {
-                            HomeInfoGridCard(
-                                title = homeCardGitHub,
-                                naText = homeNa,
-                                columns = 3,
-                                stats = listOf(
-                                    HomeCardStatItem(
-                                        label = homeStatStableUpdates,
-                                        value = githubUpdatableLine,
-                                        emphasize = true
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatPreReleaseUpdates,
-                                        value = githubPreReleaseUpdateLine,
-                                        emphasize = true
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatTracked,
-                                        value = trackedCountLine
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatCached,
-                                        value = cacheHitCountLine
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatStrategy,
-                                        value = githubStrategyText
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatApi,
-                                        value = githubApiText
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatLastUpdate,
-                                        value = githubLastUpdateLine
+                        if (visibleOverviewCards.contains(HomeOverviewCard.GITHUB)) {
+                            HomeInfoCard(
+                                backdrop = homeCardBackdrop,
+                                blurEnabled = blurEnabled
+                            ) {
+                                HomeInfoGridCard(
+                                    title = homeCardGitHub,
+                                    naText = homeNa,
+                                    columns = 3,
+                                    stats = listOf(
+                                        HomeCardStatItem(
+                                            label = homeStatStableUpdates,
+                                            value = githubUpdatableLine,
+                                            emphasize = true
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatPreReleaseUpdates,
+                                            value = githubPreReleaseUpdateLine,
+                                            emphasize = true
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatTracked,
+                                            value = trackedCountLine
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatCached,
+                                            value = cacheHitCountLine
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatStrategy,
+                                            value = githubStrategyText
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatApi,
+                                            value = githubApiText
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatLastUpdate,
+                                            value = githubLastUpdateLine
+                                        )
                                     )
                                 )
-                            )
+                            }
                         }
 
-                        HomeInfoCard(
-                            backdrop = homeCardBackdrop,
-                            blurEnabled = blurEnabled
-                        ) {
-                            HomeInfoGridCard(
-                                title = homeCardBa,
-                                naText = homeNa,
-                                stats = listOf(
-                                    HomeCardStatItem(
-                                        label = homeStatStatus,
-                                        value = baActivationLine,
-                                        emphasize = true
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatAp,
-                                        value = baApLine,
-                                        emphasize = true
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatCafeAp,
-                                        value = baCafeApLine
-                                    ),
-                                    HomeCardStatItem(
-                                        label = homeStatApRemaining,
-                                        value = baApRemainingLine
+                        if (visibleOverviewCards.contains(HomeOverviewCard.BA)) {
+                            HomeInfoCard(
+                                backdrop = homeCardBackdrop,
+                                blurEnabled = blurEnabled
+                            ) {
+                                HomeInfoGridCard(
+                                    title = homeCardBa,
+                                    naText = homeNa,
+                                    stats = listOf(
+                                        HomeCardStatItem(
+                                            label = homeStatStatus,
+                                            value = baActivationLine,
+                                            emphasize = true
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatAp,
+                                            value = baApLine,
+                                            emphasize = true
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatCafeAp,
+                                            value = baCafeApLine
+                                        ),
+                                        HomeCardStatItem(
+                                            label = homeStatApRemaining,
+                                            value = baApRemainingLine
+                                        )
                                     )
                                 )
-                            )
+                            }
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                     }

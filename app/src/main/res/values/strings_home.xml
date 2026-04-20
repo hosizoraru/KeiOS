@@ -1,9 +1,11 @@
 <resources>
     <string name="main_toast_pool_guide_missing">该卡池暂未关联学生图鉴</string>
     <string name="home_cd_edit_bottom_pages">编辑底栏板块</string>
-    <string name="home_sheet_bottom_pages_title">底栏板块</string>
+    <string name="home_sheet_bottom_pages_title">卡片底栏板块</string>
     <string name="home_sheet_visible_pages_title">显示板块</string>
     <string name="home_sheet_visible_pages_desc">Home 固定显示，其他板块可按需隐藏或重新显示。</string>
+    <string name="home_sheet_visible_cards_title">Home 卡片</string>
+    <string name="home_sheet_visible_cards_desc">控制 Home 页面 MCP、GitHub、BA 三张卡片的显示状态。</string>
     <string name="home_status_loading">读取中</string>
     <string name="home_app_version_unknown_fallback">unknown</string>
     <string name="home_app_version_unknown">版本未知</string>
