@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -43,10 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.VideoSize
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.keios.ui.page.main.ba.support.BASettingsStore
@@ -385,37 +380,16 @@ internal fun GuideVideoFullscreenDialog(
     var loadError by remember(normalizedUrl) { mutableStateOf<String?>(null) }
     var videoRatio by remember(normalizedUrl) { mutableStateOf(16f / 9f) }
 
-    val player = remember(context, normalizedUrl) {
-        if (normalizedUrl.isBlank()) {
-            null
-        } else {
-            buildGuideVideoPlayer(context).apply {
-                setMediaItem(MediaItem.fromUri(normalizedUrl))
-                playWhenReady = true
-                prepare()
-            }
-        }
-    }
-
-    DisposableEffect(player) {
-        val boundPlayer = player ?: return@DisposableEffect onDispose { }
-        val listener = object : Player.Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                if (videoSize.width > 0 && videoSize.height > 0) {
-                    videoRatio = videoSize.width.toFloat() / videoSize.height.toFloat()
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                loadError = error.errorCodeName
-            }
-        }
-        boundPlayer.addListener(listener)
-        onDispose {
-            boundPlayer.removeListener(listener)
-            runCatching { boundPlayer.release() }
-        }
-    }
+    val player = rememberGuidePreparedVideoPlayer(
+        context = context,
+        mediaUrl = normalizedUrl,
+        active = true
+    )
+    BindGuideVideoPlayerState(
+        player = player,
+        onVideoRatioChanged = { ratio -> videoRatio = ratio },
+        onPlayerErrorChanged = { errorCode -> loadError = errorCode }
+    )
 
     Dialog(
         onDismissRequest = onDismiss,

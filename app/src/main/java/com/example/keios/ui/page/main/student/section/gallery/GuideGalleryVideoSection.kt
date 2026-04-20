@@ -1,6 +1,5 @@
 package com.example.keios.ui.page.main.student.section.gallery
 
-import android.content.Context
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -14,8 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,11 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.VideoSize
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
@@ -43,7 +38,6 @@ import com.example.keios.ui.page.main.student.GuideRemoteImageAdaptive
 import com.example.keios.ui.page.main.student.GuideVideoControlAction
 import com.example.keios.ui.page.main.student.GuideVideoFullscreenActivity
 import com.example.keios.ui.page.main.student.section.buildGuideCopyPayload
-import com.example.keios.ui.page.main.student.createGameKeeMediaSourceFactory
 import com.example.keios.ui.page.main.student.section.guideCopyable
 import com.example.keios.ui.page.main.student.normalizeGuideMediaSource
 import com.example.keios.ui.page.main.widget.glass.AppDropdownAnchorButton
@@ -71,7 +65,6 @@ import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Replace
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.compose.runtime.collectAsState
 
 @Composable
 fun GuideGalleryVideoGroupCardItem(
@@ -374,52 +367,33 @@ internal fun GuideInlineVideoPlayer(
         return
     }
 
-    val player = remember(context, normalizedUrl, expanded) {
-        if (!expanded || normalizedUrl.isBlank()) {
-            null
-        } else {
-            buildGuideVideoPlayer(context).apply {
-                setMediaItem(MediaItem.fromUri(normalizedUrl))
-                playWhenReady = true
-                prepare()
-            }
-        }
-    }
-
-    DisposableEffect(player) {
-        val boundPlayer = player ?: return@DisposableEffect onDispose { }
-        val listener = object : Player.Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                if (videoSize.width > 0 && videoSize.height > 0) {
-                    videoRatio = videoSize.width.toFloat() / videoSize.height.toFloat()
-                }
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                isBuffering = playbackState == Player.STATE_BUFFERING
-                onBufferingChange(isBuffering)
-            }
-
-            override fun onIsPlayingChanged(isPlayingNow: Boolean) {
-                isPlaying = isPlayingNow
-                onIsPlayingChange(isPlayingNow)
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                isBuffering = false
-                loadError = error.errorCodeName
-            }
-        }
-        boundPlayer.addListener(listener)
-        onDispose {
-            boundPlayer.removeListener(listener)
-            runCatching { boundPlayer.release() }
+    val player = rememberGuidePreparedVideoPlayer(
+        context = context,
+        mediaUrl = normalizedUrl,
+        active = expanded
+    )
+    BindGuideVideoPlayerState(
+        player = player,
+        onVideoRatioChanged = { ratio -> videoRatio = ratio },
+        onBufferingChanged = { buffering ->
+            isBuffering = buffering
+            onBufferingChange(buffering)
+        },
+        onIsPlayingChanged = { playing ->
+            isPlaying = playing
+            onIsPlayingChange(playing)
+        },
+        onPlayerErrorChanged = { errorCode ->
+            isBuffering = false
+            loadError = errorCode
+        },
+        onDispose = {
             isBuffering = false
             isPlaying = false
             onBufferingChange(false)
             onIsPlayingChange(false)
         }
-    }
+    )
 
     LaunchedEffect(player, loopEnabled) {
         player?.repeatMode = if (loopEnabled) {
@@ -528,10 +502,4 @@ internal fun GuideInlineVideoPlayer(
             overflow = TextOverflow.Ellipsis
         )
     }
-}
-
-internal fun buildGuideVideoPlayer(context: Context): ExoPlayer {
-    return ExoPlayer.Builder(context)
-        .setMediaSourceFactory(createGameKeeMediaSourceFactory(context))
-        .build()
 }
