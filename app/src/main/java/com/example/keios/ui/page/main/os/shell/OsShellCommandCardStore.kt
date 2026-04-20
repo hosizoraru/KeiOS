@@ -322,4 +322,41 @@ internal object OsShellCommandCardStore {
     }
 
     private const val MAX_OUTPUT_LENGTH = 24_000
+    private const val EXPORT_SCHEMA_VERSION = "keios.os.shell.cards.v1"
+    private const val KEY_EXPORT_SCHEMA = "schema"
+    private const val KEY_EXPORT_EXPORTED_AT = "exportedAtMillis"
+    private const val KEY_EXPORT_ITEMS = "items"
+
+    fun buildCardsExportJson(
+        cards: List<OsShellCommandCard> = loadCards(),
+        exportedAtMillis: Long = System.currentTimeMillis()
+    ): String {
+        val normalized = cards.mapNotNull(::normalizeCard)
+        val items = JSONArray(encodeCards(normalized))
+        return JSONObject().apply {
+            put(KEY_EXPORT_SCHEMA, EXPORT_SCHEMA_VERSION)
+            put(KEY_EXPORT_EXPORTED_AT, exportedAtMillis)
+            put(KEY_EXPORT_ITEMS, items)
+        }.toString()
+    }
+
+    fun importCardsFromJson(raw: String): List<OsShellCommandCard> {
+        val normalizedRaw = raw.trim()
+        if (normalizedRaw.isBlank()) {
+            throw IllegalArgumentException("文件内容为空")
+        }
+        val importedItems = if (normalizedRaw.startsWith("[")) {
+            JSONArray(normalizedRaw)
+        } else {
+            val root = JSONObject(normalizedRaw)
+            root.optJSONArray(KEY_EXPORT_ITEMS)
+                ?: throw IllegalArgumentException("未找到可导入的 shell card 数据")
+        }
+        val decoded = decodeCards(importedItems.toString())
+        if (decoded.isEmpty()) {
+            throw IllegalArgumentException("文件中没有有效的 shell card")
+        }
+        saveCards(decoded)
+        return loadCards()
+    }
 }

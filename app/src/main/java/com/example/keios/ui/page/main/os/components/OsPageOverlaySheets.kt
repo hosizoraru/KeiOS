@@ -26,6 +26,9 @@ internal fun OsPageOverlaySheets(
     activityHintText: String,
     activityShortcutCards: List<OsActivityShortcutCard>,
     defaultActivityCardTitle: String,
+    cardTransferInProgress: Boolean,
+    onExportAllActivityCards: () -> Unit,
+    onImportAllActivityCards: () -> Unit,
     onDismissActivityVisibilityManager: () -> Unit,
     onActivityCardVisibilityChange: (String, Boolean) -> Unit,
     showShellCardVisibilityManager: Boolean,
@@ -34,6 +37,8 @@ internal fun OsPageOverlaySheets(
     shellRunnerVisible: Boolean,
     onShellRunnerVisibilityChange: (Boolean) -> Unit,
     shellCommandCards: List<OsShellCommandCard>,
+    onExportAllShellCards: () -> Unit,
+    onImportAllShellCards: () -> Unit,
     onDismissShellVisibilityManager: () -> Unit,
     onShellCommandCardVisibilityChange: (String, Boolean) -> Unit,
     showShellCommandCardEditor: Boolean,
@@ -98,6 +103,9 @@ internal fun OsPageOverlaySheets(
         activityHintText = activityHintText,
         cards = activityShortcutCards,
         defaultCardTitle = defaultActivityCardTitle,
+        transferInProgress = cardTransferInProgress,
+        onExportAllCards = onExportAllActivityCards,
+        onImportAllCards = onImportAllActivityCards,
         onDismissRequest = onDismissActivityVisibilityManager,
         onCardVisibilityChange = onActivityCardVisibilityChange
     )
@@ -109,6 +117,9 @@ internal fun OsPageOverlaySheets(
         shellRunnerVisible = shellRunnerVisible,
         onShellRunnerVisibilityChange = onShellRunnerVisibilityChange,
         cards = shellCommandCards,
+        transferInProgress = cardTransferInProgress,
+        onExportAllCards = onExportAllShellCards,
+        onImportAllCards = onImportAllShellCards,
         onDismissRequest = onDismissShellVisibilityManager,
         onCardVisibilityChange = onShellCommandCardVisibilityChange
     )

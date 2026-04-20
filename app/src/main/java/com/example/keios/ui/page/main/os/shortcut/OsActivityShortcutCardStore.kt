@@ -29,6 +29,10 @@ internal object OsActivityShortcutCardStore {
     private const val KEY_EXTRA_KEY = "key"
     private const val KEY_EXTRA_TYPE = "type"
     private const val KEY_EXTRA_VALUE = "value"
+    private const val EXPORT_SCHEMA_VERSION = "keios.os.activity.cards.v1"
+    private const val KEY_EXPORT_SCHEMA = "schema"
+    private const val KEY_EXPORT_EXPORTED_AT = "exportedAtMillis"
+    private const val KEY_EXPORT_ITEMS = "items"
 
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
     private val legacyStore: MMKV by lazy { MMKV.mmkvWithID(LEGACY_KV_ID) }
@@ -97,6 +101,47 @@ internal object OsActivityShortcutCardStore {
         normalized.firstOrNull()?.let { first ->
             OsShortcutCardStore.saveGoogleSystemServiceConfig(first.config, defaults)
         }
+    }
+
+    fun buildCardsExportJson(
+        cards: List<OsActivityShortcutCard>,
+        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
+        exportedAtMillis: Long = System.currentTimeMillis()
+    ): String {
+        val normalized = cards.map { card ->
+            card.copy(config = normalizeActivityShortcutConfig(card.config, defaults))
+        }
+        val items = JSONArray(encodeCards(normalized))
+        return JSONObject().apply {
+            put(KEY_EXPORT_SCHEMA, EXPORT_SCHEMA_VERSION)
+            put(KEY_EXPORT_EXPORTED_AT, exportedAtMillis)
+            put(KEY_EXPORT_ITEMS, items)
+        }.toString()
+    }
+
+    fun importCardsFromJson(
+        raw: String,
+        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): List<OsActivityShortcutCard> {
+        val normalizedRaw = raw.trim()
+        if (normalizedRaw.isBlank()) {
+            throw IllegalArgumentException("文件内容为空")
+        }
+        val importedItems = if (normalizedRaw.startsWith("[")) {
+            JSONArray(normalizedRaw)
+        } else {
+            val root = JSONObject(normalizedRaw)
+            root.optJSONArray(KEY_EXPORT_ITEMS)
+                ?: throw IllegalArgumentException("未找到可导入的活动 card 数据")
+        }
+        val decoded = decodeCards(importedItems.toString(), defaults)
+        if (decoded.isEmpty()) {
+            throw IllegalArgumentException("文件中没有有效的活动 card")
+        }
+        val migrated = migrateBuiltInSampleCards(decoded, builtInSampleDefaults)
+        saveCards(cards = migrated, defaults = defaults)
+        return migrated
     }
 
     private fun encodeCards(cards: List<OsActivityShortcutCard>): String {

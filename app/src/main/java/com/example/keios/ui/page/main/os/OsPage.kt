@@ -55,6 +55,11 @@ import com.example.keios.ui.page.main.os.shortcut.normalizeActivityShortcutConfi
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+private enum class OsCardImportTarget {
+    Activity,
+    Shell
+}
+
 @Composable
 fun OsPage(
     scrollToTopSignal: Int,
@@ -103,6 +108,7 @@ fun OsPage(
     val addActivityCardTitle = stringResource(R.string.os_activity_sheet_title_add)
     val activityCardDeletedToast = stringResource(R.string.os_activity_card_toast_deleted)
     val activityCardDeleteDialogTitle = stringResource(R.string.os_activity_card_delete_dialog_title)
+    val cardImportFailedWithReason = stringResource(R.string.os_card_toast_import_failed_with_reason)
     val activityBuiltInGoogleSettingsTitle =
         stringResource(R.string.os_activity_builtin_google_settings_title)
     val activityBuiltInGoogleSettingsSubtitle =
@@ -201,6 +207,8 @@ fun OsPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
+    var pendingImportTarget by remember { mutableStateOf<OsCardImportTarget?>(null) }
+    var cardTransferInProgress by remember { mutableStateOf(false) }
     var exportingCard by remember { mutableStateOf<OsSectionCard?>(null) }
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }
@@ -290,6 +298,80 @@ fun OsPage(
                 context.getString(R.string.common_export_failed_with_reason, it.javaClass.simpleName),
                 Toast.LENGTH_SHORT
             ).show()
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        val target = pendingImportTarget
+        pendingImportTarget = null
+        if (uri == null || target == null) {
+            cardTransferInProgress = false
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            runCatching {
+                val raw = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.bufferedReader().use { reader ->
+                        reader?.readText().orEmpty()
+                    }
+                }
+                when (target) {
+                    OsCardImportTarget.Activity -> {
+                        val imported = OsActivityShortcutCardStore.importCardsFromJson(
+                            raw = raw,
+                            defaults = googleSystemServiceDefaults,
+                            builtInSampleDefaults = googleSettingsBuiltInSampleDefaults
+                        )
+                        activityShortcutCards = imported
+                        val validIds = imported.mapTo(mutableSetOf()) { it.id }
+                        activityCardExpanded.keys.retainAll(validIds)
+                        if (!validIds.contains(editingActivityShortcutCardId.orEmpty())) {
+                            showActivityShortcutEditor = false
+                            showActivityCardDeleteConfirm = false
+                            editingActivityShortcutCardId = null
+                        }
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.os_activity_card_toast_imported_summary,
+                                imported.size
+                            ),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    OsCardImportTarget.Shell -> {
+                        val imported = OsShellCommandCardStore.importCardsFromJson(raw)
+                        shellCommandCards = imported
+                        val validIds = imported.mapTo(mutableSetOf()) { it.id }
+                        shellCommandCardExpanded.keys.retainAll(validIds)
+                        if (!validIds.contains(editingShellCommandCardId.orEmpty())) {
+                            showShellCommandCardEditor = false
+                            showShellCardDeleteConfirm = false
+                            editingShellCommandCardId = null
+                        }
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.os_shell_card_toast_imported_summary,
+                                imported.size
+                            ),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }.onFailure { error ->
+                Toast.makeText(
+                    context,
+                    String.format(
+                        cardImportFailedWithReason,
+                        error.message ?: error.javaClass.simpleName
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            cardTransferInProgress = false
         }
     }
     var sectionStates by remember {
@@ -770,6 +852,31 @@ fun OsPage(
             activityHintText = stringResource(R.string.os_sheet_visible_activities_desc),
             activityShortcutCards = activityShortcutCards,
             defaultActivityCardTitle = googleSystemServiceDefaultTitle,
+            cardTransferInProgress = cardTransferInProgress,
+            onExportAllActivityCards = {
+                runCatching {
+                    val payload = OsActivityShortcutCardStore.buildCardsExportJson(
+                        cards = activityShortcutCards,
+                        defaults = googleSystemServiceDefaults
+                    )
+                    pendingExportContent = payload
+                    exportLauncher.launch("keios-os-activity-cards.json")
+                }.onFailure { error ->
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.common_export_failed_with_reason,
+                            error.message ?: error.javaClass.simpleName
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            onImportAllActivityCards = {
+                pendingImportTarget = OsCardImportTarget.Activity
+                cardTransferInProgress = true
+                importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+            },
             onDismissActivityVisibilityManager = { showActivityVisibilityManager = false },
             onActivityCardVisibilityChange = { cardId, checked ->
                 scope.launch { applyActivityCardVisibility(cardId, checked) }
@@ -782,6 +889,27 @@ fun OsPage(
                 scope.launch { applyCardVisibility(OsSectionCard.SHELL_RUNNER, checked) }
             },
             shellCommandCards = shellCommandCards,
+            onExportAllShellCards = {
+                runCatching {
+                    val payload = OsShellCommandCardStore.buildCardsExportJson(shellCommandCards)
+                    pendingExportContent = payload
+                    exportLauncher.launch("keios-os-shell-cards.json")
+                }.onFailure { error ->
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.common_export_failed_with_reason,
+                            error.message ?: error.javaClass.simpleName
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            onImportAllShellCards = {
+                pendingImportTarget = OsCardImportTarget.Shell
+                cardTransferInProgress = true
+                importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+            },
             onDismissShellVisibilityManager = { showShellCardVisibilityManager = false },
             onShellCommandCardVisibilityChange = { cardId, checked ->
                 scope.launch { applyShellCommandCardVisibility(cardId, checked) }

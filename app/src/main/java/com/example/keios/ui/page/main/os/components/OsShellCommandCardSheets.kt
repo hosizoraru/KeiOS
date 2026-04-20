@@ -141,6 +141,9 @@ internal fun OsShellCommandVisibilityManagerSheet(
     shellRunnerVisible: Boolean,
     onShellRunnerVisibilityChange: (Boolean) -> Unit,
     cards: List<OsShellCommandCard>,
+    transferInProgress: Boolean,
+    onExportAllCards: () -> Unit,
+    onImportAllCards: () -> Unit,
     onDismissRequest: () -> Unit,
     onCardVisibilityChange: (String, Boolean) -> Unit
 ) {
@@ -204,6 +207,34 @@ internal fun OsShellCommandVisibilityManagerSheet(
                             }
                         )
                     }
+                }
+            }
+            SheetSectionCard(verticalSpacing = 8.dp) {
+                Text(
+                    text = stringResource(R.string.os_shell_sheet_transfer_title),
+                    color = MiuixTheme.colorScheme.onBackground
+                )
+                SheetDescriptionText(text = stringResource(R.string.os_shell_sheet_transfer_desc))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    GlassTextButton(
+                        backdrop = sheetBackdrop,
+                        text = stringResource(R.string.os_sheet_action_export_cards),
+                        onClick = onExportAllCards,
+                        modifier = Modifier.weight(1f),
+                        enabled = !transferInProgress,
+                        variant = GlassVariant.SheetAction
+                    )
+                    GlassTextButton(
+                        backdrop = sheetBackdrop,
+                        text = stringResource(R.string.os_sheet_action_import_cards),
+                        onClick = onImportAllCards,
+                        modifier = Modifier.weight(1f),
+                        enabled = !transferInProgress,
+                        variant = GlassVariant.SheetAction
+                    )
                 }
             }
             SheetDescriptionText(text = shellHintText)

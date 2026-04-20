@@ -30,6 +30,7 @@ import com.example.keios.ui.page.main.os.osLucideEnterIcon
 import com.example.keios.ui.page.main.widget.core.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.core.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.glass.GlassIconButton
+import com.example.keios.ui.page.main.widget.glass.GlassTextButton
 import com.example.keios.ui.page.main.widget.glass.GlassVariant
 import com.example.keios.ui.page.main.widget.glass.MiuixAccordionCard
 import com.example.keios.ui.page.main.widget.sheet.SheetContentColumn
@@ -322,6 +323,9 @@ internal fun OsActivityVisibilityManagerSheet(
     activityHintText: String,
     cards: List<OsActivityShortcutCard>,
     defaultCardTitle: String,
+    transferInProgress: Boolean,
+    onExportAllCards: () -> Unit,
+    onImportAllCards: () -> Unit,
     onDismissRequest: () -> Unit,
     onCardVisibilityChange: (String, Boolean) -> Unit
 ) {
@@ -399,6 +403,34 @@ internal fun OsActivityVisibilityManagerSheet(
                             }
                         )
                     }
+                }
+            }
+            SheetSectionCard(verticalSpacing = 8.dp) {
+                Text(
+                    text = stringResource(R.string.os_activity_sheet_transfer_title),
+                    color = MiuixTheme.colorScheme.onBackground
+                )
+                SheetDescriptionText(text = stringResource(R.string.os_activity_sheet_transfer_desc))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    GlassTextButton(
+                        backdrop = sheetBackdrop,
+                        text = stringResource(R.string.os_sheet_action_export_cards),
+                        onClick = onExportAllCards,
+                        modifier = Modifier.weight(1f),
+                        enabled = !transferInProgress,
+                        variant = GlassVariant.SheetAction
+                    )
+                    GlassTextButton(
+                        backdrop = sheetBackdrop,
+                        text = stringResource(R.string.os_sheet_action_import_cards),
+                        onClick = onImportAllCards,
+                        modifier = Modifier.weight(1f),
+                        enabled = !transferInProgress,
+                        variant = GlassVariant.SheetAction
+                    )
                 }
             }
             SheetDescriptionText(text = activityHintText)
