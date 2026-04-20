@@ -51,9 +51,11 @@ fun BAPage(
     contentBottomPadding: Dp = 72.dp,
     scrollToTopSignal: Int = 0,
     isPageActive: Boolean = true,
+    isDataActive: Boolean = true,
     preloadingEnabled: Boolean = false,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
+    mainPagerScrollInProgress: Boolean = false,
     onOpenPoolStudentGuide: (String) -> Unit = {},
     onOpenGuideCatalog: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
@@ -127,7 +129,7 @@ fun BAPage(
         baCalendarEntries = baCalendarEntries,
         baPoolEntries = baPoolEntries,
     )
-    val syncPageActive = if (preloadingEnabled) true else isPageActive
+    val syncPageActive = if (preloadingEnabled) isDataActive else isPageActive
 
     fun openSettingsSheet() {
         ui.openSettingsSheet(office)
@@ -240,6 +242,7 @@ fun BAPage(
             BaTopBar(
                 backdrop = topBarBackdrop,
                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                reduceEffectsDuringPagerScroll = mainPagerScrollInProgress,
                 topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
                 scrollBehavior = scrollBehavior,
                 showCalendarIntervalPopup = ui.showCalendarIntervalPopup,

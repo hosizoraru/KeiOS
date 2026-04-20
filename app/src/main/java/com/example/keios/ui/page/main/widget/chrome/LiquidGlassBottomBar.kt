@@ -147,6 +147,7 @@ fun LiquidGlassBottomBar(
     onSelected: (index: Int) -> Unit,
     backdrop: Backdrop,
     tabsCount: Int,
+    reduceEffectsDuringPagerScroll: Boolean = false,
     isLiquidEffectEnabled: Boolean = true,
     content: @Composable RowScope.() -> Unit
 ) {
@@ -264,6 +265,17 @@ fun LiquidGlassBottomBar(
     }
 
     val pressProgress = if (isLiquidEffectEnabled) dampedDragAnimation.pressProgress else 0f
+    val effectBlurDp = if (reduceEffectsDuringPagerScroll) {
+        UiPerformanceBudget.backdropBlur * 0.72f
+    } else {
+        UiPerformanceBudget.backdropBlur
+    }
+    val effectLensDp = if (reduceEffectsDuringPagerScroll) {
+        UiPerformanceBudget.backdropLens * 0.70f
+    } else {
+        UiPerformanceBudget.backdropLens
+    }
+    val interactionLensScale = if (reduceEffectsDuringPagerScroll) 0.62f else 1f
 
     val selectionProgressProvider: (Int) -> Float = remember(dampedDragAnimation) {
         { tabIndex ->
@@ -271,7 +283,11 @@ fun LiquidGlassBottomBar(
         }
     }
 
-    val interactiveHighlight = if (isLiquidEffectEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    val interactiveHighlight = if (
+        isLiquidEffectEnabled &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        !reduceEffectsDuringPagerScroll
+    ) {
         remember(animationScope, tabWidthPx) {
             InteractiveHighlight(
                 animationScope = animationScope,
@@ -326,8 +342,8 @@ fun LiquidGlassBottomBar(
                         effects = {
                             if (isLiquidEffectEnabled) {
                                 vibrancy()
-                                blur(UiPerformanceBudget.backdropBlur.toPx())
-                                lens(UiPerformanceBudget.backdropLens.toPx(), UiPerformanceBudget.backdropLens.toPx())
+                                blur(effectBlurDp.toPx())
+                                lens(effectLensDp.toPx(), effectLensDp.toPx())
                             }
                         },
                         highlight = {
@@ -364,10 +380,10 @@ fun LiquidGlassBottomBar(
                                 if (isLiquidEffectEnabled) {
                                     val progress = dampedDragAnimation.pressProgress
                                     vibrancy()
-                                    blur(UiPerformanceBudget.backdropBlur.toPx())
+                                    blur(effectBlurDp.toPx())
                                     lens(
-                                        UiPerformanceBudget.backdropLens.toPx() * progress,
-                                        UiPerformanceBudget.backdropLens.toPx() * progress
+                                        effectLensDp.toPx() * progress,
+                                        effectLensDp.toPx() * progress
                                     )
                                 }
                             },
@@ -407,7 +423,11 @@ fun LiquidGlassBottomBar(
                             effects = {
                                 if (isLiquidEffectEnabled && dampedDragAnimation.pressProgress > 0f) {
                                     val progress = dampedDragAnimation.pressProgress
-                                    lens(10f.dp.toPx() * progress, 14f.dp.toPx() * progress, true)
+                                    lens(
+                                        10f.dp.toPx() * progress * interactionLensScale,
+                                        14f.dp.toPx() * progress * interactionLensScale,
+                                        true
+                                    )
                                 }
                             },
                             highlight = {

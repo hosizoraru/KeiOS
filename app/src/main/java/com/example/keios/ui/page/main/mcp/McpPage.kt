@@ -82,6 +82,7 @@ fun McpPage(
     isPageActive: Boolean = true,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
+    mainPagerScrollInProgress: Boolean = false,
     onOpenSkill: () -> Unit = {},
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -393,6 +394,7 @@ fun McpPage(
             LiquidActionBar(
                 backdrop = topBarBackdrop,
                 layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                reduceEffectsDuringPagerScroll = mainPagerScrollInProgress,
                 items = actionItems,
                 onInteractionChanged = onActionBarInteractingChanged
             )

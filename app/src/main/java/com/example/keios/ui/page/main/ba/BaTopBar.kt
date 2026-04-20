@@ -27,6 +27,7 @@ import top.yukonga.miuix.kmp.basic.ScrollBehavior
 internal fun BaTopBar(
     backdrop: LayerBackdrop,
     liquidActionBarLayeredStyleEnabled: Boolean,
+    reduceEffectsDuringPagerScroll: Boolean,
     topBarColor: Color,
     scrollBehavior: ScrollBehavior?,
     showCalendarIntervalPopup: Boolean,
@@ -91,6 +92,7 @@ internal fun BaTopBar(
                 LiquidActionBar(
                     backdrop = backdrop,
                     layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                    reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
                     items = actionItems,
                     onInteractionChanged = onInteractionChanged,
                 )

@@ -184,6 +184,7 @@ fun LiquidActionBar(
     items: List<LiquidActionItem>,
     isBlurEnabled: Boolean = true,
     layeredStyleEnabled: Boolean = true,
+    reduceEffectsDuringPagerScroll: Boolean = false,
     compactSingleItem: Boolean = false,
     selectedIndex: Int = 0,
     onInteractionChanged: (Boolean) -> Unit = {}
@@ -317,8 +318,20 @@ fun LiquidActionBar(
     val interactionProgress by remember {
         derivedStateOf { dampedDragAnimation.pressProgress.fastCoerceIn(0f, 1f) }
     }
+    val effectBlurDp = if (reduceEffectsDuringPagerScroll) {
+        UiPerformanceBudget.backdropBlur * 0.72f
+    } else {
+        UiPerformanceBudget.backdropBlur
+    }
+    val effectLensDp = if (reduceEffectsDuringPagerScroll) {
+        UiPerformanceBudget.backdropLens * 0.70f
+    } else {
+        UiPerformanceBudget.backdropLens
+    }
+    val interactionLensScale = if (reduceEffectsDuringPagerScroll) 0.62f else 1f
     val interactiveHighlightEnabled = isBlurEnabled &&
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        !reduceEffectsDuringPagerScroll &&
         (layeredStyleEnabled || isInLightTheme)
     val interactiveHighlight = if (interactiveHighlightEnabled) {
         remember(
@@ -402,8 +415,8 @@ fun LiquidActionBar(
                 effects = {
                     if (isBlurEnabled) {
                         vibrancy()
-                        blur(UiPerformanceBudget.backdropBlur.toPx())
-                        lens(UiPerformanceBudget.backdropLens.toPx(), UiPerformanceBudget.backdropLens.toPx())
+                        blur(effectBlurDp.toPx())
+                        lens(effectLensDp.toPx(), effectLensDp.toPx())
                     }
                 },
                 highlight = {
@@ -507,10 +520,10 @@ fun LiquidActionBar(
                             if (isBlurEnabled) {
                                 val progress = dampedDragAnimation.pressProgress
                                 vibrancy()
-                                blur(UiPerformanceBudget.backdropBlur.toPx())
+                                blur(effectBlurDp.toPx())
                                 lens(
-                                    UiPerformanceBudget.backdropLens.toPx() * progress,
-                                    UiPerformanceBudget.backdropLens.toPx() * progress
+                                    effectLensDp.toPx() * progress,
+                                    effectLensDp.toPx() * progress
                                 )
                             }
                         },
@@ -552,7 +565,11 @@ fun LiquidActionBar(
                             effects = {
                                 if (isBlurEnabled && dampedDragAnimation.pressProgress > 0f) {
                                     val progress = dampedDragAnimation.pressProgress
-                                    lens(9f.dp.toPx() * progress, 12f.dp.toPx() * progress, true)
+                                    lens(
+                                        9f.dp.toPx() * progress * interactionLensScale,
+                                        12f.dp.toPx() * progress * interactionLensScale,
+                                        true
+                                    )
                                 }
                             },
                             highlight = {

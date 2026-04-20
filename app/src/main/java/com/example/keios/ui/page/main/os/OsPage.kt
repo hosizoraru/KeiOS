@@ -64,10 +64,12 @@ private enum class OsCardImportTarget {
 fun OsPage(
     scrollToTopSignal: Int,
     isPageActive: Boolean = true,
+    isDataActive: Boolean = true,
     shizukuStatus: String,
     shizukuApiUtils: ShizukuApiUtils,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
+    mainPagerScrollInProgress: Boolean = false,
     contentBottomPadding: Dp = 72.dp,
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
@@ -505,7 +507,7 @@ fun OsPage(
         onCachePersistedChange = { cachePersisted = it },
         onCacheLoadedChange = { cacheLoaded = it },
         onUiStatePersistenceReadyChange = { uiStatePersistenceReady = it },
-        isPageActive = isPageActive,
+        isPageActive = isDataActive,
         ensureLoad = ::ensureLoad
     )
 
@@ -530,46 +532,46 @@ fun OsPage(
         }
     )
 
-    LaunchedEffect(systemTableExpanded, visibleCards, cacheLoaded, isPageActive) {
+    LaunchedEffect(systemTableExpanded, visibleCards, cacheLoaded, isDataActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (isPageActive && systemTableExpanded && isCardVisible(
+        if (isDataActive && systemTableExpanded && isCardVisible(
                 visibleCards,
                 OsSectionCard.SYSTEM
             )
         ) ensureLoad(SectionKind.SYSTEM)
     }
-    LaunchedEffect(secureTableExpanded, visibleCards, cacheLoaded, isPageActive) {
+    LaunchedEffect(secureTableExpanded, visibleCards, cacheLoaded, isDataActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (isPageActive && secureTableExpanded && isCardVisible(
+        if (isDataActive && secureTableExpanded && isCardVisible(
                 visibleCards,
                 OsSectionCard.SECURE
             )
         ) ensureLoad(SectionKind.SECURE)
     }
-    LaunchedEffect(globalTableExpanded, visibleCards, cacheLoaded, isPageActive) {
+    LaunchedEffect(globalTableExpanded, visibleCards, cacheLoaded, isDataActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (isPageActive && globalTableExpanded && isCardVisible(
+        if (isDataActive && globalTableExpanded && isCardVisible(
                 visibleCards,
                 OsSectionCard.GLOBAL
             )
         ) ensureLoad(SectionKind.GLOBAL)
     }
-    LaunchedEffect(androidPropsExpanded, visibleCards, cacheLoaded, isPageActive) {
+    LaunchedEffect(androidPropsExpanded, visibleCards, cacheLoaded, isDataActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (isPageActive && androidPropsExpanded && isCardVisible(
+        if (isDataActive && androidPropsExpanded && isCardVisible(
                 visibleCards,
                 OsSectionCard.ANDROID
             )
         ) ensureLoad(SectionKind.ANDROID)
     }
-    LaunchedEffect(javaPropsExpanded, visibleCards, cacheLoaded, isPageActive) {
+    LaunchedEffect(javaPropsExpanded, visibleCards, cacheLoaded, isDataActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (isPageActive && javaPropsExpanded && isCardVisible(visibleCards, OsSectionCard.JAVA)) ensureLoad(
+        if (isDataActive && javaPropsExpanded && isCardVisible(visibleCards, OsSectionCard.JAVA)) ensureLoad(
             SectionKind.JAVA)
     }
-    LaunchedEffect(linuxEnvExpanded, visibleCards, cacheLoaded, isPageActive) {
+    LaunchedEffect(linuxEnvExpanded, visibleCards, cacheLoaded, isDataActive) {
         if (!cacheLoaded) return@LaunchedEffect
-        if (isPageActive && linuxEnvExpanded && isCardVisible(visibleCards, OsSectionCard.LINUX)) ensureLoad(
+        if (isDataActive && linuxEnvExpanded && isCardVisible(visibleCards, OsSectionCard.LINUX)) ensureLoad(
             SectionKind.LINUX)
     }
     LaunchedEffect(
@@ -826,6 +828,7 @@ fun OsPage(
         topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
         topBarBackdrop = topBarBackdrop,
         layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+        reduceEffectsDuringPagerScroll = mainPagerScrollInProgress,
         manageCardsContentDescription = manageCardsContentDescription,
         manageActivitiesContentDescription = manageActivitiesContentDescription,
         manageShellCardsContentDescription = manageShellCardsContentDescription,

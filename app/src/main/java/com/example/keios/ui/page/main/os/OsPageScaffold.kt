@@ -23,6 +23,7 @@ internal fun OsPageScaffoldShell(
     topBarColor: Color,
     topBarBackdrop: LayerBackdrop,
     layeredStyleEnabled: Boolean,
+    reduceEffectsDuringPagerScroll: Boolean,
     manageCardsContentDescription: String,
     manageActivitiesContentDescription: String,
     manageShellCardsContentDescription: String,
@@ -91,6 +92,7 @@ internal fun OsPageScaffoldShell(
             LiquidActionBar(
                 backdrop = topBarBackdrop,
                 layeredStyleEnabled = layeredStyleEnabled,
+                reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
                 items = actionItems,
                 onInteractionChanged = onActionBarInteractingChanged
             )

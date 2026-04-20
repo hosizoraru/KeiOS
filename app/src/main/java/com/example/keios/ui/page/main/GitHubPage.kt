@@ -57,6 +57,7 @@ fun GitHubPage(
     externalRefreshTriggerToken: Int = 0,
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
+    mainPagerScrollInProgress: Boolean = false,
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
@@ -344,6 +345,7 @@ fun GitHubPage(
         topBarColor = topBarColor,
         enableSearchBar = enableSearchBar,
         liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+        reduceEffectsDuringPagerScroll = mainPagerScrollInProgress,
         showSearchBar = state.showSearchBar,
         trackedSearch = state.trackedSearch,
         sortMode = state.sortMode,

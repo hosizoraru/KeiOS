@@ -469,6 +469,7 @@ fun HomePage(
     homeBaOverview: HomeBaOverview = HomeBaOverview(),
     homeIconHdrEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
+    mainPagerScrollInProgress: Boolean = false,
     visibleBottomPages: Set<BottomPage>,
     onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit,
     onOpenSettings: () -> Unit,
@@ -663,7 +664,11 @@ fun HomePage(
     var summaryY by remember { mutableFloatStateOf(0f) }
     var initialLogoAreaY by remember { mutableFloatStateOf(0f) }
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
-    val hdrSweepProgress = if (homeIconHdrEnabled && transitionAnimationsEnabled) {
+    val hdrSweepProgress = if (
+        homeIconHdrEnabled &&
+        transitionAnimationsEnabled &&
+        !mainPagerScrollInProgress
+    ) {
         val hdrSweep = rememberInfiniteTransition(label = "kei_hdr_sweep")
         val animated by hdrSweep.animateFloat(
             initialValue = -0.35f,
@@ -782,6 +787,7 @@ fun HomePage(
                     LiquidActionBar(
                         backdrop = actionBarBackdrop,
                         layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                        reduceEffectsDuringPagerScroll = mainPagerScrollInProgress,
                         items = homeActionItems,
                         selectedIndex = actionBarSelectedIndex,
                         onInteractionChanged = onActionBarInteractingChanged

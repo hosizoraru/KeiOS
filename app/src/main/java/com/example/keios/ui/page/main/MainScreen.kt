@@ -496,6 +496,19 @@ private fun MainPagerLayout(
             current || settled || (preloadPolicy.includeTargetPageInHeavyRender && target)
         }
     }
+    val resolveDataActive: (Int) -> Boolean = { pageIndex ->
+        pageIndex == pagerState.settledPage
+    }
+    val resolvedMainPagerBeyondViewportCount = if (
+        temporaryBeyondViewportCount == null && pagerState.isScrollInProgress
+    ) {
+        maxOf(
+            UiPerformanceBudget.mainPagerBeyondViewportPageCount,
+            preloadPolicy.mainPagerBeyondViewportPageCount - 1
+        )
+    } else {
+        temporaryBeyondViewportCount ?: preloadPolicy.mainPagerBeyondViewportPageCount
+    }
     LaunchedEffect(settingsReturnToken, transitionAnimationsEnabled) {
         if (settingsReturnToken <= 0) return@LaunchedEffect
         temporaryBeyondViewportCount = 0
@@ -747,6 +760,7 @@ private fun MainPagerLayout(
                         },
                         backdrop = backdrop,
                         tabsCount = tabs.size,
+                        reduceEffectsDuringPagerScroll = pagerState.isScrollInProgress,
                         isLiquidEffectEnabled = liquidBottomBarEnabled,
                         content = bottomBarTabs
                     )
@@ -760,8 +774,7 @@ private fun MainPagerLayout(
                 key = { index -> tabs[index].name },
                 userScrollEnabled = pagerScrollEnabled,
                 overscrollEffect = null,
-                beyondViewportPageCount = temporaryBeyondViewportCount
-                    ?: preloadPolicy.mainPagerBeyondViewportPageCount,
+                beyondViewportPageCount = resolvedMainPagerBeyondViewportCount,
                 // CRITICAL FIX: NEVER conditionally unmount layerBackdrop.
                 // If the node is visible (even during an exit animation), it MUST have the backdrop attached,
                 // otherwise consumer composables will attempt to draw a detached Native pointer causing SIGSEGV.
@@ -818,6 +831,7 @@ private fun MainPagerLayout(
                                 homeBaOverview = homeBaOverview,
                                 homeIconHdrEnabled = homeIconHdrEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                mainPagerScrollInProgress = pagerState.isScrollInProgress,
                                 visibleBottomPages = visibleTabsSnapshot,
                                 onBottomPageVisibilityChange = { page, visible ->
                                     if (page == BottomPage.Home) return@HomePage
@@ -840,13 +854,16 @@ private fun MainPagerLayout(
                         }
                         BottomPage.Os -> {
                             val isWarmActive = resolveWarmActive(pageIndex)
+                            val isDataActive = resolveDataActive(pageIndex)
                             OsPage(
                                 scrollToTopSignal = osScrollToTopSignal,
                                 isPageActive = isWarmActive,
+                                isDataActive = isDataActive,
                                 shizukuStatus = shizukuStatus,
                                 shizukuApiUtils = shizukuApiUtils,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                mainPagerScrollInProgress = pagerState.isScrollInProgress,
                                 contentBottomPadding = bottomOverlayPadding,
                                 onActionBarInteractingChanged = { interacting ->
                                     pagerScrollEnabled = !interacting
@@ -855,13 +872,16 @@ private fun MainPagerLayout(
                         }
                         BottomPage.Ba -> {
                             val isWarmActive = resolveWarmActive(pageIndex)
+                            val isDataActive = resolveDataActive(pageIndex)
                             BAPage(
                                 contentBottomPadding = bottomOverlayPadding,
                                 scrollToTopSignal = baScrollToTopSignal,
                                 isPageActive = isWarmActive,
+                                isDataActive = isDataActive,
                                 preloadingEnabled = preloadingEnabled,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                mainPagerScrollInProgress = pagerState.isScrollInProgress,
                                 onOpenPoolStudentGuide = { sourceUrl ->
                                     onOpenGuideDetail(sourceUrl)
                                 },
@@ -882,6 +902,7 @@ private fun MainPagerLayout(
                                 isPageActive = isWarmActive,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                mainPagerScrollInProgress = pagerState.isScrollInProgress,
                                 onOpenSkill = { navigator.pushSingleTop(KeiosRoute.McpSkill) },
                                 onActionBarInteractingChanged = { interacting ->
                                     pagerScrollEnabled = !interacting
@@ -897,6 +918,7 @@ private fun MainPagerLayout(
                                 externalRefreshTriggerToken = requestedGitHubRefreshToken,
                                 cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                                mainPagerScrollInProgress = pagerState.isScrollInProgress,
                                 onActionBarInteractingChanged = { interacting ->
                                     pagerScrollEnabled = !interacting
                                 }
