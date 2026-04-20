@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -19,40 +18,23 @@ import com.example.keios.core.system.ShizukuApiUtils
 import com.example.keios.core.ui.effect.getMiuixAppBarColor
 import com.example.keios.core.ui.effect.rememberMiuixBlurBackdrop
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.keios.ui.page.main.host.pager.MainPageRuntime
 import com.example.keios.ui.page.main.host.pager.rememberMainPageBackdropSet
 import com.example.keios.ui.page.main.os.components.OsPageMainList
 import com.example.keios.ui.page.main.os.components.OsPageOverlayHost
-import com.example.keios.ui.page.main.os.components.OsPageOverlaySheets
 import com.example.keios.ui.page.main.os.state.OsCardImportTarget
+import com.example.keios.ui.page.main.os.state.createOsPageActionState
 import com.example.keios.ui.page.main.os.state.rememberOsPageCardTransferState
 import com.example.keios.ui.page.main.os.state.rememberOsPageOverlayState
 import com.example.keios.ui.page.main.os.state.rememberOsPageTextBundle
-import com.example.keios.ui.page.main.os.shell.OsShellCommandCard
 import com.example.keios.ui.page.main.os.shell.OsShellCommandCardStore
 import com.example.keios.ui.page.main.os.shell.OsShellRunnerActivity
-import com.example.keios.ui.page.main.os.shell.createDefaultShellCommandCardDraft
-import com.example.keios.ui.page.main.os.shell.defaultOsShellCommandCardTitle
 import com.example.keios.ui.page.main.os.shortcut.OsActivityCardEditMode
-import com.example.keios.ui.page.main.os.shortcut.OsActivityShortcutCard
 import com.example.keios.ui.page.main.os.shortcut.OsActivityShortcutCardStore
-import com.example.keios.ui.page.main.os.shortcut.ShortcutActivityClassOption
-import com.example.keios.ui.page.main.os.shortcut.ShortcutInstalledAppOption
-import com.example.keios.ui.page.main.os.shortcut.ShortcutSuggestionField
-import com.example.keios.ui.page.main.os.shortcut.applyGoogleSystemServiceSuggestion
-import com.example.keios.ui.page.main.os.shortcut.applyShortcutImplicitDefaults
 import com.example.keios.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
-import com.example.keios.ui.page.main.os.shortcut.ensureEditorActivityShortcutDraft
-import com.example.keios.ui.page.main.os.shortcut.launchGoogleSystemServiceActivity
-import com.example.keios.ui.page.main.os.shortcut.loadActivityClassOptions
-import com.example.keios.ui.page.main.os.shortcut.loadInstalledAppOptions
-import com.example.keios.ui.page.main.os.shortcut.newOsActivityShortcutCardId
-import com.example.keios.ui.page.main.os.shortcut.normalizeActivityShortcutConfig
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -216,94 +198,40 @@ fun OsPage(
             map[section] = transform(old)
         }
     }
-
-    suspend fun ensureLoad(section: SectionKind, forceRefresh: Boolean = false) {
-        ensureOsSectionLoaded(
-            section = section,
-            forceRefresh = forceRefresh,
-            visibleCardsProvider = { visibleCards },
-            sectionStatesProvider = { sectionStates },
-            sectionLoadMutex = sectionLoadMutex,
-            sectionLoadDeferreds = sectionLoadDeferreds,
-            scope = scope,
-            context = context,
-            shizukuStatus = shizukuStatus,
-            shizukuApiUtils = shizukuApiUtils,
-            updateSection = ::updateSection,
-            onCachePersistedChanged = { cachePersisted = it }
-        )
-    }
-
-    suspend fun applyCardVisibility(card: OsSectionCard, visible: Boolean) {
-        applyOsCardVisibility(
-            card = card,
-            visible = visible,
-            currentVisibleCards = visibleCards,
-            updateVisibleCards = { visibleCards = it },
-            setTopInfoExpanded = { topInfoExpanded = it },
-            setShellRunnerExpanded = { shellRunnerExpanded = it },
-            setSystemTableExpanded = { systemTableExpanded = it },
-            setSecureTableExpanded = { secureTableExpanded = it },
-            setGlobalTableExpanded = { globalTableExpanded = it },
-            setAndroidPropsExpanded = { androidPropsExpanded = it },
-            setJavaPropsExpanded = { javaPropsExpanded = it },
-            setLinuxEnvExpanded = { linuxEnvExpanded = it },
-            updateSection = ::updateSection,
-            ensureLoad = ::ensureLoad,
-            visibleCardsProvider = { visibleCards },
-            onCachePersistedChanged = { cachePersisted = it }
-        )
-    }
-
-    suspend fun applyActivityCardVisibility(cardId: String, visible: Boolean) {
-        applyOsActivityCardVisibility(
-            cardId = cardId,
-            visible = visible,
-            currentCards = activityShortcutCards,
-            defaults = googleSystemServiceDefaults,
-            updateCards = { activityShortcutCards = it }
-        )
-    }
-
-    suspend fun applyShellCommandCardVisibility(cardId: String, visible: Boolean) {
-        applyOsShellCommandCardVisibility(
-            cardId = cardId,
-            visible = visible,
-            updateCards = { shellCommandCards = it }
-        )
-    }
-
-    suspend fun runShellCommandCard(card: OsShellCommandCard) {
-        runOsShellCommandCard(
-            card = card,
-            context = context,
-            shizukuApiUtils = shizukuApiUtils,
-            shellCardCommandRequiredToast = shellCardCommandRequiredToast,
-            shellRunNoPermissionToast = shellRunNoPermissionText,
-            shellRunNoOutputText = shellRunNoOutputText,
-            runningCardIdsProvider = { runningShellCommandCardIds },
-            updateRunningCardIds = { runningShellCommandCardIds = it },
-            onCardsReload = { shellCommandCards = OsShellCommandCardStore.loadCards() },
-            runFailedMessage = { throwable ->
-                context.getString(
-                    R.string.os_shell_card_toast_run_failed,
-                    throwable.javaClass.simpleName
-                )
-            }
-        )
-    }
-
-    suspend fun refreshAllSections() {
-        refreshAllOsSections(
-            context = context,
-            visibleCardsProvider = { visibleCards },
-            setRefreshing = { refreshing = it },
-            setRefreshProgress = { refreshProgress = it },
-            ensureLoad = ::ensureLoad,
-            noRefreshableCardText = noRefreshableCardText,
-            refreshCompletedText = refreshCompletedText
-        )
-    }
+    val actionState = createOsPageActionState(
+        context = context,
+        scope = scope,
+        shizukuStatus = shizukuStatus,
+        shizukuApiUtils = shizukuApiUtils,
+        sectionLoadMutex = sectionLoadMutex,
+        sectionLoadDeferreds = sectionLoadDeferreds,
+        visibleCardsProvider = { visibleCards },
+        sectionStatesProvider = { sectionStates },
+        updateSection = ::updateSection,
+        onCachePersistedChanged = { cachePersisted = it },
+        updateVisibleCards = { visibleCards = it },
+        setTopInfoExpanded = { topInfoExpanded = it },
+        setShellRunnerExpanded = { shellRunnerExpanded = it },
+        setSystemTableExpanded = { systemTableExpanded = it },
+        setSecureTableExpanded = { secureTableExpanded = it },
+        setGlobalTableExpanded = { globalTableExpanded = it },
+        setAndroidPropsExpanded = { androidPropsExpanded = it },
+        setJavaPropsExpanded = { javaPropsExpanded = it },
+        setLinuxEnvExpanded = { linuxEnvExpanded = it },
+        activityShortcutCardsProvider = { activityShortcutCards },
+        updateActivityShortcutCards = { activityShortcutCards = it },
+        googleSystemServiceDefaults = googleSystemServiceDefaults,
+        updateShellCommandCards = { shellCommandCards = it },
+        runningShellCommandCardIdsProvider = { runningShellCommandCardIds },
+        onRunningShellCommandCardIdsChange = { runningShellCommandCardIds = it },
+        onRefreshingChange = { refreshing = it },
+        onRefreshProgressChange = { refreshProgress = it },
+        shellCardCommandRequiredToast = shellCardCommandRequiredToast,
+        shellRunNoPermissionText = shellRunNoPermissionText,
+        shellRunNoOutputText = shellRunNoOutputText,
+        noRefreshableCardText = noRefreshableCardText,
+        refreshCompletedText = refreshCompletedText
+    )
 
     BindOsCardExpandedStateMaps(
         activityShortcutCards = activityShortcutCards,
@@ -326,7 +254,7 @@ fun OsPage(
         onCacheLoadedChange = { cacheLoaded = it },
         onUiStatePersistenceReadyChange = { uiStatePersistenceReady = it },
         isPageActive = runtime.isDataActive,
-        ensureLoad = ::ensureLoad
+        ensureLoad = actionState.ensureLoad
     )
 
     BindOsShizukuInvalidation(
@@ -360,7 +288,7 @@ fun OsPage(
         androidPropsExpanded = androidPropsExpanded,
         javaPropsExpanded = javaPropsExpanded,
         linuxEnvExpanded = linuxEnvExpanded,
-        ensureLoad = { section -> ensureLoad(section) }
+        ensureLoad = { section -> actionState.ensureLoad(section, false) }
     )
     BindOsActivitySuggestionLoadEffect(
         showActivitySuggestionSheet = overlayState.showActivitySuggestionSheet,
@@ -423,7 +351,7 @@ fun OsPage(
         onOpenCardManager = { overlayState.onShowCardManagerChange(true) },
         onOpenActivityVisibilityManager = { overlayState.onShowActivityVisibilityManagerChange(true) },
         onOpenShellCardVisibilityManager = { overlayState.onShowShellCardVisibilityManagerChange(true) },
-        onRefresh = { scope.launch { refreshAllSections() } },
+        onRefresh = { scope.launch { actionState.refreshAllSections() } },
         onActionBarInteractingChanged = onActionBarInteractingChanged,
         searchBarVisible = enableSearchBar && showSearchBar,
         queryInput = queryInput,
@@ -438,7 +366,7 @@ fun OsPage(
             visibleCardsTitle = visibleCardsTitle,
             visibleCardsHint = "隐藏卡片后会清空对应缓存；重新显示时会立即重新获取并缓存。",
             visibleCards = visibleCards,
-            applyCardVisibility = ::applyCardVisibility,
+            applyCardVisibility = actionState.applyCardVisibility,
             visibleActivitiesTitle = visibleActivitiesTitle,
             visibleActivitiesDesc = stringResource(R.string.os_sheet_visible_activities_desc),
             activityShortcutCards = activityShortcutCards,
@@ -468,7 +396,7 @@ fun OsPage(
                 overlayState.onCardTransferInProgressChange(true)
                 cardTransferState.importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
             },
-            applyActivityCardVisibility = ::applyActivityCardVisibility,
+            applyActivityCardVisibility = actionState.applyActivityCardVisibility,
             visibleShellCardsTitle = visibleShellCardsTitle,
             visibleShellCardsDesc = visibleShellCardsDesc,
             shellRunnerVisible = visibleCards.contains(OsSectionCard.SHELL_RUNNER),
@@ -494,7 +422,7 @@ fun OsPage(
                 overlayState.onCardTransferInProgressChange(true)
                 cardTransferState.importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
             },
-            applyShellCommandCardVisibility = ::applyShellCommandCardVisibility,
+            applyShellCommandCardVisibility = actionState.applyShellCommandCardVisibility,
             editShellCommandCardTitle = editShellCommandCardTitle,
             onShellCommandCardsChange = { shellCommandCards = it },
             onRemoveShellCommandCardExpanded = { shellCommandCardExpanded.remove(it) },
@@ -554,7 +482,7 @@ fun OsPage(
                 overlayState.onShowShellCommandCardEditorChange(true)
             },
             onRunShellCommandCard = { card ->
-                scope.launch { runShellCommandCard(card) }
+                scope.launch { actionState.runShellCommandCard(card) }
             },
             activityShortcutCards = activityShortcutCards,
             defaultActivityCardTitle = googleSystemServiceDefaultTitle,
@@ -628,7 +556,7 @@ fun OsPage(
                         currentExportingCard = overlayState.exportingCard,
                         updateExportingCard = overlayState.onExportingCardChange,
                         visibleCardsProvider = { visibleCards },
-                        ensureLoad = ::ensureLoad,
+                        ensureLoad = actionState.ensureLoad,
                         sectionStatesProvider = { sectionStates },
                         activityShortcutCardsProvider = { activityShortcutCards },
                         googleSystemServiceDefaults = googleSystemServiceDefaults,
@@ -641,7 +569,7 @@ fun OsPage(
                     )
                 }
             },
-            onRefreshAll = { scope.launch { refreshAllSections() } },
+            onRefreshAll = { scope.launch { actionState.refreshAllSections() } },
             contentBottomPadding = runtime.contentBottomPadding,
             showFloatingAddButton = !overlayState.showActivityShortcutEditor &&
                     !overlayState.showActivitySuggestionSheet &&
