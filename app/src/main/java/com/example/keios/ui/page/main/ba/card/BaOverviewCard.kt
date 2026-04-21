@@ -163,7 +163,7 @@ internal fun BaOverviewCard(
                         ) {
                             Text("服务器", color = MiuixTheme.colorScheme.onBackground)
                             Image(
-                                painter = painterResource(id = R.drawable.common_icon_dailyreward),
+                                painter = painterResource(id = R.drawable.lobby_icon_work),
                                 contentDescription = "服务器图标",
                                 modifier = Modifier.size(18.dp),
                             )
