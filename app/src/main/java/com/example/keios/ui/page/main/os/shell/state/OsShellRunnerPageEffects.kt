@@ -52,10 +52,11 @@ internal fun BindOsShellRunnerPersistEffects(
 @Composable
 internal fun BindOsShellRunnerAutoScrollEffect(
     outputText: String,
-    outputScrollState: ScrollState
+    outputScrollState: ScrollState,
+    enabled: Boolean
 ) {
-    LaunchedEffect(outputText) {
-        if (outputText.isNotBlank()) {
+    LaunchedEffect(outputText, enabled) {
+        if (enabled && outputText.isNotBlank()) {
             outputScrollState.scrollTo(outputScrollState.maxValue)
         }
     }

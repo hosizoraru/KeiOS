@@ -39,7 +39,10 @@ internal data class OsShellRunnerTextBundle(
     val outputCopiedToast: String,
     val outputCopyEmptyToast: String,
     val clearAllToast: String,
-    val inputHint: String
+    val inputHint: String,
+    val commandCompletedToast: String,
+    val dangerousCommandDialogTitle: String,
+    val dangerousCommandConfirmText: String
 )
 
 @Composable
@@ -78,6 +81,9 @@ internal fun rememberOsShellRunnerTextBundle(): OsShellRunnerTextBundle {
     val outputCopyEmptyToast = stringResource(R.string.os_shell_toast_output_empty)
     val clearAllToast = stringResource(R.string.os_shell_toast_cleared_all)
     val inputHint = stringResource(R.string.os_shell_input_hint)
+    val commandCompletedToast = stringResource(R.string.os_shell_toast_command_completed)
+    val dangerousCommandDialogTitle = stringResource(R.string.os_shell_dangerous_command_dialog_title)
+    val dangerousCommandConfirmText = stringResource(R.string.os_shell_dangerous_command_dialog_confirm)
 
     return remember(
         shellPageTitle,
@@ -113,7 +119,10 @@ internal fun rememberOsShellRunnerTextBundle(): OsShellRunnerTextBundle {
         outputCopiedToast,
         outputCopyEmptyToast,
         clearAllToast,
-        inputHint
+        inputHint,
+        commandCompletedToast,
+        dangerousCommandDialogTitle,
+        dangerousCommandConfirmText
     ) {
         OsShellRunnerTextBundle(
             shellPageTitle = shellPageTitle,
@@ -149,7 +158,10 @@ internal fun rememberOsShellRunnerTextBundle(): OsShellRunnerTextBundle {
             outputCopiedToast = outputCopiedToast,
             outputCopyEmptyToast = outputCopyEmptyToast,
             clearAllToast = clearAllToast,
-            inputHint = inputHint
+            inputHint = inputHint,
+            commandCompletedToast = commandCompletedToast,
+            dangerousCommandDialogTitle = dangerousCommandDialogTitle,
+            dangerousCommandConfirmText = dangerousCommandConfirmText
         )
     }
 }

@@ -37,6 +37,7 @@ internal fun OsShellRunnerInputCard(
     runActionDescription: String,
     stopActionDescription: String,
     saveCommandActionDescription: String,
+    focusRequestToken: Int,
     onRunCommand: () -> Unit,
     onStopCommand: () -> Unit,
     onOpenSaveCommandSheet: () -> Unit,
@@ -110,6 +111,7 @@ internal fun OsShellRunnerInputCard(
                 onValueChange = onCommandInputChange,
                 label = inputHint,
                 minHeight = 90.dp,
+                focusRequestToken = focusRequestToken,
                 modifier = Modifier.fillMaxWidth()
             )
         }

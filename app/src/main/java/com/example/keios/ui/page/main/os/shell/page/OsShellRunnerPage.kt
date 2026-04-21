@@ -6,12 +6,18 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,6 +38,11 @@ import com.example.keios.ui.page.main.os.appLucideBackIcon
 import com.example.keios.ui.page.main.os.osLucideClearAllIcon
 import com.example.keios.ui.page.main.os.osLucideSettingsIcon
 import com.example.keios.ui.page.main.os.shell.OsShellCommandCardStore
+import com.example.keios.ui.page.main.os.shell.OsShellRunnerCopyMode
+import com.example.keios.ui.page.main.os.shell.OsShellRunnerExitCleanupMode
+import com.example.keios.ui.page.main.os.shell.OsShellRunnerOutputSaveMode
+import com.example.keios.ui.page.main.os.shell.OsShellRunnerPrefsStore
+import com.example.keios.ui.page.main.os.shell.OsShellRunnerStartupBehavior
 import com.example.keios.ui.page.main.os.shell.OsShellSettingsSheet
 import com.example.keios.ui.page.main.os.shell.component.OsShellRunnerInputCard
 import com.example.keios.ui.page.main.os.shell.component.OsShellRunnerOutputCard
@@ -43,6 +54,7 @@ import com.example.keios.ui.page.main.os.shell.state.appendShellRunnerOutput
 import com.example.keios.ui.page.main.os.shell.state.emptyShellRunnerOutputState
 import com.example.keios.ui.page.main.os.shell.state.formatShellRunnerOutput
 import com.example.keios.ui.page.main.os.shell.state.loadOsShellRunnerPersistSnapshot
+import com.example.keios.ui.page.main.os.shell.state.normalizeShellRunnerOutputState
 import com.example.keios.ui.page.main.os.shell.state.rememberOsShellRunnerTextBundle
 import com.example.keios.ui.page.main.widget.chrome.AppChromeTokens
 import com.example.keios.ui.page.main.widget.chrome.AppPageLazyColumn
@@ -53,15 +65,34 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowDialog
+
+private val dangerousShellPatterns = listOf(
+    Regex("""(^|\s)rm(\s+-[^\n]*)?\s+/(?!sdcard)""", RegexOption.IGNORE_CASE),
+    Regex("""(^|\s)pm\s+uninstall(\s|$)""", RegexOption.IGNORE_CASE),
+    Regex("""(^|\s)settings\s+put\s+global(\s|$)""", RegexOption.IGNORE_CASE),
+    Regex("""(^|\s)settings\s+delete\s+(system|secure|global)(\s|$)""", RegexOption.IGNORE_CASE),
+    Regex("""(^|\s)setprop(\s|$)""", RegexOption.IGNORE_CASE),
+    Regex("""(^|\s)reboot(\s|$)""", RegexOption.IGNORE_CASE),
+    Regex("""(^|\s)am\s+force-stop(\s|$)""", RegexOption.IGNORE_CASE)
+)
+
+private fun isPotentiallyDangerousShellCommand(command: String): Boolean {
+    val normalized = command.trim()
+    if (normalized.isBlank()) return false
+    return dangerousShellPatterns.any { regex -> regex.containsMatchIn(normalized) }
+}
 
 @Composable
 fun OsShellRunnerPage(
     canRunShellCommand: Boolean,
     onRequestShizukuPermission: () -> Unit,
-    onRunShellCommand: suspend (String) -> String?,
+    onRunShellCommand: suspend (String, Long) -> String?,
     onSaveShellCommand: (String, String, String, String) -> Boolean,
     onClose: () -> Unit
 ) {
@@ -114,21 +145,28 @@ fun OsShellRunnerPage(
     var latestRunResultOutput by rememberSaveable {
         mutableStateOf(persistSnapshot.outputState.latestRunResultOutput)
     }
+    var settings by remember { mutableStateOf(persistSnapshot.settings) }
+    var startupFocusRequestToken by rememberSaveable {
+        mutableIntStateOf(
+            if (persistSnapshot.settings.startupBehavior == OsShellRunnerStartupBehavior.FocusInput) {
+                1
+            } else {
+                0
+            }
+        )
+    }
+
     var runningCommand by remember { mutableStateOf(false) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
     var suppressStopOutputAppend by remember { mutableStateOf(false) }
     var showSaveSheet by rememberSaveable { mutableStateOf(false) }
     var showSettingsSheet by rememberSaveable { mutableStateOf(false) }
+    var showDangerousCommandConfirm by rememberSaveable { mutableStateOf(false) }
+    var pendingDangerousCommand by rememberSaveable { mutableStateOf("") }
     var saveTitleInput by rememberSaveable { mutableStateOf("") }
     var saveSubtitleInput by rememberSaveable { mutableStateOf("") }
-    var persistInputEnabled by rememberSaveable { mutableStateOf(persistSnapshot.persistInputEnabled) }
-    var persistOutputEnabled by rememberSaveable { mutableStateOf(persistSnapshot.persistOutputEnabled) }
 
     val latestOutputEntry = remember(outputEntries) { outputEntries.lastOrNull() }
-
-    BackHandler(enabled = showSaveSheet) { showSaveSheet = false }
-    BackHandler(enabled = !showSaveSheet && showSettingsSheet) { showSettingsSheet = false }
-    BackHandler(enabled = !showSaveSheet && !showSettingsSheet, onBack = onClose)
 
     fun applyOutputState(next: OsShellRunnerOutputState) {
         outputText = next.outputText
@@ -136,16 +174,84 @@ fun OsShellRunnerPage(
         latestRunResultOutput = next.latestRunResultOutput
     }
 
-    fun appendOutput(command: String, result: String) {
+    fun normalizeOutputStateForSettings() {
         applyOutputState(
-            appendShellRunnerOutput(
-                currentOutputText = outputText,
-                currentOutputEntries = outputEntries,
-                command = command,
-                result = result,
-                commandStoppedText = textBundle.commandStoppedText
+            normalizeShellRunnerOutputState(
+                outputText = outputText,
+                outputEntries = outputEntries,
+                commandStoppedText = textBundle.commandStoppedText,
+                outputResultLabel = textBundle.outputResultLabel,
+                outputTimeLabel = textBundle.outputTimeLabel,
+                outputSaveMode = settings.outputSaveMode,
+                maxChars = settings.outputLimitChars
             )
         )
+    }
+
+    fun appendOutput(command: String, result: String) {
+        var next = appendShellRunnerOutput(
+            currentOutputText = outputText,
+            currentOutputEntries = outputEntries,
+            command = command,
+            result = result,
+            commandStoppedText = textBundle.commandStoppedText,
+            outputSaveMode = settings.outputSaveMode,
+            maxChars = settings.outputLimitChars
+        )
+        if (settings.autoFormatOutput) {
+            next = formatShellRunnerOutput(
+                outputText = next.outputText,
+                outputEntries = next.outputEntries,
+                commandStoppedText = textBundle.commandStoppedText,
+                outputResultLabel = textBundle.outputResultLabel,
+                outputTimeLabel = textBundle.outputTimeLabel,
+                maxChars = settings.outputLimitChars
+            )
+        }
+        applyOutputState(next)
+    }
+
+    fun stopCommand(showStoppedOutput: Boolean = true) {
+        val job = runningJob ?: return
+        if (!showStoppedOutput) {
+            suppressStopOutputAppend = true
+        }
+        job.cancel(CancellationException("user-stop"))
+    }
+
+    fun executeCommand(command: String) {
+        if (runningCommand) return
+        val timeoutMs = settings.commandTimeoutSeconds.coerceAtLeast(5) * 1_000L
+        val job = scope.launch {
+            runningCommand = true
+            try {
+                val output = runCatching { onRunShellCommand(command, timeoutMs) }
+                    .getOrElse { throwable ->
+                        if (throwable is CancellationException) throw throwable
+                        throwable.localizedMessage?.takeIf { it.isNotBlank() }
+                            ?: throwable.javaClass.simpleName
+                    }
+                    ?.takeIf { it.isNotBlank() }
+                    ?: textBundle.noOutputText
+                appendOutput(command, output)
+                if (settings.completionToast) {
+                    Toast.makeText(context, textBundle.commandCompletedToast, Toast.LENGTH_SHORT).show()
+                }
+            } catch (_: CancellationException) {
+                if (suppressStopOutputAppend) {
+                    suppressStopOutputAppend = false
+                } else {
+                    appendOutput(command, textBundle.commandStoppedText)
+                    if (settings.completionToast) {
+                        Toast.makeText(context, textBundle.commandStoppedText, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } finally {
+                runningCommand = false
+                runningJob = null
+            }
+        }
+        runningJob = job
     }
 
     fun runCommand() {
@@ -160,38 +266,12 @@ fun OsShellRunnerPage(
             outputText = textBundle.missingPermissionText
             return
         }
-        val job = scope.launch {
-            runningCommand = true
-            try {
-                val output = runCatching { onRunShellCommand(command) }
-                    .getOrElse { throwable ->
-                        if (throwable is CancellationException) throw throwable
-                        throwable.localizedMessage?.takeIf { it.isNotBlank() }
-                            ?: throwable.javaClass.simpleName
-                    }
-                    ?.takeIf { it.isNotBlank() }
-                    ?: textBundle.noOutputText
-                appendOutput(command, output)
-            } catch (_: CancellationException) {
-                if (suppressStopOutputAppend) {
-                    suppressStopOutputAppend = false
-                } else {
-                    appendOutput(command, textBundle.commandStoppedText)
-                }
-            } finally {
-                runningCommand = false
-                runningJob = null
-            }
+        if (settings.dangerousCommandConfirm && isPotentiallyDangerousShellCommand(command)) {
+            pendingDangerousCommand = command
+            showDangerousCommandConfirm = true
+            return
         }
-        runningJob = job
-    }
-
-    fun stopCommand(showStoppedOutput: Boolean = true) {
-        val job = runningJob ?: return
-        if (!showStoppedOutput) {
-            suppressStopOutputAppend = true
-        }
-        job.cancel(CancellationException("user-stop"))
+        executeCommand(command)
     }
 
     fun openSaveCommandSheet() {
@@ -226,7 +306,17 @@ fun OsShellRunnerPage(
     }
 
     fun copyOutput() {
-        val output = outputText.trim()
+        val preferred = when (settings.copyMode) {
+            OsShellRunnerCopyMode.FullHistory -> outputText.trim()
+            OsShellRunnerCopyMode.LatestResult -> latestOutputEntry?.result.orEmpty().trim()
+        }
+        val output = preferred.ifBlank {
+            if (settings.copyMode == OsShellRunnerCopyMode.LatestResult) {
+                latestRunResultOutput.trim().ifBlank { outputText.trim() }
+            } else {
+                outputText.trim()
+            }
+        }
         if (output.isBlank()) {
             Toast.makeText(context, textBundle.outputCopyEmptyToast, Toast.LENGTH_SHORT).show()
             return
@@ -248,7 +338,8 @@ fun OsShellRunnerPage(
                 outputEntries = outputEntries,
                 commandStoppedText = textBundle.commandStoppedText,
                 outputResultLabel = textBundle.outputResultLabel,
-                outputTimeLabel = textBundle.outputTimeLabel
+                outputTimeLabel = textBundle.outputTimeLabel,
+                maxChars = settings.outputLimitChars
             )
         )
         Toast.makeText(context, textBundle.outputFormattedToast, Toast.LENGTH_SHORT).show()
@@ -264,6 +355,33 @@ fun OsShellRunnerPage(
         clearOutput()
         Toast.makeText(context, textBundle.clearAllToast, Toast.LENGTH_SHORT).show()
     }
+
+    fun requestClose() {
+        stopCommand(showStoppedOutput = false)
+        when (settings.exitCleanupMode) {
+            OsShellRunnerExitCleanupMode.KeepAll -> Unit
+            OsShellRunnerExitCleanupMode.ClearInput -> {
+                commandInput = ""
+                OsShellRunnerPrefsStore.clearSavedInput()
+            }
+            OsShellRunnerExitCleanupMode.ClearOutput -> {
+                clearOutput()
+                OsShellRunnerPrefsStore.clearSavedOutput()
+            }
+        }
+        onClose()
+    }
+
+    BackHandler(enabled = showSaveSheet) { showSaveSheet = false }
+    BackHandler(enabled = !showSaveSheet && showSettingsSheet) { showSettingsSheet = false }
+    BackHandler(enabled = !showSaveSheet && !showSettingsSheet && showDangerousCommandConfirm) {
+        showDangerousCommandConfirm = false
+        pendingDangerousCommand = ""
+    }
+    BackHandler(
+        enabled = !showSaveSheet && !showSettingsSheet && !showDangerousCommandConfirm,
+        onBack = { requestClose() }
+    )
 
     val clearAllIcon = osLucideClearAllIcon()
     val settingsIcon = osLucideSettingsIcon()
@@ -283,14 +401,15 @@ fun OsShellRunnerPage(
     }
 
     BindOsShellRunnerPersistEffects(
-        persistInputEnabled = persistInputEnabled,
-        persistOutputEnabled = persistOutputEnabled,
+        persistInputEnabled = settings.persistInput,
+        persistOutputEnabled = settings.persistOutput,
         commandInput = commandInput,
         outputText = outputText
     )
     BindOsShellRunnerAutoScrollEffect(
         outputText = outputText,
-        outputScrollState = outputScrollState
+        outputScrollState = outputScrollState,
+        enabled = settings.autoScrollOutput
     )
 
     AppPageScaffold(
@@ -302,7 +421,7 @@ fun OsShellRunnerPage(
                 imageVector = appLucideBackIcon(),
                 contentDescription = stringResource(R.string.common_close),
                 tint = MiuixTheme.colorScheme.primary,
-                modifier = Modifier.clickable { onClose() }
+                modifier = Modifier.clickable { requestClose() }
             )
         },
         actions = {
@@ -332,6 +451,7 @@ fun OsShellRunnerPage(
                     runActionDescription = textBundle.runActionDescription,
                     stopActionDescription = textBundle.stopActionDescription,
                     saveCommandActionDescription = textBundle.saveCommandActionDescription,
+                    focusRequestToken = startupFocusRequestToken,
                     onRunCommand = { runCommand() },
                     onStopCommand = { stopCommand() },
                     onOpenSaveCommandSheet = { openSaveCommandSheet() }
@@ -380,9 +500,122 @@ fun OsShellRunnerPage(
     OsShellSettingsSheet(
         show = showSettingsSheet,
         onDismissRequest = { showSettingsSheet = false },
-        persistInputEnabled = persistInputEnabled,
-        onPersistInputEnabledChange = { checked -> persistInputEnabled = checked },
-        persistOutputEnabled = persistOutputEnabled,
-        onPersistOutputEnabledChange = { checked -> persistOutputEnabled = checked }
+        settings = settings,
+        onPersistInputEnabledChange = { checked ->
+            settings = settings.copy(persistInput = checked)
+            OsShellRunnerPrefsStore.savePersistInput(checked)
+        },
+        onPersistOutputEnabledChange = { checked ->
+            settings = settings.copy(persistOutput = checked)
+            OsShellRunnerPrefsStore.savePersistOutput(checked)
+        },
+        onTimeoutSecondsChange = { seconds ->
+            settings = settings.copy(commandTimeoutSeconds = seconds)
+            OsShellRunnerPrefsStore.saveTimeoutSeconds(seconds)
+        },
+        onAutoFormatOutputChange = { checked ->
+            settings = settings.copy(autoFormatOutput = checked)
+            OsShellRunnerPrefsStore.saveAutoFormatOutput(checked)
+        },
+        onAutoScrollOutputChange = { checked ->
+            settings = settings.copy(autoScrollOutput = checked)
+            OsShellRunnerPrefsStore.saveAutoScrollOutput(checked)
+        },
+        onOutputLimitCharsChange = { limit ->
+            settings = settings.copy(outputLimitChars = limit)
+            OsShellRunnerPrefsStore.saveOutputLimitChars(limit)
+            normalizeOutputStateForSettings()
+        },
+        onOutputSaveModeChange = { mode ->
+            settings = settings.copy(outputSaveMode = mode)
+            OsShellRunnerPrefsStore.saveOutputSaveMode(mode)
+            normalizeOutputStateForSettings()
+        },
+        onDangerousCommandConfirmChange = { checked ->
+            settings = settings.copy(dangerousCommandConfirm = checked)
+            OsShellRunnerPrefsStore.saveDangerousCommandConfirm(checked)
+        },
+        onCompletionToastChange = { checked ->
+            settings = settings.copy(completionToast = checked)
+            OsShellRunnerPrefsStore.saveCompletionToast(checked)
+        },
+        onStartupBehaviorChange = { behavior ->
+            settings = settings.copy(startupBehavior = behavior)
+            OsShellRunnerPrefsStore.saveStartupBehavior(behavior)
+            if (behavior == OsShellRunnerStartupBehavior.FocusInput) {
+                startupFocusRequestToken += 1
+            }
+        },
+        onExitCleanupModeChange = { mode ->
+            settings = settings.copy(exitCleanupMode = mode)
+            OsShellRunnerPrefsStore.saveExitCleanupMode(mode)
+        },
+        onCopyModeChange = { mode ->
+            settings = settings.copy(copyMode = mode)
+            OsShellRunnerPrefsStore.saveCopyMode(mode)
+        }
     )
+
+    val dangerousCommandPreview = remember(pendingDangerousCommand) {
+        pendingDangerousCommand.trim().replace('\n', ' ').take(120)
+    }
+    OsShellDangerousCommandConfirmDialog(
+        show = showDangerousCommandConfirm,
+        title = textBundle.dangerousCommandDialogTitle,
+        summary = context.getString(
+            R.string.os_shell_dangerous_command_dialog_summary,
+            dangerousCommandPreview.ifBlank { "-" }
+        ),
+        confirmText = textBundle.dangerousCommandConfirmText,
+        onDismissRequest = {
+            showDangerousCommandConfirm = false
+            pendingDangerousCommand = ""
+        },
+        onConfirm = {
+            val command = pendingDangerousCommand.trim()
+            showDangerousCommandConfirm = false
+            pendingDangerousCommand = ""
+            if (command.isNotBlank()) {
+                executeCommand(command)
+            }
+        }
+    )
+}
+
+@Composable
+private fun OsShellDangerousCommandConfirmDialog(
+    show: Boolean,
+    title: String,
+    summary: String,
+    confirmText: String,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    WindowDialog(
+        show = show,
+        title = title,
+        summary = summary,
+        onDismissRequest = onDismissRequest
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.common_cancel),
+                onClick = onDismissRequest
+            )
+            TextButton(
+                modifier = Modifier.weight(1f),
+                text = confirmText,
+                colors = ButtonDefaults.textButtonColors(
+                    color = MiuixTheme.colorScheme.error,
+                    textColor = MiuixTheme.colorScheme.onError
+                ),
+                onClick = onConfirm
+            )
+        }
+    }
 }

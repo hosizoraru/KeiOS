@@ -42,8 +42,8 @@ class OsShellRunnerActivity : ComponentActivity() {
                     canRunShellCommand = shizukuStatus.contains("granted", ignoreCase = true) ||
                         shizukuApiUtils.canUseCommand(),
                     onRequestShizukuPermission = { shizukuApiUtils.requestPermissionIfNeeded() },
-                    onRunShellCommand = { command ->
-                        shizukuApiUtils.execCommandCancellable(command = command, timeoutMs = 300_000L)
+                    onRunShellCommand = { command, timeoutMs ->
+                        shizukuApiUtils.execCommandCancellable(command = command, timeoutMs = timeoutMs)
                     },
                     onSaveShellCommand = { command, title, subtitle, runOutput ->
                         OsShellCommandCardStore.createCard(

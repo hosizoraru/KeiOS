@@ -11,11 +11,16 @@ import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,9 +35,12 @@ internal fun ShellCommandInputField(
     onValueChange: (String) -> Unit,
     label: String,
     minHeight: Dp = 136.dp,
+    focusRequestToken: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     val shape: CornerBasedShape = RoundedCornerShape(18.dp)
     val textColor = MiuixTheme.colorScheme.onBackground
     val placeholderColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = if (isDark) 0.72f else 0.64f)
@@ -57,6 +65,12 @@ internal fun ShellCommandInputField(
         lineHeight = AppTypographyTokens.Body.lineHeight,
         platformStyle = PlatformTextStyle(includeFontPadding = false)
     )
+    LaunchedEffect(focusRequestToken) {
+        if (focusRequestToken > 0) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     Box(
         modifier = modifier
@@ -74,6 +88,7 @@ internal fun ShellCommandInputField(
             cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
             modifier = Modifier
                 .fillMaxWidth()
+                .focusRequester(focusRequester)
                 .defaultMinSize(minHeight = minHeight),
             decorationBox = { innerTextField ->
                 Box(
