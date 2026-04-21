@@ -262,7 +262,7 @@ internal fun BaOverviewCard(
                 ) {
                     GlassIconButton(
                         backdrop = backdrop,
-                        painter = painterResource(id = R.drawable.goods_icon_biweekly_0),
+                        painter = painterResource(id = R.drawable.item_icon_consumable_ap_3),
                         contentDescription = "领取咖啡厅AP",
                         variant = GlassVariant.Content,
                         iconTint = Color.Unspecified,
