@@ -30,7 +30,6 @@ import top.yukonga.miuix.kmp.icon.extended.Play
 
 @Composable
 internal fun GuideGalleryVideoGroupHeaderActions(
-    title: String,
     itemsSize: Int,
     optionLabels: List<String>,
     selectedIndex: Int,
@@ -40,16 +39,14 @@ internal fun GuideGalleryVideoGroupHeaderActions(
     videoInlineExpanded: Boolean,
     videoInlinePlaying: Boolean,
     videoInlineBuffering: Boolean,
-    previewLoading: Boolean,
-    previewProgress: Float,
+    isVideoCached: Boolean,
     backdrop: Backdrop?,
     onToggleInlinePlay: () -> Unit,
     onOpenFullscreen: () -> Unit,
     onSaveMedia: () -> Unit
 ) {
-    val isMemoryHallVideoTitle = title.trim().startsWith("回忆大厅视频")
     if (itemsSize > 1) {
-        var showPicker by remember(title, itemsSize) { mutableStateOf(false) }
+        var showPicker by remember(itemsSize, optionLabels) { mutableStateOf(false) }
         var pickerPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
         Box(
             modifier = Modifier.capturePopupAnchor { pickerPopupAnchorBounds = it }
@@ -90,32 +87,31 @@ internal fun GuideGalleryVideoGroupHeaderActions(
     }
 
     if (displayMediaUrl.isNotBlank()) {
-        if (isMemoryHallVideoTitle) {
-            val indicatorProgress = when {
-                videoInlineBuffering -> 0.35f
-                previewLoading -> previewProgress.coerceIn(0f, 1f).coerceAtLeast(0.06f)
-                else -> 1f
-            }
-            val progressForegroundColor = if (!videoInlineBuffering && !previewLoading) {
-                Color(0xFF34C759)
-            } else {
-                Color(0xFF3B82F6)
-            }
-            val progressBackgroundColor = if (!videoInlineBuffering && !previewLoading) {
-                Color(0x5534C759)
-            } else {
-                Color(0x553B82F6)
-            }
-            CircularProgressIndicator(
-                progress = indicatorProgress,
-                size = 18.dp,
-                strokeWidth = 2.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = progressForegroundColor,
-                    backgroundColor = progressBackgroundColor
-                )
-            )
+        val indicatorProgress = when {
+            videoInlineBuffering -> 0.35f
+            videoInlineExpanded && videoInlinePlaying -> 0.72f
+            isVideoCached -> 1f
+            else -> 0.08f
         }
+        val progressForegroundColor = if (isVideoCached && !videoInlineBuffering) {
+            Color(0xFF34C759)
+        } else {
+            Color(0xFF3B82F6)
+        }
+        val progressBackgroundColor = if (isVideoCached && !videoInlineBuffering) {
+            Color(0x5534C759)
+        } else {
+            Color(0x553B82F6)
+        }
+        CircularProgressIndicator(
+            progress = indicatorProgress,
+            size = 18.dp,
+            strokeWidth = 2.dp,
+            colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                foregroundColor = progressForegroundColor,
+                backgroundColor = progressBackgroundColor
+            )
+        )
         GlassTextButton(
             backdrop = backdrop,
             text = "",

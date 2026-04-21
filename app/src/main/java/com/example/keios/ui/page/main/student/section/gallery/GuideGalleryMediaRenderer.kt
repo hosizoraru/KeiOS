@@ -85,16 +85,16 @@ internal fun GuideGalleryCardContent(
                 val cachedAudioReady = resolvedAudioSource.startsWith("file://", ignoreCase = true)
                 val indicatorProgress = when {
                     audioState.isBuffering -> 0.35f
-                    audioState.isPlaying -> audioState.playProgress.coerceIn(0f, 1f).coerceAtLeast(0.06f)
-                    cachedAudioReady || audioState.durationMs > 0L -> 1f
+                    audioState.isPlaying -> audioState.playProgress.coerceIn(0f, 1f).coerceAtLeast(0.08f)
+                    cachedAudioReady || audioState.resolvedDurationMs > 0L -> 1f
                     else -> 0.06f
                 }
-                val progressForegroundColor = if (indicatorProgress >= 0.999f) {
+                val progressForegroundColor = if (indicatorProgress >= 0.999f && !audioState.isBuffering) {
                     Color(0xFF34C759)
                 } else {
                     Color(0xFF3B82F6)
                 }
-                val progressBackgroundColor = if (indicatorProgress >= 0.999f) {
+                val progressBackgroundColor = if (indicatorProgress >= 0.999f && !audioState.isBuffering) {
                     Color(0x5534C759)
                 } else {
                     Color(0x553B82F6)

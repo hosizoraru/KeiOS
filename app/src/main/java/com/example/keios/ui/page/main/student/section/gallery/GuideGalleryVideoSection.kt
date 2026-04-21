@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -66,12 +65,8 @@ fun GuideGalleryVideoGroupCardItem(
     var videoInlinePlaying by remember(displayMediaUrl) { mutableStateOf(false) }
     var videoInlineBuffering by remember(displayMediaUrl) { mutableStateOf(false) }
     var videoControlRequestId by remember(displayMediaUrl) { mutableIntStateOf(0) }
-    val previewProgressState = remember(displayPreviewUrl) {
-        MutableStateFlow(if (displayPreviewUrl.isBlank()) 1f else 0f)
-    }
-    val previewProgress by previewProgressState.collectAsState()
-    var previewLoading by remember(displayPreviewUrl) {
-        mutableStateOf(displayPreviewUrl.isNotBlank())
+    val isVideoCached = remember(displayMediaUrl) {
+        normalizeGuideMediaSource(displayMediaUrl).startsWith("file://", ignoreCase = true)
     }
     val noteText = selectedItem.note.trim()
     val optionLabels = remember(title, items) {
@@ -92,7 +87,6 @@ fun GuideGalleryVideoGroupCardItem(
         containerColor = Color(0x223B82F6),
         headerEndActions = {
             GuideGalleryVideoGroupHeaderActions(
-                title = title,
                 itemsSize = items.size,
                 optionLabels = optionLabels,
                 selectedIndex = selectedIndex,
@@ -102,8 +96,7 @@ fun GuideGalleryVideoGroupCardItem(
                 videoInlineExpanded = videoInlineExpanded,
                 videoInlinePlaying = videoInlinePlaying,
                 videoInlineBuffering = videoInlineBuffering,
-                previewLoading = previewLoading,
-                previewProgress = previewProgress,
+                isVideoCached = isVideoCached,
                 backdrop = backdrop,
                 onToggleInlinePlay = {
                     if (normalizeGuideMediaSource(displayMediaUrl).isBlank()) {
@@ -150,8 +143,7 @@ fun GuideGalleryVideoGroupCardItem(
                 controlActionToken = videoControlRequestId,
                 onIsPlayingChange = { playing -> videoInlinePlaying = playing },
                 onBufferingChange = { buffering -> videoInlineBuffering = buffering },
-                previewProgressState = previewProgressState,
-                onPreviewLoadingChanged = { loading -> previewLoading = loading }
+                showCollapsedPreview = false
             )
         }
     }
@@ -212,7 +204,8 @@ internal fun GuideInlineVideoPlayer(
     onIsPlayingChange: (Boolean) -> Unit = {},
     onBufferingChange: (Boolean) -> Unit = {},
     previewProgressState: MutableStateFlow<Float>? = null,
-    onPreviewLoadingChanged: ((Boolean) -> Unit)? = null
+    onPreviewLoadingChanged: ((Boolean) -> Unit)? = null,
+    showCollapsedPreview: Boolean = true
 ) {
     val context = LocalContext.current
     val normalizedUrl = remember(mediaUrl) { normalizeGuideMediaSource(mediaUrl) }
@@ -236,16 +229,22 @@ internal fun GuideInlineVideoPlayer(
     }
 
     if (!expanded) {
-        GuideInlineVideoPreview(
-            previewImageUrl = normalizedPreviewUrl,
-            onOpenFullscreen = {
-                onExpandedChange(false)
-                openFullscreen()
-            },
-            previewProgressState = previewProgressState,
-            onPreviewLoadingChanged = onPreviewLoadingChanged
-        )
+        if (showCollapsedPreview) {
+            GuideInlineVideoPreview(
+                previewImageUrl = normalizedPreviewUrl,
+                onOpenFullscreen = {
+                    onExpandedChange(false)
+                    openFullscreen()
+                },
+                previewProgressState = previewProgressState,
+                onPreviewLoadingChanged = onPreviewLoadingChanged
+            )
+        } else {
+            previewProgressState?.value = 1f
+            onPreviewLoadingChanged?.invoke(false)
+        }
         onBufferingChange(false)
+        onIsPlayingChange(false)
         return
     }
 
