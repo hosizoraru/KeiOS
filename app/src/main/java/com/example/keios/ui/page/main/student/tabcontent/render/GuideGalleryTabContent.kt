@@ -17,7 +17,8 @@ internal fun LazyListScope.renderGuideGalleryTabContent(
     sourceUrl: String,
     galleryCacheRevision: Int,
     onOpenExternal: (String) -> Unit,
-    onSaveMedia: (url: String, title: String) -> Unit
+    onSaveMedia: (url: String, title: String) -> Unit,
+    onSaveMediaPack: (items: List<Pair<String, String>>, packTitle: String) -> Unit
 ) {
     val guide = info
     if (guide == null) {
@@ -41,6 +42,7 @@ internal fun LazyListScope.renderGuideGalleryTabContent(
         sourceUrl = sourceUrl,
         galleryCacheRevision = galleryCacheRevision,
         onOpenExternal = onOpenExternal,
-        onSaveMedia = onSaveMedia
+        onSaveMedia = onSaveMedia,
+        onSaveMediaPack = onSaveMediaPack
     )
 }

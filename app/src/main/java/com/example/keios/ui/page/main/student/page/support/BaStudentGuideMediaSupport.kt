@@ -1,5 +1,6 @@
 package com.example.keios.ui.page.main.student.page.support
 
+import android.content.Context
 import android.net.Uri
 import android.webkit.MimeTypeMap
 import androidx.compose.animation.core.Animatable
@@ -18,7 +19,14 @@ import com.example.keios.ui.page.main.student.hasRenderableGalleryMedia
 import com.example.keios.ui.page.main.student.isMemoryHallFileGalleryItem
 import com.example.keios.ui.page.main.student.isRenderableGalleryStaticImageUrl
 import com.example.keios.ui.page.main.widget.motion.resolvedMotionDuration
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 internal fun normalizeGuidePlaybackSource(raw: String): String {
     val value = raw.trim()
@@ -86,6 +94,19 @@ internal data class GuideMediaSaveRequest(
     val fileName: String,
     val mimeType: String
 )
+
+internal data class GuideMediaPackSaveRequest(
+    val entries: List<GuideMediaSaveRequest>,
+    val fileName: String
+)
+
+internal data class GuideMediaPackSaveResult(
+    val totalCount: Int,
+    val savedCount: Int
+) {
+    val success: Boolean
+        get() = savedCount > 0
+}
 
 private fun sanitizeGuideMediaTitle(raw: String): String {
     val cleaned = raw
@@ -252,61 +273,184 @@ internal fun buildGuideMediaSaveRequest(
     )
 }
 
-internal fun copyGuideMediaToUri(
-    context: android.content.Context,
+private fun buildGuideMediaPackZipFileName(
+    rawPackTitle: String,
+    rawPrefix: String
+): String {
+    val packTitle = sanitizeGuideMediaToken(rawPackTitle).ifBlank { "角色表情" }
+    val prefix = sanitizeGuideMediaToken(rawPrefix)
+        .takeIf { it.isNotBlank() && it != "学生图鉴" }
+        .orEmpty()
+    val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())
+    val base = if (prefix.isBlank()) {
+        "${packTitle}_打包_$stamp"
+    } else {
+        "${prefix}_${packTitle}_打包_$stamp"
+    }
+    return "${sanitizeGuideMediaTitle(base)}.zip"
+}
+
+internal fun buildGuideMediaPackSaveRequest(
+    rawItems: List<Pair<String, String>>,
+    rawPackTitle: String,
+    rawPrefix: String = ""
+): GuideMediaPackSaveRequest? {
+    if (rawItems.isEmpty()) return null
+    val entries = rawItems
+        .mapNotNull { (url, title) ->
+            buildGuideMediaSaveRequest(
+                rawUrl = url,
+                rawTitle = title,
+                rawPrefix = rawPrefix
+            )
+        }
+        .distinctBy { it.sourceUrl }
+    if (entries.isEmpty()) return null
+    return GuideMediaPackSaveRequest(
+        entries = entries,
+        fileName = buildGuideMediaPackZipFileName(
+            rawPackTitle = rawPackTitle,
+            rawPrefix = rawPrefix
+        )
+    )
+}
+
+private inline fun copyGuideMediaFromSource(
+    context: Context,
     sourceUrl: String,
-    outputUri: Uri
+    onInputStream: (InputStream) -> Boolean
 ): Boolean {
     return runCatching {
         val normalized = normalizeGuidePlaybackSource(sourceUrl)
         if (normalized.isBlank()) {
             false
         } else {
-            val output = context.contentResolver.openOutputStream(outputUri) ?: return@runCatching false
-            output.use { out ->
-                val sourceUri = runCatching { Uri.parse(normalized) }.getOrNull()
-                val scheme = sourceUri?.scheme.orEmpty().lowercase()
-                when {
-                    scheme == "file" -> {
-                        val path = sourceUri?.path.orEmpty()
-                        if (path.isBlank()) {
-                            false
-                        } else {
-                            File(path).inputStream().use { input -> input.copyTo(out) }
-                            true
-                        }
+            val sourceUri = runCatching { Uri.parse(normalized) }.getOrNull()
+            val scheme = sourceUri?.scheme.orEmpty().lowercase()
+            when {
+                scheme == "file" -> {
+                    val path = sourceUri?.path.orEmpty()
+                    if (path.isBlank()) {
+                        false
+                    } else {
+                        File(path).inputStream().use(onInputStream)
                     }
-                    scheme == "content" -> {
-                        val parsedUri = sourceUri
-                        val input = parsedUri?.let { context.contentResolver.openInputStream(it) }
-                        if (input == null) {
-                            false
-                        } else {
-                            input.use { stream -> stream.copyTo(out) }
-                            true
-                        }
-                    }
-                    scheme == "http" || scheme == "https" || normalized.startsWith("//") -> {
-                        val tempDir = File(context.cacheDir, "guide_media_save")
-                        if (!tempDir.exists()) tempDir.mkdirs()
-                        val tempFile = File(tempDir, "tmp_${System.nanoTime().toString(16)}")
-                        try {
-                            val downloaded = GameKeeFetchHelper.downloadToFile(normalized, tempFile)
-                            if (!downloaded || !tempFile.exists() || tempFile.length() <= 0L) {
-                                false
-                            } else {
-                                tempFile.inputStream().use { input -> input.copyTo(out) }
-                                true
-                            }
-                        } finally {
-                            runCatching { tempFile.delete() }
-                        }
-                    }
-                    else -> false
                 }
+
+                scheme == "content" -> {
+                    val parsedUri = sourceUri
+                    val input = parsedUri?.let { context.contentResolver.openInputStream(it) }
+                    if (input == null) {
+                        false
+                    } else {
+                        input.use(onInputStream)
+                    }
+                }
+
+                scheme == "http" || scheme == "https" || normalized.startsWith("//") -> {
+                    val tempDir = File(context.cacheDir, "guide_media_save")
+                    if (!tempDir.exists()) tempDir.mkdirs()
+                    val tempFile = File(tempDir, "tmp_${System.nanoTime().toString(16)}")
+                    try {
+                        val downloaded = GameKeeFetchHelper.downloadToFile(normalized, tempFile)
+                        if (!downloaded || !tempFile.exists() || tempFile.length() <= 0L) {
+                            false
+                        } else {
+                            tempFile.inputStream().use(onInputStream)
+                        }
+                    } finally {
+                        runCatching { tempFile.delete() }
+                    }
+                }
+
+                else -> false
             }
         }
     }.getOrDefault(false)
+}
+
+internal fun copyGuideMediaToUri(
+    context: Context,
+    sourceUrl: String,
+    outputUri: Uri
+): Boolean {
+    return runCatching {
+        val output = context.contentResolver.openOutputStream(outputUri) ?: return@runCatching false
+        output.use { out ->
+            copyGuideMediaFromSource(context, sourceUrl) { input ->
+                input.copyTo(out)
+                true
+            }
+        }
+    }.getOrDefault(false)
+}
+
+private fun createUniqueZipEntryName(
+    usedNames: MutableSet<String>,
+    rawFileName: String
+): String {
+    val sanitized = sanitizeGuideMediaTitle(rawFileName).ifBlank { "BA_media.bin" }
+    val base = sanitized.substringBeforeLast('.', sanitized).ifBlank { "BA_media" }
+    val ext = sanitized.substringAfterLast('.', "")
+    val suffix = ext.takeIf { it.isNotBlank() }?.let { ".$it" }.orEmpty()
+    val maxAttempts = 120
+    for (index in 0 until maxAttempts) {
+        val candidate = if (index == 0) {
+            "$base$suffix"
+        } else {
+            "$base ($index)$suffix"
+        }
+        if (usedNames.add(candidate)) {
+            return candidate
+        }
+    }
+    val fallback = "BA_media_${System.nanoTime().toString(16)}$suffix"
+    usedNames += fallback
+    return fallback
+}
+
+internal fun copyGuideMediaPackToUri(
+    context: Context,
+    request: GuideMediaPackSaveRequest,
+    outputUri: Uri
+): GuideMediaPackSaveResult {
+    val total = request.entries.size
+    if (total <= 0) return GuideMediaPackSaveResult(totalCount = 0, savedCount = 0)
+    var savedCount = 0
+    val success = runCatching {
+        val output = context.contentResolver.openOutputStream(outputUri) ?: return@runCatching false
+        output.use { out ->
+            ZipOutputStream(BufferedOutputStream(out)).use { zip ->
+                val usedEntryNames = mutableSetOf<String>()
+                request.entries.forEach { item ->
+                    val entryName = createUniqueZipEntryName(
+                        usedNames = usedEntryNames,
+                        rawFileName = item.fileName
+                    )
+                    var entryOpened = false
+                    val copied = copyGuideMediaFromSource(context, item.sourceUrl) { input ->
+                        runCatching {
+                            zip.putNextEntry(ZipEntry(entryName))
+                            entryOpened = true
+                            input.copyTo(zip)
+                            true
+                        }.getOrDefault(false)
+                    }
+                    if (entryOpened) {
+                        runCatching { zip.closeEntry() }
+                    }
+                    if (copied) {
+                        savedCount += 1
+                    }
+                }
+            }
+        }
+        true
+    }.getOrDefault(false)
+    if (!success) {
+        return GuideMediaPackSaveResult(totalCount = total, savedCount = 0)
+    }
+    return GuideMediaPackSaveResult(totalCount = total, savedCount = savedCount)
 }
 
 internal fun createUniqueDocumentInTree(

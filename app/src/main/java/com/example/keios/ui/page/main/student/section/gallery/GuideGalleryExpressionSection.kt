@@ -145,6 +145,7 @@ fun GuideGalleryExpressionCardItem(
     backdrop: Backdrop?,
     onOpenMedia: (String) -> Unit,
     onSaveMedia: (url: String, title: String) -> Unit = { _, _ -> },
+    onSaveMediaPack: (items: List<Pair<String, String>>, packTitle: String) -> Unit = { _, _ -> },
     mediaUrlResolver: (String) -> String = { it },
     modifier: Modifier = Modifier
 ) {
@@ -362,17 +363,7 @@ fun GuideGalleryExpressionCardItem(
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
                         onClick = {
-                            expressionPackTargets.forEach { (url, label) ->
-                                onSaveMedia(url, label)
-                            }
-                            Toast.makeText(
-                                context,
-                                context.getString(
-                                    R.string.guide_expression_pack_download_started,
-                                    expressionPackTargets.size
-                                ),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            onSaveMediaPack(expressionPackTargets, title)
                         }
                     )
                 }

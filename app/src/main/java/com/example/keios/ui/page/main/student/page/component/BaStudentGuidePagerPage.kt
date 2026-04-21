@@ -65,6 +65,7 @@ internal fun BaStudentGuidePagerPage(
     onOpenExternal: (String) -> Unit,
     onOpenGuide: (String) -> Unit,
     onSaveMedia: (String, String) -> Unit,
+    onSaveMediaPack: (List<Pair<String, String>>, String) -> Unit,
     onToggleVoicePlayback: (String) -> Unit,
     onSelectedVoiceLanguageChange: (String) -> Unit
 ) {
@@ -187,6 +188,7 @@ internal fun BaStudentGuidePagerPage(
                         onOpenExternal = onOpenExternal,
                         onOpenGuide = onOpenGuide,
                         onSaveMedia = onSaveMedia,
+                        onSaveMediaPack = onSaveMediaPack,
                         onToggleVoicePlayback = onToggleVoicePlayback,
                         onSelectedVoiceLanguageChange = onSelectedVoiceLanguageChange
                     )

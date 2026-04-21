@@ -62,6 +62,7 @@ import com.example.keios.ui.page.main.student.page.component.BaStudentGuidePager
 import com.example.keios.ui.page.main.student.page.support.rememberGuideSyncProgress
 import com.example.keios.ui.page.main.student.page.state.BindBaStudentGuideInfoLoadEffect
 import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideMediaSaveAction
+import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideMediaPackSaveAction
 import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuidePageActions
 import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideTabSelectCoordinator
 import com.example.keios.ui.page.main.student.page.state.rememberBaStudentGuideTopBarActionItems
@@ -209,6 +210,10 @@ fun BaStudentGuidePage(
         pageScope = pageScope,
         currentStudentNamePrefix = { info?.title?.trim().orEmpty() }
     )
+    val saveGuideMediaPackAction = rememberBaStudentGuideMediaPackSaveAction(
+        pageScope = pageScope,
+        currentStudentNamePrefix = { info?.title?.trim().orEmpty() }
+    )
 
     BindBaStudentGuidePlayerLifecycleEffects(
         context = context,
@@ -239,7 +244,8 @@ fun BaStudentGuidePage(
         onSourceUrlChange = { sourceUrl = it },
         onErrorChange = { error = it },
         onRefreshSignalIncrease = { refreshSignal += 1 },
-        saveGuideMedia = saveGuideMediaAction
+        saveGuideMedia = saveGuideMediaAction,
+        saveGuideMediaPack = saveGuideMediaPackAction
     )
 
     BindBaStudentGuideSourceRestoreEffect(
@@ -371,6 +377,7 @@ fun BaStudentGuidePage(
             onOpenExternal = pageActions.openExternal,
             onOpenGuide = pageActions.openGuideInPage,
             onSaveMedia = pageActions.saveGuideMedia,
+            onSaveMediaPack = pageActions.saveGuideMediaPack,
             onToggleVoicePlayback = pageActions.toggleVoicePlayback,
             onSelectedVoiceLanguageChange = { selectedVoiceLanguage = it }
         )

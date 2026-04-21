@@ -36,7 +36,8 @@ internal fun LazyListScope.renderGuideGalleryStateContent(
     sourceUrl: String,
     galleryCacheRevision: Int,
     onOpenExternal: (String) -> Unit,
-    onSaveMedia: (url: String, title: String) -> Unit
+    onSaveMedia: (url: String, title: String) -> Unit,
+    onSaveMediaPack: (items: List<Pair<String, String>>, packTitle: String) -> Unit
 ) {
     if (!error.isNullOrBlank()) {
         item { GuideGalleryErrorCard(error = error) }
@@ -95,6 +96,7 @@ internal fun LazyListScope.renderGuideGalleryStateContent(
                     backdrop = backdrop,
                     onOpenMedia = onOpenExternal,
                     onSaveMedia = onSaveMedia,
+                    onSaveMediaPack = onSaveMediaPack,
                     mediaUrlResolver = mediaUrlResolver
                 )
             } else {

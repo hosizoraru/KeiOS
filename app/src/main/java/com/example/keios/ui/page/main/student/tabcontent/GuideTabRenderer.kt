@@ -29,6 +29,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
     onOpenExternal: (String) -> Unit,
     onOpenGuide: (String) -> Unit,
     onSaveMedia: (url: String, title: String) -> Unit,
+    onSaveMediaPack: (items: List<Pair<String, String>>, packTitle: String) -> Unit,
     onToggleVoicePlayback: (String) -> Unit,
     onSelectedVoiceLanguageChange: (String) -> Unit
 ) {
@@ -86,7 +87,8 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
             sourceUrl = sourceUrl,
             galleryCacheRevision = galleryCacheRevision,
             onOpenExternal = onOpenExternal,
-            onSaveMedia = onSaveMedia
+            onSaveMedia = onSaveMedia,
+            onSaveMediaPack = onSaveMediaPack
         )
 
         GuideBottomTab.Simulate -> renderGuideSimulateTabContent(

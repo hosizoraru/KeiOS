@@ -22,8 +22,11 @@ import com.example.keios.ui.page.main.student.BaStudentGuideInfo
 import com.example.keios.ui.page.main.student.BaStudentGuideStore
 import com.example.keios.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import com.example.keios.ui.page.main.student.fetch.normalizeGuideUrl
+import com.example.keios.ui.page.main.student.page.support.GuideMediaPackSaveRequest
 import com.example.keios.ui.page.main.student.page.support.GuideMediaSaveRequest
+import com.example.keios.ui.page.main.student.page.support.buildGuideMediaPackSaveRequest
 import com.example.keios.ui.page.main.student.page.support.buildGuideMediaSaveRequest
+import com.example.keios.ui.page.main.student.page.support.copyGuideMediaPackToUri
 import com.example.keios.ui.page.main.student.page.support.copyGuideMediaToUri
 import com.example.keios.ui.page.main.student.page.support.createUniqueDocumentInTree
 import com.example.keios.ui.page.main.student.page.support.normalizeGuidePlaybackSource
@@ -37,6 +40,7 @@ internal data class BaStudentGuidePageActions(
     val openExternal: (String) -> Unit,
     val openGuideInPage: (String) -> Unit,
     val saveGuideMedia: (String, String) -> Unit,
+    val saveGuideMediaPack: (List<Pair<String, String>>, String) -> Unit,
     val toggleVoicePlayback: (String) -> Unit,
     val requestRefresh: () -> Unit
 )
@@ -197,6 +201,196 @@ internal fun rememberBaStudentGuideMediaSaveAction(
 }
 
 @Composable
+internal fun rememberBaStudentGuideMediaPackSaveAction(
+    pageScope: CoroutineScope,
+    currentStudentNamePrefix: () -> String
+): (List<Pair<String, String>>, String) -> Unit {
+    val studentNamePrefixState = rememberUpdatedState(currentStudentNamePrefix)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var pendingCustomPackSaveRequest by remember { mutableStateOf<GuideMediaPackSaveRequest?>(null) }
+    var pendingFixedPackSaveRequest by remember { mutableStateOf<GuideMediaPackSaveRequest?>(null) }
+
+    val customPackSaveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { targetUri ->
+        val request = pendingCustomPackSaveRequest
+        pendingCustomPackSaveRequest = null
+        if (request == null || targetUri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        pageScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                copyGuideMediaPackToUri(
+                    context = context,
+                    request = request,
+                    outputUri = targetUri
+                )
+            }
+            if (result.success) {
+                Toast.makeText(
+                    context,
+                    context.getString(
+                        R.string.guide_media_pack_save_success,
+                        result.savedCount,
+                        result.totalCount,
+                        request.fileName
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.guide_media_pack_save_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    val fixedFolderPackSaveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val request = pendingFixedPackSaveRequest
+        if (result.resultCode != Activity.RESULT_OK) {
+            pendingFixedPackSaveRequest = null
+            return@rememberLauncherForActivityResult
+        }
+        val treeUri = result.data?.data
+        if (request == null || treeUri == null) {
+            pendingFixedPackSaveRequest = null
+            return@rememberLauncherForActivityResult
+        }
+        runCatching {
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            context.contentResolver.takePersistableUriPermission(treeUri, flags)
+        }
+        BASettingsStore.saveMediaSaveFixedTreeUri(treeUri.toString())
+        pendingFixedPackSaveRequest = null
+        pageScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                val treeDoc = DocumentFile.fromTreeUri(context, treeUri) ?: return@withContext null
+                val targetDoc = createUniqueDocumentInTree(
+                    tree = treeDoc,
+                    mimeType = "application/zip",
+                    fileName = request.fileName
+                ) ?: return@withContext null
+                copyGuideMediaPackToUri(
+                    context = context,
+                    request = request,
+                    outputUri = targetDoc.uri
+                )
+            }
+            if (result?.success == true) {
+                Toast.makeText(
+                    context,
+                    context.getString(
+                        R.string.guide_media_pack_save_success,
+                        result.savedCount,
+                        result.totalCount,
+                        request.fileName
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.guide_media_pack_save_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    return remember(context, pageScope, customPackSaveLauncher, fixedFolderPackSaveLauncher) {
+        { rawItems: List<Pair<String, String>>, rawPackTitle: String ->
+            val request = buildGuideMediaPackSaveRequest(
+                rawItems = rawItems,
+                rawPackTitle = rawPackTitle,
+                rawPrefix = studentNamePrefixState.value()
+            )
+            if (request == null) {
+                Toast.makeText(context, context.getString(R.string.guide_media_save_empty), Toast.LENGTH_SHORT).show()
+            } else {
+                val useFixedSaveLocation = BASettingsStore.loadMediaSaveCustomEnabled()
+                if (!useFixedSaveLocation) {
+                    pendingCustomPackSaveRequest = request
+                    customPackSaveLauncher.launch(request.fileName)
+                } else {
+                    val fixedTreeUriRaw = BASettingsStore.loadMediaSaveFixedTreeUri()
+                    val fixedTreeUri = fixedTreeUriRaw.takeIf { it.isNotBlank() }?.let { raw ->
+                        runCatching { Uri.parse(raw) }.getOrNull()
+                    }
+                    if (fixedTreeUri != null) {
+                        pageScope.launch {
+                            val (treeReady, result) = withContext(Dispatchers.IO) {
+                                val treeDoc = DocumentFile.fromTreeUri(context, fixedTreeUri)
+                                    ?: return@withContext false to null
+                                val targetDoc = createUniqueDocumentInTree(
+                                    tree = treeDoc,
+                                    mimeType = "application/zip",
+                                    fileName = request.fileName
+                                ) ?: return@withContext false to null
+                                true to copyGuideMediaPackToUri(
+                                    context = context,
+                                    request = request,
+                                    outputUri = targetDoc.uri
+                                )
+                            }
+                            if (result?.success == true) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(
+                                        R.string.guide_media_pack_save_success,
+                                        result.savedCount,
+                                        result.totalCount,
+                                        request.fileName
+                                    ),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else if (treeReady) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.guide_media_pack_save_failed),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                BASettingsStore.saveMediaSaveFixedTreeUri("")
+                                pendingFixedPackSaveRequest = request
+                                val pickerIntent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                                    addFlags(
+                                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                                    )
+                                }
+                                fixedFolderPackSaveLauncher.launch(pickerIntent)
+                            }
+                        }
+                    } else {
+                        pendingFixedPackSaveRequest = request
+                        val pickerIntent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                            addFlags(
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                            )
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                putExtra(
+                                    DocumentsContract.EXTRA_INITIAL_URI,
+                                    Uri.parse("content://com.android.externalstorage.documents/tree/primary%3ADownload")
+                                )
+                            }
+                        }
+                        fixedFolderPackSaveLauncher.launch(pickerIntent)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 internal fun rememberBaStudentGuidePageActions(
     info: BaStudentGuideInfo?,
     sourceUrl: String,
@@ -213,7 +407,8 @@ internal fun rememberBaStudentGuidePageActions(
     onSourceUrlChange: (String) -> Unit,
     onErrorChange: (String?) -> Unit,
     onRefreshSignalIncrease: () -> Unit,
-    saveGuideMedia: (String, String) -> Unit
+    saveGuideMedia: (String, String) -> Unit,
+    saveGuideMediaPack: (List<Pair<String, String>>, String) -> Unit
 ): BaStudentGuidePageActions {
     val context = androidx.compose.ui.platform.LocalContext.current
     return remember(
@@ -233,7 +428,8 @@ internal fun rememberBaStudentGuidePageActions(
         onSourceUrlChange,
         onErrorChange,
         onRefreshSignalIncrease,
-        saveGuideMedia
+        saveGuideMedia,
+        saveGuideMediaPack
     ) {
         BaStudentGuidePageActions(
             shareSource = {
@@ -286,6 +482,7 @@ internal fun rememberBaStudentGuidePageActions(
                 }
             },
             saveGuideMedia = saveGuideMedia,
+            saveGuideMediaPack = saveGuideMediaPack,
             toggleVoicePlayback = { rawAudioUrl ->
                 val target = normalizeGuidePlaybackSource(rawAudioUrl)
                 if (target.isNotBlank()) {
