@@ -3,6 +3,7 @@ package os.kei.ui.page.main.widget.glass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
@@ -53,7 +54,10 @@ fun AppDropdownAnchorButton(
         variant = variant,
         minHeight = minHeight,
         horizontalPadding = horizontalPadding,
-        verticalPadding = verticalPadding
+        verticalPadding = verticalPadding,
+        textMaxLines = 1,
+        textOverflow = TextOverflow.Ellipsis,
+        textSoftWrap = false
     )
 }
 

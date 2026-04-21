@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -242,7 +241,7 @@ private fun GlassIconButtonContainer(
         if (showBorder) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .matchParentSize()
                     .clip(ContinuousCapsule)
                     .border(
                         width = glass.borderWidth,
@@ -254,7 +253,7 @@ private fun GlassIconButtonContainer(
         if (pressedOverlayAlpha > 0f) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .matchParentSize()
                     .clip(shape)
                     .background(appControlPressedOverlayColor(isDark).copy(alpha = pressedOverlayAlpha))
             )
@@ -414,7 +413,7 @@ fun GlassTextButton(
         if (pressedOverlayAlpha > 0f) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .matchParentSize()
                     .clip(ContinuousCapsule)
                     .background(appControlPressedOverlayColor(isDark).copy(alpha = pressedOverlayAlpha))
             )
