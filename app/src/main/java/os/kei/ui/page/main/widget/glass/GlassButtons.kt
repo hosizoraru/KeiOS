@@ -284,7 +284,8 @@ fun GlassTextButton(
     textMaxLines: Int = Int.MAX_VALUE,
     textOverflow: TextOverflow = TextOverflow.Clip,
     textSoftWrap: Boolean = true,
-    pressScaleEnabled: Boolean = true
+    pressScaleEnabled: Boolean = true,
+    pressOverlayEnabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
@@ -330,7 +331,7 @@ fun GlassTextButton(
     )
     val pressedOverlayAlpha by appMotionFloatState(
         targetValue = appControlPressedOverlayAlpha(
-            isPressed = enabled && isPressed,
+            isPressed = enabled && isPressed && pressOverlayEnabled,
             isDark = isDark
         ),
         durationMillis = 110,

@@ -2,6 +2,7 @@ package os.kei.ui.page.main.os.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -219,24 +220,36 @@ internal fun OsShellCommandVisibilityManagerSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    GlassTextButton(
-                        backdrop = sheetBackdrop,
-                        text = stringResource(R.string.os_shell_sheet_action_export_backup),
-                        onClick = onExportAllCards,
-                        modifier = Modifier.weight(1f),
-                        enabled = !transferInProgress,
-                        variant = GlassVariant.SheetAction,
-                        pressScaleEnabled = false
-                    )
-                    GlassTextButton(
-                        backdrop = sheetBackdrop,
-                        text = stringResource(R.string.os_shell_sheet_action_import_backup),
-                        onClick = onImportAllCards,
-                        modifier = Modifier.weight(1f),
-                        enabled = !transferInProgress,
-                        variant = GlassVariant.SheetAction,
-                        pressScaleEnabled = false
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        GlassTextButton(
+                            backdrop = sheetBackdrop,
+                            text = stringResource(R.string.os_shell_sheet_action_export_backup),
+                            onClick = onExportAllCards,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !transferInProgress,
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = false,
+                            textMaxLines = 1,
+                            textOverflow = TextOverflow.Ellipsis,
+                            textSoftWrap = false
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        GlassTextButton(
+                            backdrop = sheetBackdrop,
+                            text = stringResource(R.string.os_shell_sheet_action_import_backup),
+                            onClick = onImportAllCards,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !transferInProgress,
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = false,
+                            textMaxLines = 1,
+                            textOverflow = TextOverflow.Ellipsis,
+                            textSoftWrap = false
+                        )
+                    }
                 }
             }
             SheetDescriptionText(text = shellHintText)

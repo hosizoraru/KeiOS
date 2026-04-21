@@ -2,6 +2,7 @@ package os.kei.ui.page.main.os.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.R
@@ -479,24 +481,36 @@ internal fun OsActivityVisibilityManagerSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    GlassTextButton(
-                        backdrop = sheetBackdrop,
-                        text = stringResource(R.string.os_activity_sheet_action_export_backup),
-                        onClick = onExportAllCards,
-                        modifier = Modifier.weight(1f),
-                        enabled = !transferInProgress,
-                        variant = GlassVariant.SheetAction,
-                        pressScaleEnabled = false
-                    )
-                    GlassTextButton(
-                        backdrop = sheetBackdrop,
-                        text = stringResource(R.string.os_activity_sheet_action_import_backup),
-                        onClick = onImportAllCards,
-                        modifier = Modifier.weight(1f),
-                        enabled = !transferInProgress,
-                        variant = GlassVariant.SheetAction,
-                        pressScaleEnabled = false
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        GlassTextButton(
+                            backdrop = sheetBackdrop,
+                            text = stringResource(R.string.os_activity_sheet_action_export_backup),
+                            onClick = onExportAllCards,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !transferInProgress,
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = false,
+                            textMaxLines = 1,
+                            textOverflow = TextOverflow.Ellipsis,
+                            textSoftWrap = false
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        GlassTextButton(
+                            backdrop = sheetBackdrop,
+                            text = stringResource(R.string.os_activity_sheet_action_import_backup),
+                            onClick = onImportAllCards,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !transferInProgress,
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = false,
+                            textMaxLines = 1,
+                            textOverflow = TextOverflow.Ellipsis,
+                            textSoftWrap = false
+                        )
+                    }
                 }
             }
             SheetDescriptionText(text = activityHintText)

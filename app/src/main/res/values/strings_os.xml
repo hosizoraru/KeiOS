@@ -136,10 +136,10 @@
     <string name="os_sheet_visible_shell_cards_desc">可分别管理 shell 控制台与命令 card 的显示状态，重新开启后会立即显示。</string>
     <string name="os_shell_sheet_transfer_title">Shell 卡片备份</string>
     <string name="os_shell_sheet_transfer_desc">导出当前 Shell 卡片备份 JSON；导入 Shell 备份前会先预览识别结果与合并变化。</string>
-    <string name="os_activity_sheet_action_export_backup">导出活动备份</string>
-    <string name="os_activity_sheet_action_import_backup">导入活动备份</string>
-    <string name="os_shell_sheet_action_export_backup">导出 Shell 备份</string>
-    <string name="os_shell_sheet_action_import_backup">导入 Shell 备份</string>
+    <string name="os_activity_sheet_action_export_backup">导出活动</string>
+    <string name="os_activity_sheet_action_import_backup">导入活动</string>
+    <string name="os_shell_sheet_action_export_backup">导出 Shell</string>
+    <string name="os_shell_sheet_action_import_backup">导入 Shell</string>
     <string name="os_card_toast_import_failed_with_reason">导入失败: %1$s</string>
     <string name="os_activity_card_toast_imported_summary">活动 card 导入完成：新增 %1$d，更新 %2$d，保持 %3$d</string>
     <string name="os_import_dialog_title">导入预览</string>
