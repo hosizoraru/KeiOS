@@ -27,7 +27,6 @@ import com.example.keios.ui.page.main.os.shortcut.ShortcutActivityIcon
 import com.example.keios.ui.page.main.os.appLucideCloseIcon
 import com.example.keios.ui.page.main.os.shortcut.normalizeShortcutIntentExtras
 import com.example.keios.ui.page.main.os.osLucideEnterIcon
-import com.example.keios.ui.page.main.widget.core.AppInfoListBody
 import com.example.keios.ui.page.main.widget.core.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.core.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.glass.GlassIconButton
@@ -65,46 +64,21 @@ internal fun LazyListScope.addTopInfoCard(
             subtitle = stringResource(R.string.common_item_count, displayedTopInfoRows.size),
             expanded = expanded,
             onExpandedChange = onExpandedChange,
-            surfaceAlphaOverride = 0.28f,
             headerStartAction = {
                 OsSectionHeaderIcon(card = OsSectionCard.TOP_INFO)
             },
             headerActions = exportAction
         ) {
-            AppInfoListBody {
-                if (displayedTopInfoRows.isEmpty()) {
-                    Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
-                } else {
-                    if (query.isBlank() && !expanded) {
-                        displayedTopInfoRows.forEach { row ->
-                            OsSectionInfoRow(
-                                label = row.key,
-                                value = row.value,
-                                valueSingleLine = true,
-                                valueMarquee = true
-                            )
-                        }
-                    } else {
-                        groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
-                            Text(
-                                text = type,
-                                color = MiuixTheme.colorScheme.onBackground,
-                                fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                                lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                                fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                                modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
-                            )
-                            rows.forEach { row ->
-                                OsSectionInfoRow(
-                                    label = row.key,
-                                    value = row.value,
-                                    valueSingleLine = true,
-                                    valueMarquee = true
-                                )
-                            }
-                        }
-                    }
-                }
+            if (displayedTopInfoRows.isEmpty()) {
+                Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
+            } else if (query.isBlank() && !expanded) {
+                OsVirtualizedInfoRows(
+                    rows = displayedTopInfoRows,
+                    valueSingleLine = true,
+                    valueMarquee = true
+                )
+            } else {
+                OsVirtualizedGroupedTopInfoRows(groupedRows = groupedTopInfoRows)
             }
         }
     }
@@ -240,19 +214,82 @@ internal fun LazyListScope.addKeyValueSectionCard(
 }
 
 @Composable
-private fun OsVirtualizedInfoRows(rows: List<InfoRow>) {
-    val shouldEnableInnerScroll = rows.size > 42
+private fun OsVirtualizedInfoRows(
+    rows: List<InfoRow>,
+    valueSingleLine: Boolean = false,
+    valueMarquee: Boolean = false
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 520.dp),
-        userScrollEnabled = shouldEnableInnerScroll
+        userScrollEnabled = true
     ) {
         itemsIndexed(
             items = rows,
             key = { index, row -> "${row.key}-${row.value}-$index" }
         ) { _, row ->
-            OsSectionInfoRow(label = row.key, value = row.value)
+            OsSectionInfoRow(
+                label = row.key,
+                value = row.value,
+                valueSingleLine = valueSingleLine,
+                valueMarquee = valueMarquee
+            )
+        }
+    }
+}
+
+private sealed interface TopInfoVirtualizedItem {
+    data class Header(val title: String) : TopInfoVirtualizedItem
+    data class Entry(val row: InfoRow) : TopInfoVirtualizedItem
+}
+
+@Composable
+private fun OsVirtualizedGroupedTopInfoRows(groupedRows: List<Pair<String, List<InfoRow>>>) {
+    val rows = buildList {
+        groupedRows.forEach { (type, entries) ->
+            if (entries.isNotEmpty()) {
+                add(TopInfoVirtualizedItem.Header(type))
+                entries.forEach { entry -> add(TopInfoVirtualizedItem.Entry(entry)) }
+            }
+        }
+    }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 520.dp),
+        userScrollEnabled = true
+    ) {
+        itemsIndexed(
+            items = rows,
+            key = { index, item ->
+                when (item) {
+                    is TopInfoVirtualizedItem.Header -> "header-${item.title}-$index"
+                    is TopInfoVirtualizedItem.Entry -> "entry-${item.row.key}-${item.row.value}-$index"
+                }
+            }
+        ) { index, item ->
+            when (item) {
+                is TopInfoVirtualizedItem.Header -> {
+                    Text(
+                        text = item.title,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                        lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                        fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                        modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
+                    )
+                }
+
+                is TopInfoVirtualizedItem.Entry -> {
+                    OsSectionInfoRow(
+                        label = item.row.key,
+                        value = item.row.value,
+                        valueSingleLine = true,
+                        valueMarquee = true
+                    )
+                }
+            }
         }
     }
 }

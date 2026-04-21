@@ -32,14 +32,13 @@ fun MiuixAccordionCard(
     subtitle: String,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    surfaceAlphaOverride: Float? = null,
     headerStartAction: (@Composable () -> Unit)? = null,
     headerActions: (@Composable () -> Unit)? = null,
     onHeaderLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val surface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = surfaceAlphaOverride ?: 0.4f)
+    val surface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
     val shadowColor = if (isDark) Color.Black.copy(alpha = 0.20f) else Color.Black.copy(alpha = 0.10f)
 
     Column(
