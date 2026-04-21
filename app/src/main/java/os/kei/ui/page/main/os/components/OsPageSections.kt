@@ -481,19 +481,21 @@ internal fun OsActivityVisibilityManagerSheet(
                 ) {
                     GlassTextButton(
                         backdrop = sheetBackdrop,
-                        text = stringResource(R.string.os_sheet_action_export_cards),
+                        text = stringResource(R.string.os_activity_sheet_action_export_backup),
                         onClick = onExportAllCards,
                         modifier = Modifier.weight(1f),
                         enabled = !transferInProgress,
-                        variant = GlassVariant.SheetAction
+                        variant = GlassVariant.SheetAction,
+                        pressScaleEnabled = false
                     )
                     GlassTextButton(
                         backdrop = sheetBackdrop,
-                        text = stringResource(R.string.os_sheet_action_import_cards),
+                        text = stringResource(R.string.os_activity_sheet_action_import_backup),
                         onClick = onImportAllCards,
                         modifier = Modifier.weight(1f),
                         enabled = !transferInProgress,
-                        variant = GlassVariant.SheetAction
+                        variant = GlassVariant.SheetAction,
+                        pressScaleEnabled = false
                     )
                 }
             }

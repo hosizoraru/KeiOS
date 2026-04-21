@@ -283,7 +283,8 @@ fun GlassTextButton(
     verticalPadding: Dp = defaultGlassTextButtonVerticalPadding(variant),
     textMaxLines: Int = Int.MAX_VALUE,
     textOverflow: TextOverflow = TextOverflow.Clip,
-    textSoftWrap: Boolean = true
+    textSoftWrap: Boolean = true,
+    pressScaleEnabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
@@ -319,7 +320,11 @@ fun GlassTextButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by appMotionFloatState(
-        targetValue = if (enabled && isPressed) AppInteractiveTokens.pressedScale else 1f,
+        targetValue = if (enabled && isPressed && pressScaleEnabled) {
+            AppInteractiveTokens.pressedScale
+        } else {
+            1f
+        },
         durationMillis = 110,
         label = "glass_text_button_scale"
     )
