@@ -11,6 +11,7 @@ import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shell.defaultOsShellCommandCardTitle
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
+import os.kei.ui.page.main.os.state.OsPageCardTransferState
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -30,6 +31,7 @@ internal fun OsPageOverlayHost(
     activityShortcutCards: List<OsActivityShortcutCard>,
     defaultActivityCardTitle: String,
     cardTransferInProgress: Boolean,
+    cardTransferState: OsPageCardTransferState,
     onExportAllActivityCards: () -> Unit,
     onImportAllActivityCards: () -> Unit,
     applyActivityCardVisibility: suspend (String, Boolean) -> Unit,
@@ -90,6 +92,7 @@ internal fun OsPageOverlayHost(
         activityShortcutCards = activityShortcutCards,
         defaultActivityCardTitle = defaultActivityCardTitle,
         cardTransferInProgress = cardTransferInProgress,
+        pendingCardImportPreview = overlayState.pendingCardImportPreview,
         onExportAllActivityCards = onExportAllActivityCards,
         onImportAllActivityCards = onImportAllActivityCards,
         onDismissActivityVisibilityManager = { overlayState.onShowActivityVisibilityManagerChange(false) },
@@ -167,6 +170,17 @@ internal fun OsPageOverlayHost(
             overlayState.activityShortcutDraft.title.ifBlank { googleSystemServiceDefaultTitle }
         ),
         onDismissActivityCardDeleteConfirm = editorActions.onDismissActivityCardDeleteConfirm,
-        onConfirmActivityCardDelete = editorActions.onConfirmActivityCardDelete
+        onConfirmActivityCardDelete = editorActions.onConfirmActivityCardDelete,
+        onDismissCardImportPreview = {
+            if (!cardTransferInProgress) {
+                overlayState.onPendingCardImportPreviewChange(null)
+            }
+        },
+        onCancelCardImportPreview = {
+            if (!cardTransferInProgress) {
+                overlayState.onPendingCardImportPreviewChange(null)
+            }
+        },
+        onConfirmCardImportPreview = cardTransferState.confirmImport
     )
 }

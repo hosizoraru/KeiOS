@@ -9,6 +9,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutActivityClassOption
 import os.kei.ui.page.main.os.shortcut.ShortcutInstalledAppOption
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionItem
+import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 import os.kei.ui.page.main.os.isCardVisible
 import com.kyant.backdrop.backdrops.LayerBackdrop
 
@@ -85,7 +86,11 @@ internal fun OsPageOverlaySheets(
     activityCardDeleteDialogTitle: String,
     activityCardDeleteDialogSummary: String,
     onDismissActivityCardDeleteConfirm: () -> Unit,
-    onConfirmActivityCardDelete: () -> Unit
+    onConfirmActivityCardDelete: () -> Unit,
+    pendingCardImportPreview: OsCardImportPreview?,
+    onDismissCardImportPreview: () -> Unit,
+    onCancelCardImportPreview: () -> Unit,
+    onConfirmCardImportPreview: () -> Unit
 ) {
     OsCardVisibilityManagerSheet(
         show = showCardManager,
@@ -177,5 +182,12 @@ internal fun OsPageOverlaySheets(
         summary = activityCardDeleteDialogSummary,
         onDismissRequest = onDismissActivityCardDeleteConfirm,
         onConfirmDelete = onConfirmActivityCardDelete
+    )
+    OsImportPreviewDialog(
+        preview = pendingCardImportPreview,
+        importInProgress = cardTransferInProgress,
+        onDismissRequest = onDismissCardImportPreview,
+        onCancel = onCancelCardImportPreview,
+        onConfirmImport = onConfirmCardImportPreview
     )
 }

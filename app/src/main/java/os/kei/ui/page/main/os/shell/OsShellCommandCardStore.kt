@@ -1,6 +1,9 @@
 package os.kei.ui.page.main.os.shell
 
 import com.tencent.mmkv.MMKV
+import os.kei.ui.page.main.os.transfer.OS_SHELL_CARD_EXPORT_SCHEMA
+import os.kei.ui.page.main.os.transfer.OsCardImportRoot
+import os.kei.ui.page.main.os.transfer.OsShellCardImportPayload
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
@@ -329,9 +332,9 @@ internal object OsShellCommandCardStore {
     }
 
     private const val MAX_OUTPUT_LENGTH = 24_000
-    private const val EXPORT_SCHEMA_VERSION = "keios.os.shell.cards.v1"
     private const val KEY_EXPORT_SCHEMA = "schema"
     private const val KEY_EXPORT_EXPORTED_AT = "exportedAtMillis"
+    private const val KEY_EXPORT_ITEM_COUNT = "itemCount"
     private const val KEY_EXPORT_ITEMS = "items"
 
     fun buildCardsExportJson(
@@ -341,65 +344,84 @@ internal object OsShellCommandCardStore {
         val normalized = cards.mapNotNull(::normalizeCard)
         val items = JSONArray(encodeCards(normalized))
         return JSONObject().apply {
-            put(KEY_EXPORT_SCHEMA, EXPORT_SCHEMA_VERSION)
+            put(KEY_EXPORT_SCHEMA, OS_SHELL_CARD_EXPORT_SCHEMA)
             put(KEY_EXPORT_EXPORTED_AT, exportedAtMillis)
+            put(KEY_EXPORT_ITEM_COUNT, normalized.size)
             put(KEY_EXPORT_ITEMS, items)
-        }.toString()
+        }.toString(2)
     }
 
-    fun importCardsFromJsonMerged(raw: String): OsShellCardImportMergeResult {
-        val normalizedRaw = raw.trim()
-        if (normalizedRaw.isBlank()) {
-            throw IllegalArgumentException("文件内容为空")
+    fun parseCardsImport(root: OsCardImportRoot): OsShellCardImportPayload {
+        if (root.items.length() == 0) {
+            return OsShellCardImportPayload(
+                cards = emptyList(),
+                sourceCount = root.sourceCount,
+                invalidCount = 0,
+                duplicateCount = 0,
+                fileKind = root.fileKind,
+                isLegacyFormat = root.isLegacyFormat
+            )
         }
-        val importedItems = if (normalizedRaw.startsWith("[")) {
-            JSONArray(normalizedRaw)
-        } else {
-            val root = JSONObject(normalizedRaw)
-            root.optJSONArray(KEY_EXPORT_ITEMS)
-                ?: throw IllegalArgumentException("未找到可导入的 shell card 数据")
+        val decoded = buildList {
+            for (index in 0 until root.items.length()) {
+                val item = root.items.optJSONObject(index) ?: continue
+                decodeCard(item)?.let(::add)
+            }
         }
-        val decoded = decodeCards(importedItems.toString())
-        if (decoded.isEmpty()) {
-            throw IllegalArgumentException("文件中没有有效的 shell card")
-        }
-        val existingCards = loadCards()
-        val mergedCards = existingCards.toMutableList()
-        var addedCount = 0
-        var updatedCount = 0
-        var unchangedCount = 0
+        val deduplicated = mutableListOf<OsShellCommandCard>()
+        var duplicateCount = 0
         decoded.forEach { imported ->
-            val targetIndexById = mergedCards.indexOfFirst { it.id == imported.id }
+            val targetIndexById = deduplicated.indexOfFirst { it.id == imported.id }
             val targetIndex = if (targetIndexById >= 0) {
                 targetIndexById
             } else {
-                mergedCards.indexOfFirst { mergeKeyFor(it) == mergeKeyFor(imported) }
+                deduplicated.indexOfFirst { mergeKeyFor(it) == mergeKeyFor(imported) }
             }
             if (targetIndex < 0) {
-                mergedCards += imported
-                addedCount++
-                return@forEach
-            }
-            val existing = mergedCards[targetIndex]
-            val resolved = imported.copy(
-                id = existing.id,
-                createdAtMillis = existing.createdAtMillis.takeIf { it > 0L } ?: imported.createdAtMillis,
-                updatedAtMillis = maxOf(existing.updatedAtMillis, imported.updatedAtMillis)
-            )
-            if (cardsEquivalent(existing, resolved)) {
-                unchangedCount++
+                deduplicated += imported
             } else {
-                mergedCards[targetIndex] = resolved
-                updatedCount++
+                val existing = deduplicated[targetIndex]
+                deduplicated[targetIndex] = imported.copy(
+                    id = existing.id,
+                    createdAtMillis = existing.createdAtMillis.takeIf { it > 0L }
+                        ?: imported.createdAtMillis,
+                    updatedAtMillis = maxOf(existing.updatedAtMillis, imported.updatedAtMillis)
+                )
+                duplicateCount += 1
             }
         }
-        saveCards(mergedCards)
-        return OsShellCardImportMergeResult(
-            cards = loadCards(),
-            addedCount = addedCount,
-            updatedCount = updatedCount,
-            unchangedCount = unchangedCount
+        return OsShellCardImportPayload(
+            cards = deduplicated,
+            sourceCount = root.sourceCount,
+            invalidCount = (root.sourceCount - decoded.size).coerceAtLeast(0),
+            duplicateCount = duplicateCount,
+            fileKind = root.fileKind,
+            isLegacyFormat = root.isLegacyFormat
         )
+    }
+
+    fun previewImportedCards(
+        payload: OsShellCardImportPayload,
+        existingCards: List<OsShellCommandCard>
+    ): OsShellCardImportMergeResult {
+        return mergeImportedCards(existingCards = existingCards, importedCards = payload.cards)
+    }
+
+    fun applyImportedCards(
+        payload: OsShellCardImportPayload,
+        existingCards: List<OsShellCommandCard>
+    ): OsShellCardImportMergeResult {
+        val result = mergeImportedCards(existingCards = existingCards, importedCards = payload.cards)
+        saveCards(result.cards)
+        return result
+    }
+
+    fun importCardsFromJsonMerged(raw: String): OsShellCardImportMergeResult {
+        val payload = parseCardsImport(root = os.kei.ui.page.main.os.transfer.parseOsCardImportRoot(raw))
+        if (payload.cards.isEmpty()) {
+            throw IllegalArgumentException("文件中没有有效的 shell card")
+        }
+        return applyImportedCards(payload = payload, existingCards = loadCards())
     }
 
     private fun mergeKeyFor(card: OsShellCommandCard): String {
@@ -413,5 +435,63 @@ internal object OsShellCommandCardStore {
             old.command == new.command &&
             old.runOutput == new.runOutput &&
             old.lastRunAtMillis == new.lastRunAtMillis
+    }
+
+    private fun decodeCard(item: JSONObject): OsShellCommandCard? {
+        if (!item.has(KEY_COMMAND)) return null
+        return normalizeCard(
+            OsShellCommandCard(
+                id = item.optString(KEY_ID),
+                visible = item.optBoolean(KEY_VISIBLE, true),
+                title = item.optString(KEY_TITLE),
+                subtitle = item.optString(KEY_SUBTITLE),
+                command = item.optString(KEY_COMMAND),
+                runOutput = item.optString(KEY_RUN_OUTPUT),
+                lastRunAtMillis = item.optLong(KEY_LAST_RUN_AT, 0L),
+                createdAtMillis = item.optLong(KEY_CREATED_AT, 0L),
+                updatedAtMillis = item.optLong(KEY_UPDATED_AT, 0L)
+            )
+        )
+    }
+
+    private fun mergeImportedCards(
+        existingCards: List<OsShellCommandCard>,
+        importedCards: List<OsShellCommandCard>
+    ): OsShellCardImportMergeResult {
+        val mergedCards = existingCards.toMutableList()
+        var addedCount = 0
+        var updatedCount = 0
+        var unchangedCount = 0
+        importedCards.forEach { imported ->
+            val targetIndexById = mergedCards.indexOfFirst { it.id == imported.id }
+            val targetIndex = if (targetIndexById >= 0) {
+                targetIndexById
+            } else {
+                mergedCards.indexOfFirst { mergeKeyFor(it) == mergeKeyFor(imported) }
+            }
+            if (targetIndex < 0) {
+                mergedCards += imported
+                addedCount += 1
+                return@forEach
+            }
+            val existing = mergedCards[targetIndex]
+            val resolved = imported.copy(
+                id = existing.id,
+                createdAtMillis = existing.createdAtMillis.takeIf { it > 0L } ?: imported.createdAtMillis,
+                updatedAtMillis = maxOf(existing.updatedAtMillis, imported.updatedAtMillis)
+            )
+            if (cardsEquivalent(existing, resolved)) {
+                unchangedCount += 1
+            } else {
+                mergedCards[targetIndex] = resolved
+                updatedCount += 1
+            }
+        }
+        return OsShellCardImportMergeResult(
+            cards = mergedCards,
+            addedCount = addedCount,
+            updatedCount = updatedCount,
+            unchangedCount = unchangedCount
+        )
     }
 }

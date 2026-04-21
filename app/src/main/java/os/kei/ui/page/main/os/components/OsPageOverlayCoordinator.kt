@@ -47,6 +47,7 @@ internal fun OsPageOverlayCoordinator(
         activityShortcutCards = activityShortcutCards,
         defaultActivityCardTitle = textBundle.googleSystemServiceDefaultTitle,
         cardTransferInProgress = overlayState.cardTransferInProgress,
+        cardTransferState = cardTransferState,
         onExportAllActivityCards = overlayTransferActions.onExportAllActivityCards,
         onImportAllActivityCards = overlayTransferActions.onImportAllActivityCards,
         applyActivityCardVisibility = actionState.applyActivityCardVisibility,

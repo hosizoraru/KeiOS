@@ -2,6 +2,9 @@ package os.kei.ui.page.main.os.shortcut
 
 import os.kei.ui.page.main.os.OsGoogleSystemServiceConfig
 import os.kei.ui.page.main.os.OsShortcutCardStore
+import os.kei.ui.page.main.os.transfer.OS_ACTIVITY_CARD_EXPORT_SCHEMA
+import os.kei.ui.page.main.os.transfer.OsActivityCardImportPayload
+import os.kei.ui.page.main.os.transfer.OsCardImportRoot
 import com.tencent.mmkv.MMKV
 import org.json.JSONArray
 import org.json.JSONObject
@@ -36,9 +39,9 @@ internal object OsActivityShortcutCardStore {
     private const val KEY_EXTRA_KEY = "key"
     private const val KEY_EXTRA_TYPE = "type"
     private const val KEY_EXTRA_VALUE = "value"
-    private const val EXPORT_SCHEMA_VERSION = "keios.os.activity.cards.v1"
     private const val KEY_EXPORT_SCHEMA = "schema"
     private const val KEY_EXPORT_EXPORTED_AT = "exportedAtMillis"
+    private const val KEY_EXPORT_ITEM_COUNT = "itemCount"
     private const val KEY_EXPORT_ITEMS = "items"
     private const val LEGACY_GOOGLE_SETTINGS_ACTIVITY_CLASS =
         "com.google.android.gms.app.settings.GoogleSettingsActivity"
@@ -122,10 +125,96 @@ internal object OsActivityShortcutCardStore {
         }
         val items = JSONArray(encodeCards(normalized))
         return JSONObject().apply {
-            put(KEY_EXPORT_SCHEMA, EXPORT_SCHEMA_VERSION)
+            put(KEY_EXPORT_SCHEMA, OS_ACTIVITY_CARD_EXPORT_SCHEMA)
             put(KEY_EXPORT_EXPORTED_AT, exportedAtMillis)
+            put(KEY_EXPORT_ITEM_COUNT, normalized.size)
             put(KEY_EXPORT_ITEMS, items)
-        }.toString()
+        }.toString(2)
+    }
+
+    fun parseCardsImport(
+        root: OsCardImportRoot,
+        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): OsActivityCardImportPayload {
+        if (root.items.length() == 0) {
+            return OsActivityCardImportPayload(
+                cards = emptyList(),
+                sourceCount = root.sourceCount,
+                invalidCount = 0,
+                duplicateCount = 0,
+                fileKind = root.fileKind,
+                isLegacyFormat = root.isLegacyFormat
+            )
+        }
+        val decoded = buildList {
+            for (index in 0 until root.items.length()) {
+                val item = root.items.optJSONObject(index) ?: continue
+                decodeCard(item, defaults)?.let(::add)
+            }
+        }
+        val migrated = migrateBuiltInSampleCards(
+            cards = decoded,
+            builtInSampleDefaults = builtInSampleDefaults
+        )
+        val deduplicated = mutableListOf<OsActivityShortcutCard>()
+        var duplicateCount = 0
+        migrated.forEach { imported ->
+            val targetIndexById = deduplicated.indexOfFirst { it.id == imported.id }
+            val targetIndex = if (targetIndexById >= 0) {
+                targetIndexById
+            } else {
+                deduplicated.indexOfFirst { mergeKeyFor(it) == mergeKeyFor(imported) }
+            }
+            if (targetIndex < 0) {
+                deduplicated += imported
+            } else {
+                val existing = deduplicated[targetIndex]
+                deduplicated[targetIndex] = imported.copy(
+                    id = existing.id,
+                    isBuiltInSample = existing.isBuiltInSample || imported.isBuiltInSample
+                )
+                duplicateCount += 1
+            }
+        }
+        return OsActivityCardImportPayload(
+            cards = deduplicated,
+            sourceCount = root.sourceCount,
+            invalidCount = (root.sourceCount - decoded.size).coerceAtLeast(0),
+            duplicateCount = duplicateCount,
+            fileKind = root.fileKind,
+            isLegacyFormat = root.isLegacyFormat
+        )
+    }
+
+    fun previewImportedCards(
+        payload: OsActivityCardImportPayload,
+        existingCards: List<OsActivityShortcutCard>,
+        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): OsActivityCardImportMergeResult {
+        return mergeImportedCards(
+            existingCards = existingCards,
+            importedCards = payload.cards,
+            defaults = defaults,
+            builtInSampleDefaults = builtInSampleDefaults
+        )
+    }
+
+    fun applyImportedCards(
+        payload: OsActivityCardImportPayload,
+        existingCards: List<OsActivityShortcutCard>,
+        defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): OsActivityCardImportMergeResult {
+        val result = mergeImportedCards(
+            existingCards = existingCards,
+            importedCards = payload.cards,
+            defaults = defaults,
+            builtInSampleDefaults = builtInSampleDefaults
+        )
+        saveCards(cards = result.cards, defaults = defaults)
+        return result
     }
 
     fun importCardsFromJsonMerged(
@@ -133,62 +222,22 @@ internal object OsActivityShortcutCardStore {
         defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
         builtInSampleDefaults: OsGoogleSystemServiceConfig
     ): OsActivityCardImportMergeResult {
-        val normalizedRaw = raw.trim()
-        if (normalizedRaw.isBlank()) {
-            throw IllegalArgumentException("文件内容为空")
-        }
-        val importedItems = if (normalizedRaw.startsWith("[")) {
-            JSONArray(normalizedRaw)
-        } else {
-            val root = JSONObject(normalizedRaw)
-            root.optJSONArray(KEY_EXPORT_ITEMS)
-                ?: throw IllegalArgumentException("未找到可导入的活动 card 数据")
-        }
-        val decoded = decodeCards(importedItems.toString(), defaults)
-        if (decoded.isEmpty()) {
-            throw IllegalArgumentException("文件中没有有效的活动 card")
-        }
-        val incomingCards = migrateBuiltInSampleCards(decoded, builtInSampleDefaults)
-        val existingCards = loadCards(defaults = defaults, builtInSampleDefaults = builtInSampleDefaults)
-        val mergedCards = existingCards.toMutableList()
-        var addedCount = 0
-        var updatedCount = 0
-        var unchangedCount = 0
-        incomingCards.forEach { imported ->
-            val targetIndexById = mergedCards.indexOfFirst { it.id == imported.id }
-            val targetIndex = if (targetIndexById >= 0) {
-                targetIndexById
-            } else {
-                val importedKey = mergeKeyFor(imported)
-                mergedCards.indexOfFirst { mergeKeyFor(it) == importedKey }
-            }
-            if (targetIndex < 0) {
-                mergedCards += imported
-                addedCount++
-                return@forEach
-            }
-            val existing = mergedCards[targetIndex]
-            val resolved = imported.copy(
-                id = existing.id,
-                isBuiltInSample = existing.isBuiltInSample || imported.isBuiltInSample
-            )
-            if (cardsEquivalent(existing, resolved, defaults)) {
-                unchangedCount++
-            } else {
-                mergedCards[targetIndex] = resolved
-                updatedCount++
-            }
-        }
-        val finalizedCards = migrateBuiltInSampleCards(
-            cards = mergedCards,
+        val payload = parseCardsImport(
+            root = os.kei.ui.page.main.os.transfer.parseOsCardImportRoot(raw),
+            defaults = defaults,
             builtInSampleDefaults = builtInSampleDefaults
         )
-        saveCards(cards = finalizedCards, defaults = defaults)
-        return OsActivityCardImportMergeResult(
-            cards = finalizedCards,
-            addedCount = addedCount,
-            updatedCount = updatedCount,
-            unchangedCount = unchangedCount
+        if (payload.cards.isEmpty()) {
+            throw IllegalArgumentException("文件中没有有效的活动 card")
+        }
+        return applyImportedCards(
+            payload = payload,
+            existingCards = loadCards(
+                defaults = defaults,
+                builtInSampleDefaults = builtInSampleDefaults
+            ),
+            defaults = defaults,
+            builtInSampleDefaults = builtInSampleDefaults
         )
     }
 
@@ -250,31 +299,49 @@ internal object OsActivityShortcutCardStore {
             buildList {
                 for (index in 0 until array.length()) {
                     val item = array.optJSONObject(index) ?: continue
-                    val config = OsGoogleSystemServiceConfig(
-                        title = item.optString(KEY_TITLE),
-                        subtitle = item.optString(KEY_SUBTITLE),
-                        appName = item.optString(KEY_APP_NAME),
-                        packageName = item.optString(KEY_PACKAGE_NAME),
-                        className = item.optString(KEY_CLASS_NAME),
-                        intentAction = item.optString(KEY_INTENT_ACTION),
-                        intentCategory = item.optString(KEY_INTENT_CATEGORY),
-                        intentFlags = item.optString(KEY_INTENT_FLAGS),
-                        intentUriData = item.optString(KEY_INTENT_URI_DATA),
-                        intentMimeType = item.optString(KEY_INTENT_MIME_TYPE),
-                        intentExtras = decodeIntentExtras(item.optJSONArray(KEY_INTENT_EXTRAS))
-                    )
-                    add(
-                        OsActivityShortcutCard(
-                            id = item.optString(KEY_ID).trim()
-                                .ifBlank { newOsActivityShortcutCardId() },
-                            visible = item.optBoolean(KEY_VISIBLE, true),
-                            isBuiltInSample = item.optBoolean(KEY_IS_BUILT_IN_SAMPLE, false),
-                            config = normalizeActivityShortcutConfig(config, defaults)
-                        )
-                    )
+                    decodeCard(item, defaults)?.let(::add)
                 }
             }
         }.getOrDefault(emptyList())
+    }
+
+    private fun decodeCard(
+        item: JSONObject,
+        defaults: OsGoogleSystemServiceConfig
+    ): OsActivityShortcutCard? {
+        if (!isActivityCardItem(item)) return null
+        val config = OsGoogleSystemServiceConfig(
+            title = item.optString(KEY_TITLE),
+            subtitle = item.optString(KEY_SUBTITLE),
+            appName = item.optString(KEY_APP_NAME),
+            packageName = item.optString(KEY_PACKAGE_NAME),
+            className = item.optString(KEY_CLASS_NAME),
+            intentAction = item.optString(KEY_INTENT_ACTION),
+            intentCategory = item.optString(KEY_INTENT_CATEGORY),
+            intentFlags = item.optString(KEY_INTENT_FLAGS),
+            intentUriData = item.optString(KEY_INTENT_URI_DATA),
+            intentMimeType = item.optString(KEY_INTENT_MIME_TYPE),
+            intentExtras = decodeIntentExtras(item.optJSONArray(KEY_INTENT_EXTRAS))
+        )
+        return OsActivityShortcutCard(
+            id = item.optString(KEY_ID).trim()
+                .ifBlank { newOsActivityShortcutCardId() },
+            visible = item.optBoolean(KEY_VISIBLE, true),
+            isBuiltInSample = item.optBoolean(KEY_IS_BUILT_IN_SAMPLE, false),
+            config = normalizeActivityShortcutConfig(config, defaults)
+        )
+    }
+
+    private fun isActivityCardItem(item: JSONObject): Boolean {
+        return item.has(KEY_APP_NAME) ||
+            item.has(KEY_PACKAGE_NAME) ||
+            item.has(KEY_CLASS_NAME) ||
+            item.has(KEY_INTENT_ACTION) ||
+            item.has(KEY_INTENT_CATEGORY) ||
+            item.has(KEY_INTENT_FLAGS) ||
+            item.has(KEY_INTENT_URI_DATA) ||
+            item.has(KEY_INTENT_MIME_TYPE) ||
+            item.has(KEY_INTENT_EXTRAS)
     }
 
     private fun encodeIntentExtras(extras: List<ShortcutIntentExtra>): JSONArray {
@@ -363,5 +430,51 @@ internal object OsActivityShortcutCardStore {
         val targetTitle = builtInSampleDefaults.title.trim()
         if (targetTitle.isBlank()) return false
         return card.config.title.trim() == targetTitle
+    }
+
+    private fun mergeImportedCards(
+        existingCards: List<OsActivityShortcutCard>,
+        importedCards: List<OsActivityShortcutCard>,
+        defaults: OsGoogleSystemServiceConfig,
+        builtInSampleDefaults: OsGoogleSystemServiceConfig
+    ): OsActivityCardImportMergeResult {
+        val mergedCards = existingCards.toMutableList()
+        var addedCount = 0
+        var updatedCount = 0
+        var unchangedCount = 0
+        importedCards.forEach { imported ->
+            val targetIndexById = mergedCards.indexOfFirst { it.id == imported.id }
+            val targetIndex = if (targetIndexById >= 0) {
+                targetIndexById
+            } else {
+                val importedKey = mergeKeyFor(imported)
+                mergedCards.indexOfFirst { mergeKeyFor(it) == importedKey }
+            }
+            if (targetIndex < 0) {
+                mergedCards += imported
+                addedCount += 1
+                return@forEach
+            }
+            val existing = mergedCards[targetIndex]
+            val resolved = imported.copy(
+                id = existing.id,
+                isBuiltInSample = existing.isBuiltInSample || imported.isBuiltInSample
+            )
+            if (cardsEquivalent(existing, resolved, defaults)) {
+                unchangedCount += 1
+            } else {
+                mergedCards[targetIndex] = resolved
+                updatedCount += 1
+            }
+        }
+        return OsActivityCardImportMergeResult(
+            cards = migrateBuiltInSampleCards(
+                cards = mergedCards,
+                builtInSampleDefaults = builtInSampleDefaults
+            ),
+            addedCount = addedCount,
+            updatedCount = updatedCount,
+            unchangedCount = unchangedCount
+        )
     }
 }

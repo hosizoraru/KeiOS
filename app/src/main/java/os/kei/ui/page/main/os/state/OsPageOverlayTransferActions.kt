@@ -56,6 +56,7 @@ internal fun rememberOsPageOverlayTransferActions(
                 }
             },
             onImportAllActivityCards = {
+                overlayState.onPendingCardImportPreviewChange(null)
                 overlayState.onPendingImportTargetChange(OsCardImportTarget.Activity)
                 overlayState.onCardTransferInProgressChange(true)
                 cardTransferState.importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
@@ -77,6 +78,7 @@ internal fun rememberOsPageOverlayTransferActions(
                 }
             },
             onImportAllShellCards = {
+                overlayState.onPendingCardImportPreviewChange(null)
                 overlayState.onPendingImportTargetChange(OsCardImportTarget.Shell)
                 overlayState.onCardTransferInProgressChange(true)
                 cardTransferState.importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))

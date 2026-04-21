@@ -15,6 +15,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutActivityClassOption
 import os.kei.ui.page.main.os.shortcut.ShortcutInstalledAppOption
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
+import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 
 internal enum class OsCardImportTarget {
     Activity,
@@ -68,6 +69,8 @@ internal data class OsPageOverlayState(
     val onPendingExportContentChange: (String?) -> Unit,
     val pendingImportTarget: OsCardImportTarget?,
     val onPendingImportTargetChange: (OsCardImportTarget?) -> Unit,
+    val pendingCardImportPreview: OsCardImportPreview?,
+    val onPendingCardImportPreviewChange: (OsCardImportPreview?) -> Unit,
     val cardTransferInProgress: Boolean,
     val onCardTransferInProgressChange: (Boolean) -> Unit,
     val exportingCard: OsSectionCard?,
@@ -109,6 +112,7 @@ internal fun rememberOsPageOverlayState(
     var showActivityCardDeleteConfirm by rememberSaveable { mutableStateOf(false) }
     var pendingExportContent by remember { mutableStateOf<String?>(null) }
     var pendingImportTarget by remember { mutableStateOf<OsCardImportTarget?>(null) }
+    var pendingCardImportPreview by remember { mutableStateOf<OsCardImportPreview?>(null) }
     var cardTransferInProgress by remember { mutableStateOf(false) }
     var exportingCard by remember { mutableStateOf<OsSectionCard?>(null) }
 
@@ -136,6 +140,7 @@ internal fun rememberOsPageOverlayState(
         showActivityCardDeleteConfirm,
         pendingExportContent,
         pendingImportTarget,
+        pendingCardImportPreview,
         cardTransferInProgress,
         exportingCard,
     ) {
@@ -194,6 +199,8 @@ internal fun rememberOsPageOverlayState(
             onPendingExportContentChange = { pendingExportContent = it },
             pendingImportTarget = pendingImportTarget,
             onPendingImportTargetChange = { pendingImportTarget = it },
+            pendingCardImportPreview = pendingCardImportPreview,
+            onPendingCardImportPreviewChange = { pendingCardImportPreview = it },
             cardTransferInProgress = cardTransferInProgress,
             onCardTransferInProgressChange = { cardTransferInProgress = it },
             exportingCard = exportingCard,
