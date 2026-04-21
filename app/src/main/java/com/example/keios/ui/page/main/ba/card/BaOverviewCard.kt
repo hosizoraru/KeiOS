@@ -135,7 +135,7 @@ internal fun BaOverviewCard(
                     }
                     GlassIconButton(
                         backdrop = backdrop,
-                        painter = painterResource(id = R.drawable.mp_student),
+                        painter = painterResource(id = R.drawable.common_icon_dailyreward),
                         contentDescription = "打开图鉴",
                         variant = GlassVariant.Content,
                         onClick = onOpenGuideCatalog,
@@ -157,7 +157,17 @@ internal fun BaOverviewCard(
                         modifier = Modifier.heightIn(min = 40.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
-                        Text("服务器", color = MiuixTheme.colorScheme.onBackground)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("服务器", color = MiuixTheme.colorScheme.onBackground)
+                            Image(
+                                painter = painterResource(id = R.drawable.common_icon_dailyreward),
+                                contentDescription = "服务器图标",
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                     AppDropdownSelector(
                         selectedText = serverOptions[serverIndex],
