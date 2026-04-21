@@ -79,7 +79,7 @@ internal fun LazyListScope.addTopInfoCard(
                     labelMinWidth = 56.dp,
                     labelMaxWidth = 92.dp,
                     labelMaxLines = 1,
-                    valueMinWidth = 112.dp
+                    valueMinWidth = 140.dp
                 )
             } else {
                 OsVirtualizedGroupedTopInfoRows(groupedRows = groupedTopInfoRows)
@@ -299,7 +299,7 @@ private fun OsVirtualizedGroupedTopInfoRows(groupedRows: List<Pair<String, List<
                         labelMinWidth = 56.dp,
                         labelMaxWidth = 92.dp,
                         labelMaxLines = 1,
-                        valueMinWidth = 112.dp
+                        valueMinWidth = 140.dp
                     )
                 }
             }

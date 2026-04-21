@@ -124,6 +124,14 @@ internal fun OsPageMainList(
     showFloatingAddButton: Boolean,
     onOpenAddActivityShortcutCard: () -> Unit
 ) {
+    val topMetricLabel = stringResource(R.string.os_overview_metric_top_info)
+    fun metricLabelWeight(label: String): Float {
+        return if (label == topMetricLabel) 0.30f else 0.56f
+    }
+    fun metricValueWeight(label: String): Float {
+        return if (label == topMetricLabel) 0.70f else 0.44f
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         AppPageLazyColumn(
             modifier = Modifier
@@ -184,8 +192,8 @@ internal fun OsPageMainList(
                                         ?: MiuixTheme.colorScheme.onBackground,
                                     labelMaxLines = 1,
                                     valueMaxLines = 1,
-                                    labelWeight = 0.56f,
-                                    valueWeight = 0.44f,
+                                    labelWeight = metricLabelWeight(pair[0].label),
+                                    valueWeight = metricValueWeight(pair[0].label),
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (pair.size > 1) {
@@ -197,8 +205,8 @@ internal fun OsPageMainList(
                                             ?: MiuixTheme.colorScheme.onBackground,
                                         labelMaxLines = 1,
                                         valueMaxLines = 1,
-                                        labelWeight = 0.56f,
-                                        valueWeight = 0.44f,
+                                        labelWeight = metricLabelWeight(pair[1].label),
+                                        valueWeight = metricValueWeight(pair[1].label),
                                         modifier = Modifier.weight(1f)
                                     )
                                 } else {
