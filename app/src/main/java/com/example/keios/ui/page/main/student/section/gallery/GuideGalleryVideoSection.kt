@@ -32,6 +32,7 @@ import com.example.keios.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.example.keios.ui.page.main.widget.glass.GlassTextButton
 import com.example.keios.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
+import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,10 +55,34 @@ fun GuideGalleryVideoGroupCardItem(
         if (selectedIndex !in items.indices) selectedIndex = 0
     }
     val selectedItem = items.getOrElse(selectedIndex) { items.first() }
-    val displayMediaUrl = mediaUrlResolver(selectedItem.mediaUrl)
-    val displayPreviewUrl = mediaUrlResolver(
-        selectedItem.imageUrl.ifBlank { previewFallbackUrl }
-    )
+    var displayMediaUrl by remember(selectedItem.mediaUrl) {
+        mutableStateOf(mediaUrlResolver(selectedItem.mediaUrl))
+    }
+    var displayPreviewUrl by remember(selectedItem.imageUrl, previewFallbackUrl) {
+        mutableStateOf(mediaUrlResolver(selectedItem.imageUrl.ifBlank { previewFallbackUrl }))
+    }
+    LaunchedEffect(selectedItem.mediaUrl, selectedItem.imageUrl, previewFallbackUrl) {
+        repeat(30) {
+            delay(1_000L)
+            val nextMediaUrl = mediaUrlResolver(selectedItem.mediaUrl)
+            val nextPreviewUrl = mediaUrlResolver(selectedItem.imageUrl.ifBlank { previewFallbackUrl })
+            var changed = false
+            if (nextMediaUrl != displayMediaUrl) {
+                displayMediaUrl = nextMediaUrl
+                changed = true
+            }
+            if (nextPreviewUrl != displayPreviewUrl) {
+                displayPreviewUrl = nextPreviewUrl
+                changed = true
+            }
+            if (!changed &&
+                normalizeGuideMediaSource(displayMediaUrl).startsWith("file://", ignoreCase = true) &&
+                (displayPreviewUrl.isBlank() || normalizeGuideMediaSource(displayPreviewUrl).startsWith("file://", ignoreCase = true))
+            ) {
+                return@LaunchedEffect
+            }
+        }
+    }
     val saveTargetUrl = remember(displayMediaUrl, displayPreviewUrl) {
         displayMediaUrl.ifBlank { displayPreviewUrl }
     }

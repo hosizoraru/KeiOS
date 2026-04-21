@@ -88,7 +88,6 @@ internal fun GuideGalleryCardContent(
                 val indicatorProgress = when {
                     cachedAudioReady -> 1f
                     audioState.isBuffering -> 0.35f
-                    audioState.resolvedDurationMs > 0L -> 1f
                     else -> 0.06f
                 }
                 val progressForegroundColor = if (indicatorProgress >= 0.999f) {
