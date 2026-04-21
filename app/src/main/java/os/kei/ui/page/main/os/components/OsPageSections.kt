@@ -490,7 +490,7 @@ internal fun OsActivityVisibilityManagerSheet(
                             enabled = !transferInProgress,
                             variant = GlassVariant.SheetAction,
                             pressScaleEnabled = false,
-                            pressOverlayEnabled = false,
+                            pressOverlayEnabled = true,
                             textMaxLines = 1,
                             textOverflow = TextOverflow.Ellipsis,
                             textSoftWrap = false
@@ -505,7 +505,7 @@ internal fun OsActivityVisibilityManagerSheet(
                             enabled = !transferInProgress,
                             variant = GlassVariant.SheetAction,
                             pressScaleEnabled = false,
-                            pressOverlayEnabled = false,
+                            pressOverlayEnabled = true,
                             textMaxLines = 1,
                             textOverflow = TextOverflow.Ellipsis,
                             textSoftWrap = false
