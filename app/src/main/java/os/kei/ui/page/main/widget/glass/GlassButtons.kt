@@ -283,7 +283,7 @@ fun GlassTextButton(
     textMaxLines: Int = Int.MAX_VALUE,
     textOverflow: TextOverflow = TextOverflow.Clip,
     textSoftWrap: Boolean = true,
-    pressScaleEnabled: Boolean = false,
+    pressScaleEnabled: Boolean = true,
     pressOverlayEnabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()

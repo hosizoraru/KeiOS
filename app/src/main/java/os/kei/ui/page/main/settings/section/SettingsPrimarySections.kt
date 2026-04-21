@@ -245,7 +245,6 @@ internal fun SettingsNotifySection(
                     },
                     enabled = state.batteryOptimizationActionAvailable,
                     onClick = actions.onOpenBatteryOptimizationSettings,
-                    pressScaleEnabled = false,
                     pressOverlayEnabled = true
                 )
             }

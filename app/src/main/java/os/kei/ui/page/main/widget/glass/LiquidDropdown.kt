@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -283,6 +284,11 @@ fun LiquidDropdownItem(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val animatedScale by appMotionFloatState(
+        targetValue = if (isPressed) AppInteractiveTokens.pressedScale else 1f,
+        durationMillis = 110,
+        label = "liquid_dropdown_item_scale"
+    )
     val pressedOverlayAlpha by appMotionFloatState(
         targetValue = appControlPressedOverlayAlpha(
             isPressed = isPressed,
@@ -302,6 +308,10 @@ fun LiquidDropdownItem(
             .padding(horizontal = 2.dp, vertical = 0.dp)
             .padding(top = outerTopPadding, bottom = outerBottomPadding)
             .bringIntoViewRequester(bringIntoViewRequester)
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+            }
             .clip(itemShape)
             .clickable(
                 interactionSource = interactionSource,

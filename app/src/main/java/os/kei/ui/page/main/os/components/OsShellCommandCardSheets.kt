@@ -226,7 +226,6 @@ internal fun OsShellCommandVisibilityManagerSheet(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
                             variant = GlassVariant.SheetAction,
-                            pressScaleEnabled = false,
                             pressOverlayEnabled = true
                         )
                     }
@@ -238,7 +237,6 @@ internal fun OsShellCommandVisibilityManagerSheet(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
                             variant = GlassVariant.SheetAction,
-                            pressScaleEnabled = false,
                             pressOverlayEnabled = true
                         )
                     }

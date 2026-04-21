@@ -486,7 +486,6 @@ internal fun OsActivityVisibilityManagerSheet(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
                             variant = GlassVariant.SheetAction,
-                            pressScaleEnabled = false,
                             pressOverlayEnabled = true
                         )
                     }
@@ -498,7 +497,6 @@ internal fun OsActivityVisibilityManagerSheet(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
                             variant = GlassVariant.SheetAction,
-                            pressScaleEnabled = false,
                             pressOverlayEnabled = true
                         )
                     }
