@@ -1,5 +1,7 @@
 package com.example.keios.ui.page.main.host.main
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -9,22 +11,59 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.keios.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import com.example.keios.ui.page.main.student.fetch.normalizeGuideUrl
 
+private val mainScreenGuideDetailPathRegex = Regex("""^/ba/tj/\d+(?:\.html)?$""", RegexOption.IGNORE_CASE)
+
+private fun isMainScreenGuideDetailLink(rawUrl: String): Boolean {
+    val normalized = normalizeGuideUrl(rawUrl)
+    if (normalized.isBlank()) return false
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull() ?: return false
+    val host = uri.host?.lowercase().orEmpty()
+    val hostAccepted = host == "www.gamekee.com" || host == "gamekee.com"
+    if (!hostAccepted) return false
+    return mainScreenGuideDetailPathRegex.matches(uri.path.orEmpty())
+}
+
+private fun openMainScreenExternalLink(url: String, onFailure: () -> Unit, launch: (Intent) -> Unit) {
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        launch(intent)
+    }.onFailure {
+        onFailure()
+    }
+}
+
 @Composable
 internal fun rememberMainScreenOpenGuideDetailAction(
     poolGuideMissingText: String,
+    externalOpenFailureText: String,
     onNavigateToCanonicalGuide: (String) -> Unit
 ): (String) -> Unit {
     val context = LocalContext.current
     val latestNavigate by rememberUpdatedState(onNavigateToCanonicalGuide)
     val latestMissingToastText by rememberUpdatedState(poolGuideMissingText)
+    val latestExternalOpenFailureText by rememberUpdatedState(externalOpenFailureText)
     return remember(context) {
         { rawUrl ->
             val normalized = normalizeGuideUrl(rawUrl)
-            val contentId = if (normalized.isBlank()) null else extractGuideContentIdFromUrl(normalized)
-            if (contentId == null || contentId <= 0L) {
+            if (normalized.isBlank()) {
                 Toast.makeText(context, latestMissingToastText, Toast.LENGTH_SHORT).show()
+            } else if (isMainScreenGuideDetailLink(normalized)) {
+                val contentId = extractGuideContentIdFromUrl(normalized)
+                if (contentId == null || contentId <= 0L) {
+                    Toast.makeText(context, latestMissingToastText, Toast.LENGTH_SHORT).show()
+                } else {
+                    latestNavigate("https://www.gamekee.com/ba/tj/$contentId.html")
+                }
             } else {
-                latestNavigate("https://www.gamekee.com/ba/tj/$contentId.html")
+                openMainScreenExternalLink(
+                    url = normalized,
+                    onFailure = {
+                        Toast.makeText(context, latestExternalOpenFailureText, Toast.LENGTH_SHORT).show()
+                    },
+                    launch = { intent -> context.startActivity(intent) }
+                )
             }
         }
     }

@@ -73,8 +73,10 @@ fun MainScreen(
         mcpServerManager = mcpServerManager
     )
     val poolGuideMissingText = stringResource(R.string.main_toast_pool_guide_missing)
+    val externalOpenFailureText = stringResource(R.string.ba_error_open_activity_link)
     val openGuideDetail = rememberMainScreenOpenGuideDetailAction(
         poolGuideMissingText = poolGuideMissingText,
+        externalOpenFailureText = externalOpenFailureText,
         onNavigateToCanonicalGuide = { canonicalGuideUrl ->
             BaStudentGuideStore.setCurrentUrl(canonicalGuideUrl)
             navigator.push(KeiosRoute.BaStudentGuide(nonce = System.nanoTime()))
