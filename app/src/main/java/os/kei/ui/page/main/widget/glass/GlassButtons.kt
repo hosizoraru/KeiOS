@@ -406,8 +406,7 @@ fun GlassTextButton(
                     Modifier.background(fallbackColor)
                 }
             )
-            .then(borderModifier)
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            .then(borderModifier),
         contentAlignment = Alignment.Center
     ) {
         if (pressedOverlayAlpha > 0f) {
@@ -419,6 +418,7 @@ fun GlassTextButton(
             )
         }
         Row(
+            modifier = Modifier.padding(horizontal = horizontalPadding, vertical = verticalPadding),
             horizontalArrangement = Arrangement.spacedBy(AppInteractiveTokens.controlContentGap),
             verticalAlignment = Alignment.CenterVertically
         ) {
