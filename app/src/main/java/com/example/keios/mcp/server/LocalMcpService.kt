@@ -978,7 +978,13 @@ class LocalMcpService(
         val overrideEndpoint = endpointOverride.trim()
         if (overrideEndpoint.isNotBlank()) {
             return buildMcpConfigJson(
-                servers = listOf(fixedServerName to overrideEndpoint),
+                servers = listOf(
+                    McpConfigServerEntry(
+                        name = fixedServerName,
+                        endpoint = overrideEndpoint,
+                        includeJsonContentTypeHeader = shouldIncludeJsonContentTypeHeader(overrideEndpoint, fixedMode)
+                    )
+                ),
                 token = state?.authToken ?: "YOUR_TOKEN"
             )
         }
@@ -986,13 +992,33 @@ class LocalMcpService(
         val localEndpoint = resolveEndpoint(state = state, mode = "local")
         val lanEndpoint = resolveEndpoint(state = state, mode = "lan")
         val servers = when (fixedMode) {
-            "local" -> listOf(fixedServerName to localEndpoint)
-            "lan" -> listOf(fixedServerName to lanEndpoint)
+            "local" -> listOf(
+                McpConfigServerEntry(
+                    name = fixedServerName,
+                    endpoint = localEndpoint,
+                    includeJsonContentTypeHeader = false
+                )
+            )
+            "lan" -> listOf(
+                McpConfigServerEntry(
+                    name = fixedServerName,
+                    endpoint = lanEndpoint,
+                    includeJsonContentTypeHeader = true
+                )
+            )
             else -> {
-                val list = mutableListOf<Pair<String, String>>()
-                list += "$fixedServerName Local" to localEndpoint
+                val list = mutableListOf<McpConfigServerEntry>()
+                list += McpConfigServerEntry(
+                    name = "$fixedServerName Local",
+                    endpoint = localEndpoint,
+                    includeJsonContentTypeHeader = false
+                )
                 if (lanEndpoint != localEndpoint) {
-                    list += "$fixedServerName LAN" to lanEndpoint
+                    list += McpConfigServerEntry(
+                        name = "$fixedServerName LAN",
+                        endpoint = lanEndpoint,
+                        includeJsonContentTypeHeader = true
+                    )
                 }
                 list
             }
@@ -1004,11 +1030,17 @@ class LocalMcpService(
     }
 
     private fun buildMcpConfigJson(
-        servers: List<Pair<String, String>>,
+        servers: List<McpConfigServerEntry>,
         token: String
     ): String {
         val fixedServers = if (servers.isEmpty()) {
-            listOf("KeiOS MCP" to DEFAULT_ENDPOINT)
+            listOf(
+                McpConfigServerEntry(
+                    name = "KeiOS MCP",
+                    endpoint = DEFAULT_ENDPOINT,
+                    includeJsonContentTypeHeader = false
+                )
+            )
         } else {
             servers
         }
@@ -1017,14 +1049,19 @@ class LocalMcpService(
         return buildString {
             appendLine("{")
             appendLine("  \"mcpServers\": {")
-            fixedServers.forEachIndexed { index, pair ->
-                val name = jsonEscape(pair.first)
-                val endpoint = jsonEscape(pair.second.ifBlank { DEFAULT_ENDPOINT })
+            fixedServers.forEachIndexed { index, server ->
+                val name = jsonEscape(server.name)
+                val endpoint = jsonEscape(server.endpoint.ifBlank { DEFAULT_ENDPOINT })
                 appendLine("    \"$name\": {")
                 appendLine("      \"type\": \"streamablehttp\",")
                 appendLine("      \"url\": \"$endpoint\",")
                 appendLine("      \"headers\": {")
-                appendLine("        \"Authorization\": \"Bearer $fixedToken\"")
+                if (server.includeJsonContentTypeHeader) {
+                    appendLine("        \"Authorization\": \"Bearer $fixedToken\",")
+                    appendLine("        \"Content-Type\": \"application/json\"")
+                } else {
+                    appendLine("        \"Authorization\": \"Bearer $fixedToken\"")
+                }
                 appendLine("      }")
                 append("    }")
                 if (index != fixedServers.lastIndex) append(",")
@@ -1033,6 +1070,20 @@ class LocalMcpService(
             appendLine("  }")
             append("}")
         }
+    }
+
+    private data class McpConfigServerEntry(
+        val name: String,
+        val endpoint: String,
+        val includeJsonContentTypeHeader: Boolean
+    )
+
+    private fun shouldIncludeJsonContentTypeHeader(endpoint: String, mode: String): Boolean {
+        if (mode == "lan") return true
+        val host = runCatching { java.net.URI(endpoint).host.orEmpty() }.getOrDefault("")
+        if (host.isBlank()) return false
+        val lowerHost = host.lowercase()
+        return lowerHost != "127.0.0.1" && lowerHost != "localhost"
     }
 
     private fun buildTopInfoText(query: String, limit: Int): String {

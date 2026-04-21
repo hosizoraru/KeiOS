@@ -342,11 +342,24 @@ class McpServerManager(
         return localMcpService.getSkillMarkdownForUi()
     }
 
-    fun buildConfigJson(url: String? = null): String {
+    fun buildConfigJson(
+        url: String? = null,
+        includeJsonContentTypeHeader: Boolean = _uiState.value.allowExternal
+    ): String {
         val authToken = ensureAuthToken()
         val state = _uiState.value
         val endpoint = url ?: state.localEndpoint
         val escapedName = state.serverName.replace("\"", "\\\"")
+        val headersText = if (includeJsonContentTypeHeader) {
+            """
+        "Authorization": "Bearer $authToken",
+        "Content-Type": "application/json"
+            """.trimIndent()
+        } else {
+            """
+        "Authorization": "Bearer $authToken"
+            """.trimIndent()
+        }
         return """
 {
   "mcpServers": {
@@ -354,7 +367,7 @@ class McpServerManager(
       "type": "streamablehttp",
       "url": "$endpoint",
       "headers": {
-        "Authorization": "Bearer $authToken"
+${headersText.prependIndent("        ")}
       }
     }
   }

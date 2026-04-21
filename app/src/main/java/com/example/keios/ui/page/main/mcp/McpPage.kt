@@ -259,7 +259,10 @@ fun McpPage(
                     } else {
                         "http://127.0.0.1:$port${snapshot.endpointPath}"
                     }
-                    val json = mcpServerManager.buildConfigJson(endpoint)
+                    val json = mcpServerManager.buildConfigJson(
+                        url = endpoint,
+                        includeJsonContentTypeHeader = allowExternalSnapshot.value
+                    )
                     copyToClipboard(contextSnapshot.value, "mcp-config", json)
                     Toast.makeText(
                         contextSnapshot.value,
