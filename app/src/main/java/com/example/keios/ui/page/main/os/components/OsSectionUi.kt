@@ -61,6 +61,8 @@ internal fun OsSectionInfoRow(
     label: String,
     value: String,
     copyValueOnly: Boolean = false,
+    valueSingleLine: Boolean = false,
+    valueMarquee: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val displayValue = value.ifBlank { "N/A" }
@@ -76,12 +78,13 @@ internal fun OsSectionInfoRow(
         rowVerticalPadding = CardLayoutRhythm.infoRowVerticalPadding,
         valueTextAlign = TextAlign.End,
         labelMaxLines = Int.MAX_VALUE,
-        valueMaxLines = 6,
-        valueOverflow = TextOverflow.Ellipsis,
+        valueMaxLines = if (valueSingleLine) 1 else 6,
+        valueOverflow = if (valueSingleLine) TextOverflow.Clip else TextOverflow.Ellipsis,
         labelFontSize = AppTypographyTokens.Body.fontSize,
         labelLineHeight = AppTypographyTokens.Body.lineHeight,
         valueFontSize = AppTypographyTokens.Body.fontSize,
         valueLineHeight = AppTypographyTokens.Body.lineHeight,
+        valueMarquee = valueMarquee,
         emphasizedValue = true,
         copyPayloadOverride = if (copyValueOnly) displayValue else null
     )

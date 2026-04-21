@@ -27,6 +27,7 @@ import com.example.keios.ui.page.main.os.shortcut.ShortcutActivityIcon
 import com.example.keios.ui.page.main.os.appLucideCloseIcon
 import com.example.keios.ui.page.main.os.shortcut.normalizeShortcutIntentExtras
 import com.example.keios.ui.page.main.os.osLucideEnterIcon
+import com.example.keios.ui.page.main.widget.core.AppInfoListBody
 import com.example.keios.ui.page.main.widget.core.AppStatusPillSize
 import com.example.keios.ui.page.main.widget.core.AppTypographyTokens
 import com.example.keios.ui.page.main.widget.glass.GlassIconButton
@@ -64,30 +65,43 @@ internal fun LazyListScope.addTopInfoCard(
             subtitle = stringResource(R.string.common_item_count, displayedTopInfoRows.size),
             expanded = expanded,
             onExpandedChange = onExpandedChange,
+            surfaceAlphaOverride = 0.28f,
             headerStartAction = {
                 OsSectionHeaderIcon(card = OsSectionCard.TOP_INFO)
             },
             headerActions = exportAction
         ) {
-            if (displayedTopInfoRows.isEmpty()) {
-                Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
-            } else {
-                if (query.isBlank() && !expanded) {
-                    displayedTopInfoRows.forEach { row ->
-                        OsSectionInfoRow(label = row.key, value = row.value)
-                    }
+            AppInfoListBody {
+                if (displayedTopInfoRows.isEmpty()) {
+                    Text(text = noMatchedResultsText, color = MiuixTheme.colorScheme.onBackgroundVariant)
                 } else {
-                    groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
-                        Text(
-                            text = type,
-                            color = MiuixTheme.colorScheme.onBackground,
-                            fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                            lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                            fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                            modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
-                        )
-                        rows.forEach { row ->
-                            OsSectionInfoRow(label = row.key, value = row.value)
+                    if (query.isBlank() && !expanded) {
+                        displayedTopInfoRows.forEach { row ->
+                            OsSectionInfoRow(
+                                label = row.key,
+                                value = row.value,
+                                valueSingleLine = true,
+                                valueMarquee = true
+                            )
+                        }
+                    } else {
+                        groupedTopInfoRows.forEachIndexed { index, (type, rows) ->
+                            Text(
+                                text = type,
+                                color = MiuixTheme.colorScheme.onBackground,
+                                fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                                lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                                fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                                modifier = Modifier.padding(top = if (index == 0) 0.dp else 8.dp, bottom = 2.dp)
+                            )
+                            rows.forEach { row ->
+                                OsSectionInfoRow(
+                                    label = row.key,
+                                    value = row.value,
+                                    valueSingleLine = true,
+                                    valueMarquee = true
+                                )
+                            }
                         }
                     }
                 }

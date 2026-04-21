@@ -1,5 +1,7 @@
 package com.example.keios.ui.page.main.widget.core
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +29,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
  * Keeps typography and spacing consistent while allowing lightweight per-page tuning.
  */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun AppInfoRow(
     label: String,
     value: String,
@@ -48,6 +51,7 @@ fun AppInfoRow(
     labelLineHeight: TextUnit = AppTypographyTokens.Supporting.lineHeight,
     valueFontSize: TextUnit = AppTypographyTokens.Body.fontSize,
     valueLineHeight: TextUnit = AppTypographyTokens.Body.lineHeight,
+    valueMarquee: Boolean = false,
     emphasizedValue: Boolean = true,
     copyPayloadOverride: String? = null,
     onClick: (() -> Unit)? = null,
@@ -81,10 +85,15 @@ fun AppInfoRow(
                 }
                 else -> Modifier.wrapContentWidth()
             }
-            val valueModifier = if (valueWeight > 0f) {
+            val baseValueModifier = if (valueWeight > 0f) {
                 Modifier.weight(valueWeight)
             } else {
                 Modifier.wrapContentWidth()
+            }
+            val valueModifier = if (valueMarquee) {
+                baseValueModifier.basicMarquee()
+            } else {
+                baseValueModifier
             }
             Text(
                 text = displayLabel,
