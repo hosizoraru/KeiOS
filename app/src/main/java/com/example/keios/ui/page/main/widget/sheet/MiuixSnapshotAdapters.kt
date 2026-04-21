@@ -1,17 +1,6 @@
 package com.example.keios.ui.page.main.widget.sheet
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -35,8 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
@@ -62,6 +54,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.layout.BottomSheetDefaults
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 enum class SnapshotPopupPlacement {
     Dropdown,
@@ -69,12 +62,9 @@ enum class SnapshotPopupPlacement {
     ActionBarCenter
 }
 
-private val SnapshotPopupFractionAnimationSpec =
-    spring<Float>(dampingRatio = 0.82f, stiffness = 362.5f, visibilityThreshold = 0.0001f)
-private val SnapshotPopupSizeAnimationSpec =
-    spring<IntSize>(dampingRatio = 0.82f, stiffness = 362.5f)
-private val SnapshotPopupAlphaEnterAnimationSpec = tween<Float>(durationMillis = 200)
-private val SnapshotPopupAlphaExitAnimationSpec = tween<Float>(durationMillis = 150)
+private val SnapshotPopupFractionAnimationSpec = ListPopupDefaults.FractionAnimationSpec
+private val SnapshotPopupAlphaEnterAnimationSpec = ListPopupDefaults.AlphaEnterAnimationSpec
+private val SnapshotPopupAlphaExitAnimationSpec = ListPopupDefaults.AlphaExitAnimationSpec
 
 @Composable
 fun SnapshotWindowListPopup(
@@ -129,9 +119,12 @@ fun SnapshotWindowListPopup(
         val pivotY = if (opensDownward) 0f else 1f
         TransformOrigin(pivotFractionX = pivotX, pivotFractionY = pivotY)
     }
+    val popupShowBelow = opensDownward
+    val popupShowAbove = !opensDownward
+    val fractionProgress = remember { Animatable(0f) }
+    val alphaProgress = remember { Animatable(0f) }
     var wasVisible by remember { mutableStateOf(false) }
-    var popupRender by remember { mutableStateOf(show) }
-    val popupVisibilityState = remember { MutableTransitionState(false) }
+    var popupRender by remember { mutableStateOf(false) }
     val composePopupPositionProvider = remember(
         density,
         popupPositionProvider,
@@ -181,28 +174,31 @@ fun SnapshotWindowListPopup(
         }
     }
 
-    LaunchedEffect(show) {
+    LaunchedEffect(show, transitionAnimationsEnabled, onDismissFinished) {
         if (show) {
             wasVisible = true
             popupRender = true
-            popupVisibilityState.targetState = true
+            if (transitionAnimationsEnabled) {
+                launch {
+                    fractionProgress.animateTo(1f, SnapshotPopupFractionAnimationSpec)
+                }
+                alphaProgress.animateTo(1f, SnapshotPopupAlphaEnterAnimationSpec)
+            } else {
+                fractionProgress.snapTo(1f)
+                alphaProgress.snapTo(1f)
+            }
         } else {
-            popupVisibilityState.targetState = false
-        }
-    }
-
-    LaunchedEffect(
-        show,
-        popupRender,
-        popupVisibilityState.currentState,
-        popupVisibilityState.targetState,
-        onDismissFinished
-    ) {
-        if (!show &&
-            popupRender &&
-            !popupVisibilityState.currentState &&
-            !popupVisibilityState.targetState
-        ) {
+            if (!popupRender && !wasVisible) return@LaunchedEffect
+            if (transitionAnimationsEnabled) {
+                launch {
+                    fractionProgress.animateTo(0f, SnapshotPopupFractionAnimationSpec)
+                }
+                alphaProgress.animateTo(0f, SnapshotPopupAlphaExitAnimationSpec)
+                fractionProgress.stop()
+            } else {
+                fractionProgress.snapTo(0f)
+                alphaProgress.snapTo(0f)
+            }
             popupRender = false
             if (wasVisible) {
                 wasVisible = false
@@ -212,35 +208,6 @@ fun SnapshotWindowListPopup(
     }
 
     if (popupRender) {
-        val expandAlignment = if (opensDownward) Alignment.Top else Alignment.Bottom
-        val popupEnter = if (transitionAnimationsEnabled) {
-            fadeIn(
-                animationSpec = SnapshotPopupAlphaEnterAnimationSpec
-            ) + expandVertically(
-                expandFrom = expandAlignment,
-                animationSpec = SnapshotPopupSizeAnimationSpec
-            ) + scaleIn(
-                initialScale = 0.92f,
-                transformOrigin = popupTransformOrigin,
-                animationSpec = SnapshotPopupFractionAnimationSpec
-            )
-        } else {
-            EnterTransition.None
-        }
-        val popupExit = if (transitionAnimationsEnabled) {
-            fadeOut(
-                animationSpec = SnapshotPopupAlphaExitAnimationSpec
-            ) + shrinkVertically(
-                shrinkTowards = expandAlignment,
-                animationSpec = SnapshotPopupSizeAnimationSpec
-            ) + scaleOut(
-                targetScale = 0.94f,
-                transformOrigin = popupTransformOrigin,
-                animationSpec = SnapshotPopupFractionAnimationSpec
-            )
-        } else {
-            ExitTransition.None
-        }
         Popup(
             popupPositionProvider = composePopupPositionProvider,
             onDismissRequest = onDismissRequest,
@@ -251,19 +218,46 @@ fun SnapshotWindowListPopup(
                 clippingEnabled = false
             )
         ) {
-            AnimatedVisibility(
-                visibleState = popupVisibilityState,
-                enter = popupEnter,
-                exit = popupExit
+            val fraction = fractionProgress.value.coerceIn(0f, 1f)
+            val scale = 0.15f + 0.85f * fraction
+            Box(
+                modifier = popupModifier
+                    .defaultMinSize(minWidth = popupMinWidth)
+                    .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
+                    .then(if (maxHeight != null) Modifier.heightIn(max = maxHeight) else Modifier)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        alpha = alphaProgress.value.coerceIn(0f, 1f)
+                        transformOrigin = popupTransformOrigin
+                    }
+                    .drawWithContent {
+                        val progress = fractionProgress.value.coerceIn(0f, 1f)
+                        val showMiddle = !popupShowBelow && !popupShowAbove
+                        val clipStart = when {
+                            popupShowAbove -> size.height * (1f - progress)
+                            showMiddle -> size.height * (0.5f - 0.5f * progress)
+                            else -> 0f
+                        }
+                        val clipBottom = when {
+                            popupShowBelow -> size.height * progress
+                            popupShowAbove -> size.height
+                            showMiddle -> size.height * (0.5f + 0.5f * progress)
+                            else -> size.height
+                        }
+                        if (clipBottom > clipStart) {
+                            clipRect(
+                                left = 0f,
+                                top = clipStart,
+                                right = size.width,
+                                bottom = clipBottom
+                            ) {
+                                this@drawWithContent.drawContent()
+                            }
+                        }
+                    }
             ) {
-                Box(
-                    modifier = popupModifier
-                        .defaultMinSize(minWidth = popupMinWidth)
-                        .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
-                        .then(if (maxHeight != null) Modifier.heightIn(max = maxHeight) else Modifier)
-                ) {
-                    content()
-                }
+                content()
             }
         }
     }
