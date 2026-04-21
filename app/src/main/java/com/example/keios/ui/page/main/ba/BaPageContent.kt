@@ -21,7 +21,9 @@ import com.example.keios.ui.page.main.ba.card.BaDebugCard
 import com.example.keios.ui.page.main.ba.card.BaIdCard
 import com.example.keios.ui.page.main.ba.card.BaOverviewCard
 import com.example.keios.ui.page.main.ba.card.BaPoolCard
+import com.example.keios.ui.page.main.ba.card.BaPoolNotesCard
 import com.example.keios.ui.page.main.ba.card.filterVisibleCalendarEntries
+import com.example.keios.ui.page.main.ba.card.filterVisiblePoolNoteEntries
 import com.example.keios.ui.page.main.ba.card.filterVisiblePoolEntries
 import com.example.keios.ui.page.main.ba.support.BAInitState
 import com.example.keios.ui.page.main.ba.support.BaCalendarEntry
@@ -122,6 +124,17 @@ internal fun BaPageContent(
         calendarPoolNowMs
     ) {
         filterVisiblePoolEntries(
+            entries = state.baPoolEntries,
+            showEndedPools = state.showEndedPools,
+            nowMs = calendarPoolNowMs
+        )
+    }
+    val visiblePoolNoteEntries = remember(
+        state.baPoolEntries,
+        state.showEndedPools,
+        calendarPoolNowMs
+    ) {
+        filterVisiblePoolNoteEntries(
             entries = state.baPoolEntries,
             showEndedPools = state.showEndedPools,
             nowMs = calendarPoolNowMs
@@ -241,6 +254,26 @@ internal fun BaPageContent(
                 onOpenPoolStudentGuide = actions.onOpenPoolStudentGuide,
                 onOpenCalendarLink = actions.onOpenCalendarLink
             )
+        }
+
+        if (visiblePoolNoteEntries.isNotEmpty()) {
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+            item {
+                BaPoolNotesCard(
+                    backdrop = backdrop,
+                    serverOptions = state.serverOptions,
+                    serverIndex = state.serverIndex,
+                    baPoolLoading = state.baPoolLoading,
+                    baPoolLastSyncMs = state.baPoolLastSyncMs,
+                    baPoolError = state.baPoolError,
+                    visiblePoolNoteEntries = visiblePoolNoteEntries,
+                    nowMs = calendarPoolNowMs,
+                    showEndedPools = state.showEndedPools,
+                    effectsEnabled = calendarPoolEffectsEnabled,
+                    onRefreshPool = actions.onRefreshPool,
+                    onOpenCalendarLink = actions.onOpenCalendarLink
+                )
+            }
         }
 
         item { Spacer(modifier = Modifier.height(10.dp)) }

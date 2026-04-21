@@ -22,6 +22,7 @@ import com.example.keios.ui.page.main.ba.support.GameKeeCoverImage
 import com.example.keios.ui.page.main.ba.support.activityProgress
 import com.example.keios.ui.page.main.ba.support.formatBaDateTimeNoYearInTimeZone
 import com.example.keios.ui.page.main.ba.support.formatBaRemainingTime
+import com.example.keios.ui.page.main.ba.support.isGameKeeGuideDetailLink
 import com.example.keios.ui.page.main.ba.support.poolProgress
 import com.example.keios.ui.page.main.ba.support.serverRefreshTimeZone
 import com.example.keios.ui.page.main.widget.glass.GlassIconButton
@@ -47,7 +48,17 @@ internal fun filterVisiblePoolEntries(
     showEndedPools: Boolean,
     nowMs: Long
 ): List<BaPoolEntry> {
-    return if (showEndedPools) entries else entries.filter { it.endAtMs > nowMs }
+    val byTime = if (showEndedPools) entries else entries.filter { it.endAtMs > nowMs }
+    return byTime.filter { isGameKeeGuideDetailLink(it.linkUrl) }
+}
+
+internal fun filterVisiblePoolNoteEntries(
+    entries: List<BaPoolEntry>,
+    showEndedPools: Boolean,
+    nowMs: Long
+): List<BaPoolEntry> {
+    val byTime = if (showEndedPools) entries else entries.filter { it.endAtMs > nowMs }
+    return byTime.filterNot { isGameKeeGuideDetailLink(it.linkUrl) }
 }
 
 @Composable
@@ -414,6 +425,85 @@ internal fun BaPoolCard(
 }
 
 @Composable
+internal fun BaPoolNotesCard(
+    backdrop: Backdrop?,
+    serverOptions: List<String>,
+    serverIndex: Int,
+    baPoolLoading: Boolean,
+    baPoolLastSyncMs: Long,
+    baPoolError: String?,
+    visiblePoolNoteEntries: List<BaPoolEntry>,
+    nowMs: Long,
+    showEndedPools: Boolean,
+    effectsEnabled: Boolean,
+    onRefreshPool: () -> Unit,
+    onOpenCalendarLink: (String) -> Unit,
+) {
+    val countdownBlue = Color(0xFF60A5FA)
+    val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    BaGlassCard(
+        backdrop = backdrop,
+        accentColor = Color(0xFF3B82F6),
+        accentAlpha = 0f,
+        effectsEnabled = effectsEnabled,
+    ) {
+        BaCardHeader(
+            title = "日程笔记 · ${serverOptions[serverIndex]}",
+            trailing = {
+                Text(
+                    text = if (baPoolLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
+                        baPoolLastSyncMs,
+                        serverTimeZone
+                    ),
+                    color = countdownBlue,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                GlassIconButton(
+                    backdrop = backdrop,
+                    icon = MiuixIcons.Regular.Refresh,
+                    contentDescription = "刷新日程笔记",
+                    variant = GlassVariant.Content,
+                    onClick = onRefreshPool,
+                )
+            },
+        )
+        when {
+            !baPoolError.isNullOrBlank() && visiblePoolNoteEntries.isEmpty() -> {
+                BaPoolStatePanel(
+                    backdrop = backdrop,
+                    text = baPoolError,
+                    accentColor = Color(0xFFF59E0B),
+                    effectsEnabled = effectsEnabled
+                )
+            }
+
+            !baPoolLoading && visiblePoolNoteEntries.isEmpty() -> {
+                BaPoolStatePanel(
+                    backdrop = backdrop,
+                    text = if (showEndedPools) "暂无日程笔记" else "暂无进行中或即将开始的日程笔记",
+                    accentColor = MiuixTheme.colorScheme.onBackgroundVariant,
+                    effectsEnabled = effectsEnabled
+                )
+            }
+
+            else -> {
+                visiblePoolNoteEntries.forEach { note ->
+                    BaPoolNoteEntryPanel(
+                        backdrop = backdrop,
+                        serverIndex = serverIndex,
+                        note = note,
+                        nowMs = nowMs,
+                        effectsEnabled = effectsEnabled,
+                        onOpenCalendarLink = onOpenCalendarLink
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 internal fun BaPoolStatePanel(
     backdrop: Backdrop?,
     text: String,
@@ -431,6 +521,77 @@ internal fun BaPoolStatePanel(
             color = accentColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+internal fun BaPoolNoteEntryPanel(
+    backdrop: Backdrop?,
+    serverIndex: Int,
+    note: BaPoolEntry,
+    nowMs: Long,
+    effectsEnabled: Boolean,
+    onOpenCalendarLink: (String) -> Unit,
+) {
+    val accentBlue = Color(0xFF3B82F6)
+    val accentGreen = Color(0xFF22C55E)
+    val countdownBlue = Color(0xFF60A5FA)
+    val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    val isRunningNow = nowMs in note.startAtMs until note.endAtMs
+    val isEnded = note.endAtMs <= nowMs
+    val remainTarget = if (isRunningNow || isEnded) note.endAtMs else note.startAtMs
+    val remainText = if (isEnded) "已结束" else formatBaRemainingTime(remainTarget, nowMs)
+    val statusText = when {
+        isRunningNow -> "进行中"
+        isEnded -> "已结束"
+        else -> "即将开始"
+    }
+    val statusColor = when {
+        isRunningNow -> accentGreen
+        isEnded -> MiuixTheme.colorScheme.onBackgroundVariant
+        else -> accentBlue
+    }
+
+    BaGlassPanel(
+        backdrop = backdrop,
+        modifier = Modifier.fillMaxWidth(),
+        accentColor = statusColor,
+        effectsEnabled = effectsEnabled,
+        onClick = { onOpenCalendarLink(note.linkUrl) },
+        onLongClick = { onOpenCalendarLink(note.linkUrl) },
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = statusText,
+                color = statusColor,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = remainText,
+                color = countdownBlue,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+        }
+        Text(
+            text = note.name,
+            color = MiuixTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = "${formatBaDateTimeNoYearInTimeZone(note.startAtMs, serverTimeZone)} - ${
+                formatBaDateTimeNoYearInTimeZone(note.endAtMs, serverTimeZone)
+            }",
+            color = countdownBlue.copy(alpha = 0.92f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

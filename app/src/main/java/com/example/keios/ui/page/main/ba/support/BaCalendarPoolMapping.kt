@@ -1,8 +1,10 @@
 package com.example.keios.ui.page.main.ba.support
 
 import com.example.keios.feature.ba.data.remote.GameKeeFetchHelper
+import com.example.keios.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
 import org.json.JSONArray
 import org.json.JSONObject
+import android.net.Uri
 import java.util.Locale
 
 internal fun gameKeeServerId(serverIndex: Int): Int {
@@ -109,6 +111,229 @@ internal fun parsePoolTagIds(raw: String): List<Int> {
         .findAll(raw)
         .mapNotNull { it.value.toIntOrNull() }
         .toList()
+}
+
+private val gameKeeGuideDetailPathRegex = Regex("""^/ba/tj/\d+(?:\.html)?$""", RegexOption.IGNORE_CASE)
+private val gameKeeWikiArticlePathRegex = Regex("""^/ba/\d+(?:\.html)?$""", RegexOption.IGNORE_CASE)
+
+internal fun isGameKeeGuideDetailLink(rawUrl: String): Boolean {
+    val normalized = normalizeGameKeeLink(rawUrl)
+    if (normalized.isBlank()) return false
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull() ?: return false
+    val host = uri.host?.lowercase(Locale.ROOT).orEmpty()
+    val hostAccepted = host == "www.gamekee.com" || host == "gamekee.com"
+    if (!hostAccepted) return false
+    val path = uri.path.orEmpty()
+    return gameKeeGuideDetailPathRegex.matches(path)
+}
+
+private fun isGameKeeWikiArticleLink(rawUrl: String): Boolean {
+    val normalized = normalizeGameKeeLink(rawUrl)
+    if (normalized.isBlank()) return false
+    val uri = runCatching { Uri.parse(normalized) }.getOrNull() ?: return false
+    val host = uri.host?.lowercase(Locale.ROOT).orEmpty()
+    val hostAccepted = host == "www.gamekee.com" || host == "gamekee.com"
+    if (!hostAccepted) return false
+    val path = uri.path.orEmpty()
+    return gameKeeWikiArticlePathRegex.matches(path)
+}
+
+private const val BA_GUIDE_STUDENT_PID = 49443
+private const val BA_GUIDE_NPC_SATELLITE_PID = 107619
+private const val BA_GUIDE_INDEX_REFERER_PATH = "/ba/second/23941"
+private const val BA_POOL_GUIDE_LOOKUP_CACHE_TTL_MS = 6L * 60L * 60L * 1000L
+
+private data class PoolGuideLookupCache(
+    val syncedAtMs: Long,
+    val tokenToGuideUrl: Map<String, String>
+)
+
+@Volatile
+private var baPoolGuideLookupCache: PoolGuideLookupCache? = null
+
+private val poolGuideAliasStopwords = setOf("学生", "student", "npc", "卫星")
+
+private fun normalizePoolGuideToken(raw: String): String {
+    return raw.trim()
+        .replace('（', '(')
+        .replace('）', ')')
+        .replace("·", "")
+        .replace("・", "")
+        .replace(" ", "")
+        .replace("　", "")
+        .lowercase(Locale.ROOT)
+}
+
+private fun splitPoolAliasTokens(rawAlias: String): List<String> {
+    if (rawAlias.isBlank()) return emptyList()
+    return rawAlias
+        .split(',', '，', '、', '|', '/', ';', '；')
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+}
+
+private fun buildPoolGuideTokens(name: String, alias: String): Set<String> {
+    val tokens = linkedSetOf<String>()
+    fun addToken(raw: String) {
+        val token = normalizePoolGuideToken(raw)
+        if (token.length < 2) return
+        if (token in poolGuideAliasStopwords) return
+        tokens += token
+    }
+
+    addToken(name)
+    val baseName = name
+        .replace(Regex("""[（(].*?[)）]"""), "")
+        .trim()
+    if (baseName.isNotBlank() && baseName != name) {
+        addToken(baseName)
+    }
+    splitPoolAliasTokens(alias).forEach(::addToken)
+    return tokens
+}
+
+private fun buildPoolGuideLookupFromCatalogCache(): Map<String, String> {
+    val bundle = loadCachedBaGuideCatalogBundle() ?: return emptyMap()
+    if (bundle.entriesByTab.isEmpty()) return emptyMap()
+    val out = mutableMapOf<String, String>()
+    bundle.entriesByTab.values.flatten().forEach { entry ->
+        if (entry.contentId <= 0L) return@forEach
+        val detailUrl = normalizeGameKeeLink(entry.detailUrl)
+        if (!isGameKeeGuideDetailLink(detailUrl)) return@forEach
+        buildPoolGuideTokens(entry.name, entry.alias).forEach { token ->
+            out.putIfAbsent(token, detailUrl)
+        }
+    }
+    return out
+}
+
+private fun fetchPoolGuideLookupByPid(pid: Int): Map<String, String> {
+    val body = GameKeeFetchHelper.fetchJson(
+        pathOrUrl = "/v1/entry/treesByPid?pid=$pid",
+        refererPath = BA_GUIDE_INDEX_REFERER_PATH,
+        extraHeaders = mapOf(
+            "device-num" to "1",
+            "game-alias" to "ba"
+        )
+    )
+    val root = JSONObject(body)
+    if (root.optInt("code", -1) != 0) {
+        error("guide lookup api code=${root.optInt("code", -1)} pid=$pid")
+    }
+    val data = root.optJSONArray("data") ?: return emptyMap()
+    val out = mutableMapOf<String, String>()
+    for (index in 0 until data.length()) {
+        val item = data.optJSONObject(index) ?: continue
+        val contentId = item.optLong("content_id", 0L)
+        if (contentId <= 0L) continue
+        val name = item.optString("name").trim()
+            .ifBlank { item.optString("title").trim() }
+        if (name.isBlank()) continue
+        val alias = item.optString("name_alias").trim()
+        val detailUrl = normalizeGameKeeLink("https://www.gamekee.com/ba/tj/$contentId.html")
+        buildPoolGuideTokens(name, alias).forEach { token ->
+            out.putIfAbsent(token, detailUrl)
+        }
+    }
+    return out
+}
+
+private fun loadOrFetchPoolGuideLookup(nowMs: Long): Map<String, String> {
+    val cached = baPoolGuideLookupCache
+    if (cached != null &&
+        cached.tokenToGuideUrl.isNotEmpty() &&
+        (nowMs - cached.syncedAtMs).coerceAtLeast(0L) < BA_POOL_GUIDE_LOOKUP_CACHE_TTL_MS
+    ) {
+        return cached.tokenToGuideUrl
+    }
+
+    val fromCatalogCache = buildPoolGuideLookupFromCatalogCache()
+    val merged = runCatching {
+        buildMap {
+            putAll(fromCatalogCache)
+            putAll(fetchPoolGuideLookupByPid(BA_GUIDE_STUDENT_PID))
+            putAll(fetchPoolGuideLookupByPid(BA_GUIDE_NPC_SATELLITE_PID))
+        }
+    }.getOrElse {
+        if (fromCatalogCache.isNotEmpty()) {
+            fromCatalogCache
+        } else {
+            cached?.tokenToGuideUrl.orEmpty()
+        }
+    }
+
+    if (merged.isNotEmpty()) {
+        baPoolGuideLookupCache = PoolGuideLookupCache(
+            syncedAtMs = nowMs,
+            tokenToGuideUrl = merged
+        )
+    }
+    return merged
+}
+
+private fun resolveGuideUrlByPoolName(
+    name: String,
+    alias: String,
+    tokenToGuideUrl: Map<String, String>
+): String? {
+    if (tokenToGuideUrl.isEmpty()) return null
+    val candidateTokens = buildPoolGuideTokens(name, alias)
+    if (candidateTokens.isEmpty()) return null
+    candidateTokens.forEach { token ->
+        tokenToGuideUrl[token]?.let { return it }
+    }
+    return null
+}
+
+private fun resolvePoolGuideLinks(
+    entries: List<BaPoolEntry>,
+    aliasByEntryId: Map<Int, String>,
+    nowMs: Long
+): List<BaPoolEntry> {
+    if (entries.isEmpty()) return entries
+    val unresolvedIndexes = entries.indices.filter { index ->
+        val entry = entries[index]
+        !isGameKeeGuideDetailLink(entry.linkUrl) && isGameKeeWikiArticleLink(entry.linkUrl)
+    }
+    if (unresolvedIndexes.isEmpty()) return entries
+
+    val resolved = entries.toMutableList()
+    var lookup = buildPoolGuideLookupFromCatalogCache()
+
+    unresolvedIndexes.forEach { index ->
+        val entry = resolved[index]
+        val alias = aliasByEntryId[entry.id].orEmpty()
+        val matched = resolveGuideUrlByPoolName(
+            name = entry.name,
+            alias = alias,
+            tokenToGuideUrl = lookup
+        )
+        if (!matched.isNullOrBlank()) {
+            resolved[index] = entry.copy(linkUrl = matched)
+        }
+    }
+
+    val pendingIndexes = unresolvedIndexes.filter { index ->
+        !isGameKeeGuideDetailLink(resolved[index].linkUrl)
+    }
+    if (pendingIndexes.isEmpty()) return resolved
+
+    lookup = loadOrFetchPoolGuideLookup(nowMs)
+    if (lookup.isEmpty()) return resolved
+
+    pendingIndexes.forEach { index ->
+        val entry = resolved[index]
+        val alias = aliasByEntryId[entry.id].orEmpty()
+        val matched = resolveGuideUrlByPoolName(
+            name = entry.name,
+            alias = alias,
+            tokenToGuideUrl = lookup
+        )
+        if (!matched.isNullOrBlank()) {
+            resolved[index] = entry.copy(linkUrl = matched)
+        }
+    }
+    return resolved
 }
 
 internal fun fetchBaCalendarEntries(
@@ -323,6 +548,7 @@ internal fun fetchBaPoolEntriesFromAll(
     }
     val data = root.optJSONArray("data") ?: return emptyList()
     val entries = mutableListOf<BaPoolEntry>()
+    val aliasByEntryId = mutableMapOf<Int, String>()
     for (index in 0 until data.length()) {
         val item = data.optJSONObject(index) ?: continue
         val name = item.optString("name").trim()
@@ -345,8 +571,10 @@ internal fun fetchBaPoolEntriesFromAll(
         } ?: continue
         val normalizedTagName = BA_POOL_TAG_NAME_MAP[normalizedTagId] ?: "卡池"
 
+        val entryId = item.optInt("id", 0)
+        aliasByEntryId[entryId] = item.optString("name_alias").trim()
         entries += BaPoolEntry(
-            id = item.optInt("id", 0),
+            id = entryId,
             name = name,
             tagId = normalizedTagId,
             tagName = normalizedTagName,
@@ -357,7 +585,11 @@ internal fun fetchBaPoolEntriesFromAll(
             isRunning = isRunning
         )
     }
-    return entries
+    return resolvePoolGuideLinks(
+        entries = entries,
+        aliasByEntryId = aliasByEntryId,
+        nowMs = nowMs
+    )
 }
 
 internal fun fetchBaPoolEntries(
