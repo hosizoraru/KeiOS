@@ -1,15 +1,19 @@
-name: Build Debug APK (Build-CI)
+name: CI / Benchmark APK
 
 on:
-  push:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Commit SHA/branch/tag to build (optional). Leave empty to build the latest commit on selected branch.
+        required: false
+        type: string
 
 permissions:
   contents: read
   packages: read
 
 jobs:
-  build-debug-apk:
-    if: contains(join(github.event.commits.*.message, ' '), 'Build-CI')
+  build-benchmark-apk:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -19,6 +23,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.sha }}
 
       - name: Setup JDK 21
         uses: actions/setup-java@v5
@@ -60,24 +67,31 @@ jobs:
             echo "gpr.key=${GITHUB_TOKEN}"
           } >> "${HOME}/.gradle/gradle.properties"
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Build benchmark APK
+        run: ./gradlew :app:assembleBenchmark --stacktrace
 
       - name: Compose artifact filename
         id: meta
+        shell: bash
         run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
+          SHORT_SHA="$(git rev-parse --short=7 HEAD)"
+          FULL_SHA="$(git rev-parse HEAD)"
           BUILD_TIME_UTC="$(date -u +'%Y%m%d-%H%M%S')"
-          APK_FILE_NAME="KeiOS-debug-${BUILD_TIME_UTC}-${SHORT_SHA}.apk"
-          ARTIFACT_NAME="KeiOS-debug-${BUILD_TIME_UTC}-${SHORT_SHA}-run${GITHUB_RUN_NUMBER}"
+          APK_FILE_NAME="KeiOS-benchmark-${BUILD_TIME_UTC}-${SHORT_SHA}.apk"
+          ARTIFACT_NAME="KeiOS-benchmark-${BUILD_TIME_UTC}-${SHORT_SHA}-run${GITHUB_RUN_NUMBER}"
+          echo "commit_sha=${FULL_SHA}" >> "${GITHUB_OUTPUT}"
           echo "apk_file_name=${APK_FILE_NAME}" >> "${GITHUB_OUTPUT}"
           echo "artifact_name=${ARTIFACT_NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Prepare artifact
+        shell: bash
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "${RUNNER_TEMP}/${{ steps.meta.outputs.apk_file_name }}"
+          set -euo pipefail
+          APK_PATH="$(find app/build/outputs/apk/benchmark -maxdepth 2 -type f -name '*.apk' | head -n 1)"
+          test -n "${APK_PATH}"
+          cp "${APK_PATH}" "${RUNNER_TEMP}/${{ steps.meta.outputs.apk_file_name }}"
 
-      - name: Upload debug APK
+      - name: Upload benchmark APK
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.meta.outputs.artifact_name }}

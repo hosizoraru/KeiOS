@@ -81,14 +81,14 @@ JDK 兜底示例路径：
 - `AppOverviewCard`
 - 统一后的列表正文骨架与说明块节奏
 
-## GitHub Actions：Build-CI 自动构建调试包
+## GitHub Actions：CI / Debug APK
 
-工作流路径：`.github/workflows/build-debug-on-message.yml`
+工作流路径：`.github/workflows/ci-debug-apk.yml`
 
 - 触发方式：`push` 事件中任一 commit message 包含 `Build-CI`。
 - 构建产物：自动构建并上传 Debug APK 到 GitHub Actions。
 - APK 文件名格式：`KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>.apk`（UTC 时间）。
-- Artifact 名称格式：`keiOS-debug-apk-<run_number>`。
+- Artifact 名称格式：`KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`。
 
 示例提交信息：
 
@@ -96,11 +96,13 @@ JDK 兜底示例路径：
 chore: tune guide cache Build-CI
 ```
 
-## GitHub Actions：Benchmark-CI 手动构建 Benchmark 产物
+## GitHub Actions：CI / Benchmark APK（手动）
 
-工作流路径：`.github/workflows/benchmark-ci.yml`
+工作流路径：`.github/workflows/ci-benchmark-apk.yml`
 
 - 触发方式：`workflow_dispatch` 手动运行。
+- 可选输入：`commit`（commit SHA / branch / tag）。
+- 默认行为：`commit` 为空时构建所选分支的最新提交。
 - 构建任务：`./gradlew :app:assembleBenchmark --stacktrace`。
 - 构建产物：自动上传 Benchmark APK 到 GitHub Actions Artifact。
 - APK 文件名格式：`KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>.apk`（UTC 时间）。

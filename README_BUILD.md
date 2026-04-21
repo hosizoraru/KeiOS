@@ -82,14 +82,14 @@ Current baseline scope:
 - `AppOverviewCard`
 - unified list-body layout / supporting block rhythm
 
-## GitHub Actions: Build-CI Debug Artifact
+## GitHub Actions: CI / Debug APK
 
-Workflow: `.github/workflows/build-debug-on-message.yml`
+Workflow: `.github/workflows/ci-debug-apk.yml`
 
 - Trigger: `push` with any commit message containing `Build-CI`.
 - Job output: debug APK artifact uploaded to GitHub Actions.
 - APK file name format: `KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>.apk` (UTC).
-- Artifact name format: `keiOS-debug-apk-<run_number>`.
+- Artifact name format: `KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`.
 
 Example commit message:
 
@@ -97,11 +97,13 @@ Example commit message:
 chore: tune guide cache Build-CI
 ```
 
-## GitHub Actions: Benchmark-CI Manual Benchmark Artifact
+## GitHub Actions: CI / Benchmark APK (Manual)
 
-Workflow: `.github/workflows/benchmark-ci.yml`
+Workflow: `.github/workflows/ci-benchmark-apk.yml`
 
 - Trigger: manual run via `workflow_dispatch`.
+- Optional input: `commit` (commit SHA / branch / tag).
+- Default behavior: build latest commit on selected branch when `commit` is empty.
 - Build task: `./gradlew :app:assembleBenchmark --stacktrace`.
 - Job output: benchmark APK artifact uploaded to GitHub Actions.
 - APK file name format: `KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>.apk` (UTC).
