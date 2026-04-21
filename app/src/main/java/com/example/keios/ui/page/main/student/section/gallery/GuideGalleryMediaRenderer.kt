@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.keios.ui.page.main.os.appLucideFullscreenIcon
 import com.example.keios.ui.page.main.student.GuideRemoteImageAdaptive
 import com.example.keios.ui.page.main.student.GuideVideoControlAction
 import com.example.keios.ui.page.main.student.GuideVideoFullscreenActivity
@@ -29,7 +30,6 @@ import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Replace
@@ -64,6 +64,7 @@ internal fun GuideGalleryCardContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val fullscreenIcon = appLucideFullscreenIcon()
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -144,7 +145,7 @@ internal fun GuideGalleryCardContent(
                 GlassTextButton(
                     backdrop = backdrop,
                     text = "",
-                    leadingIcon = MiuixIcons.Regular.ExpandMore,
+                    leadingIcon = fullscreenIcon,
                     textColor = Color(0xFF3B82F6),
                     variant = GlassVariant.Compact,
                     onClick = {

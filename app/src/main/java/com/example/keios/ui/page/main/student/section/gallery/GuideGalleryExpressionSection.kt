@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.keios.R
+import com.example.keios.ui.page.main.os.appLucideFullscreenIcon
 import com.example.keios.ui.page.main.os.appLucidePackageIcon
 import com.example.keios.ui.page.main.student.BaGuideGalleryItem
 import com.example.keios.ui.page.main.student.section.GuidePressableMediaSurface
@@ -70,7 +71,6 @@ import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -215,6 +215,7 @@ fun GuideGalleryExpressionCardItem(
     val imageProgress by imageProgressState.collectAsState()
     var imageLoading by remember(displayImageUrl) { mutableStateOf(displayImageUrl.isNotBlank()) }
     val packDownloadIcon = appLucidePackageIcon()
+    val fullscreenIcon = appLucideFullscreenIcon()
     val expressionPackTargets = remember(items, optionLabels, mediaUrlResolver) {
         items.mapIndexedNotNull { index, item ->
             val rawImage = mediaUrlResolver(item.imageUrl)
@@ -322,7 +323,7 @@ fun GuideGalleryExpressionCardItem(
                     GlassTextButton(
                         backdrop = backdrop,
                         text = "",
-                        leadingIcon = MiuixIcons.Regular.ExpandMore,
+                        leadingIcon = fullscreenIcon,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
                         onClick = {

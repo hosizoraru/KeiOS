@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.example.keios.ui.page.main.os.appLucideFullscreenIcon
 import com.example.keios.ui.page.main.widget.glass.AppDropdownAnchorButton
 import com.example.keios.ui.page.main.widget.glass.GlassTextButton
 import com.example.keios.ui.page.main.widget.glass.GlassVariant
@@ -24,7 +25,6 @@ import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
-import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 
@@ -45,6 +45,7 @@ internal fun GuideGalleryVideoGroupHeaderActions(
     onOpenFullscreen: () -> Unit,
     onSaveMedia: () -> Unit
 ) {
+    val fullscreenIcon = appLucideFullscreenIcon()
     if (itemsSize > 1) {
         var showPicker by remember(itemsSize, optionLabels) { mutableStateOf(false) }
         var pickerPopupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
@@ -127,7 +128,7 @@ internal fun GuideGalleryVideoGroupHeaderActions(
         GlassTextButton(
             backdrop = backdrop,
             text = "",
-            leadingIcon = MiuixIcons.Regular.ExpandMore,
+            leadingIcon = fullscreenIcon,
             textColor = Color(0xFF3B82F6),
             variant = GlassVariant.Compact,
             onClick = onOpenFullscreen
