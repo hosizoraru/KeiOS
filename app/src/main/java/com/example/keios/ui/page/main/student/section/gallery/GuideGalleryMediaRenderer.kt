@@ -83,18 +83,19 @@ internal fun GuideGalleryCardContent(
             if (isMemoryHallBgmTitle && audioTargetUrl.isNotBlank()) {
                 val resolvedAudioSource = normalizeGuideMediaSource(displayMediaUrl)
                 val cachedAudioReady = resolvedAudioSource.startsWith("file://", ignoreCase = true)
+                // Header indicator keeps a stable readiness meaning: cached = ready.
                 val indicatorProgress = when {
+                    cachedAudioReady -> 1f
                     audioState.isBuffering -> 0.35f
-                    audioState.isPlaying -> audioState.playProgress.coerceIn(0f, 1f).coerceAtLeast(0.08f)
-                    cachedAudioReady || audioState.resolvedDurationMs > 0L -> 1f
+                    audioState.resolvedDurationMs > 0L -> 1f
                     else -> 0.06f
                 }
-                val progressForegroundColor = if (indicatorProgress >= 0.999f && !audioState.isBuffering) {
+                val progressForegroundColor = if (indicatorProgress >= 0.999f) {
                     Color(0xFF34C759)
                 } else {
                     Color(0xFF3B82F6)
                 }
-                val progressBackgroundColor = if (indicatorProgress >= 0.999f && !audioState.isBuffering) {
+                val progressBackgroundColor = if (indicatorProgress >= 0.999f) {
                     Color(0x5534C759)
                 } else {
                     Color(0x553B82F6)

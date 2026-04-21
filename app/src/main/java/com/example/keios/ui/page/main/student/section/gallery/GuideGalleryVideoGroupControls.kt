@@ -87,18 +87,18 @@ internal fun GuideGalleryVideoGroupHeaderActions(
     }
 
     if (displayMediaUrl.isNotBlank()) {
+        // Header indicator represents readiness/cache status, not playback progress.
         val indicatorProgress = when {
-            videoInlineBuffering -> 0.35f
-            videoInlineExpanded && videoInlinePlaying -> 0.72f
             isVideoCached -> 1f
+            videoInlineBuffering -> 0.35f
             else -> 0.08f
         }
-        val progressForegroundColor = if (isVideoCached && !videoInlineBuffering) {
+        val progressForegroundColor = if (isVideoCached) {
             Color(0xFF34C759)
         } else {
             Color(0xFF3B82F6)
         }
-        val progressBackgroundColor = if (isVideoCached && !videoInlineBuffering) {
+        val progressBackgroundColor = if (isVideoCached) {
             Color(0x5534C759)
         } else {
             Color(0x553B82F6)
