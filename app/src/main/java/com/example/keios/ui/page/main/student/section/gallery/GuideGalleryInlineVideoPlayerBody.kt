@@ -40,7 +40,10 @@ internal fun GuideInlineVideoPreview(
             GuideRemoteImageAdaptive(
                 imageUrl = previewImageUrl,
                 progressState = previewProgressState,
-                onLoadingChanged = onPreviewLoadingChanged
+                onLoadingChanged = onPreviewLoadingChanged,
+                placeholderRatioMin = 16f / 9f,
+                placeholderRatioMax = 16f / 9f,
+                showLoadingIndicator = true
             )
         }
     } else {

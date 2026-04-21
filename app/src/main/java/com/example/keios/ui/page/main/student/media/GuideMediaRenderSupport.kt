@@ -4,7 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +30,9 @@ import com.example.keios.ui.page.main.student.fetch.normalizeGuideUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal fun normalizeGuideMediaSource(raw: String): String {
     val value = raw.trim()
@@ -108,7 +112,10 @@ fun GuideRemoteImageAdaptive(
     modifier: Modifier = Modifier,
     maxDecodeDimension: Int = 2048,
     progressState: MutableStateFlow<Float>? = null,
-    onLoadingChanged: ((Boolean) -> Unit)? = null
+    onLoadingChanged: ((Boolean) -> Unit)? = null,
+    placeholderRatioMin: Float = 0.4f,
+    placeholderRatioMax: Float = 4f,
+    showLoadingIndicator: Boolean = false
 ) {
     val context = LocalContext.current
     val target = remember(imageUrl) { normalizeGuideMediaSource(imageUrl) }
@@ -219,12 +226,33 @@ fun GuideRemoteImageAdaptive(
     }
     val rendered = bitmap
     if (rendered == null) {
-        Spacer(
+        val placeholderRatio = stableRatio.coerceIn(
+            placeholderRatioMin.coerceAtLeast(0.2f),
+            placeholderRatioMax.coerceAtLeast(placeholderRatioMin.coerceAtLeast(0.2f))
+        )
+        Box(
             modifier = modifier
                 .fillMaxWidth()
-                .aspectRatio(stableRatio)
+                .aspectRatio(placeholderRatio)
+                .background(
+                    color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.36f),
+                    shape = RoundedCornerShape(14.dp)
+                )
                 .clip(RoundedCornerShape(14.dp))
-        )
+        ) {
+            if (showLoadingIndicator) {
+                CircularProgressIndicator(
+                    progress = progressState?.value?.coerceIn(0f, 1f)?.coerceAtLeast(0.06f) ?: 0.35f,
+                    size = 22.dp,
+                    strokeWidth = 2.dp,
+                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                        foregroundColor = MiuixTheme.colorScheme.primary,
+                        backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.28f)
+                    ),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
         return
     }
     val ratio = remember(rendered.width, rendered.height) {

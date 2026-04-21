@@ -100,7 +100,7 @@ internal fun BaPageContent(
     state: BaPageContentState,
     actions: BaPageContentActions,
 ) {
-    val sectionTickMs = if (listState.isScrollInProgress) 30_000L else 5_000L
+    val sectionTickMs = 1_000L
     val calendarPoolNowMs = remember(state.uiNowMs, sectionTickMs) {
         (state.uiNowMs / sectionTickMs).coerceAtLeast(0L) * sectionTickMs
     }

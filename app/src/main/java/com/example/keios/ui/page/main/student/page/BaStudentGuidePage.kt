@@ -299,6 +299,8 @@ fun BaStudentGuidePage(
         onShareSource = pageActions.shareSource,
         onRefresh = pageActions.requestRefresh
     )
+    val topBarCollapsedFraction = scrollBehavior.state.collapsedFraction.coerceIn(0f, 1f)
+    val topBarTitleAlpha = 1f - topBarCollapsedFraction
 
     Scaffold(
         modifier = Modifier
@@ -311,6 +313,7 @@ fun BaStudentGuidePage(
                 largeTitle = pageTitle,
                 scrollBehavior = scrollBehavior,
                 color = topBarMaterialBackdrop.getMiuixAppBarColor(),
+                titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = topBarTitleAlpha),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

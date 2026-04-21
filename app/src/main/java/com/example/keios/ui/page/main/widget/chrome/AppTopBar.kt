@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,12 +32,18 @@ fun AppTopBarSection(
     searchBarAnimationLabelPrefix: String = "appTopBarSearch",
     searchBarContent: (@Composable BoxScope.() -> Unit)? = null
 ) {
+    val collapsedFraction = scrollBehavior?.state?.collapsedFraction ?: 0f
+    val titleAlpha by animateFloatAsState(
+        targetValue = 1f - collapsedFraction.coerceIn(0f, 1f),
+        label = "appTopBarTitleAlpha"
+    )
     Column(modifier = modifier) {
         TopAppBar(
             title = title,
             largeTitle = largeTitle,
             scrollBehavior = scrollBehavior,
             color = color,
+            titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = titleAlpha),
             navigationIcon = navigationIcon ?: {},
             actions = actions
         )
