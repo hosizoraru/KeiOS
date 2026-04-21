@@ -141,7 +141,6 @@ internal fun HomePageControlSheet(
                         }
                     }
             }
-            SheetDescriptionText(text = visiblePagesDesc)
             SheetSectionTitle(visibleCardsTitle)
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetControlRow(label = homeCardMcp) {
@@ -169,6 +168,7 @@ internal fun HomePageControlSheet(
                     )
                 }
             }
+            SheetDescriptionText(text = visiblePagesDesc)
             SheetDescriptionText(text = visibleCardsDesc)
         }
     }

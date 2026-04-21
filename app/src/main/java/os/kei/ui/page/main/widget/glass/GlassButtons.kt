@@ -284,7 +284,7 @@ fun GlassTextButton(
     textMaxLines: Int = Int.MAX_VALUE,
     textOverflow: TextOverflow = TextOverflow.Clip,
     textSoftWrap: Boolean = true,
-    pressScaleEnabled: Boolean = true,
+    pressScaleEnabled: Boolean = false,
     pressOverlayEnabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
@@ -318,17 +318,10 @@ fun GlassTextButton(
     } else {
         Modifier
     }
-    val variantDisablesPressScale = when (variant) {
-        GlassVariant.SheetAction,
-        GlassVariant.SheetPrimaryAction,
-        GlassVariant.SheetDangerAction -> true
-        else -> false
-    }
-    val resolvedPressScaleEnabled = pressScaleEnabled && !variantDisablesPressScale
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by appMotionFloatState(
-        targetValue = if (enabled && isPressed && resolvedPressScaleEnabled) {
+        targetValue = if (enabled && isPressed && pressScaleEnabled) {
             AppInteractiveTokens.pressedScale
         } else {
             1f
