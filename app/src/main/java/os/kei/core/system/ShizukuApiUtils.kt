@@ -1,6 +1,8 @@
 package os.kei.core.system
 
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
 import os.kei.core.log.AppLogger
 import kotlinx.coroutines.suspendCancellableCoroutine
 import rikka.shizuku.Shizuku
@@ -26,6 +28,7 @@ class ShizukuApiUtils(
 
     private var statusCallback: ((String) -> Unit)? = null
     private var cachedNewProcessMethod: Method? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val binderReceivedListener = Shizuku.OnBinderReceivedListener {
         publishStatus(currentStatus())
@@ -369,7 +372,14 @@ class ShizukuApiUtils(
     }
 
     private fun publishStatus(message: String) {
-        statusCallback?.invoke(message)
+        val callback = statusCallback ?: return
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            callback(message)
+        } else {
+            mainHandler.post {
+                statusCallback?.invoke(message)
+            }
+        }
     }
 
     companion object {

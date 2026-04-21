@@ -6,8 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -40,6 +45,7 @@ import os.kei.ui.page.main.settings.support.rememberSettingsPermissionKeepAliveC
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import android.widget.Toast
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -95,6 +101,9 @@ fun SettingsPage(
     val enabledCardColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
     val disabledCardColor = Color(0x2264748B)
     val scope = rememberCoroutineScope()
+    val latestNotificationPermissionGranted = rememberUpdatedState(notificationPermissionGranted)
+    val latestShizukuStatus = rememberUpdatedState(shizukuStatus)
+    var shizukuRefreshToken by remember { mutableIntStateOf(0) }
 
     val pageUiState = rememberSettingsPageUiState()
     val backgroundController = rememberSettingsBackgroundController(
@@ -116,14 +125,14 @@ fun SettingsPage(
         context = context,
         shizukuApiUtils = shizukuApiUtils
     )
-    DisposableEffect(lifecycleOwner, batteryOptimizationController) {
+    DisposableEffect(lifecycleOwner, batteryOptimizationController, permissionKeepAliveController) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 batteryOptimizationController.refresh()
                 scope.launch {
                     permissionKeepAliveController.refresh(
-                        notificationPermissionGranted = notificationPermissionGranted,
-                        shizukuStatus = shizukuStatus
+                        notificationPermissionGranted = latestNotificationPermissionGranted.value,
+                        shizukuStatus = latestShizukuStatus.value
                     )
                 }
             }
@@ -138,6 +147,16 @@ fun SettingsPage(
             notificationPermissionGranted = notificationPermissionGranted,
             shizukuStatus = shizukuStatus
         )
+    }
+    LaunchedEffect(shizukuRefreshToken) {
+        if (shizukuRefreshToken <= 0) return@LaunchedEffect
+        repeat(8) {
+            permissionKeepAliveController.refresh(
+                notificationPermissionGranted = latestNotificationPermissionGranted.value,
+                shizukuStatus = latestShizukuStatus.value
+            )
+            delay(400)
+        }
     }
     val sectionContracts = rememberSettingsSectionContractBundle(
         notificationPermissionGranted = notificationPermissionGranted,
@@ -155,6 +174,9 @@ fun SettingsPage(
         superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
         ignoringBatteryOptimizations = batteryOptimizationController.ignoringBatteryOptimizations,
         batteryOptimizationActionAvailable = batteryOptimizationController.requestActionAvailable,
+        oemAutoStartState = permissionKeepAliveController.oemAutoStartState,
+        oemAutoStartVendorLabel = permissionKeepAliveController.oemAutoStartVendorLabel,
+        oemAutoStartActionAvailable = permissionKeepAliveController.oemAutoStartActionAvailable,
         appListAccessMode = permissionKeepAliveController.appListAccessMode,
         appListDetectedCount = permissionKeepAliveController.appListDetectedCount,
         appListSettingsActionAvailable = permissionKeepAliveController.appListSettingsActionAvailable,
@@ -193,6 +215,16 @@ fun SettingsPage(
                 ).show()
             }
         },
+        onOpenOemAutoStartSettings = {
+            val opened = permissionKeepAliveController.openOemAutoStartSettings()
+            if (!opened) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_oem_autostart_toast_open_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        },
         onOpenAppListPermissionSettings = {
             val opened = permissionKeepAliveController.openAppListPermissionSettings()
             if (!opened) {
@@ -203,7 +235,10 @@ fun SettingsPage(
                 ).show()
             }
         },
-        onCheckOrRequestShizuku = onCheckOrRequestShizuku,
+        onCheckOrRequestShizuku = {
+            shizukuRefreshToken += 1
+            onCheckOrRequestShizuku()
+        },
         onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged
     )
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.IntRect
 import os.kei.core.prefs.AppThemeMode
 import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
+import os.kei.ui.page.main.settings.support.SettingsOemAutoStartState
 
 @Immutable
 internal data class SettingsPermissionKeepAliveSectionState(
@@ -12,6 +13,9 @@ internal data class SettingsPermissionKeepAliveSectionState(
     val notificationSettingsActionAvailable: Boolean,
     val ignoringBatteryOptimizations: Boolean,
     val batteryOptimizationActionAvailable: Boolean,
+    val oemAutoStartState: SettingsOemAutoStartState,
+    val oemAutoStartVendorLabel: String,
+    val oemAutoStartActionAvailable: Boolean,
     val appListAccessMode: SettingsAppListAccessMode,
     val appListDetectedCount: Int,
     val appListSettingsActionAvailable: Boolean,
@@ -23,6 +27,7 @@ internal data class SettingsPermissionKeepAliveSectionActions(
     val onRequestNotificationPermission: () -> Unit,
     val onOpenNotificationSettings: () -> Unit,
     val onOpenBatteryOptimizationSettings: () -> Unit,
+    val onOpenOemAutoStartSettings: () -> Unit,
     val onOpenAppListPermissionSettings: () -> Unit,
     val onCheckOrRequestShizuku: () -> Unit
 )

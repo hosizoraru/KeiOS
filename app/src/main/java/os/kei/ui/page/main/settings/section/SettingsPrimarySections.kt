@@ -14,6 +14,7 @@ import os.kei.ui.page.main.os.osLucideCopyIcon
 import os.kei.ui.page.main.settings.support.SettingsActionItem
 import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
+import os.kei.ui.page.main.settings.support.SettingsOemAutoStartState
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -28,6 +29,7 @@ internal fun SettingsPermissionKeepAliveSection(
 ) {
     val permissionsActive = state.notificationsEnabled ||
         state.ignoringBatteryOptimizations ||
+        state.oemAutoStartState == SettingsOemAutoStartState.Allowed ||
         state.shizukuGranted ||
         state.appListAccessMode != SettingsAppListAccessMode.Restricted
     SettingsGroupCard(
@@ -98,6 +100,70 @@ internal fun SettingsPermissionKeepAliveSection(
                     enabled = state.batteryOptimizationActionAvailable,
                     onClick = actions.onOpenBatteryOptimizationSettings
                 )
+            }
+        )
+        SettingsActionItem(
+            title = stringResource(R.string.settings_oem_autostart_title),
+            summary = when (state.oemAutoStartState) {
+                SettingsOemAutoStartState.Allowed -> {
+                    stringResource(
+                        R.string.settings_oem_autostart_summary_allowed,
+                        state.oemAutoStartVendorLabel
+                    )
+                }
+                SettingsOemAutoStartState.Restricted -> {
+                    stringResource(
+                        R.string.settings_oem_autostart_summary_restricted,
+                        state.oemAutoStartVendorLabel
+                    )
+                }
+                SettingsOemAutoStartState.Unknown -> {
+                    stringResource(
+                        R.string.settings_oem_autostart_summary_unknown,
+                        state.oemAutoStartVendorLabel
+                    )
+                }
+                SettingsOemAutoStartState.Unsupported -> {
+                    stringResource(R.string.settings_oem_autostart_summary_unsupported)
+                }
+            },
+            infoKey = stringResource(R.string.settings_permissions_info_status),
+            infoValue = when (state.oemAutoStartState) {
+                SettingsOemAutoStartState.Allowed -> {
+                    stringResource(
+                        R.string.settings_oem_autostart_status_allowed,
+                        state.oemAutoStartVendorLabel
+                    )
+                }
+                SettingsOemAutoStartState.Restricted -> {
+                    stringResource(
+                        R.string.settings_oem_autostart_status_restricted,
+                        state.oemAutoStartVendorLabel
+                    )
+                }
+                SettingsOemAutoStartState.Unknown -> {
+                    stringResource(
+                        R.string.settings_oem_autostart_status_unknown,
+                        state.oemAutoStartVendorLabel
+                    )
+                }
+                SettingsOemAutoStartState.Unsupported -> {
+                    stringResource(R.string.settings_oem_autostart_status_unsupported)
+                }
+            },
+            trailing = {
+                if (state.oemAutoStartActionAvailable) {
+                    GlassTextButton(
+                        backdrop = null,
+                        variant = GlassVariant.Compact,
+                        text = if (state.oemAutoStartState == SettingsOemAutoStartState.Allowed) {
+                            stringResource(R.string.common_open)
+                        } else {
+                            stringResource(R.string.settings_oem_autostart_action_request)
+                        },
+                        onClick = actions.onOpenOemAutoStartSettings
+                    )
+                }
             }
         )
         SettingsActionItem(

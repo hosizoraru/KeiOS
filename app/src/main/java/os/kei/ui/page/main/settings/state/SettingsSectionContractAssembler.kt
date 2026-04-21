@@ -16,6 +16,7 @@ import os.kei.ui.page.main.settings.section.SettingsNotifySectionState
 import os.kei.ui.page.main.settings.section.SettingsVisualSectionActions
 import os.kei.ui.page.main.settings.section.SettingsVisualSectionState
 import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
+import os.kei.ui.page.main.settings.support.SettingsOemAutoStartState
 
 internal data class SettingsSectionContractBundle(
     val permissionKeepAliveState: SettingsPermissionKeepAliveSectionState,
@@ -49,6 +50,9 @@ internal fun rememberSettingsSectionContractBundle(
     superIslandBypassRestrictionEnabled: Boolean,
     ignoringBatteryOptimizations: Boolean,
     batteryOptimizationActionAvailable: Boolean,
+    oemAutoStartState: SettingsOemAutoStartState,
+    oemAutoStartVendorLabel: String,
+    oemAutoStartActionAvailable: Boolean,
     appListAccessMode: SettingsAppListAccessMode,
     appListDetectedCount: Int,
     appListSettingsActionAvailable: Boolean,
@@ -69,6 +73,7 @@ internal fun rememberSettingsSectionContractBundle(
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
     onOpenBatteryOptimizationSettings: () -> Unit,
+    onOpenOemAutoStartSettings: () -> Unit,
     onOpenAppListPermissionSettings: () -> Unit,
     onCheckOrRequestShizuku: () -> Unit,
     onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit
@@ -79,6 +84,9 @@ internal fun rememberSettingsSectionContractBundle(
         notificationSettingsActionAvailable,
         ignoringBatteryOptimizations,
         batteryOptimizationActionAvailable,
+        oemAutoStartState,
+        oemAutoStartVendorLabel,
+        oemAutoStartActionAvailable,
         appListAccessMode,
         appListDetectedCount,
         appListSettingsActionAvailable,
@@ -91,6 +99,9 @@ internal fun rememberSettingsSectionContractBundle(
             notificationSettingsActionAvailable = notificationSettingsActionAvailable,
             ignoringBatteryOptimizations = ignoringBatteryOptimizations,
             batteryOptimizationActionAvailable = batteryOptimizationActionAvailable,
+            oemAutoStartState = oemAutoStartState,
+            oemAutoStartVendorLabel = oemAutoStartVendorLabel,
+            oemAutoStartActionAvailable = oemAutoStartActionAvailable,
             appListAccessMode = appListAccessMode,
             appListDetectedCount = appListDetectedCount,
             appListSettingsActionAvailable = appListSettingsActionAvailable,
@@ -102,6 +113,7 @@ internal fun rememberSettingsSectionContractBundle(
         onRequestNotificationPermission,
         onOpenNotificationSettings,
         onOpenBatteryOptimizationSettings,
+        onOpenOemAutoStartSettings,
         onOpenAppListPermissionSettings,
         onCheckOrRequestShizuku
     ) {
@@ -109,6 +121,7 @@ internal fun rememberSettingsSectionContractBundle(
             onRequestNotificationPermission = onRequestNotificationPermission,
             onOpenNotificationSettings = onOpenNotificationSettings,
             onOpenBatteryOptimizationSettings = onOpenBatteryOptimizationSettings,
+            onOpenOemAutoStartSettings = onOpenOemAutoStartSettings,
             onOpenAppListPermissionSettings = onOpenAppListPermissionSettings,
             onCheckOrRequestShizuku = onCheckOrRequestShizuku
         )
