@@ -32,6 +32,7 @@ internal fun MainScreenNavHost(
     packageInfo: PackageInfo?,
     onCheckOrRequestShizuku: () -> Unit,
     notificationPermissionGranted: Boolean,
+    onRequestNotificationPermission: () -> Unit,
     mcpServerManager: McpServerManager,
     appThemeMode: AppThemeMode,
     onAppThemeModeChanged: (AppThemeMode) -> Unit
@@ -63,6 +64,8 @@ internal fun MainScreenNavHost(
         }
         entry<KeiosRoute.Settings> {
             SettingsPage(
+                notificationPermissionGranted = notificationPermissionGranted,
+                onRequestNotificationPermission = onRequestNotificationPermission,
                 liquidBottomBarEnabled = prefsState.liquidBottomBarEnabled,
                 onLiquidBottomBarChanged = prefsState::updateLiquidBottomBarEnabled,
                 liquidActionBarLayeredStyleEnabled = prefsState.liquidActionBarLayeredStyleEnabled,
@@ -93,6 +96,9 @@ internal fun MainScreenNavHost(
                 onTextCopyCapabilityExpandedChanged = prefsState::updateTextCopyCapabilityExpanded,
                 cacheDiagnosticsEnabled = prefsState.cacheDiagnosticsEnabled,
                 onCacheDiagnosticsChanged = prefsState::updateCacheDiagnosticsEnabled,
+                shizukuStatus = pagerCoordinator.shizukuStatus,
+                onCheckOrRequestShizuku = onCheckOrRequestShizuku,
+                shizukuApiUtils = pagerCoordinator.shizukuApiUtils,
                 appThemeMode = appThemeMode,
                 onAppThemeModeChanged = onAppThemeModeChanged,
                 onBack = { navigator.pop() }

@@ -116,6 +116,7 @@ fun MainScreen(
         packageInfo = currentPackageInfo,
         onCheckOrRequestShizuku = currentOnCheckOrRequestShizuku,
         notificationPermissionGranted = currentNotificationPermissionGranted,
+        onRequestNotificationPermission = onRequestNotificationPermission,
         mcpServerManager = mcpServerManager,
         appThemeMode = appThemeMode,
         onAppThemeModeChanged = currentOnAppThemeModeChanged,

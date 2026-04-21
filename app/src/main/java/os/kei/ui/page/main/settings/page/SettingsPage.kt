@@ -5,7 +5,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -17,6 +19,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import os.kei.R
 import os.kei.core.prefs.AppThemeMode
+import os.kei.core.system.ShizukuApiUtils
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.settings.section.SettingsAnimationSection
 import os.kei.ui.page.main.settings.section.SettingsBackgroundSection
@@ -24,6 +27,7 @@ import os.kei.ui.page.main.settings.section.SettingsCacheSection
 import os.kei.ui.page.main.settings.section.SettingsComponentEffectsSection
 import os.kei.ui.page.main.settings.section.SettingsLogSection
 import os.kei.ui.page.main.settings.section.SettingsNotifySection
+import os.kei.ui.page.main.settings.section.SettingsPermissionKeepAliveSection
 import os.kei.ui.page.main.settings.section.SettingsCopySection
 import os.kei.ui.page.main.settings.section.SettingsVisualSection
 import os.kei.ui.page.main.settings.state.rememberSettingsBackgroundController
@@ -32,9 +36,11 @@ import os.kei.ui.page.main.settings.state.rememberSettingsLogController
 import os.kei.ui.page.main.settings.state.rememberSettingsPageUiState
 import os.kei.ui.page.main.settings.state.rememberSettingsSectionContractBundle
 import os.kei.ui.page.main.settings.support.rememberSettingsBatteryOptimizationController
+import os.kei.ui.page.main.settings.support.rememberSettingsPermissionKeepAliveController
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -44,6 +50,8 @@ internal val LocalSettingsLiquidGlassSwitchEnabled = staticCompositionLocalOf { 
 
 @Composable
 fun SettingsPage(
+    notificationPermissionGranted: Boolean,
+    onRequestNotificationPermission: () -> Unit,
     liquidBottomBarEnabled: Boolean,
     onLiquidBottomBarChanged: (Boolean) -> Unit,
     liquidActionBarLayeredStyleEnabled: Boolean,
@@ -74,6 +82,9 @@ fun SettingsPage(
     onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit,
     cacheDiagnosticsEnabled: Boolean,
     onCacheDiagnosticsChanged: (Boolean) -> Unit,
+    shizukuStatus: String,
+    onCheckOrRequestShizuku: () -> Unit,
+    shizukuApiUtils: ShizukuApiUtils,
     appThemeMode: AppThemeMode,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     onBack: () -> Unit
@@ -83,6 +94,7 @@ fun SettingsPage(
     val settingsTitle = stringResource(R.string.settings_title)
     val enabledCardColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
     val disabledCardColor = Color(0x2264748B)
+    val scope = rememberCoroutineScope()
 
     val pageUiState = rememberSettingsPageUiState()
     val backgroundController = rememberSettingsBackgroundController(
@@ -100,10 +112,20 @@ fun SettingsPage(
         cacheDiagnosticsEnabled = cacheDiagnosticsEnabled
     )
     val batteryOptimizationController = rememberSettingsBatteryOptimizationController(context)
+    val permissionKeepAliveController = rememberSettingsPermissionKeepAliveController(
+        context = context,
+        shizukuApiUtils = shizukuApiUtils
+    )
     DisposableEffect(lifecycleOwner, batteryOptimizationController) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 batteryOptimizationController.refresh()
+                scope.launch {
+                    permissionKeepAliveController.refresh(
+                        notificationPermissionGranted = notificationPermissionGranted,
+                        shizukuStatus = shizukuStatus
+                    )
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -111,7 +133,16 @@ fun SettingsPage(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+    LaunchedEffect(notificationPermissionGranted, shizukuStatus) {
+        permissionKeepAliveController.refresh(
+            notificationPermissionGranted = notificationPermissionGranted,
+            shizukuStatus = shizukuStatus
+        )
+    }
     val sectionContracts = rememberSettingsSectionContractBundle(
+        notificationPermissionGranted = notificationPermissionGranted,
+        notificationsEnabled = permissionKeepAliveController.notificationsEnabled,
+        notificationSettingsActionAvailable = permissionKeepAliveController.notificationSettingsActionAvailable,
         preloadingEnabled = preloadingEnabled,
         homeIconHdrEnabled = homeIconHdrEnabled,
         appThemeMode = appThemeMode,
@@ -124,8 +155,24 @@ fun SettingsPage(
         superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
         ignoringBatteryOptimizations = batteryOptimizationController.ignoringBatteryOptimizations,
         batteryOptimizationActionAvailable = batteryOptimizationController.requestActionAvailable,
+        appListAccessMode = permissionKeepAliveController.appListAccessMode,
+        appListDetectedCount = permissionKeepAliveController.appListDetectedCount,
+        appListSettingsActionAvailable = permissionKeepAliveController.appListSettingsActionAvailable,
+        shizukuGranted = permissionKeepAliveController.shizukuGranted,
+        shizukuStatusText = permissionKeepAliveController.shizukuStatusText,
         textCopyCapabilityExpanded = textCopyCapabilityExpanded,
         pageUiState = pageUiState,
+        onRequestNotificationPermission = onRequestNotificationPermission,
+        onOpenNotificationSettings = {
+            val opened = permissionKeepAliveController.openNotificationSettings()
+            if (!opened) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_notification_permission_toast_open_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        },
         onPreloadingEnabledChanged = onPreloadingEnabledChanged,
         onHomeIconHdrChanged = onHomeIconHdrChanged,
         onAppThemeModeChanged = onAppThemeModeChanged,
@@ -146,6 +193,17 @@ fun SettingsPage(
                 ).show()
             }
         },
+        onOpenAppListPermissionSettings = {
+            val opened = permissionKeepAliveController.openAppListPermissionSettings()
+            if (!opened) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_app_list_access_toast_open_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        },
+        onCheckOrRequestShizuku = onCheckOrRequestShizuku,
         onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged
     )
 
@@ -178,6 +236,14 @@ fun SettingsPage(
                     .nestedScroll(scrollBehavior.nestedScrollConnection),
                 sectionSpacing = 12.dp
             ) {
+                item {
+                    SettingsPermissionKeepAliveSection(
+                        state = sectionContracts.permissionKeepAliveState,
+                        actions = sectionContracts.permissionKeepAliveActions,
+                        enabledCardColor = enabledCardColor,
+                        disabledCardColor = disabledCardColor
+                    )
+                }
                 item {
                     SettingsVisualSection(
                         state = sectionContracts.visualState,

@@ -9,12 +9,17 @@ import os.kei.ui.page.main.settings.section.SettingsComponentEffectsSectionActio
 import os.kei.ui.page.main.settings.section.SettingsComponentEffectsSectionState
 import os.kei.ui.page.main.settings.section.SettingsCopySectionActions
 import os.kei.ui.page.main.settings.section.SettingsCopySectionState
+import os.kei.ui.page.main.settings.section.SettingsPermissionKeepAliveSectionActions
+import os.kei.ui.page.main.settings.section.SettingsPermissionKeepAliveSectionState
 import os.kei.ui.page.main.settings.section.SettingsNotifySectionActions
 import os.kei.ui.page.main.settings.section.SettingsNotifySectionState
 import os.kei.ui.page.main.settings.section.SettingsVisualSectionActions
 import os.kei.ui.page.main.settings.section.SettingsVisualSectionState
+import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
 
 internal data class SettingsSectionContractBundle(
+    val permissionKeepAliveState: SettingsPermissionKeepAliveSectionState,
+    val permissionKeepAliveActions: SettingsPermissionKeepAliveSectionActions,
     val visualState: SettingsVisualSectionState,
     val visualActions: SettingsVisualSectionActions,
     val animationState: SettingsAnimationSectionState,
@@ -29,6 +34,9 @@ internal data class SettingsSectionContractBundle(
 
 @Composable
 internal fun rememberSettingsSectionContractBundle(
+    notificationPermissionGranted: Boolean,
+    notificationsEnabled: Boolean,
+    notificationSettingsActionAvailable: Boolean,
     preloadingEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
     appThemeMode: AppThemeMode,
@@ -41,8 +49,15 @@ internal fun rememberSettingsSectionContractBundle(
     superIslandBypassRestrictionEnabled: Boolean,
     ignoringBatteryOptimizations: Boolean,
     batteryOptimizationActionAvailable: Boolean,
+    appListAccessMode: SettingsAppListAccessMode,
+    appListDetectedCount: Int,
+    appListSettingsActionAvailable: Boolean,
+    shizukuGranted: Boolean,
+    shizukuStatusText: String,
     textCopyCapabilityExpanded: Boolean,
     pageUiState: SettingsPageUiState,
+    onRequestNotificationPermission: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
     onPreloadingEnabledChanged: (Boolean) -> Unit,
     onHomeIconHdrChanged: (Boolean) -> Unit,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
@@ -54,8 +69,50 @@ internal fun rememberSettingsSectionContractBundle(
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
     onOpenBatteryOptimizationSettings: () -> Unit,
+    onOpenAppListPermissionSettings: () -> Unit,
+    onCheckOrRequestShizuku: () -> Unit,
     onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit
 ): SettingsSectionContractBundle {
+    val permissionKeepAliveState = remember(
+        notificationPermissionGranted,
+        notificationsEnabled,
+        notificationSettingsActionAvailable,
+        ignoringBatteryOptimizations,
+        batteryOptimizationActionAvailable,
+        appListAccessMode,
+        appListDetectedCount,
+        appListSettingsActionAvailable,
+        shizukuGranted,
+        shizukuStatusText
+    ) {
+        SettingsPermissionKeepAliveSectionState(
+            notificationPermissionGranted = notificationPermissionGranted,
+            notificationsEnabled = notificationsEnabled,
+            notificationSettingsActionAvailable = notificationSettingsActionAvailable,
+            ignoringBatteryOptimizations = ignoringBatteryOptimizations,
+            batteryOptimizationActionAvailable = batteryOptimizationActionAvailable,
+            appListAccessMode = appListAccessMode,
+            appListDetectedCount = appListDetectedCount,
+            appListSettingsActionAvailable = appListSettingsActionAvailable,
+            shizukuGranted = shizukuGranted,
+            shizukuStatusText = shizukuStatusText
+        )
+    }
+    val permissionKeepAliveActions = remember(
+        onRequestNotificationPermission,
+        onOpenNotificationSettings,
+        onOpenBatteryOptimizationSettings,
+        onOpenAppListPermissionSettings,
+        onCheckOrRequestShizuku
+    ) {
+        SettingsPermissionKeepAliveSectionActions(
+            onRequestNotificationPermission = onRequestNotificationPermission,
+            onOpenNotificationSettings = onOpenNotificationSettings,
+            onOpenBatteryOptimizationSettings = onOpenBatteryOptimizationSettings,
+            onOpenAppListPermissionSettings = onOpenAppListPermissionSettings,
+            onCheckOrRequestShizuku = onCheckOrRequestShizuku
+        )
+    }
     val visualState = remember(
         preloadingEnabled,
         homeIconHdrEnabled,
@@ -122,26 +179,20 @@ internal fun rememberSettingsSectionContractBundle(
     }
     val notifyState = remember(
         superIslandNotificationEnabled,
-        superIslandBypassRestrictionEnabled,
-        ignoringBatteryOptimizations,
-        batteryOptimizationActionAvailable
+        superIslandBypassRestrictionEnabled
     ) {
         SettingsNotifySectionState(
             superIslandNotificationEnabled = superIslandNotificationEnabled,
-            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
-            ignoringBatteryOptimizations = ignoringBatteryOptimizations,
-            batteryOptimizationActionAvailable = batteryOptimizationActionAvailable
+            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled
         )
     }
     val notifyActions = remember(
         onSuperIslandNotificationChanged,
-        onSuperIslandBypassRestrictionChanged,
-        onOpenBatteryOptimizationSettings
+        onSuperIslandBypassRestrictionChanged
     ) {
         SettingsNotifySectionActions(
             onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
-            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
-            onOpenBatteryOptimizationSettings = onOpenBatteryOptimizationSettings
+            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged
         )
     }
     val copyState = remember(textCopyCapabilityExpanded) {
@@ -153,6 +204,8 @@ internal fun rememberSettingsSectionContractBundle(
         )
     }
     return remember(
+        permissionKeepAliveState,
+        permissionKeepAliveActions,
         visualState,
         visualActions,
         animationState,
@@ -165,6 +218,8 @@ internal fun rememberSettingsSectionContractBundle(
         copyActions
     ) {
         SettingsSectionContractBundle(
+            permissionKeepAliveState = permissionKeepAliveState,
+            permissionKeepAliveActions = permissionKeepAliveActions,
             visualState = visualState,
             visualActions = visualActions,
             animationState = animationState,

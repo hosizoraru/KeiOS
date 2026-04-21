@@ -8,14 +8,179 @@ import os.kei.core.prefs.AppThemeMode
 import os.kei.ui.page.main.os.appLucideAlertIcon
 import os.kei.ui.page.main.os.appLucideConfigIcon
 import os.kei.ui.page.main.os.appLucideLayersIcon
+import os.kei.ui.page.main.os.appLucideLockIcon
 import os.kei.ui.page.main.os.appLucideTimeIcon
 import os.kei.ui.page.main.os.osLucideCopyIcon
 import os.kei.ui.page.main.settings.support.SettingsActionItem
+import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
+
+@Composable
+internal fun SettingsPermissionKeepAliveSection(
+    state: SettingsPermissionKeepAliveSectionState,
+    actions: SettingsPermissionKeepAliveSectionActions,
+    enabledCardColor: Color,
+    disabledCardColor: Color
+) {
+    val permissionsActive = state.notificationsEnabled ||
+        state.ignoringBatteryOptimizations ||
+        state.shizukuGranted ||
+        state.appListAccessMode != SettingsAppListAccessMode.Restricted
+    SettingsGroupCard(
+        header = stringResource(R.string.settings_group_permissions_header),
+        title = stringResource(R.string.settings_group_permissions_title),
+        sectionIcon = appLucideLockIcon(),
+        containerColor = if (permissionsActive) enabledCardColor else disabledCardColor
+    ) {
+        SettingsActionItem(
+            title = stringResource(R.string.settings_notification_permission_title),
+            summary = if (state.notificationPermissionGranted && state.notificationsEnabled) {
+                stringResource(R.string.settings_notification_permission_summary_granted)
+            } else {
+                stringResource(R.string.settings_notification_permission_summary_restricted)
+            },
+            infoKey = stringResource(R.string.settings_permissions_info_status),
+            infoValue = if (state.notificationPermissionGranted && state.notificationsEnabled) {
+                stringResource(R.string.settings_notification_permission_status_granted)
+            } else {
+                stringResource(R.string.settings_notification_permission_status_restricted)
+            },
+            trailing = {
+                GlassTextButton(
+                    backdrop = null,
+                    variant = GlassVariant.Compact,
+                    text = if (state.notificationPermissionGranted) {
+                        stringResource(R.string.common_open)
+                    } else {
+                        stringResource(R.string.settings_notification_permission_action_request)
+                    },
+                    enabled = if (state.notificationPermissionGranted) {
+                        state.notificationSettingsActionAvailable
+                    } else {
+                        true
+                    },
+                    onClick = {
+                        if (state.notificationPermissionGranted) {
+                            actions.onOpenNotificationSettings()
+                        } else {
+                            actions.onRequestNotificationPermission()
+                        }
+                    }
+                )
+            }
+        )
+        SettingsActionItem(
+            title = stringResource(R.string.settings_battery_optimization_title),
+            summary = if (state.ignoringBatteryOptimizations) {
+                stringResource(R.string.settings_battery_optimization_summary_ignored)
+            } else {
+                stringResource(R.string.settings_battery_optimization_summary_restricted)
+            },
+            infoKey = stringResource(R.string.settings_battery_optimization_info_status),
+            infoValue = if (state.ignoringBatteryOptimizations) {
+                stringResource(R.string.settings_battery_optimization_status_ignored)
+            } else {
+                stringResource(R.string.settings_battery_optimization_status_restricted)
+            },
+            trailing = {
+                GlassTextButton(
+                    backdrop = null,
+                    variant = GlassVariant.Compact,
+                    text = if (state.ignoringBatteryOptimizations) {
+                        stringResource(R.string.common_open)
+                    } else {
+                        stringResource(R.string.settings_battery_optimization_action_request)
+                    },
+                    enabled = state.batteryOptimizationActionAvailable,
+                    onClick = actions.onOpenBatteryOptimizationSettings
+                )
+            }
+        )
+        SettingsActionItem(
+            title = stringResource(R.string.settings_app_list_access_title),
+            summary = when (state.appListAccessMode) {
+                SettingsAppListAccessMode.Shizuku -> {
+                    stringResource(R.string.settings_app_list_access_summary_shizuku)
+                }
+                SettingsAppListAccessMode.Direct -> {
+                    stringResource(R.string.settings_app_list_access_summary_direct)
+                }
+                SettingsAppListAccessMode.Restricted -> {
+                    stringResource(R.string.settings_app_list_access_summary_restricted)
+                }
+            },
+            infoKey = stringResource(R.string.settings_app_list_access_info_mode),
+            infoValue = when (state.appListAccessMode) {
+                SettingsAppListAccessMode.Shizuku -> {
+                    stringResource(
+                        R.string.settings_app_list_access_mode_shizuku,
+                        state.appListDetectedCount
+                    )
+                }
+                SettingsAppListAccessMode.Direct -> {
+                    stringResource(
+                        R.string.settings_app_list_access_mode_direct,
+                        state.appListDetectedCount
+                    )
+                }
+                SettingsAppListAccessMode.Restricted -> {
+                    stringResource(R.string.settings_app_list_access_mode_restricted)
+                }
+            },
+            trailing = {
+                GlassTextButton(
+                    backdrop = null,
+                    variant = GlassVariant.Compact,
+                    text = if (state.appListSettingsActionAvailable) {
+                        stringResource(R.string.common_open)
+                    } else {
+                        stringResource(R.string.common_refresh)
+                    },
+                    enabled = state.appListSettingsActionAvailable || state.shizukuGranted,
+                    onClick = {
+                        if (state.appListSettingsActionAvailable) {
+                            actions.onOpenAppListPermissionSettings()
+                        } else {
+                            actions.onCheckOrRequestShizuku()
+                        }
+                    }
+                )
+            }
+        )
+        SettingsActionItem(
+            title = stringResource(R.string.settings_shizuku_permission_title),
+            summary = if (state.shizukuGranted) {
+                stringResource(R.string.settings_shizuku_permission_summary_granted)
+            } else {
+                stringResource(R.string.settings_shizuku_permission_summary_restricted)
+            },
+            infoKey = stringResource(R.string.settings_permissions_info_status),
+            infoValue = state.shizukuStatusText.ifBlank {
+                if (state.shizukuGranted) {
+                    stringResource(R.string.settings_shizuku_permission_status_granted)
+                } else {
+                    stringResource(R.string.settings_shizuku_permission_status_restricted)
+                }
+            },
+            trailing = {
+                GlassTextButton(
+                    backdrop = null,
+                    variant = GlassVariant.Compact,
+                    text = if (state.shizukuGranted) {
+                        stringResource(R.string.common_refresh)
+                    } else {
+                        stringResource(R.string.settings_shizuku_permission_action_request)
+                    },
+                    onClick = actions.onCheckOrRequestShizuku
+                )
+            }
+        )
+    }
+}
 
 @Composable
 internal fun SettingsVisualSection(
@@ -189,8 +354,7 @@ internal fun SettingsNotifySection(
     disabledCardColor: Color
 ) {
     val notifyGroupActive = state.superIslandNotificationEnabled ||
-        state.superIslandBypassRestrictionEnabled ||
-        state.ignoringBatteryOptimizations
+        state.superIslandBypassRestrictionEnabled
     SettingsGroupCard(
         header = stringResource(R.string.settings_group_notify_header),
         title = stringResource(R.string.settings_group_notify_title),
@@ -220,34 +384,6 @@ internal fun SettingsNotifySection(
             onCheckedChange = actions.onSuperIslandBypassRestrictionChanged,
             infoKey = stringResource(R.string.common_note),
             infoValue = stringResource(R.string.settings_super_island_bypass_note)
-        )
-        SettingsActionItem(
-            title = stringResource(R.string.settings_battery_optimization_title),
-            summary = if (state.ignoringBatteryOptimizations) {
-                stringResource(R.string.settings_battery_optimization_summary_ignored)
-            } else {
-                stringResource(R.string.settings_battery_optimization_summary_restricted)
-            },
-            infoKey = stringResource(R.string.settings_battery_optimization_info_status),
-            infoValue = if (state.ignoringBatteryOptimizations) {
-                stringResource(R.string.settings_battery_optimization_status_ignored)
-            } else {
-                stringResource(R.string.settings_battery_optimization_status_restricted)
-            },
-            trailing = {
-                GlassTextButton(
-                    backdrop = null,
-                    variant = GlassVariant.Compact,
-                    text = if (state.ignoringBatteryOptimizations) {
-                        stringResource(R.string.common_open)
-                    } else {
-                        stringResource(R.string.settings_battery_optimization_action_request)
-                    },
-                    enabled = state.batteryOptimizationActionAvailable,
-                    onClick = actions.onOpenBatteryOptimizationSettings,
-                    pressOverlayEnabled = true
-                )
-            }
         )
     }
 }

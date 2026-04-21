@@ -3,6 +3,29 @@ package os.kei.ui.page.main.settings.section
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.IntRect
 import os.kei.core.prefs.AppThemeMode
+import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
+
+@Immutable
+internal data class SettingsPermissionKeepAliveSectionState(
+    val notificationPermissionGranted: Boolean,
+    val notificationsEnabled: Boolean,
+    val notificationSettingsActionAvailable: Boolean,
+    val ignoringBatteryOptimizations: Boolean,
+    val batteryOptimizationActionAvailable: Boolean,
+    val appListAccessMode: SettingsAppListAccessMode,
+    val appListDetectedCount: Int,
+    val appListSettingsActionAvailable: Boolean,
+    val shizukuGranted: Boolean,
+    val shizukuStatusText: String
+)
+
+internal data class SettingsPermissionKeepAliveSectionActions(
+    val onRequestNotificationPermission: () -> Unit,
+    val onOpenNotificationSettings: () -> Unit,
+    val onOpenBatteryOptimizationSettings: () -> Unit,
+    val onOpenAppListPermissionSettings: () -> Unit,
+    val onCheckOrRequestShizuku: () -> Unit
+)
 
 @Immutable
 internal data class SettingsVisualSectionState(
@@ -48,15 +71,12 @@ internal data class SettingsComponentEffectsSectionActions(
 @Immutable
 internal data class SettingsNotifySectionState(
     val superIslandNotificationEnabled: Boolean,
-    val superIslandBypassRestrictionEnabled: Boolean,
-    val ignoringBatteryOptimizations: Boolean,
-    val batteryOptimizationActionAvailable: Boolean
+    val superIslandBypassRestrictionEnabled: Boolean
 )
 
 internal data class SettingsNotifySectionActions(
     val onSuperIslandNotificationChanged: (Boolean) -> Unit,
-    val onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
-    val onOpenBatteryOptimizationSettings: () -> Unit
+    val onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit
 )
 
 @Immutable
