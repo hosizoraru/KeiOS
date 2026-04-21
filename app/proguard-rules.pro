@@ -5,6 +5,8 @@
 # Keep manifest component class names stable for runtime introspection in About page.
 -keepnames class com.example.keios.KeiOSApp
 -keepnames class com.example.keios.MainActivity
+-keepnames class com.example.keios.ui.page.main.github.share.GitHubShareImportActivity
+-keepnames class com.example.keios.ui.page.main.os.shell.OsShellRunnerActivity
 -keepnames class com.example.keios.ui.page.main.student.GuideVideoFullscreenActivity
 -keepnames class com.example.keios.mcp.service.McpKeepAliveService
 -keepnames class com.example.keios.feature.notification.NotificationActionReceiver
