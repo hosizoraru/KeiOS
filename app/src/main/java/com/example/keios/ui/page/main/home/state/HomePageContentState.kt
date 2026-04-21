@@ -112,7 +112,7 @@ internal fun rememberHomePageContentState(
         }.getOrDefault(homeAppVersionUnknown)
     }
     val networkModeText = if (mcpOverview.allowExternal) {
-        stringResource(R.string.mcp_network_mode_lan_accessible)
+        stringResource(R.string.mcp_network_mode_lan_short)
     } else {
         stringResource(R.string.mcp_network_mode_local_only_short)
     }
@@ -126,7 +126,11 @@ internal fun rememberHomePageContentState(
     } else {
         stringResource(R.string.home_mcp_status_stopped)
     }
-    val mcpTokenStatusText = if (mcpOverview.authTokenConfigured) homeCommonFilled else homeCommonNotUsed
+    val mcpTokenStatusText = if (mcpOverview.authTokenConfigured) {
+        mcpOverview.authTokenPreview.ifBlank { homeCommonFilled }
+    } else {
+        homeCommonNotUsed
+    }
     val githubStrategyText = when (githubOverview.strategy) {
         GitHubLookupStrategyOption.AtomFeed -> stringResource(R.string.github_overview_strategy_atom)
         GitHubLookupStrategyOption.GitHubApiToken -> stringResource(R.string.github_overview_strategy_api)

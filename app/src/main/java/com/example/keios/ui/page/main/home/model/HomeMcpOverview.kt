@@ -10,6 +10,7 @@ data class HomeMcpOverview(
     val endpointPath: String = "",
     val serverName: String = "",
     val authTokenConfigured: Boolean = false,
+    val authTokenPreview: String = "",
     val connectedClients: Int = 0,
     val allowExternal: Boolean = false,
 )

@@ -23,6 +23,13 @@ internal data class MainPagerHomeOverviewState(
     val homeBaOverview: HomeBaOverview
 )
 
+private fun buildHomeTokenPreview(token: String): String {
+    val trimmed = token.trim()
+    if (trimmed.isBlank()) return ""
+    if (trimmed.length <= 4) return trimmed
+    return "${trimmed.take(2)}…${trimmed.takeLast(2)}"
+}
+
 @Composable
 internal fun rememberMainPagerHomeOverviewState(
     mcpServerManager: McpServerManager,
@@ -39,6 +46,7 @@ internal fun rememberMainPagerHomeOverviewState(
             endpointPath = mcpUiState.endpointPath,
             serverName = mcpUiState.serverName,
             authTokenConfigured = mcpUiState.authToken.isNotBlank(),
+            authTokenPreview = buildHomeTokenPreview(mcpUiState.authToken),
             connectedClients = mcpUiState.connectedClients,
             allowExternal = mcpUiState.allowExternal
         )
