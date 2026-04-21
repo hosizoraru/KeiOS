@@ -96,6 +96,16 @@ JDK 兜底示例路径：
 chore: tune guide cache Build-CI
 ```
 
+## GitHub Actions：Benchmark-CI 手动构建 Benchmark 产物
+
+工作流路径：`.github/workflows/benchmark-ci.yml`
+
+- 触发方式：`workflow_dispatch` 手动运行。
+- 构建任务：`./gradlew :app:assembleBenchmark --stacktrace`。
+- 构建产物：自动上传 Benchmark APK 到 GitHub Actions Artifact。
+- APK 文件名格式：`KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>.apk`（UTC 时间）。
+- Artifact 名称格式：`KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`。
+
 ## GitHub 实时基准测试（GitHub Live Benchmark Test）
 
 `GitHubStrategyLiveBenchmarkTest` 是一个按需启用的联网测试，用于对比 Atom 与 API 两种策略在真实仓库上的行为。

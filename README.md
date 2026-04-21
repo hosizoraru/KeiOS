@@ -11,6 +11,7 @@ Build docs:
 - GitHub distribution is source-first during daily rapid iteration.
 - Early adopters can clone this repository and build locally with the guides above.
 - Packaged release cadence resumes after the current iteration window stabilizes.
+- `Benchmark-CI` workflow (`.github/workflows/benchmark-ci.yml`) supports manual benchmark APK builds and uploads downloadable artifacts.
 
 ## Project Snapshot
 

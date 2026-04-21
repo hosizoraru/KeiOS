@@ -97,6 +97,16 @@ Example commit message:
 chore: tune guide cache Build-CI
 ```
 
+## GitHub Actions: Benchmark-CI Manual Benchmark Artifact
+
+Workflow: `.github/workflows/benchmark-ci.yml`
+
+- Trigger: manual run via `workflow_dispatch`.
+- Build task: `./gradlew :app:assembleBenchmark --stacktrace`.
+- Job output: benchmark APK artifact uploaded to GitHub Actions.
+- APK file name format: `KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>.apk` (UTC).
+- Artifact name format: `KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`.
+
 ## GitHub Live Benchmark Test
 
 `GitHubStrategyLiveBenchmarkTest` is an opt-in network test that compares Atom vs API strategy behavior against live repositories.

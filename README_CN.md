@@ -11,6 +11,7 @@
 - 当前处于每日快速迭代阶段，GitHub 分发采用源码优先。
 - 尝鲜用户可直接 clone 本仓库，并按上方构建指南本地构建安装。
 - 安装包分发节奏会在本轮迭代窗口稳定后恢复。
+- `Benchmark-CI` 工作流（`.github/workflows/benchmark-ci.yml`）支持手动构建 Benchmark APK，并上传可下载 Artifact。
 
 ## 项目概览
 
