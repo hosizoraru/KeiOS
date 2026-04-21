@@ -150,6 +150,7 @@ internal fun BaCafeCard(
         BaInlineActionPanel(
             backdrop = backdrop,
             buttonText = "邀请券1",
+            buttonIconRes = R.drawable.cafe_icon_coupon,
             countdownText = invite1Text,
             timeText = invite1TimeText,
             accentColor = invite1Color,
@@ -161,6 +162,7 @@ internal fun BaCafeCard(
         BaInlineActionPanel(
             backdrop = backdrop,
             buttonText = "邀请券2",
+            buttonIconRes = R.drawable.cafe_icon_coupon,
             countdownText = invite2Text,
             timeText = invite2TimeText,
             accentColor = invite2Color,
