@@ -321,6 +321,7 @@ internal fun OsCardVisibilityManagerSheet(
     SnapshotWindowBottomSheet(
         show = show,
         title = title,
+        enableNestedScroll = false,
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
@@ -333,7 +334,6 @@ internal fun OsCardVisibilityManagerSheet(
         }
     ) {
         SheetContentColumn(
-            scrollable = false,
             verticalSpacing = 10.dp
         ) {
             @Composable
@@ -397,6 +397,7 @@ internal fun OsActivityVisibilityManagerSheet(
     SnapshotWindowBottomSheet(
         show = show,
         title = title,
+        enableNestedScroll = false,
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
@@ -409,7 +410,6 @@ internal fun OsActivityVisibilityManagerSheet(
         }
     ) {
         SheetContentColumn(
-            scrollable = false,
             verticalSpacing = 10.dp
         ) {
             val activityVisibilityItems = cards.map { card ->
@@ -487,7 +487,9 @@ internal fun OsActivityVisibilityManagerSheet(
                             onClick = onExportAllCards,
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
-                            variant = GlassVariant.SheetAction
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = true
                         )
                     }
                     Box(modifier = Modifier.weight(1f)) {
@@ -497,7 +499,9 @@ internal fun OsActivityVisibilityManagerSheet(
                             onClick = onImportAllCards,
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
-                            variant = GlassVariant.SheetAction
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = true
                         )
                     }
                 }

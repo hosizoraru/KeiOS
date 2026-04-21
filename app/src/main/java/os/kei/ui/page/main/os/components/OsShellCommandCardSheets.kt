@@ -151,6 +151,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
     SnapshotWindowBottomSheet(
         show = show,
         title = title,
+        enableNestedScroll = false,
         onDismissRequest = onDismissRequest,
         startAction = {
             GlassIconButton(
@@ -163,7 +164,6 @@ internal fun OsShellCommandVisibilityManagerSheet(
         }
     ) {
         SheetContentColumn(
-            scrollable = false,
             verticalSpacing = 10.dp
         ) {
             SheetSectionCard(verticalSpacing = 10.dp) {
@@ -227,7 +227,9 @@ internal fun OsShellCommandVisibilityManagerSheet(
                             onClick = onExportAllCards,
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
-                            variant = GlassVariant.SheetAction
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = true
                         )
                     }
                     Box(modifier = Modifier.weight(1f)) {
@@ -237,7 +239,9 @@ internal fun OsShellCommandVisibilityManagerSheet(
                             onClick = onImportAllCards,
                             modifier = Modifier.fillMaxWidth(),
                             enabled = !transferInProgress,
-                            variant = GlassVariant.SheetAction
+                            variant = GlassVariant.SheetAction,
+                            pressScaleEnabled = false,
+                            pressOverlayEnabled = true
                         )
                     }
                 }
