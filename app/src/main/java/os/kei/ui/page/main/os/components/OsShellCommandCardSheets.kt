@@ -214,7 +214,6 @@ internal fun OsShellCommandVisibilityManagerSheet(
                     text = stringResource(R.string.os_shell_sheet_transfer_title),
                     color = MiuixTheme.colorScheme.onBackground
                 )
-                SheetDescriptionText(text = stringResource(R.string.os_shell_sheet_transfer_desc))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -245,6 +244,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
                     }
                 }
             }
+            SheetDescriptionText(text = stringResource(R.string.os_shell_sheet_transfer_desc))
             SheetDescriptionText(text = shellHintText)
         }
     }

@@ -318,10 +318,17 @@ fun GlassTextButton(
     } else {
         Modifier
     }
+    val variantDisablesPressScale = when (variant) {
+        GlassVariant.SheetAction,
+        GlassVariant.SheetPrimaryAction,
+        GlassVariant.SheetDangerAction -> true
+        else -> false
+    }
+    val resolvedPressScaleEnabled = pressScaleEnabled && !variantDisablesPressScale
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by appMotionFloatState(
-        targetValue = if (enabled && isPressed && pressScaleEnabled) {
+        targetValue = if (enabled && isPressed && resolvedPressScaleEnabled) {
             AppInteractiveTokens.pressedScale
         } else {
             1f

@@ -48,12 +48,15 @@ internal data class SettingsComponentEffectsSectionActions(
 @Immutable
 internal data class SettingsNotifySectionState(
     val superIslandNotificationEnabled: Boolean,
-    val superIslandBypassRestrictionEnabled: Boolean
+    val superIslandBypassRestrictionEnabled: Boolean,
+    val ignoringBatteryOptimizations: Boolean,
+    val batteryOptimizationActionAvailable: Boolean
 )
 
 internal data class SettingsNotifySectionActions(
     val onSuperIslandNotificationChanged: (Boolean) -> Unit,
-    val onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit
+    val onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
+    val onOpenBatteryOptimizationSettings: () -> Unit
 )
 
 @Immutable

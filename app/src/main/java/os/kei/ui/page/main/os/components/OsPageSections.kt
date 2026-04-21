@@ -474,7 +474,6 @@ internal fun OsActivityVisibilityManagerSheet(
                     text = stringResource(R.string.os_activity_sheet_transfer_title),
                     color = MiuixTheme.colorScheme.onBackground
                 )
-                SheetDescriptionText(text = stringResource(R.string.os_activity_sheet_transfer_desc))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -505,6 +504,7 @@ internal fun OsActivityVisibilityManagerSheet(
                     }
                 }
             }
+            SheetDescriptionText(text = stringResource(R.string.os_activity_sheet_transfer_desc))
             SheetDescriptionText(text = activityHintText)
         }
     }

@@ -39,6 +39,8 @@ internal fun rememberSettingsSectionContractBundle(
     cardPressFeedbackEnabled: Boolean,
     superIslandNotificationEnabled: Boolean,
     superIslandBypassRestrictionEnabled: Boolean,
+    ignoringBatteryOptimizations: Boolean,
+    batteryOptimizationActionAvailable: Boolean,
     textCopyCapabilityExpanded: Boolean,
     pageUiState: SettingsPageUiState,
     onPreloadingEnabledChanged: (Boolean) -> Unit,
@@ -51,6 +53,7 @@ internal fun rememberSettingsSectionContractBundle(
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
+    onOpenBatteryOptimizationSettings: () -> Unit,
     onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit
 ): SettingsSectionContractBundle {
     val visualState = remember(
@@ -119,20 +122,26 @@ internal fun rememberSettingsSectionContractBundle(
     }
     val notifyState = remember(
         superIslandNotificationEnabled,
-        superIslandBypassRestrictionEnabled
+        superIslandBypassRestrictionEnabled,
+        ignoringBatteryOptimizations,
+        batteryOptimizationActionAvailable
     ) {
         SettingsNotifySectionState(
             superIslandNotificationEnabled = superIslandNotificationEnabled,
-            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled
+            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
+            ignoringBatteryOptimizations = ignoringBatteryOptimizations,
+            batteryOptimizationActionAvailable = batteryOptimizationActionAvailable
         )
     }
     val notifyActions = remember(
         onSuperIslandNotificationChanged,
-        onSuperIslandBypassRestrictionChanged
+        onSuperIslandBypassRestrictionChanged,
+        onOpenBatteryOptimizationSettings
     ) {
         SettingsNotifySectionActions(
             onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
-            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged
+            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
+            onOpenBatteryOptimizationSettings = onOpenBatteryOptimizationSettings
         )
     }
     val copyState = remember(textCopyCapabilityExpanded) {

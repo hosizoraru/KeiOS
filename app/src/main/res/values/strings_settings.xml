@@ -81,6 +81,14 @@
     <string name="settings_super_island_style_summary_enabled">启用超级岛模板（Hyper Focus）。关闭后改用 AOSP Live Update 实时通知。</string>
     <string name="settings_super_island_style_summary_disabled">当前使用 AOSP Live Update 实时通知样式。开启后恢复超级岛模板。</string>
     <string name="settings_super_island_style_scope">影响 MCP 常驻通知与 BA AP 通知的样式呈现</string>
+    <string name="settings_battery_optimization_title">电池优化</string>
+    <string name="settings_battery_optimization_summary_ignored">当前已加入忽略电池优化名单，MCP 常驻与后台通知会更稳定。</string>
+    <string name="settings_battery_optimization_summary_restricted">当前仍受系统电池优化限制，后台保活与实时通知可能更容易被系统回收。</string>
+    <string name="settings_battery_optimization_info_status">状态</string>
+    <string name="settings_battery_optimization_status_ignored">无限制 / 已忽略优化</string>
+    <string name="settings_battery_optimization_status_restricted">受系统优化限制</string>
+    <string name="settings_battery_optimization_action_request">申请无限制</string>
+    <string name="settings_battery_optimization_toast_open_failed">无法打开电池优化设置，请手动到系统设置调整</string>
     <string name="settings_copy_capability_header">文本复制</string>
     <string name="settings_copy_capability_title">复制能力扩展</string>
     <string name="settings_copy_capability_summary_enabled">完整复制模式：文本支持长按选区、拖动、全选与系统文本菜单联动，适合深度检索与引用。</string>

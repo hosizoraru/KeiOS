@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -11,6 +12,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import os.kei.R
 import os.kei.core.prefs.AppThemeMode
 import os.kei.ui.page.main.os.appLucideBackIcon
@@ -27,8 +31,10 @@ import os.kei.ui.page.main.settings.state.rememberSettingsCacheController
 import os.kei.ui.page.main.settings.state.rememberSettingsLogController
 import os.kei.ui.page.main.settings.state.rememberSettingsPageUiState
 import os.kei.ui.page.main.settings.state.rememberSettingsSectionContractBundle
+import os.kei.ui.page.main.settings.support.rememberSettingsBatteryOptimizationController
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
+import android.widget.Toast
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -73,6 +79,7 @@ fun SettingsPage(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val settingsTitle = stringResource(R.string.settings_title)
     val enabledCardColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.46f)
     val disabledCardColor = Color(0x2264748B)
@@ -92,6 +99,18 @@ fun SettingsPage(
         context = context,
         cacheDiagnosticsEnabled = cacheDiagnosticsEnabled
     )
+    val batteryOptimizationController = rememberSettingsBatteryOptimizationController(context)
+    DisposableEffect(lifecycleOwner, batteryOptimizationController) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                batteryOptimizationController.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     val sectionContracts = rememberSettingsSectionContractBundle(
         preloadingEnabled = preloadingEnabled,
         homeIconHdrEnabled = homeIconHdrEnabled,
@@ -103,6 +122,8 @@ fun SettingsPage(
         cardPressFeedbackEnabled = cardPressFeedbackEnabled,
         superIslandNotificationEnabled = superIslandNotificationEnabled,
         superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
+        ignoringBatteryOptimizations = batteryOptimizationController.ignoringBatteryOptimizations,
+        batteryOptimizationActionAvailable = batteryOptimizationController.requestActionAvailable,
         textCopyCapabilityExpanded = textCopyCapabilityExpanded,
         pageUiState = pageUiState,
         onPreloadingEnabledChanged = onPreloadingEnabledChanged,
@@ -115,6 +136,16 @@ fun SettingsPage(
         onCardPressFeedbackChanged = onCardPressFeedbackChanged,
         onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
         onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
+        onOpenBatteryOptimizationSettings = {
+            val opened = batteryOptimizationController.openBatteryOptimizationSettings()
+            if (!opened) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_battery_optimization_toast_open_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        },
         onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged
     )
 

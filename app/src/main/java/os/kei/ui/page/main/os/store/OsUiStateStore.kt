@@ -45,13 +45,13 @@ internal object OsUiStateStore {
         val kv = store
         val legacyKv = legacyStore
         return OsUiSnapshot(
-            topInfoExpanded = readBool(kv, legacyKv, KEY_TOP_INFO, LEGACY_KEY_TOP_INFO, true),
+            topInfoExpanded = readBool(kv, legacyKv, KEY_TOP_INFO, LEGACY_KEY_TOP_INFO, false),
             shellRunnerExpanded = readBool(
                 kv,
                 legacyKv,
                 KEY_SHELL_RUNNER,
                 LEGACY_KEY_SHELL_RUNNER,
-                false
+                true
             ),
             googleSystemServiceExpanded = readBool(
                 kv,
@@ -95,18 +95,18 @@ internal object OsUiStateStore {
                 LEGACY_KEY_JAVA_PROPS,
                 false
             ),
-            linuxEnvExpanded = readBool(kv, legacyKv, KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, false),
+            linuxEnvExpanded = readBool(kv, legacyKv, KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, true),
             visibleCards = OsCardVisibilityStore.loadVisibleCards()
         )
     }
 
-    fun topInfoExpanded(defaultValue: Boolean = true): Boolean =
+    fun topInfoExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_TOP_INFO, LEGACY_KEY_TOP_INFO, defaultValue)
 
     fun overviewExpanded(defaultValue: Boolean = true): Boolean =
         readBool(KEY_OVERVIEW, LEGACY_KEY_OVERVIEW, defaultValue)
 
-    fun shellRunnerExpanded(defaultValue: Boolean = false): Boolean =
+    fun shellRunnerExpanded(defaultValue: Boolean = true): Boolean =
         readBool(KEY_SHELL_RUNNER, LEGACY_KEY_SHELL_RUNNER, defaultValue)
 
     fun osSystemTableExpanded(defaultValue: Boolean = false): Boolean =
@@ -127,7 +127,7 @@ internal object OsUiStateStore {
     fun javaPropsExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_JAVA_PROPS, LEGACY_KEY_JAVA_PROPS, defaultValue)
 
-    fun linuxEnvExpanded(defaultValue: Boolean = false): Boolean =
+    fun linuxEnvExpanded(defaultValue: Boolean = true): Boolean =
         readBool(KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, defaultValue)
 
     fun setTopInfoExpanded(value: Boolean) {

@@ -13,8 +13,9 @@ import os.kei.ui.page.main.os.osLucideCopyIcon
 import os.kei.ui.page.main.settings.support.SettingsActionItem
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
-import os.kei.ui.page.main.widget.glass.AppDropdownSelector
+import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 
 @Composable
 internal fun SettingsVisualSection(
@@ -187,7 +188,9 @@ internal fun SettingsNotifySection(
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val notifyGroupActive = state.superIslandNotificationEnabled || state.superIslandBypassRestrictionEnabled
+    val notifyGroupActive = state.superIslandNotificationEnabled ||
+        state.superIslandBypassRestrictionEnabled ||
+        state.ignoringBatteryOptimizations
     SettingsGroupCard(
         header = stringResource(R.string.settings_group_notify_header),
         title = stringResource(R.string.settings_group_notify_title),
@@ -217,6 +220,35 @@ internal fun SettingsNotifySection(
             onCheckedChange = actions.onSuperIslandBypassRestrictionChanged,
             infoKey = stringResource(R.string.common_note),
             infoValue = stringResource(R.string.settings_super_island_bypass_note)
+        )
+        SettingsActionItem(
+            title = stringResource(R.string.settings_battery_optimization_title),
+            summary = if (state.ignoringBatteryOptimizations) {
+                stringResource(R.string.settings_battery_optimization_summary_ignored)
+            } else {
+                stringResource(R.string.settings_battery_optimization_summary_restricted)
+            },
+            infoKey = stringResource(R.string.settings_battery_optimization_info_status),
+            infoValue = if (state.ignoringBatteryOptimizations) {
+                stringResource(R.string.settings_battery_optimization_status_ignored)
+            } else {
+                stringResource(R.string.settings_battery_optimization_status_restricted)
+            },
+            trailing = {
+                GlassTextButton(
+                    backdrop = null,
+                    variant = GlassVariant.Compact,
+                    text = if (state.ignoringBatteryOptimizations) {
+                        stringResource(R.string.common_open)
+                    } else {
+                        stringResource(R.string.settings_battery_optimization_action_request)
+                    },
+                    enabled = state.batteryOptimizationActionAvailable,
+                    onClick = actions.onOpenBatteryOptimizationSettings,
+                    pressScaleEnabled = false,
+                    pressOverlayEnabled = true
+                )
+            }
         )
     }
 }
