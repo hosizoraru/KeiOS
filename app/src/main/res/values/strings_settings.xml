@@ -96,10 +96,12 @@
     <string name="settings_oem_autostart_summary_allowed">%1$s 已允许应用自启动，开机后常驻服务与通知恢复会更稳定。</string>
     <string name="settings_oem_autostart_summary_restricted">%1$s 当前限制应用自启动，开机后服务恢复与后台提醒可能更容易被延后。</string>
     <string name="settings_oem_autostart_summary_unknown">%1$s 提供自启动管理入口，当前状态读取失败，建议手动进入检查。</string>
+    <string name="settings_oem_autostart_summary_fallback">当前设备没有稳定的 OEM 直达入口，按钮会直接打开本应用的系统应用信息页，继续管理权限与后台行为。</string>
     <string name="settings_oem_autostart_summary_unsupported">当前设备没有单独的 OEM 自启动权限入口，应用会沿用系统默认启动策略。</string>
     <string name="settings_oem_autostart_status_allowed">%1$s / 已允许</string>
     <string name="settings_oem_autostart_status_restricted">%1$s / 受限</string>
     <string name="settings_oem_autostart_status_unknown">%1$s / 状态未知</string>
+    <string name="settings_oem_autostart_status_fallback">系统应用信息 / 可继续管理</string>
     <string name="settings_oem_autostart_status_unsupported">当前设备未提供单独入口</string>
     <string name="settings_oem_autostart_action_request">去授权</string>
     <string name="settings_oem_autostart_toast_open_failed">无法打开 OEM 自启动设置，请手动到系统安全中心检查</string>

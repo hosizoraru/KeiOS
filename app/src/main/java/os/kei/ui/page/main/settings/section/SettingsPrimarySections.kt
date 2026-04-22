@@ -123,6 +123,9 @@ internal fun SettingsPermissionKeepAliveSection(
                         state.oemAutoStartVendorLabel
                     )
                 }
+                SettingsOemAutoStartState.Fallback -> {
+                    stringResource(R.string.settings_oem_autostart_summary_fallback)
+                }
                 SettingsOemAutoStartState.Unsupported -> {
                     stringResource(R.string.settings_oem_autostart_summary_unsupported)
                 }
@@ -146,6 +149,9 @@ internal fun SettingsPermissionKeepAliveSection(
                         R.string.settings_oem_autostart_status_unknown,
                         state.oemAutoStartVendorLabel
                     )
+                }
+                SettingsOemAutoStartState.Fallback -> {
+                    stringResource(R.string.settings_oem_autostart_status_fallback)
                 }
                 SettingsOemAutoStartState.Unsupported -> {
                     stringResource(R.string.settings_oem_autostart_status_unsupported)
