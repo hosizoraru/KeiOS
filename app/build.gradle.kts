@@ -54,7 +54,7 @@ fun gitTotalCommitCountOrNull(): Int? {
     return runGitCommandOrNull("rev-list", "--count", "HEAD")?.toIntOrNull()
 }
 
-val releaseVersion = AppSemVer(major = 1, minor = 0, patch = 1)
+val releaseVersion = AppSemVer(major = 1, minor = 1, patch = 0)
 val nonReleaseVersion = releaseVersion.copy(patch = releaseVersion.patch + 1)
 val versionAnchorTag = runGitCommandOrNull("describe", "--tags", "--abbrev=0") ?: "v1.0.0"
 val gitShortHashValue = runGitCommandOrNull("rev-parse", "--short", "HEAD")
