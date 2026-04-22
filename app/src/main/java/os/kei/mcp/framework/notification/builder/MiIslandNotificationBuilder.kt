@@ -3,8 +3,11 @@ package os.kei.mcp.framework.notification.builder
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
-import android.graphics.Color
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.NotificationCompat
 import com.xzakota.hyper.notification.focus.FocusNotification
 import com.xzakota.hyper.notification.island.model.TextInfo
@@ -23,11 +26,16 @@ class MiIslandNotificationBuilder(
         val isHighlighted: Boolean = false
     )
 
+    private data class IslandIconBundle(
+        val lightIcon: Icon,
+        val darkIcon: Icon
+    )
+
     private companion object {
         private const val TAG = "McpMiIslandBuilder"
         private const val HIGHLIGHT_BG_COLOR = "#006EFF"
         private const val HIGHLIGHT_TITLE_COLOR = "#FFFFFF"
-        private const val ISLAND_ICON_RES_ID_DEFAULT = R.drawable.ic_kei_logo_island
+        private const val ISLAND_ICON_RES_ID_DEFAULT = R.drawable.ic_notification_logo
         private const val ISLAND_ICON_RES_ID_AP = R.drawable.ic_ba_ap_island_notification
         private const val ISLAND_ICON_RES_ID_BA_CAFE_VISIT = R.drawable.ic_ba_schale_island
         private const val ISLAND_ICON_RES_ID_BA_ARENA_REFRESH = R.drawable.ic_ba_schale_island
@@ -66,16 +74,16 @@ class MiIslandNotificationBuilder(
         val isBlueArchiveCafeVisit = McpNotificationPayload.isBaCafeVisitServerName(state.serverName)
         val isBlueArchiveArenaRefresh = McpNotificationPayload.isBaArenaRefreshServerName(state.serverName)
         val isBlueArchiveNotification = isBlueArchiveAp || isBlueArchiveCafeVisit || isBlueArchiveArenaRefresh
-        val lightLogoIcon = if (isBlueArchiveNotification) {
-            Icon.createWithResource(context, islandIconResId)
+        val iconBundle = if (isBlueArchiveNotification) {
+            IslandIconBundle(
+                lightIcon = Icon.createWithResource(context, islandIconResId),
+                darkIcon = Icon.createWithResource(context, islandIconResId)
+            )
         } else {
-            Icon.createWithResource(context, islandIconResId).setTint(Color.BLACK)
+            buildDefaultLauncherIslandIcons()
         }
-        val darkLogoIcon = if (isBlueArchiveNotification) {
-            Icon.createWithResource(context, islandIconResId)
-        } else {
-            Icon.createWithResource(context, islandIconResId).setTint(Color.WHITE)
-        }
+        val lightLogoIcon = iconBundle.lightIcon
+        val darkLogoIcon = iconBundle.darkIcon
         val rightTitle = if (isBlueArchiveAp && state.running) {
             "${state.port.coerceAtLeast(0)}/${state.clients.coerceAtLeast(0)}"
         } else if (isBlueArchiveCafeVisit && state.running) {
@@ -138,14 +146,30 @@ class MiIslandNotificationBuilder(
             island {
                 islandProperty = 1
                 bigIslandArea {
-                    picInfo {
-                        type = 1
-                        pic = displayIconKey
-                    }
-                    textInfo = TextInfo().apply {
-                        title = state.title(context)
-                        content = compactContent
-                        narrowFont = true
+                    if (isBlueArchiveNotification) {
+                        picInfo {
+                            type = 1
+                            pic = displayIconKey
+                        }
+                        textInfo = TextInfo().apply {
+                            title = state.title(context)
+                            content = compactContent
+                            narrowFont = true
+                        }
+                    } else {
+                        imageTextInfoLeft {
+                            type = 1
+                            picInfo {
+                                type = 1
+                                pic = displayIconKey
+                            }
+                        }
+                        imageTextInfoRight {
+                            type = 3
+                            textInfo {
+                                title = rightTitle
+                            }
+                        }
                     }
                 }
                 smallIslandArea {
@@ -197,4 +221,30 @@ class MiIslandNotificationBuilder(
     }.onFailure {
         AppLogger.e(TAG, "Build FocusNotification extras failed", it)
     }.getOrNull()
+
+    private fun buildDefaultLauncherIslandIcons(): IslandIconBundle {
+        val drawable = resolveDefaultIslandDrawable().mutate()
+        val sizePx = (context.resources.displayMetrics.density * 40f).toInt().coerceAtLeast(64)
+        val insetPx = (sizePx * 0.12f).toInt().coerceAtLeast(4)
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(
+            insetPx,
+            insetPx,
+            sizePx - insetPx,
+            sizePx - insetPx
+        )
+        drawable.draw(canvas)
+        val icon = Icon.createWithBitmap(bitmap)
+        return IslandIconBundle(
+            lightIcon = icon,
+            darkIcon = icon
+        )
+    }
+
+    private fun resolveDefaultIslandDrawable(): Drawable {
+        val appInfo = context.applicationInfo
+        return AppCompatResources.getDrawable(context, R.mipmap.ic_launcher_round)
+            ?: context.packageManager.getApplicationIcon(appInfo)
+    }
 }

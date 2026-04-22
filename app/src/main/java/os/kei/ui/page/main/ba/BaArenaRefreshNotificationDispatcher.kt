@@ -3,7 +3,6 @@ package os.kei.ui.page.main.ba
 import android.content.Context
 import android.content.pm.PackageManager
 import os.kei.R
-import os.kei.mcp.service.McpKeepAliveService
 import os.kei.mcp.notification.McpNotificationHelper
 import os.kei.mcp.notification.McpNotificationPayload
 import os.kei.ui.page.main.ba.support.baServerLabel
@@ -28,29 +27,17 @@ internal object BaArenaRefreshNotificationDispatcher {
             slotMs = slotMs
         )
 
-        runCatching {
-            McpKeepAliveService.startOrUpdate(
+        return runCatching {
+            McpNotificationHelper.notifyStandaloneEvent(
                 context = context,
-                serverName = McpNotificationPayload.BA_ARENA_REFRESH_SERVER_NAME,
-                running = true,
-                port = 0,
-                path = detailLine,
-                clients = 0,
-                forceStart = true,
                 notificationId = McpNotificationHelper.BA_ARENA_REFRESH_NOTIFICATION_ID,
-                heartbeatEnabled = false
-            )
-        }.onFailure {
-            McpNotificationHelper.notifyTest(
-                context = context,
                 serverName = McpNotificationPayload.BA_ARENA_REFRESH_SERVER_NAME,
                 running = true,
                 port = 0,
                 path = detailLine,
-                clients = 0,
+                clients = 0
             )
-        }
-        return true
+        }.isSuccess
     }
 
     private fun buildRefreshDetailLine(

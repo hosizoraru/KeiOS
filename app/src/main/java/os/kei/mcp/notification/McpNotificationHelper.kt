@@ -205,7 +205,24 @@ object McpNotificationHelper {
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val (stopPendingIntent, secondaryActionLabel) = if (isBlueArchiveNotification) {
+        val (stopPendingIntent, secondaryActionLabel) = if (secondaryActionMode == SecondaryActionMode.MARK_READ) {
+            val readIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+                action = NotificationActionReceiver.ACTION_MARK_READ
+                putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            }
+            PendingIntent.getBroadcast(
+                context,
+                210_200 + notificationId,
+                readIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ) to context.getString(
+                if (isBlueArchiveNotification) {
+                    R.string.common_mark_read
+                } else {
+                    R.string.common_acknowledge
+                }
+            )
+        } else if (isBlueArchiveNotification) {
             val dismissIntent = Intent(context, McpKeepAliveService::class.java).apply {
                 action = ACTION_DISMISS
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
@@ -216,17 +233,6 @@ object McpNotificationHelper {
                 dismissIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             ) to context.getString(R.string.common_mark_read)
-        } else if (secondaryActionMode == SecondaryActionMode.MARK_READ) {
-            val readIntent = Intent(context, NotificationActionReceiver::class.java).apply {
-                action = NotificationActionReceiver.ACTION_MARK_READ
-                putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
-            }
-            PendingIntent.getBroadcast(
-                context,
-                210_200 + notificationId,
-                readIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            ) to context.getString(R.string.common_acknowledge)
         } else {
             val toggleIntent = Intent(context, MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -276,50 +282,54 @@ object McpNotificationHelper {
             isBlueArchiveArenaRefresh -> BA_ARENA_REFRESH_NOTIFICATION_ID
             else -> TEST_NOTIFICATION_ID
         }
-        if (isBlueArchiveNotification) {
-            runCatching {
-                McpKeepAliveService.Companion.startOrUpdate(
-                    context = context,
-                    serverName = serverName,
-                    running = running,
-                    port = port,
-                    path = path,
-                    clients = clients,
-                    forceStart = true,
-                    notificationId = baNotificationId,
-                    heartbeatEnabled = false
-                )
-            }.onSuccess {
-                return
-            }.onFailure {
-                AppLogger.w(TAG, "BA notifyTest fallback to direct notify: ${it.message ?: it.javaClass.simpleName}")
-            }
-        }
+        notifyStandaloneEvent(
+            context = context,
+            notificationId = baNotificationId,
+            serverName = serverName,
+            running = runningForNotification,
+            port = port,
+            path = path,
+            clients = clients,
+            ongoing = runningForNotification,
+            onlyAlertOnce = false
+        )
+    }
+
+    fun notifyStandaloneEvent(
+        context: Context,
+        notificationId: Int,
+        serverName: String,
+        running: Boolean,
+        port: Int,
+        path: String,
+        clients: Int,
+        ongoing: Boolean = running,
+        onlyAlertOnce: Boolean = false
+    ) {
         ensureChannel(context)
         val buildResult = buildForegroundNotificationResult(
             context = context,
             serverName = serverName,
-            running = runningForNotification,
+            running = running,
             port = port,
             path = path,
             clients = clients,
-            ongoing = runningForNotification,
-            onlyAlertOnce = false,
+            ongoing = ongoing,
+            onlyAlertOnce = onlyAlertOnce,
             secondaryActionMode = SecondaryActionMode.MARK_READ,
-            notificationId = baNotificationId
+            notificationId = notificationId
         )
         val snapshot = CachedNotificationSnapshot(
             serverName = serverName,
-            running = runningForNotification,
+            running = running,
             port = port,
             path = path,
             clients = clients,
-            ongoing = runningForNotification,
-            onlyAlertOnce = false,
+            ongoing = ongoing,
+            onlyAlertOnce = onlyAlertOnce,
             style = buildResult.style,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )
-        val notificationId = baNotificationId
         cacheNotificationSnapshot(notificationId, snapshot)
         notifyWithResolvedDispatcher(
             context = context,
@@ -347,7 +357,8 @@ object McpNotificationHelper {
             path = path,
             clients = clients,
             ongoing = true,
-            onlyAlertOnce = false
+            onlyAlertOnce = false,
+            notificationId = notificationId
         )
         val snapshot = CachedNotificationSnapshot(
             serverName = serverName,
@@ -387,7 +398,8 @@ object McpNotificationHelper {
             path = path,
             clients = clients,
             ongoing = true,
-            onlyAlertOnce = true
+            onlyAlertOnce = true,
+            notificationId = notificationId
         )
         val snapshot = CachedNotificationSnapshot(
             serverName = serverName,
