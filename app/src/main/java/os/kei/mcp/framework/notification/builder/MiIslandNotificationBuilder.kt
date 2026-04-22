@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.NotificationCompat
 import com.xzakota.hyper.notification.focus.FocusNotification
 import com.xzakota.hyper.notification.island.model.TextInfo
@@ -147,16 +146,6 @@ class MiIslandNotificationBuilder(
                 islandProperty = 1
                 bigIslandArea {
                     if (isBlueArchiveNotification) {
-                        picInfo {
-                            type = 1
-                            pic = displayIconKey
-                        }
-                        textInfo = TextInfo().apply {
-                            title = state.title(context)
-                            content = compactContent
-                            narrowFont = true
-                        }
-                    } else {
                         imageTextInfoLeft {
                             type = 1
                             picInfo {
@@ -167,8 +156,22 @@ class MiIslandNotificationBuilder(
                         imageTextInfoRight {
                             type = 3
                             textInfo {
-                                title = rightTitle
+                                title = if (isBlueArchiveAp && state.running) {
+                                    rightTitle
+                                } else {
+                                    state.title(context)
+                                }
                             }
+                        }
+                    } else {
+                        picInfo {
+                            type = 1
+                            pic = displayIconKey
+                        }
+                        textInfo = TextInfo().apply {
+                            title = state.title(context)
+                            content = compactContent
+                            narrowFont = true
                         }
                     }
                 }
@@ -224,8 +227,8 @@ class MiIslandNotificationBuilder(
 
     private fun buildDefaultLauncherIslandIcons(): IslandIconBundle {
         val drawable = resolveDefaultIslandDrawable().mutate()
-        val sizePx = (context.resources.displayMetrics.density * 40f).toInt().coerceAtLeast(64)
-        val insetPx = (sizePx * 0.12f).toInt().coerceAtLeast(4)
+        val sizePx = (context.resources.displayMetrics.density * 48f).toInt().coerceAtLeast(72)
+        val insetPx = (sizePx * 0.18f).toInt().coerceAtLeast(6)
         val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable.setBounds(
@@ -235,7 +238,7 @@ class MiIslandNotificationBuilder(
             sizePx - insetPx
         )
         drawable.draw(canvas)
-        val icon = Icon.createWithBitmap(bitmap)
+        val icon = Icon.createWithAdaptiveBitmap(bitmap)
         return IslandIconBundle(
             lightIcon = icon,
             darkIcon = icon
@@ -243,8 +246,6 @@ class MiIslandNotificationBuilder(
     }
 
     private fun resolveDefaultIslandDrawable(): Drawable {
-        val appInfo = context.applicationInfo
-        return AppCompatResources.getDrawable(context, R.mipmap.ic_launcher_round)
-            ?: context.packageManager.getApplicationIcon(appInfo)
+        return context.packageManager.getApplicationIcon(context.applicationInfo)
     }
 }
