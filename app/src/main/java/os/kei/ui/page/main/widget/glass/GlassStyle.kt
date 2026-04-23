@@ -1,5 +1,7 @@
 package os.kei.ui.page.main.widget.glass
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -30,14 +32,20 @@ internal data class GlassStyle(
     val showBorder: Boolean
 )
 
+@Composable
+@ReadOnlyComposable
 internal fun glassStyle(
     isDark: Boolean,
     variant: GlassVariant,
     blurRadius: Dp?
 ): GlassStyle {
+    val reducedEffects = LocalReducedGlassEffectsEnabled.current
+    fun blur(dp: Dp): Dp = dp.reduceGlassBlurIfNeeded(reducedEffects).clampGlassBlur()
+    fun lens(dp: Dp): Dp = dp.reduceGlassLensIfNeeded(reducedEffects)
+
     return when (variant) {
         GlassVariant.Bar -> GlassStyle(
-            blur = UiPerformanceBudget.backdropBlur.clampGlassBlur(),
+            blur = blur(UiPerformanceBudget.backdropBlur),
             baseColor = Color.Transparent,
             overlayColor = Color.Transparent,
             borderColor = if (isDark) Color.White.copy(alpha = 0.10f) else Color(0xFFD9E6F8).copy(alpha = 0.78f),
@@ -45,12 +53,12 @@ internal fun glassStyle(
             highlightAlpha = if (isDark) 1f else 0.82f,
             shadowAlpha = if (isDark) 0.20f else 0.10f,
             fallbackAlpha = if (isDark) 0.40f else 0.56f,
-            lensStart = 24.dp,
-            lensEnd = 24.dp,
+            lensStart = lens(24.dp),
+            lensEnd = lens(24.dp),
             showBorder = true
         )
         GlassVariant.SheetInput -> {
-            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 6.dp else 11.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -61,8 +69,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.64f,
                     shadowAlpha = 0.10f,
                     fallbackAlpha = 0.76f,
-                    lensStart = 25.dp,
-                    lensEnd = 25.dp,
+                    lensStart = lens(25.dp),
+                    lensEnd = lens(25.dp),
                     showBorder = true
                 )
             } else {
@@ -75,14 +83,14 @@ internal fun glassStyle(
                     highlightAlpha = 0.78f,
                     shadowAlpha = 0.14f,
                     fallbackAlpha = 1f,
-                    lensStart = 27.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(27.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = true
                 )
             }
         }
         GlassVariant.SheetAction -> {
-            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 6.dp else 11.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -93,8 +101,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.66f,
                     shadowAlpha = 0.10f,
                     fallbackAlpha = 0.76f,
-                    lensStart = 25.dp,
-                    lensEnd = 25.dp,
+                    lensStart = lens(25.dp),
+                    lensEnd = lens(25.dp),
                     showBorder = true
                 )
             } else {
@@ -107,14 +115,14 @@ internal fun glassStyle(
                     highlightAlpha = 0.78f,
                     shadowAlpha = 0.16f,
                     fallbackAlpha = 1f,
-                    lensStart = 27.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(27.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = true
                 )
             }
         }
         GlassVariant.SheetDangerAction -> {
-            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 6.dp else 11.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -125,8 +133,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.68f,
                     shadowAlpha = 0.12f,
                     fallbackAlpha = 0.78f,
-                    lensStart = 27.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(27.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = true
                 )
             } else {
@@ -139,14 +147,14 @@ internal fun glassStyle(
                     highlightAlpha = 0.80f,
                     shadowAlpha = 0.15f,
                     fallbackAlpha = 1f,
-                    lensStart = 27.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(27.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = true
                 )
             }
         }
         GlassVariant.SheetPrimaryAction -> {
-            val blur = (blurRadius ?: if (isDark) 6.dp else 11.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 6.dp else 11.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -157,8 +165,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.68f,
                     shadowAlpha = 0.12f,
                     fallbackAlpha = 0.78f,
-                    lensStart = 27.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(27.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = true
                 )
             } else {
@@ -171,14 +179,14 @@ internal fun glassStyle(
                     highlightAlpha = 0.80f,
                     shadowAlpha = 0.15f,
                     fallbackAlpha = 1f,
-                    lensStart = 27.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(27.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = true
                 )
             }
         }
         GlassVariant.Floating -> {
-            val blur = (blurRadius ?: if (isDark) 8.dp else 11.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 8.dp else 11.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -189,8 +197,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.58f,
                     shadowAlpha = 0.12f,
                     fallbackAlpha = 0.68f,
-                    lensStart = 25.dp,
-                    lensEnd = 27.dp,
+                    lensStart = lens(25.dp),
+                    lensEnd = lens(27.dp),
                     showBorder = false
                 )
             } else {
@@ -203,14 +211,14 @@ internal fun glassStyle(
                     highlightAlpha = 0.70f,
                     shadowAlpha = 0.12f,
                     fallbackAlpha = 0.86f,
-                    lensStart = 26.dp,
-                    lensEnd = 28.dp,
+                    lensStart = lens(26.dp),
+                    lensEnd = lens(28.dp),
                     showBorder = false
                 )
             }
         }
         GlassVariant.Compact -> {
-            val blur = (blurRadius ?: if (isDark) 5.dp else 6.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 5.dp else 6.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -221,8 +229,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.54f,
                     shadowAlpha = 0.09f,
                     fallbackAlpha = 0.72f,
-                    lensStart = 22.dp,
-                    lensEnd = 22.dp,
+                    lensStart = lens(22.dp),
+                    lensEnd = lens(22.dp),
                     showBorder = true
                 )
             } else {
@@ -235,14 +243,14 @@ internal fun glassStyle(
                     highlightAlpha = 0.78f,
                     shadowAlpha = 0.11f,
                     fallbackAlpha = 0.92f,
-                    lensStart = 22.dp,
-                    lensEnd = 22.dp,
+                    lensStart = lens(22.dp),
+                    lensEnd = lens(22.dp),
                     showBorder = true
                 )
             }
         }
         GlassVariant.Content -> {
-            val blur = (blurRadius ?: if (isDark) 7.dp else 11.dp).clampGlassBlur()
+            val blur = blur(blurRadius ?: if (isDark) 7.dp else 11.dp)
             if (isDark) {
                 GlassStyle(
                     blur = blur,
@@ -253,8 +261,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.96f,
                     shadowAlpha = 0.18f,
                     fallbackAlpha = 0.92f,
-                    lensStart = 26.dp,
-                    lensEnd = 28.dp,
+                    lensStart = lens(26.dp),
+                    lensEnd = lens(28.dp),
                     showBorder = true
                 )
             } else {
@@ -267,8 +275,8 @@ internal fun glassStyle(
                     highlightAlpha = 0.80f,
                     shadowAlpha = 0.14f,
                     fallbackAlpha = 0.98f,
-                    lensStart = 26.dp,
-                    lensEnd = 28.dp,
+                    lensStart = lens(26.dp),
+                    lensEnd = lens(28.dp),
                     showBorder = true
                 )
             }

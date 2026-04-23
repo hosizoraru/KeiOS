@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -40,8 +41,11 @@ fun MiuixAccordionCard(
     content: @Composable () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
+    val reducedEffects = reducedGlassEffectsEnabled()
     val surface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
     val shadowColor = if (isDark) Color.Black.copy(alpha = 0.20f) else Color.Black.copy(alpha = 0.10f)
+    val blurRadius = UiPerformanceBudget.backdropBlur.reduceGlassBlurIfNeeded(reducedEffects)
+    val lensRadius = UiPerformanceBudget.backdropLens.reduceGlassLensIfNeeded(reducedEffects)
 
     Column(
         modifier = Modifier
@@ -54,8 +58,8 @@ fun MiuixAccordionCard(
                         shape = { RoundedRectangle(CardLayoutRhythm.cardCornerRadius) },
                         effects = {
                             vibrancy()
-                            blur(UiPerformanceBudget.backdropBlur.toPx())
-                            lens(UiPerformanceBudget.backdropLens.toPx(), UiPerformanceBudget.backdropLens.toPx())
+                            blur(blurRadius.toPx())
+                            lens(lensRadius.toPx(), lensRadius.toPx())
                         },
                         highlight = { Highlight.Default.copy(alpha = 1f) },
                         shadow = { Shadow.Default.copy(color = shadowColor) },
@@ -91,3 +95,7 @@ fun MiuixAccordionCard(
         }
     }
 }
+
+@Composable
+@ReadOnlyComposable
+private fun reducedGlassEffectsEnabled(): Boolean = LocalReducedGlassEffectsEnabled.current
