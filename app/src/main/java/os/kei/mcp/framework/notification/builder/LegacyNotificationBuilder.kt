@@ -11,7 +11,7 @@ class LegacyNotificationBuilder(
 ) : SessionNotificationBuilder {
 
     private companion object {
-        private const val ICON_DEFAULT = R.drawable.ic_kei_logo_color
+        private const val ICON_DEFAULT = R.drawable.ic_kei_logo_live_update
         private const val ICON_AP = R.drawable.ba_ap_icon
         private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale
         private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_schale
