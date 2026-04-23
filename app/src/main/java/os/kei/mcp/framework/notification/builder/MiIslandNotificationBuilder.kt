@@ -21,6 +21,13 @@ class MiIslandNotificationBuilder(
         val isHighlighted: Boolean = false
     )
 
+    private data class IslandPresentation(
+        val allowFloat: Boolean,
+        val showTextButtons: Boolean,
+        val rightTitle: String,
+        val rightContent: String? = null
+    )
+
     private companion object {
         private const val TAG = "McpMiIslandBuilder"
         private const val HIGHLIGHT_BG_COLOR = "#006EFF"
@@ -36,24 +43,40 @@ class MiIslandNotificationBuilder(
         val isBlueArchiveAp = McpNotificationPayload.isBaApServerName(state.serverName)
         val isBlueArchiveCafeVisit = McpNotificationPayload.isBaCafeVisitServerName(state.serverName)
         val isBlueArchiveArenaRefresh = McpNotificationPayload.isBaArenaRefreshServerName(state.serverName)
+        val isBlueArchiveNotification =
+            isBlueArchiveAp || isBlueArchiveCafeVisit || isBlueArchiveArenaRefresh
         val islandIconResId = when {
             isBlueArchiveAp -> ISLAND_ICON_RES_ID_AP
             isBlueArchiveCafeVisit -> ISLAND_ICON_RES_ID_BA_CAFE_VISIT
             isBlueArchiveArenaRefresh -> ISLAND_ICON_RES_ID_BA_ARENA_REFRESH
             else -> ISLAND_ICON_RES_ID_DEFAULT
         }
+        val shortCriticalText = resolveShortCriticalText(
+            state = state,
+            isBlueArchiveAp = isBlueArchiveAp,
+            isBlueArchiveCafeVisit = isBlueArchiveCafeVisit,
+            isBlueArchiveArenaRefresh = isBlueArchiveArenaRefresh
+        )
         val builder = NotificationCompat.Builder(context, payload.environment.channelId)
             .setSmallIcon(islandIconResId)
             .setContentTitle(state.title(context))
             .setContentText(state.content(context).ifBlank { " " })
             .setContentIntent(state.openPendingIntent)
-            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setCategory(
+                if (!isBlueArchiveNotification && state.running) {
+                    NotificationCompat.CATEGORY_SERVICE
+                } else {
+                    NotificationCompat.CATEGORY_STATUS
+                }
+            )
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(state.ongoing)
             .setOnlyAlertOnce(state.onlyAlertOnce)
             .setAutoCancel(false)
+            .setRequestPromotedOngoing(state.running || state.ongoing)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
 
+        shortCriticalText?.let(builder::setShortCriticalText)
         buildFocusExtras(payload, islandIconResId)?.let(builder::addExtras)
         return builder.build()
     }
@@ -65,6 +88,12 @@ class MiIslandNotificationBuilder(
         val isBlueArchiveArenaRefresh = McpNotificationPayload.isBaArenaRefreshServerName(state.serverName)
         val isBlueArchiveNotification =
             isBlueArchiveAp || isBlueArchiveCafeVisit || isBlueArchiveArenaRefresh
+        val presentation = resolvePresentation(
+            state = state,
+            isBlueArchiveAp = isBlueArchiveAp,
+            isBlueArchiveCafeVisit = isBlueArchiveCafeVisit,
+            isBlueArchiveArenaRefresh = isBlueArchiveArenaRefresh
+        )
         val lightLogoIcon = if (isBlueArchiveNotification) {
             Icon.createWithResource(context, islandIconResId)
         } else {
@@ -75,23 +104,6 @@ class MiIslandNotificationBuilder(
         } else {
             Icon.createWithResource(context, islandIconResId).setTint(Color.WHITE)
         }
-        val rightTitle = when {
-            isBlueArchiveAp && state.running -> {
-                "${state.port.coerceAtLeast(0)}/${state.clients.coerceAtLeast(0)}"
-            }
-
-            isBlueArchiveCafeVisit && state.running -> {
-                context.getString(R.string.ba_cafe_visit_notification_island_text)
-            }
-
-            isBlueArchiveArenaRefresh && state.running -> {
-                context.getString(R.string.ba_arena_refresh_notification_island_text)
-            }
-
-            else -> {
-                state.shortText.ifEmpty { state.title(context) }
-            }
-        }
         val actions = mutableListOf(
             IslandAction(
                 key = "mcp_action_open",
@@ -100,15 +112,13 @@ class MiIslandNotificationBuilder(
                 isHighlighted = true
             )
         ).apply {
-            if (state.running) {
-                add(
-                    IslandAction(
-                        key = "mcp_action_stop",
-                        title = state.stopActionTitle(context),
-                        pendingIntent = state.stopPendingIntent
-                    )
+            add(
+                IslandAction(
+                    key = "mcp_action_stop",
+                    title = state.stopActionTitle(context),
+                    pendingIntent = state.stopPendingIntent
                 )
-            }
+            )
         }
 
         FocusNotification.buildV3 {
@@ -117,7 +127,7 @@ class MiIslandNotificationBuilder(
             val displayIconKey = darkLogoKey
 
             islandFirstFloat = true
-            enableFloat = true
+            enableFloat = presentation.allowFloat
             updatable = true
             ticker = state.title(context)
             tickerPic = lightLogoKey
@@ -139,7 +149,10 @@ class MiIslandNotificationBuilder(
                     imageTextInfoRight {
                         type = 3
                         textInfo {
-                            title = rightTitle
+                            title = presentation.rightTitle
+                            content = presentation.rightContent
+                            narrowFont = presentation.rightTitle.length >= 6 ||
+                                (presentation.rightContent?.length ?: 0) >= 12
                         }
                     }
                 }
@@ -163,7 +176,7 @@ class MiIslandNotificationBuilder(
                 picDark = darkLogoKey
             }
 
-            if (actions.isNotEmpty()) {
+            if (presentation.showTextButtons && actions.isNotEmpty()) {
                 textButton {
                     actions.take(2).forEach { actionItem ->
                         addActionInfo {
@@ -188,4 +201,71 @@ class MiIslandNotificationBuilder(
     }.onFailure {
         AppLogger.e(TAG, "Build FocusNotification extras failed", it)
     }.getOrNull()
+
+    private fun resolvePresentation(
+        state: McpNotificationPayload,
+        isBlueArchiveAp: Boolean,
+        isBlueArchiveCafeVisit: Boolean,
+        isBlueArchiveArenaRefresh: Boolean
+    ): IslandPresentation {
+        if (isBlueArchiveAp && state.running) {
+            return IslandPresentation(
+                allowFloat = true,
+                showTextButtons = true,
+                rightTitle = "${state.port.coerceAtLeast(0)}/${state.clients.coerceAtLeast(0)}"
+            )
+        }
+        if (isBlueArchiveCafeVisit && state.running) {
+            return IslandPresentation(
+                allowFloat = true,
+                showTextButtons = true,
+                rightTitle = context.getString(R.string.ba_cafe_visit_notification_island_text)
+            )
+        }
+        if (isBlueArchiveArenaRefresh && state.running) {
+            return IslandPresentation(
+                allowFloat = true,
+                showTextButtons = true,
+                rightTitle = context.getString(R.string.ba_arena_refresh_notification_island_text)
+            )
+        }
+        if (state.running) {
+            return IslandPresentation(
+                allowFloat = false,
+                showTextButtons = false,
+                rightTitle = state.onlineText(context),
+                rightContent = resolveDefaultEndpointSummary(state)
+            )
+        }
+        return IslandPresentation(
+            allowFloat = true,
+            showTextButtons = true,
+            rightTitle = state.statusText(context)
+        )
+    }
+
+    private fun resolveShortCriticalText(
+        state: McpNotificationPayload,
+        isBlueArchiveAp: Boolean,
+        isBlueArchiveCafeVisit: Boolean,
+        isBlueArchiveArenaRefresh: Boolean
+    ): String? {
+        return when {
+            !state.running -> state.statusText(context)
+            isBlueArchiveAp -> state.shortText
+            isBlueArchiveCafeVisit || isBlueArchiveArenaRefresh -> state.onlineText(context)
+            else -> state.onlineText(context)
+        }.takeIf { it.isNotBlank() }
+    }
+
+    private fun resolveDefaultEndpointSummary(state: McpNotificationPayload): String? {
+        if (!state.running) return null
+        val path = state.path.trim().ifBlank { "/mcp" }
+        val port = state.port.coerceAtLeast(0)
+        return if (path.length <= 12) {
+            "$port $path"
+        } else {
+            port.toString()
+        }
+    }
 }
