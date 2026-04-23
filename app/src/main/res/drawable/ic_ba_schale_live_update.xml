@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:drawable="@drawable/ic_ba_schale"
-    android:insetLeft="-3dp"
+    android:insetLeft="1dp"
     android:insetTop="-4dp"
-    android:insetRight="-5dp"
+    android:insetRight="-7dp"
     android:insetBottom="-4dp" />
