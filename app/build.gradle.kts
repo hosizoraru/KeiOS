@@ -27,6 +27,24 @@ data class AppSemVer(
     }
 }
 
+fun parseSemVerTagOrNull(raw: String?): AppSemVer? {
+    val normalized = raw?.trim().orEmpty()
+    val match = Regex("""^v?(\d+)\.(\d+)\.(\d+)$""").matchEntire(normalized) ?: return null
+    val (major, minor, patch) = match.destructured
+    return AppSemVer(
+        major = major.toInt(),
+        minor = minor.toInt(),
+        patch = patch.toInt()
+    )
+}
+
+fun latestMergedSemVerTagOrNull(): String? {
+    return runGitCommandOrNull("tag", "--merged", "HEAD", "--sort=-v:refname")
+        ?.lineSequence()
+        ?.map { it.trim() }
+        ?.firstOrNull { parseSemVerTagOrNull(it) != null }
+}
+
 data class GitVersionSnapshot(
     val relativeCommitCount: Int,
     val totalCommitCount: Int,
@@ -54,9 +72,10 @@ fun gitTotalCommitCountOrNull(): Int? {
     return runGitCommandOrNull("rev-list", "--count", "HEAD")?.toIntOrNull()
 }
 
-val releaseVersion = AppSemVer(major = 1, minor = 1, patch = 0)
+val fallbackReleaseVersion = AppSemVer(major = 1, minor = 0, patch = 0)
+val versionAnchorTag = latestMergedSemVerTagOrNull() ?: "v${fallbackReleaseVersion.name}"
+val releaseVersion = parseSemVerTagOrNull(versionAnchorTag) ?: fallbackReleaseVersion
 val nonReleaseVersion = releaseVersion.copy(patch = releaseVersion.patch + 1)
-val versionAnchorTag = runGitCommandOrNull("describe", "--tags", "--abbrev=0") ?: "v1.0.0"
 val gitShortHashValue = runGitCommandOrNull("rev-parse", "--short", "HEAD")
 val gitBranchNameValue = runGitCommandOrNull("rev-parse", "--abbrev-ref", "HEAD")
 val gitDirtyValue = runGitCommandOrNull("status", "--porcelain")?.isNotBlank() ?: false
