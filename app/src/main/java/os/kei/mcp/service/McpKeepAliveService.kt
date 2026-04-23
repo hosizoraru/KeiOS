@@ -155,15 +155,13 @@ class McpKeepAliveService : Service() {
         path: String,
         clients: Int
     ): Notification {
-        return McpNotificationHelper.buildForegroundNotification(
+        return McpNotificationHelper.buildForegroundBootstrapNotification(
             context = this,
             serverName = serverName,
             running = running,
             port = port,
             path = path,
             clients = clients,
-            ongoing = true,
-            onlyAlertOnce = false,
             notificationId = currentNotificationId
         )
     }
@@ -209,7 +207,8 @@ class McpKeepAliveService : Service() {
             running = running,
             port = port,
             path = path,
-            clients = clients
+            clients = clients,
+            onlyAlertOnce = true
         )
         if (settleForeground) {
             scheduleIslandRefresh(
@@ -235,28 +234,23 @@ class McpKeepAliveService : Service() {
         islandRefreshJob = serviceScope.launch {
             // Foreground-service bookkeeping can overwrite the first island update on some
             // HyperOS builds, so we re-apply once the service is fully settled.
-            delay(350)
-            if (!canRefreshIsland(notificationId, serverName, port, path, clients)) return@launch
-            McpNotificationHelper.refreshForegroundAsIsland(
-                context = this@McpKeepAliveService,
-                notificationId = notificationId,
-                serverName = serverName,
-                running = currentRunning,
-                port = port,
-                path = path,
-                clients = clients
-            )
-            delay(850)
-            if (!canRefreshIsland(notificationId, serverName, port, path, clients)) return@launch
-            McpNotificationHelper.refreshForegroundAsIsland(
-                context = this@McpKeepAliveService,
-                notificationId = notificationId,
-                serverName = serverName,
-                running = currentRunning,
-                port = port,
-                path = path,
-                clients = clients
-            )
+            val refreshCheckpoints = longArrayOf(420L, 1_150L, 2_300L, 4_000L)
+            var elapsedMs = 0L
+            refreshCheckpoints.forEach { checkpointMs ->
+                delay((checkpointMs - elapsedMs).coerceAtLeast(0L))
+                elapsedMs = checkpointMs
+                if (!canRefreshIsland(notificationId, serverName, port, path, clients)) return@launch
+                McpNotificationHelper.refreshForegroundAsIsland(
+                    context = this@McpKeepAliveService,
+                    notificationId = notificationId,
+                    serverName = serverName,
+                    running = currentRunning,
+                    port = port,
+                    path = path,
+                    clients = clients,
+                    onlyAlertOnce = true
+                )
+            }
         }
     }
 

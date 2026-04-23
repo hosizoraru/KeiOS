@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import os.kei.MainActivity
 import os.kei.R
@@ -171,6 +172,59 @@ object McpNotificationHelper {
             onlyAlertOnce = onlyAlertOnce,
             notificationId = notificationId
         ).notification
+    }
+
+    fun buildForegroundBootstrapNotification(
+        context: Context,
+        serverName: String,
+        running: Boolean,
+        port: Int,
+        path: String,
+        clients: Int,
+        notificationId: Int = KEEPALIVE_NOTIFICATION_ID
+    ): Notification {
+        val isBlueArchiveNotification = McpNotificationPayload.isBaNotificationServerName(serverName)
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            putExtra(
+                MainActivity.EXTRA_TARGET_BOTTOM_PAGE,
+                if (isBlueArchiveNotification) {
+                    MainActivity.TARGET_BOTTOM_PAGE_BA
+                } else {
+                    MainActivity.TARGET_BOTTOM_PAGE_MCP
+                }
+            )
+        }
+        val openPendingIntent = PendingIntent.getActivity(
+            context,
+            310_100 + notificationId,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val payload = McpNotificationPayload(
+            serverName = serverName,
+            running = running,
+            port = port,
+            path = path,
+            clients = clients,
+            ongoing = true,
+            onlyAlertOnce = true,
+            openPendingIntent = openPendingIntent,
+            stopPendingIntent = openPendingIntent
+        )
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_kei_logo_live_update)
+            .setContentTitle(payload.title(context))
+            .setContentText(payload.content(context).ifBlank { " " })
+            .setContentIntent(openPendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setAutoCancel(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .build()
     }
 
     private fun buildForegroundNotificationResult(
@@ -344,7 +398,8 @@ object McpNotificationHelper {
         running: Boolean,
         port: Int,
         path: String,
-        clients: Int
+        clients: Int,
+        onlyAlertOnce: Boolean = true
     ) {
         ensureChannel(context)
         val buildResult = buildForegroundNotificationResult(
@@ -355,7 +410,7 @@ object McpNotificationHelper {
             path = path,
             clients = clients,
             ongoing = true,
-            onlyAlertOnce = false,
+            onlyAlertOnce = onlyAlertOnce,
             notificationId = notificationId
         )
         val snapshot = CachedNotificationSnapshot(
@@ -365,7 +420,7 @@ object McpNotificationHelper {
             path = path,
             clients = clients,
             ongoing = true,
-            onlyAlertOnce = false,
+            onlyAlertOnce = onlyAlertOnce,
             style = buildResult.style,
             useXiaomiMagic = buildResult.useXiaomiMagic
         )

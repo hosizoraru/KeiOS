@@ -44,6 +44,7 @@ class MiIslandNotificationBuilder(
         private const val TAG = "McpMiIslandBuilder"
         private const val HIGHLIGHT_BG_COLOR = "#006EFF"
         private const val HIGHLIGHT_TITLE_COLOR = "#FFFFFF"
+        private const val MCP_RUNNING_ACCENT_COLOR = "#1A73E8"
         private const val BA_AP_PROGRESS_COLOR = "#4DA3FF"
         private const val BA_AP_PROGRESS_TRACK_COLOR = "#374151"
         private const val BA_EVENT_ACCENT_COLOR = "#4DA3FF"
@@ -86,6 +87,7 @@ class MiIslandNotificationBuilder(
             .setCategory(
                 when {
                     isBlueArchiveAp && state.running -> NotificationCompat.CATEGORY_PROGRESS
+                    !isBlueArchiveNotification && state.running -> NotificationCompat.CATEGORY_SERVICE
                     else -> NotificationCompat.CATEGORY_STATUS
                 }
             )
@@ -102,6 +104,12 @@ class MiIslandNotificationBuilder(
                 .setColor(Color.parseColor(accentColor))
         }
         shortCriticalText?.let(builder::setShortCriticalText)
+        if (!isBlueArchiveNotification) {
+            builder.addAction(0, context.getString(R.string.common_open), state.openPendingIntent)
+            if (state.running) {
+                builder.addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
+            }
+        }
         if (presentation.showExpandedProgress) {
             builder.setProgress(100, presentation.progressPercent.coerceIn(0, 100), false)
         }
@@ -306,13 +314,13 @@ class MiIslandNotificationBuilder(
         if (state.running) {
             return IslandPresentation(
                 allowFloat = false,
-                showTextButtons = true,
+                showTextButtons = false,
                 rightTitle = state.onlineText(context),
                 notificationOngoing = state.ongoing,
-                requestPromotedOngoing = false,
+                requestPromotedOngoing = true,
                 focusUpdatable = true,
-                focusShowNotification = true,
-                rightContent = resolveDefaultEndpointSummary(state)
+                rightContent = resolveDefaultEndpointSummary(state),
+                notificationAccentColor = MCP_RUNNING_ACCENT_COLOR
             )
         }
         return IslandPresentation(
