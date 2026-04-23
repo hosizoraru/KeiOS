@@ -32,7 +32,7 @@ internal data class ModernNotificationSpec(
 internal object ModernNotificationSpecResolver {
     private const val PROGRESS_ACTIVE_COLOR = 0xFF2E7D32.toInt()
     private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
-    private const val ICON_DEFAULT = R.drawable.ic_kei_logo_notification
+    private const val ICON_DEFAULT = R.drawable.ic_kei_logo_color
     private const val ICON_AP = R.drawable.ba_ap_icon
     private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale
     private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_schale
