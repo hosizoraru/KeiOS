@@ -58,8 +58,14 @@ fun GitHubPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val isDark = isSystemInDarkTheme()
-    val backdrops = rememberMainPageBackdropSet(keyPrefix = "github")
-    val topBarColor = rememberMiuixBlurBackdrop(enableBlur = true).getMiuixAppBarColor()
+    val fullBackdropEffectsEnabled = runtime.isPageActive && !runtime.isPagerScrollInProgress
+    val backdrops = rememberMainPageBackdropSet(
+        keyPrefix = "github",
+        distinctLayers = fullBackdropEffectsEnabled
+    )
+    val topBarColor = rememberMiuixBlurBackdrop(
+        enableBlur = fullBackdropEffectsEnabled
+    ).getMiuixAppBarColor()
 
     val state = rememberGitHubPageState()
     var pendingTrackedExportContent by remember { mutableStateOf<String?>(null) }

@@ -34,7 +34,9 @@ internal data class OsPageUiContext(
 )
 
 @Composable
-internal fun rememberOsPageUiContext(): OsPageUiContext {
+internal fun rememberOsPageUiContext(
+    enableFullBackdropEffects: Boolean
+): OsPageUiContext {
     val context = LocalContext.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
@@ -42,9 +44,10 @@ internal fun rememberOsPageUiContext(): OsPageUiContext {
     val isDark = isSystemInDarkTheme()
     val backdrops = rememberMainPageBackdropSet(
         keyPrefix = "os",
-        refreshOnCompositionEnter = true
+        refreshOnCompositionEnter = true,
+        distinctLayers = enableFullBackdropEffects
     )
-    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
+    val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = enableFullBackdropEffects)
     val searchBarHideThresholdPx = with(density) { 28.dp.toPx() }
     return OsPageUiContext(
         context = context,

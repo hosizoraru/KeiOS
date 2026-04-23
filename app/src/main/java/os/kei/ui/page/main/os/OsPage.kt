@@ -47,7 +47,9 @@ fun OsPage(
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
-    val uiContext = rememberOsPageUiContext()
+    val uiContext = rememberOsPageUiContext(
+        enableFullBackdropEffects = runtime.isPageActive && !runtime.isPagerScrollInProgress
+    )
     val context = uiContext.context
     val density = uiContext.density
     val scope = uiContext.scope

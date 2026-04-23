@@ -92,7 +92,6 @@ import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop as rememberMiuixLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -121,14 +120,18 @@ fun HomePage(
     val dynamicBackgroundEnabled = shaderSupported &&
         runtime.isDataActive &&
         !runtime.isPagerScrollInProgress
+    val fullBackdropEffectsEnabled = runtime.isPageActive && !runtime.isPagerScrollInProgress
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val backdrop = rememberMiuixLayerBackdrop()
     val actionBarBackdrop = rememberActionBarBackdrop {
         drawRect(surfaceColor)
         drawContent()
     }
-    val homeCardBackdrop = rememberActionBarBackdrop {
-        drawContent()
+    val homeCardBackdrop = if (fullBackdropEffectsEnabled) {
+        rememberActionBarBackdrop {
+            drawContent()
+        }
+    } else {
+        actionBarBackdrop
     }
     val contentState = rememberHomePageContentState(
         shizukuStatus = shizukuStatus,

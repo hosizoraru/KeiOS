@@ -23,6 +23,7 @@ data class MainPageBackdropSet(
 fun rememberMainPageBackdropSet(
     keyPrefix: String,
     refreshOnCompositionEnter: Boolean = false,
+    distinctLayers: Boolean = true,
 ): MainPageBackdropSet {
     val surfaceColor = MiuixTheme.colorScheme.surface
     val instanceKeySuffix = if (refreshOnCompositionEnter) {
@@ -35,24 +36,27 @@ fun rememberMainPageBackdropSet(
     } else {
         ""
     }
-    val topBarBackdrop = key("$keyPrefix-topbar$instanceKeySuffix") {
+
+    @Composable
+    fun rememberPageBackdrop(slot: String): LayerBackdrop = key("$keyPrefix-$slot$instanceKeySuffix") {
         rememberLayerBackdrop {
             drawRect(surfaceColor)
             drawContent()
         }
     }
-    val contentBackdrop = key("$keyPrefix-content$instanceKeySuffix") {
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
+
+    if (!distinctLayers) {
+        val sharedBackdrop = rememberPageBackdrop("shared")
+        return MainPageBackdropSet(
+            topBar = sharedBackdrop,
+            content = sharedBackdrop,
+            sheet = sharedBackdrop
+        )
     }
-    val sheetBackdrop = key("$keyPrefix-sheet$instanceKeySuffix") {
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
-    }
+
+    val topBarBackdrop = rememberPageBackdrop("topbar")
+    val contentBackdrop = rememberPageBackdrop("content")
+    val sheetBackdrop = rememberPageBackdrop("sheet")
     return MainPageBackdropSet(
         topBar = topBarBackdrop,
         content = contentBackdrop,
