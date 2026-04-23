@@ -33,9 +33,9 @@ internal object ModernNotificationSpecResolver {
     private const val PROGRESS_ACTIVE_COLOR = 0xFF2E7D32.toInt()
     private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
     private const val ICON_DEFAULT = R.drawable.ic_kei_logo_live_update
-    private const val ICON_AP = R.drawable.ic_ba_ap_island_notification
-    private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale_island
-    private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_schale_island
+    private const val ICON_AP = R.drawable.ic_ba_ap_live_update
+    private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale_live_update
+    private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_schale_live_update
 
     fun resolve(state: McpNotificationPayload): ModernNotificationSpec {
         val kind = resolveKind(state.serverName)

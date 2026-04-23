@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ba_ap_icon_tight"
+    android:insetLeft="-3dp"
+    android:insetTop="-2dp"
+    android:insetRight="-3dp"
+    android:insetBottom="-2dp" />
