@@ -22,6 +22,11 @@ class GitHubPageModelsTest {
     }
 
     @Test
+    fun `format release value prefers compact tag when name carries project label`() {
+        assertEquals("1.1.0", formatReleaseValue("KeiOS v1.1.0", "v1.1.0"))
+    }
+
+    @Test
     fun `status action url only exists for real remote update targets`() {
         val preTrackedNoRemoteUpdate = VersionCheckUi(
             hasUpdate = false,

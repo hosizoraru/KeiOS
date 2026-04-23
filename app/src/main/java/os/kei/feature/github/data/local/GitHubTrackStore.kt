@@ -4,6 +4,7 @@ import os.kei.feature.github.model.GitHubCheckCacheEntry
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.feature.github.model.defaultKeiOsTrackedApp
 import com.tencent.mmkv.MMKV
 import org.json.JSONArray
 import org.json.JSONObject
@@ -60,7 +61,11 @@ object GitHubTrackStore {
     private fun kv(): MMKV = store
 
     fun load(): List<GitHubTrackedApp> {
-        val raw = kv().decodeString(KEY_ITEMS).orEmpty()
+        val store = kv()
+        if (!store.containsKey(KEY_ITEMS)) {
+            return seedDefaultTrackedItems()
+        }
+        val raw = store.decodeString(KEY_ITEMS).orEmpty()
         if (raw.isBlank()) return emptyList()
         return runCatching {
             val array = JSONArray(raw)
@@ -71,6 +76,12 @@ object GitHubTrackStore {
                 }
             }
         }.getOrDefault(emptyList())
+    }
+
+    private fun seedDefaultTrackedItems(): List<GitHubTrackedApp> {
+        val defaults = listOf(defaultKeiOsTrackedApp())
+        save(defaults)
+        return defaults
     }
 
     fun save(items: List<GitHubTrackedApp>) {

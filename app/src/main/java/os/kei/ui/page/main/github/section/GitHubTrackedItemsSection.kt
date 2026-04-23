@@ -43,6 +43,7 @@ import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.data.remote.GitHubVersionUtils
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.feature.github.model.isKeiOsSelfTrack
 import os.kei.ui.page.main.github.AppIcon
 import os.kei.ui.page.main.github.GitHubCompactInfoRow
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
@@ -169,6 +170,15 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
                 },
                 headerStartAction = {
                     AppIcon(packageName = item.packageName, size = 24.dp)
+                },
+                titleAccessory = {
+                    if (item.isKeiOsSelfTrack()) {
+                        StatusPill(
+                            label = stringResource(R.string.github_track_badge_current_app),
+                            color = GitHubStatusPalette.Active,
+                            size = AppStatusPillSize.Compact
+                        )
+                    }
                 },
                 onHeaderLongClick = { onOpenTrackSheetForEdit(item) },
                 headerActions = {

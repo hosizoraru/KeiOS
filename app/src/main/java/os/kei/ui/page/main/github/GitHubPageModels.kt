@@ -151,12 +151,58 @@ private fun String.normalizeVersionPrefix(): String {
     return trim().removePrefix("v").removePrefix("V")
 }
 
+private fun String.removeIgnoreCase(token: String): String {
+    if (token.isBlank()) return this
+    return replace(Regex(Regex.escape(token), RegexOption.IGNORE_CASE), " ")
+}
+
+private fun String.compactVersionCandidate(): String? {
+    return GitHubVersionUtils.normalizeVersionCandidates(this)
+        .map { it.normalizeVersionPrefix() }
+        .filter { it.isNotBlank() }
+        .minWithOrNull(
+            compareBy<String>(
+                { candidate -> candidate.count(Char::isLetter) },
+                { candidate -> candidate.length },
+                { candidate -> candidate }
+            )
+        )
+}
+
+private fun preferredTagDisplayValue(
+    releaseName: String,
+    rawTag: String
+): String? {
+    val name = releaseName.trim()
+    val tag = rawTag.trim()
+    if (name.isBlank() || tag.isBlank()) return null
+
+    val tagVersion = tag.compactVersionCandidate() ?: return null
+    val nameCarriesSameVersion = GitHubVersionUtils.compareCandidateSets(
+        leftCandidates = listOf(tagVersion),
+        rightCandidates = GitHubVersionUtils.normalizeVersionCandidates(name)
+    ) == 0
+    if (!nameCarriesSameVersion) return null
+
+    val normalizedName = name.normalizeVersionPrefix()
+    val normalizedTag = tag.normalizeVersionPrefix()
+    if (normalizedName.equals(normalizedTag, ignoreCase = true)) return null
+
+    val residualLetters = name
+        .removeIgnoreCase(tag)
+        .removeIgnoreCase(normalizedTag)
+        .removeIgnoreCase(tagVersion)
+        .filter(Char::isLetter)
+    return tagVersion.takeIf { residualLetters.isNotBlank() }
+}
+
 internal fun formatReleaseValue(
     releaseName: String,
     rawTag: String
 ): String {
     val name = releaseName.trim()
     val tag = rawTag.trim()
+    preferredTagDisplayValue(name, tag)?.let { return it }
     val normalizedName = name.normalizeVersionPrefix()
     val normalizedTag = tag.normalizeVersionPrefix()
     return when {

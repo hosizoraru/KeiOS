@@ -1,5 +1,12 @@
 package os.kei.feature.github.model
 
+import os.kei.BuildConfig
+
+private const val keiOsTrackOwner = "hosizoraru"
+private const val keiOsTrackRepo = "KeiOS"
+private const val keiOsTrackRepoUrl = "https://github.com/$keiOsTrackOwner/$keiOsTrackRepo"
+private const val keiOsTrackAppLabel = "KeiOS"
+
 data class GitHubTrackedApp(
     val repoUrl: String,
     val owner: String,
@@ -11,6 +18,22 @@ data class GitHubTrackedApp(
 ) {
     val id: String
         get() = "$owner/$repo|$packageName"
+}
+
+internal fun defaultKeiOsTrackedApp(): GitHubTrackedApp {
+    return GitHubTrackedApp(
+        repoUrl = keiOsTrackRepoUrl,
+        owner = keiOsTrackOwner,
+        repo = keiOsTrackRepo,
+        packageName = BuildConfig.APPLICATION_ID,
+        appLabel = keiOsTrackAppLabel
+    )
+}
+
+internal fun GitHubTrackedApp.isKeiOsSelfTrack(): Boolean {
+    return owner.equals(keiOsTrackOwner, ignoreCase = true) &&
+        repo.equals(keiOsTrackRepo, ignoreCase = true) &&
+        packageName.equals(BuildConfig.APPLICATION_ID, ignoreCase = true)
 }
 
 data class InstalledAppItem(

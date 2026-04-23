@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ fun MiuixAccordionCard(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     headerStartAction: (@Composable () -> Unit)? = null,
+    titleAccessory: (@Composable RowScope.() -> Unit)? = null,
     headerActions: (@Composable () -> Unit)? = null,
     onHeaderLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
@@ -68,6 +70,7 @@ fun MiuixAccordionCard(
             title = title,
             subtitle = subtitle,
             startAction = headerStartAction,
+            titleAccessory = titleAccessory,
             endActions = if (headerActions != null) {
                 { headerActions.invoke() }
             } else {
