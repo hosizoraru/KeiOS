@@ -46,7 +46,7 @@ internal data class OsUiSnapshot(
     val androidPropsExpanded: Boolean = false,
     val javaPropsExpanded: Boolean = false,
     val linuxEnvExpanded: Boolean = true,
-    val visibleCards: Set<OsSectionCard> = OsSectionCard.entries.toSet()
+    val visibleCards: Set<OsSectionCard> = OsCardVisibilityStore.defaultVisibleCards()
 )
 
 internal data class OsGoogleSystemServiceConfig(
