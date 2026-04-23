@@ -86,7 +86,6 @@ class MiIslandNotificationBuilder(
             .setCategory(
                 when {
                     isBlueArchiveAp && state.running -> NotificationCompat.CATEGORY_PROGRESS
-                    !isBlueArchiveNotification && state.running -> NotificationCompat.CATEGORY_SERVICE
                     else -> NotificationCompat.CATEGORY_STATUS
                 }
             )
@@ -307,11 +306,12 @@ class MiIslandNotificationBuilder(
         if (state.running) {
             return IslandPresentation(
                 allowFloat = false,
-                showTextButtons = false,
+                showTextButtons = true,
                 rightTitle = state.onlineText(context),
                 notificationOngoing = state.ongoing,
-                requestPromotedOngoing = state.running || state.ongoing,
+                requestPromotedOngoing = false,
                 focusUpdatable = true,
+                focusShowNotification = true,
                 rightContent = resolveDefaultEndpointSummary(state)
             )
         }
