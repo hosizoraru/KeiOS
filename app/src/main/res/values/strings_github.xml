@@ -11,6 +11,7 @@
     <string name="github_refresh_island_running">刷新中</string>
     <string name="github_refresh_island_cancelled">已取消</string>
     <string name="github_refresh_island_completed">已完成</string>
+    <string name="github_refresh_failed_short_with_count">失败 %1$d</string>
     <string name="github_check_failed_prefix">检查失败</string>
     <string name="github_page_title">GitHub</string>
     <string name="github_toast_no_checkable_item">暂无可检查条目</string>

@@ -191,11 +191,12 @@ object GitHubRefreshNotificationHelper {
         )
     }
 
-    private fun resolveCompactStateTitle(context: Context, state: RefreshState): String {
+    private fun resolveCompactStateContent(context: Context, state: RefreshState): String? {
         return when {
-            state.running -> context.getString(R.string.github_refresh_island_running)
             state.cancelled -> context.getString(R.string.github_refresh_island_cancelled)
-            else -> context.getString(R.string.github_refresh_island_completed)
+            state.failedCount > 0 ->
+                context.getString(R.string.github_refresh_failed_short_with_count, state.failedCount)
+            else -> null
         }
     }
 
@@ -378,7 +379,7 @@ object GitHubRefreshNotificationHelper {
     ) = runCatching {
         val progressPercent = state.progressPercent.coerceIn(0, 100)
         val fractionText = resolveCompactFractionText(context, state)
-        val compactStateTitle = resolveCompactStateTitle(context, state)
+        val compactStateContent = resolveCompactStateContent(context, state)
         FocusNotification.buildV3 {
             val lightLogoIcon = Icon.createWithResource(context, iconResId)
             val darkLogoIcon = Icon.createWithResource(context, iconResId)
@@ -391,6 +392,7 @@ object GitHubRefreshNotificationHelper {
             ticker = title
             tickerPic = light
             tickerPicDark = dark
+            outEffectSrc = "outer_glow"
 
             island {
                 islandProperty = 1
@@ -403,22 +405,24 @@ object GitHubRefreshNotificationHelper {
                         }
                     }
                     if (state.running) {
-                        imageTextInfoRight {
-                            type = 3
+                        progressTextInfo {
                             progressInfo {
                                 progress = progressPercent
                                 isCCW = true
                                 colorReach = MI_PROGRESS_COLOR
                                 colorUnReach = MI_PROGRESS_TRACK_COLOR
                             }
+                            textInfo {
+                                this.title = " "
+                            }
                         }
                     } else {
                         imageTextInfoRight {
                             type = 3
                             textInfo {
-                                this.title = compactStateTitle
-                                this.content = fractionText
-                                this.showHighlightColor = !state.cancelled
+                                this.title = fractionText
+                                this.content = compactStateContent
+                                this.showHighlightColor = state.failedCount > 0
                             }
                         }
                     }

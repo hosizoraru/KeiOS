@@ -297,9 +297,6 @@ internal class GitHubRefreshActions(
                 updatableCount = updatableCount,
                 failedCount = failedCount
             )
-            if (showToast) {
-                env.toast(R.string.github_toast_check_completed)
-            }
             state.refreshAllJob = null
         }
     }
