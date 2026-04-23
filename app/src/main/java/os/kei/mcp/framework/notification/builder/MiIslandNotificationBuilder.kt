@@ -185,7 +185,10 @@ class MiIslandNotificationBuilder(
                                 colorUnReach = presentation.progressTrackColor
                             }
                             textInfo {
-                                title = " "
+                                title = presentation.rightTitle
+                                content = presentation.rightContent
+                                narrowFont = presentation.rightTitle.length >= 6 ||
+                                    (presentation.rightContent?.length ?: 0) >= 12
                             }
                         }
                     } else {
