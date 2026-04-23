@@ -57,8 +57,6 @@ object McpNotificationHelper {
     @Volatile
     private var isXmsfNetworkBlocked = false
     @Volatile
-    private var isPackageChainEnabled = false
-    @Volatile
     private var isUidFirewallChainEnabled = false
     @Volatile
     private var keepAliveSnapshot: CachedNotificationSnapshot? = null
@@ -476,14 +474,11 @@ object McpNotificationHelper {
 
     fun restoreXiaomiNetworkIfNeeded(context: Context) {
         val xmsfUid = resolveXmsfUid(context)
-        val selfPackage = context.packageName
         magicScope.launch {
             networkMutex.withLock {
-                healConnectivityStateLocked(selfPackage, xmsfUid)
                 if (xmsfUid != null && isXmsfNetworkBlocked) {
-                    restoreXmsfNetworkingLocked(xmsfUid, selfPackage)
+                    restoreXmsfNetworkingLocked(xmsfUid)
                 }
-                healConnectivityStateLocked(selfPackage, xmsfUid)
             }
         }
     }
@@ -555,13 +550,7 @@ object McpNotificationHelper {
         }
         val notificationManager = NotificationManagerCompat.from(context)
         if (shizukuApiUtils.canUseCommand()) {
-            val selfPackage = context.packageName
-            val targetUid = resolveXmsfUid(context)
-            magicScope.launch {
-                networkMutex.withLock {
-                    healConnectivityStateLocked(selfPackage, targetUid)
-                }
-            }
+            restoreXiaomiNetworkIfNeeded(context)
         }
         notificationManager.notify(notificationId, notification)
     }
@@ -587,16 +576,11 @@ object McpNotificationHelper {
     ) {
         val notificationManager = NotificationManagerCompat.from(context)
         val targetUid = resolveXmsfUid(context)
-        val selfPackage = context.packageName
         AppLogger.i(TAG, "notifyWithXiaomiMagic: targetUid=$targetUid notifId=$notificationId")
         if (!shouldExecuteXiaomiMagic(targetUid)) {
             AppLogger.w(TAG, "skip Xiaomi magic: preconditions not satisfied")
             if (shizukuApiUtils.canUseCommand()) {
-                magicScope.launch {
-                    networkMutex.withLock {
-                        healConnectivityStateLocked(selfPackage, targetUid)
-                    }
-                }
+                restoreXiaomiNetworkIfNeeded(context)
             }
             notificationManager.notify(notificationId, notification)
             return
@@ -610,15 +594,13 @@ object McpNotificationHelper {
         magicScope.launch {
             networkMutex.withLock {
                 try {
-                    healConnectivityStateLocked(selfPackage, nonNullUid)
                     AppLogger.i(TAG, "blocking xmsf network for uid=$nonNullUid")
-                    blockXmsfNetworkingLocked(nonNullUid, selfPackage)
+                    blockXmsfNetworkingLocked(nonNullUid)
                     notificationManager.notify(notificationId, notification)
                     delay(XIAOMI_MAGIC_BLOCK_INTERVAL_MS)
                 } finally {
                     AppLogger.i(TAG, "restoring xmsf network for uid=$nonNullUid")
-                    restoreXmsfNetworkingLocked(nonNullUid, selfPackage)
-                    healConnectivityStateLocked(selfPackage, nonNullUid)
+                    restoreXmsfNetworkingLocked(nonNullUid)
                 }
             }
         }
@@ -648,13 +630,11 @@ object McpNotificationHelper {
         return isShellOrRoot && canUseMode
     }
 
-    private fun blockXmsfNetworkingLocked(uid: Int, selfPackage: String) {
+    private fun blockXmsfNetworkingLocked(uid: Int) {
         when (resolveMagicCommandSet()) {
             XiaomiMagicCommandSet.PACKAGE_NETWORKING -> {
                 val blocked = execMagicCommand("cmd connectivity set-package-networking-enabled false $XMSF_PACKAGE_NAME")
-                execMagicCommand("cmd connectivity set-package-networking-enabled true $selfPackage")
                 isXmsfNetworkBlocked = blocked
-                isPackageChainEnabled = false
                 AppLogger.i(
                     TAG,
                     "blockXmsfNetworkingLocked(package): uid=$uid blocked=$blocked"
@@ -674,24 +654,21 @@ object McpNotificationHelper {
 
             XiaomiMagicCommandSet.NONE -> {
                 isXmsfNetworkBlocked = false
-                isPackageChainEnabled = false
                 isUidFirewallChainEnabled = false
                 AppLogger.w(TAG, "blockXmsfNetworkingLocked skipped: no supported connectivity command")
             }
         }
     }
 
-    private fun restoreXmsfNetworkingLocked(uid: Int, selfPackage: String) {
+    private fun restoreXmsfNetworkingLocked(uid: Int) {
         val mode = resolveMagicCommandSet()
         val restored = when (mode) {
             XiaomiMagicCommandSet.PACKAGE_NETWORKING -> {
-                val packageRestored = if (isXmsfNetworkBlocked) {
+                if (isXmsfNetworkBlocked) {
                     execMagicCommand("cmd connectivity set-package-networking-enabled true $XMSF_PACKAGE_NAME")
                 } else {
                     true
                 }
-                val selfRestored = execMagicCommand("cmd connectivity set-package-networking-enabled true $selfPackage")
-                packageRestored && selfRestored
             }
 
             XiaomiMagicCommandSet.UID_FIREWALL -> {
@@ -712,28 +689,7 @@ object McpNotificationHelper {
         }
         AppLogger.i(TAG, "restoreXmsfNetworkingLocked: uid=$uid mode=$mode restored=$restored")
         isXmsfNetworkBlocked = false
-        isPackageChainEnabled = false
         isUidFirewallChainEnabled = false
-    }
-
-    private fun healConnectivityStateLocked(selfPackage: String, xmsfUid: Int?) {
-        when (resolveMagicCommandSet()) {
-            XiaomiMagicCommandSet.PACKAGE_NETWORKING -> {
-                execMagicCommand("cmd connectivity set-package-networking-enabled true $selfPackage")
-                execMagicCommand("cmd connectivity set-package-networking-enabled true $XMSF_PACKAGE_NAME")
-            }
-
-            XiaomiMagicCommandSet.UID_FIREWALL -> {
-                if (xmsfUid != null) {
-                    execMagicCommand("cmd connectivity set-uid-firewall-rule 9 $xmsfUid 0")
-                }
-                execMagicCommand("cmd connectivity set-firewall-chain-enabled 9 false")
-            }
-
-            XiaomiMagicCommandSet.NONE -> {
-                // no-op
-            }
-        }
     }
 
     private fun resolveMagicCommandSet(): XiaomiMagicCommandSet {

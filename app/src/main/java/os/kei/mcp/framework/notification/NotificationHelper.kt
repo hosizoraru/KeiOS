@@ -33,7 +33,7 @@ class NotificationHelper(
     }
 
     val isMiIslandAvailable: Boolean
-        get() = isSupportMiIsland && hasMiIslandPermission
+        get() = isHyperOS && isSupportMiIsland && hasMiIslandPermission
 
     val isModernLiveUpdateEligible: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA

@@ -9,6 +9,21 @@ import android.os.Bundle
 import com.xzakota.hyper.notification.focus.FocusNotification
 import os.kei.R
 
+internal enum class MiFocusNotificationCompactMode {
+    TEXT,
+    PROGRESS
+}
+
+internal enum class MiFocusNotificationExpandedMode {
+    BASE_INFO,
+    ICON_TEXT
+}
+
+internal enum class MiFocusNotificationDisplayIconStyle {
+    ORIGINAL,
+    MONO_TINTED
+}
+
 internal data class MiFocusNotificationAction(
     val key: String,
     val title: String,
@@ -26,20 +41,36 @@ internal data class MiFocusNotificationSpec(
     val compactTitle: String,
     val compactContent: String? = null,
     val displayIconResId: Int,
+    val expandedIconResId: Int = displayIconResId,
     val actionIconResId: Int = displayIconResId,
     val tickerIconResId: Int = R.drawable.ic_notification_logo,
+    val compactMode: MiFocusNotificationCompactMode = MiFocusNotificationCompactMode.TEXT,
+    val expandedMode: MiFocusNotificationExpandedMode = MiFocusNotificationExpandedMode.ICON_TEXT,
+    val displayIconStyle: MiFocusNotificationDisplayIconStyle = MiFocusNotificationDisplayIconStyle.ORIGINAL,
     val allowFloat: Boolean = true,
     val islandFirstFloat: Boolean = true,
     val outerGlow: Boolean = false,
+    val updatable: Boolean = true,
+    val showNotification: Boolean? = null,
     val aodTitle: String = compactTitle,
+    val progressPercent: Int = 0,
+    val progressColor: String? = null,
+    val progressTrackColor: String? = null,
+    val showExpandedProgress: Boolean = false,
+    val showHighlightColor: Boolean = false,
     val embedTextButtons: Boolean = false,
-    val actions: List<MiFocusNotificationAction> = emptyList()
+    val actions: List<MiFocusNotificationAction> = emptyList(),
+    val narrowFont: Boolean? = null
 )
 
 internal object MiFocusNotificationTemplate {
     fun build(context: Context, spec: MiFocusNotificationSpec): Bundle {
         val compactTitle = spec.compactTitle.ifBlank { spec.title }
         val compactContent = spec.compactContent?.trim()?.takeIf { it.isNotEmpty() }
+        val progressPercent = spec.progressPercent.coerceIn(0, 100)
+        val narrowFont = spec.narrowFont ?: (
+            compactTitle.length >= 6 || (compactContent?.length ?: 0) >= 12
+        )
 
         return FocusNotification.buildV3 {
             val tickerLightKey = createPicture(
@@ -50,16 +81,29 @@ internal object MiFocusNotificationTemplate {
                 "mi_focus_ticker_dark",
                 Icon.createWithResource(context, spec.tickerIconResId).setTint(Color.WHITE)
             )
-            val displayLightKey = createPicture(
-                "mi_focus_display_light",
-                Icon.createWithResource(context, spec.displayIconResId)
+            val displayIcon = when (spec.displayIconStyle) {
+                MiFocusNotificationDisplayIconStyle.ORIGINAL -> {
+                    Icon.createWithResource(context, spec.displayIconResId)
+                }
+
+                MiFocusNotificationDisplayIconStyle.MONO_TINTED -> {
+                    Icon.createWithResource(context, spec.displayIconResId).setTint(Color.WHITE)
+                }
+            }
+            val displayKey = createPicture("mi_focus_display", displayIcon)
+            val expandedKey = createPicture(
+                "mi_focus_expanded",
+                Icon.createWithResource(context, spec.expandedIconResId)
             )
 
             islandFirstFloat = spec.islandFirstFloat
             enableFloat = spec.allowFloat
-            updatable = true
+            updatable = spec.updatable
+            isShowNotification = spec.showNotification
             ticker = compactTitle
             tickerPic = tickerLightKey
+            tickerPicDark = tickerDarkKey
+            aodTitle = spec.aodTitle
 
             if (spec.outerGlow) {
                 outEffectSrc = "outer_glow"
@@ -72,38 +116,73 @@ internal object MiFocusNotificationTemplate {
                         type = 1
                         picInfo {
                             type = 1
-                            pic = displayLightKey
+                            pic = displayKey
                         }
                     }
-                    imageTextInfoRight {
-                        type = 3
-                        textInfo {
-                            title = compactTitle
-                            content = compactContent
-                            narrowFont = compactTitle.length >= 6
+                    when (spec.compactMode) {
+                        MiFocusNotificationCompactMode.PROGRESS -> {
+                            progressTextInfo {
+                                progressInfo {
+                                    progress = progressPercent
+                                    isCCW = true
+                                    spec.progressColor?.let { colorReach = it }
+                                    spec.progressTrackColor?.let { colorUnReach = it }
+                                }
+                                textInfo {
+                                    title = compactTitle
+                                    content = compactContent
+                                    this.narrowFont = narrowFont
+                                    showHighlightColor = spec.showHighlightColor
+                                }
+                            }
+                        }
+
+                        MiFocusNotificationCompactMode.TEXT -> {
+                            imageTextInfoRight {
+                                type = 3
+                                textInfo {
+                                    title = compactTitle
+                                    content = compactContent
+                                    this.narrowFont = narrowFont
+                                    showHighlightColor = spec.showHighlightColor
+                                }
+                            }
                         }
                     }
                 }
                 smallIslandArea {
                     picInfo {
                         type = 1
-                        pic = displayLightKey
+                        pic = displayKey
                     }
                 }
             }
 
-            baseInfo {
-                type = 2
-                title = spec.title
-                content = spec.content.ifBlank { " " }
+            when (spec.expandedMode) {
+                MiFocusNotificationExpandedMode.BASE_INFO -> {
+                    baseInfo {
+                        type = 2
+                        title = spec.title
+                        content = spec.content.ifBlank { " " }
+                    }
+                }
+
+                MiFocusNotificationExpandedMode.ICON_TEXT -> {
+                    iconTextInfo {
+                        title = spec.title
+                        content = spec.content.ifBlank { " " }
+                        animIconInfo {
+                            type = 0
+                            src = expandedKey
+                        }
+                    }
+                }
             }
 
-            iconTextInfo {
-                title = spec.title
-                content = spec.content.ifBlank { " " }
-                animIconInfo {
-                    type = 0
-                    src = displayLightKey
+            if (spec.showExpandedProgress) {
+                multiProgressInfo {
+                    progress = progressPercent
+                    spec.progressColor?.let { color = it }
                 }
             }
 

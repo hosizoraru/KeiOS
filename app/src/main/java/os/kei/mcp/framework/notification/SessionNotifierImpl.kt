@@ -30,7 +30,8 @@ class SessionNotifierImpl(
         AppLogger.i(
             TAG,
             "build preferSuperIsland=$preferSuperIsland supportMiIsland=${helper.isSupportMiIsland} " +
-                "focusPermission=${helper.hasMiIslandPermission} style=$style bypass=$bypassRestriction"
+                "focusPermission=${helper.hasMiIslandPermission} available=${helper.isMiIslandAvailable} " +
+                "style=$style bypass=$bypassRestriction"
         )
         val wrapped = NotificationPayload(
             state = payload,
@@ -55,7 +56,7 @@ class SessionNotifierImpl(
     }
 
     private fun resolveStyle(preferSuperIsland: Boolean): NotificationRenderStyle {
-        if (preferSuperIsland && helper.isSupportMiIsland) {
+        if (preferSuperIsland && helper.isMiIslandAvailable) {
             return NotificationRenderStyle.MI_ISLAND
         }
         return NotificationRenderStyle.LIVE_UPDATE
