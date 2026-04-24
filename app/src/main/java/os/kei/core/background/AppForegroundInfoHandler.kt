@@ -41,12 +41,14 @@ object AppForegroundInfoHandler {
 
             val states = LinkedHashMap<String, GitHubCheckCacheEntry>()
             var updatableCount = 0
+            var preReleaseUpdateCount = 0
             var failedCount = 0
             tracked.forEach { item ->
                 val check = withContext(Dispatchers.IO) {
                     GitHubReleaseCheckService.evaluateTrackedApp(context, item)
                 }
                 if (check.hasUpdate == true) updatableCount += 1
+                if (check.hasPreReleaseUpdate) preReleaseUpdateCount += 1
                 if (check.status == GitHubTrackedReleaseStatus.Failed) failedCount += 1
                 states[item.id] = with(GitHubReleaseCheckService) { check.toCacheEntry() }
             }
@@ -54,11 +56,11 @@ object AppForegroundInfoHandler {
             withContext(Dispatchers.IO) {
                 GitHubTrackStore.saveCheckCache(states, nowMs)
             }
-            if (updatableCount > 0 || failedCount > 0) {
+            if (updatableCount > 0 || preReleaseUpdateCount > 0 || failedCount > 0) {
                 GitHubRefreshNotificationHelper.notifyCompleted(
                     context = context,
                     total = tracked.size,
-                    trackedCount = tracked.size,
+                    preReleaseUpdateCount = preReleaseUpdateCount,
                     updatableCount = updatableCount,
                     failedCount = failedCount
                 )

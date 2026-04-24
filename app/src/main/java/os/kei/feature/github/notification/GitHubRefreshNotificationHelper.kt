@@ -38,7 +38,7 @@ object GitHubRefreshNotificationHelper {
     private data class RefreshState(
         val current: Int,
         val total: Int,
-        val trackedCount: Int,
+        val preReleaseUpdateCount: Int,
         val updatableCount: Int,
         val failedCount: Int,
         val running: Boolean,
@@ -82,7 +82,7 @@ object GitHubRefreshNotificationHelper {
         context: Context,
         current: Int,
         total: Int,
-        trackedCount: Int,
+        preReleaseUpdateCount: Int,
         updatableCount: Int,
         failedCount: Int
     ) {
@@ -94,7 +94,7 @@ object GitHubRefreshNotificationHelper {
             state = RefreshState(
                 current = safeCurrent,
                 total = safeTotal,
-                trackedCount = trackedCount,
+                preReleaseUpdateCount = preReleaseUpdateCount,
                 updatableCount = updatableCount,
                 failedCount = failedCount,
                 running = !isComplete,
@@ -107,7 +107,7 @@ object GitHubRefreshNotificationHelper {
     fun notifyCompleted(
         context: Context,
         total: Int,
-        trackedCount: Int,
+        preReleaseUpdateCount: Int,
         updatableCount: Int,
         failedCount: Int
     ) {
@@ -116,7 +116,7 @@ object GitHubRefreshNotificationHelper {
             state = RefreshState(
                 current = total,
                 total = total,
-                trackedCount = trackedCount,
+                preReleaseUpdateCount = preReleaseUpdateCount,
                 updatableCount = updatableCount,
                 failedCount = failedCount,
                 running = false,
@@ -130,7 +130,7 @@ object GitHubRefreshNotificationHelper {
         context: Context,
         current: Int,
         total: Int,
-        trackedCount: Int,
+        preReleaseUpdateCount: Int,
         updatableCount: Int,
         failedCount: Int
     ) {
@@ -139,7 +139,7 @@ object GitHubRefreshNotificationHelper {
             state = RefreshState(
                 current = current,
                 total = total,
-                trackedCount = trackedCount,
+                preReleaseUpdateCount = preReleaseUpdateCount,
                 updatableCount = updatableCount,
                 failedCount = failedCount,
                 running = false,
@@ -167,7 +167,7 @@ object GitHubRefreshNotificationHelper {
                 R.string.github_refresh_content_with_failed,
                 state.safeCurrent,
                 state.safeTotal,
-                state.trackedCount,
+                state.preReleaseUpdateCount,
                 state.updatableCount,
                 state.failedCount
             )
@@ -176,7 +176,7 @@ object GitHubRefreshNotificationHelper {
                 R.string.github_refresh_content,
                 state.safeCurrent,
                 state.safeTotal,
-                state.trackedCount,
+                state.preReleaseUpdateCount,
                 state.updatableCount
             )
         }

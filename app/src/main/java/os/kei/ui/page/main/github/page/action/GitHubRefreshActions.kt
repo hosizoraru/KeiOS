@@ -47,12 +47,14 @@ internal class GitHubRefreshActions(
                 val checkedCount = (state.refreshProgress * trackedCount.toFloat()).toInt()
                     .coerceIn(0, trackedCount)
                 val updatableCount = state.trackedItems.count { state.checkStates[it.id]?.hasUpdate == true }
+                val preReleaseUpdateCount =
+                    state.trackedItems.count { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
                 val failedCount = state.trackedItems.count { state.checkStates[it.id]?.failed == true }
                 GitHubRefreshNotificationHelper.notifyCancelled(
                     context = context,
                     current = checkedCount,
                     total = trackedCount,
-                    trackedCount = trackedCount,
+                    preReleaseUpdateCount = preReleaseUpdateCount,
                     updatableCount = updatableCount,
                     failedCount = failedCount
                 )
@@ -240,12 +242,13 @@ internal class GitHubRefreshActions(
             state.refreshProgress = 0f
             val totalCount = snapshot.size
             var updatableCount = 0
+            var preReleaseUpdateCount = 0
             var failedCount = 0
             GitHubRefreshNotificationHelper.notifyProgress(
                 context = context,
                 current = 0,
                 total = totalCount,
-                trackedCount = totalCount,
+                preReleaseUpdateCount = 0,
                 updatableCount = 0,
                 failedCount = 0
             )
@@ -263,6 +266,9 @@ internal class GitHubRefreshActions(
                 if (itemState.hasUpdate == true) {
                     updatableCount += 1
                 }
+                if (itemState.hasPreReleaseUpdate) {
+                    preReleaseUpdateCount += 1
+                }
                 if (itemState.failed) {
                     failedCount += 1
                 }
@@ -271,7 +277,7 @@ internal class GitHubRefreshActions(
                     context = context,
                     current = index + 1,
                     total = totalCount,
-                    trackedCount = totalCount,
+                    preReleaseUpdateCount = preReleaseUpdateCount,
                     updatableCount = updatableCount,
                     failedCount = failedCount
                 )
@@ -293,7 +299,7 @@ internal class GitHubRefreshActions(
             GitHubRefreshNotificationHelper.notifyCompleted(
                 context = context,
                 total = totalCount,
-                trackedCount = totalCount,
+                preReleaseUpdateCount = preReleaseUpdateCount,
                 updatableCount = updatableCount,
                 failedCount = failedCount
             )
