@@ -34,6 +34,7 @@ import os.kei.ui.page.main.os.shell.OsShellRunnerActivity
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCardStore
 import os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
+import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -100,31 +101,17 @@ fun OsPage(
     val sectionLoadMutex = remember { Mutex() }
     val sectionLoadDeferreds = remember { mutableStateMapOf<SectionKind, Deferred<List<InfoRow>>>() }
     var showSearchBar by remember { mutableStateOf(true) }
-    var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val surfaceColor = uiContext.surfaceColor
     val backdrops = uiContext.backdrops
     val topBarMaterialBackdrop = uiContext.topBarMaterialBackdrop
     val searchBarHideThresholdPx = uiContext.searchBarHideThresholdPx
-    val searchBarScrollConnection = remember(searchBarHideThresholdPx) {
+    val searchBarVisibilityController = remember(searchBarHideThresholdPx) {
+        ScrollChromeVisibilityController(searchBarHideThresholdPx)
+    }
+    val searchBarScrollConnection = remember(searchBarVisibilityController) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) {
-                    if (showSearchBar) {
-                        searchBarHideOffsetPx = (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
-                        if (searchBarHideOffsetPx >= searchBarHideThresholdPx) {
-                            showSearchBar = false
-                            searchBarHideOffsetPx = 0f
-                        }
-                    }
-                }
-                if (available.y > 1f) {
-                    if (!showSearchBar) {
-                        showSearchBar = true
-                    }
-                    if (searchBarHideOffsetPx != 0f) {
-                        searchBarHideOffsetPx = 0f
-                    }
-                }
+                searchBarVisibilityController.update(available.y, showSearchBar) { showSearchBar = it }
                 return Offset.Zero
             }
         }

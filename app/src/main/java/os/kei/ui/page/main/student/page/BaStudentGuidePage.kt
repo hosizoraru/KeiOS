@@ -46,6 +46,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,6 +79,7 @@ import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
+import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
@@ -202,15 +204,15 @@ fun BaStudentGuidePage(
                 ?: GuideBottomTab.Archive.ordinal
         }
     )
-    val bottomBarNestedScrollConnection = remember {
+    val density = LocalDensity.current
+    val bottomBarVisibilityThresholdPx = remember(density) { with(density) { 22.dp.toPx() } }
+    val bottomBarVisibilityController = remember(bottomBarVisibilityThresholdPx) {
+        ScrollChromeVisibilityController(bottomBarVisibilityThresholdPx)
+    }
+    val bottomBarNestedScrollConnection = remember(bottomBarVisibilityController) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f && showBottomBar) {
-                    showBottomBar = false
-                }
-                if (available.y > 1f && !showBottomBar) {
-                    showBottomBar = true
-                }
+                bottomBarVisibilityController.update(available.y, showBottomBar) { showBottomBar = it }
                 return Offset.Zero
             }
         }

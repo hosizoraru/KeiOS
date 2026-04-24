@@ -65,6 +65,7 @@ import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionBarPopupAnchors
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
+import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
@@ -180,35 +181,21 @@ fun BaGuideCatalogPage(
     )
     var showSearchBar by remember { mutableStateOf(true) }
     val density = LocalDensity.current
-    var searchBarHideOffsetPx by remember { mutableStateOf(0f) }
     val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
-    val bottomBarNestedScrollConnection = remember(searchBarHideThresholdPx) {
+    val searchBarVisibilityController = remember(searchBarHideThresholdPx) {
+        ScrollChromeVisibilityController(searchBarHideThresholdPx)
+    }
+    val bottomBarVisibilityController = remember(searchBarHideThresholdPx) {
+        ScrollChromeVisibilityController(searchBarHideThresholdPx)
+    }
+    val bottomBarNestedScrollConnection = remember(
+        searchBarVisibilityController,
+        bottomBarVisibilityController
+    ) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f) {
-                    if (showBottomBar) {
-                        showBottomBar = false
-                    }
-                    if (showSearchBar) {
-                        searchBarHideOffsetPx =
-                            (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
-                        if (searchBarHideOffsetPx >= searchBarHideThresholdPx) {
-                            showSearchBar = false
-                            searchBarHideOffsetPx = 0f
-                        }
-                    }
-                }
-                if (available.y > 1f) {
-                    if (!showBottomBar) {
-                        showBottomBar = true
-                    }
-                    if (!showSearchBar) {
-                        showSearchBar = true
-                    }
-                    if (searchBarHideOffsetPx != 0f) {
-                        searchBarHideOffsetPx = 0f
-                    }
-                }
+                bottomBarVisibilityController.update(available.y, showBottomBar) { showBottomBar = it }
+                searchBarVisibilityController.update(available.y, showSearchBar) { showSearchBar = it }
                 return Offset.Zero
             }
         }

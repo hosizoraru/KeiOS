@@ -27,6 +27,7 @@ import os.kei.ui.page.main.github.page.action.GitHubTrackImportPreview
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportAttachCandidate
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
 import os.kei.ui.page.main.github.share.GitHubShareImportPreview
+import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import kotlinx.coroutines.Job
 
 @Stable
@@ -91,7 +92,8 @@ internal class GitHubPageState(
     var deleteInProgress by mutableStateOf(false)
     var showFloatingAddButton by mutableStateOf(true)
     var showSearchBar by mutableStateOf(true)
-    var searchBarHideOffsetPx by mutableStateOf(0f)
+    private val searchBarVisibilityController = ScrollChromeVisibilityController(searchBarHideThresholdPx)
+    private val addButtonVisibilityController = ScrollChromeVisibilityController(searchBarHideThresholdPx)
 
     val trackedItems = mutableStateListOf<GitHubTrackedApp>()
     val checkStates = mutableStateMapOf<String, VersionCheckUi>()
@@ -107,29 +109,11 @@ internal class GitHubPageState(
 
     val addButtonScrollConnection = object : NestedScrollConnection {
         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            if (available.y < -1f) {
-                if (showFloatingAddButton) {
-                    showFloatingAddButton = false
-                }
-                if (showSearchBar) {
-                    searchBarHideOffsetPx =
-                        (searchBarHideOffsetPx + (-available.y)).coerceAtMost(searchBarHideThresholdPx)
-                    if (searchBarHideOffsetPx >= searchBarHideThresholdPx) {
-                        showSearchBar = false
-                        searchBarHideOffsetPx = 0f
-                    }
-                }
+            addButtonVisibilityController.update(available.y, showFloatingAddButton) {
+                showFloatingAddButton = it
             }
-            if (available.y > 1f) {
-                if (!showFloatingAddButton) {
-                    showFloatingAddButton = true
-                }
-                if (!showSearchBar) {
-                    showSearchBar = true
-                }
-                if (searchBarHideOffsetPx != 0f) {
-                    searchBarHideOffsetPx = 0f
-                }
+            searchBarVisibilityController.update(available.y, showSearchBar) {
+                showSearchBar = it
             }
             return Offset.Zero
         }

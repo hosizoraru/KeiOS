@@ -13,7 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.model.BottomPage
+import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import kotlinx.coroutines.Job
@@ -43,6 +46,11 @@ internal fun rememberMainPagerTabJumpController(
     var pagerScrollEnabled by remember { mutableStateOf(true) }
     var showBottomBar by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
+    val density = LocalDensity.current
+    val bottomBarVisibilityThresholdPx = remember(density) { with(density) { 22.dp.toPx() } }
+    val bottomBarVisibilityController = remember(bottomBarVisibilityThresholdPx) {
+        ScrollChromeVisibilityController(bottomBarVisibilityThresholdPx)
+    }
 
     val farJumpBefore: suspend () -> Unit = {
         if (!transitionAnimationsEnabled) {
@@ -75,19 +83,14 @@ internal fun rememberMainPagerTabJumpController(
             )
         }
     }
-    val nestedScrollConnection = remember(pagerRuntime.homePageBottomBarPinned, showBottomBar) {
+    val nestedScrollConnection = remember(pagerRuntime.homePageBottomBarPinned, bottomBarVisibilityController) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (pagerRuntime.homePageBottomBarPinned) {
-                    if (!showBottomBar) showBottomBar = true
+                    bottomBarVisibilityController.showNow(showBottomBar) { showBottomBar = it }
                     return Offset.Zero
                 }
-                if (available.y < -1f && showBottomBar) {
-                    showBottomBar = false
-                }
-                if (available.y > 1f && !showBottomBar) {
-                    showBottomBar = true
-                }
+                bottomBarVisibilityController.update(available.y, showBottomBar) { showBottomBar = it }
                 return Offset.Zero
             }
         }
@@ -120,6 +123,7 @@ internal fun rememberMainPagerTabJumpController(
 
     LaunchedEffect(pagerRuntime.homePageBottomBarPinned) {
         if (pagerRuntime.homePageBottomBarPinned && !showBottomBar) {
+            bottomBarVisibilityController.reset()
             showBottomBar = true
         }
     }

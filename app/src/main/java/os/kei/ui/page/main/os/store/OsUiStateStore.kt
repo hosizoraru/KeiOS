@@ -16,6 +16,8 @@ internal object OsUiStateStore {
     private const val KEY_ANDROID_PROPS = "expanded_os_android_props"
     private const val KEY_JAVA_PROPS = "expanded_os_java_props"
     private const val KEY_LINUX_ENV = "expanded_os_linux_env"
+    private const val KEY_COLLAPSED_DEFAULT_MIGRATION = "os_collapsed_default_migration_v1"
+    private const val KEY_COLLAPSE_ALL_DEFAULT_CARDS_MIGRATION = "os_collapse_all_default_cards_v2"
 
     private const val LEGACY_KEY_OVERVIEW = "expanded_overview"
     private const val LEGACY_KEY_TOP_INFO = "expanded_top_info"
@@ -44,14 +46,14 @@ internal object OsUiStateStore {
     fun loadSnapshot(): OsUiSnapshot {
         val kv = store
         val legacyKv = legacyStore
-        return OsUiSnapshot(
+        val snapshot = OsUiSnapshot(
             topInfoExpanded = readBool(kv, legacyKv, KEY_TOP_INFO, LEGACY_KEY_TOP_INFO, false),
             shellRunnerExpanded = readBool(
                 kv,
                 legacyKv,
                 KEY_SHELL_RUNNER,
                 LEGACY_KEY_SHELL_RUNNER,
-                true
+                false
             ),
             googleSystemServiceExpanded = readBool(
                 kv,
@@ -95,18 +97,19 @@ internal object OsUiStateStore {
                 LEGACY_KEY_JAVA_PROPS,
                 false
             ),
-            linuxEnvExpanded = readBool(kv, legacyKv, KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, true),
+            linuxEnvExpanded = readBool(kv, legacyKv, KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, false),
             visibleCards = OsCardVisibilityStore.loadVisibleCards()
         )
+        return collapseAllDefaultCardsIfNeeded(kv, migrateOldDefaultExpandedSnapshotIfNeeded(kv, snapshot))
     }
 
     fun topInfoExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_TOP_INFO, LEGACY_KEY_TOP_INFO, defaultValue)
 
-    fun overviewExpanded(defaultValue: Boolean = true): Boolean =
+    fun overviewExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_OVERVIEW, LEGACY_KEY_OVERVIEW, defaultValue)
 
-    fun shellRunnerExpanded(defaultValue: Boolean = true): Boolean =
+    fun shellRunnerExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_SHELL_RUNNER, LEGACY_KEY_SHELL_RUNNER, defaultValue)
 
     fun osSystemTableExpanded(defaultValue: Boolean = false): Boolean =
@@ -127,8 +130,50 @@ internal object OsUiStateStore {
     fun javaPropsExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_JAVA_PROPS, LEGACY_KEY_JAVA_PROPS, defaultValue)
 
-    fun linuxEnvExpanded(defaultValue: Boolean = true): Boolean =
+    fun linuxEnvExpanded(defaultValue: Boolean = false): Boolean =
         readBool(KEY_LINUX_ENV, LEGACY_KEY_LINUX_ENV, defaultValue)
+
+    private fun migrateOldDefaultExpandedSnapshotIfNeeded(
+        kv: MMKV,
+        snapshot: OsUiSnapshot
+    ): OsUiSnapshot {
+        if (kv.decodeBool(KEY_COLLAPSED_DEFAULT_MIGRATION, false)) return snapshot
+        kv.encode(KEY_COLLAPSED_DEFAULT_MIGRATION, true)
+        val looksLikeOldDefaultExpansion =
+            !snapshot.topInfoExpanded &&
+                snapshot.shellRunnerExpanded &&
+                !snapshot.googleSystemServiceExpanded &&
+                !snapshot.systemTableExpanded &&
+                !snapshot.secureTableExpanded &&
+                !snapshot.globalTableExpanded &&
+                !snapshot.androidPropsExpanded &&
+                !snapshot.javaPropsExpanded &&
+                snapshot.linuxEnvExpanded
+        if (!looksLikeOldDefaultExpansion) return snapshot
+        return snapshot.copy(
+            shellRunnerExpanded = false,
+            linuxEnvExpanded = false
+        )
+    }
+
+    private fun collapseAllDefaultCardsIfNeeded(
+        kv: MMKV,
+        snapshot: OsUiSnapshot
+    ): OsUiSnapshot {
+        if (kv.decodeBool(KEY_COLLAPSE_ALL_DEFAULT_CARDS_MIGRATION, false)) return snapshot
+        kv.encode(KEY_COLLAPSE_ALL_DEFAULT_CARDS_MIGRATION, true)
+        return snapshot.copy(
+            topInfoExpanded = false,
+            shellRunnerExpanded = false,
+            googleSystemServiceExpanded = false,
+            systemTableExpanded = false,
+            secureTableExpanded = false,
+            globalTableExpanded = false,
+            androidPropsExpanded = false,
+            javaPropsExpanded = false,
+            linuxEnvExpanded = false
+        )
+    }
 
     fun setTopInfoExpanded(value: Boolean) {
         store.encode(KEY_TOP_INFO, value)

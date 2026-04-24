@@ -38,14 +38,14 @@ internal enum class SystemOverviewState {
 
 internal data class OsUiSnapshot(
     val topInfoExpanded: Boolean = false,
-    val shellRunnerExpanded: Boolean = true,
+    val shellRunnerExpanded: Boolean = false,
     val googleSystemServiceExpanded: Boolean = false,
     val systemTableExpanded: Boolean = false,
     val secureTableExpanded: Boolean = false,
     val globalTableExpanded: Boolean = false,
     val androidPropsExpanded: Boolean = false,
     val javaPropsExpanded: Boolean = false,
-    val linuxEnvExpanded: Boolean = true,
+    val linuxEnvExpanded: Boolean = false,
     val visibleCards: Set<OsSectionCard> = OsCardVisibilityStore.defaultVisibleCards()
 )
 
