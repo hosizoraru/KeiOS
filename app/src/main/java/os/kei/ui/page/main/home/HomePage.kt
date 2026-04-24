@@ -120,7 +120,9 @@ fun HomePage(
     val dynamicBackgroundEnabled = shaderSupported &&
         runtime.isDataActive &&
         !runtime.isPagerScrollInProgress
-    val fullBackdropEffectsEnabled = runtime.isPageActive && !runtime.isPagerScrollInProgress
+    val fullBackdropEffectsEnabled = runtime.isPageActive &&
+        !runtime.isPagerScrollInProgress &&
+        !lazyListState.isScrollInProgress
     val surfaceColor = MiuixTheme.colorScheme.surface
     val actionBarBackdrop = rememberActionBarBackdrop {
         drawRect(surfaceColor)

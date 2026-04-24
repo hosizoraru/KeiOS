@@ -141,7 +141,9 @@ fun McpPage(
         val visibleChars = portText.trim().ifBlank { "38888" }.length.coerceIn(4, 6)
         (visibleChars * 14 + 28).dp
     }
-    val fullBackdropEffectsEnabled = runtime.isPageActive && !runtime.isPagerScrollInProgress
+    val fullBackdropEffectsEnabled = runtime.isPageActive &&
+        !runtime.isPagerScrollInProgress &&
+        !listState.isScrollInProgress
     val toggleServer: () -> Unit = {
         if (uiState.running) {
             mcpServerManager.stop()

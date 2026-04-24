@@ -47,8 +47,11 @@ fun OsPage(
     enableSearchBar: Boolean = true,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
+    val listState = rememberLazyListState()
     val uiContext = rememberOsPageUiContext(
-        enableFullBackdropEffects = runtime.isPageActive && !runtime.isPagerScrollInProgress
+        enableFullBackdropEffects = runtime.isPageActive &&
+            !runtime.isPagerScrollInProgress &&
+            !listState.isScrollInProgress
     )
     val context = uiContext.context
     val density = uiContext.density
@@ -88,7 +91,6 @@ fun OsPage(
     val activityCardExpanded = remember { mutableStateMapOf<String, Boolean>() }
     val overlayState = rememberOsPageOverlayState(textBundle.googleSystemServiceDefaults)
     var uiStatePersistenceReady by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }

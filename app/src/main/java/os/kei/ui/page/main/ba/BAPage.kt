@@ -56,7 +56,9 @@ fun BAPage(
     val context = LocalContext.current
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
-    val fullBackdropEffectsEnabled = runtime.isPageActive && !runtime.isPagerScrollInProgress
+    val fullBackdropEffectsEnabled = runtime.isPageActive &&
+        !runtime.isPagerScrollInProgress &&
+        !listState.isScrollInProgress
     val backdrops = rememberMainPageBackdropSet(
         keyPrefix = "ba",
         refreshOnCompositionEnter = true,

@@ -19,9 +19,17 @@ import os.kei.ui.page.main.github.state.toCacheEntry
 import os.kei.ui.page.main.github.state.toUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
+
+private const val GITHUB_REFRESH_ALL_PARALLELISM = 4
+private const val GITHUB_REFRESH_PROGRESS_NOTIFY_INTERVAL_MS = 600L
 
 internal class GitHubRefreshActions(
     private val env: GitHubPageActionEnvironment
@@ -270,38 +278,64 @@ internal class GitHubRefreshActions(
                     message = context.getString(R.string.github_msg_checking)
                 )
             }
-            snapshot.forEachIndexed { index, item ->
-                val itemState = resolveItemState(item)
-                if (state.trackedItems.any { it.id == item.id }) {
-                    state.checkStates[item.id] = itemState
-                }
-                if (itemState.hasUpdate == true) {
-                    updatableCount += 1
-                }
-                if (itemState.hasPreReleaseUpdate) {
-                    preReleaseUpdateCount += 1
-                }
-                if (itemState.failed) {
-                    failedCount += 1
-                }
-                state.refreshProgress = (index + 1).toFloat() / snapshot.size.toFloat()
-                GitHubRefreshNotificationHelper.notifyProgress(
-                    context = context,
-                    current = index + 1,
-                    total = totalCount,
-                    preReleaseUpdateCount = preReleaseUpdateCount,
-                    updatableCount = updatableCount,
-                    failedCount = failedCount
-                )
-                if (showToast && itemState.failed) {
-                    env.toast(
-                        R.string.github_toast_repo_message,
-                        item.owner,
-                        item.repo,
-                        itemState.message
-                    )
-                }
-                if (index < snapshot.lastIndex) delay(120)
+            val progressMutex = Mutex()
+            val semaphore = Semaphore(GITHUB_REFRESH_ALL_PARALLELISM)
+            var completedCount = 0
+            var lastProgressNotifyAtMs = System.currentTimeMillis()
+            supervisorScope {
+                snapshot.map { item ->
+                    launch {
+                        val itemState = semaphore.withPermit {
+                            runCatching {
+                                resolveItemState(item)
+                            }.getOrElse { throwable ->
+                                VersionCheckUi(
+                                    failed = true,
+                                    message = throwable.message ?: throwable.javaClass.simpleName
+                                )
+                            }
+                        }
+                        progressMutex.withLock {
+                            if (state.trackedItems.any { tracked -> tracked.id == item.id }) {
+                                state.checkStates[item.id] = itemState
+                            }
+                            if (itemState.hasUpdate == true) {
+                                updatableCount += 1
+                            }
+                            if (itemState.hasPreReleaseUpdate) {
+                                preReleaseUpdateCount += 1
+                            }
+                            if (itemState.failed) {
+                                failedCount += 1
+                            }
+                            completedCount += 1
+                            state.refreshProgress = completedCount.toFloat() / snapshot.size.toFloat()
+                            val nowMs = System.currentTimeMillis()
+                            if (
+                                completedCount == totalCount ||
+                                nowMs - lastProgressNotifyAtMs >= GITHUB_REFRESH_PROGRESS_NOTIFY_INTERVAL_MS
+                            ) {
+                                lastProgressNotifyAtMs = nowMs
+                                GitHubRefreshNotificationHelper.notifyProgress(
+                                    context = context,
+                                    current = completedCount,
+                                    total = totalCount,
+                                    preReleaseUpdateCount = preReleaseUpdateCount,
+                                    updatableCount = updatableCount,
+                                    failedCount = failedCount
+                                )
+                            }
+                            if (showToast && itemState.failed) {
+                                env.toast(
+                                    R.string.github_toast_repo_message,
+                                    item.owner,
+                                    item.repo,
+                                    itemState.message
+                                )
+                            }
+                        }
+                    }
+                }.joinAll()
             }
             state.overviewRefreshState = OverviewRefreshState.Completed
             state.lastRefreshMs = System.currentTimeMillis()
