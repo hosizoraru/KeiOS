@@ -130,7 +130,6 @@ class MiIslandNotificationBuilder(
             isBlueArchiveCafeVisit = isBlueArchiveCafeVisit,
             isBlueArchiveArenaRefresh = isBlueArchiveArenaRefresh
         )
-        val showLeadingIslandIcon = !isBlueArchiveCafeVisit && !isBlueArchiveArenaRefresh
         val lightLogoIcon = if (isBlueArchiveNotification) {
             Icon.createWithResource(context, islandIconResId)
         } else {
@@ -177,13 +176,11 @@ class MiIslandNotificationBuilder(
             island {
                 islandProperty = 1
                 bigIslandArea {
-                    if (showLeadingIslandIcon) {
-                        imageTextInfoLeft {
+                    imageTextInfoLeft {
+                        type = 1
+                        picInfo {
                             type = 1
-                            picInfo {
-                                type = 1
-                                pic = displayIconKey
-                            }
+                            pic = displayIconKey
                         }
                     }
                     if (presentation.showProgressRing) {
@@ -277,7 +274,7 @@ class MiIslandNotificationBuilder(
             return IslandPresentation(
                 allowFloat = false,
                 showTextButtons = true,
-                rightTitle = "",
+                rightTitle = context.getString(R.string.ba_notification_ap_island_text),
                 notificationOngoing = true,
                 requestPromotedOngoing = true,
                 focusUpdatable = true,
@@ -343,7 +340,7 @@ class MiIslandNotificationBuilder(
     ): String? {
         return when {
             !state.running -> state.statusText(context)
-            isBlueArchiveAp -> ""
+            isBlueArchiveAp -> context.getString(R.string.ba_notification_ap_island_text)
             isBlueArchiveCafeVisit || isBlueArchiveArenaRefresh -> state.onlineText(context)
             else -> state.onlineText(context)
         }.takeIf { it.isNotBlank() }

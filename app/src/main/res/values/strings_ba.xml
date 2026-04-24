@@ -39,6 +39,7 @@
     <string name="ba_toast_notification_permission_required">请先授予通知权限</string>
     <string name="ba_toast_cafe_visit_notification_sent">已发送咖啡厅学生访问通知</string>
     <string name="ba_toast_arena_refresh_notification_sent">已发送竞技场刷新通知</string>
+    <string name="ba_notification_ap_island_text">AP</string>
     <string name="ba_cafe_visit_notification_title">咖啡厅学生来访问啦</string>
     <string name="ba_cafe_visit_notification_content">咖啡厅学生来访问啦</string>
     <string name="ba_cafe_visit_notification_content_detail">%1$s %2$d:00 学生来访问啦</string>
