@@ -274,7 +274,7 @@ class MiIslandNotificationBuilder(
             return IslandPresentation(
                 allowFloat = false,
                 showTextButtons = true,
-                rightTitle = "${state.port.coerceAtLeast(0)}/${state.clients.coerceAtLeast(0)}",
+                rightTitle = "",
                 notificationOngoing = true,
                 requestPromotedOngoing = true,
                 focusUpdatable = true,
@@ -289,7 +289,7 @@ class MiIslandNotificationBuilder(
             return IslandPresentation(
                 allowFloat = true,
                 showTextButtons = true,
-                rightTitle = context.getString(R.string.ba_cafe_visit_notification_island_text),
+                rightTitle = context.getString(R.string.ba_cafe_visit_notification_island_compact_text),
                 notificationOngoing = false,
                 requestPromotedOngoing = false,
                 focusUpdatable = true,
@@ -302,7 +302,7 @@ class MiIslandNotificationBuilder(
             return IslandPresentation(
                 allowFloat = true,
                 showTextButtons = true,
-                rightTitle = context.getString(R.string.ba_arena_refresh_notification_island_text),
+                rightTitle = context.getString(R.string.ba_arena_refresh_notification_island_compact_text),
                 notificationOngoing = false,
                 requestPromotedOngoing = false,
                 focusUpdatable = true,
@@ -342,8 +342,9 @@ class MiIslandNotificationBuilder(
     ): String? {
         return when {
             !state.running -> state.statusText(context)
-            isBlueArchiveAp -> state.shortText
-            isBlueArchiveCafeVisit || isBlueArchiveArenaRefresh -> state.onlineText(context)
+            isBlueArchiveAp -> ""
+            isBlueArchiveCafeVisit -> context.getString(R.string.ba_cafe_visit_notification_island_compact_text)
+            isBlueArchiveArenaRefresh -> context.getString(R.string.ba_arena_refresh_notification_island_compact_text)
             else -> state.onlineText(context)
         }.takeIf { it.isNotBlank() }
     }
