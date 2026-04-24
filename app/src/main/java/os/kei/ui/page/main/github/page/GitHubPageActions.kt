@@ -60,7 +60,9 @@ internal class GitHubPageActions(
     suspend fun reloadApps(forceRefresh: Boolean = false) =
         refreshActions.reloadApps(forceRefresh = forceRefresh)
 
-    suspend fun initializePage() = refreshActions.initializePage()
+    suspend fun initializeWarmSnapshot() = refreshActions.initializeWarmSnapshot()
+
+    suspend fun initializePageActiveWork() = refreshActions.initializePageActiveWork()
 
     suspend fun syncTrackSnapshotFromStore(forceRefreshApps: Boolean = true) =
         refreshActions.syncSnapshotFromStore(forceRefreshApps)

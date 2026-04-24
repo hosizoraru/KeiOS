@@ -92,10 +92,22 @@ internal class GitHubRefreshActions(
         state.appListLoaded = true
     }
 
-    suspend fun initializePage() {
+    suspend fun initializeWarmSnapshot() {
         applyTrackSnapshot(
             withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
         )
+        val hasTracked = state.trackedItems.isNotEmpty()
+        val hasCachedForTracked = state.trackedItems.any { item ->
+            state.checkStates.containsKey(item.id)
+        }
+        state.overviewRefreshState = when {
+            !hasTracked -> OverviewRefreshState.Idle
+            hasCachedForTracked -> OverviewRefreshState.Cached
+            else -> OverviewRefreshState.Idle
+        }
+    }
+
+    suspend fun initializePageActiveWork() {
         AppBackgroundScheduler.scheduleGitHubRefresh(context)
         reloadApps(forceRefresh = false)
         val refreshedRequestedTracks = refreshRequestedTracksIfNeeded()

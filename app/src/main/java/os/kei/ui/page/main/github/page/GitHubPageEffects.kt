@@ -21,7 +21,8 @@ internal fun BindGitHubPageEffects(
     context: Context,
     listState: LazyListState,
     scrollToTopSignal: Int,
-    isPageActive: Boolean,
+    isPageWarmActive: Boolean,
+    isPageDataActive: Boolean,
     state: GitHubPageState,
     actions: GitHubPageActions,
     installedOnlineShareTargets: List<OnlineShareTargetOption>,
@@ -36,34 +37,47 @@ internal fun BindGitHubPageEffects(
         actions.handleInstalledOnlineShareTargetsChanged(installedOnlineShareTargets)
     }
 
-    LaunchedEffect(isPageActive) {
-        if (!isPageActive) return@LaunchedEffect
-        delay(GITHUB_PAGE_ACTIVE_SYNC_DELAY_MS)
+    LaunchedEffect(isPageWarmActive) {
+        if (!isPageWarmActive) return@LaunchedEffect
         val currentSignalVersion = GitHubTrackStoreSignals.version.value
         if (!state.hasInitialized) {
             state.hasInitialized = true
-            actions.initializePage()
+            actions.initializeWarmSnapshot()
         } else if (currentSignalVersion > state.lastTrackStoreSignalVersion) {
-            actions.syncTrackSnapshotFromStore(forceRefreshApps = true)
+            actions.syncTrackSnapshotFromStore(forceRefreshApps = false)
         }
-        actions.syncLocalAppStateOnPageActive()
         state.lastTrackStoreSignalVersion = currentSignalVersion
+    }
+
+    LaunchedEffect(isPageDataActive) {
+        if (!isPageDataActive) return@LaunchedEffect
+        delay(GITHUB_PAGE_ACTIVE_SYNC_DELAY_MS)
+        if (!state.hasInitialized) {
+            state.hasInitialized = true
+            actions.initializeWarmSnapshot()
+        }
+        if (!state.hasActiveInitialized) {
+            state.hasActiveInitialized = true
+            actions.initializePageActiveWork()
+        } else {
+            actions.syncLocalAppStateOnPageActive()
+        }
         actions.trimExpiredPendingShareImportTrack()
     }
 
-    LaunchedEffect(isPageActive) {
-        if (!isPageActive) return@LaunchedEffect
+    LaunchedEffect(isPageWarmActive) {
+        if (!isPageWarmActive) return@LaunchedEffect
         GitHubTrackStoreSignals.version.collect { version ->
             if (version <= 0L) return@collect
             if (version <= state.lastTrackStoreSignalVersion) return@collect
             state.lastTrackStoreSignalVersion = version
             if (!state.hasInitialized) return@collect
-            actions.syncTrackSnapshotFromStore(forceRefreshApps = true)
+            actions.syncTrackSnapshotFromStore(forceRefreshApps = isPageDataActive)
         }
     }
 
-    LaunchedEffect(scrollToTopSignal, isPageActive) {
-        if (isPageActive && scrollToTopSignal > 0) {
+    LaunchedEffect(scrollToTopSignal, isPageDataActive) {
+        if (isPageDataActive && scrollToTopSignal > 0) {
             listState.animateScrollToItem(0)
         }
     }
@@ -84,8 +98,8 @@ internal fun BindGitHubPageEffects(
         }
     }
 
-    LaunchedEffect(isPageActive) {
-        if (!isPageActive) return@LaunchedEffect
+    LaunchedEffect(isPageDataActive) {
+        if (!isPageDataActive) return@LaunchedEffect
         AppPackageChangedEvents.events.collect { event ->
             actions.handlePackageChangedEvent(event)
         }
