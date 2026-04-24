@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -299,7 +300,6 @@ fun LiquidGlassBottomBar(
         label = "liquid_bottom_bar_item_press"
     )
     val combinedPressProgress = max(pressProgress, itemPressProgress)
-    val liquidInteractionActive = isLiquidEffectEnabled && combinedPressProgress > 0.001f
     val reducedEffectsProgress by appMotionFloatState(
         targetValue = if (reduceEffectsDuringPagerScroll) 1f else 0f,
         durationMillis = AppMotionTokens.glassEffectRelaxMs,
@@ -378,6 +378,7 @@ fun LiquidGlassBottomBar(
                         }
                     }
                     .graphicsLayer { translationX = chromeTranslationX }
+                    .clip(ContinuousCapsule)
                     .drawBackdrop(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
@@ -398,12 +399,11 @@ fun LiquidGlassBottomBar(
                         },
                         onDrawSurface = {
                             drawRect(palette.baseFillColor)
-                            drawRect(palette.readabilityScrimBrush)
-                            drawRect(palette.contentShieldColor)
                             drawRect(palette.edgeHighlightBrush)
                             drawRect(palette.edgeDepthBrush)
                         }
                     )
+                    .drawLiquidBottomBarMaterial(palette)
                     .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .height(AppChromeTokens.floatingBottomBarOuterHeight)
                     .padding(horizontal = horizontalPadding),
@@ -421,14 +421,15 @@ fun LiquidGlassBottomBar(
                         .alpha(0f)
                         .layerBackdrop(tabsBackdrop)
                         .graphicsLayer { translationX = chromeTranslationX }
+                        .clip(ContinuousCapsule)
                         .drawBackdrop(
                             backdrop = backdrop,
                             shape = { ContinuousCapsule },
                             effects = {
-                                if (liquidInteractionActive) {
-                                    val progress = combinedPressProgress
+                                if (isLiquidEffectEnabled) {
+                                    val progress = combinedPressProgress.fastCoerceIn(0f, 1f)
                                     vibrancy()
-                                    blur(effectBlurDp.toPx())
+                                    blur(effectBlurDp.toPx() * progress)
                                     lens(
                                         effectLensDp.toPx() * progress,
                                         effectLensDp.toPx() * progress
@@ -440,13 +441,10 @@ fun LiquidGlassBottomBar(
                             },
                             onDrawSurface = {
                                 drawRect(palette.baseFillColor)
-                                drawRect(palette.readabilityScrimBrush, alpha = 0.72f)
-                                drawRect(palette.contentShieldColor, alpha = 0.72f)
-                                if (liquidInteractionActive) {
-                                    drawRect(palette.edgeHighlightBrush, alpha = combinedPressProgress)
-                                }
+                                drawRect(palette.edgeHighlightBrush, alpha = combinedPressProgress)
                             }
                         )
+                        .drawLiquidBottomBarMaterial(palette, alpha = 0.72f)
                         .height(AppChromeTokens.floatingBottomBarInnerHeight)
                         .padding(horizontal = horizontalPadding),
                     verticalAlignment = Alignment.CenterVertically,
@@ -472,8 +470,8 @@ fun LiquidGlassBottomBar(
                             backdrop = combinedBackdrop,
                             shape = { ContinuousCapsule },
                             effects = {
-                                if (liquidInteractionActive) {
-                                    val progress = combinedPressProgress
+                                if (isLiquidEffectEnabled) {
+                                    val progress = combinedPressProgress.fastCoerceIn(0f, 1f)
                                     lens(
                                         indicatorLensWidthPx * progress * interactionLensScale,
                                         indicatorLensHeightPx * progress * interactionLensScale,
@@ -526,6 +524,15 @@ fun LiquidGlassBottomBar(
     }
 }
 
+private fun Modifier.drawLiquidBottomBarMaterial(
+    palette: LiquidBottomBarPalette,
+    alpha: Float = 1f
+): Modifier = drawWithContent {
+    drawRect(palette.readabilityScrimBrush, alpha = alpha)
+    drawRect(palette.contentShieldColor, alpha = alpha)
+    drawContent()
+}
+
 @Composable
 private fun rememberLiquidBottomBarPalette(
     isLiquidEffectEnabled: Boolean,
@@ -571,15 +578,15 @@ private fun rememberLiquidBottomBarPalette(
 
     if (isInLightTheme) {
         return@remember LiquidBottomBarPalette(
-            baseFillColor = surfaceContainer.copy(alpha = 0.82f),
+            baseFillColor = surfaceContainer.copy(alpha = 0.90f),
             inactiveContentColor = onSurface.copy(alpha = 0.88f),
             activeContentColor = primary,
             readabilityScrimBrush = Brush.verticalGradient(
-                0.00f to Color.White.copy(alpha = 0.34f),
-                0.42f to Color.White.copy(alpha = 0.24f),
-                1.00f to Color.White.copy(alpha = 0.36f)
+                0.00f to Color.White.copy(alpha = 0.44f),
+                0.42f to Color.White.copy(alpha = 0.32f),
+                1.00f to Color.White.copy(alpha = 0.46f)
             ),
-            contentShieldColor = Color.White.copy(alpha = 0.18f),
+            contentShieldColor = Color.White.copy(alpha = 0.28f),
             edgeHighlightBrush = Brush.verticalGradient(
                 0.00f to Color.White.copy(alpha = 0.18f),
                 0.36f to Color.White.copy(alpha = 0.03f),
@@ -599,15 +606,15 @@ private fun rememberLiquidBottomBarPalette(
     }
 
     return@remember LiquidBottomBarPalette(
-        baseFillColor = surfaceContainer.copy(alpha = 0.48f),
+        baseFillColor = surfaceContainer.copy(alpha = 0.58f),
         inactiveContentColor = onSurface.copy(alpha = 0.84f),
         activeContentColor = primary.copy(alpha = 0.98f),
         readabilityScrimBrush = Brush.verticalGradient(
-            0.00f to Color.Black.copy(alpha = 0.24f),
-            0.42f to Color.Black.copy(alpha = 0.16f),
-            1.00f to Color.Black.copy(alpha = 0.26f)
+            0.00f to Color.Black.copy(alpha = 0.30f),
+            0.42f to Color.Black.copy(alpha = 0.22f),
+            1.00f to Color.Black.copy(alpha = 0.32f)
         ),
-        contentShieldColor = Color.Black.copy(alpha = 0.12f),
+        contentShieldColor = Color.Black.copy(alpha = 0.18f),
         edgeHighlightBrush = Brush.verticalGradient(
             0.00f to Color.White.copy(alpha = 0.13f),
             0.34f to Color.White.copy(alpha = 0.02f),
