@@ -301,6 +301,9 @@ fun LiquidGlassBottomBar(
     val interactionLensScale = lerp(1f, 0.84f, reducedEffectsProgress)
     val effectBlurDp = UiPerformanceBudget.backdropBlur * effectBlurScale
     val effectLensDp = UiPerformanceBudget.backdropLens * effectLensScale
+    val tactileLiftPx = with(density) { 1.25.dp.toPx() } * combinedPressProgress
+    val tactileScaleX = lerp(1f, 1.006f, combinedPressProgress)
+    val tactileScaleY = lerp(1f, 0.996f, combinedPressProgress)
 
     val selectionProgressProvider: (Int) -> Float = remember(dampedDragAnimation) {
         { tabIndex ->
@@ -366,7 +369,12 @@ fun LiquidGlassBottomBar(
                             tabWidthPx = measuredTabWidthPx
                         }
                     }
-                    .graphicsLayer { translationX = panelOffset }
+                    .graphicsLayer {
+                        translationX = panelOffset
+                        translationY = -tactileLiftPx
+                        scaleX = tactileScaleX
+                        scaleY = tactileScaleY
+                    }
                     .drawBackdrop(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
@@ -403,7 +411,12 @@ fun LiquidGlassBottomBar(
                         .clearAndSetSemantics {}
                         .alpha(0f)
                         .layerBackdrop(tabsBackdrop)
-                        .graphicsLayer { translationX = panelOffset }
+                        .graphicsLayer {
+                            translationX = panelOffset
+                            translationY = -tactileLiftPx
+                            scaleX = tactileScaleX
+                            scaleY = tactileScaleY
+                        }
                         .drawBackdrop(
                             backdrop = backdrop,
                             shape = { ContinuousCapsule },
@@ -445,6 +458,9 @@ fun LiquidGlassBottomBar(
                             } else {
                                 -progressOffset + panelOffset
                             }
+                            translationY = -tactileLiftPx
+                            scaleX = tactileScaleX
+                            scaleY = tactileScaleY
                         }
                         .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
                         .then(dampedDragAnimation.modifier)
