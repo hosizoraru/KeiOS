@@ -7,18 +7,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.Icon
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.xzakota.hyper.notification.focus.FocusNotification
 import os.kei.MainActivity
 import os.kei.R
 import os.kei.core.log.AppLogger
-import os.kei.core.notification.focus.MiFocusNotificationAction
-import os.kei.core.notification.focus.MiFocusNotificationCompactMode
-import os.kei.core.notification.focus.MiFocusNotificationDisplayIconStyle
-import os.kei.core.notification.focus.MiFocusNotificationExpandedMode
-import os.kei.core.notification.focus.MiFocusNotificationSpec
-import os.kei.core.notification.focus.MiFocusNotificationTemplate
 import os.kei.core.prefs.UiPrefs
 import os.kei.feature.notification.NotificationActionReceiver
 import os.kei.mcp.framework.notification.NotificationHelper
@@ -332,17 +328,17 @@ object GitHubRefreshNotificationHelper {
         state: RefreshState,
         onlyAlertOnce: Boolean
     ): Notification {
+        val iconResId = ISLAND_ICON_RES_ID
         val title = resolveTitle(context, state)
         val content = resolveContent(context, state)
         val openPendingIntent = buildOpenPendingIntent(context)
-        val readPendingIntent = buildMarkReadPendingIntent(context)
         val shortCriticalText = if (state.running) {
             resolveCompactProgressText(context, state)
         } else {
             resolveCompactFractionText(context, state)
         }
         val baseBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(ISLAND_ICON_RES_ID)
+            .setSmallIcon(iconResId)
             .setContentTitle(title)
             .setContentText(content.ifBlank { " " })
             .setContentIntent(openPendingIntent)
@@ -350,23 +346,27 @@ object GitHubRefreshNotificationHelper {
                 if (state.running) NotificationCompat.CATEGORY_PROGRESS
                 else NotificationCompat.CATEGORY_STATUS
             )
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setColorized(true)
+            .setColor(Color.parseColor(MI_PROGRESS_COLOR))
             .setOngoing(state.running || state.keepUntilRead)
             .setOnlyAlertOnce(onlyAlertOnce)
             .setAutoCancel(false)
+            .setRequestPromotedOngoing(state.running || state.keepUntilRead)
             .setShortCriticalText(shortCriticalText)
-        if (state.running) {
-            baseBuilder
-                .setProgress(100, state.progressPercent, false)
-                .addAction(0, context.getString(R.string.common_open), openPendingIntent)
-                .addAction(0, context.getString(R.string.common_acknowledge), readPendingIntent)
-        }
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setProgress(
+                if (state.running) 100 else 0,
+                if (state.running) state.progressPercent else 0,
+                false
+            )
+
         buildMiIslandFocusExtras(
             context = context,
             state = state,
             title = title,
             content = content,
-            openPendingIntent = openPendingIntent,
-            readPendingIntent = readPendingIntent
+            iconResId = iconResId
         )?.let(baseBuilder::addExtras)
         return baseBuilder.build()
     }
@@ -376,63 +376,112 @@ object GitHubRefreshNotificationHelper {
         state: RefreshState,
         title: String,
         content: String,
-        openPendingIntent: PendingIntent,
-        readPendingIntent: PendingIntent
+        iconResId: Int
     ) = runCatching {
-        MiFocusNotificationTemplate.build(
-            context = context,
-            spec = if (state.running) {
-                MiFocusNotificationSpec(
-                    title = title,
-                    content = content,
-                    compactTitle = " ",
-                    displayIconResId = ISLAND_ICON_RES_ID,
-                    tickerIconResId = ISLAND_ICON_RES_ID,
-                    compactMode = MiFocusNotificationCompactMode.PROGRESS,
-                    expandedMode = MiFocusNotificationExpandedMode.BASE_INFO,
-                    displayIconStyle = MiFocusNotificationDisplayIconStyle.ORIGINAL,
-                    allowFloat = false,
-                    outerGlow = true,
-                    updatable = true,
-                    showNotification = true,
-                    progressPercent = state.progressPercent,
-                    progressColor = MI_PROGRESS_COLOR,
-                    progressTrackColor = MI_PROGRESS_TRACK_COLOR,
-                    showExpandedProgress = true
-                )
-            } else {
-                MiFocusNotificationSpec(
-                    title = title,
-                    content = content,
-                    compactTitle = resolveCompactFractionText(context, state),
-                    compactContent = resolveCompactStateContent(context, state),
-                    displayIconResId = ISLAND_ICON_RES_ID,
-                    tickerIconResId = ISLAND_ICON_RES_ID,
-                    compactMode = MiFocusNotificationCompactMode.TEXT,
-                    expandedMode = MiFocusNotificationExpandedMode.ICON_TEXT,
-                    displayIconStyle = MiFocusNotificationDisplayIconStyle.ORIGINAL,
-                    allowFloat = true,
-                    outerGlow = true,
-                    updatable = false,
-                    showNotification = true,
-                    showHighlightColor = state.failedCount > 0,
-                    embedTextButtons = true,
-                    actions = listOf(
-                        MiFocusNotificationAction(
-                            key = "github_action_open",
-                            title = context.getString(R.string.common_open),
-                            pendingIntent = openPendingIntent,
-                            isHighlighted = true
-                        ),
-                        MiFocusNotificationAction(
-                            key = "github_action_read",
-                            title = context.getString(R.string.common_acknowledge),
-                            pendingIntent = readPendingIntent
-                        )
-                    )
-                )
+        val progressPercent = state.progressPercent.coerceIn(0, 100)
+        val fractionText = resolveCompactFractionText(context, state)
+        val compactStateContent = resolveCompactStateContent(context, state)
+        FocusNotification.buildV3 {
+            val lightLogoIcon = Icon.createWithResource(context, iconResId)
+            val darkLogoIcon = Icon.createWithResource(context, iconResId)
+            val light = createPicture("github_logo_light", lightLogoIcon)
+            val dark = createPicture("github_logo_dark", darkLogoIcon)
+
+            islandFirstFloat = true
+            enableFloat = !state.running
+            updatable = true
+            ticker = title
+            tickerPic = light
+            tickerPicDark = dark
+            outEffectSrc = "outer_glow"
+
+            island {
+                islandProperty = 1
+                bigIslandArea {
+                    imageTextInfoLeft {
+                        type = 1
+                        picInfo {
+                            type = 1
+                            pic = dark
+                        }
+                    }
+                    if (state.running) {
+                        progressTextInfo {
+                            progressInfo {
+                                progress = progressPercent
+                                isCCW = true
+                                colorReach = MI_PROGRESS_COLOR
+                                colorUnReach = MI_PROGRESS_TRACK_COLOR
+                            }
+                            textInfo {
+                                this.title = " "
+                            }
+                        }
+                    } else {
+                        imageTextInfoRight {
+                            type = 3
+                            textInfo {
+                                this.title = fractionText
+                                this.content = compactStateContent
+                                this.showHighlightColor = state.failedCount > 0
+                            }
+                        }
+                    }
+                }
+                smallIslandArea {
+                    picInfo {
+                        type = 1
+                        pic = dark
+                    }
+                }
             }
-        )
+
+            baseInfo {
+                type = 2
+                this.title = title
+                this.content = content.ifBlank { " " }
+            }
+
+            if (state.running) {
+                multiProgressInfo {
+                    progress = progressPercent
+                    color = MI_PROGRESS_COLOR
+                }
+            }
+
+            picInfo {
+                type = 1
+                pic = light
+                picDark = dark
+            }
+
+            if (!state.running) {
+                textButton {
+                    addActionInfo {
+                        val nativeAction = Notification.Action.Builder(
+                            Icon.createWithResource(context, iconResId),
+                            context.getString(R.string.common_open),
+                            buildOpenPendingIntent(context)
+                        ).build()
+                        action = createAction("github_action_open", nativeAction)
+                        actionTitle = context.getString(R.string.common_open)
+                        actionBgColor = "#006EFF"
+                        actionBgColorDark = "#006EFF"
+                        actionTitleColor = "#FFFFFF"
+                        actionTitleColorDark = "#FFFFFF"
+                    }
+                    addActionInfo {
+                        val nativeAction = Notification.Action.Builder(
+                            Icon.createWithResource(context, iconResId),
+                            context.getString(R.string.common_acknowledge),
+                            buildMarkReadPendingIntent(context)
+                        ).build()
+                        action = createAction("github_action_read", nativeAction)
+                        actionTitle = context.getString(R.string.common_acknowledge)
+                    }
+                }
+            }
+        }
     }.onFailure {
         AppLogger.e(TAG, "Build FocusNotification extras failed", it)
     }.getOrNull()
