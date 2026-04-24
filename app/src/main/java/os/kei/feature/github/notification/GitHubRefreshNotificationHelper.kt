@@ -86,15 +86,18 @@ object GitHubRefreshNotificationHelper {
         updatableCount: Int,
         failedCount: Int
     ) {
+        val safeTotal = total.coerceAtLeast(1)
+        val safeCurrent = current.coerceIn(0, safeTotal)
+        val isComplete = total > 0 && safeCurrent >= safeTotal
         notifyInternal(
             context = context,
             state = RefreshState(
-                current = current,
-                total = total,
+                current = safeCurrent,
+                total = safeTotal,
                 trackedCount = trackedCount,
                 updatableCount = updatableCount,
                 failedCount = failedCount,
-                running = true,
+                running = !isComplete,
                 cancelled = false
             ),
             onlyAlertOnce = true
@@ -230,7 +233,7 @@ object GitHubRefreshNotificationHelper {
     ): NotificationBuildResult {
         val helper = NotificationHelper(context)
         val preferSuperIsland = UiPrefs.isSuperIslandNotificationEnabled(defaultValue = false)
-        val style = if (preferSuperIsland && helper.isMiIslandAvailable) {
+        val style = if (preferSuperIsland && helper.isSupportMiIsland) {
             RenderStyle.MI_ISLAND
         } else {
             RenderStyle.LIVE_UPDATE
@@ -238,8 +241,7 @@ object GitHubRefreshNotificationHelper {
         AppLogger.i(
             TAG,
             "buildNotification preferSuperIsland=$preferSuperIsland supportMiIsland=${helper.isSupportMiIsland} " +
-                "focusPermission=${helper.hasMiIslandPermission} available=${helper.isMiIslandAvailable} " +
-                "style=$style"
+                "focusPermission=${helper.hasMiIslandPermission} style=$style"
         )
         val notification = when (style) {
             RenderStyle.MI_ISLAND -> buildMiIslandNotification(context, state, onlyAlertOnce)

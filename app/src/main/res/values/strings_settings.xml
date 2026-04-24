@@ -79,6 +79,10 @@
     <string name="settings_super_island_bypass_summary_enabled">已启用兼容绕过（高风险）：会临时改动系统网络规则以强触发超级岛。</string>
     <string name="settings_super_island_bypass_summary_disabled">默认关闭（推荐）：降低 HyperOS 状态栏/系统界面异常风险。</string>
     <string name="settings_super_island_bypass_note">仅超级岛样式生效；Live Update 不会使用该绕过。</string>
+    <string name="settings_super_island_restore_delay_title">超级岛恢复延迟</string>
+    <string name="settings_super_island_restore_delay_summary">当前在发送后等待 %1$dms 再恢复 `com.xiaomi.xmsf` 网络连接。</string>
+    <string name="settings_super_island_restore_delay_scope">仅影响启用“超级岛兼容绕过”后的恢复时序；MCP / GitHub / BA 超级岛共用该延迟。</string>
+    <string name="settings_super_island_restore_delay_note">默认推荐 %1$dms。8 Elite Gen5 可尝试 75ms，其它设备建议从默认值开始微调。</string>
     <string name="settings_super_island_style_title">超级岛通知样式</string>
     <string name="settings_super_island_style_summary_enabled">启用超级岛模板（Hyper Focus）。关闭后改用 AOSP Live Update 实时通知。</string>
     <string name="settings_super_island_style_summary_disabled">当前使用 AOSP Live Update 实时通知样式。开启后恢复超级岛模板。</string>

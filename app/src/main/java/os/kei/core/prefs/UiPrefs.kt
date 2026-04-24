@@ -25,6 +25,7 @@ data class UiPrefsSnapshot(
     val nonHomeBackgroundOpacity: Float,
     val superIslandNotificationEnabled: Boolean,
     val superIslandBypassRestrictionEnabled: Boolean,
+    val superIslandRestoreDelayMs: Int,
     val logDebugEnabled: Boolean,
     val textCopyCapabilityExpanded: Boolean,
     val cacheDiagnosticsEnabled: Boolean,
@@ -46,6 +47,7 @@ object UiPrefs {
     private const val KEY_NON_HOME_BACKGROUND_OPACITY = "non_home_background_opacity"
     private const val KEY_SUPER_ISLAND_NOTIFICATION = "super_island_notification"
     private const val KEY_SUPER_ISLAND_BYPASS_RESTRICTION = "super_island_bypass_restriction"
+    private const val KEY_SUPER_ISLAND_RESTORE_DELAY_MS = "super_island_restore_delay_ms"
     private const val KEY_LOG_DEBUG = "log_debug"
     private const val KEY_TEXT_COPY_CAPABILITY_EXPANDED = "text_copy_capability_expanded"
     private const val KEY_CACHE_DIAGNOSTICS = "cache_diagnostics"
@@ -54,6 +56,9 @@ object UiPrefs {
     private const val NON_HOME_BACKGROUND_OPACITY_DEFAULT = 0.16f
     private const val NON_HOME_BACKGROUND_OPACITY_MIN = 0.06f
     private const val NON_HOME_BACKGROUND_OPACITY_MAX = 0.40f
+    const val SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS = 100
+    const val SUPER_ISLAND_RESTORE_DELAY_MIN_MS = 50
+    const val SUPER_ISLAND_RESTORE_DELAY_MAX_MS = 350
     private val DEFAULT_VISIBLE_BOTTOM_PAGE_NAMES = setOf("Os", "Mcp", "GitHub", "Ba")
     private val store: MMKV by lazy { MMKV.mmkvWithID(KV_ID) }
     private val textCopyCapabilityExpandedState = MutableStateFlow(
@@ -172,6 +177,27 @@ object UiPrefs {
         kv().encode(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, value)
     }
 
+    fun getSuperIslandRestoreDelayMs(defaultValue: Int = SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS): Int {
+        val fallback = defaultValue.coerceIn(
+            SUPER_ISLAND_RESTORE_DELAY_MIN_MS,
+            SUPER_ISLAND_RESTORE_DELAY_MAX_MS
+        )
+        return kv().decodeInt(KEY_SUPER_ISLAND_RESTORE_DELAY_MS, fallback).coerceIn(
+            SUPER_ISLAND_RESTORE_DELAY_MIN_MS,
+            SUPER_ISLAND_RESTORE_DELAY_MAX_MS
+        )
+    }
+
+    fun setSuperIslandRestoreDelayMs(value: Int) {
+        kv().encode(
+            KEY_SUPER_ISLAND_RESTORE_DELAY_MS,
+            value.coerceIn(
+                SUPER_ISLAND_RESTORE_DELAY_MIN_MS,
+                SUPER_ISLAND_RESTORE_DELAY_MAX_MS
+            )
+        )
+    }
+
     fun isLogDebugEnabled(defaultValue: Boolean = BuildConfig.LOG_DEBUG_DEFAULT): Boolean {
         return kv().decodeBool(buildTypeAwareLogDebugKey(), defaultValue)
     }
@@ -243,6 +269,7 @@ object UiPrefs {
             nonHomeBackgroundOpacity = NON_HOME_BACKGROUND_OPACITY_DEFAULT,
             superIslandNotificationEnabled = false,
             superIslandBypassRestrictionEnabled = false,
+            superIslandRestoreDelayMs = SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS,
             logDebugEnabled = BuildConfig.LOG_DEBUG_DEFAULT,
             textCopyCapabilityExpanded = false,
             cacheDiagnosticsEnabled = true,
@@ -269,6 +296,7 @@ object UiPrefs {
             ).coerceIn(NON_HOME_BACKGROUND_OPACITY_MIN, NON_HOME_BACKGROUND_OPACITY_MAX),
             superIslandNotificationEnabled = store.decodeBool(KEY_SUPER_ISLAND_NOTIFICATION, false),
             superIslandBypassRestrictionEnabled = store.decodeBool(KEY_SUPER_ISLAND_BYPASS_RESTRICTION, false),
+            superIslandRestoreDelayMs = getSuperIslandRestoreDelayMs(),
             logDebugEnabled = store.decodeBool(buildTypeAwareLogDebugKey(), BuildConfig.LOG_DEBUG_DEFAULT),
             textCopyCapabilityExpanded = store.decodeBool(KEY_TEXT_COPY_CAPABILITY_EXPANDED, false),
             cacheDiagnosticsEnabled = store.decodeBool(KEY_CACHE_DIAGNOSTICS, true),

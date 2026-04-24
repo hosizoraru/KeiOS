@@ -89,6 +89,8 @@
     <string name="mcp_online_text_clients">在线 %1$d</string>
     <string name="mcp_keepalive_channel_name">MCP KeepAlive</string>
     <string name="mcp_keepalive_channel_desc">用于维持 MCP Server 前台保活并显示超级岛信息</string>
+    <string name="mcp_keepalive_service_channel_name">MCP KeepAlive Service</string>
+    <string name="mcp_keepalive_service_channel_desc">用于维持 MCP Server 前台服务壳通知</string>
     <string name="mcp_live_update_channel_name">MCP Live Update</string>
     <string name="mcp_live_update_channel_desc">用于展示 AOSP Live Update 实时通知</string>
     <string name="mcp_action_toggle_service">开关服务</string>

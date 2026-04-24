@@ -90,6 +90,8 @@ internal fun MainScreenNavHost(
                 onSuperIslandNotificationChanged = prefsState::updateSuperIslandNotificationEnabled,
                 superIslandBypassRestrictionEnabled = prefsState.superIslandBypassRestrictionEnabled,
                 onSuperIslandBypassRestrictionChanged = prefsState::updateSuperIslandBypassRestrictionEnabled,
+                superIslandRestoreDelayMs = prefsState.superIslandRestoreDelayMs,
+                onSuperIslandRestoreDelayMsChanged = prefsState::updateSuperIslandRestoreDelayMs,
                 logDebugEnabled = prefsState.logDebugEnabled,
                 onLogDebugChanged = prefsState::updateLogDebugEnabled,
                 textCopyCapabilityExpanded = prefsState.textCopyCapabilityExpanded,

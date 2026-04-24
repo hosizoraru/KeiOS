@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 
 class McpKeepAliveService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val notificationManager by lazy { NotificationManagerCompat.from(this) }
     private var heartbeatJob: Job? = null
     private var islandRefreshJob: Job? = null
     private var isForegroundPromoted: Boolean = false
@@ -50,12 +51,8 @@ class McpKeepAliveService : Service() {
                 } else {
                     requestedNotificationId
                 }
-                NotificationManagerCompat.from(this).cancel(resolvedNotificationId)
-                val shouldForceStop = resolvedNotificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID ||
-                    resolvedNotificationId == McpNotificationHelper.BA_CAFE_VISIT_NOTIFICATION_ID ||
-                    resolvedNotificationId == McpNotificationHelper.BA_ARENA_REFRESH_NOTIFICATION_ID ||
-                    intent.getBooleanExtra(EXTRA_FORCE_STOP_ON_DISMISS, false)
-                if (shouldForceStop || !currentRunning) {
+                McpNotificationHelper.cancelNotification(this, resolvedNotificationId)
+                if (!currentRunning) {
                     stopHeartbeat()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
@@ -67,6 +64,7 @@ class McpKeepAliveService : Service() {
                 stopIslandRefresh()
                 stopHeartbeat()
                 McpNotificationHelper.restoreXiaomiNetworkIfNeeded(this)
+                cancelCurrentIslandNotification()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 isForegroundPromoted = false
                 stopSelf()
@@ -104,20 +102,29 @@ class McpKeepAliveService : Service() {
                 )
                 val shouldPromoteForeground =
                     !isBlueArchiveNotification &&
-                        (!isForegroundPromoted ||
-                            intent?.action == ACTION_START ||
-                            previousNotificationId != notificationId)
+                        (!isForegroundPromoted || intent?.action == ACTION_START)
                 if (shouldPromoteForeground) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                         startForeground(
-                            notificationId,
+                            McpNotificationHelper.KEEPALIVE_FOREGROUND_NOTIFICATION_ID,
                             notification,
                             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
                         )
                     } else {
-                        startForeground(notificationId, notification)
+                        startForeground(
+                            McpNotificationHelper.KEEPALIVE_FOREGROUND_NOTIFICATION_ID,
+                            notification
+                        )
                     }
                     isForegroundPromoted = true
+                } else if (!isBlueArchiveNotification && isForegroundPromoted) {
+                    notificationManager.notify(
+                        McpNotificationHelper.KEEPALIVE_FOREGROUND_NOTIFICATION_ID,
+                        notification
+                    )
+                }
+                if (!isBlueArchiveNotification && previousNotificationId != notificationId) {
+                    McpNotificationHelper.cancelNotification(this, previousNotificationId)
                 }
                 if (!isBlueArchiveNotification) {
                     refreshForegroundNotification(
@@ -143,6 +150,8 @@ class McpKeepAliveService : Service() {
         stopIslandRefresh()
         stopHeartbeat()
         McpNotificationHelper.restoreXiaomiNetworkIfNeeded(this)
+        cancelCurrentIslandNotification()
+        notificationManager.cancel(McpNotificationHelper.KEEPALIVE_FOREGROUND_NOTIFICATION_ID)
         isForegroundPromoted = false
         serviceScope.cancel()
         super.onDestroy()
@@ -162,7 +171,7 @@ class McpKeepAliveService : Service() {
             port = port,
             path = path,
             clients = clients,
-            notificationId = currentNotificationId
+            notificationId = McpNotificationHelper.KEEPALIVE_FOREGROUND_NOTIFICATION_ID
         )
     }
 
@@ -232,8 +241,8 @@ class McpKeepAliveService : Service() {
     ) {
         islandRefreshJob?.cancel()
         islandRefreshJob = serviceScope.launch {
-            // Foreground-service bookkeeping can overwrite the first island update on some
-            // HyperOS builds, so we re-apply once the service is fully settled.
+            // Cold-start Focus handling on some HyperOS builds still benefits from a few
+            // follow-up island re-applies after the foreground service is settled.
             val refreshCheckpoints = longArrayOf(420L, 1_150L, 2_300L, 4_000L)
             var elapsedMs = 0L
             refreshCheckpoints.forEach { checkpointMs ->
@@ -274,6 +283,10 @@ class McpKeepAliveService : Service() {
         islandRefreshJob = null
     }
 
+    private fun cancelCurrentIslandNotification() {
+        McpNotificationHelper.cancelNotification(this, currentNotificationId)
+    }
+
     companion object {
         private const val ACTION_START = "os.kei.mcp.keepalive.START"
         private const val ACTION_UPDATE = "os.kei.mcp.keepalive.UPDATE"
@@ -286,7 +299,6 @@ class McpKeepAliveService : Service() {
         private const val EXTRA_SERVER_NAME = "server_name"
         private const val EXTRA_CLIENTS = "clients"
         private const val EXTRA_HEARTBEAT_ENABLED = "heartbeat_enabled"
-        private const val EXTRA_FORCE_STOP_ON_DISMISS = "force_stop_on_dismiss"
 
         fun startOrUpdate(
             context: Context,
@@ -308,12 +320,6 @@ class McpKeepAliveService : Service() {
                 putExtra(EXTRA_CLIENTS, clients)
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
                 putExtra(EXTRA_HEARTBEAT_ENABLED, heartbeatEnabled)
-                putExtra(
-                    EXTRA_FORCE_STOP_ON_DISMISS,
-                    notificationId == McpNotificationHelper.BA_AP_NOTIFICATION_ID ||
-                        notificationId == McpNotificationHelper.BA_CAFE_VISIT_NOTIFICATION_ID ||
-                        notificationId == McpNotificationHelper.BA_ARENA_REFRESH_NOTIFICATION_ID
-                )
             }
             if (forceStart) {
                 ContextCompat.startForegroundService(context, intent)

@@ -1,8 +1,12 @@
 package os.kei.ui.page.main.settings.section
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.core.prefs.AppThemeMode
 import os.kei.ui.page.main.os.appLucideAlertIcon
@@ -14,11 +18,21 @@ import os.kei.ui.page.main.os.osLucideCopyIcon
 import os.kei.ui.page.main.settings.support.SettingsActionItem
 import os.kei.ui.page.main.settings.support.SettingsAppListAccessMode
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
+import os.kei.ui.page.main.settings.support.SettingsInfoItem
 import os.kei.ui.page.main.settings.support.SettingsOemAutoStartState
+import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS
+import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_KEY_POINTS
+import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_MAGNET_THRESHOLD
+import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_MAX_MS
+import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_MIN_MS
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
+import os.kei.ui.page.main.settings.support.formatMilliseconds
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
+import kotlin.math.roundToInt
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.basic.SliderDefaults
 
 @Composable
 internal fun SettingsPermissionKeepAliveSection(
@@ -456,6 +470,40 @@ internal fun SettingsNotifySection(
             onCheckedChange = actions.onSuperIslandBypassRestrictionChanged,
             infoKey = stringResource(R.string.common_note),
             infoValue = stringResource(R.string.settings_super_island_bypass_note)
+        )
+        SettingsActionItem(
+            title = stringResource(R.string.settings_super_island_restore_delay_title),
+            summary = stringResource(
+                R.string.settings_super_island_restore_delay_summary,
+                formatMilliseconds(state.superIslandRestoreDelayMs)
+            ),
+            infoKey = stringResource(R.string.common_scope),
+            infoValue = stringResource(R.string.settings_super_island_restore_delay_scope)
+        )
+        Slider(
+            value = state.superIslandRestoreDelayMs.toFloat().coerceIn(
+                SUPER_ISLAND_RESTORE_DELAY_MIN_MS,
+                SUPER_ISLAND_RESTORE_DELAY_MAX_MS
+            ),
+            onValueChange = { value ->
+                actions.onSuperIslandRestoreDelayMsChanged(value.roundToInt())
+            },
+            valueRange = SUPER_ISLAND_RESTORE_DELAY_MIN_MS..SUPER_ISLAND_RESTORE_DELAY_MAX_MS,
+            showKeyPoints = true,
+            keyPoints = SUPER_ISLAND_RESTORE_DELAY_KEY_POINTS,
+            magnetThreshold = SUPER_ISLAND_RESTORE_DELAY_MAGNET_THRESHOLD,
+            hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+            enabled = state.superIslandBypassRestrictionEnabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp)
+        )
+        SettingsInfoItem(
+            key = stringResource(R.string.common_note),
+            value = stringResource(
+                R.string.settings_super_island_restore_delay_note,
+                formatMilliseconds(SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS.roundToInt())
+            )
         )
     }
 }

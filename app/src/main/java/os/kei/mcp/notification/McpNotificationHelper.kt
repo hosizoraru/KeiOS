@@ -12,6 +12,7 @@ import androidx.core.app.NotificationManagerCompat
 import os.kei.MainActivity
 import os.kei.R
 import os.kei.core.log.AppLogger
+import os.kei.core.prefs.UiPrefs
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.feature.notification.NotificationActionReceiver
 import os.kei.mcp.service.McpKeepAliveService
@@ -32,7 +33,9 @@ object McpNotificationHelper {
 
     const val CHANNEL_ID = "mcp_keepalive_channel_v2"
     const val LIVE_CHANNEL_ID = "mcp_live_update_channel_v1"
+    const val FOREGROUND_SERVICE_CHANNEL_ID = "mcp_keepalive_service_channel_v1"
     private const val LEGACY_CHANNEL_ID = "mcp_keepalive_channel"
+    const val KEEPALIVE_FOREGROUND_NOTIFICATION_ID = 38887
     const val KEEPALIVE_NOTIFICATION_ID = 38888
     const val BA_AP_NOTIFICATION_ID = 38889
     const val BA_CAFE_VISIT_NOTIFICATION_ID = 38890
@@ -41,7 +44,6 @@ object McpNotificationHelper {
     private const val ACTION_DISMISS = "os.kei.mcp.keepalive.DISMISS"
     private const val EXTRA_NOTIFICATION_ID = "notification_id"
     private const val XMSF_PACKAGE_NAME = "com.xiaomi.xmsf"
-    private const val XIAOMI_MAGIC_BLOCK_INTERVAL_MS = 100L
 
     private enum class XiaomiMagicCommandSet {
         PACKAGE_NETWORKING,
@@ -104,6 +106,18 @@ object McpNotificationHelper {
                 enableVibration(false)
             }
             manager.createNotificationChannel(keepalive)
+        }
+        if (manager.getNotificationChannel(FOREGROUND_SERVICE_CHANNEL_ID) == null) {
+            val foregroundShell = NotificationChannel(
+                FOREGROUND_SERVICE_CHANNEL_ID,
+                context.getString(R.string.mcp_keepalive_service_channel_name),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = context.getString(R.string.mcp_keepalive_service_channel_desc)
+                setShowBadge(false)
+                enableVibration(false)
+            }
+            manager.createNotificationChannel(foregroundShell)
         }
         if (manager.getNotificationChannel(LIVE_CHANNEL_ID) == null) {
             val liveUpdate = NotificationChannel(
@@ -210,13 +224,13 @@ object McpNotificationHelper {
             openPendingIntent = openPendingIntent,
             stopPendingIntent = openPendingIntent
         )
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        return NotificationCompat.Builder(context, FOREGROUND_SERVICE_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_kei_logo_live_update)
             .setContentTitle(payload.title(context))
             .setContentText(payload.content(context).ifBlank { " " })
             .setContentIntent(openPendingIntent)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
@@ -534,6 +548,15 @@ object McpNotificationHelper {
         }
     }
 
+    private fun clearNotificationSnapshot(notificationId: Int) {
+        when (notificationId) {
+            KEEPALIVE_NOTIFICATION_ID -> keepAliveSnapshot = null
+            BA_AP_NOTIFICATION_ID -> baApSnapshot = null
+            BA_CAFE_VISIT_NOTIFICATION_ID -> baCafeVisitSnapshot = null
+            BA_ARENA_REFRESH_NOTIFICATION_ID -> baArenaRefreshSnapshot = null
+        }
+    }
+
     private fun notifyWithResolvedDispatcher(
         context: Context,
         notificationId: Int,
@@ -569,6 +592,17 @@ object McpNotificationHelper {
         )
     }
 
+    fun cancelNotification(
+        context: Context,
+        notificationId: Int
+    ) {
+        clearNotificationSnapshot(notificationId)
+        if (shizukuApiUtils.canUseCommand()) {
+            restoreXiaomiNetworkIfNeeded(context)
+        }
+        NotificationManagerCompat.from(context).cancel(notificationId)
+    }
+
     private fun notifyWithXiaomiMagic(
         context: Context,
         notificationId: Int,
@@ -597,7 +631,7 @@ object McpNotificationHelper {
                     AppLogger.i(TAG, "blocking xmsf network for uid=$nonNullUid")
                     blockXmsfNetworkingLocked(nonNullUid)
                     notificationManager.notify(notificationId, notification)
-                    delay(XIAOMI_MAGIC_BLOCK_INTERVAL_MS)
+                    delay(resolveXiaomiMagicBlockIntervalMs())
                 } finally {
                     AppLogger.i(TAG, "restoring xmsf network for uid=$nonNullUid")
                     restoreXmsfNetworkingLocked(nonNullUid)
@@ -714,5 +748,9 @@ object McpNotificationHelper {
             AppLogger.w(TAG, "magic command failed: $command; output=$output")
         }
         return success
+    }
+
+    private fun resolveXiaomiMagicBlockIntervalMs(): Long {
+        return UiPrefs.getSuperIslandRestoreDelayMs().toLong()
     }
 }

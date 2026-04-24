@@ -82,6 +82,8 @@ fun SettingsPage(
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     superIslandBypassRestrictionEnabled: Boolean,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
+    superIslandRestoreDelayMs: Int,
+    onSuperIslandRestoreDelayMsChanged: (Int) -> Unit,
     logDebugEnabled: Boolean,
     onLogDebugChanged: (Boolean) -> Unit,
     textCopyCapabilityExpanded: Boolean,
@@ -172,6 +174,7 @@ fun SettingsPage(
         cardPressFeedbackEnabled = cardPressFeedbackEnabled,
         superIslandNotificationEnabled = superIslandNotificationEnabled,
         superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
+        superIslandRestoreDelayMs = superIslandRestoreDelayMs,
         ignoringBatteryOptimizations = batteryOptimizationController.ignoringBatteryOptimizations,
         batteryOptimizationActionAvailable = batteryOptimizationController.requestActionAvailable,
         oemAutoStartState = permissionKeepAliveController.oemAutoStartState,
@@ -205,6 +208,7 @@ fun SettingsPage(
         onCardPressFeedbackChanged = onCardPressFeedbackChanged,
         onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
         onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
+        onSuperIslandRestoreDelayMsChanged = onSuperIslandRestoreDelayMsChanged,
         onOpenBatteryOptimizationSettings = {
             val opened = batteryOptimizationController.openBatteryOptimizationSettings()
             if (!opened) {

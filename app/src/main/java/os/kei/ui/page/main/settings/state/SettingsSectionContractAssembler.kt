@@ -48,6 +48,7 @@ internal fun rememberSettingsSectionContractBundle(
     cardPressFeedbackEnabled: Boolean,
     superIslandNotificationEnabled: Boolean,
     superIslandBypassRestrictionEnabled: Boolean,
+    superIslandRestoreDelayMs: Int,
     ignoringBatteryOptimizations: Boolean,
     batteryOptimizationActionAvailable: Boolean,
     oemAutoStartState: SettingsOemAutoStartState,
@@ -72,6 +73,7 @@ internal fun rememberSettingsSectionContractBundle(
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
+    onSuperIslandRestoreDelayMsChanged: (Int) -> Unit,
     onOpenBatteryOptimizationSettings: () -> Unit,
     onOpenOemAutoStartSettings: () -> Unit,
     onOpenAppListPermissionSettings: () -> Unit,
@@ -192,20 +194,24 @@ internal fun rememberSettingsSectionContractBundle(
     }
     val notifyState = remember(
         superIslandNotificationEnabled,
-        superIslandBypassRestrictionEnabled
+        superIslandBypassRestrictionEnabled,
+        superIslandRestoreDelayMs
     ) {
         SettingsNotifySectionState(
             superIslandNotificationEnabled = superIslandNotificationEnabled,
-            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled
+            superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
+            superIslandRestoreDelayMs = superIslandRestoreDelayMs
         )
     }
     val notifyActions = remember(
         onSuperIslandNotificationChanged,
-        onSuperIslandBypassRestrictionChanged
+        onSuperIslandBypassRestrictionChanged,
+        onSuperIslandRestoreDelayMsChanged
     ) {
         SettingsNotifySectionActions(
             onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
-            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged
+            onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
+            onSuperIslandRestoreDelayMsChanged = onSuperIslandRestoreDelayMsChanged
         )
     }
     val copyState = remember(textCopyCapabilityExpanded) {

@@ -31,6 +31,7 @@ internal class MainScreenUiPrefsState(
     var nonHomeBackgroundOpacity by mutableStateOf(snapshot.nonHomeBackgroundOpacity)
     var superIslandNotificationEnabled by mutableStateOf(snapshot.superIslandNotificationEnabled)
     var superIslandBypassRestrictionEnabled by mutableStateOf(snapshot.superIslandBypassRestrictionEnabled)
+    var superIslandRestoreDelayMs by mutableStateOf(snapshot.superIslandRestoreDelayMs)
     var logDebugEnabled by mutableStateOf(snapshot.logDebugEnabled)
     var textCopyCapabilityExpanded by mutableStateOf(snapshot.textCopyCapabilityExpanded)
     var cacheDiagnosticsEnabled by mutableStateOf(snapshot.cacheDiagnosticsEnabled)
@@ -96,6 +97,13 @@ internal class MainScreenUiPrefsState(
     fun updateSuperIslandBypassRestrictionEnabled(value: Boolean) {
         superIslandBypassRestrictionEnabled = value
         UiPrefs.setSuperIslandBypassRestrictionEnabled(value)
+        mcpServerManager.refreshNotificationNow()
+        McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
+    }
+
+    fun updateSuperIslandRestoreDelayMs(value: Int) {
+        superIslandRestoreDelayMs = value
+        UiPrefs.setSuperIslandRestoreDelayMs(value)
         mcpServerManager.refreshNotificationNow()
         McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
     }

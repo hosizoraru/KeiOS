@@ -233,6 +233,10 @@ internal fun formatOpacityPercent(alpha: Float): Int {
     return (alpha.coerceIn(0f, 1f) * 100f).roundToInt()
 }
 
+internal fun formatMilliseconds(value: Int): Int {
+    return value.coerceAtLeast(0)
+}
+
 private const val NON_HOME_BACKGROUND_CROP_DIR = "non_home_background"
 private const val NON_HOME_BACKGROUND_CROP_FILE_PREFIX = "cropped_non_home_"
 private const val NON_HOME_BACKGROUND_CROP_TARGET_SHORT_EDGE = 1440
@@ -251,6 +255,21 @@ internal val NON_HOME_BACKGROUND_OPACITY_KEY_POINTS = listOf(
     0.26f,
     0.33f,
     NON_HOME_BACKGROUND_OPACITY_MAX
+)
+internal const val SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS = 100f
+internal const val SUPER_ISLAND_RESTORE_DELAY_MIN_MS = 50f
+internal const val SUPER_ISLAND_RESTORE_DELAY_MAX_MS = 350f
+internal const val SUPER_ISLAND_RESTORE_DELAY_MAGNET_THRESHOLD = 6f
+internal val SUPER_ISLAND_RESTORE_DELAY_KEY_POINTS = listOf(
+    SUPER_ISLAND_RESTORE_DELAY_MIN_MS,
+    75f,
+    SUPER_ISLAND_RESTORE_DELAY_DEFAULT_MS,
+    125f,
+    150f,
+    200f,
+    250f,
+    300f,
+    SUPER_ISLAND_RESTORE_DELAY_MAX_MS
 )
 
 internal fun createNonHomeBackgroundCropOutputUri(context: Context): Uri {
