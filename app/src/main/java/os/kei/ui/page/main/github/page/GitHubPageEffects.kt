@@ -12,6 +12,9 @@ import os.kei.core.system.AppPackageChangedEvents
 import os.kei.feature.github.data.local.GitHubTrackStoreSignals
 import os.kei.feature.github.data.remote.GitHubVersionUtils
 import os.kei.ui.page.main.github.query.OnlineShareTargetOption
+import kotlinx.coroutines.delay
+
+private const val GITHUB_PAGE_ACTIVE_SYNC_DELAY_MS = 120L
 
 @Composable
 internal fun BindGitHubPageEffects(
@@ -35,6 +38,7 @@ internal fun BindGitHubPageEffects(
 
     LaunchedEffect(isPageActive) {
         if (!isPageActive) return@LaunchedEffect
+        delay(GITHUB_PAGE_ACTIVE_SYNC_DELAY_MS)
         val currentSignalVersion = GitHubTrackStoreSignals.version.value
         if (!state.hasInitialized) {
             state.hasInitialized = true

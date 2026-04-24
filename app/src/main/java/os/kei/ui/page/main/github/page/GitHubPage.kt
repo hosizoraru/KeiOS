@@ -38,8 +38,7 @@ import os.kei.feature.github.model.isKeiOsSelfTrack
 import os.kei.ui.page.main.widget.glass.GlassEffectRuntime
 import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
 import os.kei.ui.page.main.widget.glass.glassEffectRuntime
-import os.kei.ui.page.main.widget.motion.AppMotionTokens
-import os.kei.ui.page.main.widget.motion.appMotionFloatState
+import os.kei.ui.page.main.widget.glass.rememberGlassReductionProgress
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -205,7 +204,7 @@ fun GitHubPage(
         context = context,
         listState = listState,
         scrollToTopSignal = runtime.scrollToTopSignal,
-        isPageActive = runtime.isPageActive,
+        isPageActive = runtime.isDataActive,
         state = state,
         actions = actions,
         installedOnlineShareTargets = installedOnlineShareTargets,
@@ -218,9 +217,8 @@ fun GitHubPage(
         derivedStateOf { state.trackedItems.any { it.isKeiOsSelfTrack() } }
     }
     val upstreamGlassRuntime = glassEffectRuntime()
-    val listScrollGlassProgress by appMotionFloatState(
-        targetValue = if (isListScrolling) 1f else 0f,
-        durationMillis = AppMotionTokens.glassEffectRelaxMs,
+    val listScrollGlassProgress = rememberGlassReductionProgress(
+        reduceEffectsDuringMotion = isListScrolling,
         label = "githubListGlassEffectProgress"
     )
     val githubGlassRuntime = remember(upstreamGlassRuntime, listScrollGlassProgress) {

@@ -21,8 +21,7 @@ import os.kei.ui.page.main.mcp.McpPage
 import os.kei.ui.page.main.os.OsPage
 import os.kei.ui.page.main.widget.glass.GlassEffectRuntime
 import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
-import os.kei.ui.page.main.widget.motion.AppMotionTokens
-import os.kei.ui.page.main.widget.motion.appMotionFloatState
+import os.kei.ui.page.main.widget.glass.rememberGlassReductionProgress
 
 @Composable
 internal fun MainPagerPageHost(
@@ -68,9 +67,8 @@ internal fun MainPagerPageHost(
             BottomPage.GitHub -> githubScrollToTopSignal
         }
     )
-    val reducedGlassProgress by appMotionFloatState(
-        targetValue = if (runtime.isPagerScrollInProgress) 1f else 0f,
-        durationMillis = AppMotionTokens.glassEffectRelaxMs,
+    val reducedGlassProgress = rememberGlassReductionProgress(
+        reduceEffectsDuringMotion = runtime.isPagerScrollInProgress,
         label = "mainPagerGlassEffectProgress"
     )
     CompositionLocalProvider(

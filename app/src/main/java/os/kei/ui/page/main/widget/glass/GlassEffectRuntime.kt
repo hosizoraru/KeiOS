@@ -1,11 +1,18 @@
 package os.kei.ui.page.main.widget.glass
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
+import os.kei.ui.page.main.widget.motion.AppMotionTokens
+import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
+import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 
 @Immutable
 data class GlassEffectRuntime(
@@ -14,9 +21,9 @@ data class GlassEffectRuntime(
     fun blurScaleFor(variant: GlassVariant): Float = lerp(
         start = 1f,
         stop = when (variant) {
-            GlassVariant.Content -> 0.76f
-            GlassVariant.Floating -> 0.78f
-            else -> 0.80f
+            GlassVariant.Content -> 0.62f
+            GlassVariant.Floating -> 0.66f
+            else -> 0.70f
         },
         fraction = reducedProgress
     )
@@ -24,9 +31,9 @@ data class GlassEffectRuntime(
     fun lensScaleFor(variant: GlassVariant): Float = lerp(
         start = 1f,
         stop = when (variant) {
-            GlassVariant.Content -> 0.74f
-            GlassVariant.Floating -> 0.76f
-            else -> 0.78f
+            GlassVariant.Content -> 0.58f
+            GlassVariant.Floating -> 0.62f
+            else -> 0.66f
         },
         fraction = reducedProgress
     )
@@ -58,3 +65,30 @@ internal fun resolvedGlassLensDp(
     base: Dp,
     variant: GlassVariant
 ): Dp = base * glassEffectRuntime().lensScaleFor(variant)
+
+@Composable
+internal fun rememberGlassReductionProgress(
+    reduceEffectsDuringMotion: Boolean,
+    label: String
+): Float {
+    val animationsEnabled = LocalTransitionAnimationsEnabled.current
+    val progress = remember(label) {
+        Animatable(if (reduceEffectsDuringMotion) 1f else 0f)
+    }
+    LaunchedEffect(progress, reduceEffectsDuringMotion, animationsEnabled) {
+        if (reduceEffectsDuringMotion || !animationsEnabled) {
+            progress.snapTo(if (reduceEffectsDuringMotion) 1f else 0f)
+        } else {
+            progress.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(
+                    durationMillis = resolvedMotionDuration(
+                        AppMotionTokens.glassEffectRelaxMs,
+                        animationsEnabled
+                    )
+                )
+            )
+        }
+    }
+    return progress.value
+}

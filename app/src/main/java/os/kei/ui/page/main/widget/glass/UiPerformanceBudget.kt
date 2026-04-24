@@ -8,6 +8,7 @@ object UiPerformanceBudget {
     val backdropBlur: Dp = 8.dp
     val backdropLens: Dp = 24.dp
     const val mainPagerBeyondViewportPageCount: Int = 1
+    const val mainPagerActiveScrollBeyondViewportPageCount: Int = 0
     const val catalogPagerBeyondViewportPageCount: Int = 0
     const val guidePagerBeyondViewportPageCount: Int = 0
     const val guideStaticPrefetchInitialCount: Int = 5
