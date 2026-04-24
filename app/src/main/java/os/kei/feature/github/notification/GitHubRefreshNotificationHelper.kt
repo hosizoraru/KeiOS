@@ -28,6 +28,12 @@ object GitHubRefreshNotificationHelper {
     private const val ISLAND_ICON_RES_ID = R.drawable.ic_github_invertocat_island_blue
     private const val MI_PROGRESS_COLOR = "#1A73E8"
     private const val MI_PROGRESS_TRACK_COLOR = "#334155"
+    private const val RUNNING_PROGRESS_FLOOR = 6
+    private const val RUNNING_PROGRESS_CEILING = 96
+
+    private val progressLock = Any()
+    private var lastRunningTotal = 0
+    private var lastDisplayedProgressPercent = 0
 
     private data class NotificationBuildResult(
         val notification: Notification,
@@ -42,12 +48,13 @@ object GitHubRefreshNotificationHelper {
         val updatableCount: Int,
         val failedCount: Int,
         val running: Boolean,
-        val cancelled: Boolean
+        val cancelled: Boolean,
+        val displayProgressPercent: Int
     ) {
         val safeTotal: Int = total.coerceAtLeast(1)
         val safeCurrent: Int = current.coerceIn(0, safeTotal)
         val progressPercent: Int =
-            ((safeCurrent.toFloat() / safeTotal.toFloat()) * 100f).roundToInt().coerceIn(0, 100)
+            displayProgressPercent.coerceIn(0, 100)
 
         val shortText: String
             get() = "$safeCurrent/$safeTotal"
@@ -89,6 +96,12 @@ object GitHubRefreshNotificationHelper {
         val safeTotal = total.coerceAtLeast(1)
         val safeCurrent = current.coerceIn(0, safeTotal)
         val isComplete = total > 0 && safeCurrent >= safeTotal
+        val displayProgressPercent = resolveDisplayProgressPercent(
+            current = safeCurrent,
+            total = safeTotal,
+            running = !isComplete,
+            cancelled = false
+        )
         notifyInternal(
             context = context,
             state = RefreshState(
@@ -98,7 +111,8 @@ object GitHubRefreshNotificationHelper {
                 updatableCount = updatableCount,
                 failedCount = failedCount,
                 running = !isComplete,
-                cancelled = false
+                cancelled = false,
+                displayProgressPercent = displayProgressPercent
             ),
             onlyAlertOnce = true
         )
@@ -120,7 +134,13 @@ object GitHubRefreshNotificationHelper {
                 updatableCount = updatableCount,
                 failedCount = failedCount,
                 running = false,
-                cancelled = false
+                cancelled = false,
+                displayProgressPercent = resolveDisplayProgressPercent(
+                    current = total,
+                    total = total,
+                    running = false,
+                    cancelled = false
+                )
             ),
             onlyAlertOnce = true
         )
@@ -143,14 +163,61 @@ object GitHubRefreshNotificationHelper {
                 updatableCount = updatableCount,
                 failedCount = failedCount,
                 running = false,
-                cancelled = true
+                cancelled = true,
+                displayProgressPercent = resolveDisplayProgressPercent(
+                    current = current,
+                    total = total,
+                    running = false,
+                    cancelled = true
+                )
             ),
             onlyAlertOnce = true
         )
     }
 
     fun cancel(context: Context) {
+        resetDisplayProgress()
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+    }
+
+    private fun resolveDisplayProgressPercent(
+        current: Int,
+        total: Int,
+        running: Boolean,
+        cancelled: Boolean
+    ): Int = synchronized(progressLock) {
+        val safeTotal = total.coerceAtLeast(1)
+        val safeCurrent = current.coerceIn(0, safeTotal)
+        if (cancelled) {
+            val cancelledProgress = lastDisplayedProgressPercent.coerceIn(0, RUNNING_PROGRESS_CEILING)
+            resetDisplayProgressLocked()
+            return@synchronized cancelledProgress
+        }
+        if (!running) {
+            resetDisplayProgressLocked()
+            return@synchronized 100
+        }
+        if (safeTotal != lastRunningTotal || safeCurrent == 0) {
+            lastRunningTotal = safeTotal
+            lastDisplayedProgressPercent = 0
+        }
+        val rawProgress = ((safeCurrent.toFloat() / safeTotal.toFloat()) * 100f)
+            .roundToInt()
+            .coerceIn(RUNNING_PROGRESS_FLOOR, RUNNING_PROGRESS_CEILING)
+        val smoothedProgress = rawProgress
+            .coerceAtLeast(lastDisplayedProgressPercent)
+            .coerceAtMost(RUNNING_PROGRESS_CEILING)
+        lastDisplayedProgressPercent = smoothedProgress
+        smoothedProgress
+    }
+
+    private fun resetDisplayProgress() = synchronized(progressLock) {
+        resetDisplayProgressLocked()
+    }
+
+    private fun resetDisplayProgressLocked() {
+        lastRunningTotal = 0
+        lastDisplayedProgressPercent = 0
     }
 
     private fun resolveTitle(context: Context, state: RefreshState): String {

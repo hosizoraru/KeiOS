@@ -30,7 +30,9 @@ import kotlinx.coroutines.sync.withPermit
 
 private const val GITHUB_REFRESH_ALL_PARALLELISM = 4
 private const val GITHUB_REFRESH_UI_BATCH_SIZE = 4
-private const val GITHUB_REFRESH_PROGRESS_NOTIFY_INTERVAL_MS = 1_200L
+private const val GITHUB_REFRESH_PROGRESS_NOTIFY_BATCH_SIZE = 2
+private const val GITHUB_REFRESH_PROGRESS_NOTIFY_MIN_INTERVAL_MS = 500L
+private const val GITHUB_REFRESH_PROGRESS_NOTIFY_INTERVAL_MS = 850L
 
 private data class GitHubRefreshProgressSnapshot(
     val current: Int,
@@ -321,6 +323,28 @@ internal class GitHubRefreshActions(
                             }
                             completedCount += 1
                             pendingUiResults += item to itemState
+                            val nowMs = System.currentTimeMillis()
+                            val progressNotifyAgeMs = nowMs - lastProgressNotifyAtMs
+                            val shouldNotifyProgress =
+                                completedCount < totalCount &&
+                                    (
+                                        progressNotifyAgeMs >= GITHUB_REFRESH_PROGRESS_NOTIFY_INTERVAL_MS ||
+                                            (
+                                                completedCount % GITHUB_REFRESH_PROGRESS_NOTIFY_BATCH_SIZE == 0 &&
+                                                    progressNotifyAgeMs >=
+                                                    GITHUB_REFRESH_PROGRESS_NOTIFY_MIN_INTERVAL_MS
+                                                )
+                                        )
+                            if (shouldNotifyProgress) {
+                                lastProgressNotifyAtMs = nowMs
+                                progressNotifySnapshot = GitHubRefreshProgressSnapshot(
+                                    current = completedCount,
+                                    total = totalCount,
+                                    preReleaseUpdateCount = preReleaseUpdateCount,
+                                    updatableCount = updatableCount,
+                                    failedCount = failedCount
+                                )
+                            }
                             val shouldFlushUi = pendingUiResults.size >= GITHUB_REFRESH_UI_BATCH_SIZE ||
                                 completedCount == totalCount
                             if (shouldFlushUi) {
@@ -330,20 +354,6 @@ internal class GitHubRefreshActions(
                                     }
                                 }
                                 state.refreshProgress = completedCount.toFloat() / snapshot.size.toFloat()
-                                val nowMs = System.currentTimeMillis()
-                                if (
-                                    completedCount == totalCount ||
-                                    nowMs - lastProgressNotifyAtMs >= GITHUB_REFRESH_PROGRESS_NOTIFY_INTERVAL_MS
-                                ) {
-                                    lastProgressNotifyAtMs = nowMs
-                                    progressNotifySnapshot = GitHubRefreshProgressSnapshot(
-                                        current = completedCount,
-                                        total = totalCount,
-                                        preReleaseUpdateCount = preReleaseUpdateCount,
-                                        updatableCount = updatableCount,
-                                        failedCount = failedCount
-                                    )
-                                }
                                 if (showToast) {
                                     failedToasts = pendingUiResults.filter { (_, pendingState) ->
                                         pendingState.failed
