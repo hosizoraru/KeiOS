@@ -264,6 +264,7 @@ internal fun BaCalendarEntryPanel(
                 imageUrl = activity.imageUrl,
                 enabled = isPageActive,
                 modifier = Modifier.fillMaxWidth(),
+                loadEnabled = isPageActive && effectsEnabled
             )
         }
         Text(
@@ -490,7 +491,8 @@ internal fun BaPoolEntryPanel(
                         enabled = isPageActive,
                         modifier = Modifier.fillMaxWidth(),
                         contentScale = ContentScale.Fit,
-                        aspectRatioRange = 0.66f..1.34f
+                        aspectRatioRange = 0.66f..1.34f,
+                        loadEnabled = isPageActive && effectsEnabled
                     )
                 }
             }

@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,14 +26,16 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun BaGuideCatalogEntryAvatar(
     imageUrl: String,
-    fallbackRes: Int
+    fallbackRes: Int,
+    loadEnabled: Boolean = true
 ) {
     if (imageUrl.isBlank()) {
         BaGuideCatalogEntryAvatarFallback(iconRes = fallbackRes)
     } else {
         BaGuideCatalogEntryAvatarImage(
             imageUrl = imageUrl,
-            fallbackRes = fallbackRes
+            fallbackRes = fallbackRes,
+            loadEnabled = loadEnabled
         )
     }
 }
@@ -41,10 +43,20 @@ internal fun BaGuideCatalogEntryAvatar(
 @Composable
 private fun BaGuideCatalogEntryAvatarImage(
     imageUrl: String,
-    fallbackRes: Int
+    fallbackRes: Int,
+    loadEnabled: Boolean
 ) {
     val context = LocalContext.current
-    val bitmap by produceState<Bitmap?>(initialValue = BaGuideCatalogIconCache.get(imageUrl), imageUrl) {
+    val bitmap by produceState<Bitmap?>(
+        initialValue = BaGuideCatalogIconCache.get(imageUrl),
+        imageUrl,
+        loadEnabled
+    ) {
+        BaGuideCatalogIconCache.get(imageUrl)?.let { cached ->
+            value = cached
+            return@produceState
+        }
+        if (!loadEnabled) return@produceState
         value = withContext(Dispatchers.IO) { BaGuideCatalogIconCache.getOrLoad(context, imageUrl) }
     }
     val rendered = bitmap

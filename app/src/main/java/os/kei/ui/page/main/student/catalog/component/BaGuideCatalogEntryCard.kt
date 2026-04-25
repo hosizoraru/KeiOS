@@ -35,6 +35,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun BaGuideCatalogEntryCard(
     entry: BaGuideCatalogEntry,
     isFavorite: Boolean,
+    loadAvatarImage: Boolean = true,
     onOpenGuide: (String) -> Unit,
     onToggleFavorite: (Long) -> Unit
 ) {
@@ -76,7 +77,8 @@ internal fun BaGuideCatalogEntryCard(
             ) {
                 BaGuideCatalogEntryAvatar(
                     imageUrl = entry.iconUrl,
-                    fallbackRes = entry.tab.iconRes
+                    fallbackRes = entry.tab.iconRes,
+                    loadEnabled = loadAvatarImage
                 )
             }
 
