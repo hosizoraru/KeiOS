@@ -2,6 +2,7 @@ package os.kei.feature.github.data.remote
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import os.kei.core.system.HyperOsSettingsIntents
@@ -58,25 +59,33 @@ object GitHubVersionUtils {
         }
 
         val pm = context.packageManager
-        val mainIntent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_LAUNCHER) }
-        val activities = pm.queryIntentActivities(
-            mainIntent,
-            PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_ALL.toLong())
-        )
-        val packages = activities.map { it.activityInfo.packageName }.toSet()
+        val overlayFlagMask = installedAppResourceOverlayFlagMask()
+        val apps = pm.queryInstalledPackageInfos()
+            .asSequence()
+            .mapNotNull { pkgInfo ->
+                val packageName = pkgInfo.packageName.trim()
+                if (packageName.isBlank()) return@mapNotNull null
+                val appInfo = pkgInfo.applicationInfo ?: pm.getApplicationInfoCompat(packageName)
+                    ?: return@mapNotNull null
+                if (shouldIgnoreInstalledAppForGitHubList(appInfo, overlayFlagMask)) {
+                    return@mapNotNull null
+                }
 
-        val apps = packages.mapNotNull { pkg ->
-            runCatching {
-                val appInfo = pm.getApplicationInfo(pkg, PackageManager.ApplicationInfoFlags.of(0))
-                val label = pm.getApplicationLabel(appInfo).toString()
-                val pkgInfo = pm.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(0))
+                val label = runCatching {
+                    pm.getApplicationLabel(appInfo).toString()
+                }.getOrDefault(packageName).trim().ifBlank { packageName }
                 InstalledAppItem(
                     label = label,
-                    packageName = pkg,
+                    packageName = packageName,
                     lastUpdateTimeMs = pkgInfo.lastUpdateTime
                 )
-            }.getOrNull()
-        }.sortedBy { it.label.lowercase(Locale.getDefault()) }
+            }
+            .distinctBy { it.packageName }
+            .sortedWith(
+                compareBy<InstalledAppItem> { it.label.lowercase(Locale.getDefault()) }
+                    .thenBy { it.packageName.lowercase(Locale.ROOT) }
+            )
+            .toList()
         installedAppsCache = CachedInstalledApps(
             updatedAtMs = now,
             apps = apps
@@ -543,4 +552,40 @@ object GitHubVersionUtils {
             channelNumber = channelNumber
         )
     }
+}
+
+private fun PackageManager.queryInstalledPackageInfos() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
+} else {
+    @Suppress("DEPRECATION")
+    getInstalledPackages(0)
+}
+
+private fun PackageManager.getApplicationInfoCompat(packageName: String): ApplicationInfo? {
+    return runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            getApplicationInfo(packageName, 0)
+        }
+    }.getOrNull()
+}
+
+private fun installedAppResourceOverlayFlagMask(): Int {
+    return runCatching {
+        ApplicationInfo::class.java.getField("FLAG_IS_RESOURCE_OVERLAY").getInt(null)
+    }.getOrDefault(0)
+}
+
+private fun shouldIgnoreInstalledAppForGitHubList(
+    appInfo: ApplicationInfo,
+    overlayFlagMask: Int
+): Boolean {
+    if (!appInfo.enabled) return true
+    if ((appInfo.flags and ApplicationInfo.FLAG_INSTALLED) == 0) return true
+    if ((appInfo.flags and ApplicationInfo.FLAG_HAS_CODE) == 0) return true
+    if ((appInfo.flags and ApplicationInfo.FLAG_TEST_ONLY) != 0) return true
+    if (overlayFlagMask != 0 && (appInfo.flags and overlayFlagMask) != 0) return true
+    return false
 }
