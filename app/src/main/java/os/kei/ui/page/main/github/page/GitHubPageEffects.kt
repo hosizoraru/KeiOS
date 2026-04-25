@@ -9,8 +9,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.LazyListState
 import os.kei.R
 import os.kei.core.system.AppPackageChangedEvents
-import os.kei.feature.github.data.local.GitHubTrackStoreSignals
-import os.kei.feature.github.data.remote.GitHubVersionUtils
 import os.kei.ui.page.main.github.query.OnlineShareTargetOption
 import kotlinx.coroutines.delay
 
@@ -39,7 +37,7 @@ internal fun BindGitHubPageEffects(
 
     LaunchedEffect(isPageWarmActive) {
         if (!isPageWarmActive) return@LaunchedEffect
-        val currentSignalVersion = GitHubTrackStoreSignals.version.value
+        val currentSignalVersion = actions.currentTrackStoreSignalVersion()
         if (!state.hasInitialized) {
             state.hasInitialized = true
             actions.initializeWarmSnapshot()
@@ -67,7 +65,7 @@ internal fun BindGitHubPageEffects(
 
     LaunchedEffect(isPageWarmActive) {
         if (!isPageWarmActive) return@LaunchedEffect
-        GitHubTrackStoreSignals.version.collect { version ->
+        actions.trackStoreSignalVersions().collect { version ->
             if (version <= 0L) return@collect
             if (version <= state.lastTrackStoreSignalVersion) return@collect
             state.lastTrackStoreSignalVersion = version
@@ -85,7 +83,7 @@ internal fun BindGitHubPageEffects(
     LaunchedEffect(state.appListLoaded, state.appList) {
         if (state.appListLoaded && state.appList.isEmpty() && !state.hasAutoRequestedPermission) {
             state.hasAutoRequestedPermission = true
-            val intent = GitHubVersionUtils.buildAppListPermissionIntent(context)
+            val intent = actions.buildAppListPermissionIntent()
             if (intent != null) {
                 onLaunchAppListPermission(intent)
             } else {

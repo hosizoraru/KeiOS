@@ -3,17 +3,17 @@ package os.kei.ui.page.main.github.page.action
 import android.content.Context
 import android.widget.Toast
 import androidx.annotation.StringRes
-import os.kei.core.background.AppBackgroundScheduler
-import os.kei.feature.github.data.local.GitHubTrackStore
-import os.kei.feature.github.data.local.GitHubTrackStoreSignals
 import os.kei.ui.page.main.github.page.GitHubPageState
+import os.kei.ui.page.main.github.page.GitHubPageRepository
 import os.kei.ui.page.main.github.query.DownloaderOption
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 internal class GitHubPageActionEnvironment(
     val context: Context,
     val scope: CoroutineScope,
     val state: GitHubPageState,
+    val repository: GitHubPageRepository,
     val systemDmOption: DownloaderOption,
     val openLinkFailureMessage: String
 ) {
@@ -33,16 +33,17 @@ internal class GitHubPageActionEnvironment(
     fun saveTrackedItems(refreshTrackIds: Set<String> = emptySet()) {
         state.retainTrackedFirstInstallAtByTrackedItems()
         state.retainTrackedAddedAtByTrackedItems()
-        GitHubTrackStore.save(state.trackedItems.toList())
-        GitHubTrackStore.saveTrackedFirstInstallAtByPackage(state.trackedFirstInstallAtByPackage)
-        GitHubTrackStore.saveTrackedAddedAtById(state.trackedAddedAtById)
-        AppBackgroundScheduler.scheduleGitHubRefresh(context)
-        refreshTrackIds.forEach { trackId ->
-            GitHubTrackStoreSignals.requestTrackRefresh(
-                trackId = trackId,
-                notifyChangeSignal = false
+        val items = state.trackedItems.toList()
+        val trackedFirstInstallAtByPackage = state.trackedFirstInstallAtByPackage.toMap()
+        val trackedAddedAtById = state.trackedAddedAtById.toMap()
+        scope.launch {
+            repository.saveTrackedItems(
+                context = context,
+                items = items,
+                trackedFirstInstallAtByPackage = trackedFirstInstallAtByPackage,
+                trackedAddedAtById = trackedAddedAtById,
+                refreshTrackIds = refreshTrackIds
             )
         }
-        GitHubTrackStoreSignals.notifyChanged()
     }
 }

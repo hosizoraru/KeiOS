@@ -103,6 +103,7 @@ fun GitHubPage(
         context,
         scope,
         state,
+        githubPageViewModel.repository,
         systemDmOption,
         openLinkFailureMessage
     ) {
@@ -110,6 +111,7 @@ fun GitHubPage(
             context = context,
             scope = scope,
             state = state,
+            repository = githubPageViewModel.repository,
             systemDmOption = systemDmOption,
             openLinkFailureMessage = openLinkFailureMessage
         )

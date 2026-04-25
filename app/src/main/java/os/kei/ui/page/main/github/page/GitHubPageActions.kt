@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import os.kei.R
 import os.kei.core.system.AppPackageChangedEvent
-import os.kei.feature.github.data.local.GitHubTrackStore
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.VersionCheckUi
@@ -13,7 +12,6 @@ import os.kei.ui.page.main.github.page.action.GitHubConfigActions
 import os.kei.ui.page.main.github.page.action.GitHubPageActionEnvironment
 import os.kei.ui.page.main.github.page.action.GitHubRefreshActions
 import os.kei.ui.page.main.github.page.action.GitHubTrackActions
-import os.kei.ui.page.main.github.page.action.GitHubTrackImportPreview
 import os.kei.ui.page.main.github.query.DownloaderOption
 import os.kei.ui.page.main.github.query.OnlineShareTargetOption
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +21,7 @@ internal class GitHubPageActions(
     context: Context,
     scope: CoroutineScope,
     state: GitHubPageState,
+    repository: GitHubPageRepository,
     systemDmOption: DownloaderOption,
     openLinkFailureMessage: String
 ) {
@@ -30,6 +29,7 @@ internal class GitHubPageActions(
         context = context,
         scope = scope,
         state = state,
+        repository = repository,
         systemDmOption = systemDmOption,
         openLinkFailureMessage = openLinkFailureMessage
     )
@@ -149,21 +149,23 @@ internal class GitHubPageActions(
         installedOnlineShareTargets: List<OnlineShareTargetOption>
     ) = configActions.handleInstalledOnlineShareTargetsChanged(installedOnlineShareTargets)
 
+    fun currentTrackStoreSignalVersion(): Long = env.repository.currentTrackStoreSignalVersion()
+
+    fun trackStoreSignalVersions() = env.repository.trackStoreSignalVersions()
+
+    fun buildAppListPermissionIntent() = env.repository.buildAppListPermissionIntent(env.context)
+
     fun applyLookupConfig() = configActions.applyLookupConfig()
 
     fun applyCheckLogicSheet(installedOnlineShareTargets: List<OnlineShareTargetOption>) =
         configActions.applyCheckLogicSheet(installedOnlineShareTargets)
 
-    fun buildTrackedItemsExportJson(
-        exportedAtMillis: Long = System.currentTimeMillis()
-    ) = configActions.buildTrackedItemsExportJson(exportedAtMillis)
-
-    fun previewTrackedItemsImport(raw: String) = configActions.previewTrackedItemsImport(raw)
+    suspend fun previewTrackedItemsImport(raw: String) = configActions.previewTrackedItemsImport(raw)
 
     fun applyTrackedItemsImport(preview: GitHubTrackImportPreview) =
         configActions.applyTrackedItemsImport(preview)
 
-    fun importTrackedItemsJson(raw: String) = configActions.importTrackedItemsJson(raw)
+    suspend fun importTrackedItemsJson(raw: String) = configActions.importTrackedItemsJson(raw)
 
     fun cancelPendingShareImportTrack(showToast: Boolean = true) {
         val hadPending = env.state.pendingShareImportTrack != null
@@ -280,7 +282,9 @@ internal class GitHubPageActions(
 
     private fun clearPendingShareImportTrack() {
         env.state.pendingShareImportTrack = null
-        GitHubTrackStore.savePendingShareImportTrack(null)
+        env.scope.launch {
+            env.repository.clearPendingShareImportTrack()
+        }
     }
 
 }

@@ -1,16 +1,19 @@
 package os.kei.ui.page.main.github.page.action
 
+import kotlinx.coroutines.launch
 import os.kei.R
-import os.kei.feature.github.data.remote.GitHubVersionUtils
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.feature.github.model.defaultKeiOsTrackedApp
+import os.kei.ui.page.main.github.page.GitHubTrackEditorDraft
+import os.kei.ui.page.main.github.page.GitHubTrackEditorResult
 
 internal class GitHubTrackActions(
     private val env: GitHubPageActionEnvironment,
     private val refreshActions: GitHubRefreshActions
 ) {
     private val state get() = env.state
-    private val packageNamePattern = Regex("""^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$""")
+    private val scope get() = env.scope
+    private val repository get() = env.repository
 
     fun openTrackSheetForAdd() {
         state.resetTrackEditor()
@@ -53,77 +56,65 @@ internal class GitHubTrackActions(
     }
 
     fun applyTrackSheet() {
-        val nowMillis = System.currentTimeMillis()
-        val parsed = GitHubVersionUtils.parseOwnerRepo(state.repoUrlInput)
-        if (parsed == null) {
-            env.toast(R.string.github_toast_fill_repo_and_select_app)
-            return
-        }
-        val manualPackage = state.packageNameInput.trim()
-        val resolvedPackageName = manualPackage
-        if (resolvedPackageName.isNotBlank() && !packageNamePattern.matches(resolvedPackageName)) {
-            env.toast(R.string.github_toast_invalid_package_name)
-            return
-        }
-        val matchedInstalledApp = resolvedPackageName
-            .takeIf { it.isNotBlank() }
-            ?.let { packageName ->
-                state.appList.firstOrNull { item ->
-                    item.packageName.equals(packageName, ignoreCase = true)
-                }
-            }
-        val resolvedAppLabel = when {
-            matchedInstalledApp != null -> matchedInstalledApp.label
-            resolvedPackageName.isNotBlank() -> resolvedPackageName
-            else -> "${parsed.first}/${parsed.second}"
-        }
-        val newItem = GitHubTrackedApp(
-            repoUrl = state.repoUrlInput.trim(),
-            owner = parsed.first,
-            repo = parsed.second,
-            packageName = resolvedPackageName,
-            appLabel = resolvedAppLabel,
+        val draft = GitHubTrackEditorDraft(
+            repoUrl = state.repoUrlInput,
+            packageName = state.packageNameInput,
             preferPreRelease = state.preferPreReleaseInput,
-            alwaysShowLatestReleaseDownloadButton = state.alwaysShowLatestReleaseDownloadButtonInput
+            alwaysShowLatestReleaseDownloadButton = state.alwaysShowLatestReleaseDownloadButtonInput,
+            appList = state.appList
         )
-        val editing = state.editingTrackedItem
-        if (editing == null) {
-            if (state.trackedItems.any { it.id == newItem.id }) {
-                env.toast(R.string.github_toast_track_exists)
-                return
+        scope.launch {
+            val nowMillis = System.currentTimeMillis()
+            val newItem = when (val result = repository.buildTrackedItem(draft)) {
+                GitHubTrackEditorResult.InvalidRepository -> {
+                    env.toast(R.string.github_toast_fill_repo_and_select_app)
+                    return@launch
+                }
+                GitHubTrackEditorResult.InvalidPackageName -> {
+                    env.toast(R.string.github_toast_invalid_package_name)
+                    return@launch
+                }
+                is GitHubTrackEditorResult.Ready -> result.item
             }
-            state.trackedItems.add(newItem)
-            state.recordTrackedAddedAt(newItem.id, nowMillis)
-            env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
-            env.toast(R.string.github_toast_track_added)
-        } else {
-            val duplicate = state.trackedItems.any { it.id == newItem.id && it.id != editing.id }
-            if (duplicate) {
-                env.toast(R.string.github_toast_track_exists)
-                return
-            }
-            val existingAddedAt = state.trackedAddedAtById[editing.id]
-                ?.takeIf { it > 0L }
-                ?: state.trackedAddedAtById[newItem.id]
-                ?.takeIf { it > 0L }
-                ?: nowMillis
-            val index = state.trackedItems.indexOfFirst { it.id == editing.id }
-            if (index >= 0) {
-                state.trackedItems[index] = newItem
-            } else {
+            val editing = state.editingTrackedItem
+            if (editing == null) {
+                if (state.trackedItems.any { it.id == newItem.id }) {
+                    env.toast(R.string.github_toast_track_exists)
+                    return@launch
+                }
                 state.trackedItems.add(newItem)
+                state.recordTrackedAddedAt(newItem.id, nowMillis)
+                env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
+                env.toast(R.string.github_toast_track_added)
+            } else {
+                val duplicate = state.trackedItems.any { it.id == newItem.id && it.id != editing.id }
+                if (duplicate) {
+                    env.toast(R.string.github_toast_track_exists)
+                    return@launch
+                }
+                val existingAddedAt = state.trackedAddedAtById[editing.id]
+                    ?.takeIf { it > 0L }
+                    ?: state.trackedAddedAtById[newItem.id]
+                    ?.takeIf { it > 0L }
+                    ?: nowMillis
+                val index = state.trackedItems.indexOfFirst { it.id == editing.id }
+                if (index >= 0) {
+                    state.trackedItems[index] = newItem
+                } else {
+                    state.trackedItems.add(newItem)
+                }
+                if (editing.id != newItem.id) {
+                    state.checkStates.remove(editing.id)
+                    state.trackedCardExpanded.remove(editing.id)
+                    state.clearAssetUiState(editing.id)
+                    state.trackedAddedAtById.remove(editing.id)
+                }
+                state.recordTrackedAddedAt(newItem.id, existingAddedAt)
+                env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
+                env.toast(R.string.github_toast_track_updated)
             }
-            if (editing.id != newItem.id) {
-                state.checkStates.remove(editing.id)
-                state.trackedCardExpanded.remove(editing.id)
-                state.clearAssetUiState(editing.id)
-                state.trackedAddedAtById.remove(editing.id)
-            }
-            state.recordTrackedAddedAt(newItem.id, existingAddedAt)
-            env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
-            env.toast(R.string.github_toast_track_updated)
+            state.dismissTrackSheet()
         }
-        state.dismissTrackSheet()
     }
 
     fun confirmDeletePendingItem() {

@@ -7,19 +7,13 @@ import android.net.Uri
 import android.os.Environment
 import androidx.core.net.toUri
 import os.kei.R
-import os.kei.feature.github.data.local.GitHubReleaseAssetCacheStore
-import os.kei.feature.github.data.local.GitHubTrackStore
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
-import os.kei.feature.github.data.remote.GitHubReleaseAssetRepository
-import os.kei.feature.github.data.remote.GitHubVersionUtils
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.VersionCheckUi
 import os.kei.ui.page.main.github.asset.apkAssetTarget
 import os.kei.ui.page.main.github.statusActionUrl
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 internal class GitHubAssetActions(
     private val env: GitHubPageActionEnvironment
@@ -27,6 +21,7 @@ internal class GitHubAssetActions(
     private val context get() = env.context
     private val scope get() = env.scope
     private val state get() = env.state
+    private val repository get() = env.repository
     private val systemDmOption get() = env.systemDmOption
 
     fun openExternalUrl(
@@ -79,7 +74,7 @@ internal class GitHubAssetActions(
         val hasApiToken = state.lookupConfig.apiToken.isNotBlank()
         val releaseUrl = target.releaseUrl
         val normalizedRawTag = target.rawTag
-        val cacheKeyDefault = GitHubReleaseAssetCacheStore.buildCacheKey(
+        val cacheKeyDefault = repository.buildAssetCacheKey(
             owner = item.owner,
             repo = item.repo,
             rawTag = normalizedRawTag,
@@ -89,7 +84,7 @@ internal class GitHubAssetActions(
             includeAllAssets = false,
             hasApiToken = hasApiToken
         )
-        val cacheKeyAllAssets = GitHubReleaseAssetCacheStore.buildCacheKey(
+        val cacheKeyAllAssets = repository.buildAssetCacheKey(
             owner = item.owner,
             repo = item.repo,
             rawTag = normalizedRawTag,
@@ -99,9 +94,10 @@ internal class GitHubAssetActions(
             includeAllAssets = true,
             hasApiToken = hasApiToken
         )
-        scope.launch(Dispatchers.IO) {
-            GitHubReleaseAssetCacheStore.clear(cacheKeyDefault)
-            GitHubReleaseAssetCacheStore.clear(cacheKeyAllAssets)
+        scope.launch {
+            repository.clearAssetCaches(
+                listOf(cacheKeyDefault, cacheKeyAllAssets)
+            )
         }
     }
 
@@ -120,7 +116,7 @@ internal class GitHubAssetActions(
         )
         if (target == null) {
             val fallbackUrl = if (alwaysLatestRelease) {
-                GitHubVersionUtils.buildReleaseUrl(item.owner, item.repo)
+                repository.buildReleaseUrl(item.owner, item.repo)
             } else {
                 itemState.statusActionUrl(item.owner, item.repo)
             }
@@ -152,8 +148,8 @@ internal class GitHubAssetActions(
         state.apkAssetErrors.remove(item.id)
         scope.launch {
             val preferHtml = state.lookupConfig.selectedStrategy == GitHubLookupStrategyOption.AtomFeed
-            val refreshIntervalHours = GitHubTrackStore.loadRefreshIntervalHours()
-            val assetCacheKey = GitHubReleaseAssetCacheStore.buildCacheKey(
+            val refreshIntervalHours = repository.loadRefreshIntervalHours()
+            val assetCacheKey = repository.buildAssetCacheKey(
                 owner = item.owner,
                 repo = item.repo,
                 rawTag = target.rawTag,
@@ -163,12 +159,10 @@ internal class GitHubAssetActions(
                 includeAllAssets = includeAllAssets,
                 hasApiToken = state.lookupConfig.apiToken.isNotBlank()
             )
-            val persistedBundle = withContext(Dispatchers.IO) {
-                GitHubReleaseAssetCacheStore.load(
-                    cacheKey = assetCacheKey,
-                    refreshIntervalHours = refreshIntervalHours
-                )
-            }
+            val persistedBundle = repository.loadAssetBundle(
+                cacheKey = assetCacheKey,
+                refreshIntervalHours = refreshIntervalHours
+            )
             if (persistedBundle != null && state.matchesAssetSourceSignature(persistedBundle)) {
                 state.apkAssetLoading[item.id] = false
                 state.apkAssetBundles[item.id] = persistedBundle
@@ -179,30 +173,26 @@ internal class GitHubAssetActions(
                 )
                 return@launch
             } else if (persistedBundle != null) {
-                withContext(Dispatchers.IO) {
-                    GitHubReleaseAssetCacheStore.clear(assetCacheKey)
-                }
+                repository.clearAssetCache(assetCacheKey)
             }
-            val result = withContext(Dispatchers.IO) {
-                GitHubReleaseAssetRepository.fetchApkAssets(
-                    owner = item.owner,
-                    repo = item.repo,
-                    rawTag = target.rawTag,
-                    releaseUrl = target.releaseUrl,
-                    preferHtml = preferHtml,
-                    aggressiveFiltering = state.lookupConfig.aggressiveApkFiltering,
-                    includeAllAssets = includeAllAssets,
-                    apiToken = state.lookupConfig.apiToken
-                )
-            }
+            val result = repository.fetchApkAssets(
+                owner = item.owner,
+                repo = item.repo,
+                rawTag = target.rawTag,
+                releaseUrl = target.releaseUrl,
+                preferHtml = preferHtml,
+                aggressiveFiltering = state.lookupConfig.aggressiveApkFiltering,
+                includeAllAssets = includeAllAssets,
+                apiToken = state.lookupConfig.apiToken
+            )
             state.apkAssetLoading[item.id] = false
             result.onSuccess { bundle ->
                 val persistedBundle = bundle.copy(
                     sourceConfigSignature = state.buildAssetSourceSignature()
                 )
                 state.apkAssetBundles[item.id] = persistedBundle
-                scope.launch(Dispatchers.IO) {
-                    GitHubReleaseAssetCacheStore.save(
+                scope.launch {
+                    repository.saveAssetBundle(
                         cacheKey = assetCacheKey,
                         bundle = persistedBundle
                     )
@@ -223,13 +213,11 @@ internal class GitHubAssetActions(
         val token = state.lookupConfig.apiToken.trim()
         val preferApiAsset =
             state.lookupConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken
-        return withContext(Dispatchers.IO) {
-            GitHubReleaseAssetRepository.resolvePreferredDownloadUrl(
-                asset = asset,
-                useApiAssetUrl = preferApiAsset,
-                apiToken = token
-            ).getOrElse { asset.downloadUrl }
-        }
+        return repository.resolvePreferredDownloadUrl(
+            asset = asset,
+            useApiAssetUrl = preferApiAsset,
+            apiToken = token
+        )
     }
 
     private suspend fun shareApkLinkInternal(asset: GitHubReleaseAssetFile): Boolean {

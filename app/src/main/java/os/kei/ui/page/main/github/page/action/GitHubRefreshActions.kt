@@ -1,32 +1,23 @@
 package os.kei.ui.page.main.github.page.action
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import os.kei.R
-import os.kei.core.background.AppBackgroundScheduler
-import os.kei.feature.github.data.local.AppIconCache
 import os.kei.feature.github.data.local.GitHubTrackSnapshot
-import os.kei.feature.github.data.local.GitHubTrackStore
-import os.kei.feature.github.data.local.GitHubTrackStoreSignals
-import os.kei.feature.github.data.remote.GitHubVersionUtils
-import os.kei.feature.github.domain.GitHubReleaseCheckService
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubTrackedApp
-import os.kei.feature.github.notification.GitHubRefreshNotificationHelper
 import os.kei.ui.page.main.github.OverviewRefreshState
 import os.kei.ui.page.main.github.VersionCheckUi
 import os.kei.ui.page.main.github.isLocalAppUninstalled
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
 import os.kei.ui.page.main.github.state.toCacheEntry
 import os.kei.ui.page.main.github.state.toUi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.sync.withPermit
 
 private const val GITHUB_REFRESH_ALL_PARALLELISM = 4
 private const val GITHUB_REFRESH_UI_BATCH_SIZE = 4
@@ -48,28 +39,29 @@ internal class GitHubRefreshActions(
     private val context get() = env.context
     private val scope get() = env.scope
     private val state get() = env.state
+    private val repository get() = env.repository
 
     fun persistCheckCache(refreshTimestamp: Long = state.lastRefreshMs) {
-        val states = state.trackedItems.associate { item ->
-            val itemState = state.checkStates[item.id] ?: VersionCheckUi()
-            item.id to itemState.toCacheEntry()
+        val states = buildCheckCacheEntries()
+        scope.launch {
+            repository.saveCheckCache(states, refreshTimestamp)
         }
-        GitHubTrackStore.saveCheckCache(states, refreshTimestamp)
     }
 
     fun cancelRefreshAll(reason: String? = null) {
-        if (state.refreshAllJob?.isActive == true) {
-            state.refreshAllJob?.cancel()
-            state.refreshAllJob = null
-            val trackedCount = state.trackedItems.size
-            if (trackedCount > 0) {
-                val checkedCount = (state.refreshProgress * trackedCount.toFloat()).toInt()
-                    .coerceIn(0, trackedCount)
-                val updatableCount = state.trackedItems.count { state.checkStates[it.id]?.hasUpdate == true }
-                val preReleaseUpdateCount =
-                    state.trackedItems.count { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
-                val failedCount = state.trackedItems.count { state.checkStates[it.id]?.failed == true }
-                GitHubRefreshNotificationHelper.notifyCancelled(
+        if (state.refreshAllJob?.isActive != true) return
+        state.refreshAllJob?.cancel()
+        state.refreshAllJob = null
+        val trackedCount = state.trackedItems.size
+        if (trackedCount > 0) {
+            val checkedCount = (state.refreshProgress * trackedCount.toFloat()).toInt()
+                .coerceIn(0, trackedCount)
+            val updatableCount = state.trackedItems.count { state.checkStates[it.id]?.hasUpdate == true }
+            val preReleaseUpdateCount =
+                state.trackedItems.count { state.checkStates[it.id]?.hasPreReleaseUpdate == true }
+            val failedCount = state.trackedItems.count { state.checkStates[it.id]?.failed == true }
+            scope.launch {
+                repository.notifyRefreshCancelled(
                     context = context,
                     current = checkedCount,
                     total = trackedCount,
@@ -77,44 +69,39 @@ internal class GitHubRefreshActions(
                     updatableCount = updatableCount,
                     failedCount = failedCount
                 )
-            } else {
-                GitHubRefreshNotificationHelper.cancel(context)
             }
-            state.overviewRefreshState = if (state.trackedItems.isEmpty()) {
-                OverviewRefreshState.Idle
-            } else if (state.checkStates.isNotEmpty()) {
-                OverviewRefreshState.Cached
-            } else {
-                OverviewRefreshState.Idle
-            }
-            state.refreshProgress = 0f
-            env.toast(reason)
+        } else {
+            repository.cancelRefreshNotification(context)
         }
+        state.overviewRefreshState = if (state.trackedItems.isEmpty()) {
+            OverviewRefreshState.Idle
+        } else if (state.checkStates.isNotEmpty()) {
+            OverviewRefreshState.Cached
+        } else {
+            OverviewRefreshState.Idle
+        }
+        state.refreshProgress = 0f
+        env.toast(reason)
     }
 
     suspend fun reloadApps(forceRefresh: Boolean = false) {
-        state.appList = withContext(Dispatchers.IO) {
-            GitHubVersionUtils.queryInstalledLaunchableApps(
-                context = context,
-                forceRefresh = forceRefresh
-            )
-        }
+        state.appList = repository.queryInstalledLaunchableApps(
+            context = context,
+            forceRefresh = forceRefresh
+        )
         val trackedPackages = state.trackedItems
             .map { it.packageName.trim() }
             .filter { it.isNotBlank() }
             .distinct()
-        if (trackedPackages.isNotEmpty()) {
-            withContext(Dispatchers.IO) {
-                AppIconCache.preload(context, trackedPackages)
-            }
-        }
+        repository.preloadAppIcons(
+            context = context,
+            packageNames = trackedPackages
+        )
         state.appListLoaded = true
     }
 
     suspend fun initializeWarmSnapshot() {
-        applyTrackSnapshot(
-            withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
-        )
+        applyTrackSnapshot(repository.loadTrackSnapshot())
         val hasTracked = state.trackedItems.isNotEmpty()
         val hasCachedForTracked = state.trackedItems.any { item ->
             state.checkStates.containsKey(item.id)
@@ -127,7 +114,7 @@ internal class GitHubRefreshActions(
     }
 
     suspend fun initializePageActiveWork() {
-        AppBackgroundScheduler.scheduleGitHubRefresh(context)
+        repository.scheduleGitHubRefresh(context)
         reloadApps(forceRefresh = false)
         val refreshedRequestedTracks = refreshRequestedTracksIfNeeded()
         val hasTracked = state.trackedItems.isNotEmpty()
@@ -147,9 +134,7 @@ internal class GitHubRefreshActions(
     }
 
     suspend fun syncSnapshotFromStore(forceRefreshApps: Boolean = true) {
-        applyTrackSnapshot(
-            withContext(Dispatchers.IO) { GitHubTrackStore.loadSnapshot() }
-        )
+        applyTrackSnapshot(repository.loadTrackSnapshot())
         if (forceRefreshApps) {
             reloadApps(forceRefresh = true)
         }
@@ -177,7 +162,7 @@ internal class GitHubRefreshActions(
             if (packageName.isBlank()) return@forEach
 
             val latestLocalVersionInfo = runCatching {
-                GitHubVersionUtils.localVersionInfoOrNull(context, packageName)
+                repository.localVersionInfoOrNull(context, packageName)
             }.getOrNull()
             val installed = latestLocalVersionInfo != null
 
@@ -195,18 +180,6 @@ internal class GitHubRefreshActions(
                 refreshItem(item = item, showToastOnError = false)
             }
         }
-    }
-
-    private fun refreshRequestedTracksIfNeeded(): Boolean {
-        val trackedById = state.trackedItems.associateBy { it.id }
-        if (trackedById.isEmpty()) return false
-        val requestedIds = GitHubTrackStoreSignals.consumeTrackRefreshRequests(trackedById.keys)
-        if (requestedIds.isEmpty()) return false
-        requestedIds.forEach { trackId ->
-            val item = trackedById[trackId] ?: return@forEach
-            refreshItem(item = item, showToastOnError = false)
-        }
-        return true
     }
 
     fun refreshItem(
@@ -247,7 +220,7 @@ internal class GitHubRefreshActions(
             env.toast(itemState.message)
         }
         state.checkStates[item.id] = itemState
-        persistCheckCache()
+        persistCheckCacheNow()
         onUpdated?.invoke(itemState)
     }
 
@@ -262,12 +235,12 @@ internal class GitHubRefreshActions(
             }
             state.overviewRefreshState = OverviewRefreshState.Idle
             state.refreshProgress = 0f
-            GitHubRefreshNotificationHelper.cancel(context)
+            repository.cancelRefreshNotification(context)
             return
         }
         state.refreshAllJob?.cancel()
         state.refreshAllJob = scope.launch {
-            GitHubTrackStore.clearCheckCache()
+            repository.clearCheckCache()
             state.lastRefreshMs = 0L
             state.overviewRefreshState = OverviewRefreshState.Refreshing
             state.refreshProgress = 0f
@@ -275,16 +248,14 @@ internal class GitHubRefreshActions(
             var updatableCount = 0
             var preReleaseUpdateCount = 0
             var failedCount = 0
-            withContext(Dispatchers.IO) {
-                GitHubRefreshNotificationHelper.notifyProgress(
-                    context = context,
-                    current = 0,
-                    total = totalCount,
-                    preReleaseUpdateCount = 0,
-                    updatableCount = 0,
-                    failedCount = 0
-                )
-            }
+            repository.notifyRefreshProgress(
+                context = context,
+                current = 0,
+                total = totalCount,
+                preReleaseUpdateCount = 0,
+                updatableCount = 0,
+                failedCount = 0
+            )
             snapshot.forEach { item ->
                 state.checkStates[item.id] = VersionCheckUi(
                     loading = true,
@@ -363,16 +334,14 @@ internal class GitHubRefreshActions(
                             }
                         }
                         progressNotifySnapshot?.let { progress ->
-                            withContext(Dispatchers.IO) {
-                                GitHubRefreshNotificationHelper.notifyProgress(
-                                    context = context,
-                                    current = progress.current,
-                                    total = progress.total,
-                                    preReleaseUpdateCount = progress.preReleaseUpdateCount,
-                                    updatableCount = progress.updatableCount,
-                                    failedCount = progress.failedCount
-                                )
-                            }
+                            repository.notifyRefreshProgress(
+                                context = context,
+                                current = progress.current,
+                                total = progress.total,
+                                preReleaseUpdateCount = progress.preReleaseUpdateCount,
+                                updatableCount = progress.updatableCount,
+                                failedCount = progress.failedCount
+                            )
                         }
                         failedToasts.forEach { (failedItem, failedState) ->
                             env.toast(
@@ -388,37 +357,48 @@ internal class GitHubRefreshActions(
             state.overviewRefreshState = OverviewRefreshState.Completed
             state.lastRefreshMs = System.currentTimeMillis()
             state.refreshProgress = 1f
-            persistCheckCache(state.lastRefreshMs)
+            persistCheckCacheNow(state.lastRefreshMs)
             onFinished?.invoke()
-            withContext(Dispatchers.IO) {
-                GitHubRefreshNotificationHelper.notifyCompleted(
-                    context = context,
-                    total = totalCount,
-                    preReleaseUpdateCount = preReleaseUpdateCount,
-                    updatableCount = updatableCount,
-                    failedCount = failedCount
-                )
-            }
+            repository.notifyRefreshCompleted(
+                context = context,
+                total = totalCount,
+                preReleaseUpdateCount = preReleaseUpdateCount,
+                updatableCount = updatableCount,
+                failedCount = failedCount
+            )
             state.refreshAllJob = null
         }
     }
 
-    private suspend fun resolveItemState(
-        item: GitHubTrackedApp
-    ): VersionCheckUi {
-        return withContext(Dispatchers.IO) {
-            GitHubReleaseCheckService.evaluateTrackedApp(context, item).toUi()
+    private suspend fun refreshRequestedTracksIfNeeded(): Boolean {
+        val trackedById = state.trackedItems.associateBy { it.id }
+        if (trackedById.isEmpty()) return false
+        val requestedIds = repository.consumeTrackRefreshRequests(trackedById.keys)
+        if (requestedIds.isEmpty()) return false
+        requestedIds.forEach { trackId ->
+            val item = trackedById[trackId] ?: return@forEach
+            refreshItem(item = item, showToastOnError = false)
         }
+        return true
+    }
+
+    private suspend fun persistCheckCacheNow(refreshTimestamp: Long = state.lastRefreshMs) {
+        repository.saveCheckCache(buildCheckCacheEntries(), refreshTimestamp)
+    }
+
+    private fun buildCheckCacheEntries() =
+        state.trackedItems.associate { item ->
+            val itemState = state.checkStates[item.id] ?: VersionCheckUi()
+            item.id to itemState.toCacheEntry()
+        }
+
+    private suspend fun resolveItemState(item: GitHubTrackedApp): VersionCheckUi {
+        return repository.evaluateTrackedApp(context, item)
     }
 
     private fun applyTrackSnapshot(trackSnapshot: GitHubTrackSnapshot) {
         val activeStrategyId = trackSnapshot.lookupConfig.selectedStrategy.storageId
-        val snapshotAssetSourceSignature = listOf(
-            "asset-v2",
-            trackSnapshot.lookupConfig.selectedStrategy.storageId,
-            trackSnapshot.lookupConfig.apiToken.isNotBlank().toString(),
-            trackSnapshot.lookupConfig.aggressiveApkFiltering.toString()
-        ).joinToString("|")
+        val snapshotAssetSourceSignature = state.buildAssetSourceSignature(trackSnapshot.lookupConfig)
         state.lookupConfig = trackSnapshot.lookupConfig
         state.selectedStrategyInput = trackSnapshot.lookupConfig.selectedStrategy
         state.githubApiTokenInput = trackSnapshot.lookupConfig.apiToken

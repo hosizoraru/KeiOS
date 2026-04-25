@@ -26,7 +26,7 @@ import os.kei.ui.page.main.github.RefreshIntervalOption
 import os.kei.ui.page.main.github.GitHubAppCandidateRow
 import os.kei.ui.page.main.github.GitHubSelectedAppCard
 import os.kei.ui.page.main.github.GitHubStatusPalette
-import os.kei.ui.page.main.github.page.action.GitHubTrackImportPreview
+import os.kei.ui.page.main.github.page.GitHubTrackImportPreview
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.github.query.DownloaderOption

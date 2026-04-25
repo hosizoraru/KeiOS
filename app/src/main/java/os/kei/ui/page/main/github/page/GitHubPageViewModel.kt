@@ -44,7 +44,7 @@ internal sealed interface GitHubTrackedImportStartResult {
 }
 
 internal class GitHubPageViewModel : ViewModel() {
-    private val repository = GitHubPageRepository()
+    val repository = GitHubPageRepository()
     private var pageState: GitHubPageState? = null
     private var contentStateJob: Job? = null
     private var pendingShareImportClockJob: Job? = null
