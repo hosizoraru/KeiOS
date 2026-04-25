@@ -42,6 +42,7 @@ fun AppPageScaffold(
     topBarColor: Color = Color.Transparent,
     navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
     searchBarVisible: Boolean = false,
     searchBarAnimationLabelPrefix: String = "appPageSearch",
     searchBarContent: (@Composable BoxScope.() -> Unit)? = null,
@@ -62,6 +63,7 @@ fun AppPageScaffold(
                 searchBarContent = searchBarContent
             )
         },
+        bottomBar = bottomBar,
         content = content
     )
 }

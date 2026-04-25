@@ -1,6 +1,9 @@
 package os.kei.ui.page.main.settings.page
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -8,11 +11,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -22,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.core.prefs.AppThemeMode
 import os.kei.core.system.ShizukuApiUtils
@@ -42,8 +49,10 @@ import os.kei.ui.page.main.settings.state.rememberSettingsPageUiState
 import os.kei.ui.page.main.settings.state.rememberSettingsSectionContractBundle
 import os.kei.ui.page.main.settings.support.rememberSettingsBatteryOptimizationController
 import os.kei.ui.page.main.settings.support.rememberSettingsPermissionKeepAliveController
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
+import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import android.widget.Toast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -248,6 +257,13 @@ fun SettingsPage(
 
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
+    var selectedCategory by rememberSaveable { mutableStateOf(SettingsCategory.Access) }
+    val bottomBarBackdrop = rememberLayerBackdrop()
+    val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+    LaunchedEffect(selectedCategory) {
+        listState.scrollToItem(0)
+    }
 
     AppPageScaffold(
         title = settingsTitle,
@@ -262,6 +278,17 @@ fun SettingsPage(
                     tint = MiuixTheme.colorScheme.onSurface
                 )
             }
+        },
+        bottomBar = {
+            SettingsCategoryBottomBar(
+                visible = true,
+                navigationBarBottom = navigationBarBottom,
+                selectedCategory = selectedCategory,
+                selectedCategoryProvider = { selectedCategory },
+                backdrop = bottomBarBackdrop,
+                isLiquidEffectEnabled = liquidBottomBarEnabled,
+                onSelectCategory = { selectedCategory = it }
+            )
         }
     ) { innerPadding ->
         CompositionLocalProvider(
@@ -272,97 +299,111 @@ fun SettingsPage(
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
+                    .layerBackdrop(bottomBarBackdrop)
                     .nestedScroll(scrollBehavior.nestedScrollConnection),
+                bottomExtra = appPageBottomPaddingWithFloatingOverlay(
+                    AppChromeTokens.pageBottomInsetExtra
+                ),
                 sectionSpacing = 12.dp
             ) {
-                item {
-                    SettingsPermissionKeepAliveSection(
-                        state = sectionContracts.permissionKeepAliveState,
-                        actions = sectionContracts.permissionKeepAliveActions,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsVisualSection(
-                        state = sectionContracts.visualState,
-                        actions = sectionContracts.visualActions,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsAnimationSection(
-                        state = sectionContracts.animationState,
-                        actions = sectionContracts.animationActions,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsComponentEffectsSection(
-                        state = sectionContracts.componentEffectsState,
-                        actions = sectionContracts.componentEffectsActions,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsBackgroundSection(
-                        nonHomeBackgroundEnabled = nonHomeBackgroundEnabled,
-                        onNonHomeBackgroundEnabledChanged = onNonHomeBackgroundEnabledChanged,
-                        nonHomeBackgroundUri = nonHomeBackgroundUri,
-                        nonHomeBackgroundOpacity = nonHomeBackgroundOpacity,
-                        onNonHomeBackgroundOpacityChanged = onNonHomeBackgroundOpacityChanged,
-                        backgroundPickerLauncher = backgroundController.backgroundPickerLauncher,
-                        onClearBackground = backgroundController.clearBackground,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsLogSection(
-                        logDebugEnabled = logDebugEnabled,
-                        onLogDebugChanged = onLogDebugChanged,
-                        logStats = logController.logStats,
-                        exportingLogZip = logController.exportingLogZip,
-                        clearingLogs = logController.clearingLogs,
-                        onExportZipClick = logController.exportZip,
-                        onClearLogsClick = logController.clearLogs,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsNotifySection(
-                        state = sectionContracts.notifyState,
-                        actions = sectionContracts.notifyActions,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsCopySection(
-                        state = sectionContracts.copyState,
-                        actions = sectionContracts.copyActions,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
-                }
-                item {
-                    SettingsCacheSection(
-                        cacheDiagnosticsEnabled = cacheDiagnosticsEnabled,
-                        onCacheDiagnosticsChanged = onCacheDiagnosticsChanged,
-                        cacheEntries = cacheController.cacheEntries,
-                        cacheEntriesLoading = cacheController.cacheEntriesLoading,
-                        clearingAllCaches = cacheController.clearingAllCaches,
-                        onClearingAllCachesChange = { cacheController.clearingAllCaches = it },
-                        clearingCacheId = cacheController.clearingCacheId,
-                        onClearingCacheIdChange = { cacheController.clearingCacheId = it },
-                        onCacheReload = cacheController::requestCacheReload,
-                        enabledCardColor = enabledCardColor,
-                        disabledCardColor = disabledCardColor
-                    )
+                when (selectedCategory) {
+                    SettingsCategory.Access -> {
+                        item {
+                            SettingsPermissionKeepAliveSection(
+                                state = sectionContracts.permissionKeepAliveState,
+                                actions = sectionContracts.permissionKeepAliveActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                    }
+                    SettingsCategory.Appearance -> {
+                        item {
+                            SettingsVisualSection(
+                                state = sectionContracts.visualState,
+                                actions = sectionContracts.visualActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsAnimationSection(
+                                state = sectionContracts.animationState,
+                                actions = sectionContracts.animationActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsComponentEffectsSection(
+                                state = sectionContracts.componentEffectsState,
+                                actions = sectionContracts.componentEffectsActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsBackgroundSection(
+                                nonHomeBackgroundEnabled = nonHomeBackgroundEnabled,
+                                onNonHomeBackgroundEnabledChanged = onNonHomeBackgroundEnabledChanged,
+                                nonHomeBackgroundUri = nonHomeBackgroundUri,
+                                nonHomeBackgroundOpacity = nonHomeBackgroundOpacity,
+                                onNonHomeBackgroundOpacityChanged = onNonHomeBackgroundOpacityChanged,
+                                backgroundPickerLauncher = backgroundController.backgroundPickerLauncher,
+                                onClearBackground = backgroundController.clearBackground,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                    }
+                    SettingsCategory.Notify -> {
+                        item {
+                            SettingsNotifySection(
+                                state = sectionContracts.notifyState,
+                                actions = sectionContracts.notifyActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                    }
+                    SettingsCategory.Data -> {
+                        item {
+                            SettingsCopySection(
+                                state = sectionContracts.copyState,
+                                actions = sectionContracts.copyActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsCacheSection(
+                                cacheDiagnosticsEnabled = cacheDiagnosticsEnabled,
+                                onCacheDiagnosticsChanged = onCacheDiagnosticsChanged,
+                                cacheEntries = cacheController.cacheEntries,
+                                cacheEntriesLoading = cacheController.cacheEntriesLoading,
+                                clearingAllCaches = cacheController.clearingAllCaches,
+                                onClearingAllCachesChange = { cacheController.clearingAllCaches = it },
+                                clearingCacheId = cacheController.clearingCacheId,
+                                onClearingCacheIdChange = { cacheController.clearingCacheId = it },
+                                onCacheReload = cacheController::requestCacheReload,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsLogSection(
+                                logDebugEnabled = logDebugEnabled,
+                                onLogDebugChanged = onLogDebugChanged,
+                                logStats = logController.logStats,
+                                exportingLogZip = logController.exportingLogZip,
+                                clearingLogs = logController.clearingLogs,
+                                onExportZipClick = logController.exportZip,
+                                onClearLogsClick = logController.clearLogs,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                    }
                 }
             }
         }
