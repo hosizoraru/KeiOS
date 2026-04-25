@@ -1,16 +1,13 @@
 package os.kei.ui.page.main.mcp.section
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.mcp.server.McpServerManager
 import os.kei.mcp.server.McpServerUiState
 import os.kei.ui.page.main.os.appLucideAppWindowIcon
 import os.kei.ui.page.main.os.appLucideConfigIcon
@@ -35,11 +32,9 @@ internal fun McpServiceControlSection(
     backdrop: LayerBackdrop,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    mcpServerManager: McpServerManager,
-    unknownText: String,
+    onSendTestNotification: () -> Unit,
     onShowResetConfigConfirm: () -> Unit,
 ) {
-    val context = LocalContext.current
     MiuixExpandableSection(
         backdrop = backdrop,
         title = stringResource(R.string.mcp_section_service_control_title),
@@ -62,26 +57,7 @@ internal fun McpServiceControlSection(
                     text = stringResource(R.string.mcp_action_send_test_notification),
                     modifier = modifier,
                     textColor = MiuixTheme.colorScheme.primary,
-                    onClick = {
-                        mcpServerManager.sendTestNotification()
-                            .onSuccess {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.mcp_toast_test_notification_sent),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            .onFailure {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(
-                                        R.string.common_send_failed_with_reason,
-                                        it.message ?: unknownText
-                                    ),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                    }
+                    onClick = onSendTestNotification
                 )
             },
             second = { modifier ->

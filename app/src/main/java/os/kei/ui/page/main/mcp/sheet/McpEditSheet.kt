@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.mcp.sheet
 
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -8,10 +7,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import os.kei.R
-import os.kei.mcp.server.McpServerManager
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.widget.glass.GlassIconButton
@@ -41,12 +38,10 @@ internal fun McpEditServiceSheet(
     portFieldWidth: Dp,
     allowExternal: Boolean,
     onAllowExternalChange: (Boolean) -> Unit,
-    mcpServerManager: McpServerManager,
-    unknownText: String,
+    onSave: () -> Unit,
     onDismissRequest: () -> Unit,
     onShowResetTokenConfirm: () -> Unit,
 ) {
-    val context = LocalContext.current
     SnapshotWindowBottomSheet(
         show = show,
         title = stringResource(R.string.mcp_sheet_edit_service_title),
@@ -66,42 +61,7 @@ internal fun McpEditServiceSheet(
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),
                 contentDescription = stringResource(R.string.common_save),
-                onClick = {
-                    val port = portText.toIntOrNull()
-                    if (port == null) {
-                        Toast.makeText(context, context.getString(R.string.common_port_invalid), Toast.LENGTH_SHORT).show()
-                        return@GlassIconButton
-                    }
-                    mcpServerManager.updateServerName(serverName)
-                    mcpServerManager.updatePort(port).onFailure {
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                R.string.common_save_failed_with_reason,
-                                it.message ?: unknownText
-                            ),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@GlassIconButton
-                    }
-                    mcpServerManager.updateAllowExternal(allowExternal).onFailure {
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                R.string.common_save_failed_with_reason,
-                                it.message ?: unknownText
-                            ),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@GlassIconButton
-                    }
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.mcp_toast_saved_requires_restart),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    onDismissRequest()
-                }
+                onClick = onSave
             )
         }
     ) {
@@ -123,7 +83,7 @@ internal fun McpEditServiceSheet(
                 SheetControlRow(label = stringResource(R.string.mcp_sheet_label_service_port)) {
                     GlassSearchField(
                         value = portText,
-                        onValueChange = { onPortTextChange(it.filter(Char::isDigit).take(5)) },
+                        onValueChange = onPortTextChange,
                         label = stringResource(R.string.mcp_input_port_hint),
                         backdrop = backdrop,
                         variant = GlassVariant.SheetInput,

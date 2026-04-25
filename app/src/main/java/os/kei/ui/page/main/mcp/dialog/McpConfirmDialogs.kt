@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.mcp.dialog
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,11 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.mcp.server.McpServerManager
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -22,10 +19,9 @@ import top.yukonga.miuix.kmp.window.WindowDialog
 @Composable
 internal fun McpResetConfigDialog(
     show: Boolean,
-    mcpServerManager: McpServerManager,
+    onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val context = LocalContext.current
     WindowDialog(
         show = show,
         title = stringResource(R.string.mcp_action_reset_service_config),
@@ -50,21 +46,7 @@ internal fun McpResetConfigDialog(
                         color = MiuixTheme.colorScheme.error,
                         textColor = MiuixTheme.colorScheme.onError
                     ),
-                    onClick = {
-                        val requiresRestart = mcpServerManager.resetServerConfigPreservingToken()
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                if (requiresRestart) {
-                                    R.string.mcp_toast_config_reset_requires_restart
-                                } else {
-                                    R.string.mcp_toast_config_reset
-                                }
-                            ),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        onDismissRequest()
-                    }
+                    onClick = onConfirm
                 )
             }
         }
@@ -74,10 +56,9 @@ internal fun McpResetConfigDialog(
 @Composable
 internal fun McpResetTokenDialog(
     show: Boolean,
-    mcpServerManager: McpServerManager,
+    onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val context = LocalContext.current
     WindowDialog(
         show = show,
         title = stringResource(R.string.mcp_action_reset_token),
@@ -102,15 +83,7 @@ internal fun McpResetTokenDialog(
                         color = MiuixTheme.colorScheme.error,
                         textColor = MiuixTheme.colorScheme.onError
                     ),
-                    onClick = {
-                        mcpServerManager.regenerateAuthToken()
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.mcp_toast_token_reset_reconnect),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        onDismissRequest()
-                    }
+                    onClick = onConfirm
                 )
             }
         }
