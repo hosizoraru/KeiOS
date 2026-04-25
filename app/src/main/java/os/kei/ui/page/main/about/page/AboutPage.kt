@@ -6,11 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -18,12 +15,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
 import os.kei.core.system.ShizukuApiUtils
-import os.kei.ui.page.main.about.model.buildComponentEntries
-import os.kei.ui.page.main.about.model.buildPermissionEntries
-import os.kei.ui.page.main.about.model.loadPackageDetailInfo
 import os.kei.ui.page.main.about.state.rememberAboutPageColorPalette
+import os.kei.ui.page.main.about.state.rememberAboutPageSectionExpansionState
 import os.kei.ui.page.main.about.section.AboutAppCardSection
 import os.kei.ui.page.main.about.section.AboutBuildSdkCardSection
 import os.kei.ui.page.main.about.section.AboutComponentCardSection
@@ -58,37 +54,27 @@ fun AboutPage(
 ) {
     val context = LocalContext.current
     val palette = rememberAboutPageColorPalette(shizukuStatus = shizukuStatus)
+    val viewModel: AboutPageViewModel = viewModel()
+    val detailsState by viewModel.detailsState.collectAsState()
 
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
-    var appExpanded by rememberSaveable { mutableStateOf(true) }
-    var runtimeExpanded by rememberSaveable { mutableStateOf(false) }
-    var permissionExpanded by rememberSaveable { mutableStateOf(false) }
-    var componentExpanded by rememberSaveable { mutableStateOf(false) }
-    var buildExpanded by rememberSaveable { mutableStateOf(false) }
-    var uiFrameworkExpanded by rememberSaveable { mutableStateOf(false) }
-    var githubExpanded by rememberSaveable { mutableStateOf(false) }
-    var networkExpanded by rememberSaveable { mutableStateOf(false) }
-    var mediaExpanded by rememberSaveable { mutableStateOf(false) }
-    var projectLicenseExpanded by rememberSaveable { mutableStateOf(false) }
-    var licenseExpanded by rememberSaveable { mutableStateOf(false) }
+    val expansionState = rememberAboutPageSectionExpansionState()
 
     LaunchedEffect(scrollToTopSignal) {
         if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
     }
 
-    val packageDetailInfo = remember(context) {
-        loadPackageDetailInfo(context)
+    LaunchedEffect(context, notificationPermissionGranted, shizukuStatus, shizukuApiUtils) {
+        viewModel.refreshDetails(
+            context = context,
+            notificationPermissionGranted = notificationPermissionGranted,
+            shizukuApiUtils = shizukuApiUtils
+        )
     }
-    val permissionEntries = remember(packageDetailInfo, notificationPermissionGranted) {
-        buildPermissionEntries(context, packageDetailInfo, notificationPermissionGranted)
-    }
-    val componentEntries = remember(packageDetailInfo) {
-        buildComponentEntries(context, packageDetailInfo)
-    }
-    val shizukuDetailMap = remember(shizukuStatus) {
-        shizukuApiUtils.detailedRows().toMap()
-    }
+    val permissionEntries = detailsState.permissionEntries
+    val componentEntries = detailsState.componentEntries
+    val shizukuDetailMap = detailsState.shizukuDetailMap
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
     val openLinkFailed = stringResource(R.string.common_open_link_failed)
 
@@ -125,8 +111,8 @@ fun AboutPage(
                     cardColor = palette.infoCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = appExpanded,
-                    onExpandedChange = { appExpanded = it }
+                    expanded = expansionState.appExpanded,
+                    onExpandedChange = { expansionState.appExpanded = it }
                 )
             }
             item {
@@ -134,8 +120,8 @@ fun AboutPage(
                     cardColor = palette.githubCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = githubExpanded,
-                    onExpandedChange = { githubExpanded = it },
+                    expanded = expansionState.githubExpanded,
+                    onExpandedChange = { expansionState.githubExpanded = it },
                     onOpenProjectUrl = { url ->
                         if (!openExternalUrl(context, url)) {
                             Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
@@ -155,8 +141,8 @@ fun AboutPage(
                     shizukuDetailMap = shizukuDetailMap,
                     permissionCount = permissionEntries.size,
                     componentCount = componentEntries.size,
-                    expanded = runtimeExpanded,
-                    onExpandedChange = { runtimeExpanded = it },
+                    expanded = expansionState.runtimeExpanded,
+                    onExpandedChange = { expansionState.runtimeExpanded = it },
                     onCheckShizuku = onCheckShizuku
                 )
             }
@@ -168,8 +154,8 @@ fun AboutPage(
                     readyColor = palette.readyColor,
                     notReadyColor = palette.notReadyColor,
                     entries = permissionEntries,
-                    expanded = permissionExpanded,
-                    onExpandedChange = { permissionExpanded = it }
+                    expanded = expansionState.permissionExpanded,
+                    onExpandedChange = { expansionState.permissionExpanded = it }
                 )
             }
             item {
@@ -179,8 +165,8 @@ fun AboutPage(
                     subtitleColor = palette.subtitleColor,
                     accent = palette.accent,
                     entries = componentEntries,
-                    expanded = componentExpanded,
-                    onExpandedChange = { componentExpanded = it }
+                    expanded = expansionState.componentExpanded,
+                    onExpandedChange = { expansionState.componentExpanded = it }
                 )
             }
             item {
@@ -188,8 +174,8 @@ fun AboutPage(
                     cardColor = palette.buildCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = buildExpanded,
-                    onExpandedChange = { buildExpanded = it }
+                    expanded = expansionState.buildExpanded,
+                    onExpandedChange = { expansionState.buildExpanded = it }
                 )
             }
             item {
@@ -197,8 +183,8 @@ fun AboutPage(
                     cardColor = palette.uiFrameworkCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = uiFrameworkExpanded,
-                    onExpandedChange = { uiFrameworkExpanded = it }
+                    expanded = expansionState.uiFrameworkExpanded,
+                    onExpandedChange = { expansionState.uiFrameworkExpanded = it }
                 )
             }
             item {
@@ -206,8 +192,8 @@ fun AboutPage(
                     cardColor = palette.networkServiceCardColor,
                     titleColor = palette.readyColor,
                     subtitleColor = palette.subtitleColor,
-                    expanded = networkExpanded,
-                    onExpandedChange = { networkExpanded = it }
+                    expanded = expansionState.networkExpanded,
+                    onExpandedChange = { expansionState.networkExpanded = it }
                 )
             }
             item {
@@ -215,8 +201,8 @@ fun AboutPage(
                     cardColor = palette.mediaStorageCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = mediaExpanded,
-                    onExpandedChange = { mediaExpanded = it }
+                    expanded = expansionState.mediaExpanded,
+                    onExpandedChange = { expansionState.mediaExpanded = it }
                 )
             }
             item {
@@ -224,8 +210,8 @@ fun AboutPage(
                     cardColor = palette.projectLicenseCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = projectLicenseExpanded,
-                    onExpandedChange = { projectLicenseExpanded = it },
+                    expanded = expansionState.projectLicenseExpanded,
+                    onExpandedChange = { expansionState.projectLicenseExpanded = it },
                     onOpenLicenseUrl = { url ->
                         if (!openExternalUrl(context, url)) {
                             Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
@@ -238,8 +224,8 @@ fun AboutPage(
                     cardColor = palette.licenseCardColor,
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
-                    expanded = licenseExpanded,
-                    onExpandedChange = { licenseExpanded = it },
+                    expanded = expansionState.licenseExpanded,
+                    onExpandedChange = { expansionState.licenseExpanded = it },
                     onOpenSourceUrl = { url ->
                         if (!openExternalUrl(context, url)) {
                             Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
