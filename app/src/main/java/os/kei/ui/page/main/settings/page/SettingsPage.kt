@@ -1,5 +1,8 @@
 package os.kei.ui.page.main.settings.page
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
@@ -53,10 +58,9 @@ import os.kei.ui.page.main.settings.section.SettingsPermissionKeepAliveSection
 import os.kei.ui.page.main.settings.section.SettingsCopySection
 import os.kei.ui.page.main.settings.section.SettingsVisualSection
 import os.kei.ui.page.main.settings.state.rememberSettingsBackgroundController
-import os.kei.ui.page.main.settings.state.rememberSettingsCacheController
-import os.kei.ui.page.main.settings.state.rememberSettingsLogController
 import os.kei.ui.page.main.settings.state.rememberSettingsPageUiState
 import os.kei.ui.page.main.settings.state.rememberSettingsSectionContractBundle
+import os.kei.ui.page.main.settings.state.SettingsPageViewModel
 import os.kei.ui.page.main.settings.support.rememberSettingsBatteryOptimizationController
 import os.kei.ui.page.main.settings.support.rememberSettingsPermissionKeepAliveController
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
@@ -66,7 +70,6 @@ import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
-import android.widget.Toast
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -131,6 +134,9 @@ fun SettingsPage(
     val latestNotificationPermissionGranted = rememberUpdatedState(notificationPermissionGranted)
     val latestShizukuStatus = rememberUpdatedState(shizukuStatus)
     var shizukuRefreshToken by remember { mutableIntStateOf(0) }
+    val settingsPageViewModel: SettingsPageViewModel = viewModel()
+    val cacheState by settingsPageViewModel.cacheState.collectAsState()
+    val logState by settingsPageViewModel.logState.collectAsState()
 
     val pageUiState = rememberSettingsPageUiState()
     val backgroundController = rememberSettingsBackgroundController(
@@ -138,14 +144,6 @@ fun SettingsPage(
         onNonHomeBackgroundEnabledChanged = onNonHomeBackgroundEnabledChanged,
         nonHomeBackgroundUri = nonHomeBackgroundUri,
         onNonHomeBackgroundUriChanged = onNonHomeBackgroundUriChanged
-    )
-    val logController = rememberSettingsLogController(
-        logDebugEnabled = logDebugEnabled,
-        pageUiState = pageUiState
-    )
-    val cacheController = rememberSettingsCacheController(
-        context = context,
-        cacheDiagnosticsEnabled = cacheDiagnosticsEnabled
     )
     val batteryOptimizationController = rememberSettingsBatteryOptimizationController(context)
     val permissionKeepAliveController = rememberSettingsPermissionKeepAliveController(
@@ -173,6 +171,18 @@ fun SettingsPage(
         permissionKeepAliveController.refresh(
             notificationPermissionGranted = notificationPermissionGranted,
             shizukuStatus = shizukuStatus
+        )
+    }
+    LaunchedEffect(context, cacheDiagnosticsEnabled) {
+        settingsPageViewModel.bindCacheDiagnostics(
+            context = context,
+            enabled = cacheDiagnosticsEnabled
+        )
+    }
+    LaunchedEffect(context, logDebugEnabled) {
+        settingsPageViewModel.bindLogStats(
+            context = context,
+            logDebugEnabled = logDebugEnabled
         )
     }
     LaunchedEffect(shizukuRefreshToken) {
@@ -272,6 +282,39 @@ fun SettingsPage(
         },
         onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged
     )
+
+    val logExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri == null) {
+            settingsPageViewModel.finishLogExport()
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val result = settingsPageViewModel.exportLogZip(context, uri)
+            settingsPageViewModel.finishLogExport()
+            if (result.isSuccess) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_log_toast_exported),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                    ?: context.getString(R.string.common_unknown)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_log_toast_export_failed, reason),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            settingsPageViewModel.reloadLogStats(context)
+        }
+    }
+    LaunchedEffect(logState.pendingExportFileName) {
+        val fileName = settingsPageViewModel.consumePendingExportFileName() ?: return@LaunchedEffect
+        logExportLauncher.launch(fileName)
+    }
 
     val scrollBehavior = MiuixScrollBehavior()
     val categories = remember { SettingsCategory.entries.toList() }
@@ -492,13 +535,38 @@ fun SettingsPage(
                                 SettingsCacheSection(
                                     cacheDiagnosticsEnabled = cacheDiagnosticsEnabled,
                                     onCacheDiagnosticsChanged = onCacheDiagnosticsChanged,
-                                    cacheEntries = cacheController.cacheEntries,
-                                    cacheEntriesLoading = cacheController.cacheEntriesLoading,
-                                    clearingAllCaches = cacheController.clearingAllCaches,
-                                    onClearingAllCachesChange = { cacheController.clearingAllCaches = it },
-                                    clearingCacheId = cacheController.clearingCacheId,
-                                    onClearingCacheIdChange = { cacheController.clearingCacheId = it },
-                                    onCacheReload = cacheController::requestCacheReload,
+                                    cacheEntries = cacheState.cacheEntries,
+                                    cacheEntriesLoading = cacheState.cacheEntriesLoading,
+                                    clearingAllCaches = cacheState.clearingAllCaches,
+                                    clearingCacheId = cacheState.clearingCacheId,
+                                    onClearAllCaches = {
+                                        scope.launch {
+                                            val result = settingsPageViewModel.clearAllCaches(context)
+                                            if (result.isSuccess) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.settings_cache_toast_cleared_all),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                                                    ?: context.getString(R.string.common_unknown)
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(
+                                                        R.string.settings_cache_toast_clear_all_failed,
+                                                        reason
+                                                    ),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    },
+                                    onClearCache = { cacheId ->
+                                        scope.launch {
+                                            settingsPageViewModel.clearCache(context, cacheId)
+                                        }
+                                    },
                                     enabledCardColor = enabledCardColor,
                                     disabledCardColor = disabledCardColor
                                 )
@@ -507,11 +575,33 @@ fun SettingsPage(
                                 SettingsLogSection(
                                     logDebugEnabled = logDebugEnabled,
                                     onLogDebugChanged = onLogDebugChanged,
-                                    logStats = logController.logStats,
-                                    exportingLogZip = logController.exportingLogZip,
-                                    clearingLogs = logController.clearingLogs,
-                                    onExportZipClick = logController.exportZip,
-                                    onClearLogsClick = logController.clearLogs,
+                                    logStats = logState.logStats,
+                                    exportingLogZip = logState.exportingLogZip,
+                                    clearingLogs = logState.clearingLogs,
+                                    onExportZipClick = settingsPageViewModel::beginLogExport,
+                                    onClearLogsClick = {
+                                        scope.launch {
+                                            val result = settingsPageViewModel.clearLogs(context)
+                                            if (result.isSuccess) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.settings_log_toast_cleared),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                                                    ?: context.getString(R.string.common_unknown)
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(
+                                                        R.string.settings_log_toast_clear_failed,
+                                                        reason
+                                                    ),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    },
                                     enabledCardColor = enabledCardColor,
                                     disabledCardColor = disabledCardColor
                                 )

@@ -1,18 +1,15 @@
 package os.kei.ui.page.main.settings.section
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.core.prefs.CacheEntrySummary
-import os.kei.core.prefs.CacheStores
 import os.kei.ui.page.main.os.appLucidePackageIcon
 import os.kei.ui.page.main.settings.support.SettingsCacheRow
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
@@ -20,9 +17,6 @@ import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -33,15 +27,12 @@ internal fun SettingsCacheSection(
     cacheEntries: List<CacheEntrySummary>?,
     cacheEntriesLoading: Boolean,
     clearingAllCaches: Boolean,
-    onClearingAllCachesChange: (Boolean) -> Unit,
     clearingCacheId: String?,
-    onClearingCacheIdChange: (String?) -> Unit,
-    onCacheReload: () -> Unit,
+    onClearAllCaches: () -> Unit,
+    onClearCache: (String) -> Unit,
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
     val subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.90f)
     SettingsGroupCard(
         header = stringResource(R.string.settings_cache_header),
@@ -102,31 +93,7 @@ internal fun SettingsCacheSection(
                     modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
                     textColor = MiuixTheme.colorScheme.error,
                     enabled = !clearingAllCaches && clearingCacheId == null,
-                    onClick = {
-                        scope.launch {
-                            onClearingAllCachesChange(true)
-                            val result = withContext(Dispatchers.IO) {
-                                runCatching { CacheStores.clearAll(context) }
-                            }
-                            onClearingAllCachesChange(false)
-                            if (result.isSuccess) {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.settings_cache_toast_cleared_all),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
-                                    ?: context.getString(R.string.common_unknown)
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.settings_cache_toast_clear_all_failed, reason),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            onCacheReload()
-                        }
-                    }
+                    onClick = onClearAllCaches
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 cacheEntries.forEachIndexed { index, entry ->
@@ -135,17 +102,7 @@ internal fun SettingsCacheSection(
                         clearing = clearingAllCaches || clearingCacheId == entry.id,
                         onClear = {
                             if (clearingAllCaches || clearingCacheId != null) return@SettingsCacheRow
-                            scope.launch {
-                                onClearingCacheIdChange(entry.id)
-                                try {
-                                    withContext(Dispatchers.IO) {
-                                        CacheStores.clear(context, entry.id)
-                                    }
-                                    onCacheReload()
-                                } finally {
-                                    onClearingCacheIdChange(null)
-                                }
-                            }
+                            onClearCache(entry.id)
                         }
                     )
                     if (index < cacheEntries.lastIndex) {
