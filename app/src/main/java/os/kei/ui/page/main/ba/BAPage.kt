@@ -8,13 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.ui.page.main.host.pager.MainPageRuntime
@@ -22,12 +18,10 @@ import os.kei.ui.page.main.host.pager.rememberMainPageBackdropSet
 import os.kei.ui.page.main.ba.support.BASessionState
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.ba.support.BA_AP_MAX
-import os.kei.ui.page.main.ba.support.BaCalendarEntry
 import os.kei.ui.page.main.ba.BaCalendarPoolViewModel
 import os.kei.ui.page.main.ba.BaOfficeViewModel
 import os.kei.ui.page.main.ba.BaPageCommonEffects
 import os.kei.ui.page.main.ba.BaPageContent
-import os.kei.ui.page.main.ba.support.BaPoolEntry
 import os.kei.ui.page.main.ba.BaSettingsSheet
 import os.kei.ui.page.main.ba.BaTopBar
 import os.kei.ui.page.main.ba.applyBaCalendarRefreshInterval
@@ -88,8 +82,6 @@ fun BAPage(
     val calendarUiState by calendarPoolViewModel.calendarUiState.collectAsState()
     val poolUiState by calendarPoolViewModel.poolUiState.collectAsState()
 
-    var baCalendarEntries by remember { mutableStateOf(emptyList<BaCalendarEntry>()) }
-    var baPoolEntries by remember { mutableStateOf(emptyList<BaPoolEntry>()) }
     val officeSmallTitle = when (ui.serverIndex) {
         0 -> "沙勒办公室"
         1 -> "夏萊行政室"
@@ -105,8 +97,8 @@ fun BAPage(
         ui = ui,
         serverOptions = serverOptions,
         cafeLevelOptions = cafeLevelOptions,
-        baCalendarEntries = baCalendarEntries,
-        baPoolEntries = baPoolEntries,
+        baCalendarEntries = calendarUiState.entries,
+        baPoolEntries = poolUiState.entries,
     )
     val syncPageActive = if (preloadingEnabled) runtime.isPageActive else runtime.isDataActive
 
@@ -202,13 +194,11 @@ fun BAPage(
         )
     }
     LaunchedEffect(calendarUiState) {
-        baCalendarEntries = calendarUiState.entries
         ui.baCalendarLoading = calendarUiState.loading
         ui.baCalendarError = calendarUiState.error
         ui.baCalendarLastSyncMs = calendarUiState.lastSyncMs
     }
     LaunchedEffect(poolUiState) {
-        baPoolEntries = poolUiState.entries
         ui.baPoolLoading = poolUiState.loading
         ui.baPoolError = poolUiState.error
         ui.baPoolLastSyncMs = poolUiState.lastSyncMs
