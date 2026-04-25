@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.BasicText
 import kotlin.math.max
 import os.kei.R
-import os.kei.ui.page.main.home.model.HomeOverviewCard
+import os.kei.feature.home.model.HomeOverviewCard
 import os.kei.ui.page.main.model.BottomPage
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.widget.glass.GlassIconButton

@@ -50,12 +50,12 @@ import coil3.size.Precision
 import coil3.size.Scale
 import os.kei.core.log.AppLogger
 import os.kei.core.system.ShizukuApiUtils
+import os.kei.feature.home.model.HomeBaOverview
+import os.kei.feature.home.model.HomeGitHubOverview
+import os.kei.feature.home.model.HomeMcpOverview
 import os.kei.mcp.server.McpServerManager
 import os.kei.ui.navigation.KeiosRoute
 import os.kei.ui.navigation.Navigator
-import os.kei.ui.page.main.home.model.HomeBaOverview
-import os.kei.ui.page.main.home.model.HomeGitHubOverview
-import os.kei.ui.page.main.home.model.HomeMcpOverview
 import os.kei.ui.page.main.model.BottomPage
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
@@ -192,6 +192,7 @@ internal fun MainPagerLayout(
                     homeMcpOverview = coordinator.homeMcpOverview,
                     homeGitHubOverview = coordinator.homeGitHubOverview,
                     homeBaOverview = coordinator.homeBaOverview,
+                    visibleOverviewCards = coordinator.visibleOverviewCards,
                     homeTopInset = insets.homeTopInset,
                     homeBottomInset = insets.homeBottomInset,
                     bottomOverlayPadding = insets.bottomOverlayPadding,
@@ -201,6 +202,7 @@ internal fun MainPagerLayout(
                     mcpScrollToTopSignal = coordinator.mcpScrollToTopSignal,
                     githubScrollToTopSignal = coordinator.githubScrollToTopSignal,
                     onBottomPageVisibilityChange = coordinator.onBottomPageVisibilityChange,
+                    onOverviewCardVisibilityChange = coordinator.onOverviewCardVisibilityChange,
                     onOpenSettings = { navigator.pushSingleTop(KeiosRoute.Settings) },
                     onOpenAbout = { navigator.pushSingleTop(KeiosRoute.About) },
                     onOpenPoolGuideDetail = onOpenGuideDetail,

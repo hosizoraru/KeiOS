@@ -4,30 +4,75 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import os.kei.core.log.AppLogger
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import os.kei.feature.home.data.HomeOverviewRepository
+import os.kei.feature.home.model.HomeBaOverview
+import os.kei.feature.home.model.HomeGitHubOverview
+import os.kei.feature.home.model.HomeMcpOverview
+import os.kei.feature.home.model.HomeOverviewCard
+import os.kei.feature.home.model.HomeOverviewSnapshot
+import os.kei.feature.home.model.defaultHomeOverviewCards
 import os.kei.mcp.server.McpServerManager
-import os.kei.ui.page.main.home.model.HomeBaOverview
-import os.kei.ui.page.main.home.model.HomeGitHubOverview
-import os.kei.ui.page.main.home.model.HomeMcpOverview
-import os.kei.ui.page.main.home.model.loadHomeBaOverview
-import os.kei.ui.page.main.home.model.loadHomeGitHubOverview
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 internal data class MainPagerHomeOverviewState(
     val homeMcpOverview: HomeMcpOverview,
     val homeGitHubOverview: HomeGitHubOverview,
-    val homeBaOverview: HomeBaOverview
+    val homeBaOverview: HomeBaOverview,
+    val visibleOverviewCards: Set<HomeOverviewCard>,
+    val onOverviewCardVisibilityChange: (HomeOverviewCard, Boolean) -> Unit
 )
 
-private fun buildHomeTokenPreview(token: String): String {
-    val trimmed = token.trim()
-    if (trimmed.isBlank()) return ""
-    if (trimmed.length <= 4) return trimmed
-    return "${trimmed.take(2)}…${trimmed.takeLast(2)}"
+internal class MainPagerHomeOverviewViewModel(
+    private val repository: HomeOverviewRepository
+) : ViewModel() {
+    val uiState: StateFlow<HomeOverviewSnapshot> = repository.observeOverview()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
+            initialValue = HomeOverviewSnapshot()
+        )
+
+    fun refresh(reason: String) {
+        repository.requestRefresh(reason)
+    }
+
+    fun setOverviewCardVisible(card: HomeOverviewCard, visible: Boolean) {
+        viewModelScope.launch {
+            repository.setOverviewCardVisible(card, visible)
+        }
+    }
+
+    companion object {
+        fun factory(mcpServerManager: McpServerManager): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    if (modelClass.isAssignableFrom(MainPagerHomeOverviewViewModel::class.java)) {
+                        return MainPagerHomeOverviewViewModel(
+                            repository = HomeOverviewRepository(mcpServerManager.uiState)
+                        ) as T
+                    }
+                    throw IllegalArgumentException("Unknown ViewModel class ${modelClass.name}")
+                }
+
+                override fun <T : ViewModel> create(
+                    modelClass: Class<T>,
+                    extras: CreationExtras
+                ): T {
+                    return create(modelClass)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -35,63 +80,29 @@ internal fun rememberMainPagerHomeOverviewState(
     mcpServerManager: McpServerManager,
     settingsReturnToken: Int
 ): MainPagerHomeOverviewState {
-    val mcpUiState by mcpServerManager.uiState.collectAsState()
-    var homeGitHubOverview by remember { mutableStateOf(HomeGitHubOverview()) }
-    var homeBaOverview by remember { mutableStateOf(HomeBaOverview()) }
-    val homeMcpOverview = remember(mcpUiState) {
-        HomeMcpOverview(
-            running = mcpUiState.running,
-            runningSinceEpochMs = mcpUiState.runningSinceEpochMs,
-            port = mcpUiState.port,
-            endpointPath = mcpUiState.endpointPath,
-            serverName = mcpUiState.serverName,
-            authTokenConfigured = mcpUiState.authToken.isNotBlank(),
-            authTokenPreview = buildHomeTokenPreview(mcpUiState.authToken),
-            connectedClients = mcpUiState.connectedClients,
-            allowExternal = mcpUiState.allowExternal
-        )
-    }
-
-    suspend fun refreshHomeOverviewState(reason: String) {
-        val (baOverview, githubOverview) = withContext(Dispatchers.IO) {
-            val loadedBaOverview = runCatching { loadHomeBaOverview() }
-                .onFailure { error ->
-                    AppLogger.w(
-                        "MainScreen",
-                        "loadHomeBaOverview failed (reason=$reason)",
-                        error
-                    )
-                }
-                .getOrElse { HomeBaOverview(loaded = true) }
-            val loadedGitHubOverview = runCatching { loadHomeGitHubOverview() }
-                .onFailure { error ->
-                    AppLogger.w(
-                        "MainScreen",
-                        "loadHomeGitHubOverview failed (reason=$reason)",
-                        error
-                    )
-                }
-                .getOrElse { HomeGitHubOverview(loaded = true) }
-            loadedBaOverview to loadedGitHubOverview
+    val homeOverviewViewModel: MainPagerHomeOverviewViewModel = viewModel(
+        key = "main_pager_home_overview",
+        factory = remember(mcpServerManager) {
+            MainPagerHomeOverviewViewModel.factory(mcpServerManager)
         }
-        homeBaOverview = baOverview
-        homeGitHubOverview = githubOverview
-    }
-
-    LaunchedEffect(Unit) {
-        if (homeBaOverview.loaded && homeGitHubOverview.loaded) return@LaunchedEffect
-        refreshHomeOverviewState(reason = "initial")
-    }
+    )
+    val uiState by homeOverviewViewModel.uiState.collectAsState()
     LaunchedEffect(settingsReturnToken) {
         if (settingsReturnToken <= 0) return@LaunchedEffect
-        refreshHomeOverviewState(reason = "settings_return_$settingsReturnToken")
+        homeOverviewViewModel.refresh("settings_return_$settingsReturnToken")
     }
-
-    return remember(homeMcpOverview, homeGitHubOverview, homeBaOverview) {
+    val onOverviewCardVisibilityChange = remember(homeOverviewViewModel) {
+        { card: HomeOverviewCard, visible: Boolean ->
+            homeOverviewViewModel.setOverviewCardVisible(card, visible)
+        }
+    }
+    return remember(uiState, onOverviewCardVisibilityChange) {
         MainPagerHomeOverviewState(
-            homeMcpOverview = homeMcpOverview,
-            homeGitHubOverview = homeGitHubOverview,
-            homeBaOverview = homeBaOverview
+            homeMcpOverview = uiState.mcpOverview,
+            homeGitHubOverview = uiState.githubOverview,
+            homeBaOverview = uiState.baOverview,
+            visibleOverviewCards = uiState.visibleOverviewCards.ifEmpty { defaultHomeOverviewCards() },
+            onOverviewCardVisibilityChange = onOverviewCardVisibilityChange
         )
     }
 }

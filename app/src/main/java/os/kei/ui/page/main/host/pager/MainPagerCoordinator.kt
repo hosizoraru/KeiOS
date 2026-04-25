@@ -17,9 +17,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.mcp.server.McpServerManager
-import os.kei.ui.page.main.home.model.HomeBaOverview
-import os.kei.ui.page.main.home.model.HomeGitHubOverview
-import os.kei.ui.page.main.home.model.HomeMcpOverview
+import os.kei.feature.home.model.HomeBaOverview
+import os.kei.feature.home.model.HomeGitHubOverview
+import os.kei.feature.home.model.HomeMcpOverview
+import os.kei.feature.home.model.HomeOverviewCard
 import os.kei.ui.page.main.model.BottomPage
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.perf.ReportPagerPerformanceState
@@ -40,6 +41,7 @@ internal data class MainPagerCoordinatorState(
     val homeMcpOverview: HomeMcpOverview,
     val homeGitHubOverview: HomeGitHubOverview,
     val homeBaOverview: HomeBaOverview,
+    val visibleOverviewCards: Set<HomeOverviewCard>,
     val pagerScrollEnabled: Boolean,
     val showBottomBar: Boolean,
     val nestedScrollConnection: NestedScrollConnection,
@@ -50,6 +52,7 @@ internal data class MainPagerCoordinatorState(
     val onPageSelected: (Int) -> Unit,
     val onActionBarInteractingChanged: (Boolean) -> Unit,
     val onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit,
+    val onOverviewCardVisibilityChange: (HomeOverviewCard, Boolean) -> Unit,
     val osScrollToTopSignal: Int,
     val baScrollToTopSignal: Int,
     val mcpScrollToTopSignal: Int,
@@ -180,6 +183,7 @@ internal fun rememberMainPagerCoordinator(
             homeMcpOverview = homeOverviewState.homeMcpOverview,
             homeGitHubOverview = homeOverviewState.homeGitHubOverview,
             homeBaOverview = homeOverviewState.homeBaOverview,
+            visibleOverviewCards = homeOverviewState.visibleOverviewCards,
             pagerScrollEnabled = tabJumpController.pagerScrollEnabled,
             showBottomBar = tabJumpController.showBottomBar,
             nestedScrollConnection = tabJumpController.nestedScrollConnection,
@@ -190,6 +194,7 @@ internal fun rememberMainPagerCoordinator(
             onPageSelected = scrollSignalController.onPageSelected,
             onActionBarInteractingChanged = tabJumpController.onActionBarInteractingChanged,
             onBottomPageVisibilityChange = onBottomPageVisibilityChange,
+            onOverviewCardVisibilityChange = homeOverviewState.onOverviewCardVisibilityChange,
             osScrollToTopSignal = scrollSignalController.osScrollToTopSignal,
             baScrollToTopSignal = scrollSignalController.baScrollToTopSignal,
             mcpScrollToTopSignal = scrollSignalController.mcpScrollToTopSignal,

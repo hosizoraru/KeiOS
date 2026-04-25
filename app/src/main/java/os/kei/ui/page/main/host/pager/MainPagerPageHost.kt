@@ -10,11 +10,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.mcp.server.McpServerManager
 import os.kei.core.system.ShizukuApiUtils
+import os.kei.feature.home.model.HomeBaOverview
+import os.kei.feature.home.model.HomeGitHubOverview
+import os.kei.feature.home.model.HomeMcpOverview
+import os.kei.feature.home.model.HomeOverviewCard
 import os.kei.ui.page.main.ba.BAPage
 import os.kei.ui.page.main.github.page.GitHubPage
-import os.kei.ui.page.main.home.model.HomeBaOverview
-import os.kei.ui.page.main.home.model.HomeGitHubOverview
-import os.kei.ui.page.main.home.model.HomeMcpOverview
 import os.kei.ui.page.main.home.HomePage
 import os.kei.ui.page.main.model.BottomPage
 import os.kei.ui.page.main.mcp.McpPage
@@ -39,6 +40,7 @@ internal fun MainPagerPageHost(
     homeMcpOverview: HomeMcpOverview,
     homeGitHubOverview: HomeGitHubOverview,
     homeBaOverview: HomeBaOverview,
+    visibleOverviewCards: Set<HomeOverviewCard>,
     homeTopInset: Dp,
     homeBottomInset: Dp,
     bottomOverlayPadding: Dp,
@@ -48,6 +50,7 @@ internal fun MainPagerPageHost(
     mcpScrollToTopSignal: Int,
     githubScrollToTopSignal: Int,
     onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit,
+    onOverviewCardVisibilityChange: (HomeOverviewCard, Boolean) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenPoolGuideDetail: (String) -> Unit,
@@ -86,7 +89,9 @@ internal fun MainPagerPageHost(
                         runtime = runtime,
                         liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                         visibleBottomPages = visibleBottomPages,
+                        visibleOverviewCards = visibleOverviewCards,
                         onBottomPageVisibilityChange = onBottomPageVisibilityChange,
+                        onOverviewCardVisibilityChange = onOverviewCardVisibilityChange,
                         onOpenSettings = onOpenSettings,
                         onOpenAbout = onOpenAbout,
                         onActionBarInteractingChanged = onActionBarInteractingChanged

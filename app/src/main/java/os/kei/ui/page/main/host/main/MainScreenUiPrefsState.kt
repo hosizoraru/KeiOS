@@ -3,136 +3,115 @@ package os.kei.ui.page.main.host.main
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import os.kei.core.log.AppLogger
-import os.kei.core.prefs.UiPrefs
 import os.kei.core.prefs.UiPrefsSnapshot
 import os.kei.mcp.notification.McpNotificationHelper
 import os.kei.mcp.server.McpServerManager
 
 @Stable
 internal class MainScreenUiPrefsState(
-    snapshot: UiPrefsSnapshot,
+    private val snapshot: UiPrefsSnapshot,
     private val appContext: Context,
-    private val mcpServerManager: McpServerManager
+    private val mcpServerManager: McpServerManager,
+    private val viewModel: MainScreenPrefsViewModel
 ) {
-    var liquidBottomBarEnabled by mutableStateOf(snapshot.liquidBottomBarEnabled)
-    var liquidActionBarLayeredStyleEnabled by mutableStateOf(snapshot.liquidActionBarLayeredStyleEnabled)
-    var liquidGlassSwitchEnabled by mutableStateOf(snapshot.liquidGlassSwitchEnabled)
-    var transitionAnimationsEnabled by mutableStateOf(snapshot.transitionAnimationsEnabled)
-    var predictiveBackAnimationsEnabled by mutableStateOf(snapshot.predictiveBackAnimationsEnabled)
-    var cardPressFeedbackEnabled by mutableStateOf(snapshot.cardPressFeedbackEnabled)
-    var homeIconHdrEnabled by mutableStateOf(snapshot.homeIconHdrEnabled)
-    var preloadingEnabled by mutableStateOf(snapshot.preloadingEnabled)
-    var nonHomeBackgroundEnabled by mutableStateOf(snapshot.nonHomeBackgroundEnabled)
-    var nonHomeBackgroundUri by mutableStateOf(snapshot.nonHomeBackgroundUri)
-    var nonHomeBackgroundOpacity by mutableStateOf(snapshot.nonHomeBackgroundOpacity)
-    var superIslandNotificationEnabled by mutableStateOf(snapshot.superIslandNotificationEnabled)
-    var superIslandBypassRestrictionEnabled by mutableStateOf(snapshot.superIslandBypassRestrictionEnabled)
-    var superIslandRestoreDelayMs by mutableStateOf(snapshot.superIslandRestoreDelayMs)
-    var logDebugEnabled by mutableStateOf(snapshot.logDebugEnabled)
-    var textCopyCapabilityExpanded by mutableStateOf(snapshot.textCopyCapabilityExpanded)
-    var cacheDiagnosticsEnabled by mutableStateOf(snapshot.cacheDiagnosticsEnabled)
-    var visibleBottomPageNames by mutableStateOf(snapshot.visibleBottomPageNames)
+    val liquidBottomBarEnabled: Boolean get() = snapshot.liquidBottomBarEnabled
+    val liquidActionBarLayeredStyleEnabled: Boolean get() = snapshot.liquidActionBarLayeredStyleEnabled
+    val liquidGlassSwitchEnabled: Boolean get() = snapshot.liquidGlassSwitchEnabled
+    val transitionAnimationsEnabled: Boolean get() = snapshot.transitionAnimationsEnabled
+    val predictiveBackAnimationsEnabled: Boolean get() = snapshot.predictiveBackAnimationsEnabled
+    val cardPressFeedbackEnabled: Boolean get() = snapshot.cardPressFeedbackEnabled
+    val homeIconHdrEnabled: Boolean get() = snapshot.homeIconHdrEnabled
+    val preloadingEnabled: Boolean get() = snapshot.preloadingEnabled
+    val nonHomeBackgroundEnabled: Boolean get() = snapshot.nonHomeBackgroundEnabled
+    val nonHomeBackgroundUri: String get() = snapshot.nonHomeBackgroundUri
+    val nonHomeBackgroundOpacity: Float get() = snapshot.nonHomeBackgroundOpacity
+    val superIslandNotificationEnabled: Boolean get() = snapshot.superIslandNotificationEnabled
+    val superIslandBypassRestrictionEnabled: Boolean get() = snapshot.superIslandBypassRestrictionEnabled
+    val superIslandRestoreDelayMs: Int get() = snapshot.superIslandRestoreDelayMs
+    val logDebugEnabled: Boolean get() = snapshot.logDebugEnabled
+    val textCopyCapabilityExpanded: Boolean get() = snapshot.textCopyCapabilityExpanded
+    val cacheDiagnosticsEnabled: Boolean get() = snapshot.cacheDiagnosticsEnabled
+    val visibleBottomPageNames: Set<String> get() = snapshot.visibleBottomPageNames
 
     fun updateLiquidBottomBarEnabled(value: Boolean) {
-        liquidBottomBarEnabled = value
-        UiPrefs.setLiquidBottomBarEnabled(value)
+        viewModel.updateLiquidBottomBarEnabled(value)
     }
 
     fun updateLiquidActionBarLayeredStyleEnabled(value: Boolean) {
-        liquidActionBarLayeredStyleEnabled = value
-        UiPrefs.setLiquidActionBarLayeredStyleEnabled(value)
+        viewModel.updateLiquidActionBarLayeredStyleEnabled(value)
     }
 
     fun updateLiquidGlassSwitchEnabled(value: Boolean) {
-        liquidGlassSwitchEnabled = value
-        UiPrefs.setLiquidGlassSwitchEnabled(value)
+        viewModel.updateLiquidGlassSwitchEnabled(value)
     }
 
     fun updateTransitionAnimationsEnabled(value: Boolean) {
-        transitionAnimationsEnabled = value
-        UiPrefs.setTransitionAnimationsEnabled(value)
+        viewModel.updateTransitionAnimationsEnabled(value)
     }
 
     fun updatePredictiveBackAnimationsEnabled(value: Boolean) {
-        predictiveBackAnimationsEnabled = value
-        UiPrefs.setPredictiveBackAnimationsEnabled(value)
+        viewModel.updatePredictiveBackAnimationsEnabled(value)
     }
 
     fun updateCardPressFeedbackEnabled(value: Boolean) {
-        cardPressFeedbackEnabled = value
-        UiPrefs.setCardPressFeedbackEnabled(value)
+        viewModel.updateCardPressFeedbackEnabled(value)
     }
 
     fun updateHomeIconHdrEnabled(value: Boolean) {
-        homeIconHdrEnabled = value
-        UiPrefs.setHomeIconHdrEnabled(value)
+        viewModel.updateHomeIconHdrEnabled(value)
     }
 
     fun updatePreloadingEnabled(value: Boolean) {
-        preloadingEnabled = value
-        UiPrefs.setPreloadingEnabled(value)
+        viewModel.updatePreloadingEnabled(value)
     }
 
     fun updateNonHomeBackgroundEnabled(value: Boolean) {
-        nonHomeBackgroundEnabled = value
-        UiPrefs.setNonHomeBackgroundEnabled(value)
+        viewModel.updateNonHomeBackgroundEnabled(value)
     }
 
     fun updateNonHomeBackgroundUri(value: String) {
-        nonHomeBackgroundUri = value
-        UiPrefs.setNonHomeBackgroundUri(value)
+        viewModel.updateNonHomeBackgroundUri(value)
     }
 
     fun updateNonHomeBackgroundOpacity(value: Float) {
-        nonHomeBackgroundOpacity = value
-        UiPrefs.setNonHomeBackgroundOpacity(value)
+        viewModel.updateNonHomeBackgroundOpacity(value)
     }
 
     fun updateSuperIslandNotificationEnabled(value: Boolean) {
-        superIslandNotificationEnabled = value
-        UiPrefs.setSuperIslandNotificationEnabled(value)
+        viewModel.updateSuperIslandNotificationEnabled(value)
         mcpServerManager.refreshNotificationNow()
         McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
     }
 
     fun updateSuperIslandBypassRestrictionEnabled(value: Boolean) {
-        superIslandBypassRestrictionEnabled = value
-        UiPrefs.setSuperIslandBypassRestrictionEnabled(value)
+        viewModel.updateSuperIslandBypassRestrictionEnabled(value)
         mcpServerManager.refreshNotificationNow()
         McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
     }
 
     fun updateSuperIslandRestoreDelayMs(value: Int) {
-        superIslandRestoreDelayMs = value
-        UiPrefs.setSuperIslandRestoreDelayMs(value)
+        viewModel.updateSuperIslandRestoreDelayMs(value)
         mcpServerManager.refreshNotificationNow()
         McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
     }
 
     fun updateLogDebugEnabled(value: Boolean) {
-        logDebugEnabled = value
-        UiPrefs.setLogDebugEnabled(value)
+        viewModel.updateLogDebugEnabled(value)
         AppLogger.setDebugEnabled(value)
     }
 
     fun updateTextCopyCapabilityExpanded(value: Boolean) {
-        textCopyCapabilityExpanded = value
-        UiPrefs.setTextCopyCapabilityExpanded(value)
+        viewModel.updateTextCopyCapabilityExpanded(value)
     }
 
     fun updateCacheDiagnosticsEnabled(value: Boolean) {
-        cacheDiagnosticsEnabled = value
-        UiPrefs.setCacheDiagnosticsEnabled(value)
+        viewModel.updateCacheDiagnosticsEnabled(value)
     }
 
     fun updateVisibleBottomPageNames(value: Set<String>) {
-        visibleBottomPageNames = value
-        UiPrefs.saveVisibleBottomPageNames(value)
+        viewModel.updateVisibleBottomPageNames(value)
     }
 }
 
@@ -140,13 +119,15 @@ internal class MainScreenUiPrefsState(
 internal fun rememberMainScreenUiPrefsState(
     snapshot: UiPrefsSnapshot,
     appContext: Context,
-    mcpServerManager: McpServerManager
+    mcpServerManager: McpServerManager,
+    viewModel: MainScreenPrefsViewModel
 ): MainScreenUiPrefsState {
-    return remember(snapshot, appContext, mcpServerManager) {
+    return remember(snapshot, appContext, mcpServerManager, viewModel) {
         MainScreenUiPrefsState(
             snapshot = snapshot,
             appContext = appContext,
-            mcpServerManager = mcpServerManager
+            mcpServerManager = mcpServerManager,
+            viewModel = viewModel
         )
     }
 }

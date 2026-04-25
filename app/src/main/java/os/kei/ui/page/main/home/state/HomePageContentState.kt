@@ -7,9 +7,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import os.kei.R
 import os.kei.feature.github.model.GitHubLookupStrategyOption
-import os.kei.ui.page.main.home.model.HomeBaOverview
-import os.kei.ui.page.main.home.model.HomeGitHubOverview
-import os.kei.ui.page.main.home.model.HomeMcpOverview
+import os.kei.feature.home.model.HomeBaOverview
+import os.kei.feature.home.model.HomeGitHubOverview
+import os.kei.feature.home.model.HomeMcpOverview
 import os.kei.ui.page.main.home.model.formatGitHubCacheAgo
 import os.kei.ui.page.main.mcp.util.formatMcpUptimeText
 import top.yukonga.miuix.kmp.theme.MiuixTheme

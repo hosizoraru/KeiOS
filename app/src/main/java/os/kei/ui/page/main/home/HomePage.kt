@@ -31,12 +31,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.core.ui.effect.background.BgEffectBackground
-import os.kei.ui.page.main.home.model.HomeBaOverview
-import os.kei.ui.page.main.home.model.HomeGitHubOverview
-import os.kei.ui.page.main.home.model.HomeMcpOverview
-import os.kei.ui.page.main.home.model.HomeOverviewCard
-import os.kei.ui.page.main.home.model.loadHomeVisibleOverviewCards
-import os.kei.ui.page.main.home.model.saveHomeVisibleOverviewCards
+import os.kei.feature.home.model.HomeBaOverview
+import os.kei.feature.home.model.HomeGitHubOverview
+import os.kei.feature.home.model.HomeMcpOverview
+import os.kei.feature.home.model.HomeOverviewCard
+import os.kei.feature.home.model.defaultHomeOverviewCards
 import os.kei.ui.page.main.home.state.rememberHomePageContentState
 import os.kei.ui.page.main.home.state.rememberHomePageHeroMotionState
 import os.kei.ui.page.main.home.state.rememberHomePageOverviewCardState
@@ -66,7 +65,9 @@ fun HomePage(
     runtime: MainPageRuntime = MainPageRuntime(),
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     visibleBottomPages: Set<BottomPage>,
+    visibleOverviewCards: Set<HomeOverviewCard> = defaultHomeOverviewCards(),
     onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit,
+    onOverviewCardVisibilityChange: (HomeOverviewCard, Boolean) -> Unit = { _, _ -> },
     onOpenSettings: () -> Unit,
     onOpenAbout: () -> Unit,
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
@@ -105,15 +106,6 @@ fun HomePage(
 
     var actionBarSelectedIndex by rememberSaveable { mutableIntStateOf(1) }
     var showBottomPageEditor by rememberSaveable { mutableStateOf(false) }
-    var visibleOverviewCards by remember { mutableStateOf(loadHomeVisibleOverviewCards()) }
-
-    fun setHomeOverviewCardVisible(card: HomeOverviewCard, visible: Boolean) {
-        val updated = visibleOverviewCards.toMutableSet().apply {
-            if (visible) add(card) else remove(card)
-        }.toSet()
-        visibleOverviewCards = updated
-        saveHomeVisibleOverviewCards(updated)
-    }
 
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
@@ -243,7 +235,7 @@ fun HomePage(
                 homeCardBa = contentState.homeCardBa,
                 onDismissRequest = { showBottomPageEditor = false },
                 onBottomPageVisibilityChange = onBottomPageVisibilityChange,
-                onOverviewCardVisibilityChange = ::setHomeOverviewCardVisible
+                onOverviewCardVisibilityChange = onOverviewCardVisibilityChange
             )
 
             val horizontalSafeInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
