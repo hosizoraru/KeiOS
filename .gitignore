@@ -67,6 +67,8 @@ signing.properties
 *.env
 .env
 .env.*
+!/app/signing/
+!/app/signing/keios-ci-debug.keystore
 
 # Temporary / local scratch
 tmp/

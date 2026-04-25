@@ -63,6 +63,17 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
 
+      - name: Verify debug APK signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          EXPECTED_SHA256="0ef11332dc8107b78535bac6d3507c6c52c2224630c84efd8d44c3d921ff4fd8"
+          ACTUAL_SHA256="$("${ANDROID_HOME}/build-tools/37.0.0/apksigner" verify --print-certs "${APK_PATH}" \
+            | awk -F': ' '/certificate SHA-256 digest/ {print tolower($NF); exit}')"
+          echo "Debug signer SHA-256: ${ACTUAL_SHA256}"
+          test "${ACTUAL_SHA256}" = "${EXPECTED_SHA256}"
+
       - name: Compose artifact filename
         id: meta
         run: |

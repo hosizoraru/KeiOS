@@ -174,6 +174,15 @@ android {
     namespace = "os.kei"
     compileSdk = projectCompileSdk
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("signing/keios-ci-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "os.kei"
         minSdk = projectMinSdk
