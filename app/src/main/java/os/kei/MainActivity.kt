@@ -12,8 +12,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -116,28 +118,30 @@ class MainActivity : ComponentActivity() {
             val controller = ThemeController(colorSchemeMode)
 
             MiuixTheme(controller = controller) {
-                SystemBarAutoStyle(appThemeMode)
-                MainScreen(
-                    appLabel = appLabel,
-                    packageInfo = packageInfo,
-                    shizukuStatus = shizukuStatus.value,
-                    onCheckOrRequestShizuku = { shizukuApiUtils.requestPermissionIfNeeded() },
-                    notificationPermissionGranted = notificationPermissionGranted,
-                    onRequestNotificationPermission = { requestNotificationPermissionIfNeeded() },
-                    shizukuApiUtils = shizukuApiUtils,
-                    mcpServerManager = mcpServerManager,
-                    appThemeMode = appThemeMode,
-                    onAppThemeModeChanged = { mode ->
-                        appThemeModeState.value = mode
-                        UiPrefs.setAppThemeMode(mode)
-                    },
-                    requestedBottomPage = requestedBottomPage,
-                    requestedBottomPageToken = requestedBottomPageToken,
-                    requestedGitHubRefreshToken = requestedGitHubRefreshToken,
-                    onRequestedBottomPageConsumed = {
-                        requestedBottomPage = null
-                    }
-                )
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
+                    SystemBarAutoStyle(appThemeMode)
+                    MainScreen(
+                        appLabel = appLabel,
+                        packageInfo = packageInfo,
+                        shizukuStatus = shizukuStatus.value,
+                        onCheckOrRequestShizuku = { shizukuApiUtils.requestPermissionIfNeeded() },
+                        notificationPermissionGranted = notificationPermissionGranted,
+                        onRequestNotificationPermission = { requestNotificationPermissionIfNeeded() },
+                        shizukuApiUtils = shizukuApiUtils,
+                        mcpServerManager = mcpServerManager,
+                        appThemeMode = appThemeMode,
+                        onAppThemeModeChanged = { mode ->
+                            appThemeModeState.value = mode
+                            UiPrefs.setAppThemeMode(mode)
+                        },
+                        requestedBottomPage = requestedBottomPage,
+                        requestedBottomPageToken = requestedBottomPageToken,
+                        requestedGitHubRefreshToken = requestedGitHubRefreshToken,
+                        onRequestedBottomPageConsumed = {
+                            requestedBottomPage = null
+                        }
+                    )
+                }
             }
         }
         jankStats = AppJankMonitor.attach(

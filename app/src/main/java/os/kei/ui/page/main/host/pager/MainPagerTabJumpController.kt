@@ -88,9 +88,14 @@ internal fun rememberMainPagerTabJumpController(
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (pagerRuntime.homePageBottomBarPinned) {
                     bottomBarVisibilityController.showNow(showBottomBar) { showBottomBar = it }
-                    return Offset.Zero
                 }
-                bottomBarVisibilityController.update(available.y, showBottomBar) { showBottomBar = it }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (!pagerRuntime.homePageBottomBarPinned) {
+                    bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
+                }
                 return Offset.Zero
             }
         }

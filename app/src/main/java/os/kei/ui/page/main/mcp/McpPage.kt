@@ -109,11 +109,11 @@ fun McpPage(
     var showFloatingToggleButton by remember { mutableStateOf(true) }
     val toggleButtonScrollConnection = remember {
         object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y < -1f && showFloatingToggleButton) {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (consumed.y < -1f && showFloatingToggleButton) {
                     showFloatingToggleButton = false
                 }
-                if (available.y > 1f && !showFloatingToggleButton) {
+                if (consumed.y > 1f && !showFloatingToggleButton) {
                     showFloatingToggleButton = true
                 }
                 return Offset.Zero

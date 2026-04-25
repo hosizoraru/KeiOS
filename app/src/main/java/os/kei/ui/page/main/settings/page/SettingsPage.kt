@@ -296,8 +296,8 @@ fun SettingsPage(
     }
     val bottomBarNestedScrollConnection = remember(bottomBarVisibilityController) {
         object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                bottomBarVisibilityController.update(available.y, showBottomBar) { showBottomBar = it }
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
                 return Offset.Zero
             }
         }

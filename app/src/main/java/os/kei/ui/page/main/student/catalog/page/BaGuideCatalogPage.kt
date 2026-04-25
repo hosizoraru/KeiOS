@@ -194,9 +194,9 @@ fun BaGuideCatalogPage(
         bottomBarVisibilityController
     ) {
         object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                bottomBarVisibilityController.update(available.y, showBottomBar) { showBottomBar = it }
-                searchBarVisibilityController.update(available.y, showSearchBar) { showSearchBar = it }
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
+                searchBarVisibilityController.update(consumed.y, showSearchBar) { showSearchBar = it }
                 return Offset.Zero
             }
         }
