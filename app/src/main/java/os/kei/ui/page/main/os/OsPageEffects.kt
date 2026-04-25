@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -19,6 +20,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.os.shortcut.loadActivityClassOptions
 import os.kei.ui.page.main.os.shortcut.loadInstalledAppOptions
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,14 +28,16 @@ import kotlinx.coroutines.withContext
 import kotlin.collections.plus
 
 @Composable
+@OptIn(FlowPreview::class)
 internal fun BindOsExpandedStatePersistence(
     ready: Boolean,
     snapshotProvider: () -> OsUiSnapshot
 ) {
+    val currentSnapshotProvider = rememberUpdatedState(snapshotProvider)
     LaunchedEffect(ready) {
         if (!ready) return@LaunchedEffect
         snapshotFlow {
-            snapshotProvider()
+            currentSnapshotProvider.value()
         }
             .debounce(200)
             .distinctUntilChanged()
@@ -75,6 +79,7 @@ internal fun BindOsShellCardReloadOnResume(
 
 @Composable
 internal fun BindOsInitialCacheLoad(
+    ready: Boolean,
     visibleCards: Set<OsSectionCard>,
     onVisibleCardsChange: (Set<OsSectionCard>) -> Unit,
     onSectionStatesChange: (Map<SectionKind, SectionState>) -> Unit,
@@ -84,7 +89,8 @@ internal fun BindOsInitialCacheLoad(
     isPageActive: Boolean,
     ensureLoad: suspend (SectionKind, Boolean) -> Unit
 ) {
-    LaunchedEffect(Unit) {
+    LaunchedEffect(ready) {
+        if (!ready) return@LaunchedEffect
         var ensuredVisibleCards = visibleCards
         if (!ensuredVisibleCards.contains(OsSectionCard.GOOGLE_SYSTEM_SERVICE)) {
             ensuredVisibleCards = ensuredVisibleCards + OsSectionCard.GOOGLE_SYSTEM_SERVICE
@@ -283,7 +289,7 @@ internal fun BindOsCardExpandedStateMaps(
     shellCommandCards: List<OsShellCommandCard>,
     shellCommandCardExpanded: MutableMap<String, Boolean>
 ) {
-    LaunchedEffect(activityShortcutCards) {
+    LaunchedEffect(activityShortcutCards, initialGoogleSystemServiceExpanded) {
         val currentIds = activityShortcutCards.map { it.id }.toSet()
         activityCardExpanded.keys.toList().forEach { id ->
             if (!currentIds.contains(id)) {
@@ -291,18 +297,14 @@ internal fun BindOsCardExpandedStateMaps(
             }
         }
         activityShortcutCards.forEachIndexed { index, card ->
-            if (!activityCardExpanded.containsKey(card.id)) {
-                activityCardExpanded[card.id] =
-                    if (
-                        index == 0 && (
-                            card.id == LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID ||
-                                card.id == BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID
-                            )
-                    ) {
-                        initialGoogleSystemServiceExpanded
-                    } else {
-                        false
-                    }
+            val usesStoredDefaultExpansion = index == 0 && (
+                card.id == LEGACY_GOOGLE_SYSTEM_SERVICE_CARD_ID ||
+                    card.id == BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID
+                )
+            if (usesStoredDefaultExpansion) {
+                activityCardExpanded[card.id] = initialGoogleSystemServiceExpanded
+            } else if (!activityCardExpanded.containsKey(card.id)) {
+                activityCardExpanded[card.id] = false
             }
         }
     }

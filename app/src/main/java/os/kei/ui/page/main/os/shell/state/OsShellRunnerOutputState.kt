@@ -1,8 +1,6 @@
 package os.kei.ui.page.main.os.shell.state
 
 import os.kei.ui.page.main.os.shell.OsShellRunnerOutputSaveMode
-import os.kei.ui.page.main.os.shell.OsShellRunnerPrefsStore
-import os.kei.ui.page.main.os.shell.OsShellRunnerSettings
 import os.kei.ui.page.main.os.shell.ShellOutputDisplayEntry
 import os.kei.ui.page.main.os.shell.parseShellOutputDisplayEntries
 import os.kei.ui.page.main.os.shell.trimShellOutputEntries
@@ -20,44 +18,6 @@ internal data class OsShellRunnerOutputState(
     val outputEntries: List<ShellOutputDisplayEntry>,
     val latestRunResultOutput: String
 )
-
-internal data class OsShellRunnerPersistSnapshot(
-    val commandInput: String,
-    val settings: OsShellRunnerSettings,
-    val outputState: OsShellRunnerOutputState
-)
-
-internal fun loadOsShellRunnerPersistSnapshot(
-    commandStoppedText: String,
-    outputResultLabel: String,
-    outputTimeLabel: String
-): OsShellRunnerPersistSnapshot {
-    val settings = OsShellRunnerPrefsStore.loadSettings()
-    val commandInput = if (settings.persistInput) {
-        OsShellRunnerPrefsStore.loadSavedInput()
-    } else {
-        ""
-    }
-    val savedOutputText = if (settings.persistOutput) {
-        OsShellRunnerPrefsStore.loadSavedOutput()
-    } else {
-        ""
-    }
-    val outputState = normalizeShellRunnerOutputState(
-        outputText = savedOutputText,
-        outputEntries = emptyList(),
-        commandStoppedText = commandStoppedText,
-        outputResultLabel = outputResultLabel,
-        outputTimeLabel = outputTimeLabel,
-        outputSaveMode = settings.outputSaveMode,
-        maxChars = settings.outputLimitChars
-    )
-    return OsShellRunnerPersistSnapshot(
-        commandInput = commandInput,
-        settings = settings,
-        outputState = outputState
-    )
-}
 
 internal fun appendShellRunnerOutput(
     currentOutputText: String,

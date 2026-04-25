@@ -29,10 +29,10 @@ import os.kei.ui.page.main.os.state.rememberOsPageOverlayTransferActions
 import os.kei.ui.page.main.os.state.rememberOsPageSectionStateStore
 import os.kei.ui.page.main.os.state.rememberOsPageTextBundle
 import os.kei.ui.page.main.os.state.rememberOsPageUiContext
-import os.kei.ui.page.main.os.shell.OsShellCommandCardStore
 import os.kei.ui.page.main.os.shell.OsShellRunnerActivity
+import os.kei.ui.page.main.os.shortcut.BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
-import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCardStore
+import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
 import os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -68,27 +68,38 @@ fun OsPage(
     val refreshingColor = uiContext.refreshingColor
     val syncedColor = uiContext.syncedColor
     val shizukuReady = shizukuStatus.contains("granted", ignoreCase = true)
-    val initialUiSnapshot = remember { OsUiStateStore.loadSnapshot() }
     val lifecycleOwner = LocalLifecycleOwner.current
     var cacheLoaded by remember { mutableStateOf(false) }
     var cachePersisted by remember { mutableStateOf(false) }
     val osPageViewModel: OsPageViewModel = viewModel()
+    LaunchedEffect(textBundle.googleSystemServiceDefaults, textBundle.googleSettingsBuiltInSampleDefaults) {
+        osPageViewModel.loadPersistentState(
+            googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
+            googleSettingsBuiltInSampleDefaults = textBundle.googleSettingsBuiltInSampleDefaults
+        )
+    }
+    val persistentState by osPageViewModel.persistentState.collectAsState()
     val queryInput by osPageViewModel.queryInput.collectAsState()
     val queryApplied by osPageViewModel.queryApplied.collectAsState()
-    var topInfoExpanded by remember { mutableStateOf(initialUiSnapshot.topInfoExpanded) }
-    var shellRunnerExpanded by remember { mutableStateOf(initialUiSnapshot.shellRunnerExpanded) }
-    var systemTableExpanded by remember { mutableStateOf(initialUiSnapshot.systemTableExpanded) }
-    var secureTableExpanded by remember { mutableStateOf(initialUiSnapshot.secureTableExpanded) }
-    var globalTableExpanded by remember { mutableStateOf(initialUiSnapshot.globalTableExpanded) }
-    var androidPropsExpanded by remember { mutableStateOf(initialUiSnapshot.androidPropsExpanded) }
-    var javaPropsExpanded by remember { mutableStateOf(initialUiSnapshot.javaPropsExpanded) }
-    var linuxEnvExpanded by remember { mutableStateOf(initialUiSnapshot.linuxEnvExpanded) }
-    var visibleCards by remember { mutableStateOf(initialUiSnapshot.visibleCards) }
-    var activityShortcutCards by remember {
-        mutableStateOf(
-            OsActivityShortcutCardStore.loadCards(
-                defaults = textBundle.googleSystemServiceDefaults,
-                builtInSampleDefaults = textBundle.googleSettingsBuiltInSampleDefaults
+    val uiSnapshot = persistentState.uiSnapshot
+    val topInfoExpanded = uiSnapshot.topInfoExpanded
+    val shellRunnerExpanded = uiSnapshot.shellRunnerExpanded
+    val systemTableExpanded = uiSnapshot.systemTableExpanded
+    val secureTableExpanded = uiSnapshot.secureTableExpanded
+    val globalTableExpanded = uiSnapshot.globalTableExpanded
+    val androidPropsExpanded = uiSnapshot.androidPropsExpanded
+    val javaPropsExpanded = uiSnapshot.javaPropsExpanded
+    val linuxEnvExpanded = uiSnapshot.linuxEnvExpanded
+    val visibleCards = uiSnapshot.visibleCards
+    val activityShortcutCards = if (persistentState.loaded) {
+        persistentState.activityShortcutCards
+    } else {
+        listOf(
+            OsActivityShortcutCard(
+                id = BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID,
+                visible = true,
+                isBuiltInSample = true,
+                config = textBundle.googleSettingsBuiltInSampleDefaults
             )
         )
     }
@@ -98,7 +109,7 @@ fun OsPage(
     val scrollBehavior = MiuixScrollBehavior()
     var refreshing by remember { mutableStateOf(false) }
     var refreshProgress by remember { mutableStateOf(0f) }
-    var shellCommandCards by remember { mutableStateOf(OsShellCommandCardStore.loadCards()) }
+    val shellCommandCards = persistentState.shellCommandCards
     val shellCommandCardExpanded = remember { mutableStateMapOf<String, Boolean>() }
     var runningShellCommandCardIds by remember { mutableStateOf(emptySet<String>()) }
     val sectionLoadMutex = remember { Mutex() }
@@ -129,17 +140,17 @@ fun OsPage(
     }
     BindOsShellCardReloadOnResume(
         lifecycleOwner = lifecycleOwner,
-        reloadCards = { shellCommandCards = OsShellCommandCardStore.loadCards() }
+        reloadCards = osPageViewModel::reloadShellCommandCards
     )
     val cardTransferState = rememberOsPageCardTransferState(
         context = context,
         scope = scope,
         overlayState = overlayState,
         activityShortcutCards = activityShortcutCards,
-        onActivityShortcutCardsChange = { activityShortcutCards = it },
+        onActivityShortcutCardsChange = osPageViewModel::updateActivityShortcutCards,
         activityCardExpanded = activityCardExpanded,
         shellCommandCards = shellCommandCards,
-        onShellCommandCardsChange = { shellCommandCards = it },
+        onShellCommandCardsChange = osPageViewModel::updateShellCommandCards,
         shellCommandCardExpanded = shellCommandCardExpanded,
         googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
         googleSettingsBuiltInSampleDefaults = textBundle.googleSettingsBuiltInSampleDefaults,
@@ -168,19 +179,19 @@ fun OsPage(
         sectionStatesProvider = { sectionStates },
         updateSection = updateSection,
         onCachePersistedChanged = { cachePersisted = it },
-        updateVisibleCards = { visibleCards = it },
-        setTopInfoExpanded = { topInfoExpanded = it },
-        setShellRunnerExpanded = { shellRunnerExpanded = it },
-        setSystemTableExpanded = { systemTableExpanded = it },
-        setSecureTableExpanded = { secureTableExpanded = it },
-        setGlobalTableExpanded = { globalTableExpanded = it },
-        setAndroidPropsExpanded = { androidPropsExpanded = it },
-        setJavaPropsExpanded = { javaPropsExpanded = it },
-        setLinuxEnvExpanded = { linuxEnvExpanded = it },
+        updateVisibleCards = osPageViewModel::updateVisibleCards,
+        setTopInfoExpanded = osPageViewModel::updateTopInfoExpanded,
+        setShellRunnerExpanded = osPageViewModel::updateShellRunnerExpanded,
+        setSystemTableExpanded = osPageViewModel::updateSystemTableExpanded,
+        setSecureTableExpanded = osPageViewModel::updateSecureTableExpanded,
+        setGlobalTableExpanded = osPageViewModel::updateGlobalTableExpanded,
+        setAndroidPropsExpanded = osPageViewModel::updateAndroidPropsExpanded,
+        setJavaPropsExpanded = osPageViewModel::updateJavaPropsExpanded,
+        setLinuxEnvExpanded = osPageViewModel::updateLinuxEnvExpanded,
         activityShortcutCardsProvider = { activityShortcutCards },
-        updateActivityShortcutCards = { activityShortcutCards = it },
+        updateActivityShortcutCards = osPageViewModel::updateActivityShortcutCards,
         googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
-        updateShellCommandCards = { shellCommandCards = it },
+        updateShellCommandCards = osPageViewModel::updateShellCommandCards,
         runningShellCommandCardIdsProvider = { runningShellCommandCardIds },
         onRunningShellCommandCardIdsChange = { runningShellCommandCardIds = it },
         onRefreshingChange = { refreshing = it },
@@ -195,7 +206,7 @@ fun OsPage(
     BindOsCardExpandedStateMaps(
         activityShortcutCards = activityShortcutCards,
         activityCardExpanded = activityCardExpanded,
-        initialGoogleSystemServiceExpanded = initialUiSnapshot.googleSystemServiceExpanded,
+        initialGoogleSystemServiceExpanded = uiSnapshot.googleSystemServiceExpanded,
         shellCommandCards = shellCommandCards,
         shellCommandCardExpanded = shellCommandCardExpanded
     )
@@ -206,8 +217,9 @@ fun OsPage(
     )
 
     BindOsInitialCacheLoad(
+        ready = persistentState.loaded,
         visibleCards = visibleCards,
-        onVisibleCardsChange = { visibleCards = it },
+        onVisibleCardsChange = osPageViewModel::updateVisibleCards,
         onSectionStatesChange = sectionStateStore.onSectionStatesChange,
         onCachePersistedChange = { cachePersisted = it },
         onCacheLoadedChange = { cacheLoaded = it },
@@ -224,16 +236,7 @@ fun OsPage(
     BindOsExpandedStatePersistence(
         ready = uiStatePersistenceReady,
         snapshotProvider = {
-            OsUiSnapshot(
-                topInfoExpanded = topInfoExpanded,
-                shellRunnerExpanded = shellRunnerExpanded,
-                systemTableExpanded = systemTableExpanded,
-                secureTableExpanded = secureTableExpanded,
-                globalTableExpanded = globalTableExpanded,
-                androidPropsExpanded = androidPropsExpanded,
-                javaPropsExpanded = javaPropsExpanded,
-                linuxEnvExpanded = linuxEnvExpanded
-            )
+            uiSnapshot.copy(visibleCards = visibleCards)
         }
     )
 
@@ -329,9 +332,9 @@ fun OsPage(
             overlayTransferActions = overlayTransferActions,
             cardTransferState = cardTransferState,
             textBundle = textBundle,
-            onShellCommandCardsChange = { shellCommandCards = it },
+            onShellCommandCardsChange = osPageViewModel::updateShellCommandCards,
             onRemoveShellCommandCardExpanded = { shellCommandCardExpanded.remove(it) },
-            onActivityShortcutCardsChange = { activityShortcutCards = it },
+            onActivityShortcutCardsChange = osPageViewModel::updateActivityShortcutCards,
             onRemoveActivityCardExpanded = { activityCardExpanded.remove(it) }
         )
         OsPageMainList(
@@ -358,10 +361,10 @@ fun OsPage(
             displayedTopInfoRows = derivedState.displayedTopInfoRows,
             groupedTopInfoRows = derivedState.groupedTopInfoRows,
             topInfoExpanded = topInfoExpanded,
-            onTopInfoExpandedChange = { topInfoExpanded = it },
+            onTopInfoExpandedChange = osPageViewModel::updateTopInfoExpanded,
             shellRunnerRows = derivedState.shellRunnerRows,
             shellRunnerExpanded = shellRunnerExpanded,
-            onShellRunnerExpandedChange = { shellRunnerExpanded = it },
+            onShellRunnerExpandedChange = osPageViewModel::updateShellRunnerExpanded,
             onOpenShellRunner = { OsShellRunnerActivity.launch(context) },
             shellCommandCards = shellCommandCards,
             shellCommandCardExpanded = shellCommandCardExpanded,
@@ -421,17 +424,17 @@ fun OsPage(
             prunedJavaRows = derivedState.prunedJavaRows,
             prunedLinuxRows = derivedState.prunedLinuxRows,
             systemTableExpanded = systemTableExpanded,
-            onSystemTableExpandedChange = { systemTableExpanded = it },
+            onSystemTableExpandedChange = osPageViewModel::updateSystemTableExpanded,
             secureTableExpanded = secureTableExpanded,
-            onSecureTableExpandedChange = { secureTableExpanded = it },
+            onSecureTableExpandedChange = osPageViewModel::updateSecureTableExpanded,
             globalTableExpanded = globalTableExpanded,
-            onGlobalTableExpandedChange = { globalTableExpanded = it },
+            onGlobalTableExpandedChange = osPageViewModel::updateGlobalTableExpanded,
             androidPropsExpanded = androidPropsExpanded,
-            onAndroidPropsExpandedChange = { androidPropsExpanded = it },
+            onAndroidPropsExpandedChange = osPageViewModel::updateAndroidPropsExpanded,
             javaPropsExpanded = javaPropsExpanded,
-            onJavaPropsExpandedChange = { javaPropsExpanded = it },
+            onJavaPropsExpandedChange = osPageViewModel::updateJavaPropsExpanded,
             linuxEnvExpanded = linuxEnvExpanded,
-            onLinuxEnvExpandedChange = { linuxEnvExpanded = it },
+            onLinuxEnvExpandedChange = osPageViewModel::updateLinuxEnvExpanded,
             isCardVisible = { card -> isCardVisible(visibleCards, card) },
             sectionSubtitle = { section, size ->
                 sectionSubtitle(

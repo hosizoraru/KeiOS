@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,29 +34,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
-import os.kei.core.prefs.UiPrefs
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.osLucideClearAllIcon
 import os.kei.ui.page.main.os.osLucideSettingsIcon
-import os.kei.ui.page.main.os.shell.OsShellCommandCardStore
 import os.kei.ui.page.main.os.shell.OsShellRunnerCopyMode
 import os.kei.ui.page.main.os.shell.OsShellRunnerExitCleanupMode
 import os.kei.ui.page.main.os.shell.OsShellRunnerOutputSaveMode
-import os.kei.ui.page.main.os.shell.OsShellRunnerPrefsStore
 import os.kei.ui.page.main.os.shell.OsShellRunnerStartupBehavior
+import os.kei.ui.page.main.os.shell.OsShellRunnerViewModel
 import os.kei.ui.page.main.os.shell.OsShellSettingsSheet
 import os.kei.ui.page.main.os.shell.component.OsShellRunnerInputCard
 import os.kei.ui.page.main.os.shell.component.OsShellRunnerOutputCard
 import os.kei.ui.page.main.os.shell.component.OsShellRunnerSaveSheet
 import os.kei.ui.page.main.os.shell.state.BindOsShellRunnerAutoScrollEffect
 import os.kei.ui.page.main.os.shell.state.BindOsShellRunnerPersistEffects
-import os.kei.ui.page.main.os.shell.state.OsShellRunnerOutputState
-import os.kei.ui.page.main.os.shell.state.appendShellRunnerOutput
-import os.kei.ui.page.main.os.shell.state.emptyShellRunnerOutputState
-import os.kei.ui.page.main.os.shell.state.formatShellRunnerOutput
-import os.kei.ui.page.main.os.shell.state.loadOsShellRunnerPersistSnapshot
-import os.kei.ui.page.main.os.shell.state.normalizeShellRunnerOutputState
 import os.kei.ui.page.main.os.shell.state.rememberOsShellRunnerTextBundle
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
@@ -64,7 +59,9 @@ import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -93,7 +90,6 @@ fun OsShellRunnerPage(
     canRunShellCommand: Boolean,
     onRequestShizukuPermission: () -> Unit,
     onRunShellCommand: suspend (String, Long) -> String?,
-    onSaveShellCommand: (String, String, String, String) -> Boolean,
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
@@ -101,20 +97,34 @@ fun OsShellRunnerPage(
     val pageListState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val textBundle = rememberOsShellRunnerTextBundle()
+    val shellRunnerViewModel: OsShellRunnerViewModel = viewModel()
+    LaunchedEffect(
+        textBundle.commandStoppedText,
+        textBundle.outputResultLabel,
+        textBundle.outputTimeLabel
+    ) {
+        shellRunnerViewModel.loadPersistentState(
+            commandStoppedText = textBundle.commandStoppedText,
+            outputResultLabel = textBundle.outputResultLabel,
+            outputTimeLabel = textBundle.outputTimeLabel
+        )
+    }
+    LaunchedEffect(shellRunnerViewModel) {
+        shellRunnerViewModel.refreshChromePrefs()
+    }
+    val persistentState by shellRunnerViewModel.persistentState.collectAsState()
+    val chromePrefs by shellRunnerViewModel.chromePrefs.collectAsState()
     val isDark = isSystemInDarkTheme()
     val shellCommandAccentColor = if (isDark) Color(0xFF7AB8FF) else Color(0xFF2563EB)
     val shellSuccessAccentColor = if (isDark) Color(0xFF7EE7A8) else Color(0xFF15803D)
     val shellStoppedAccentColor = if (isDark) Color(0xFFFF9E9E) else Color(0xFFDC2626)
     val outputScrollState = rememberScrollState()
-
-    var liquidActionBarLayeredStyleEnabled by remember {
-        mutableStateOf(UiPrefs.isLiquidActionBarLayeredStyleEnabled())
-    }
+    val liquidActionBarLayeredStyleEnabled = chromePrefs.liquidActionBarLayeredStyleEnabled
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                liquidActionBarLayeredStyleEnabled = UiPrefs.isLiquidActionBarLayeredStyleEnabled()
+                shellRunnerViewModel.refreshChromePrefs()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -127,33 +137,22 @@ fun OsShellRunnerPage(
         drawContent()
     }
 
-    val persistSnapshot = remember(
-        textBundle.commandStoppedText,
-        textBundle.outputResultLabel,
-        textBundle.outputTimeLabel
-    ) {
-        loadOsShellRunnerPersistSnapshot(
-            commandStoppedText = textBundle.commandStoppedText,
-            outputResultLabel = textBundle.outputResultLabel,
-            outputTimeLabel = textBundle.outputTimeLabel
-        )
-    }
-
-    var commandInput by rememberSaveable { mutableStateOf(persistSnapshot.commandInput) }
-    var outputText by rememberSaveable { mutableStateOf(persistSnapshot.outputState.outputText) }
-    var outputEntries by remember { mutableStateOf(persistSnapshot.outputState.outputEntries) }
-    var latestRunResultOutput by rememberSaveable {
-        mutableStateOf(persistSnapshot.outputState.latestRunResultOutput)
-    }
-    var settings by remember { mutableStateOf(persistSnapshot.settings) }
-    var startupFocusRequestToken by rememberSaveable {
-        mutableIntStateOf(
-            if (persistSnapshot.settings.startupBehavior == OsShellRunnerStartupBehavior.FocusInput) {
-                1
-            } else {
-                0
-            }
-        )
+    val commandInput = persistentState.commandInput
+    val settings = persistentState.settings
+    val outputText = persistentState.outputState.outputText
+    val outputEntries = persistentState.outputState.outputEntries
+    val latestRunResultOutput = persistentState.outputState.latestRunResultOutput
+    var startupFocusRequestToken by rememberSaveable { mutableIntStateOf(0) }
+    var startupFocusApplied by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(persistentState.loaded) {
+        if (
+            persistentState.loaded &&
+            !startupFocusApplied &&
+            settings.startupBehavior == OsShellRunnerStartupBehavior.FocusInput
+        ) {
+            startupFocusRequestToken += 1
+            startupFocusApplied = true
+        }
     }
 
     var runningCommand by remember { mutableStateOf(false) }
@@ -168,47 +167,14 @@ fun OsShellRunnerPage(
 
     val latestOutputEntry = remember(outputEntries) { outputEntries.lastOrNull() }
 
-    fun applyOutputState(next: OsShellRunnerOutputState) {
-        outputText = next.outputText
-        outputEntries = next.outputEntries
-        latestRunResultOutput = next.latestRunResultOutput
-    }
-
-    fun normalizeOutputStateForSettings() {
-        applyOutputState(
-            normalizeShellRunnerOutputState(
-                outputText = outputText,
-                outputEntries = outputEntries,
-                commandStoppedText = textBundle.commandStoppedText,
-                outputResultLabel = textBundle.outputResultLabel,
-                outputTimeLabel = textBundle.outputTimeLabel,
-                outputSaveMode = settings.outputSaveMode,
-                maxChars = settings.outputLimitChars
-            )
-        )
-    }
-
-    fun appendOutput(command: String, result: String) {
-        var next = appendShellRunnerOutput(
-            currentOutputText = outputText,
-            currentOutputEntries = outputEntries,
+    suspend fun appendOutput(command: String, result: String) {
+        shellRunnerViewModel.appendOutput(
             command = command,
             result = result,
             commandStoppedText = textBundle.commandStoppedText,
-            outputSaveMode = settings.outputSaveMode,
-            maxChars = settings.outputLimitChars
+            outputResultLabel = textBundle.outputResultLabel,
+            outputTimeLabel = textBundle.outputTimeLabel
         )
-        if (settings.autoFormatOutput) {
-            next = formatShellRunnerOutput(
-                outputText = next.outputText,
-                outputEntries = next.outputEntries,
-                commandStoppedText = textBundle.commandStoppedText,
-                outputResultLabel = textBundle.outputResultLabel,
-                outputTimeLabel = textBundle.outputTimeLabel,
-                maxChars = settings.outputLimitChars
-            )
-        }
-        applyOutputState(next)
     }
 
     fun stopCommand(showStoppedOutput: Boolean = true) {
@@ -241,7 +207,9 @@ fun OsShellRunnerPage(
                 if (suppressStopOutputAppend) {
                     suppressStopOutputAppend = false
                 } else {
-                    appendOutput(command, textBundle.commandStoppedText)
+                    withContext(NonCancellable) {
+                        appendOutput(command, textBundle.commandStoppedText)
+                    }
                     if (settings.completionToast) {
                         Toast.makeText(context, textBundle.commandStoppedText, Toast.LENGTH_SHORT).show()
                     }
@@ -258,12 +226,12 @@ fun OsShellRunnerPage(
         if (runningCommand) return
         val command = commandInput.trim()
         if (command.isBlank()) {
-            outputText = textBundle.emptyCommandText
+            shellRunnerViewModel.replaceOutputMessage(textBundle.emptyCommandText)
             return
         }
         if (!canRunShellCommand) {
             onRequestShizukuPermission()
-            outputText = textBundle.missingPermissionText
+            shellRunnerViewModel.replaceOutputMessage(textBundle.missingPermissionText)
             return
         }
         if (settings.dangerousCommandConfirm && isPotentiallyDangerousShellCommand(command)) {
@@ -280,10 +248,11 @@ fun OsShellRunnerPage(
             Toast.makeText(context, textBundle.commandSaveEmptyToast, Toast.LENGTH_SHORT).show()
             return
         }
-        val currentCard = OsShellCommandCardStore.findLatestByCommand(command)
-        saveTitleInput = ""
-        saveSubtitleInput = currentCard?.subtitle.orEmpty()
-        showSaveSheet = true
+        scope.launch {
+            saveTitleInput = ""
+            saveSubtitleInput = shellRunnerViewModel.latestShellCardSubtitle(command)
+            showSaveSheet = true
+        }
     }
 
     fun saveCommandToCard() {
@@ -298,10 +267,17 @@ fun OsShellRunnerPage(
             return
         }
         val subtitle = saveSubtitleInput.trim()
-        val saved = onSaveShellCommand(command, title, subtitle, latestRunResultOutput)
-        if (saved) {
-            showSaveSheet = false
-            Toast.makeText(context, textBundle.commandSavedToast, Toast.LENGTH_SHORT).show()
+        scope.launch {
+            val saved = shellRunnerViewModel.createShellCommandCard(
+                command = command,
+                title = title,
+                subtitle = subtitle,
+                runOutput = latestRunResultOutput
+            )
+            if (saved) {
+                showSaveSheet = false
+                Toast.makeText(context, textBundle.commandSavedToast, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -332,26 +308,23 @@ fun OsShellRunnerPage(
             Toast.makeText(context, textBundle.outputFormatEmptyToast, Toast.LENGTH_SHORT).show()
             return
         }
-        applyOutputState(
-            formatShellRunnerOutput(
-                outputText = outputText,
-                outputEntries = outputEntries,
+        scope.launch {
+            shellRunnerViewModel.formatOutput(
                 commandStoppedText = textBundle.commandStoppedText,
                 outputResultLabel = textBundle.outputResultLabel,
-                outputTimeLabel = textBundle.outputTimeLabel,
-                maxChars = settings.outputLimitChars
+                outputTimeLabel = textBundle.outputTimeLabel
             )
-        )
-        Toast.makeText(context, textBundle.outputFormattedToast, Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, textBundle.outputFormattedToast, Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun clearOutput() {
-        applyOutputState(emptyShellRunnerOutputState())
+        shellRunnerViewModel.clearOutput()
     }
 
     fun clearAllContent() {
         stopCommand(showStoppedOutput = false)
-        commandInput = ""
+        shellRunnerViewModel.updateCommandInput("")
         clearOutput()
         Toast.makeText(context, textBundle.clearAllToast, Toast.LENGTH_SHORT).show()
     }
@@ -361,12 +334,12 @@ fun OsShellRunnerPage(
         when (settings.exitCleanupMode) {
             OsShellRunnerExitCleanupMode.KeepAll -> Unit
             OsShellRunnerExitCleanupMode.ClearInput -> {
-                commandInput = ""
-                OsShellRunnerPrefsStore.clearSavedInput()
+                shellRunnerViewModel.updateCommandInput("")
+                shellRunnerViewModel.clearSavedInput()
             }
             OsShellRunnerExitCleanupMode.ClearOutput -> {
                 clearOutput()
-                OsShellRunnerPrefsStore.clearSavedOutput()
+                shellRunnerViewModel.clearSavedOutput()
             }
         }
         onClose()
@@ -404,7 +377,9 @@ fun OsShellRunnerPage(
         persistInputEnabled = settings.persistInput,
         persistOutputEnabled = settings.persistOutput,
         commandInput = commandInput,
-        outputText = outputText
+        outputText = outputText,
+        onPersistInput = shellRunnerViewModel::persistInput,
+        onPersistOutput = shellRunnerViewModel::persistOutput
     )
     BindOsShellRunnerAutoScrollEffect(
         outputText = outputText,
@@ -446,7 +421,7 @@ fun OsShellRunnerPage(
                     inputTitle = textBundle.inputTitle,
                     inputHint = textBundle.inputHint,
                     commandInput = commandInput,
-                    onCommandInputChange = { commandInput = it },
+                    onCommandInputChange = shellRunnerViewModel::updateCommandInput,
                     runningCommand = runningCommand,
                     runActionDescription = textBundle.runActionDescription,
                     stopActionDescription = textBundle.stopActionDescription,
@@ -501,59 +476,37 @@ fun OsShellRunnerPage(
         show = showSettingsSheet,
         onDismissRequest = { showSettingsSheet = false },
         settings = settings,
-        onPersistInputEnabledChange = { checked ->
-            settings = settings.copy(persistInput = checked)
-            OsShellRunnerPrefsStore.savePersistInput(checked)
-        },
-        onPersistOutputEnabledChange = { checked ->
-            settings = settings.copy(persistOutput = checked)
-            OsShellRunnerPrefsStore.savePersistOutput(checked)
-        },
-        onTimeoutSecondsChange = { seconds ->
-            settings = settings.copy(commandTimeoutSeconds = seconds)
-            OsShellRunnerPrefsStore.saveTimeoutSeconds(seconds)
-        },
-        onAutoFormatOutputChange = { checked ->
-            settings = settings.copy(autoFormatOutput = checked)
-            OsShellRunnerPrefsStore.saveAutoFormatOutput(checked)
-        },
-        onAutoScrollOutputChange = { checked ->
-            settings = settings.copy(autoScrollOutput = checked)
-            OsShellRunnerPrefsStore.saveAutoScrollOutput(checked)
-        },
+        onPersistInputEnabledChange = shellRunnerViewModel::updatePersistInput,
+        onPersistOutputEnabledChange = shellRunnerViewModel::updatePersistOutput,
+        onTimeoutSecondsChange = shellRunnerViewModel::updateTimeoutSeconds,
+        onAutoFormatOutputChange = shellRunnerViewModel::updateAutoFormatOutput,
+        onAutoScrollOutputChange = shellRunnerViewModel::updateAutoScrollOutput,
         onOutputLimitCharsChange = { limit ->
-            settings = settings.copy(outputLimitChars = limit)
-            OsShellRunnerPrefsStore.saveOutputLimitChars(limit)
-            normalizeOutputStateForSettings()
+            shellRunnerViewModel.updateOutputLimitChars(
+                limit = limit,
+                commandStoppedText = textBundle.commandStoppedText,
+                outputResultLabel = textBundle.outputResultLabel,
+                outputTimeLabel = textBundle.outputTimeLabel
+            )
         },
         onOutputSaveModeChange = { mode ->
-            settings = settings.copy(outputSaveMode = mode)
-            OsShellRunnerPrefsStore.saveOutputSaveMode(mode)
-            normalizeOutputStateForSettings()
+            shellRunnerViewModel.updateOutputSaveMode(
+                mode = mode,
+                commandStoppedText = textBundle.commandStoppedText,
+                outputResultLabel = textBundle.outputResultLabel,
+                outputTimeLabel = textBundle.outputTimeLabel
+            )
         },
-        onDangerousCommandConfirmChange = { checked ->
-            settings = settings.copy(dangerousCommandConfirm = checked)
-            OsShellRunnerPrefsStore.saveDangerousCommandConfirm(checked)
-        },
-        onCompletionToastChange = { checked ->
-            settings = settings.copy(completionToast = checked)
-            OsShellRunnerPrefsStore.saveCompletionToast(checked)
-        },
+        onDangerousCommandConfirmChange = shellRunnerViewModel::updateDangerousCommandConfirm,
+        onCompletionToastChange = shellRunnerViewModel::updateCompletionToast,
         onStartupBehaviorChange = { behavior ->
-            settings = settings.copy(startupBehavior = behavior)
-            OsShellRunnerPrefsStore.saveStartupBehavior(behavior)
+            shellRunnerViewModel.updateStartupBehavior(behavior)
             if (behavior == OsShellRunnerStartupBehavior.FocusInput) {
                 startupFocusRequestToken += 1
             }
         },
-        onExitCleanupModeChange = { mode ->
-            settings = settings.copy(exitCleanupMode = mode)
-            OsShellRunnerPrefsStore.saveExitCleanupMode(mode)
-        },
-        onCopyModeChange = { mode ->
-            settings = settings.copy(copyMode = mode)
-            OsShellRunnerPrefsStore.saveCopyMode(mode)
-        }
+        onExitCleanupModeChange = shellRunnerViewModel::updateExitCleanupMode,
+        onCopyModeChange = shellRunnerViewModel::updateCopyMode
     )
 
     val dangerousCommandPreview = remember(pendingDangerousCommand) {

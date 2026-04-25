@@ -3,8 +3,8 @@ package os.kei.ui.page.main.os.shell.state
 import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
-import os.kei.ui.page.main.os.shell.OsShellRunnerPrefsStore
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
@@ -17,34 +17,28 @@ internal fun BindOsShellRunnerPersistEffects(
     persistInputEnabled: Boolean,
     persistOutputEnabled: Boolean,
     commandInput: String,
-    outputText: String
+    outputText: String,
+    onPersistInput: (String) -> Unit,
+    onPersistOutput: (String) -> Unit
 ) {
-    LaunchedEffect(persistInputEnabled) {
-        OsShellRunnerPrefsStore.savePersistInput(persistInputEnabled)
-        if (!persistInputEnabled) {
-            OsShellRunnerPrefsStore.clearSavedInput()
-        }
-    }
-    LaunchedEffect(persistOutputEnabled) {
-        OsShellRunnerPrefsStore.savePersistOutput(persistOutputEnabled)
-        if (!persistOutputEnabled) {
-            OsShellRunnerPrefsStore.clearSavedOutput()
-        }
-    }
+    val currentCommandInput = rememberUpdatedState(commandInput)
+    val currentOutputText = rememberUpdatedState(outputText)
+    val currentPersistInput = rememberUpdatedState(onPersistInput)
+    val currentPersistOutput = rememberUpdatedState(onPersistOutput)
     LaunchedEffect(persistInputEnabled) {
         if (!persistInputEnabled) return@LaunchedEffect
-        snapshotFlow { commandInput }
+        snapshotFlow { currentCommandInput.value }
             .debounce(shellPersistDebounceMs)
             .collectLatest { input ->
-                OsShellRunnerPrefsStore.saveInput(input)
+                currentPersistInput.value(input)
             }
     }
     LaunchedEffect(persistOutputEnabled) {
         if (!persistOutputEnabled) return@LaunchedEffect
-        snapshotFlow { outputText }
+        snapshotFlow { currentOutputText.value }
             .debounce(shellPersistDebounceMs)
             .collectLatest { output ->
-                OsShellRunnerPrefsStore.saveOutput(output)
+                currentPersistOutput.value(output)
             }
     }
 }
