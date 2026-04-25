@@ -21,6 +21,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -36,13 +37,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
 import os.kei.core.prefs.UiPrefs
 import os.kei.core.ui.effect.getMiuixAppBarColor
@@ -53,7 +54,7 @@ import os.kei.ui.page.main.os.appLucideSortIcon
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
 import os.kei.ui.page.main.student.catalog.component.BaGuideCatalogSortActionPopup
 import os.kei.ui.page.main.student.catalog.component.BaGuideCatalogTabContent
-import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogDataController
+import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogViewModel
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogFilterSortState
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabSelectCoordinator
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTopBarActionItems
@@ -91,7 +92,6 @@ fun BaGuideCatalogPage(
     preloadingEnabled: Boolean = false,
     enableSearchBar: Boolean = true,
 ) {
-    val context = LocalContext.current
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
     val preloadPolicy = remember(preloadingEnabled) {
         UiPerformanceBudget.resolvePreloadPolicy(preloadingEnabled)
@@ -125,16 +125,25 @@ fun BaGuideCatalogPage(
 
     val loadFailedText = stringResource(R.string.ba_catalog_load_failed)
     val refreshFailedKeepCacheText = stringResource(R.string.ba_catalog_refresh_failed_keep_cached)
-    val catalogData = rememberBaGuideCatalogDataController(
-        context = context,
-        transitionAnimationsEnabled = transitionAnimationsEnabled,
-        initialFetchDelayMs = preloadPolicy.initialFetchDelayMs,
-        loadFailedText = loadFailedText,
-        refreshFailedKeepCacheText = refreshFailedKeepCacheText
-    )
-    val catalog = catalogData.catalog
-    val loading = catalogData.loading
-    val error = catalogData.error
+    val catalogViewModel: BaGuideCatalogViewModel = viewModel()
+    val catalogDataState by catalogViewModel.dataState.collectAsState()
+    LaunchedEffect(
+        catalogViewModel,
+        transitionAnimationsEnabled,
+        preloadPolicy.initialFetchDelayMs,
+        loadFailedText,
+        refreshFailedKeepCacheText
+    ) {
+        catalogViewModel.bind(
+            transitionAnimationsEnabled = transitionAnimationsEnabled,
+            initialFetchDelayMs = preloadPolicy.initialFetchDelayMs,
+            loadFailedText = loadFailedText,
+            refreshFailedKeepCacheText = refreshFailedKeepCacheText
+        )
+    }
+    val catalog = catalogDataState.catalog
+    val loading = catalogDataState.loading
+    val error = catalogDataState.error
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val filterSortState = rememberBaGuideCatalogFilterSortState()
 
@@ -147,7 +156,7 @@ fun BaGuideCatalogPage(
         refreshActionContentDescription = refreshActionContentDescription,
         showSortPopup = filterSortState.showSortPopup,
         onShowSortPopupChange = { filterSortState.showSortPopup = it },
-        onRefreshRequest = catalogData.requestRefresh
+        onRefreshRequest = catalogViewModel::requestRefresh
     )
 
     val tabs = BaGuideCatalogTab.entries
