@@ -19,7 +19,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import os.kei.R
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.student.BaStudentGuideInfo
-import os.kei.ui.page.main.student.BaStudentGuideStore
 import os.kei.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import os.kei.ui.page.main.student.fetch.normalizeGuideUrl
 import os.kei.ui.page.main.student.page.support.GuideMediaPackSaveRequest
@@ -403,10 +402,8 @@ internal fun rememberBaStudentGuidePageActions(
     onPlayingVoiceUrlChange: (String) -> Unit,
     onIsVoicePlayingChange: (Boolean) -> Unit,
     onVoicePlayProgressChange: (Float) -> Unit,
-    onManualRefreshRequestedChange: (Boolean) -> Unit,
-    onSourceUrlChange: (String) -> Unit,
-    onErrorChange: (String?) -> Unit,
-    onRefreshSignalIncrease: () -> Unit,
+    onOpenGuideInPage: (String) -> Unit,
+    onRefresh: () -> Unit,
     saveGuideMedia: (String, String) -> Unit,
     saveGuideMediaPack: (List<Pair<String, String>>, String) -> Unit
 ): BaStudentGuidePageActions {
@@ -424,10 +421,8 @@ internal fun rememberBaStudentGuidePageActions(
         onPlayingVoiceUrlChange,
         onIsVoicePlayingChange,
         onVoicePlayProgressChange,
-        onManualRefreshRequestedChange,
-        onSourceUrlChange,
-        onErrorChange,
-        onRefreshSignalIncrease,
+        onOpenGuideInPage,
+        onRefresh,
         saveGuideMedia,
         saveGuideMediaPack
     ) {
@@ -474,11 +469,7 @@ internal fun rememberBaStudentGuidePageActions(
                     normalized
                 }
                 if (target.isNotBlank() && target != sourceUrl) {
-                    onManualRefreshRequestedChange(false)
-                    BaStudentGuideStore.setCurrentUrl(target)
-                    onSourceUrlChange(target)
-                    onErrorChange(null)
-                    onRefreshSignalIncrease()
+                    onOpenGuideInPage(target)
                 }
             },
             saveGuideMedia = saveGuideMedia,
@@ -521,10 +512,7 @@ internal fun rememberBaStudentGuidePageActions(
                     }
                 }
             },
-            requestRefresh = {
-                onManualRefreshRequestedChange(true)
-                onRefreshSignalIncrease()
-            }
+            requestRefresh = onRefresh
         )
     }
 }

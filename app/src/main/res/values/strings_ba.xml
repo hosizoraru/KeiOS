@@ -78,6 +78,8 @@
     <string name="guide_expression_swipe_hint">左右滑动切换表情</string>
     <string name="guide_media_pack_save_success">表情打包完成：%1$d/%2$d 项，文件：%3$s</string>
     <string name="guide_media_pack_save_failed">表情打包失败</string>
+    <string name="guide_refresh_failed_keep_cached">网络请求失败，已显示本地缓存</string>
+    <string name="guide_load_failed">图鉴信息加载失败</string>
     <string name="guide_share_source_empty">暂无可分享的来源链接</string>
     <string name="guide_share_source_chooser_title">分享来源</string>
     <string name="guide_cd_share_source">分享来源</string>

@@ -28,6 +28,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -52,17 +53,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import os.kei.R
-import os.kei.ui.page.main.student.BaStudentGuideInfo
-import os.kei.ui.page.main.student.BaStudentGuideStore
 import os.kei.ui.page.main.student.createGameKeeMediaSourceFactory
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.component.BaStudentGuideBottomBar
 import os.kei.ui.page.main.student.page.component.BaStudentGuidePagerContent
 import os.kei.ui.page.main.student.page.support.rememberGuideSyncProgress
 import os.kei.ui.page.main.student.page.support.resolveGuideBottomTabs
-import os.kei.ui.page.main.student.page.state.BindBaStudentGuideInfoLoadEffect
 import os.kei.ui.page.main.student.page.state.rememberBaStudentGuideMediaSaveAction
 import os.kei.ui.page.main.student.page.state.rememberBaStudentGuideMediaPackSaveAction
 import os.kei.ui.page.main.student.page.state.rememberBaStudentGuidePageActions
@@ -71,7 +70,7 @@ import os.kei.ui.page.main.student.page.state.rememberBaStudentGuideTopBarAction
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePagerSyncEffects
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePlayerLifecycleEffects
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePrefetchEffects
-import os.kei.ui.page.main.student.page.state.BindBaStudentGuideSourceRestoreEffect
+import os.kei.ui.page.main.student.page.state.BaStudentGuideViewModel
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuideVoiceListenerEffect
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuideVoiceProgressEffect
 import os.kei.ui.perf.ReportPagerPerformanceState
@@ -120,6 +119,8 @@ fun BaStudentGuidePage(
     val openLinkFailedText = stringResource(R.string.common_open_link_failed)
     val shareSourceContentDescription = stringResource(R.string.guide_cd_share_source)
     val refreshContentDescription = stringResource(R.string.common_refresh)
+    val loadFailedText = stringResource(R.string.guide_load_failed)
+    val refreshFailedKeepCacheText = stringResource(R.string.guide_refresh_failed_keep_cached)
     val accent = MiuixTheme.colorScheme.primary
     val surfaceColor = MiuixTheme.colorScheme.surface
     // Keep backdrop allocation stable per page lifecycle to avoid RenderThread native crashes
@@ -146,13 +147,27 @@ fun BaStudentGuidePage(
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
     val scrollBehavior = MiuixScrollBehavior()
 
-    var sourceUrl by rememberSaveable { mutableStateOf(BaStudentGuideStore.loadCurrentUrl()) }
-    var info by remember(sourceUrl) { mutableStateOf<BaStudentGuideInfo?>(null) }
+    val guideViewModel: BaStudentGuideViewModel = viewModel()
+    val guideDataState by guideViewModel.dataState.collectAsState()
+    LaunchedEffect(
+        guideViewModel,
+        transitionAnimationsEnabled,
+        preloadPolicy.initialFetchDelayMs,
+        loadFailedText,
+        refreshFailedKeepCacheText
+    ) {
+        guideViewModel.bind(
+            transitionAnimationsEnabled = transitionAnimationsEnabled,
+            initialFetchDelayMs = preloadPolicy.initialFetchDelayMs,
+            loadFailedText = loadFailedText,
+            refreshFailedKeepCacheText = refreshFailedKeepCacheText
+        )
+    }
+    val sourceUrl = guideDataState.sourceUrl
+    val info = guideDataState.info
     val guideSyncToken = info?.syncedAtMs ?: -1L
-    var loading by remember(sourceUrl) { mutableStateOf(sourceUrl.isNotBlank()) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var refreshSignal by remember { mutableStateOf(0) }
-    var manualRefreshRequested by remember { mutableStateOf(false) }
+    val loading = guideDataState.loading
+    val error = guideDataState.error
     var selectedBottomTabOrdinal by rememberSaveable(sourceUrl) {
         mutableIntStateOf(GuideBottomTab.Archive.ordinal)
     }
@@ -258,19 +273,12 @@ fun BaStudentGuidePage(
         onPlayingVoiceUrlChange = { playingVoiceUrl = it },
         onIsVoicePlayingChange = { isVoicePlaying = it },
         onVoicePlayProgressChange = { voicePlayProgress = it },
-        onManualRefreshRequestedChange = { manualRefreshRequested = it },
-        onSourceUrlChange = { sourceUrl = it },
-        onErrorChange = { error = it },
-        onRefreshSignalIncrease = { refreshSignal += 1 },
+        onOpenGuideInPage = guideViewModel::openGuide,
+        onRefresh = guideViewModel::requestRefresh,
         saveGuideMedia = saveGuideMediaAction,
         saveGuideMediaPack = saveGuideMediaPackAction
     )
 
-    BindBaStudentGuideSourceRestoreEffect(
-        sourceUrl = sourceUrl,
-        onSourceUrlChange = { sourceUrl = it },
-        onErrorChange = { error = it }
-    )
     BindBaStudentGuidePagerSyncEffects(
         sourceUrl = sourceUrl,
         bottomTabsSize = bottomTabsList.size,
@@ -303,20 +311,6 @@ fun BaStudentGuidePage(
         initialPrefetchCount = preloadPolicy.guideStaticPrefetchInitialCount,
         galleryExtraPrefetchCount = preloadPolicy.guideStaticPrefetchGalleryExtraCount,
         onGalleryCacheRevisionIncrease = { galleryCacheRevision += 1 }
-    )
-    BindBaStudentGuideInfoLoadEffect(
-        context = context,
-        sourceUrl = sourceUrl,
-        refreshSignal = refreshSignal,
-        transitionAnimationsEnabled = transitionAnimationsEnabled,
-        initialFetchDelayMs = preloadPolicy.initialFetchDelayMs,
-        manualRefreshRequested = manualRefreshRequested,
-        onManualRefreshRequestedChange = { manualRefreshRequested = it },
-        currentSourceUrlProvider = { sourceUrl },
-        currentInfoProvider = { info },
-        onInfoChange = { info = it },
-        onErrorChange = { error = it },
-        onLoadingChange = { loading = it }
     )
     val shareIcon = appLucideShareIcon()
     val refreshIcon = appLucideRefreshIcon()

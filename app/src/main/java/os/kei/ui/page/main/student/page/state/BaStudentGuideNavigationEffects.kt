@@ -3,22 +3,6 @@ package os.kei.ui.page.main.student.page.state
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import os.kei.ui.page.main.student.BaStudentGuideStore
-
-@Composable
-internal fun BindBaStudentGuideSourceRestoreEffect(
-    sourceUrl: String,
-    onSourceUrlChange: (String) -> Unit,
-    onErrorChange: (String?) -> Unit
-) {
-    LaunchedEffect(Unit) {
-        val latestStored = BaStudentGuideStore.loadCurrentUrl()
-        if (latestStored.isNotBlank() && latestStored != sourceUrl) {
-            onSourceUrlChange(latestStored)
-            onErrorChange(null)
-        }
-    }
-}
 
 @Composable
 internal fun BindBaStudentGuidePagerSyncEffects(
