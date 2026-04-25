@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.onEach
 import androidx.compose.runtime.snapshotFlow
 
 private const val HOME_HEADER_SINK_PER_HIDDEN_CARD_DP = 22
-private val HOME_HERO_AVOIDANCE_SCROLL_DISTANCE_DP = 30.dp
+private val HOME_HERO_AVOIDANCE_SCROLL_DISTANCE_DP = 128.dp
 
 internal data class HomePageHeroMotionState(
     val scrollProgress: Float,
@@ -132,8 +132,10 @@ internal fun rememberHomePageHeroMotionState(
                     if (summaryProgress != 1f) summaryProgress = 1f
                     return@onEach
                 }
-                avoidanceProgress = (offset.toFloat() / avoidanceScrollDistancePx.coerceAtLeast(1f))
-                    .coerceIn(0f, 1f)
+                avoidanceProgress = homeHeroAvoidanceProgress(
+                    offsetPx = offset.toFloat(),
+                    distancePx = avoidanceScrollDistancePx
+                )
 
                 if (initialLogoAreaY == 0f && logoAreaY > 0f) {
                     initialLogoAreaY = logoAreaY
@@ -188,6 +190,14 @@ internal fun rememberHomePageHeroMotionState(
             onSummaryBottomChanged = { bottom -> if (summaryY == 0f) summaryY = bottom }
         )
     }
+}
+
+private fun homeHeroAvoidanceProgress(
+    offsetPx: Float,
+    distancePx: Float
+): Float {
+    val progress = (offsetPx / distancePx.coerceAtLeast(1f)).coerceIn(0f, 1f)
+    return progress * progress * (3f - 2f * progress)
 }
 
 @Composable

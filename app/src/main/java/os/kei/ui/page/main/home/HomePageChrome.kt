@@ -63,6 +63,10 @@ private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
     Color(0xFFFF6098),
     Color(0xFFFF5893)
 )
+private val HOME_HERO_ICON_AVOIDANCE_LIFT = 88.dp
+private val HOME_HERO_TITLE_AVOIDANCE_LIFT = 70.dp
+private val HOME_HERO_SUMMARY_AVOIDANCE_LIFT = 56.dp
+private const val HOME_HERO_AVOIDANCE_ALPHA_WEIGHT = 0.28f
 
 internal data class HomeHeaderStatusPillState(
     val label: String,
@@ -197,9 +201,12 @@ internal fun HomePageHero(
     onSummaryBottomChanged: (Float) -> Unit
 ) {
     val density = LocalDensity.current
-    val iconAvoidanceLiftPx = with(density) { 44.dp.toPx() }
-    val titleAvoidanceLiftPx = with(density) { 34.dp.toPx() }
-    val summaryAvoidanceLiftPx = with(density) { 28.dp.toPx() }
+    val iconAvoidanceLiftPx = with(density) { HOME_HERO_ICON_AVOIDANCE_LIFT.toPx() }
+    val titleAvoidanceLiftPx = with(density) { HOME_HERO_TITLE_AVOIDANCE_LIFT.toPx() }
+    val summaryAvoidanceLiftPx = with(density) { HOME_HERO_SUMMARY_AVOIDANCE_LIFT.toPx() }
+    val iconExitProgress = max(iconProgress, avoidanceProgress * HOME_HERO_AVOIDANCE_ALPHA_WEIGHT)
+    val titleExitProgress = max(titleProgress, avoidanceProgress * HOME_HERO_AVOIDANCE_ALPHA_WEIGHT)
+    val summaryExitProgress = max(summaryProgress, avoidanceProgress * HOME_HERO_AVOIDANCE_ALPHA_WEIGHT)
 
     Column(
         modifier = Modifier
@@ -217,10 +224,10 @@ internal fun HomePageHero(
             modifier = Modifier
                 .size(88.dp)
                 .graphicsLayer {
-                    alpha = 1f - iconProgress
+                    alpha = 1f - iconExitProgress
                     translationY = -iconAvoidanceLiftPx * max(iconProgress, avoidanceProgress)
-                    scaleX = 1f - (iconProgress * 0.05f)
-                    scaleY = 1f - (iconProgress * 0.05f)
+                    scaleX = 1f - (iconExitProgress * 0.05f)
+                    scaleY = 1f - (iconExitProgress * 0.05f)
                 }
                 .onGloballyPositioned { coordinates ->
                     onIconBottomChanged(coordinates.positionInWindow().y + coordinates.size.height)
@@ -232,7 +239,7 @@ internal fun HomePageHero(
                 modifier = Modifier
                     .size(88.dp)
                     .graphicsLayer {
-                        alpha = (1f - iconProgress) * 0.95f
+                        alpha = (1f - iconExitProgress) * 0.95f
                     }
                     .homeKeiHdrAccent(
                         enabled = homeIconHdrEnabled,
@@ -267,10 +274,10 @@ internal fun HomePageHero(
                     onTitleBottomChanged(coordinates.positionInWindow().y + coordinates.size.height)
                 }
                 .graphicsLayer {
-                    alpha = 1f - titleProgress
+                    alpha = 1f - titleExitProgress
                     translationY = -titleAvoidanceLiftPx * max(titleProgress, avoidanceProgress)
-                    scaleX = 1f - (titleProgress * 0.05f)
-                    scaleY = 1f - (titleProgress * 0.05f)
+                    scaleX = 1f - (titleExitProgress * 0.05f)
+                    scaleY = 1f - (titleExitProgress * 0.05f)
                 }
                 .homeKeiHdrAccent(
                     enabled = homeIconHdrEnabled,
@@ -286,10 +293,10 @@ internal fun HomePageHero(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    alpha = 1f - summaryProgress
+                    alpha = 1f - summaryExitProgress
                     translationY = -summaryAvoidanceLiftPx * max(summaryProgress, avoidanceProgress)
-                    scaleX = 1f - (summaryProgress * 0.05f)
-                    scaleY = 1f - (summaryProgress * 0.05f)
+                    scaleX = 1f - (summaryExitProgress * 0.05f)
+                    scaleY = 1f - (summaryExitProgress * 0.05f)
                 }
                 .onGloballyPositioned { coordinates ->
                     onSummaryBottomChanged(coordinates.positionInWindow().y + coordinates.size.height)
