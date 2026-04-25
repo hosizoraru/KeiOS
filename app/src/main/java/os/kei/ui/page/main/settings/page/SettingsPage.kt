@@ -2,10 +2,12 @@ package os.kei.ui.page.main.settings.page
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -383,6 +385,7 @@ fun SettingsPage(
                 selectedPage = pagerState.targetPage.coerceIn(0, categories.lastIndex),
                 selectedPageProvider = { pagerState.targetPage },
                 backdrop = bottomBarBackdrop,
+                reduceEffectsDuringPagerScroll = pagerState.isScrollInProgress,
                 isLiquidEffectEnabled = liquidBottomBarEnabled,
                 onSelectCategory = selectSettingsCategoryAction
             )
@@ -407,10 +410,15 @@ fun SettingsPage(
                     SettingsCategory.Notify -> notifyListState
                     SettingsCategory.Data -> dataListState
                 }
+                val pageViewportBottomPadding = innerPadding.calculateBottomPadding()
+                val pageContentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding()
+                )
                 AppPageLazyColumn(
-                    innerPadding = innerPadding,
+                    innerPadding = pageContentPadding,
                     state = pageListState,
                     modifier = Modifier
+                        .padding(bottom = pageViewportBottomPadding)
                         .fillMaxSize()
                         .nestedScroll(scrollBehavior.nestedScrollConnection),
                     bottomExtra = appPageBottomPaddingWithFloatingOverlay(
