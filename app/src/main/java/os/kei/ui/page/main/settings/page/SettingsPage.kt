@@ -337,10 +337,25 @@ fun SettingsPage(
     val bottomBarVisibilityController = remember(bottomBarVisibilityThresholdPx) {
         ScrollChromeVisibilityController(bottomBarVisibilityThresholdPx)
     }
+    val activePageListState = when (
+        if (pagerState.isScrollInProgress) pagerState.targetPage else pagerState.settledPage
+    ) {
+        0 -> accessListState
+        1 -> appearanceListState
+        2 -> notifyListState
+        else -> dataListState
+    }
+    val currentActivePageListState = rememberUpdatedState(activePageListState)
     val bottomBarNestedScrollConnection = remember(bottomBarVisibilityController) {
         object : NestedScrollConnection {
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
+                val currentListState = currentActivePageListState.value
+                bottomBarVisibilityController.updateWithinScrollBounds(
+                    deltaY = consumed.y,
+                    visible = showBottomBar,
+                    canScrollBackward = currentListState.canScrollBackward,
+                    canScrollForward = currentListState.canScrollForward
+                ) { showBottomBar = it }
                 return Offset.Zero
             }
         }
