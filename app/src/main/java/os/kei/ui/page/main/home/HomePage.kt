@@ -23,11 +23,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -47,6 +45,7 @@ import os.kei.ui.page.main.model.BottomPage
 import os.kei.ui.page.main.os.appLucideInfoIcon
 import os.kei.ui.page.main.os.appLucideLayersIcon
 import os.kei.ui.page.main.os.osLucideSettingsIcon
+import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -73,7 +72,6 @@ fun HomePage(
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val layoutDirection = LocalLayoutDirection.current
-    val density = LocalDensity.current
     val lazyListState = rememberLazyListState()
     val topAppBarScrollBehavior = MiuixScrollBehavior()
 
@@ -277,7 +275,8 @@ fun HomePage(
                     homeAppName = contentState.homeAppName,
                     homeTagline = contentState.homeTagline,
                     appVersionText = contentState.appVersionText,
-                    avoidanceProgress = heroMotionState.avoidanceProgress, iconProgress = heroMotionState.iconProgress,
+                    avoidanceProgress = heroMotionState.avoidanceProgress,
+                    iconProgress = heroMotionState.iconProgress,
                     titleProgress = heroMotionState.titleProgress,
                     summaryProgress = heroMotionState.summaryProgress,
                     statusPills = overviewCardState.homeHeaderStatusPills,
@@ -329,15 +328,7 @@ fun HomePage(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(
-                    // Respect system status bar insets and add extra spacing
-                    top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + 8.dp,
-                    end = WindowInsets.safeDrawing.asPaddingValues().calculateEndPadding(layoutDirection) + 8.dp
-                )
-        ) {
+        AppTopEndActionBarOverlay {
             LiquidActionBar(
                 backdrop = actionBarBackdrop,
                 layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,

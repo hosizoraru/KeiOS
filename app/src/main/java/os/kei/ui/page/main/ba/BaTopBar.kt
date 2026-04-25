@@ -25,11 +25,22 @@ import top.yukonga.miuix.kmp.basic.ScrollBehavior
 
 @Composable
 internal fun BaTopBar(
+    topBarColor: Color,
+    scrollBehavior: ScrollBehavior?,
+) {
+    AppTopBarSection(
+        title = "",
+        largeTitle = stringResource(R.string.ba_topbar_title),
+        scrollBehavior = scrollBehavior,
+        color = topBarColor,
+    )
+}
+
+@Composable
+internal fun BaTopBarActions(
     backdrop: LayerBackdrop,
     liquidActionBarLayeredStyleEnabled: Boolean,
     reduceEffectsDuringPagerScroll: Boolean,
-    topBarColor: Color,
-    scrollBehavior: ScrollBehavior?,
     showCalendarIntervalPopup: Boolean,
     calendarRefreshIntervalHours: Int,
     onShowSettings: () -> Unit,
@@ -82,53 +93,45 @@ internal fun BaTopBar(
         )
     }
 
-    AppTopBarSection(
-        title = "",
-        largeTitle = stringResource(R.string.ba_topbar_title),
-        scrollBehavior = scrollBehavior,
-        color = topBarColor,
-        actions = {
-            Box {
-                LiquidActionBar(
-                    backdrop = backdrop,
-                    layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                    reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
-                    items = actionItems,
-                    onInteractionChanged = onInteractionChanged,
-                )
+    Box {
+        LiquidActionBar(
+            backdrop = backdrop,
+            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+            reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
+            items = actionItems,
+            onInteractionChanged = onInteractionChanged,
+        )
 
-                LiquidActionBarPopupAnchors(itemCount = 4) { slotIndex, popupAnchorBounds ->
-                    if (slotIndex == 1 && showCalendarIntervalPopup) {
-                        SnapshotWindowListPopup(
-                            show = showCalendarIntervalPopup,
-                            alignment = PopupPositionProvider.Align.BottomStart,
-                            anchorBounds = popupAnchorBounds,
-                            placement = SnapshotPopupPlacement.ActionBarCenter,
-                            onDismissRequest = { onShowCalendarIntervalPopupChange(false) },
-                            enableWindowDim = false,
-                        ) {
-                            LiquidDropdownColumn {
-                                val options = BaCalendarRefreshIntervalOption.entries
-                                val selected = BaCalendarRefreshIntervalOption.fromHours(
-                                    calendarRefreshIntervalHours,
-                                )
-                                options.forEachIndexed { index, option ->
-                                    LiquidDropdownImpl(
-                                        text = option.label,
-                                        optionSize = options.size,
-                                        isSelected = selected == option,
-                                        index = index,
-                                        onSelectedIndexChange = { selectedIndex ->
-                                            onCalendarRefreshIntervalSelected(options[selectedIndex].hours)
-                                            onShowCalendarIntervalPopupChange(false)
-                                        },
-                                    )
-                                }
-                            }
+        LiquidActionBarPopupAnchors(itemCount = 4) { slotIndex, popupAnchorBounds ->
+            if (slotIndex == 1 && showCalendarIntervalPopup) {
+                SnapshotWindowListPopup(
+                    show = showCalendarIntervalPopup,
+                    alignment = PopupPositionProvider.Align.BottomStart,
+                    anchorBounds = popupAnchorBounds,
+                    placement = SnapshotPopupPlacement.ActionBarCenter,
+                    onDismissRequest = { onShowCalendarIntervalPopupChange(false) },
+                    enableWindowDim = false,
+                ) {
+                    LiquidDropdownColumn {
+                        val options = BaCalendarRefreshIntervalOption.entries
+                        val selected = BaCalendarRefreshIntervalOption.fromHours(
+                            calendarRefreshIntervalHours,
+                        )
+                        options.forEachIndexed { index, option ->
+                            LiquidDropdownImpl(
+                                text = option.label,
+                                optionSize = options.size,
+                                isSelected = selected == option,
+                                index = index,
+                                onSelectedIndexChange = { selectedIndex ->
+                                    onCalendarRefreshIntervalSelected(options[selectedIndex].hours)
+                                    onShowCalendarIntervalPopupChange(false)
+                                },
+                            )
                         }
                     }
                 }
             }
-        },
-    )
+        }
+    }
 }

@@ -59,6 +59,7 @@ import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabSelect
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTopBarActionItems
 import os.kei.ui.page.main.student.catalog.state.rememberCatalogSyncProgress
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.AppTopBarSearchField
 import os.kei.ui.page.main.widget.chrome.AppTopBarSection
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
@@ -201,161 +202,163 @@ fun BaGuideCatalogPage(
         }
     }
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MiuixTheme.colorScheme.background)
-            .nestedScroll(bottomBarNestedScrollConnection),
-        topBar = {
-            AppTopBarSection(
-                title = pageTitle,
-                largeTitle = pageTitle,
-                scrollBehavior = scrollBehavior,
-                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = appLucideBackIcon(),
-                            contentDescription = null,
-                            tint = MiuixTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                actions = {
-                    Box {
-                        LiquidActionBar(
-                            backdrop = topBarBackdrop,
-                            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            items = actionItems
-                        )
-                        LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
-                            if (slotIndex != 0) return@LiquidActionBarPopupAnchors
-                            BaGuideCatalogSortActionPopup(
-                                show = filterSortState.showSortPopup,
-                                anchorBounds = popupAnchorBounds,
-                                sortMode = filterSortState.sortMode,
-                                onDismissRequest = { filterSortState.showSortPopup = false },
-                                onSelectSortMode = filterSortState::selectSortMode
-                            )
-                        }
-                    }
-                },
-                searchBarVisible = enableSearchBar && showSearchBar
-            ) {
-                Column {
-                    AppTopBarSearchField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
-                        value = filterSortState.searchQuery,
-                        onValueChange = { filterSortState.searchQuery = it },
-                        label = searchLabel
-                    )
-                }
-            }
-        },
-        bottomBar = {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                AnimatedVisibility(
-                    visible = showBottomBar,
-                    enter = appFloatingEnter(),
-                    exit = appFloatingExit(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    val bottomBarModifier = Modifier.padding(
-                        horizontal = AppChromeTokens.pageHorizontalPadding,
-                        vertical = AppChromeTokens.pageSectionGap + navigationBarBottom
-                    )
-                    val bottomBarTabs: @Composable RowScope.() -> Unit = {
-                        tabs.forEachIndexed { index, tab ->
-                            val selected = pagerState.targetPage == index
-                            val tabColor = liquidGlassBottomBarItemContentColor(index)
-                            val tabContent: @Composable ColumnScope.() -> Unit = {
-                                Icon(
-                                    painter = painterResource(id = tab.iconRes),
-                                    contentDescription = tab.label,
-                                    tint = tabColor,
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                        .graphicsLayer {
-                                            scaleX = 1f
-                                            scaleY = 1f
-                                        }
-                                )
-                                Text(
-                                    text = tab.label,
-                                    fontSize = 11.sp,
-                                    lineHeight = 14.sp,
-                                    color = tabColor,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Visible
-                                )
-                            }
-                            LiquidGlassBottomBarItem(
-                                selected = selected,
-                                tabIndex = index,
-                                onClick = { selectCatalogTabAction(index) },
-                                modifier = Modifier.defaultMinSize(minWidth = 76.dp),
-                                content = tabContent
-                            )
-                        }
-                    }
-
-                    LiquidGlassBottomBar(
-                        modifier = bottomBarModifier,
-                        selectedIndex = pagerState.targetPage,
-                        onSelected = { index ->
-                            if (index != pagerState.targetPage) {
-                                selectCatalogTabAction(index)
-                            }
-                        },
-                        backdrop = bottomBarBackdrop,
-                        tabsCount = tabs.size,
-                        isLiquidEffectEnabled = liquidBottomBarEnabled,
-                        content = bottomBarTabs
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
-        val progress = rememberCatalogSyncProgress(
-            loading = loading,
-            animationsEnabled = transitionAnimationsEnabled
-        )
-        val progressColor = when {
-            loading -> Color(0xFF3B82F6)
-            !error.isNullOrBlank() -> Color(0xFFEF4444)
-            else -> Color(0xFF22C55E)
-        }
-
-        HorizontalPager(
-            state = pagerState,
-            key = { index -> tabs[index].name },
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = farJumpAlpha.value }
-                .layerBackdrop(bottomBarBackdrop),
-            beyondViewportPageCount = preloadPolicy.catalogPagerBeyondViewportPageCount
-        ) { pageIndex ->
-            val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogTab.Student }
-            BaGuideCatalogTabContent(
-                tab = pageTab,
-                catalog = catalog,
-                filterSortState = filterSortState,
+                .background(MiuixTheme.colorScheme.background)
+                .nestedScroll(bottomBarNestedScrollConnection),
+            topBar = {
+                AppTopBarSection(
+                    title = pageTitle,
+                    largeTitle = pageTitle,
+                    scrollBehavior = scrollBehavior,
+                    color = topBarMaterialBackdrop.getMiuixAppBarColor(),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = appLucideBackIcon(),
+                                contentDescription = null,
+                                tint = MiuixTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    searchBarVisible = enableSearchBar && showSearchBar
+                ) {
+                    Column {
+                        AppTopBarSearchField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
+                            value = filterSortState.searchQuery,
+                            onValueChange = { filterSortState.searchQuery = it },
+                            label = searchLabel
+                        )
+                    }
+                }
+            },
+            bottomBar = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    AnimatedVisibility(
+                        visible = showBottomBar,
+                        enter = appFloatingEnter(),
+                        exit = appFloatingExit(),
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    ) {
+                        val bottomBarModifier = Modifier.padding(
+                            horizontal = AppChromeTokens.pageHorizontalPadding,
+                            vertical = AppChromeTokens.pageSectionGap + navigationBarBottom
+                        )
+                        val bottomBarTabs: @Composable RowScope.() -> Unit = {
+                            tabs.forEachIndexed { index, tab ->
+                                val selected = pagerState.targetPage == index
+                                val tabColor = liquidGlassBottomBarItemContentColor(index)
+                                val tabContent: @Composable ColumnScope.() -> Unit = {
+                                    Icon(
+                                        painter = painterResource(id = tab.iconRes),
+                                        contentDescription = tab.label,
+                                        tint = tabColor,
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .graphicsLayer {
+                                                scaleX = 1f
+                                                scaleY = 1f
+                                            }
+                                    )
+                                    Text(
+                                        text = tab.label,
+                                        fontSize = 11.sp,
+                                        lineHeight = 14.sp,
+                                        color = tabColor,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Visible
+                                    )
+                                }
+                                LiquidGlassBottomBarItem(
+                                    selected = selected,
+                                    tabIndex = index,
+                                    onClick = { selectCatalogTabAction(index) },
+                                    modifier = Modifier.defaultMinSize(minWidth = 76.dp),
+                                    content = tabContent
+                                )
+                            }
+                        }
+
+                        LiquidGlassBottomBar(
+                            modifier = bottomBarModifier,
+                            selectedIndex = pagerState.targetPage,
+                            onSelected = { index ->
+                                if (index != pagerState.targetPage) {
+                                    selectCatalogTabAction(index)
+                                }
+                            },
+                            backdrop = bottomBarBackdrop,
+                            tabsCount = tabs.size,
+                            isLiquidEffectEnabled = liquidBottomBarEnabled,
+                            content = bottomBarTabs
+                        )
+                    }
+                }
+            }
+        ) { innerPadding ->
+            val progress = rememberCatalogSyncProgress(
                 loading = loading,
-                error = error,
-                progress = progress,
-                progressColor = progressColor,
-                accent = accent,
-                innerPadding = innerPadding,
-                nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-                isPageActive = pageIndex == pagerState.currentPage,
-                renderHeavyContent = pageIndex == pagerState.currentPage ||
-                    pageIndex == pagerState.settledPage ||
-                    (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage),
-                onOpenGuide = onOpenGuide
+                animationsEnabled = transitionAnimationsEnabled
             )
+            val progressColor = when {
+                loading -> Color(0xFF3B82F6)
+                !error.isNullOrBlank() -> Color(0xFFEF4444)
+                else -> Color(0xFF22C55E)
+            }
+
+            HorizontalPager(
+                state = pagerState,
+                key = { index -> tabs[index].name },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = farJumpAlpha.value }
+                    .layerBackdrop(bottomBarBackdrop),
+                beyondViewportPageCount = preloadPolicy.catalogPagerBeyondViewportPageCount
+            ) { pageIndex ->
+                val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogTab.Student }
+                BaGuideCatalogTabContent(
+                    tab = pageTab,
+                    catalog = catalog,
+                    filterSortState = filterSortState,
+                    loading = loading,
+                    error = error,
+                    progress = progress,
+                    progressColor = progressColor,
+                    accent = accent,
+                    innerPadding = innerPadding,
+                    nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                    isPageActive = pageIndex == pagerState.currentPage,
+                    renderHeavyContent = pageIndex == pagerState.currentPage ||
+                        pageIndex == pagerState.settledPage ||
+                        (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage),
+                    onOpenGuide = onOpenGuide
+                )
+            }
+        }
+        AppTopEndActionBarOverlay {
+            Box {
+                LiquidActionBar(
+                    backdrop = topBarBackdrop,
+                    layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                    items = actionItems
+                )
+                LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
+                    if (slotIndex != 0) return@LiquidActionBarPopupAnchors
+                    BaGuideCatalogSortActionPopup(
+                        show = filterSortState.showSortPopup,
+                        anchorBounds = popupAnchorBounds,
+                        sortMode = filterSortState.sortMode,
+                        onDismissRequest = { filterSortState.showSortPopup = false },
+                        onSelectSortMode = filterSortState::selectSortMode
+                    )
+                }
+            }
         }
     }
 }

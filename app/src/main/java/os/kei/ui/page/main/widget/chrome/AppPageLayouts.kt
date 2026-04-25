@@ -1,8 +1,11 @@
 package os.kei.ui.page.main.widget.chrome
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -48,24 +51,30 @@ fun AppPageScaffold(
     searchBarContent: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit
 ) {
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            AppTopBarSection(
-                title = title,
-                largeTitle = largeTitle,
-                scrollBehavior = scrollBehavior,
-                color = topBarColor,
-                navigationIcon = navigationIcon,
-                actions = actions,
-                searchBarVisible = searchBarVisible,
-                searchBarAnimationLabelPrefix = searchBarAnimationLabelPrefix,
-                searchBarContent = searchBarContent
-            )
-        },
-        bottomBar = bottomBar,
-        content = content
-    )
+    Box(modifier = modifier) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                AppTopBarSection(
+                    title = title,
+                    largeTitle = largeTitle,
+                    scrollBehavior = scrollBehavior,
+                    color = topBarColor,
+                    navigationIcon = navigationIcon,
+                    searchBarVisible = searchBarVisible,
+                    searchBarAnimationLabelPrefix = searchBarAnimationLabelPrefix,
+                    searchBarContent = searchBarContent
+                )
+            },
+            bottomBar = bottomBar,
+            content = content
+        )
+        AppTopEndActionBarOverlay {
+            Row {
+                actions()
+            }
+        }
+    }
 }
 
 @Composable

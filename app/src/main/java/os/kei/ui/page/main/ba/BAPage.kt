@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.ba
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ import os.kei.ui.page.main.ba.rememberBaPageUiController
 import os.kei.ui.page.main.ba.saveBaPageSettings
 import os.kei.core.ui.effect.getMiuixAppBarColor
 import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
+import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -212,15 +214,31 @@ fun BAPage(
         ui.baPoolLastSyncMs = poolUiState.lastSyncMs
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            BaTopBar(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                BaTopBar(
+                    topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
+                    scrollBehavior = scrollBehavior,
+                )
+            },
+        ) { innerPadding ->
+            BaPageContent(
+                backdrop = backdrops.content,
+                innerPadding = innerPadding,
+                contentBottomPadding = runtime.contentBottomPadding,
+                listState = listState,
+                nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                state = pageContentState,
+                actions = pageContentActions,
+            )
+        }
+        AppTopEndActionBarOverlay {
+            BaTopBarActions(
                 backdrop = backdrops.topBar,
                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                 reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
-                topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                scrollBehavior = scrollBehavior,
                 showCalendarIntervalPopup = ui.showCalendarIntervalPopup,
                 calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
                 onShowSettings = ::openSettingsSheet,
@@ -242,17 +260,7 @@ fun BAPage(
                 },
                 onInteractionChanged = onActionBarInteractingChanged,
             )
-        },
-    ) { innerPadding ->
-        BaPageContent(
-            backdrop = backdrops.content,
-            innerPadding = innerPadding,
-            contentBottomPadding = runtime.contentBottomPadding,
-            listState = listState,
-            nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-            state = pageContentState,
-            actions = pageContentActions,
-        )
+        }
     }
 
     BaSettingsSheet(

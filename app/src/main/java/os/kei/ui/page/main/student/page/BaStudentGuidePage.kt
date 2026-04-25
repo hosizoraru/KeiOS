@@ -76,6 +76,7 @@ import os.kei.ui.page.main.student.page.state.BindBaStudentGuideVoiceListenerEff
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuideVoiceProgressEffect
 import os.kei.ui.perf.ReportPagerPerformanceState
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
+import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
@@ -330,78 +331,78 @@ fun BaStudentGuidePage(
     val topBarCollapsedFraction = scrollBehavior.state.collapsedFraction.coerceIn(0f, 1f)
     val topBarTitleAlpha = 1f - topBarCollapsedFraction
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MiuixTheme.colorScheme.background)
-            .nestedScroll(bottomBarNestedScrollConnection),
-        topBar = {
-            TopAppBar(
-                title = pageTitle,
-                largeTitle = pageTitle,
-                scrollBehavior = scrollBehavior,
-                color = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = topBarTitleAlpha),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = appLucideBackIcon(),
-                            contentDescription = null,
-                            tint = MiuixTheme.colorScheme.onSurface
-                        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MiuixTheme.colorScheme.background)
+                .nestedScroll(bottomBarNestedScrollConnection),
+            topBar = {
+                TopAppBar(
+                    title = pageTitle,
+                    largeTitle = pageTitle,
+                    scrollBehavior = scrollBehavior,
+                    color = topBarMaterialBackdrop.getMiuixAppBarColor(),
+                    titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = topBarTitleAlpha),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = appLucideBackIcon(),
+                                contentDescription = null,
+                                tint = MiuixTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                },
-                actions = {
-                    Box {
-                        LiquidActionBar(
-                            backdrop = topBarBackdrop,
-                            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                            items = actionItems
-                        )
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            BaStudentGuideBottomBar(
-                visible = showBottomBar,
-                navigationBarBottom = navigationBarBottom,
+                )
+            },
+            bottomBar = {
+                BaStudentGuideBottomBar(
+                    visible = showBottomBar,
+                    navigationBarBottom = navigationBarBottom,
+                    bottomTabs = bottomTabsList,
+                    selectedPage = pagerState.targetPage,
+                    selectedPageProvider = { pagerState.targetPage },
+                    backdrop = navBackdrop,
+                    isLiquidEffectEnabled = liquidBottomBarEnabled,
+                    onSelectTab = selectBottomTabAction
+                )
+            }
+        ) { innerPadding ->
+            BaStudentGuidePagerContent(
+                sourceUrl = sourceUrl,
+                info = info,
+                error = error,
+                pagerState = pagerState,
                 bottomTabs = bottomTabsList,
-                selectedPage = pagerState.targetPage,
-                selectedPageProvider = { pagerState.targetPage },
-                backdrop = navBackdrop,
-                isLiquidEffectEnabled = liquidBottomBarEnabled,
-                onSelectTab = selectBottomTabAction
+                syncProgress = syncProgress,
+                activationCount = activationCount,
+                surfaceColor = surfaceColor,
+                accent = accent,
+                innerPadding = innerPadding,
+                farJumpAlpha = farJumpAlpha.value,
+                navBackdrop = navBackdrop,
+                galleryCacheRevision = galleryCacheRevision,
+                selectedVoiceLanguage = selectedVoiceLanguage,
+                playingVoiceUrl = playingVoiceUrl,
+                isVoicePlaying = isVoicePlaying,
+                voicePlayProgress = voicePlayProgress,
+                includeTargetPageInHeavyRender = preloadPolicy.includeTargetPageInHeavyRender,
+                guidePagerBeyondViewportPageCount = preloadPolicy.guidePagerBeyondViewportPageCount,
+                nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                onOpenExternal = pageActions.openExternal,
+                onOpenGuide = pageActions.openGuideInPage,
+                onSaveMedia = pageActions.saveGuideMedia,
+                onSaveMediaPack = pageActions.saveGuideMediaPack,
+                onToggleVoicePlayback = pageActions.toggleVoicePlayback,
+                onSelectedVoiceLanguageChange = { selectedVoiceLanguage = it }
             )
         }
-    ) { innerPadding ->
-        BaStudentGuidePagerContent(
-            sourceUrl = sourceUrl,
-            info = info,
-            error = error,
-            pagerState = pagerState,
-            bottomTabs = bottomTabsList,
-            syncProgress = syncProgress,
-            activationCount = activationCount,
-            surfaceColor = surfaceColor,
-            accent = accent,
-            innerPadding = innerPadding,
-            farJumpAlpha = farJumpAlpha.value,
-            navBackdrop = navBackdrop,
-            galleryCacheRevision = galleryCacheRevision,
-            selectedVoiceLanguage = selectedVoiceLanguage,
-            playingVoiceUrl = playingVoiceUrl,
-            isVoicePlaying = isVoicePlaying,
-            voicePlayProgress = voicePlayProgress,
-            includeTargetPageInHeavyRender = preloadPolicy.includeTargetPageInHeavyRender,
-            guidePagerBeyondViewportPageCount = preloadPolicy.guidePagerBeyondViewportPageCount,
-            nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-            onOpenExternal = pageActions.openExternal,
-            onOpenGuide = pageActions.openGuideInPage,
-            onSaveMedia = pageActions.saveGuideMedia,
-            onSaveMediaPack = pageActions.saveGuideMediaPack,
-            onToggleVoicePlayback = pageActions.toggleVoicePlayback,
-            onSelectedVoiceLanguageChange = { selectedVoiceLanguage = it }
-        )
+        AppTopEndActionBarOverlay {
+            LiquidActionBar(
+                backdrop = topBarBackdrop,
+                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                items = actionItems
+            )
+        }
     }
 }

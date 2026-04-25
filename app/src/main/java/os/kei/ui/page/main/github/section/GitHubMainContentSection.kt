@@ -27,6 +27,7 @@ import os.kei.ui.page.main.github.VersionCheckUi
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
 import os.kei.ui.page.main.os.appLucideAddIcon
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
+import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
@@ -98,22 +99,114 @@ internal fun GitHubMainContent(
 ) {
     val context = LocalContext.current
     val supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty()
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            GitHubTopBarSection(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                GitHubTopBarSection(
+                    backdrop = topBarBackdrop,
+                    topBarColor = topBarColor,
+                    scrollBehavior = scrollBehavior,
+                    enableSearchBar = enableSearchBar,
+                    showSearchBar = showSearchBar,
+                    trackedSearch = trackedSearch,
+                    onTrackedSearchChange = onTrackedSearchChange,
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(addButtonScrollConnection)
+            ) {
+                AppPageLazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    state = listState,
+                    innerPadding = innerPadding,
+                    bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding),
+                    topExtra = 0.dp,
+                    sectionSpacing = CardLayoutRhythm.denseSectionGap
+                ) {
+                    item {
+                        GitHubOverviewCard(
+                            isDark = isDark,
+                            lookupConfig = lookupConfig,
+                            overviewRefreshState = overviewRefreshState,
+                            refreshProgress = refreshProgress,
+                            lastRefreshMs = lastRefreshMs,
+                            metrics = overviewMetrics,
+                            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                            onRefreshAllTracked = onRefreshAllTracked,
+                            onOpenTrackSheetForAdd = onOpenTrackSheetForAdd
+                        )
+                    }
+                    if (showPendingShareImportCard && pendingShareImportTrack != null) {
+                        item {
+                            GitHubPendingShareImportCard(
+                                pending = pendingShareImportTrack,
+                                repoOverlapCount = pendingShareImportRepoOverlapCount,
+                                onCancel = onCancelPendingShareImportTrack
+                            )
+                        }
+                    }
+                    GitHubTrackedItemsSection(
+                        trackedItems = trackedItems,
+                        filteredTracked = filteredTracked,
+                        sortedTracked = sortedTracked,
+                        appLastUpdatedAtByTrackId = appLastUpdatedAtByTrackId,
+                        checkStates = checkStates,
+                        itemRefreshLoading = itemRefreshLoading,
+                        contentBackdrop = contentBackdrop,
+                        reduceEffectsDuringListScroll = reduceEffectsDuringListScroll,
+                        isDark = isDark,
+                        apkAssetBundles = apkAssetBundles,
+                        apkAssetLoading = apkAssetLoading,
+                        apkAssetErrors = apkAssetErrors,
+                        apkAssetExpanded = apkAssetExpanded,
+                        trackedCardExpanded = trackedCardExpanded,
+                        onRefreshTrackedItem = onRefreshTrackedItem,
+                        onOpenTrackSheetForEdit = onOpenTrackSheetForEdit,
+                        onClearApkAssetUiState = onClearApkAssetUiState,
+                        onCollapseApkAssetPanel = onCollapseApkAssetPanel,
+                        onLoadApkAssets = onLoadApkAssets,
+                        onOpenExternalUrl = onOpenExternalUrl,
+                        onOpenApkInDownloader = onOpenApkInDownloader,
+                        onShareApkLink = onShareApkLink,
+                        context = context,
+                        supportedAbis = supportedAbis
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = showFloatingAddButton,
+                    enter = appFloatingEnter(),
+                    exit = appFloatingExit(),
+                    modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
+                ) {
+                    GlassIconButton(
+                        backdrop = contentBackdrop,
+                        icon = appLucideAddIcon(),
+                        contentDescription = stringResource(R.string.github_cd_add_track),
+                        onClick = onOpenTrackSheetForAdd,
+                        modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
+                        width = 60.dp,
+                        height = 44.dp,
+                        containerColor = MiuixTheme.colorScheme.primary,
+                        variant = GlassVariant.Floating
+                    )
+                }
+            }
+        }
+        AppTopEndActionBarOverlay {
+            GitHubTopBarActions(
                 backdrop = topBarBackdrop,
-                topBarColor = topBarColor,
-                scrollBehavior = scrollBehavior,
-                enableSearchBar = enableSearchBar,
                 liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                 reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
-                showSearchBar = showSearchBar,
-                trackedSearch = trackedSearch,
                 sortMode = sortMode,
                 showSortPopup = showSortPopup,
                 deleteInProgress = deleteInProgress,
-                onTrackedSearchChange = onTrackedSearchChange,
                 onOpenStrategySheet = onOpenStrategySheet,
                 onOpenCheckLogicSheet = onOpenCheckLogicSheet,
                 onShowSortPopupChange = onShowSortPopupChange,
@@ -121,91 +214,6 @@ internal fun GitHubMainContent(
                 onRefreshAllTracked = onRefreshAllTracked,
                 onActionBarInteractingChanged = onActionBarInteractingChanged
             )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(addButtonScrollConnection)
-        ) {
-            AppPageLazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
-                state = listState,
-                innerPadding = innerPadding,
-                bottomExtra = appPageBottomPaddingWithFloatingOverlay(contentBottomPadding),
-                topExtra = 0.dp,
-                sectionSpacing = CardLayoutRhythm.denseSectionGap
-            ) {
-                item {
-                    GitHubOverviewCard(
-                        isDark = isDark,
-                        lookupConfig = lookupConfig,
-                        overviewRefreshState = overviewRefreshState,
-                        refreshProgress = refreshProgress,
-                        lastRefreshMs = lastRefreshMs,
-                        metrics = overviewMetrics,
-                        cardPressFeedbackEnabled = cardPressFeedbackEnabled,
-                        onRefreshAllTracked = onRefreshAllTracked,
-                        onOpenTrackSheetForAdd = onOpenTrackSheetForAdd
-                    )
-                }
-                if (showPendingShareImportCard && pendingShareImportTrack != null) {
-                    item {
-                        GitHubPendingShareImportCard(
-                            pending = pendingShareImportTrack,
-                            repoOverlapCount = pendingShareImportRepoOverlapCount,
-                            onCancel = onCancelPendingShareImportTrack
-                        )
-                    }
-                }
-                GitHubTrackedItemsSection(
-                    trackedItems = trackedItems,
-                    filteredTracked = filteredTracked,
-                    sortedTracked = sortedTracked,
-                    appLastUpdatedAtByTrackId = appLastUpdatedAtByTrackId,
-                    checkStates = checkStates,
-                    itemRefreshLoading = itemRefreshLoading,
-                    contentBackdrop = contentBackdrop,
-                    reduceEffectsDuringListScroll = reduceEffectsDuringListScroll,
-                    isDark = isDark,
-                    apkAssetBundles = apkAssetBundles,
-                    apkAssetLoading = apkAssetLoading,
-                    apkAssetErrors = apkAssetErrors,
-                    apkAssetExpanded = apkAssetExpanded,
-                    trackedCardExpanded = trackedCardExpanded,
-                    onRefreshTrackedItem = onRefreshTrackedItem,
-                    onOpenTrackSheetForEdit = onOpenTrackSheetForEdit,
-                    onClearApkAssetUiState = onClearApkAssetUiState,
-                    onCollapseApkAssetPanel = onCollapseApkAssetPanel,
-                    onLoadApkAssets = onLoadApkAssets,
-                    onOpenExternalUrl = onOpenExternalUrl,
-                    onOpenApkInDownloader = onOpenApkInDownloader,
-                    onShareApkLink = onShareApkLink,
-                    context = context,
-                    supportedAbis = supportedAbis
-                )
-            }
-
-            AnimatedVisibility(
-                visible = showFloatingAddButton,
-                enter = appFloatingEnter(),
-                exit = appFloatingExit(),
-                modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
-            ) {
-                GlassIconButton(
-                    backdrop = contentBackdrop,
-                    icon = appLucideAddIcon(),
-                    contentDescription = stringResource(R.string.github_cd_add_track),
-                    onClick = onOpenTrackSheetForAdd,
-                    modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
-                    width = 60.dp,
-                    height = 44.dp,
-                    containerColor = MiuixTheme.colorScheme.primary,
-                    variant = GlassVariant.Floating
-                )
-            }
         }
     }
 }

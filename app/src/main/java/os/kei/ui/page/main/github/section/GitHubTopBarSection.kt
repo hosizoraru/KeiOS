@@ -35,14 +35,40 @@ internal fun GitHubTopBarSection(
     topBarColor: Color,
     scrollBehavior: ScrollBehavior,
     enableSearchBar: Boolean,
-    liquidActionBarLayeredStyleEnabled: Boolean,
-    reduceEffectsDuringPagerScroll: Boolean,
     showSearchBar: Boolean,
     trackedSearch: String,
+    onTrackedSearchChange: (String) -> Unit,
+) {
+    AppTopBarSection(
+        title = "",
+        largeTitle = stringResource(R.string.github_page_title),
+        scrollBehavior = scrollBehavior,
+        color = topBarColor,
+        searchBarVisible = enableSearchBar && showSearchBar,
+        searchBarAnimationLabelPrefix = "githubSearchBar",
+    ) {
+        Column {
+            AppTopBarSearchField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
+                value = trackedSearch,
+                onValueChange = onTrackedSearchChange,
+                label = stringResource(R.string.github_topbar_search_label),
+                backdrop = backdrop
+            )
+        }
+    }
+}
+
+@Composable
+internal fun GitHubTopBarActions(
+    backdrop: LayerBackdrop,
+    liquidActionBarLayeredStyleEnabled: Boolean,
+    reduceEffectsDuringPagerScroll: Boolean,
     sortMode: GitHubSortMode,
     showSortPopup: Boolean,
     deleteInProgress: Boolean,
-    onTrackedSearchChange: (String) -> Unit,
     onOpenStrategySheet: () -> Unit,
     onOpenCheckLogicSheet: () -> Unit,
     onShowSortPopupChange: (Boolean) -> Unit,
@@ -94,66 +120,44 @@ internal fun GitHubTopBarSection(
             )
         )
     }
-    AppTopBarSection(
-        title = "",
-        largeTitle = stringResource(R.string.github_page_title),
-        scrollBehavior = scrollBehavior,
-        color = topBarColor,
-        actions = {
-            Box {
-                LiquidActionBar(
-                    backdrop = backdrop,
-                    layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                    reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
-                    items = actionItems,
-                    onInteractionChanged = onActionBarInteractingChanged
-                )
+    Box {
+        LiquidActionBar(
+            backdrop = backdrop,
+            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+            reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
+            items = actionItems,
+            onInteractionChanged = onActionBarInteractingChanged
+        )
 
-                LiquidActionBarPopupAnchors(itemCount = 4) { slotIndex, popupAnchorBounds ->
-                    when (slotIndex) {
-                        2 -> if (showSortPopup) {
-                            SnapshotWindowListPopup(
-                                show = showSortPopup,
-                                alignment = PopupPositionProvider.Align.BottomStart,
-                                anchorBounds = popupAnchorBounds,
-                                placement = SnapshotPopupPlacement.ActionBarCenter,
-                                onDismissRequest = { onShowSortPopupChange(false) },
-                                enableWindowDim = false
-                            ) {
-                                LiquidDropdownColumn {
-                                    val modes = GitHubSortMode.entries
-                                    modes.forEachIndexed { index, mode ->
-                                        LiquidDropdownImpl(
-                                            text = stringResource(mode.labelRes),
-                                            optionSize = modes.size,
-                                            isSelected = sortMode == mode,
-                                            index = index,
-                                            onSelectedIndexChange = { selectedIndex ->
-                                                onSortModeChange(modes[selectedIndex])
-                                                onShowSortPopupChange(false)
-                                            }
-                                        )
+        LiquidActionBarPopupAnchors(itemCount = 4) { slotIndex, popupAnchorBounds ->
+            when (slotIndex) {
+                2 -> if (showSortPopup) {
+                    SnapshotWindowListPopup(
+                        show = showSortPopup,
+                        alignment = PopupPositionProvider.Align.BottomStart,
+                        anchorBounds = popupAnchorBounds,
+                        placement = SnapshotPopupPlacement.ActionBarCenter,
+                        onDismissRequest = { onShowSortPopupChange(false) },
+                        enableWindowDim = false
+                    ) {
+                        LiquidDropdownColumn {
+                            val modes = GitHubSortMode.entries
+                            modes.forEachIndexed { index, mode ->
+                                LiquidDropdownImpl(
+                                    text = stringResource(mode.labelRes),
+                                    optionSize = modes.size,
+                                    isSelected = sortMode == mode,
+                                    index = index,
+                                    onSelectedIndexChange = { selectedIndex ->
+                                        onSortModeChange(modes[selectedIndex])
+                                        onShowSortPopupChange(false)
                                     }
-                                }
+                                )
                             }
                         }
                     }
                 }
             }
-        },
-        searchBarVisible = enableSearchBar && showSearchBar,
-        searchBarAnimationLabelPrefix = "githubSearchBar",
-    ) {
-        Column {
-            AppTopBarSearchField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
-                value = trackedSearch,
-                onValueChange = onTrackedSearchChange,
-                label = stringResource(R.string.github_topbar_search_label),
-                backdrop = backdrop
-            )
         }
     }
 }
