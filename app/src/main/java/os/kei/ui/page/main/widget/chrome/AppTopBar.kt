@@ -24,7 +24,7 @@ fun AppTopBarSection(
     title: String,
     modifier: Modifier = Modifier,
     largeTitle: String = title,
-    color: Color = MiuixTheme.colorScheme.surface,
+    color: Color = Color.Transparent,
     scrollBehavior: ScrollBehavior? = null,
     navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},

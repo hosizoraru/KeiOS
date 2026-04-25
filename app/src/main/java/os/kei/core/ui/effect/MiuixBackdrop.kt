@@ -19,4 +19,4 @@ fun rememberMiuixBlurBackdrop(enableBlur: Boolean): LayerBackdrop? {
 
 @Composable
 fun LayerBackdrop?.getMiuixAppBarColor(): Color =
-    if (this != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    Color.Transparent

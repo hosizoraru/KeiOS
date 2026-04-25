@@ -261,7 +261,7 @@ fun HomePage(
             SmallTopAppBar(
                 title = "",
                 scrollBehavior = topAppBarScrollBehavior,
-                color = MiuixTheme.colorScheme.surface.copy(alpha = if (heroMotionState.scrollProgress == 1f) 1f else 0f),
+                color = Color.Transparent,
                 titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = heroMotionState.topBarProgress),
                 actions = {
                     LiquidActionBar(
