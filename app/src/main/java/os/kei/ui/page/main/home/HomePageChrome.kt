@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.BasicText
+import kotlin.math.max
 import os.kei.R
 import os.kei.ui.page.main.home.model.HomeOverviewCard
 import os.kei.ui.page.main.model.BottomPage
@@ -194,6 +196,11 @@ internal fun HomePageHero(
     onTitleBottomChanged: (Float) -> Unit,
     onSummaryBottomChanged: (Float) -> Unit
 ) {
+    val density = LocalDensity.current
+    val iconAvoidanceLiftPx = with(density) { 44.dp.toPx() }
+    val titleAvoidanceLiftPx = with(density) { 34.dp.toPx() }
+    val summaryAvoidanceLiftPx = with(density) { 28.dp.toPx() }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -211,6 +218,7 @@ internal fun HomePageHero(
                 .size(88.dp)
                 .graphicsLayer {
                     alpha = 1f - iconProgress
+                    translationY = -iconAvoidanceLiftPx * max(iconProgress, avoidanceProgress)
                     scaleX = 1f - (iconProgress * 0.05f)
                     scaleY = 1f - (iconProgress * 0.05f)
                 }
@@ -260,6 +268,7 @@ internal fun HomePageHero(
                 }
                 .graphicsLayer {
                     alpha = 1f - titleProgress
+                    translationY = -titleAvoidanceLiftPx * max(titleProgress, avoidanceProgress)
                     scaleX = 1f - (titleProgress * 0.05f)
                     scaleY = 1f - (titleProgress * 0.05f)
                 }
@@ -278,6 +287,7 @@ internal fun HomePageHero(
                 .fillMaxWidth()
                 .graphicsLayer {
                     alpha = 1f - summaryProgress
+                    translationY = -summaryAvoidanceLiftPx * max(summaryProgress, avoidanceProgress)
                     scaleX = 1f - (summaryProgress * 0.05f)
                     scaleY = 1f - (summaryProgress * 0.05f)
                 }
