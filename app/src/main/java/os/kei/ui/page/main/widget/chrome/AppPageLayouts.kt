@@ -90,6 +90,7 @@ fun AppPageLazyColumn(
     LazyColumn(
         modifier = modifier,
         state = state,
+        overscrollEffect = null,
         contentPadding = appPageContentPadding(
             innerPadding = innerPadding,
             bottomExtra = bottomExtra,
