@@ -1,60 +1,9 @@
 package os.kei.ui.page.main.mcp.skill.state
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import os.kei.mcp.server.McpServerManager
 import os.kei.ui.page.main.mcp.skill.model.SkillSection
-import os.kei.ui.page.main.mcp.skill.support.buildSkillSections
-import os.kei.ui.page.main.mcp.skill.support.parseMarkdownBlocks
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Stable
 internal data class McpSkillPageContentState(
-    val sections: List<SkillSection>
+    val sections: List<SkillSection> = emptyList()
 )
-
-@Composable
-internal fun rememberMcpSkillPageContentState(
-    mcpServerManager: McpServerManager,
-    emptyMarkdown: String,
-    defaultRootTitle: String,
-    defaultOverviewTitle: String,
-    defaultContentTitle: String,
-    emptyContentText: String
-): McpSkillPageContentState {
-    val markdown by produceState(initialValue = "", mcpServerManager) {
-        value = withContext(Dispatchers.IO) {
-            mcpServerManager.getSkillMarkdown()
-        }
-    }
-    val sections by produceState(
-        initialValue = emptyList<SkillSection>(),
-        markdown,
-        emptyMarkdown,
-        defaultRootTitle,
-        defaultOverviewTitle,
-        defaultContentTitle,
-        emptyContentText
-    ) {
-        value = withContext(Dispatchers.Default) {
-            val blocks = parseMarkdownBlocks(markdown.ifBlank { emptyMarkdown })
-            buildSkillSections(
-                blocks = blocks,
-                defaultRootTitle = defaultRootTitle,
-                defaultOverviewTitle = defaultOverviewTitle,
-                defaultContentTitle = defaultContentTitle,
-                emptyContentText = emptyContentText
-            )
-        }
-    }
-
-    return remember(sections) {
-        McpSkillPageContentState(
-            sections = sections
-        )
-    }
-}
