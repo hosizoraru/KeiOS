@@ -262,12 +262,12 @@ internal class GitHubPageState(
 }
 
 @Composable
-internal fun rememberGitHubPageState(): GitHubPageState {
+internal fun rememberGitHubPageState(viewModel: GitHubPageViewModel): GitHubPageState {
     val density = LocalDensity.current
     val searchBarHideThresholdPx = remember(density) {
         with(density) { 28.dp.toPx() }
     }
-    return remember(searchBarHideThresholdPx) {
-        GitHubPageState(searchBarHideThresholdPx)
+    return remember(viewModel, searchBarHideThresholdPx) {
+        viewModel.pageState(searchBarHideThresholdPx)
     }
 }

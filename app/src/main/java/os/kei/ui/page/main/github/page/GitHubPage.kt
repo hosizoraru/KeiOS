@@ -6,25 +6,22 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.widget.Toast
 import os.kei.R
 import os.kei.ui.page.main.host.pager.MainPageRuntime
 import os.kei.ui.page.main.host.pager.rememberMainPageBackdropSet
-import os.kei.ui.page.main.github.query.queryDownloaderOptions
-import os.kei.ui.page.main.github.query.queryOnlineShareTargetOptions
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.github.section.GitHubMainContent
-import os.kei.ui.page.main.github.section.GitHubOverviewMetrics
 import os.kei.ui.page.main.github.sheet.GitHubCheckLogicSheet
 import os.kei.ui.page.main.github.sheet.GitHubDeleteTrackDialog
 import os.kei.ui.page.main.github.sheet.GitHubStrategySheet
@@ -36,16 +33,13 @@ import os.kei.ui.page.main.github.page.BindGitHubPageEffects
 import os.kei.ui.page.main.github.page.GitHubPageActions
 import os.kei.ui.page.main.github.page.rememberGitHubPageState
 import os.kei.feature.github.model.isKeiOsSelfTrack
-import os.kei.ui.page.main.widget.glass.GlassEffectRuntime
 import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
 import os.kei.ui.page.main.widget.glass.glassEffectRuntime
 import os.kei.ui.page.main.widget.glass.rememberGlassReductionProgress
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.math.max
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -66,6 +60,7 @@ fun GitHubPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val isDark = isSystemInDarkTheme()
+    val githubPageViewModel: GitHubPageViewModel = viewModel()
     val isListScrolling by remember(listState) {
         derivedStateOf { listState.isScrollInProgress }
     }
@@ -84,17 +79,23 @@ fun GitHubPage(
         enableBlur = topBarBackdropEffectsEnabled
     ).getMiuixAppBarColor()
 
-    val state = rememberGitHubPageState()
+    val state = rememberGitHubPageState(githubPageViewModel)
+    val transferState by githubPageViewModel.transferState.collectAsState()
+    val installedOnlineShareTargets by githubPageViewModel.installedOnlineShareTargets.collectAsState()
+    val checkLogicDownloaderOptions by githubPageViewModel.checkLogicDownloaderOptions.collectAsState()
+    val contentDerivedState by githubPageViewModel.contentDerivedState.collectAsState()
+    LaunchedEffect(context, state) {
+        githubPageViewModel.bindContextObservers(
+            context = context,
+            state = state
+        )
+    }
     SideEffect {
         state.updateScrollBounds(
             canScrollBackward = listState.canScrollBackward,
             canScrollForward = listState.canScrollForward
         )
     }
-    var pendingTrackedExportContent by remember { mutableStateOf<String?>(null) }
-    var pendingTrackedExportFileName by remember { mutableStateOf<String?>(null) }
-    var tracksExporting by remember { mutableStateOf(false) }
-    var tracksImporting by remember { mutableStateOf(false) }
     val exportFileNameFormatter = remember {
         DateTimeFormatter.ofPattern("yyMMdd-HHmm", Locale.getDefault())
     }
@@ -113,27 +114,9 @@ fun GitHubPage(
             openLinkFailureMessage = openLinkFailureMessage
         )
     }
-    androidx.compose.runtime.LaunchedEffect(externalRefreshTriggerToken) {
+    LaunchedEffect(externalRefreshTriggerToken) {
         if (externalRefreshTriggerToken <= 0) return@LaunchedEffect
         actions.refreshAllTracked(showToast = true)
-    }
-    val shouldResolveOnlineShareTargets by remember(state) {
-        derivedStateOf {
-            state.showCheckLogicSheet ||
-                state.lookupConfig.onlineShareTargetPackage.isNotBlank() ||
-                state.onlineShareTargetPackageInput.isNotBlank()
-        }
-    }
-    val installedOnlineShareTargets = remember(
-        shouldResolveOnlineShareTargets,
-        state.appListLoaded,
-        state.appList
-    ) {
-        if (shouldResolveOnlineShareTargets) {
-            queryOnlineShareTargetOptions(context, state.appList)
-        } else {
-            emptyList()
-        }
     }
     val appListPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -142,23 +125,20 @@ fun GitHubPage(
     val tracksExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        val exportContent = pendingTrackedExportContent
-        pendingTrackedExportContent = null
-        pendingTrackedExportFileName = null
-        if (uri == null || exportContent.isNullOrBlank()) {
-            tracksExporting = false
+        val request = githubPageViewModel.consumePendingExport()
+        if (uri == null || request == null) {
+            githubPageViewModel.finishTrackedExport()
             return@rememberLauncherForActivityResult
         }
         scope.launch {
             val result = runCatching {
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.bufferedWriter().use { writer ->
-                        checkNotNull(writer) { "openOutputStream returned null" }
-                        writer.write(exportContent)
-                    }
-                }
+                githubPageViewModel.writeExport(
+                    contentResolver = context.contentResolver,
+                    uri = uri,
+                    request = request
+                )
             }
-            tracksExporting = false
+            githubPageViewModel.finishTrackedExport()
             result.onSuccess {
                 Toast.makeText(
                     context,
@@ -181,20 +161,18 @@ fun GitHubPage(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) {
-            tracksImporting = false
+            githubPageViewModel.finishTrackedImport()
             return@rememberLauncherForActivityResult
         }
         scope.launch {
             val result = runCatching {
-                val raw = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.bufferedReader().use { reader ->
-                        checkNotNull(reader) { "openInputStream returned null" }
-                        reader.readText()
-                    }
-                }
+                val raw = githubPageViewModel.readImport(
+                    contentResolver = context.contentResolver,
+                    uri = uri
+                )
                 actions.previewTrackedItemsImport(raw)
             }
-            tracksImporting = false
+            githubPageViewModel.finishTrackedImport()
             result.onSuccess { preview ->
                 state.pendingTrackImportPreview = preview
             }.onFailure {
@@ -223,7 +201,6 @@ fun GitHubPage(
         onActionBarInteractingChanged = onActionBarInteractingChanged
     )
 
-    val contentDerivedState = rememberGitHubPageContentDerivedState(state = state)
     val hasKeiOsSelfTrack by remember {
         derivedStateOf { state.trackedItems.any { it.isKeiOsSelfTrack() } }
     }
@@ -239,13 +216,6 @@ fun GitHubPage(
                 listScrollGlassProgress * 0.72f
             )
         )
-    }
-    val checkLogicDownloaderOptions = remember(state.showCheckLogicSheet) {
-        if (state.showCheckLogicSheet) {
-            queryDownloaderOptions(context)
-        } else {
-            emptyList()
-        }
     }
     CompositionLocalProvider(LocalGlassEffectRuntime provides githubGlassRuntime) {
         GitHubMainContent(
@@ -317,69 +287,68 @@ fun GitHubPage(
         )
     }
 
-    val onExportTrackedItems = {
-        if (!(tracksExporting || tracksImporting)) {
-            if (state.trackedItems.isEmpty()) {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.github_toast_require_track_item),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                pendingTrackedExportContent = actions.buildTrackedItemsExportJson(
-                    exportedAtMillis = System.currentTimeMillis()
-                )
-                val exportFileName = buildString {
-                    append("keios-github-tracks-")
-                    append(LocalDateTime.now().format(exportFileNameFormatter))
-                    append(".json")
-                }
-                pendingTrackedExportFileName = exportFileName
-                tracksExporting = true
-                tracksExportLauncher.launch(exportFileName)
+    val onExportTrackedItems: () -> Unit = {
+        scope.launch {
+            val exportedAtMillis = System.currentTimeMillis()
+            val exportFileName = buildString {
+                append("keios-github-tracks-")
+                append(LocalDateTime.now().format(exportFileNameFormatter))
+                append(".json")
             }
-        }
-    }
+            when (
+                val result = githubPageViewModel.beginTrackedExport(
+                    items = state.trackedItems.toList(),
+                    exportedAtMillis = exportedAtMillis,
+                    fileName = exportFileName
+                )
+            ) {
+                GitHubTrackedExportStartResult.Busy -> Unit
+                GitHubTrackedExportStartResult.Empty -> {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.github_toast_require_track_item),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
 
-    val onImportTrackedItems = {
-        if (!(tracksExporting || tracksImporting)) {
-            tracksImporting = true
-            tracksImportLauncher.launch(arrayOf("application/json", "text/plain"))
-        }
-    }
+                is GitHubTrackedExportStartResult.Failed -> {
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.github_toast_track_export_failed,
+                            result.reason ?: result.javaClass.simpleName
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
 
-    val onConfirmTrackImport = {
-        val preview = state.pendingTrackImportPreview
-        if (preview != null) {
-            tracksImporting = true
-            scope.launch {
-                val result = runCatching { actions.applyTrackedItemsImport(preview) }
-                tracksImporting = false
-                result.onSuccess { importResult ->
-                    state.dismissTrackImportPreview()
-                    val effectiveCount = importResult.addedCount +
-                        importResult.updatedCount +
-                        importResult.unchangedCount
-                    if (effectiveCount == 0) {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.github_toast_track_import_no_valid),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
+                GitHubTrackedExportStartResult.Ready -> {
+                    runCatching {
+                        tracksExportLauncher.launch(exportFileName)
+                    }.onFailure {
+                        githubPageViewModel.finishTrackedExport()
                         Toast.makeText(
                             context,
                             context.getString(
-                                R.string.github_toast_track_imported_summary,
-                                importResult.addedCount,
-                                importResult.updatedCount,
-                                importResult.unchangedCount,
-                                importResult.invalidCount + importResult.duplicateCount
+                                R.string.github_toast_track_export_failed,
+                                it.javaClass.simpleName
                             ),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
+                }
+            }
+        }
+    }
+
+    val onImportTrackedItems: () -> Unit = {
+        when (githubPageViewModel.beginTrackedImport()) {
+            GitHubTrackedImportStartResult.Busy -> Unit
+            GitHubTrackedImportStartResult.Ready -> {
+                runCatching {
+                    tracksImportLauncher.launch(arrayOf("application/json", "text/plain"))
                 }.onFailure {
+                    githubPageViewModel.finishTrackedImport()
                     Toast.makeText(
                         context,
                         context.getString(
@@ -388,6 +357,55 @@ fun GitHubPage(
                         ),
                         Toast.LENGTH_SHORT
                     ).show()
+                }
+            }
+        }
+    }
+
+    val onConfirmTrackImport: () -> Unit = {
+        val preview = state.pendingTrackImportPreview
+        if (preview != null) {
+            when (githubPageViewModel.beginTrackedImport()) {
+                GitHubTrackedImportStartResult.Busy -> Unit
+                GitHubTrackedImportStartResult.Ready -> {
+                    scope.launch {
+                        val result = runCatching { actions.applyTrackedItemsImport(preview) }
+                        githubPageViewModel.finishTrackedImport()
+                        result.onSuccess { importResult ->
+                            state.dismissTrackImportPreview()
+                            val effectiveCount = importResult.addedCount +
+                                importResult.updatedCount +
+                                importResult.unchangedCount
+                            if (effectiveCount == 0) {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.github_toast_track_import_no_valid),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(
+                                        R.string.github_toast_track_imported_summary,
+                                        importResult.addedCount,
+                                        importResult.updatedCount,
+                                        importResult.unchangedCount,
+                                        importResult.invalidCount + importResult.duplicateCount
+                                    ),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }.onFailure {
+                            Toast.makeText(
+                                context,
+                                context.getString(
+                                    R.string.github_toast_track_import_failed,
+                                    it.javaClass.simpleName
+                                ),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 }
             }
         }
@@ -403,8 +421,8 @@ fun GitHubPage(
             installedOnlineShareTargets = installedOnlineShareTargets,
             checkLogicDownloaderOptions = checkLogicDownloaderOptions,
             hasKeiOsSelfTrack = hasKeiOsSelfTrack,
-            tracksExporting = tracksExporting,
-            tracksImporting = tracksImporting,
+            tracksExporting = transferState.tracksExporting,
+            tracksImporting = transferState.tracksImporting,
             onEnsureKeiOsSelfTrack = actions::ensureKeiOsSelfTrack,
             onExportTrackedItems = onExportTrackedItems,
             onImportTrackedItems = onImportTrackedItems,
