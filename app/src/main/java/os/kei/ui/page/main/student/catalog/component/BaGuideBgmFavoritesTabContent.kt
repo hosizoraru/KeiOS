@@ -100,6 +100,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     var batchCaching by remember { mutableStateOf(false) }
     var batchCacheDone by remember { mutableIntStateOf(0) }
     var batchCacheTotal by remember { mutableIntStateOf(0) }
+    var batchFailedAudioUrls by remember { mutableStateOf<Set<String>>(emptySet()) }
     var removedFavorite by remember { mutableStateOf<GuideBgmFavoriteItem?>(null) }
     val cacheSuccessText = stringResource(R.string.ba_catalog_bgm_cache_success)
     val cacheFailedText = stringResource(R.string.ba_catalog_bgm_cache_failed)
@@ -169,6 +170,9 @@ internal fun BaGuideBgmFavoritesTabContent(
                 isFavoriteBgmCached(appContext, favorite)
             }.getOrDefault(false)
             cachingAudioUrls = cachingAudioUrls - favorite.audioUrl
+            if (success) {
+                batchFailedAudioUrls = batchFailedAudioUrls - favorite.audioUrl
+            }
             cacheRevision += 1
             Toast.makeText(
                 context,
@@ -178,11 +182,8 @@ internal fun BaGuideBgmFavoritesTabContent(
         }
     }
 
-    fun cacheDisplayedFavorites() {
+    fun cacheFavoriteBatch(targets: List<GuideBgmFavoriteItem>) {
         if (batchCaching) return
-        val targets = displayedFavorites.filter { favorite ->
-            favorite.audioUrl.isNotBlank() && !isFavoriteBgmCached(appContext, favorite)
-        }
         if (targets.isEmpty()) {
             Toast.makeText(context, cacheAllReadyText, Toast.LENGTH_SHORT).show()
             return
@@ -190,9 +191,11 @@ internal fun BaGuideBgmFavoritesTabContent(
         batchCaching = true
         batchCacheDone = 0
         batchCacheTotal = targets.size
+        batchFailedAudioUrls = batchFailedAudioUrls - targets.map { it.audioUrl }.toSet()
         cachingAudioUrls = cachingAudioUrls + targets.map { it.audioUrl }
         pageScope.launch {
             var successCount = 0
+            val failedAudioUrls = mutableSetOf<String>()
             targets.forEach { favorite ->
                 val success = runCatching {
                     BaGuideTempMediaCache.prefetchForGuide(
@@ -202,18 +205,37 @@ internal fun BaGuideBgmFavoritesTabContent(
                     )
                     isFavoriteBgmCached(appContext, favorite)
                 }.getOrDefault(false)
-                if (success) successCount += 1
+                if (success) {
+                    successCount += 1
+                } else {
+                    failedAudioUrls += favorite.audioUrl
+                }
                 batchCacheDone += 1
                 cachingAudioUrls = cachingAudioUrls - favorite.audioUrl
                 cacheRevision += 1
             }
             batchCaching = false
+            batchFailedAudioUrls = batchFailedAudioUrls + failedAudioUrls
             Toast.makeText(
                 context,
                 context.getString(R.string.ba_catalog_bgm_cache_batch_done, successCount),
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    fun cacheDisplayedFavorites() {
+        val targets = displayedFavorites.filter { favorite ->
+            favorite.audioUrl.isNotBlank() && !isFavoriteBgmCached(appContext, favorite)
+        }
+        cacheFavoriteBatch(targets)
+    }
+
+    fun retryFailedCache() {
+        val failedTargets = displayedFavorites.filter { favorite ->
+            favorite.audioUrl in batchFailedAudioUrls && !isFavoriteBgmCached(appContext, favorite)
+        }
+        cacheFavoriteBatch(failedTargets)
     }
 
     val listState = rememberLazyListState()
@@ -383,8 +405,12 @@ internal fun BaGuideBgmFavoritesTabContent(
                         batchCaching = batchCaching,
                         batchDone = batchCacheDone,
                         batchTotal = batchCacheTotal,
+                        batchFailedCount = displayedFavorites.count { favorite ->
+                            favorite.audioUrl in batchFailedAudioUrls && !isFavoriteBgmCached(appContext, favorite)
+                        },
                         accent = accent,
-                        onCacheAll = ::cacheDisplayedFavorites
+                        onCacheAll = ::cacheDisplayedFavorites,
+                        onRetryFailed = ::retryFailedCache
                     )
                 }
 

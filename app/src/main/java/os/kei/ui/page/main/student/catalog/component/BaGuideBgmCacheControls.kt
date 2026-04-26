@@ -33,14 +33,21 @@ internal fun BaGuideBgmCacheControls(
     batchCaching: Boolean,
     batchDone: Int,
     batchTotal: Int,
+    batchFailedCount: Int,
     accent: Color,
-    onCacheAll: () -> Unit
+    onCacheAll: () -> Unit,
+    onRetryFailed: () -> Unit
 ) {
     val title = if (batchCaching) {
         stringResource(
             R.string.ba_catalog_bgm_cache_batch_progress,
             batchDone.coerceAtLeast(0),
             batchTotal.coerceAtLeast(0)
+        )
+    } else if (batchFailedCount > 0) {
+        stringResource(
+            R.string.ba_catalog_bgm_cache_batch_failed_summary,
+            batchFailedCount.coerceAtLeast(0)
         )
     } else {
         stringResource(
@@ -50,7 +57,19 @@ internal fun BaGuideBgmCacheControls(
             formatBgmCacheBytes(cacheBytes)
         )
     }
-    val actionText = stringResource(R.string.ba_catalog_bgm_action_cache_all)
+    val progress = if (batchTotal > 0) {
+        batchDone.toFloat() / batchTotal.toFloat()
+    } else {
+        0f
+    }.coerceIn(0f, 1f)
+    val retryMode = !batchCaching && batchFailedCount > 0
+    val actionText = stringResource(
+        if (retryMode) {
+            R.string.ba_catalog_bgm_action_retry_failed
+        } else {
+            R.string.ba_catalog_bgm_action_cache_all
+        }
+    )
     Card(
         modifier = Modifier.fillMaxWidth(),
         cornerRadius = 16.dp,
@@ -85,13 +104,29 @@ internal fun BaGuideBgmCacheControls(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (batchCaching) {
+                    top.yukonga.miuix.kmp.basic.LinearProgressIndicator(
+                        progress = progress,
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 4.dp,
+                        colors = top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+                            .progressIndicatorColors(
+                                foregroundColor = accent,
+                                backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
+                            )
+                    )
+                }
             }
             GlassTextButton(
                 backdrop = null,
                 text = actionText,
-                leadingIcon = if (batchCaching) appLucideRefreshIcon() else appLucideDownloadIcon(),
-                onClick = onCacheAll,
-                enabled = favoriteCount > 0 && cachedCount < favoriteCount && !batchCaching,
+                leadingIcon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
+                onClick = if (retryMode) onRetryFailed else onCacheAll,
+                enabled = !batchCaching &&
+                    (
+                        retryMode ||
+                            (favoriteCount > 0 && cachedCount < favoriteCount)
+                        ),
                 textColor = accent,
                 containerColor = accent,
                 variant = GlassVariant.Compact,
