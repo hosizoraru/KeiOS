@@ -70,6 +70,11 @@ internal fun BaGuideBgmFavoritesTabContent(
         BaGuideBgmFavoriteSortMode.entries.firstOrNull { it.name == sortModeName }
             ?: BaGuideBgmFavoriteSortMode.Recent
     }
+    var groupModeName by rememberSaveable { mutableStateOf(BaGuideBgmFavoriteGroupMode.All.name) }
+    val groupMode = remember(groupModeName) {
+        BaGuideBgmFavoriteGroupMode.entries.firstOrNull { it.name == groupModeName }
+            ?: BaGuideBgmFavoriteGroupMode.All
+    }
     val displayedFavorites = remember(favorites, searchQuery, sortMode) {
         filterAndSortBgmFavorites(
             favorites = favorites,
@@ -226,6 +231,18 @@ internal fun BaGuideBgmFavoritesTabContent(
     val cachedFavoriteBytes = remember(displayedFavorites, cacheRevision) {
         displayedFavorites.sumOf { favorite -> favoriteBgmCachedBytes(appContext, favorite) }
     }
+    val groupLabels = rememberBaGuideBgmFavoriteGroupLabels()
+    val playbackSnapshot = remember(playbackRuntimeState, selectedAudioUrl) {
+        GuideBgmFavoritePlaybackStore.snapshot()
+    }
+    val displayedFavoriteGroups = remember(displayedFavorites, groupMode, playbackSnapshot, groupLabels) {
+        groupBgmFavorites(
+            favorites = displayedFavorites,
+            groupMode = groupMode,
+            playbackSnapshot = playbackSnapshot,
+            labels = groupLabels
+        )
+    }
     val selectedIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
     val selectedFavorite = displayedFavorites.getOrNull(selectedIndex)
     val queueItemIndex = 1 +
@@ -327,6 +344,11 @@ internal fun BaGuideBgmFavoritesTabContent(
                         accent = accent,
                         onSortModeChange = { sortModeName = it.name }
                     )
+                    BaGuideBgmGroupModeRow(
+                        groupMode = groupMode,
+                        accent = accent,
+                        onGroupModeChange = { groupModeName = it.name }
+                    )
                 }
             }
 
@@ -401,25 +423,36 @@ internal fun BaGuideBgmFavoritesTabContent(
                     }
                 }
 
-                items(
-                    items = displayedFavorites,
-                    key = { it.audioUrl }
-                ) { favorite ->
-                    val cached = remember(favorite, cacheRevision) {
-                        isFavoriteBgmCached(appContext, favorite)
+                displayedFavoriteGroups.forEach { group ->
+                    if (groupMode != BaGuideBgmFavoriteGroupMode.All) {
+                        item(key = "bgm-group-${group.key}") {
+                            BaGuideBgmFavoriteGroupHeader(
+                                label = group.label,
+                                count = group.favorites.size,
+                                accent = accent
+                            )
+                        }
                     }
-                    BaGuideBgmFavoriteCard(
-                        favorite = favorite,
-                        selected = favorite.audioUrl == selectedAudioUrl,
-                        cached = cached,
-                        caching = cachingAudioUrls.contains(favorite.audioUrl),
-                        accent = accent,
-                        onOpenGuide = { openFavoriteGuide(favorite) },
-                        onSelect = { selectedAudioUrl = favorite.audioUrl },
-                        onPlay = { startFavoritePlayback(favorite) },
-                        onCache = { cacheFavorite(favorite) },
-                        onRemove = { removeFavorite(favorite) }
-                    )
+                    items(
+                        items = group.favorites,
+                        key = { it.audioUrl }
+                    ) { favorite ->
+                        val cached = remember(favorite, cacheRevision) {
+                            isFavoriteBgmCached(appContext, favorite)
+                        }
+                        BaGuideBgmFavoriteCard(
+                            favorite = favorite,
+                            selected = favorite.audioUrl == selectedAudioUrl,
+                            cached = cached,
+                            caching = cachingAudioUrls.contains(favorite.audioUrl),
+                            accent = accent,
+                            onOpenGuide = { openFavoriteGuide(favorite) },
+                            onSelect = { selectedAudioUrl = favorite.audioUrl },
+                            onPlay = { startFavoritePlayback(favorite) },
+                            onCache = { cacheFavorite(favorite) },
+                            onRemove = { removeFavorite(favorite) }
+                        )
+                    }
                 }
             }
         }

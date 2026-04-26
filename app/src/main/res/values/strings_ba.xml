@@ -71,6 +71,14 @@
     <string name="ba_catalog_bgm_sort_recent">最近收藏</string>
     <string name="ba_catalog_bgm_sort_student">学生名</string>
     <string name="ba_catalog_bgm_sort_title">标题</string>
+    <string name="ba_catalog_bgm_group_all">全部</string>
+    <string name="ba_catalog_bgm_group_school">学院</string>
+    <string name="ba_catalog_bgm_group_role_type">类型</string>
+    <string name="ba_catalog_bgm_group_recent_played">播放记录</string>
+    <string name="ba_catalog_bgm_group_unknown_school">未知学院</string>
+    <string name="ba_catalog_bgm_group_unknown_type">未知类型</string>
+    <string name="ba_catalog_bgm_group_played">有播放记录</string>
+    <string name="ba_catalog_bgm_group_unplayed">未播放</string>
     <string name="ba_catalog_bgm_queue_title">播放队列</string>
     <string name="ba_catalog_bgm_queue_position">%1$d / %2$d</string>
     <string name="ba_catalog_bgm_queue_continuous">连续播放</string>
