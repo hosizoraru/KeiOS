@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -36,6 +37,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -79,6 +81,49 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal val LocalSettingsLiquidGlassSwitchEnabled = staticCompositionLocalOf { false }
+
+private fun LazyListState.canMoveForSettingsChrome(deltaY: Float): Boolean {
+    return when {
+        deltaY < -1f -> canScrollForward
+        deltaY > 1f -> canScrollBackward
+        else -> true
+    }
+}
+
+private fun settingsChromeNestedScrollConnection(
+    listState: LazyListState,
+    delegate: NestedScrollConnection
+): NestedScrollConnection {
+    return object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            if (!listState.canMoveForSettingsChrome(available.y)) return Offset.Zero
+            return delegate.onPreScroll(available, source)
+        }
+
+        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+            val canMove = listState.canMoveForSettingsChrome(consumed.y) ||
+                listState.canMoveForSettingsChrome(available.y)
+            if (!canMove) return Offset.Zero
+            return delegate.onPostScroll(consumed, available, source)
+        }
+
+        override suspend fun onPreFling(available: Velocity): Velocity {
+            if (!listState.canMoveForSettingsChrome(available.y)) return Velocity.Zero
+            return delegate.onPreFling(available)
+        }
+
+        override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+            val canMove = listState.canMoveForSettingsChrome(consumed.y) ||
+                listState.canMoveForSettingsChrome(available.y)
+            if (!canMove) return Velocity.Zero
+            return delegate.onPostFling(consumed, available)
+        }
+    }
+}
+
+private fun SettingsCategory.keepsChromeVisibleOnBounds(): Boolean {
+    return this == SettingsCategory.Access || this == SettingsCategory.Notify
+}
 
 @Composable
 fun SettingsPage(
@@ -337,18 +382,27 @@ fun SettingsPage(
     val bottomBarVisibilityController = remember(bottomBarVisibilityThresholdPx) {
         ScrollChromeVisibilityController(bottomBarVisibilityThresholdPx)
     }
-    val activePageListState = when (
-        if (pagerState.isScrollInProgress) pagerState.targetPage else pagerState.settledPage
-    ) {
-        0 -> accessListState
-        1 -> appearanceListState
-        2 -> notifyListState
-        else -> dataListState
+    val activeCategoryIndex = if (pagerState.isScrollInProgress) {
+        pagerState.targetPage
+    } else {
+        pagerState.settledPage
+    }.coerceIn(0, categories.lastIndex)
+    val activeCategory = categories[activeCategoryIndex]
+    val activePageListState = when (activeCategory) {
+        SettingsCategory.Access -> accessListState
+        SettingsCategory.Appearance -> appearanceListState
+        SettingsCategory.Notify -> notifyListState
+        SettingsCategory.Data -> dataListState
     }
     val currentActivePageListState = rememberUpdatedState(activePageListState)
+    val currentActiveCategory = rememberUpdatedState(activeCategory)
     val bottomBarNestedScrollConnection = remember(bottomBarVisibilityController) {
         object : NestedScrollConnection {
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (currentActiveCategory.value.keepsChromeVisibleOnBounds()) {
+                    bottomBarVisibilityController.showNow(showBottomBar) { showBottomBar = it }
+                    return Offset.Zero
+                }
                 val currentListState = currentActivePageListState.value
                 bottomBarVisibilityController.updateWithinScrollBounds(
                     deltaY = consumed.y,
@@ -466,12 +520,18 @@ fun SettingsPage(
                     SettingsCategory.Notify -> notifyListState
                     SettingsCategory.Data -> dataListState
                 }
+                val pageNestedScrollConnection = remember(pageListState, scrollBehavior) {
+                    settingsChromeNestedScrollConnection(
+                        listState = pageListState,
+                        delegate = scrollBehavior.nestedScrollConnection
+                    )
+                }
                 AppPageLazyColumn(
                     innerPadding = innerPadding,
                     state = pageListState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                        .nestedScroll(pageNestedScrollConnection),
                     bottomExtra = appPageBottomPaddingWithFloatingOverlay(
                         AppChromeTokens.floatingBottomBarOuterHeight
                     ),
