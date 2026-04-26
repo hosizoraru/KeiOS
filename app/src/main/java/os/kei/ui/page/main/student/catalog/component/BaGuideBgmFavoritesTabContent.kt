@@ -1,6 +1,8 @@
 package os.kei.ui.page.main.student.catalog.component
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -48,8 +50,10 @@ import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.SmallTitle
 
 @Composable
@@ -101,10 +105,18 @@ internal fun BaGuideBgmFavoritesTabContent(
     var batchCacheDone by remember { mutableIntStateOf(0) }
     var batchCacheTotal by remember { mutableIntStateOf(0) }
     var batchFailedAudioUrls by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var pendingExportJson by remember { mutableStateOf("") }
+    var exportingFavorites by remember { mutableStateOf(false) }
+    var importingFavorites by remember { mutableStateOf(false) }
+    var miniPlayerCollapsed by rememberSaveable { mutableStateOf(false) }
     var removedFavorite by remember { mutableStateOf<GuideBgmFavoriteItem?>(null) }
     val cacheSuccessText = stringResource(R.string.ba_catalog_bgm_cache_success)
     val cacheFailedText = stringResource(R.string.ba_catalog_bgm_cache_failed)
     val cacheAllReadyText = stringResource(R.string.ba_catalog_bgm_cache_all_ready)
+    val exportEmptyText = stringResource(R.string.ba_catalog_bgm_export_empty)
+    val exportSuccessText = stringResource(R.string.ba_catalog_bgm_export_success)
+    val exportFailedText = stringResource(R.string.ba_catalog_bgm_export_failed)
+    val importFailedText = stringResource(R.string.ba_catalog_bgm_import_failed)
 
     fun startFavoritePlayback(favorite: GuideBgmFavoriteItem, restart: Boolean = false) {
         selectedAudioUrl = favorite.audioUrl
@@ -238,6 +250,87 @@ internal fun BaGuideBgmFavoritesTabContent(
         cacheFavoriteBatch(failedTargets)
     }
 
+    val exportFavoritesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        val payload = pendingExportJson
+        pendingExportJson = ""
+        if (uri == null || payload.isBlank()) {
+            exportingFavorites = false
+            return@rememberLauncherForActivityResult
+        }
+        pageScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openOutputStream(uri)?.bufferedWriter().use { writer ->
+                        if (writer == null) return@runCatching false
+                        writer.write(payload)
+                        true
+                    }
+                }.getOrDefault(false)
+            }
+            exportingFavorites = false
+            Toast.makeText(
+                context,
+                if (success) exportSuccessText else exportFailedText,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    val importFavoritesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) {
+            importingFavorites = false
+            return@rememberLauncherForActivityResult
+        }
+        pageScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val raw = context.contentResolver.openInputStream(uri)
+                        ?.bufferedReader()
+                        ?.use { it.readText() }
+                        .orEmpty()
+                    GuideBgmFavoriteStore.importFavoritesJsonMerged(raw)
+                }
+            }
+            importingFavorites = false
+            result.onSuccess { importResult ->
+                if (importResult.importedCount > 0) {
+                    cacheRevision += 1
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.ba_catalog_bgm_import_success,
+                            importResult.addedCount,
+                            importResult.updatedCount
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(context, importFailedText, Toast.LENGTH_SHORT).show()
+                }
+            }.onFailure {
+                Toast.makeText(context, importFailedText, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun exportFavorites() {
+        if (favorites.isEmpty()) {
+            Toast.makeText(context, exportEmptyText, Toast.LENGTH_SHORT).show()
+            return
+        }
+        pendingExportJson = GuideBgmFavoriteStore.buildFavoritesExportJson()
+        exportingFavorites = true
+        exportFavoritesLauncher.launch("keios-ba-bgm-favorites.json")
+    }
+
+    fun importFavorites() {
+        importingFavorites = true
+        importFavoritesLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+    }
+
     val listState = rememberLazyListState()
     val bgmLabel = stringResource(R.string.ba_catalog_tab_bgm)
     val tabTitle = stringResource(R.string.ba_catalog_tab_title, bgmLabel)
@@ -269,7 +362,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     val selectedFavorite = displayedFavorites.getOrNull(selectedIndex)
     val queueItemIndex = 1 +
         if (removedFavorite == null) 0 else 1 +
-        if (displayedFavorites.isEmpty()) 0 else 1
+        if (displayedFavorites.isEmpty()) 0 else 2
     val showMiniPlayer by remember(listState, selectedFavorite, queueItemIndex) {
         derivedStateOf {
             selectedFavorite != null &&
@@ -339,7 +432,11 @@ internal fun BaGuideBgmFavoritesTabContent(
                 top = innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() +
                     AppChromeTokens.pageSectionGap +
-                    if (selectedFavorite != null) 124.dp else 0.dp,
+                    if (selectedFavorite != null) {
+                        if (miniPlayerCollapsed) 84.dp else 124.dp
+                    } else {
+                        0.dp
+                    },
                 start = AppChromeTokens.pageHorizontalPadding,
                 end = AppChromeTokens.pageHorizontalPadding
             ),
@@ -411,6 +508,16 @@ internal fun BaGuideBgmFavoritesTabContent(
                         accent = accent,
                         onCacheAll = ::cacheDisplayedFavorites,
                         onRetryFailed = ::retryFailedCache
+                    )
+                }
+                item(key = "bgm-transfer-controls") {
+                    BaGuideBgmTransferControls(
+                        favoriteCount = favorites.size,
+                        exporting = exportingFavorites,
+                        importing = importingFavorites,
+                        accent = accent,
+                        onExport = ::exportFavorites,
+                        onImport = ::importFavorites
                     )
                 }
 
@@ -502,8 +609,11 @@ internal fun BaGuideBgmFavoritesTabContent(
                     queueIndex = selectedIndex.coerceAtLeast(0),
                     queueSize = displayedFavorites.size,
                     accent = accent,
+                    collapsed = miniPlayerCollapsed,
+                    onCollapsedChange = { miniPlayerCollapsed = it },
                     onOpenQueue = {
                         pageScope.launch {
+                            miniPlayerCollapsed = false
                             listState.animateScrollToItem(queueItemIndex)
                         }
                     },

@@ -93,6 +93,8 @@
     <string name="ba_catalog_bgm_action_cache_busy">正在缓存</string>
     <string name="ba_catalog_bgm_action_cache_all">批量缓存</string>
     <string name="ba_catalog_bgm_action_retry_failed">重试失败</string>
+    <string name="ba_catalog_bgm_action_import">导入</string>
+    <string name="ba_catalog_bgm_action_export">导出</string>
     <string name="ba_catalog_bgm_action_open_gallery">打开影画鉴赏</string>
     <string name="ba_catalog_bgm_action_undo">撤销</string>
     <string name="ba_catalog_bgm_student_unknown">未知学生</string>
@@ -107,6 +109,13 @@
     <string name="ba_catalog_bgm_cache_failed">BGM 缓存失败</string>
     <string name="ba_catalog_bgm_cache_all_ready">当前列表已全部缓存</string>
     <string name="ba_catalog_bgm_cache_batch_done">批量缓存完成：%1$d 首</string>
+    <string name="ba_catalog_bgm_transfer_title">收藏备份</string>
+    <string name="ba_catalog_bgm_transfer_summary">当前收藏 %1$d 首</string>
+    <string name="ba_catalog_bgm_export_empty">暂无可导出的 BGM 收藏</string>
+    <string name="ba_catalog_bgm_export_success">BGM 收藏已导出</string>
+    <string name="ba_catalog_bgm_export_failed">BGM 收藏导出失败</string>
+    <string name="ba_catalog_bgm_import_success">BGM 收藏已导入：新增 %1$d，更新 %2$d</string>
+    <string name="ba_catalog_bgm_import_failed">BGM 收藏导入失败</string>
     <string name="ba_catalog_cd_favorite_student">收藏学生</string>
     <string name="ba_catalog_cd_unfavorite_student">取消收藏</string>
     <string name="ba_catalog_sort_default">默认排序</string>

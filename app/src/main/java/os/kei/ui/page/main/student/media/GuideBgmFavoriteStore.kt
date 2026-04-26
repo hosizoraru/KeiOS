@@ -22,6 +22,12 @@ internal data class GuideBgmFavoriteItem(
     val favoritedAtMs: Long
 )
 
+internal data class GuideBgmFavoriteImportResult(
+    val importedCount: Int,
+    val addedCount: Int,
+    val updatedCount: Int
+)
+
 internal object GuideBgmFavoriteStore {
     private val store: MMKV by lazy { MMKV.mmkvWithID(BA_GUIDE_BGM_FAVORITES_KV_ID) }
     private val lock = Any()
@@ -89,6 +95,56 @@ internal object GuideBgmFavoriteStore {
         }
     }
 
+    fun buildFavoritesExportJson(nowMs: Long = System.currentTimeMillis()): String {
+        val favorites = favoritesSnapshot()
+        return JSONObject().apply {
+            put("type", "keios.ba.bgm_favorites")
+            put("version", 1)
+            put("exportedAtMs", nowMs.coerceAtLeast(1L))
+            put(
+                "favorites",
+                JSONArray().apply {
+                    favorites.forEach { item -> put(item.toJsonObject()) }
+                }
+            )
+        }.toString()
+    }
+
+    fun importFavoritesJsonMerged(raw: String): GuideBgmFavoriteImportResult {
+        val imported = parseFavoritesImport(raw)
+        if (imported.isEmpty()) {
+            return GuideBgmFavoriteImportResult(
+                importedCount = 0,
+                addedCount = 0,
+                updatedCount = 0
+            )
+        }
+        return synchronized(lock) {
+            ensureLoadedLocked()
+            val existingByAudioUrl = favoritesState.value.associateBy { it.audioUrl }
+            val merged = existingByAudioUrl.toMutableMap()
+            var added = 0
+            var updated = 0
+            imported.forEach { item ->
+                val previous = merged[item.audioUrl]
+                if (previous == null) {
+                    added += 1
+                } else if (previous != item) {
+                    updated += 1
+                }
+                merged[item.audioUrl] = item
+            }
+            val frozen = sortedUniqueFavorites(merged.values.toList())
+            saveFavoritesLocked(frozen)
+            favoritesState.value = frozen
+            GuideBgmFavoriteImportResult(
+                importedCount = imported.size,
+                addedCount = added,
+                updatedCount = updated
+            )
+        }
+    }
+
     private fun ensureLoaded() {
         if (loaded) return
         synchronized(lock) {
@@ -133,18 +189,7 @@ internal object GuideBgmFavoriteStore {
         }
         val raw = JSONArray().apply {
             sortedUniqueFavorites(favorites).forEach { item ->
-                put(
-                    JSONObject().apply {
-                        put("audioUrl", item.audioUrl)
-                        put("title", item.title)
-                        put("studentTitle", item.studentTitle)
-                        put("studentImageUrl", item.studentImageUrl)
-                        put("imageUrl", item.imageUrl)
-                        put("sourceUrl", item.sourceUrl)
-                        put("note", item.note)
-                        put("favoritedAtMs", item.favoritedAtMs.coerceAtLeast(1L))
-                    }
-                )
+                put(item.toJsonObject())
             }
         }.toString()
         store.encode(KEY_BGM_FAVORITES_RAW, raw)
@@ -179,6 +224,50 @@ internal object GuideBgmFavoriteStore {
         }
         return byAudioUrl.values
             .sortedByDescending { it.favoritedAtMs }
+    }
+
+    private fun GuideBgmFavoriteItem.toJsonObject(): JSONObject {
+        return JSONObject().apply {
+            put("audioUrl", audioUrl)
+            put("title", title)
+            put("studentTitle", studentTitle)
+            put("studentImageUrl", studentImageUrl)
+            put("imageUrl", imageUrl)
+            put("sourceUrl", sourceUrl)
+            put("note", note)
+            put("favoritedAtMs", favoritedAtMs.coerceAtLeast(1L))
+        }
+    }
+
+    private fun parseFavoritesImport(raw: String): List<GuideBgmFavoriteItem> {
+        val trimmed = raw.trim()
+        if (trimmed.isBlank()) return emptyList()
+        return runCatching {
+            val array = if (trimmed.startsWith("[")) {
+                JSONArray(trimmed)
+            } else {
+                val root = JSONObject(trimmed)
+                root.optJSONArray("favorites")
+                    ?: root.optJSONArray("bgmFavorites")
+                    ?: JSONArray()
+            }
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    val favorite = GuideBgmFavoriteItem(
+                        audioUrl = item.optString("audioUrl").trim(),
+                        title = item.optString("title").trim(),
+                        studentTitle = item.optString("studentTitle").trim(),
+                        studentImageUrl = item.optString("studentImageUrl").trim(),
+                        imageUrl = item.optString("imageUrl").trim(),
+                        sourceUrl = item.optString("sourceUrl").trim(),
+                        note = item.optString("note").trim(),
+                        favoritedAtMs = item.optLong("favoritedAtMs", 0L).coerceAtLeast(0L)
+                    )
+                    normalizeFavorite(favorite)?.let(::add)
+                }
+            }.let(::sortedUniqueFavorites)
+        }.getOrDefault(emptyList())
     }
 }
 

@@ -1,18 +1,28 @@
 package os.kei.ui.page.main.student.catalog.component
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,6 +58,8 @@ internal fun BaGuideBgmMiniPlayer(
     onPrevious: () -> Unit,
     onTogglePlayback: () -> Unit,
     onNext: () -> Unit,
+    collapsed: Boolean,
+    onCollapsedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val studentName = favorite.studentTitle.ifBlank {
@@ -69,9 +81,27 @@ internal fun BaGuideBgmMiniPlayer(
         }
     )
     val shape = RoundedCornerShape(18.dp)
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .pointerInput(collapsed) {
+                detectVerticalDragGestures(
+                    onDragStart = { dragOffsetY = 0f },
+                    onVerticalDrag = { change, dragAmount ->
+                        dragOffsetY += dragAmount
+                        change.consume()
+                    },
+                    onDragEnd = {
+                        when {
+                            dragOffsetY > 28f -> onCollapsedChange(true)
+                            dragOffsetY < -28f -> onCollapsedChange(false)
+                        }
+                        dragOffsetY = 0f
+                    },
+                    onDragCancel = { dragOffsetY = 0f }
+                )
+            }
             .border(
                 width = 1.dp,
                 color = accent.copy(alpha = 0.35f),
@@ -88,6 +118,20 @@ internal fun BaGuideBgmMiniPlayer(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(34.dp)
+                        .height(4.dp)
+                        .background(
+                            color = MiuixTheme.colorScheme.outline.copy(alpha = 0.34f),
+                            shape = CircleShape
+                        )
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
@@ -157,6 +201,18 @@ internal fun BaGuideBgmMiniPlayer(
                     iconTint = accent,
                     containerColor = accent
                 )
+            }
+            if (collapsed) {
+                LinearProgressIndicator(
+                    progress = runtimeState.progress,
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 3.dp,
+                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                        foregroundColor = accent,
+                        backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
+                    )
+                )
+                return@Column
             }
             LinearProgressIndicator(
                 progress = runtimeState.progress,
