@@ -228,14 +228,26 @@ fun BaGuideCatalogPage(
     }
     val bottomBarNestedScrollConnection = remember(
         searchBarVisibilityController,
-        bottomBarVisibilityController
+        bottomBarVisibilityController,
+        selectedTabIndex,
+        tabs
     ) {
         object : NestedScrollConnection {
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
+                val currentPageTab = tabs.getOrNull(selectedTabIndex)
+                if (currentPageTab == BaGuideCatalogPageTab.Bgm) {
+                    showBottomBar = true
+                } else {
+                    bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
+                }
                 searchBarVisibilityController.update(consumed.y, showSearchBar) { showSearchBar = it }
                 return Offset.Zero
             }
+        }
+    }
+    LaunchedEffect(selectedTabIndex) {
+        if (tabs.getOrNull(selectedTabIndex) == BaGuideCatalogPageTab.Bgm) {
+            showBottomBar = true
         }
     }
 
@@ -385,7 +397,8 @@ fun BaGuideCatalogPage(
                         searchQuery = filterSortState.searchQuery,
                         innerPadding = innerPadding,
                         nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-                        accent = accent
+                        accent = accent,
+                        onOpenGuide = onOpenGuide
                     )
                 } else {
                     Box(
