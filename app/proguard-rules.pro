@@ -2,15 +2,18 @@
 # Keep enum member names stable because multiple stores persist enum.name across app restarts/upgrades.
 -keepclassmembernames enum os.kei.** { *; }
 
-# Keep manifest component class names stable for runtime introspection in About page.
--keepnames class os.kei.KeiOSApp
--keepnames class os.kei.MainActivity
--keepnames class os.kei.ui.page.main.github.share.GitHubShareImportActivity
--keepnames class os.kei.ui.page.main.os.shell.OsShellRunnerActivity
--keepnames class os.kei.ui.page.main.student.GuideVideoFullscreenActivity
--keepnames class os.kei.mcp.service.McpKeepAliveService
--keepnames class os.kei.feature.notification.NotificationActionReceiver
--keepnames class os.kei.core.background.AppBackgroundTickReceiver
+# Keep internal component class names stable for manifest lookups and About-page introspection.
+# This covers future KeiOS activities/services/receivers/providers without needing manual updates.
+-keepnames class os.kei.** extends android.app.Application
+-keepnames class os.kei.** extends android.app.Activity
+-keepnames class os.kei.** extends android.app.Service
+-keepnames class os.kei.** extends android.content.BroadcastReceiver
+-keepnames class os.kei.** extends android.content.ContentProvider
+
+# Keep navigation key class names stable across save/restore boundaries.
+# The route surface is tiny, and preserving names keeps release-only navigation debugging clearer.
+-keepnames class os.kei.ui.navigation.KeiosRoute
+-keepnames class os.kei.ui.navigation.KeiosRoute$*
 
 # ShizukuApiUtils reflects these no-arg static method names.
 # Keep only the reflective surface so the rest can still be optimized/shrunk.
