@@ -4,13 +4,13 @@ import androidx.annotation.StringRes
 import os.kei.R
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 
-internal enum class BaGuideBgmFavoriteSortMode(@StringRes val labelRes: Int) {
+internal enum class BaGuideBgmFavoriteSortMode(@param:StringRes val labelRes: Int) {
     Recent(R.string.ba_catalog_bgm_sort_recent),
     Student(R.string.ba_catalog_bgm_sort_student),
     Title(R.string.ba_catalog_bgm_sort_title)
 }
 
-internal enum class BaGuideBgmQueueMode(@StringRes val labelRes: Int) {
+internal enum class BaGuideBgmQueueMode(@param:StringRes val labelRes: Int) {
     Continuous(R.string.ba_catalog_bgm_queue_continuous),
     SingleLoop(R.string.ba_catalog_bgm_queue_single_loop)
 }
@@ -24,12 +24,7 @@ internal fun filterAndSortBgmFavorites(
     val filtered = if (query.isBlank()) {
         favorites
     } else {
-        favorites.filter { item ->
-            item.title.contains(query, ignoreCase = true) ||
-                item.studentTitle.contains(query, ignoreCase = true) ||
-                item.note.contains(query, ignoreCase = true) ||
-                item.audioUrl.contains(query, ignoreCase = true)
-        }
+        favorites.filter { item -> bgmFavoriteMatchesSearch(item, query) }
     }
     return when (sortMode) {
         BaGuideBgmFavoriteSortMode.Recent -> filtered.sortedByDescending { it.favoritedAtMs }
