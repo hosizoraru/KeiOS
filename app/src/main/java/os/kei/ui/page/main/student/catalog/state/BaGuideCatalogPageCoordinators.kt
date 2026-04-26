@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import os.kei.ui.page.main.host.pager.animateTabSwitch
-import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
@@ -50,7 +49,7 @@ internal fun rememberBaGuideCatalogTopBarActionItems(
 
 @Composable
 internal fun rememberBaGuideCatalogTabSelectCoordinator(
-    tabs: List<BaGuideCatalogTab>,
+    tabCount: Int,
     pagerState: androidx.compose.foundation.pager.PagerState,
     transitionAnimationsEnabled: Boolean,
     farJumpAlpha: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
@@ -61,7 +60,7 @@ internal fun rememberBaGuideCatalogTabSelectCoordinator(
     var tabJumpJob by remember { mutableStateOf<Job?>(null) }
 
     return remember(
-        tabs,
+        tabCount,
         pagerState,
         transitionAnimationsEnabled,
         farJumpAlpha,
@@ -70,8 +69,8 @@ internal fun rememberBaGuideCatalogTabSelectCoordinator(
         pagerScope
     ) {
         { index: Int ->
-            if (tabs.isNotEmpty()) {
-                val safeIndex = index.coerceIn(0, tabs.lastIndex)
+            if (tabCount > 0) {
+                val safeIndex = index.coerceIn(0, tabCount - 1)
                 val stablePageIndex = if (pagerState.isScrollInProgress) {
                     pagerState.targetPage
                 } else {

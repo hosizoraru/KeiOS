@@ -52,6 +52,7 @@ import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideSortIcon
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
+import os.kei.ui.page.main.student.catalog.component.BaGuideBgmFavoritesTabContent
 import os.kei.ui.page.main.student.catalog.component.BaGuideCatalogSortActionPopup
 import os.kei.ui.page.main.student.catalog.component.BaGuideCatalogTabContent
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogViewModel
@@ -83,6 +84,28 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private enum class BaGuideCatalogPageTab(
+    val labelRes: Int,
+    val iconRes: Int,
+    val catalogTab: BaGuideCatalogTab?
+) {
+    Student(
+        labelRes = R.string.ba_catalog_tab_student,
+        iconRes = R.drawable.ba_tab_profile,
+        catalogTab = BaGuideCatalogTab.Student
+    ),
+    NpcSatellite(
+        labelRes = R.string.ba_catalog_tab_npc_satellite,
+        iconRes = R.drawable.ba_tab_skill,
+        catalogTab = BaGuideCatalogTab.NpcSatellite
+    ),
+    Bgm(
+        labelRes = R.string.ba_catalog_tab_bgm,
+        iconRes = R.drawable.ba_tab_bgm,
+        catalogTab = null
+    )
+}
 
 @Composable
 fun BaGuideCatalogPage(
@@ -159,15 +182,15 @@ fun BaGuideCatalogPage(
         onRefreshRequest = catalogViewModel::requestRefresh
     )
 
-    val tabs = BaGuideCatalogTab.entries
+    val tabs = BaGuideCatalogPageTab.entries
     val pagerState = rememberPagerState(
         initialPage = selectedTabIndex.coerceIn(0, tabs.lastIndex.coerceAtLeast(0)),
         pageCount = { tabs.size }
     )
     ReportPagerPerformanceState(
         scope = "guide_catalog_pager",
-        currentPage = tabs.getOrElse(pagerState.currentPage) { BaGuideCatalogTab.Student }.name,
-        targetPage = tabs.getOrElse(pagerState.targetPage) { BaGuideCatalogTab.Student }.name,
+        currentPage = tabs.getOrElse(pagerState.currentPage) { BaGuideCatalogPageTab.Student }.name,
+        targetPage = tabs.getOrElse(pagerState.targetPage) { BaGuideCatalogPageTab.Student }.name,
         scrolling = pagerState.isScrollInProgress
     )
 
@@ -182,7 +205,7 @@ fun BaGuideCatalogPage(
     var showBottomBar by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
     val selectCatalogTabAction = rememberBaGuideCatalogTabSelectCoordinator(
-        tabs = tabs.toList(),
+        tabCount = tabs.size,
         pagerState = pagerState,
         transitionAnimationsEnabled = transitionAnimationsEnabled,
         farJumpAlpha = farJumpAlpha,
@@ -197,6 +220,11 @@ fun BaGuideCatalogPage(
     }
     val bottomBarVisibilityController = remember(searchBarHideThresholdPx) {
         ScrollChromeVisibilityController(searchBarHideThresholdPx)
+    }
+    LaunchedEffect(selectedTabIndex) {
+        if (tabs.getOrNull(selectedTabIndex)?.catalogTab == null) {
+            filterSortState.showSortPopup = false
+        }
     }
     val bottomBarNestedScrollConnection = remember(
         searchBarVisibilityController,
@@ -262,10 +290,11 @@ fun BaGuideCatalogPage(
                             tabs.forEachIndexed { index, tab ->
                                 val selected = pagerState.targetPage == index
                                 val tabColor = liquidGlassBottomBarItemContentColor(index)
+                                val tabLabel = stringResource(id = tab.labelRes)
                                 val tabContent: @Composable ColumnScope.() -> Unit = {
                                     Icon(
                                         painter = painterResource(id = tab.iconRes),
-                                        contentDescription = tab.label,
+                                        contentDescription = tabLabel,
                                         tint = tabColor,
                                         modifier = Modifier
                                             .size(20.dp)
@@ -275,7 +304,7 @@ fun BaGuideCatalogPage(
                                             }
                                     )
                                     Text(
-                                        text = tab.label,
+                                        text = tabLabel,
                                         fontSize = 11.sp,
                                         lineHeight = 14.sp,
                                         color = tabColor,
@@ -330,24 +359,53 @@ fun BaGuideCatalogPage(
                     .layerBackdrop(bottomBarBackdrop),
                 beyondViewportPageCount = preloadPolicy.catalogPagerBeyondViewportPageCount
             ) { pageIndex ->
-                val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogTab.Student }
-                BaGuideCatalogTabContent(
-                    tab = pageTab,
-                    catalog = catalog,
-                    filterSortState = filterSortState,
-                    loading = loading,
-                    error = error,
-                    progress = progress,
-                    progressColor = progressColor,
-                    accent = accent,
-                    innerPadding = innerPadding,
-                    nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-                    isPageActive = pageIndex == pagerState.currentPage,
-                    renderHeavyContent = pageIndex == pagerState.currentPage ||
-                        pageIndex == pagerState.settledPage ||
-                        (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage),
-                    onOpenGuide = onOpenGuide
-                )
+                val pageTab = tabs.getOrElse(pageIndex) { BaGuideCatalogPageTab.Student }
+                val renderHeavyContent = pageIndex == pagerState.currentPage ||
+                    pageIndex == pagerState.settledPage ||
+                    (preloadPolicy.includeTargetPageInHeavyRender && pageIndex == pagerState.targetPage)
+                val catalogTab = pageTab.catalogTab
+                if (catalogTab != null) {
+                    BaGuideCatalogTabContent(
+                        tab = catalogTab,
+                        catalog = catalog,
+                        filterSortState = filterSortState,
+                        loading = loading,
+                        error = error,
+                        progress = progress,
+                        progressColor = progressColor,
+                        accent = accent,
+                        innerPadding = innerPadding,
+                        nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                        isPageActive = pageIndex == pagerState.currentPage,
+                        renderHeavyContent = renderHeavyContent,
+                        onOpenGuide = onOpenGuide
+                    )
+                } else if (renderHeavyContent) {
+                    BaGuideBgmFavoritesTabContent(
+                        searchQuery = filterSortState.searchQuery,
+                        innerPadding = innerPadding,
+                        nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                        accent = accent
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = innerPadding.calculateTopPadding(),
+                                bottom = innerPadding.calculateBottomPadding() + AppChromeTokens.pageSectionGap,
+                                start = AppChromeTokens.pageHorizontalPadding,
+                                end = AppChromeTokens.pageHorizontalPadding
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(id = pageTab.labelRes),
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
             }
         }
         AppTopEndActionBarOverlay {
