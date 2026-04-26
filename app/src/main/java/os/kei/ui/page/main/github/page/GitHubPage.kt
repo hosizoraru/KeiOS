@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -49,7 +50,8 @@ fun GitHubPage(
     cardPressFeedbackEnabled: Boolean = true,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     enableSearchBar: Boolean = true,
-    onActionBarInteractingChanged: (Boolean) -> Unit = {}
+    onActionBarInteractingChanged: (Boolean) -> Unit = {},
+    onListScrollInProgressChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val openLinkFailureMessage = context.getString(R.string.github_error_open_link)
@@ -86,6 +88,12 @@ fun GitHubPage(
         if (!isListScrolling) {
             state.settleScrollChromeVisibility()
         }
+    }
+    LaunchedEffect(isListScrolling, runtime.isPageActive, onListScrollInProgressChanged) {
+        onListScrollInProgressChanged(if (runtime.isPageActive) isListScrolling else false)
+    }
+    DisposableEffect(onListScrollInProgressChanged) {
+        onDispose { onListScrollInProgressChanged(false) }
     }
     LaunchedEffect(context, state) {
         githubPageViewModel.bindContextObservers(
@@ -225,6 +233,7 @@ fun GitHubPage(
             enableSearchBar = enableSearchBar,
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
             reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress || isListScrolling,
+            reduceEffectsDuringListScroll = isListScrolling,
             showSearchBar = state.showSearchBar,
             trackedSearch = state.trackedSearch,
             sortMode = state.sortMode,

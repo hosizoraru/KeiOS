@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -304,6 +305,8 @@ fun LiquidGlassBottomBar(
     val tactileLiftPx = with(density) { 1.25.dp.toPx() } * combinedPressProgress
     val tactileScaleX = lerp(1f, 1.006f, combinedPressProgress)
     val tactileScaleY = lerp(1f, 0.996f, combinedPressProgress)
+    val useLightweightBackdrop = reducedEffectsProgress >= 0.98f &&
+        combinedPressProgress <= 0.001f
 
     val selectionProgressProvider: (Int) -> Float = remember(dampedDragAnimation) {
         { tabIndex ->
@@ -375,25 +378,33 @@ fun LiquidGlassBottomBar(
                         scaleX = tactileScaleX
                         scaleY = tactileScaleY
                     }
-                    .drawBackdrop(
-                        backdrop = backdrop,
-                        shape = { ContinuousCapsule },
-                        effects = {
-                            if (isLiquidEffectEnabled) {
-                                vibrancy()
-                                blur(effectBlurDp.toPx())
-                                lens(effectLensDp.toPx(), effectLensDp.toPx())
-                            }
-                        },
-                        highlight = {
-                            Highlight.Default.copy(alpha = if (isLiquidEffectEnabled) 1f else 0f)
-                        },
-                        shadow = {
-                            Shadow.Default.copy(
-                                color = Color.Black.copy(if (isInLightTheme) 0.10f else 0.20f)
+                    .then(
+                        if (useLightweightBackdrop) {
+                            Modifier
+                                .clip(ContinuousCapsule)
+                                .background(palette.baseFillColor, ContinuousCapsule)
+                        } else {
+                            Modifier.drawBackdrop(
+                                backdrop = backdrop,
+                                shape = { ContinuousCapsule },
+                                effects = {
+                                    if (isLiquidEffectEnabled) {
+                                        vibrancy()
+                                        blur(effectBlurDp.toPx())
+                                        lens(effectLensDp.toPx(), effectLensDp.toPx())
+                                    }
+                                },
+                                highlight = {
+                                    Highlight.Default.copy(alpha = if (isLiquidEffectEnabled) 1f else 0f)
+                                },
+                                shadow = {
+                                    Shadow.Default.copy(
+                                        color = Color.Black.copy(if (isInLightTheme) 0.10f else 0.20f)
+                                    )
+                                },
+                                onDrawSurface = { drawRect(palette.baseFillColor) }
                             )
-                        },
-                        onDrawSurface = { drawRect(palette.baseFillColor) }
+                        }
                     )
                     .then(if (interactiveHighlight != null) interactiveHighlight.modifier else Modifier)
                     .height(AppChromeTokens.floatingBottomBarOuterHeight)
@@ -410,31 +421,37 @@ fun LiquidGlassBottomBar(
                     Modifier
                         .clearAndSetSemantics {}
                         .alpha(0f)
-                        .layerBackdrop(tabsBackdrop)
+                        .then(if (useLightweightBackdrop) Modifier else Modifier.layerBackdrop(tabsBackdrop))
                         .graphicsLayer {
                             translationX = panelOffset
                             translationY = -tactileLiftPx
                             scaleX = tactileScaleX
                             scaleY = tactileScaleY
                         }
-                        .drawBackdrop(
-                            backdrop = backdrop,
-                            shape = { ContinuousCapsule },
-                            effects = {
-                                if (isLiquidEffectEnabled) {
-                                    val progress = combinedPressProgress
-                                    vibrancy()
-                                    blur(effectBlurDp.toPx())
-                                    lens(
-                                        effectLensDp.toPx() * progress,
-                                        effectLensDp.toPx() * progress
-                                    )
-                                }
-                            },
-                            highlight = {
-                                Highlight.Default.copy(alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f)
-                            },
-                            onDrawSurface = { drawRect(palette.baseFillColor) }
+                        .then(
+                            if (useLightweightBackdrop) {
+                                Modifier
+                            } else {
+                                Modifier.drawBackdrop(
+                                    backdrop = backdrop,
+                                    shape = { ContinuousCapsule },
+                                    effects = {
+                                        if (isLiquidEffectEnabled) {
+                                            val progress = combinedPressProgress
+                                            vibrancy()
+                                            blur(effectBlurDp.toPx())
+                                            lens(
+                                                effectLensDp.toPx() * progress,
+                                                effectLensDp.toPx() * progress
+                                            )
+                                        }
+                                    },
+                                    highlight = {
+                                        Highlight.Default.copy(alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f)
+                                    },
+                                    onDrawSurface = { drawRect(palette.baseFillColor) }
+                                )
+                            }
                         )
                         .height(AppChromeTokens.floatingBottomBarInnerHeight)
                         .padding(horizontal = horizontalPadding),
@@ -464,48 +481,63 @@ fun LiquidGlassBottomBar(
                         }
                         .then(if (interactiveHighlight != null) interactiveHighlight.gestureModifier else Modifier)
                         .then(dampedDragAnimation.modifier)
-                        .drawBackdrop(
-                            backdrop = combinedBackdrop,
-                            shape = { ContinuousCapsule },
-                            effects = {
-                                if (isLiquidEffectEnabled && combinedPressProgress > 0f) {
-                                    val progress = combinedPressProgress
-                                    lens(
-                                        10f.dp.toPx() * progress * interactionLensScale,
-                                        14f.dp.toPx() * progress * interactionLensScale,
-                                        true
+                        .then(
+                            if (useLightweightBackdrop) {
+                                Modifier
+                                    .clip(ContinuousCapsule)
+                                    .background(
+                                        color = if (isInLightTheme) {
+                                            Color.Black.copy(0.10f)
+                                        } else {
+                                            Color.White.copy(0.10f)
+                                        },
+                                        shape = ContinuousCapsule
                                     )
-                                }
-                            },
-                            highlight = {
-                                Highlight.Default.copy(alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f)
-                            },
-                            shadow = {
-                                Shadow(alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f)
-                            },
-                            innerShadow = {
-                                InnerShadow(
-                                    radius = 8f.dp * combinedPressProgress,
-                                    alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f
+                            } else {
+                                Modifier.drawBackdrop(
+                                    backdrop = combinedBackdrop,
+                                    shape = { ContinuousCapsule },
+                                    effects = {
+                                        if (isLiquidEffectEnabled && combinedPressProgress > 0f) {
+                                            val progress = combinedPressProgress
+                                            lens(
+                                                10f.dp.toPx() * progress * interactionLensScale,
+                                                14f.dp.toPx() * progress * interactionLensScale,
+                                                true
+                                            )
+                                        }
+                                    },
+                                    highlight = {
+                                        Highlight.Default.copy(alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f)
+                                    },
+                                    shadow = {
+                                        Shadow(alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f)
+                                    },
+                                    innerShadow = {
+                                        InnerShadow(
+                                            radius = 8f.dp * combinedPressProgress,
+                                            alpha = if (isLiquidEffectEnabled) combinedPressProgress else 0f
+                                        )
+                                    },
+                                    layerBlock = {
+                                        if (isLiquidEffectEnabled) {
+                                            val clickScale = lerp(1f, 1.045f, itemPressProgress)
+                                            scaleX = dampedDragAnimation.scaleX * clickScale
+                                            scaleY = dampedDragAnimation.scaleY * clickScale
+                                            val velocity = dampedDragAnimation.velocity / 10f
+                                            scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
+                                            scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
+                                        }
+                                    },
+                                    onDrawSurface = {
+                                        val progress = if (isLiquidEffectEnabled) combinedPressProgress else 0f
+                                        drawRect(
+                                            color = if (isInLightTheme) Color.Black.copy(0.10f) else Color.White.copy(0.10f),
+                                            alpha = 1f - progress
+                                        )
+                                        drawRect(Color.Black.copy(alpha = 0.03f * progress))
+                                    }
                                 )
-                            },
-                            layerBlock = {
-                                if (isLiquidEffectEnabled) {
-                                    val clickScale = lerp(1f, 1.045f, itemPressProgress)
-                                    scaleX = dampedDragAnimation.scaleX * clickScale
-                                    scaleY = dampedDragAnimation.scaleY * clickScale
-                                    val velocity = dampedDragAnimation.velocity / 10f
-                                    scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
-                                    scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
-                                }
-                            },
-                            onDrawSurface = {
-                                val progress = if (isLiquidEffectEnabled) combinedPressProgress else 0f
-                                drawRect(
-                                    color = if (isInLightTheme) Color.Black.copy(0.10f) else Color.White.copy(0.10f),
-                                    alpha = 1f - progress
-                                )
-                                drawRect(Color.Black.copy(alpha = 0.03f * progress))
                             }
                         )
                         .clearAndSetSemantics {}

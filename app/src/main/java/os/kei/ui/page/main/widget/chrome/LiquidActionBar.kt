@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -316,6 +317,9 @@ fun LiquidActionBar(
     val interactionLensScale = androidx.compose.ui.util.lerp(1f, 0.84f, reducedEffectsProgress)
     val effectBlurDp = UiPerformanceBudget.backdropBlur * effectBlurScale
     val effectLensDp = UiPerformanceBudget.backdropLens * effectLensScale
+    val useLightweightBackdrop = reducedEffectsProgress >= 0.98f &&
+        interactionProgress <= 0.001f &&
+        !gestureActive
     val interactiveHighlightEnabled = isBlurEnabled &&
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
         !reduceEffectsDuringPagerScroll &&
@@ -386,30 +390,38 @@ fun LiquidActionBar(
                 translationX = effectivePanelOffset
                 clip = false
             }
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { ContinuousCapsule },
-                effects = {
-                    if (isBlurEnabled) {
-                        vibrancy()
-                        blur(effectBlurDp.toPx())
-                        lens(effectLensDp.toPx(), effectLensDp.toPx())
-                    }
-                },
-                highlight = {
-                    liquidActionBarBaseHighlight(
-                        layeredStyleEnabled = layeredStyleEnabled,
-                        isBlurEnabled = isBlurEnabled,
-                        isInLightTheme = isInLightTheme
+            .then(
+                if (useLightweightBackdrop) {
+                    Modifier
+                        .clip(ContinuousCapsule)
+                        .background(palette.baseFillColor, ContinuousCapsule)
+                } else {
+                    Modifier.drawBackdrop(
+                        backdrop = backdrop,
+                        shape = { ContinuousCapsule },
+                        effects = {
+                            if (isBlurEnabled) {
+                                vibrancy()
+                                blur(effectBlurDp.toPx())
+                                lens(effectLensDp.toPx(), effectLensDp.toPx())
+                            }
+                        },
+                        highlight = {
+                            liquidActionBarBaseHighlight(
+                                layeredStyleEnabled = layeredStyleEnabled,
+                                isBlurEnabled = isBlurEnabled,
+                                isInLightTheme = isInLightTheme
+                            )
+                        },
+                        shadow = {
+                            liquidActionBarBaseShadow(
+                                layeredStyleEnabled = layeredStyleEnabled,
+                                isInLightTheme = isInLightTheme
+                            )
+                        },
+                        onDrawSurface = { drawRect(palette.baseFillColor) }
                     )
-                },
-                shadow = {
-                    liquidActionBarBaseShadow(
-                        layeredStyleEnabled = layeredStyleEnabled,
-                        isInLightTheme = isInLightTheme
-                    )
-                },
-                onDrawSurface = { drawRect(palette.baseFillColor) }
+                }
             )
             .border(
                 width = 1.dp,
@@ -455,15 +467,19 @@ fun LiquidActionBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEachIndexed { index, item ->
-                val selectionProgress = if (layeredStyleEnabled) 0f else selectionProgressProvider(index)
+                val selectionProgress = if (layeredStyleEnabled && !useLightweightBackdrop) {
+                    0f
+                } else {
+                    selectionProgressProvider(index)
+                }
                 LiquidActionItemSlot(
                     item = item,
-                    tint = if (layeredStyleEnabled) {
+                    tint = if (layeredStyleEnabled && !useLightweightBackdrop) {
                         palette.inactiveContentColor
                     } else {
                         lerp(palette.inactiveContentColor, palette.activeContentColor, selectionProgress)
                     },
-                    iconScale = if (layeredStyleEnabled) {
+                    iconScale = if (layeredStyleEnabled && !useLightweightBackdrop) {
                         1f
                     } else {
                         1f + (selectionProgress * 0.05f) + (dampedDragAnimation.pressProgress * selectionProgress * 0.03f)
@@ -497,7 +513,8 @@ fun LiquidActionBar(
             isLtr = isLtr,
             effectivePanelOffset = effectivePanelOffset,
             interactionLensScale = interactionLensScale,
-            interactiveHighlight = interactiveHighlight
+            interactiveHighlight = interactiveHighlight,
+            useLightweightBackdrop = useLightweightBackdrop
         )
     }
 }

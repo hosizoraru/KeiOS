@@ -49,6 +49,7 @@ internal fun MainPagerPageHost(
     baScrollToTopSignal: Int,
     mcpScrollToTopSignal: Int,
     githubScrollToTopSignal: Int,
+    onActivePageListScrollInProgressChanged: (Boolean) -> Unit,
     onBottomPageVisibilityChange: (BottomPage, Boolean) -> Unit,
     onOverviewCardVisibilityChange: (HomeOverviewCard, Boolean) -> Unit,
     onOpenSettings: () -> Unit,
@@ -138,7 +139,8 @@ internal fun MainPagerPageHost(
                         externalRefreshTriggerToken = requestedGitHubRefreshToken,
                         cardPressFeedbackEnabled = cardPressFeedbackEnabled,
                         liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                        onActionBarInteractingChanged = onActionBarInteractingChanged
+                        onActionBarInteractingChanged = onActionBarInteractingChanged,
+                        onListScrollInProgressChanged = onActivePageListScrollInProgressChanged
                     )
                 }
             }

@@ -37,6 +37,7 @@ internal fun GitHubTopBarSection(
     enableSearchBar: Boolean,
     showSearchBar: Boolean,
     trackedSearch: String,
+    reduceEffectsDuringListScroll: Boolean,
     onTrackedSearchChange: (String) -> Unit,
 ) {
     AppTopBarSection(
@@ -55,7 +56,7 @@ internal fun GitHubTopBarSection(
                 value = trackedSearch,
                 onValueChange = onTrackedSearchChange,
                 label = stringResource(R.string.github_topbar_search_label),
-                backdrop = backdrop
+                backdrop = if (reduceEffectsDuringListScroll) null else backdrop
             )
         }
     }

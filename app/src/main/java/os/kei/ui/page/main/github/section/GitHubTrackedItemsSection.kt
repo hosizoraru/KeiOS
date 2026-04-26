@@ -114,6 +114,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
     checkStates: SnapshotStateMap<String, VersionCheckUi>,
     itemRefreshLoading: SnapshotStateMap<String, Boolean>,
     contentBackdrop: LayerBackdrop,
+    reduceEffectsDuringListScroll: Boolean,
     isDark: Boolean,
     apkAssetBundles: SnapshotStateMap<String, GitHubReleaseAssetBundle>,
     apkAssetLoading: SnapshotStateMap<String, Boolean>,
@@ -146,6 +147,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
             )
         }
     } else {
+        val accordionBackdrop = if (reduceEffectsDuringListScroll) null else contentBackdrop
         items(
             items = sortedTracked,
             key = { it.id },
@@ -153,7 +155,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
         ) { item ->
             val expanded = trackedCardExpanded[item.id] == true
             MiuixAccordionCard(
-                backdrop = contentBackdrop,
+                backdrop = accordionBackdrop,
                 title = item.appLabel,
                 subtitle = item.packageName,
                 expanded = expanded,

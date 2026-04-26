@@ -51,6 +51,7 @@ internal fun GitHubMainContent(
     enableSearchBar: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
     reduceEffectsDuringPagerScroll: Boolean,
+    reduceEffectsDuringListScroll: Boolean,
     showSearchBar: Boolean,
     trackedSearch: String,
     sortMode: GitHubSortMode,
@@ -109,6 +110,7 @@ internal fun GitHubMainContent(
                     enableSearchBar = enableSearchBar,
                     showSearchBar = showSearchBar,
                     trackedSearch = trackedSearch,
+                    reduceEffectsDuringListScroll = reduceEffectsDuringListScroll,
                     onTrackedSearchChange = onTrackedSearchChange,
                 )
             }
@@ -158,6 +160,7 @@ internal fun GitHubMainContent(
                         checkStates = checkStates,
                         itemRefreshLoading = itemRefreshLoading,
                         contentBackdrop = contentBackdrop,
+                        reduceEffectsDuringListScroll = reduceEffectsDuringListScroll,
                         isDark = isDark,
                         apkAssetBundles = apkAssetBundles,
                         apkAssetLoading = apkAssetLoading,
@@ -184,7 +187,7 @@ internal fun GitHubMainContent(
                     modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
                 ) {
                     GlassIconButton(
-                        backdrop = contentBackdrop,
+                        backdrop = if (reduceEffectsDuringListScroll) null else contentBackdrop,
                         icon = appLucideAddIcon(),
                         contentDescription = stringResource(R.string.github_cd_add_track),
                         onClick = onOpenTrackSheetForAdd,
