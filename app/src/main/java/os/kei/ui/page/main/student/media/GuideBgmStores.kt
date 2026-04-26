@@ -64,6 +64,12 @@ internal object GuideBgmPlayerStore {
         }
     }
 
+    fun getExisting(scopeKey: String, audioUrl: String): ExoPlayer? {
+        val key = scopedKey(scopeKey, audioUrl)
+        if (key.isBlank()) return null
+        return playerByScopedAudio[key]
+    }
+
     fun pauseScopeExcept(scopeKey: String, audioUrl: String) {
         if (scopeKey.isBlank()) return
         val keepKey = scopedKey(scopeKey, audioUrl)

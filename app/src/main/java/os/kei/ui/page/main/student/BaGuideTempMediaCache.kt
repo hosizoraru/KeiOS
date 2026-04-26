@@ -263,6 +263,21 @@ object BaGuideTempMediaCache {
         return normalized
     }
 
+    fun cachedMediaBytes(
+        context: Context,
+        sourceUrl: String,
+        rawUrl: String
+    ): Long {
+        val normalized = normalizeTarget(rawUrl)
+        if (normalized.isBlank()) return 0L
+        val file = targetFile(context, sourceUrl, normalized)
+        return if (isUsableCachedMedia(normalized, file)) {
+            file.length().coerceAtLeast(0L)
+        } else {
+            0L
+        }
+    }
+
     fun clearGuideCache(context: Context, sourceUrl: String) {
         runCatching { sessionDir(context, sourceUrl).deleteRecursively() }
         removeSessionIndex(sourceUrl)
