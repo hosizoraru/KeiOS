@@ -73,6 +73,7 @@ import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePrefetchEffects
 import os.kei.ui.page.main.student.page.state.BaStudentGuideViewModel
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuideVoiceListenerEffect
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuideVoiceProgressEffect
+import os.kei.ui.page.main.student.page.state.GuideDetailTabRequestStore
 import os.kei.ui.perf.ReportPagerPerformanceState
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
@@ -171,6 +172,9 @@ fun BaStudentGuidePage(
     var selectedBottomTabOrdinal by rememberSaveable(sourceUrl) {
         mutableIntStateOf(GuideBottomTab.Archive.ordinal)
     }
+    var requestedInitialBottomTab by remember(sourceUrl) {
+        mutableStateOf(GuideDetailTabRequestStore.consume(sourceUrl))
+    }
     var selectedVoiceLanguage by rememberSaveable(sourceUrl) { mutableStateOf("") }
     var playingVoiceUrl by rememberSaveable(sourceUrl) { mutableStateOf("") }
     var isVoicePlaying by remember(sourceUrl) { mutableStateOf(false) }
@@ -220,6 +224,14 @@ fun BaStudentGuidePage(
                 ?: GuideBottomTab.Archive.ordinal
         }
     )
+    LaunchedEffect(requestedInitialBottomTab, bottomTabsList, selectBottomTabAction) {
+        val targetTab = requestedInitialBottomTab ?: return@LaunchedEffect
+        val targetIndex = bottomTabsList.indexOf(targetTab)
+        if (targetIndex >= 0) {
+            requestedInitialBottomTab = null
+            selectBottomTabAction(targetIndex)
+        }
+    }
     val density = LocalDensity.current
     val bottomBarVisibilityThresholdPx = remember(density) { with(density) { 22.dp.toPx() } }
     val bottomBarVisibilityController = remember(bottomBarVisibilityThresholdPx) {

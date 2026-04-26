@@ -64,6 +64,24 @@ internal fun appLucideAddIcon(): ImageVector = osLucideVector(LucideR.drawable.l
 internal fun appLucideDownloadIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_download)
 
 @Composable
+internal fun appLucideTrashIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_trash_2)
+
+@Composable
+internal fun appLucideUndoIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_undo_2)
+
+@Composable
+internal fun appLucideSkipBackIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_skip_back)
+
+@Composable
+internal fun appLucideSkipForwardIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_skip_forward)
+
+@Composable
+internal fun appLucideRepeatIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_repeat)
+
+@Composable
+internal fun appLucideRepeatOneIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_repeat_1)
+
+@Composable
 internal fun appLucideFullscreenIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_fullscreen)
 
 @Composable
@@ -77,6 +95,9 @@ internal fun appLucideConfirmIcon(): ImageVector = osLucideVector(LucideR.drawab
 
 @Composable
 internal fun appLucidePauseIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_pause)
+
+@Composable
+internal fun appLucidePlayIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_play)
 
 @Composable
 internal fun appLucideWarningIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_triangle_alert)

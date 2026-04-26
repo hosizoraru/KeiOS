@@ -64,6 +64,8 @@ internal fun GuideGalleryCardContent(
     isBgmFavorite: Boolean,
     bgmFavoriteContentDescription: String,
     onToggleBgmFavorite: () -> Unit,
+    showAudioLoopAction: Boolean,
+    onToggleAudioLoop: () -> Unit,
     audioState: GuideGalleryAudioPlayerState,
     gestureState: GuideGalleryGestureState,
     modifier: Modifier = Modifier
@@ -175,14 +177,16 @@ internal fun GuideGalleryCardContent(
                         containerColor = favoriteColor
                     )
                 }
-                GlassTextButton(
-                    backdrop = backdrop,
-                    text = "",
-                    leadingIcon = MiuixIcons.Regular.Replace,
-                    textColor = if (audioState.loopEnabled) Color(0xFF34C759) else Color(0xFF3B82F6),
-                    variant = GlassVariant.Compact,
-                    onClick = { audioState.toggleLoop() }
-                )
+                if (showAudioLoopAction) {
+                    GlassTextButton(
+                        backdrop = backdrop,
+                        text = "",
+                        leadingIcon = MiuixIcons.Regular.Replace,
+                        textColor = if (audioState.loopEnabled) Color(0xFF34C759) else Color(0xFF3B82F6),
+                        variant = GlassVariant.Compact,
+                        onClick = onToggleAudioLoop
+                    )
+                }
                 GlassTextButton(
                     backdrop = backdrop,
                     text = "",

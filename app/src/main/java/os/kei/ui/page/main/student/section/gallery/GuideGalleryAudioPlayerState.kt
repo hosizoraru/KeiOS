@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -58,14 +59,38 @@ internal class GuideGalleryAudioPlayerState(
         }
 
     fun toggleLoop() {
-        val nextEnabled = !loopEnabled
-        loopEnabled = nextEnabled
+        updateLoopEnabled(!loopEnabled)
+    }
+
+    fun updateLoopEnabled(enabled: Boolean) {
+        loopEnabled = enabled
         GuideBgmLoopStore.setEnabled(
             scopeKey = audioLoopScopeKey,
             audioUrl = audioTargetUrl,
-            enabled = nextEnabled
+            enabled = enabled
         )
-        player?.repeatMode = if (nextEnabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+        player?.repeatMode = if (enabled) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+    }
+
+    fun play(context: Context, restart: Boolean = false) {
+        val currentPlayer = player ?: run {
+            Toast.makeText(context, "音频地址无效", Toast.LENGTH_SHORT).show()
+            return
+        }
+        runCatching {
+            loadError = null
+            GuideBgmPlayerStore.pauseScopeExcept(audioLoopScopeKey, audioTargetUrl)
+            if (currentPlayer.currentMediaItem == null) {
+                currentPlayer.setMediaItem(MediaItem.fromUri(audioTargetUrl))
+                currentPlayer.prepare()
+            } else if (restart || currentPlayer.playbackState == Player.STATE_ENDED) {
+                currentPlayer.seekTo(0)
+            }
+            currentPlayer.play()
+        }.onFailure {
+            loadError = it.message
+            Toast.makeText(context, "音频播放失败", Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun togglePlay(context: Context) {
@@ -75,17 +100,10 @@ internal class GuideGalleryAudioPlayerState(
         }
         runCatching {
             loadError = null
-            if (currentPlayer.currentMediaItem == null) {
-                currentPlayer.setMediaItem(MediaItem.fromUri(audioTargetUrl))
-                currentPlayer.prepare()
-                currentPlayer.play()
-            } else if (currentPlayer.isPlaying) {
+            if (currentPlayer.isPlaying) {
                 currentPlayer.pause()
             } else {
-                if (currentPlayer.playbackState == Player.STATE_ENDED) {
-                    currentPlayer.seekTo(0)
-                }
-                currentPlayer.play()
+                play(context)
             }
         }.onFailure {
             loadError = it.message
@@ -148,9 +166,11 @@ internal fun rememberGuideGalleryAudioPlayerState(
 
 @Composable
 internal fun BindGuideGalleryAudioPlayerEffects(
-    state: GuideGalleryAudioPlayerState
+    state: GuideGalleryAudioPlayerState,
+    onPlaybackEnded: () -> Unit = {}
 ) {
     val player = state.player
+    val latestOnPlaybackEnded by rememberUpdatedState(onPlaybackEnded)
     LaunchedEffect(player, state.loopEnabled) {
         player?.repeatMode = if (state.loopEnabled) {
             Player.REPEAT_MODE_ONE
@@ -212,6 +232,7 @@ internal fun BindGuideGalleryAudioPlayerEffects(
                             state.durationMs = duration
                             state.positionMs = duration
                         }
+                        latestOnPlaybackEnded()
                     }
 
                     Player.STATE_IDLE -> {

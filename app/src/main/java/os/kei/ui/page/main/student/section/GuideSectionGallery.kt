@@ -1,8 +1,11 @@
 package os.kei.ui.page.main.student.section
 
 import android.widget.Toast
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +51,13 @@ fun GuideGalleryCardItem(
     showMediaTypeLabel: Boolean = true,
     showSaveAction: Boolean = true,
     showBgmFavoriteAction: Boolean = true,
+    showAudioLoopAction: Boolean = true,
+    audioLoopEnabledOverride: Boolean? = null,
+    audioAutoPlayRequestToken: Int = 0,
+    onAudioPlaybackEnded: () -> Unit = {},
+    onAudioLoopChanged: (Boolean) -> Unit = {},
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     bgmFavoriteStudentTitle: String = "",
     bgmFavoriteStudentImageUrl: String = "",
     bgmFavoriteSourceUrl: String = "",
@@ -172,7 +182,22 @@ fun GuideGalleryCardItem(
         audioLoopScopeKey = audioLoopScopeKey,
         audioTargetUrl = audioTargetUrl
     )
-    BindGuideGalleryAudioPlayerEffects(audioState)
+    LaunchedEffect(audioState, audioLoopEnabledOverride) {
+        audioLoopEnabledOverride?.let { forced ->
+            if (audioState.loopEnabled != forced) {
+                audioState.updateLoopEnabled(forced)
+            }
+        }
+    }
+    LaunchedEffect(audioState, audioAutoPlayRequestToken) {
+        if (audioAutoPlayRequestToken > 0 && audioTargetUrl.isNotBlank()) {
+            audioState.play(context, restart = true)
+        }
+    }
+    BindGuideGalleryAudioPlayerEffects(
+        state = audioState,
+        onPlaybackEnded = onAudioPlaybackEnded
+    )
 
     val imageProgressState = remember(displayImageUrl) {
         MutableStateFlow(if (displayImageUrl.isBlank()) 1f else 0f)
@@ -214,6 +239,11 @@ fun GuideGalleryCardItem(
                     Toast.LENGTH_SHORT
                 ).show()
             },
+            showAudioLoopAction = showAudioLoopAction,
+            onToggleAudioLoop = {
+                audioState.toggleLoop()
+                onAudioLoopChanged(audioState.loopEnabled)
+            },
             audioState = audioState,
             gestureState = gestureState,
             modifier = contentModifier
@@ -226,13 +256,24 @@ fun GuideGalleryCardItem(
                 .fillMaxWidth()
         )
     } else {
+        val clickableModifier = if (onClick != null || onLongClick != null) {
+            Modifier.combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onClick?.invoke() },
+                onLongClick = onLongClick
+            )
+        } else {
+            Modifier
+        }
         Card(
-            modifier = modifier.fillMaxWidth(),
+            modifier = modifier
+                .fillMaxWidth()
+                .then(clickableModifier),
             colors = CardDefaults.defaultColors(
                 color = Color(0x223B82F6),
                 contentColor = MiuixTheme.colorScheme.onBackground
-            ),
-            onClick = {}
+            )
         ) {
             content(
                 Modifier

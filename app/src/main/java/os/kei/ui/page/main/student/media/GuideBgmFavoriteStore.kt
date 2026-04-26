@@ -64,6 +64,20 @@ internal object GuideBgmFavoriteStore {
         }
     }
 
+    fun restoreFavorite(item: GuideBgmFavoriteItem) {
+        val normalized = normalizeFavorite(item) ?: return
+        synchronized(lock) {
+            ensureLoadedLocked()
+            val next = favoritesState.value
+                .filterNot { it.audioUrl == normalized.audioUrl }
+                .toMutableList()
+            next += normalized
+            val frozen = sortedUniqueFavorites(next)
+            saveFavoritesLocked(frozen)
+            favoritesState.value = frozen
+        }
+    }
+
     fun removeFavorite(audioUrl: String) {
         val normalizedAudioUrl = normalizeGuideMediaSource(audioUrl)
         if (normalizedAudioUrl.isBlank()) return
