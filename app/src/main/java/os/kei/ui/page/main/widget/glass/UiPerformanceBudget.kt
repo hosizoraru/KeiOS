@@ -7,7 +7,7 @@ object UiPerformanceBudget {
     val maxGlassBlur: Dp = 11.dp
     val backdropBlur: Dp = 8.dp
     val backdropLens: Dp = 24.dp
-    const val mainPagerBeyondViewportPageCount: Int = 1
+    const val mainPagerBeyondViewportPageCount: Int = 0
     const val mainPagerActiveScrollBeyondViewportPageCount: Int = 0
     const val catalogPagerBeyondViewportPageCount: Int = 0
     const val guidePagerBeyondViewportPageCount: Int = 0
@@ -19,6 +19,7 @@ object UiPerformanceBudget {
 
     data class PreloadPolicy(
         val mainPagerBeyondViewportPageCount: Int,
+        val mainPagerActiveScrollBeyondViewportPageCount: Int,
         val catalogPagerBeyondViewportPageCount: Int,
         val guidePagerBeyondViewportPageCount: Int,
         val guideStaticPrefetchInitialCount: Int,
@@ -33,6 +34,7 @@ object UiPerformanceBudget {
         if (!preloadingEnabled) {
             return PreloadPolicy(
                 mainPagerBeyondViewportPageCount = mainPagerBeyondViewportPageCount,
+                mainPagerActiveScrollBeyondViewportPageCount = mainPagerActiveScrollBeyondViewportPageCount,
                 catalogPagerBeyondViewportPageCount = catalogPagerBeyondViewportPageCount,
                 guidePagerBeyondViewportPageCount = guidePagerBeyondViewportPageCount,
                 guideStaticPrefetchInitialCount = guideStaticPrefetchInitialCount,
@@ -43,12 +45,13 @@ object UiPerformanceBudget {
         }
         return PreloadPolicy(
             mainPagerBeyondViewportPageCount = 1,
-            catalogPagerBeyondViewportPageCount = 0,
-            guidePagerBeyondViewportPageCount = 0,
-            guideStaticPrefetchInitialCount = 8,
-            guideStaticPrefetchGalleryExtraCount = 12,
-            includeTargetPageInHeavyRender = false,
-            initialFetchDelayMs = 40
+            mainPagerActiveScrollBeyondViewportPageCount = 1,
+            catalogPagerBeyondViewportPageCount = 1,
+            guidePagerBeyondViewportPageCount = 1,
+            guideStaticPrefetchInitialCount = 10,
+            guideStaticPrefetchGalleryExtraCount = 16,
+            includeTargetPageInHeavyRender = true,
+            initialFetchDelayMs = 0
         )
     }
 }

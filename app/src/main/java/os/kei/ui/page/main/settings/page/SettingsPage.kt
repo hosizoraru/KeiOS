@@ -508,6 +508,7 @@ fun SettingsPage(
                 state = pagerState,
                 key = { index -> categories[index].name },
                 overscrollEffect = null,
+                beyondViewportPageCount = 1,
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { alpha = farJumpAlpha.value }

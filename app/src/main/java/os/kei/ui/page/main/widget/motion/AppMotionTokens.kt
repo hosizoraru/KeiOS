@@ -28,9 +28,9 @@ object AppMotionTokens {
     const val floatingFadeOutMs = 120
     const val floatingSlideOutMs = 180
     const val glassEffectRelaxMs = 240
-    const val farJumpDimMs = 70
-    const val farJumpRestoreMs = 120
-    const val farJumpRestoreEmphasisMs = 130
+    const val farJumpDimMs = 90
+    const val farJumpRestoreMs = 160
+    const val farJumpRestoreEmphasisMs = 180
 }
 
 internal fun resolvedMotionDuration(durationMillis: Int, animationsEnabled: Boolean): Int {

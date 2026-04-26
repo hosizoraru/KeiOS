@@ -79,7 +79,7 @@ internal fun buildMainPagerRuntimeSnapshot(
     val resolvedBeyondViewportPageCount = if (
         temporaryBeyondViewportCount == null && isPagerScrollInProgress
     ) {
-        UiPerformanceBudget.mainPagerActiveScrollBeyondViewportPageCount
+        preloadPolicy.mainPagerActiveScrollBeyondViewportPageCount
     } else {
         temporaryBeyondViewportCount ?: preloadPolicy.mainPagerBeyondViewportPageCount
     }
