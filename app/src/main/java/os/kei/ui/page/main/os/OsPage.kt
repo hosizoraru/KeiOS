@@ -35,6 +35,8 @@ import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
 import os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
+import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
+import os.kei.ui.page.main.widget.glass.rememberListScrollGlassRuntime
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -49,10 +51,17 @@ fun OsPage(
     onActionBarInteractingChanged: (Boolean) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
+    val isListScrolling by remember(listState) {
+        derivedStateOf { listState.isScrollInProgress }
+    }
     val pageBackdropEffectsEnabled = runtime.isPageActive &&
         !runtime.isPagerScrollInProgress
     val fullBackdropEffectsEnabled = pageBackdropEffectsEnabled &&
-        !listState.isScrollInProgress
+        !isListScrolling
+    val osGlassRuntime = rememberListScrollGlassRuntime(
+        isListScrolling = isListScrolling,
+        label = "osListGlassEffectProgress"
+    )
     val uiContext = rememberOsPageUiContext(
         enableFullBackdropEffects = fullBackdropEffectsEnabled,
         enableTopBarBackdropEffects = pageBackdropEffectsEnabled
@@ -299,187 +308,189 @@ fun OsPage(
     val indicatorBg = derivedState.overviewUiState.indicatorBg
     val overviewMetrics = derivedState.overviewUiState.metrics
 
-    OsPageScaffoldShell(
-        scrollBehavior = scrollBehavior,
-        topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
-        topBarBackdrop = backdrops.topBar,
-        layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-        reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
-        manageCardsContentDescription = textBundle.manageCardsContentDescription,
-        manageActivitiesContentDescription = textBundle.manageActivitiesContentDescription,
-        manageShellCardsContentDescription = textBundle.manageShellCardsContentDescription,
-        refreshParamsContentDescription = textBundle.refreshParamsContentDescription,
-        refreshing = refreshing,
-        onOpenCardManager = { overlayState.onShowCardManagerChange(true) },
-        onOpenActivityVisibilityManager = { overlayState.onShowActivityVisibilityManagerChange(true) },
-        onOpenShellCardVisibilityManager = { overlayState.onShowShellCardVisibilityManagerChange(true) },
-        onRefresh = { scope.launch { actionState.refreshAllSections() } },
-        onActionBarInteractingChanged = onActionBarInteractingChanged,
-        searchBarVisible = enableSearchBar && showSearchBar,
-        queryInput = queryInput,
-        onQueryInputChange = osPageViewModel::updateQueryInput,
-        searchLabel = textBundle.searchLabel
-    ) { innerPadding ->
-        OsPageOverlayCoordinator(
-            context = context,
-            scope = scope,
-            sheetBackdrop = backdrops.sheet,
-            overlayState = overlayState,
-            visibleCards = visibleCards,
-            activityShortcutCards = activityShortcutCards,
-            shellCommandCards = shellCommandCards,
-            actionState = actionState,
-            overlayTransferActions = overlayTransferActions,
-            cardTransferState = cardTransferState,
-            textBundle = textBundle,
-            onShellCommandCardsChange = osPageViewModel::updateShellCommandCards,
-            onRemoveShellCommandCardExpanded = { shellCommandCardExpanded.remove(it) },
-            onActivityShortcutCardsChange = osPageViewModel::updateActivityShortcutCards,
-            onRemoveActivityCardExpanded = { activityCardExpanded.remove(it) }
-        )
-        OsPageMainList(
-            context = context,
-            listState = listState,
-            innerPadding = innerPadding,
-            searchBarScrollConnection = searchBarScrollConnection,
-            scrollBehaviorConnection = scrollBehavior.nestedScrollConnection,
-            contentBackdrop = backdrops.content,
-            isDark = isDark,
-            titleColor = titleColor,
-            cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+    CompositionLocalProvider(LocalGlassEffectRuntime provides osGlassRuntime) {
+        OsPageScaffoldShell(
+            scrollBehavior = scrollBehavior,
+            topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
+            topBarBackdrop = backdrops.topBar,
+            layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+            reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
+            manageCardsContentDescription = textBundle.manageCardsContentDescription,
+            manageActivitiesContentDescription = textBundle.manageActivitiesContentDescription,
+            manageShellCardsContentDescription = textBundle.manageShellCardsContentDescription,
+            refreshParamsContentDescription = textBundle.refreshParamsContentDescription,
             refreshing = refreshing,
-            overviewState = overviewState,
-            indicatorProgress = indicatorProgress,
-            statusColor = statusColor,
-            indicatorBg = indicatorBg,
-            statusLabel = statusLabel,
-            overviewCardColor = overviewCardColor,
-            overviewBorderColor = overviewBorderColor,
-            overviewMetrics = overviewMetrics,
-            noMatchedResultsText = textBundle.noMatchedResultsText,
-            query = derivedState.query,
-            displayedTopInfoRows = derivedState.displayedTopInfoRows,
-            groupedTopInfoRows = derivedState.groupedTopInfoRows,
-            topInfoExpanded = topInfoExpanded,
-            onTopInfoExpandedChange = osPageViewModel::updateTopInfoExpanded,
-            shellRunnerRows = derivedState.shellRunnerRows,
-            shellRunnerExpanded = shellRunnerExpanded,
-            onShellRunnerExpandedChange = osPageViewModel::updateShellRunnerExpanded,
-            onOpenShellRunner = { OsShellRunnerActivity.launch(context) },
-            shellCommandCards = shellCommandCards,
-            shellCommandCardExpanded = shellCommandCardExpanded,
-            runningShellCommandCardIds = runningShellCommandCardIds,
-            onShellCommandCardExpandedChange = { cardId, expanded ->
-                shellCommandCardExpanded[cardId] = expanded
-            },
-            onOpenShellCommandCardEditor = { card ->
-                overlayState.onEditingShellCommandCardIdChange(card.id)
-                overlayState.onShellCommandCardDraftChange(card)
-                overlayState.onShowShellCommandCardEditorChange(true)
-            },
-            onRunShellCommandCard = { card ->
-                scope.launch { actionState.runShellCommandCard(card) }
-            },
-            activityShortcutCards = activityShortcutCards,
-            defaultActivityCardTitle = textBundle.googleSystemServiceDefaultTitle,
-            activityCardExpanded = activityCardExpanded,
-            onActivityCardExpandedChange = { cardId, expanded ->
-                activityCardExpanded[cardId] = expanded
-            },
-            onOpenActivityShortcutCard = { card ->
-                openOsActivityShortcutCard(
-                    context = context,
-                    card = card,
-                    defaults = textBundle.googleSystemServiceDefaults,
-                    invalidTargetMessage = context.getString(R.string.os_google_system_service_toast_invalid_target),
-                    openFailedMessage = { error ->
-                        context.getString(
-                            R.string.os_google_system_service_toast_open_failed,
-                            error.javaClass.simpleName
-                        )
-                    }
-                )
-            },
-            onOpenActivityShortcutCardEditor = { card ->
-                beginEditingOsActivityShortcutCard(
-                    card = card,
-                    defaults = textBundle.googleSystemServiceDefaults,
-                    onEditModeChange = overlayState.onActivityCardEditModeChange,
-                    onEditingCardIdChange = overlayState.onEditingActivityShortcutCardIdChange,
-                    onEditingBuiltInChange = overlayState.onEditingActivityShortcutBuiltInChange,
-                    onDraftChange = overlayState.onActivityShortcutDraftChange,
-                    onShowEditorChange = overlayState.onShowActivityShortcutEditorChange
-                )
-            },
-            displayedSystemRows = derivedState.displayedSystemRows,
-            displayedSecureRows = derivedState.displayedSecureRows,
-            displayedGlobalRows = derivedState.displayedGlobalRows,
-            displayedAndroidRows = derivedState.displayedAndroidRows,
-            displayedJavaRows = derivedState.displayedJavaRows,
-            displayedLinuxRows = derivedState.displayedLinuxRows,
-            prunedSystemRows = derivedState.prunedSystemRows,
-            prunedSecureRows = derivedState.prunedSecureRows,
-            prunedGlobalRows = derivedState.prunedGlobalRows,
-            prunedAndroidRows = derivedState.prunedAndroidRows,
-            prunedJavaRows = derivedState.prunedJavaRows,
-            prunedLinuxRows = derivedState.prunedLinuxRows,
-            systemTableExpanded = systemTableExpanded,
-            onSystemTableExpandedChange = osPageViewModel::updateSystemTableExpanded,
-            secureTableExpanded = secureTableExpanded,
-            onSecureTableExpandedChange = osPageViewModel::updateSecureTableExpanded,
-            globalTableExpanded = globalTableExpanded,
-            onGlobalTableExpandedChange = osPageViewModel::updateGlobalTableExpanded,
-            androidPropsExpanded = androidPropsExpanded,
-            onAndroidPropsExpandedChange = osPageViewModel::updateAndroidPropsExpanded,
-            javaPropsExpanded = javaPropsExpanded,
-            onJavaPropsExpandedChange = osPageViewModel::updateJavaPropsExpanded,
-            linuxEnvExpanded = linuxEnvExpanded,
-            onLinuxEnvExpandedChange = osPageViewModel::updateLinuxEnvExpanded,
-            isCardVisible = { card -> isCardVisible(visibleCards, card) },
-            sectionSubtitle = { section, size ->
-                sectionSubtitle(
-                    sectionStates = sectionStates,
-                    context = context,
-                    section = section,
-                    size = size
-                )
-            },
-            exportingCard = overlayState.exportingCard,
-            onExportCard = { card ->
-                scope.launch {
-                    exportOsPageCard(
-                        card = card,
-                        currentExportingCard = overlayState.exportingCard,
-                        updateExportingCard = overlayState.onExportingCardChange,
-                        visibleCardsProvider = { visibleCards },
-                        ensureLoad = actionState.ensureLoad,
-                        sectionStatesProvider = { sectionStates },
-                        activityShortcutCardsProvider = { activityShortcutCards },
-                        googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
+            onOpenCardManager = { overlayState.onShowCardManagerChange(true) },
+            onOpenActivityVisibilityManager = { overlayState.onShowActivityVisibilityManagerChange(true) },
+            onOpenShellCardVisibilityManager = { overlayState.onShowShellCardVisibilityManagerChange(true) },
+            onRefresh = { scope.launch { actionState.refreshAllSections() } },
+            onActionBarInteractingChanged = onActionBarInteractingChanged,
+            searchBarVisible = enableSearchBar && showSearchBar,
+            queryInput = queryInput,
+            onQueryInputChange = osPageViewModel::updateQueryInput,
+            searchLabel = textBundle.searchLabel
+        ) { innerPadding ->
+            OsPageOverlayCoordinator(
+                context = context,
+                scope = scope,
+                sheetBackdrop = backdrops.sheet,
+                overlayState = overlayState,
+                visibleCards = visibleCards,
+                activityShortcutCards = activityShortcutCards,
+                shellCommandCards = shellCommandCards,
+                actionState = actionState,
+                overlayTransferActions = overlayTransferActions,
+                cardTransferState = cardTransferState,
+                textBundle = textBundle,
+                onShellCommandCardsChange = osPageViewModel::updateShellCommandCards,
+                onRemoveShellCommandCardExpanded = { shellCommandCardExpanded.remove(it) },
+                onActivityShortcutCardsChange = osPageViewModel::updateActivityShortcutCards,
+                onRemoveActivityCardExpanded = { activityCardExpanded.remove(it) }
+            )
+            OsPageMainList(
+                context = context,
+                listState = listState,
+                innerPadding = innerPadding,
+                searchBarScrollConnection = searchBarScrollConnection,
+                scrollBehaviorConnection = scrollBehavior.nestedScrollConnection,
+                contentBackdrop = backdrops.content,
+                isDark = isDark,
+                titleColor = titleColor,
+                cardPressFeedbackEnabled = cardPressFeedbackEnabled,
+                refreshing = refreshing,
+                overviewState = overviewState,
+                indicatorProgress = indicatorProgress,
+                statusColor = statusColor,
+                indicatorBg = indicatorBg,
+                statusLabel = statusLabel,
+                overviewCardColor = overviewCardColor,
+                overviewBorderColor = overviewBorderColor,
+                overviewMetrics = overviewMetrics,
+                noMatchedResultsText = textBundle.noMatchedResultsText,
+                query = derivedState.query,
+                displayedTopInfoRows = derivedState.displayedTopInfoRows,
+                groupedTopInfoRows = derivedState.groupedTopInfoRows,
+                topInfoExpanded = topInfoExpanded,
+                onTopInfoExpandedChange = osPageViewModel::updateTopInfoExpanded,
+                shellRunnerRows = derivedState.shellRunnerRows,
+                shellRunnerExpanded = shellRunnerExpanded,
+                onShellRunnerExpandedChange = osPageViewModel::updateShellRunnerExpanded,
+                onOpenShellRunner = { OsShellRunnerActivity.launch(context) },
+                shellCommandCards = shellCommandCards,
+                shellCommandCardExpanded = shellCommandCardExpanded,
+                runningShellCommandCardIds = runningShellCommandCardIds,
+                onShellCommandCardExpandedChange = { cardId, expanded ->
+                    shellCommandCardExpanded[cardId] = expanded
+                },
+                onOpenShellCommandCardEditor = { card ->
+                    overlayState.onEditingShellCommandCardIdChange(card.id)
+                    overlayState.onShellCommandCardDraftChange(card)
+                    overlayState.onShowShellCommandCardEditorChange(true)
+                },
+                onRunShellCommandCard = { card ->
+                    scope.launch { actionState.runShellCommandCard(card) }
+                },
+                activityShortcutCards = activityShortcutCards,
+                defaultActivityCardTitle = textBundle.googleSystemServiceDefaultTitle,
+                activityCardExpanded = activityCardExpanded,
+                onActivityCardExpandedChange = { cardId, expanded ->
+                    activityCardExpanded[cardId] = expanded
+                },
+                onOpenActivityShortcutCard = { card ->
+                    openOsActivityShortcutCard(
                         context = context,
-                        shizukuStatus = shizukuStatus,
-                        launchExport = { fileName, payload ->
-                            overlayState.onPendingExportContentChange(payload)
-                            cardTransferState.exportLauncher.launch(fileName)
+                        card = card,
+                        defaults = textBundle.googleSystemServiceDefaults,
+                        invalidTargetMessage = context.getString(R.string.os_google_system_service_toast_invalid_target),
+                        openFailedMessage = { error ->
+                            context.getString(
+                                R.string.os_google_system_service_toast_open_failed,
+                                error.javaClass.simpleName
+                            )
                         }
                     )
-                }
-            },
-            onRefreshAll = { scope.launch { actionState.refreshAllSections() } },
-            contentBottomPadding = runtime.contentBottomPadding,
-            showFloatingAddButton = !overlayState.showActivityShortcutEditor &&
+                },
+                onOpenActivityShortcutCardEditor = { card ->
+                    beginEditingOsActivityShortcutCard(
+                        card = card,
+                        defaults = textBundle.googleSystemServiceDefaults,
+                        onEditModeChange = overlayState.onActivityCardEditModeChange,
+                        onEditingCardIdChange = overlayState.onEditingActivityShortcutCardIdChange,
+                        onEditingBuiltInChange = overlayState.onEditingActivityShortcutBuiltInChange,
+                        onDraftChange = overlayState.onActivityShortcutDraftChange,
+                        onShowEditorChange = overlayState.onShowActivityShortcutEditorChange
+                    )
+                },
+                displayedSystemRows = derivedState.displayedSystemRows,
+                displayedSecureRows = derivedState.displayedSecureRows,
+                displayedGlobalRows = derivedState.displayedGlobalRows,
+                displayedAndroidRows = derivedState.displayedAndroidRows,
+                displayedJavaRows = derivedState.displayedJavaRows,
+                displayedLinuxRows = derivedState.displayedLinuxRows,
+                prunedSystemRows = derivedState.prunedSystemRows,
+                prunedSecureRows = derivedState.prunedSecureRows,
+                prunedGlobalRows = derivedState.prunedGlobalRows,
+                prunedAndroidRows = derivedState.prunedAndroidRows,
+                prunedJavaRows = derivedState.prunedJavaRows,
+                prunedLinuxRows = derivedState.prunedLinuxRows,
+                systemTableExpanded = systemTableExpanded,
+                onSystemTableExpandedChange = osPageViewModel::updateSystemTableExpanded,
+                secureTableExpanded = secureTableExpanded,
+                onSecureTableExpandedChange = osPageViewModel::updateSecureTableExpanded,
+                globalTableExpanded = globalTableExpanded,
+                onGlobalTableExpandedChange = osPageViewModel::updateGlobalTableExpanded,
+                androidPropsExpanded = androidPropsExpanded,
+                onAndroidPropsExpandedChange = osPageViewModel::updateAndroidPropsExpanded,
+                javaPropsExpanded = javaPropsExpanded,
+                onJavaPropsExpandedChange = osPageViewModel::updateJavaPropsExpanded,
+                linuxEnvExpanded = linuxEnvExpanded,
+                onLinuxEnvExpandedChange = osPageViewModel::updateLinuxEnvExpanded,
+                isCardVisible = { card -> isCardVisible(visibleCards, card) },
+                sectionSubtitle = { section, size ->
+                    sectionSubtitle(
+                        sectionStates = sectionStates,
+                        context = context,
+                        section = section,
+                        size = size
+                    )
+                },
+                exportingCard = overlayState.exportingCard,
+                onExportCard = { card ->
+                    scope.launch {
+                        exportOsPageCard(
+                            card = card,
+                            currentExportingCard = overlayState.exportingCard,
+                            updateExportingCard = overlayState.onExportingCardChange,
+                            visibleCardsProvider = { visibleCards },
+                            ensureLoad = actionState.ensureLoad,
+                            sectionStatesProvider = { sectionStates },
+                            activityShortcutCardsProvider = { activityShortcutCards },
+                            googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
+                            context = context,
+                            shizukuStatus = shizukuStatus,
+                            launchExport = { fileName, payload ->
+                                overlayState.onPendingExportContentChange(payload)
+                                cardTransferState.exportLauncher.launch(fileName)
+                            }
+                        )
+                    }
+                },
+                onRefreshAll = { scope.launch { actionState.refreshAllSections() } },
+                contentBottomPadding = runtime.contentBottomPadding,
+                showFloatingAddButton = !overlayState.showActivityShortcutEditor &&
                     !overlayState.showActivitySuggestionSheet &&
                     !overlayState.showShellCommandCardEditor &&
                     !overlayState.showShellCardVisibilityManager,
-            onOpenAddActivityShortcutCard = {
-                overlayState.onActivityCardEditModeChange(OsActivityCardEditMode.Add)
-                overlayState.onEditingActivityShortcutCardIdChange(null)
-                overlayState.onEditingActivityShortcutBuiltInChange(false)
-                overlayState.onActivityShortcutDraftChange(
-                    createDefaultActivityShortcutDraft(textBundle.googleSystemServiceDefaults)
-                )
-                overlayState.onShowActivityShortcutEditorChange(true)
-            }
-        )
+                onOpenAddActivityShortcutCard = {
+                    overlayState.onActivityCardEditModeChange(OsActivityCardEditMode.Add)
+                    overlayState.onEditingActivityShortcutCardIdChange(null)
+                    overlayState.onEditingActivityShortcutBuiltInChange(false)
+                    overlayState.onActivityShortcutDraftChange(
+                        createDefaultActivityShortcutDraft(textBundle.googleSystemServiceDefaults)
+                    )
+                    overlayState.onShowActivityShortcutEditorChange(true)
+                }
+            )
+        }
     }
 }

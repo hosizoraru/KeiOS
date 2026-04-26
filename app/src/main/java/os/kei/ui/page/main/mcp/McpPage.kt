@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,6 +46,8 @@ import os.kei.core.ui.effect.getMiuixAppBarColor
 import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
 import os.kei.ui.page.main.host.pager.MainPageRuntime
 import os.kei.ui.page.main.host.pager.rememberMainPageBackdropSet
+import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
+import os.kei.ui.page.main.widget.glass.rememberListScrollGlassRuntime
 import os.kei.ui.page.main.os.appLucideEditIcon
 import os.kei.ui.page.main.os.appLucideNotesIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
@@ -128,6 +132,9 @@ fun McpPage(
         }
     }
     val listState = rememberLazyListState()
+    val isListScrolling by remember(listState) {
+        derivedStateOf { listState.isScrollInProgress }
+    }
     val scrollBehavior = MiuixScrollBehavior()
     val currentUiState by rememberUpdatedState(uiState)
     val serverNameHint = context.getString(R.string.mcp_input_service_name_hint)
@@ -142,7 +149,11 @@ fun McpPage(
     val pageBackdropEffectsEnabled = runtime.isPageActive &&
         !runtime.isPagerScrollInProgress
     val fullBackdropEffectsEnabled = pageBackdropEffectsEnabled &&
-        !listState.isScrollInProgress
+        !isListScrolling
+    val mcpGlassRuntime = rememberListScrollGlassRuntime(
+        isListScrolling = isListScrolling,
+        label = "mcpListGlassEffectProgress"
+    )
     val toggleServer: () -> Unit = {
         scope.launch {
             when (val result = mcpPageViewModel.toggleServer(mcpServerManager)) {
@@ -355,6 +366,7 @@ fun McpPage(
         )
     }
 
+    CompositionLocalProvider(LocalGlassEffectRuntime provides mcpGlassRuntime) {
     AppPageScaffold(
         title = "",
         largeTitle = mcpTitle,
@@ -504,4 +516,5 @@ fun McpPage(
         onConfirm = resetToken,
         onDismissRequest = { mcpPageViewModel.updateResetTokenConfirmVisible(false) }
     )
+    }
 }

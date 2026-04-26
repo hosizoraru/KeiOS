@@ -6,13 +6,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.util.lerp
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
+import kotlin.math.max
 
 @Immutable
 data class GlassEffectRuntime(
@@ -46,7 +47,7 @@ data class GlassEffectRuntime(
         )
 }
 
-val LocalGlassEffectRuntime = staticCompositionLocalOf { GlassEffectRuntime() }
+val LocalGlassEffectRuntime = compositionLocalOf { GlassEffectRuntime() }
 
 @Composable
 @ReadOnlyComposable
@@ -91,4 +92,25 @@ internal fun rememberGlassReductionProgress(
         }
     }
     return progress.value
+}
+
+@Composable
+internal fun rememberListScrollGlassRuntime(
+    isListScrolling: Boolean,
+    label: String,
+    reductionScale: Float = UiPerformanceBudget.listScrollGlassReductionScale
+): GlassEffectRuntime {
+    val upstreamRuntime = glassEffectRuntime()
+    val listScrollProgress = rememberGlassReductionProgress(
+        reduceEffectsDuringMotion = isListScrolling,
+        label = label
+    )
+    return remember(upstreamRuntime, listScrollProgress, reductionScale) {
+        upstreamRuntime.copy(
+            reducedProgress = max(
+                upstreamRuntime.reducedProgress,
+                listScrollProgress * reductionScale
+            )
+        )
+    }
 }

@@ -16,6 +16,7 @@ object UiPerformanceBudget {
     const val mediaCacheParallelDownloads: Int = 3
     const val baCalendarPoolPriorityPrefetchCount: Int = 4
     const val baCalendarPoolDeferredWarmDelayMs: Long = 220L
+    const val listScrollGlassReductionScale: Float = 0.90f
 
     data class PreloadPolicy(
         val mainPagerBeyondViewportPageCount: Int,

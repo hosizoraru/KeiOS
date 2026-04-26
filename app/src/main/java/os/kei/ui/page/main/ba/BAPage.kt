@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -34,6 +36,8 @@ import os.kei.ui.page.main.ba.saveBaPageSettings
 import os.kei.core.ui.effect.getMiuixAppBarColor
 import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
+import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
+import os.kei.ui.page.main.widget.glass.rememberListScrollGlassRuntime
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -51,10 +55,13 @@ fun BAPage(
     val context = LocalContext.current
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
+    val isListScrolling by remember(listState) {
+        derivedStateOf { listState.isScrollInProgress }
+    }
     val pageBackdropEffectsEnabled = runtime.isPageActive &&
         !runtime.isPagerScrollInProgress
     val fullBackdropEffectsEnabled = pageBackdropEffectsEnabled &&
-        !listState.isScrollInProgress
+        !isListScrolling
     val backdrops = rememberMainPageBackdropSet(
         keyPrefix = "ba",
         refreshOnCompositionEnter = true,
@@ -101,6 +108,10 @@ fun BAPage(
         baPoolEntries = poolUiState.entries,
     )
     val syncPageActive = if (preloadingEnabled) runtime.isPageActive else runtime.isDataActive
+    val baGlassRuntime = rememberListScrollGlassRuntime(
+        isListScrolling = isListScrolling,
+        label = "baListGlassEffectProgress"
+    )
 
     fun openSettingsSheet() {
         ui.openSettingsSheet(office)
@@ -204,74 +215,76 @@ fun BAPage(
         ui.baPoolLastSyncMs = poolUiState.lastSyncMs
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                BaTopBar(
-                    topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-        ) { innerPadding ->
-            BaPageContent(
-                backdrop = backdrops.content,
-                innerPadding = innerPadding,
-                contentBottomPadding = runtime.contentBottomPadding,
-                listState = listState,
-                nestedScrollConnection = scrollBehavior.nestedScrollConnection,
-                state = pageContentState,
-                actions = pageContentActions,
-            )
-        }
-        AppTopEndActionBarOverlay {
-            BaTopBarActions(
-                backdrop = backdrops.topBar,
-                liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
-                showCalendarIntervalPopup = ui.showCalendarIntervalPopup,
-                calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
-                onShowSettings = ::openSettingsSheet,
-                onShowCalendarIntervalPopupChange = { ui.showCalendarIntervalPopup = it },
-                onCopyFriendCode = { office.copyFriendCodeToClipboard(context) },
-                onRefreshAll = {
-                    office.applyCafeStorage()
-                    office.applyApRegen()
-                    refreshCalendar(force = true)
-                    refreshPool(force = true)
-                },
-                onCalendarRefreshIntervalSelected = { hours ->
-                    applyBaCalendarRefreshInterval(
-                        ui = ui,
-                        hours = hours,
-                        onRefreshCalendar = { refreshCalendar(force = true) },
-                        onRefreshPool = { refreshPool(force = true) },
+    CompositionLocalProvider(LocalGlassEffectRuntime provides baGlassRuntime) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    BaTopBar(
+                        topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
+                        scrollBehavior = scrollBehavior,
                     )
                 },
-                onInteractionChanged = onActionBarInteractingChanged,
-            )
+            ) { innerPadding ->
+                BaPageContent(
+                    backdrop = backdrops.content,
+                    innerPadding = innerPadding,
+                    contentBottomPadding = runtime.contentBottomPadding,
+                    listState = listState,
+                    nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                    state = pageContentState,
+                    actions = pageContentActions,
+                )
+            }
+            AppTopEndActionBarOverlay {
+                BaTopBarActions(
+                    backdrop = backdrops.topBar,
+                    liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                    reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
+                    showCalendarIntervalPopup = ui.showCalendarIntervalPopup,
+                    calendarRefreshIntervalHours = ui.calendarRefreshIntervalHours,
+                    onShowSettings = ::openSettingsSheet,
+                    onShowCalendarIntervalPopupChange = { ui.showCalendarIntervalPopup = it },
+                    onCopyFriendCode = { office.copyFriendCodeToClipboard(context) },
+                    onRefreshAll = {
+                        office.applyCafeStorage()
+                        office.applyApRegen()
+                        refreshCalendar(force = true)
+                        refreshPool(force = true)
+                    },
+                    onCalendarRefreshIntervalSelected = { hours ->
+                        applyBaCalendarRefreshInterval(
+                            ui = ui,
+                            hours = hours,
+                            onRefreshCalendar = { refreshCalendar(force = true) },
+                            onRefreshPool = { refreshPool(force = true) },
+                        )
+                    },
+                    onInteractionChanged = onActionBarInteractingChanged,
+                )
+            }
         }
-    }
 
-    BaSettingsSheet(
-        show = ui.showSettingsSheet,
-        backdrop = backdrops.sheet,
-        state = settingsSheetState,
-        onApNotifyEnabledChange = { ui.sheetApNotifyEnabled = it },
-        onArenaRefreshNotifyEnabledChange = { ui.sheetArenaRefreshNotifyEnabled = it },
-        onCafeVisitNotifyEnabledChange = { ui.sheetCafeVisitNotifyEnabled = it },
-        onApNotifyThresholdTextChange = { ui.sheetApNotifyThresholdText = it },
-        onApNotifyThresholdDone = {
-            val normalized = ui.sheetApNotifyThresholdText.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 120
-            ui.sheetApNotifyThresholdText = normalized.toString()
-        },
-        onMediaAdaptiveRotationEnabledChange = { ui.sheetMediaAdaptiveRotationEnabled = it },
-        onMediaSaveCustomEnabledChange = { ui.sheetMediaSaveCustomEnabled = it },
-        onMediaSaveFixedTreeUriChange = { ui.sheetMediaSaveFixedTreeUri = it },
-        onShowEndedActivitiesChange = { ui.sheetShowEndedActivities = it },
-        onShowEndedPoolsChange = { ui.sheetShowEndedPools = it },
-        onShowCalendarPoolImagesChange = { ui.sheetShowCalendarPoolImages = it },
-        onDismissRequest = ::closeSettingsSheet,
-        onSaveRequest = ::saveSettings,
-    )
+        BaSettingsSheet(
+            show = ui.showSettingsSheet,
+            backdrop = backdrops.sheet,
+            state = settingsSheetState,
+            onApNotifyEnabledChange = { ui.sheetApNotifyEnabled = it },
+            onArenaRefreshNotifyEnabledChange = { ui.sheetArenaRefreshNotifyEnabled = it },
+            onCafeVisitNotifyEnabledChange = { ui.sheetCafeVisitNotifyEnabled = it },
+            onApNotifyThresholdTextChange = { ui.sheetApNotifyThresholdText = it },
+            onApNotifyThresholdDone = {
+                val normalized = ui.sheetApNotifyThresholdText.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 120
+                ui.sheetApNotifyThresholdText = normalized.toString()
+            },
+            onMediaAdaptiveRotationEnabledChange = { ui.sheetMediaAdaptiveRotationEnabled = it },
+            onMediaSaveCustomEnabledChange = { ui.sheetMediaSaveCustomEnabled = it },
+            onMediaSaveFixedTreeUriChange = { ui.sheetMediaSaveFixedTreeUri = it },
+            onShowEndedActivitiesChange = { ui.sheetShowEndedActivities = it },
+            onShowEndedPoolsChange = { ui.sheetShowEndedPools = it },
+            onShowCalendarPoolImagesChange = { ui.sheetShowCalendarPoolImages = it },
+            onDismissRequest = ::closeSettingsSheet,
+            onSaveRequest = ::saveSettings,
+        )
+    }
 }

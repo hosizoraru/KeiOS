@@ -34,13 +34,11 @@ import os.kei.ui.page.main.github.page.GitHubPageActions
 import os.kei.ui.page.main.github.page.rememberGitHubPageState
 import os.kei.feature.github.model.isKeiOsSelfTrack
 import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
-import os.kei.ui.page.main.widget.glass.glassEffectRuntime
-import os.kei.ui.page.main.widget.glass.rememberGlassReductionProgress
+import os.kei.ui.page.main.widget.glass.rememberListScrollGlassRuntime
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.launch
-import kotlin.math.max
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -206,19 +204,10 @@ fun GitHubPage(
     val hasKeiOsSelfTrack by remember {
         derivedStateOf { state.trackedItems.any { it.isKeiOsSelfTrack() } }
     }
-    val upstreamGlassRuntime = glassEffectRuntime()
-    val listScrollGlassProgress = rememberGlassReductionProgress(
-        reduceEffectsDuringMotion = isListScrolling,
+    val githubGlassRuntime = rememberListScrollGlassRuntime(
+        isListScrolling = isListScrolling,
         label = "githubListGlassEffectProgress"
     )
-    val githubGlassRuntime = remember(upstreamGlassRuntime, listScrollGlassProgress) {
-        upstreamGlassRuntime.copy(
-            reducedProgress = max(
-                upstreamGlassRuntime.reducedProgress,
-                listScrollGlassProgress * 0.72f
-            )
-        )
-    }
     CompositionLocalProvider(LocalGlassEffectRuntime provides githubGlassRuntime) {
         GitHubMainContent(
             contentBottomPadding = runtime.contentBottomPadding,
