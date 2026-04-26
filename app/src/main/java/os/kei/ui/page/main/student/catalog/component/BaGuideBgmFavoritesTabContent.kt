@@ -92,9 +92,13 @@ internal fun BaGuideBgmFavoritesTabContent(
     var playbackRuntimeState by remember { mutableStateOf(BaGuideBgmPlaybackRuntimeState()) }
     var cacheRevision by remember { mutableIntStateOf(0) }
     var cachingAudioUrls by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var batchCaching by remember { mutableStateOf(false) }
+    var batchCacheDone by remember { mutableIntStateOf(0) }
+    var batchCacheTotal by remember { mutableIntStateOf(0) }
     var removedFavorite by remember { mutableStateOf<GuideBgmFavoriteItem?>(null) }
     val cacheSuccessText = stringResource(R.string.ba_catalog_bgm_cache_success)
     val cacheFailedText = stringResource(R.string.ba_catalog_bgm_cache_failed)
+    val cacheAllReadyText = stringResource(R.string.ba_catalog_bgm_cache_all_ready)
 
     fun startFavoritePlayback(favorite: GuideBgmFavoriteItem, restart: Boolean = false) {
         selectedAudioUrl = favorite.audioUrl
@@ -169,6 +173,44 @@ internal fun BaGuideBgmFavoritesTabContent(
         }
     }
 
+    fun cacheDisplayedFavorites() {
+        if (batchCaching) return
+        val targets = displayedFavorites.filter { favorite ->
+            favorite.audioUrl.isNotBlank() && !isFavoriteBgmCached(appContext, favorite)
+        }
+        if (targets.isEmpty()) {
+            Toast.makeText(context, cacheAllReadyText, Toast.LENGTH_SHORT).show()
+            return
+        }
+        batchCaching = true
+        batchCacheDone = 0
+        batchCacheTotal = targets.size
+        cachingAudioUrls = cachingAudioUrls + targets.map { it.audioUrl }
+        pageScope.launch {
+            var successCount = 0
+            targets.forEach { favorite ->
+                val success = runCatching {
+                    BaGuideTempMediaCache.prefetchForGuide(
+                        context = appContext,
+                        sourceUrl = favoriteCacheScope(favorite),
+                        rawUrls = listOf(favorite.audioUrl)
+                    )
+                    isFavoriteBgmCached(appContext, favorite)
+                }.getOrDefault(false)
+                if (success) successCount += 1
+                batchCacheDone += 1
+                cachingAudioUrls = cachingAudioUrls - favorite.audioUrl
+                cacheRevision += 1
+            }
+            batchCaching = false
+            Toast.makeText(
+                context,
+                context.getString(R.string.ba_catalog_bgm_cache_batch_done, successCount),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     val listState = rememberLazyListState()
     val bgmLabel = stringResource(R.string.ba_catalog_tab_bgm)
     val tabTitle = stringResource(R.string.ba_catalog_tab_title, bgmLabel)
@@ -178,9 +220,17 @@ internal fun BaGuideBgmFavoritesTabContent(
     } else {
         stringResource(R.string.ba_catalog_empty_subtitle_search)
     }
+    val cachedFavoriteCount = remember(displayedFavorites, cacheRevision) {
+        displayedFavorites.count { favorite -> isFavoriteBgmCached(appContext, favorite) }
+    }
+    val cachedFavoriteBytes = remember(displayedFavorites, cacheRevision) {
+        displayedFavorites.sumOf { favorite -> favoriteBgmCachedBytes(appContext, favorite) }
+    }
     val selectedIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
     val selectedFavorite = displayedFavorites.getOrNull(selectedIndex)
-    val queueItemIndex = if (removedFavorite == null) 1 else 2
+    val queueItemIndex = 1 +
+        if (removedFavorite == null) 0 else 1 +
+        if (displayedFavorites.isEmpty()) 0 else 1
     val showMiniPlayer by remember(listState, selectedFavorite, queueItemIndex) {
         derivedStateOf {
             selectedFavorite != null &&
@@ -303,6 +353,19 @@ internal fun BaGuideBgmFavoritesTabContent(
                     )
                 }
             } else {
+                item(key = "bgm-cache-controls") {
+                    BaGuideBgmCacheControls(
+                        favoriteCount = displayedFavorites.size,
+                        cachedCount = cachedFavoriteCount,
+                        cacheBytes = cachedFavoriteBytes,
+                        batchCaching = batchCaching,
+                        batchDone = batchCacheDone,
+                        batchTotal = batchCacheTotal,
+                        accent = accent,
+                        onCacheAll = ::cacheDisplayedFavorites
+                    )
+                }
+
                 selectedFavorite?.let { favorite ->
                     item(key = "bgm-queue-${favorite.audioUrl}") {
                         val cached = remember(favorite, cacheRevision) {
