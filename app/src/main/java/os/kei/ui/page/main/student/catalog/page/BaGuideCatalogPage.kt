@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import os.kei.R
 import os.kei.core.prefs.UiPrefs
 import os.kei.core.ui.effect.getMiuixAppBarColor
@@ -213,6 +214,7 @@ fun BaGuideCatalogPage(
         onSortPopupChange = { filterSortState.showSortPopup = it }
     )
     var showSearchBar by remember { mutableStateOf(true) }
+    var topChromeAnimating by remember { mutableStateOf(false) }
     val density = LocalDensity.current
     val searchBarHideThresholdPx = remember(density) { with(density) { 28.dp.toPx() } }
     val searchBarVisibilityController = remember(searchBarHideThresholdPx) {
@@ -250,6 +252,12 @@ fun BaGuideCatalogPage(
             showBottomBar = true
         }
     }
+    LaunchedEffect(showSearchBar) {
+        topChromeAnimating = true
+        delay(260L)
+        topChromeAnimating = false
+    }
+    val actionBarEffectsReduced = pagerState.isScrollInProgress || topChromeAnimating
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -259,7 +267,7 @@ fun BaGuideCatalogPage(
                 .nestedScroll(bottomBarNestedScrollConnection),
             topBar = {
                 AppTopBarSection(
-                    title = pageTitle,
+                    title = "",
                     largeTitle = pageTitle,
                     scrollBehavior = scrollBehavior,
                     color = topBarMaterialBackdrop.getMiuixAppBarColor(),
@@ -281,7 +289,8 @@ fun BaGuideCatalogPage(
                                 .padding(horizontal = AppChromeTokens.searchFieldHorizontalPadding),
                             value = filterSortState.searchQuery,
                             onValueChange = { filterSortState.searchQuery = it },
-                            label = searchLabel
+                            label = searchLabel,
+                            backdrop = topBarBackdrop
                         )
                     }
                 }
@@ -426,6 +435,7 @@ fun BaGuideCatalogPage(
                 LiquidActionBar(
                     backdrop = topBarBackdrop,
                     layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+                    reduceEffectsDuringPagerScroll = actionBarEffectsReduced,
                     items = actionItems
                 )
                 LiquidActionBarPopupAnchors(itemCount = 2) { slotIndex, popupAnchorBounds ->
