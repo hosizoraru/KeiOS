@@ -89,7 +89,8 @@ internal fun prepareFavoriteBgmPlayback(
         scopeKey = GUIDE_BGM_FAVORITE_AUDIO_SCOPE_KEY,
         audioUrl = playbackUrl
     ) ?: return null
-    if (player.currentMediaItem == null) {
+    val shouldAttachMedia = player.currentMediaItem == null
+    if (shouldAttachMedia) {
         player.setMediaItem(MediaItem.fromUri(playbackUrl))
         player.prepare()
     }
@@ -98,7 +99,10 @@ internal fun prepareFavoriteBgmPlayback(
     } else {
         Player.REPEAT_MODE_OFF
     }
-    if (startPositionMs > 0L) {
+    if (
+        startPositionMs > 0L &&
+        (shouldAttachMedia || player.currentPosition <= 0L || player.playbackState == Player.STATE_ENDED)
+    ) {
         runCatching { player.seekTo(startPositionMs.coerceAtLeast(0L)) }
     }
     return player

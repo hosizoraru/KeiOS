@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.student.catalog.component
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +46,8 @@ import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.glass.FrostedBlock
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.motion.appFloatingEnter
+import os.kei.ui.page.main.widget.motion.appFloatingExit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -176,6 +180,19 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
     val selectedIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
     val selectedFavorite = displayedFavorites.getOrNull(selectedIndex)
+    val queueItemIndex = if (removedFavorite == null) 1 else 2
+    val showMiniPlayer by remember(listState, selectedFavorite, queueItemIndex) {
+        derivedStateOf {
+            selectedFavorite != null &&
+                (
+                    listState.firstVisibleItemIndex > queueItemIndex ||
+                        (
+                            listState.firstVisibleItemIndex == queueItemIndex &&
+                                listState.firstVisibleItemScrollOffset > 280
+                        )
+                    )
+        }
+    }
 
     LaunchedEffect(selectedAudioUrl, queueModeName) {
         GuideBgmFavoritePlaybackStore.saveSelection(
@@ -223,119 +240,165 @@ internal fun BaGuideBgmFavoritesTabContent(
         }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(nestedScrollConnection),
-        contentPadding = PaddingValues(
-            top = innerPadding.calculateTopPadding(),
-            bottom = innerPadding.calculateBottomPadding() + AppChromeTokens.pageSectionGap,
-            start = AppChromeTokens.pageHorizontalPadding,
-            end = AppChromeTokens.pageHorizontalPadding
-        ),
-        verticalArrangement = Arrangement.spacedBy(AppChromeTokens.pageSectionGap)
-    ) {
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        SmallTitle(tabTitle)
-                    }
-                }
-                BaGuideBgmSortModeRow(
-                    sortMode = sortMode,
-                    accent = accent,
-                    onSortModeChange = { sortModeName = it.name }
-                )
-            }
-        }
-
-        removedFavorite?.let { favorite ->
-            item(key = "bgm-undo-${favorite.audioUrl}") {
-                BaGuideBgmUndoBlock(
-                    removedFavorite = favorite,
-                    accent = accent,
-                    onUndo = {
-                        GuideBgmFavoriteStore.restoreFavorite(favorite)
-                        removedFavorite = null
-                    }
-                )
-            }
-        }
-
-        if (displayedFavorites.isEmpty()) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(nestedScrollConnection),
+            contentPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding() +
+                    AppChromeTokens.pageSectionGap +
+                    if (selectedFavorite != null) 124.dp else 0.dp,
+                start = AppChromeTokens.pageHorizontalPadding,
+                end = AppChromeTokens.pageHorizontalPadding
+            ),
+            verticalArrangement = Arrangement.spacedBy(AppChromeTokens.pageSectionGap)
+        ) {
             item {
-                FrostedBlock(
-                    backdrop = null,
-                    title = emptyTitle,
-                    subtitle = emptySubtitle,
-                    accent = accent
-                )
-            }
-        } else {
-            selectedFavorite?.let { favorite ->
-                item(key = "bgm-queue-${favorite.audioUrl}") {
-                    val cached = remember(favorite, cacheRevision) {
-                        isFavoriteBgmCached(appContext, favorite)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SmallTitle(tabTitle)
+                        }
                     }
-                    BaGuideBgmQueueCard(
-                        favorite = favorite,
-                        queueIndex = selectedIndex.coerceAtLeast(0),
-                        queueSize = displayedFavorites.size,
-                        queueMode = queueMode,
-                        cached = cached,
+                    BaGuideBgmSortModeRow(
+                        sortMode = sortMode,
                         accent = accent,
-                        audioAutoPlayRequestToken = 0,
-                        mediaUrlResolver = { raw -> resolveFavoriteBgmMediaUrl(appContext, favorite, raw) },
-                        onPrevious = { selectQueueOffset(offset = -1, startPlayback = true) },
-                        onNext = { selectQueueOffset(offset = 1, startPlayback = true) },
-                        onToggleQueueMode = {
-                            val nextMode = if (queueMode == BaGuideBgmQueueMode.Continuous) {
-                                BaGuideBgmQueueMode.SingleLoop
-                            } else {
-                                BaGuideBgmQueueMode.Continuous
-                            }
-                            queueModeName = nextMode.name
-                            applyFavoriteBgmQueueMode(appContext, favorite, nextMode)
-                        },
-                        onPlaybackEnded = {
-                            if (queueMode == BaGuideBgmQueueMode.Continuous && displayedFavorites.size > 1) {
-                                selectQueueOffset(offset = 1, startPlayback = true)
-                            }
-                        },
-                        onOpenGuide = { openFavoriteGuide(favorite) }
+                        onSortModeChange = { sortModeName = it.name }
                     )
                 }
             }
 
-            items(
-                items = displayedFavorites,
-                key = { it.audioUrl }
-            ) { favorite ->
-                val cached = remember(favorite, cacheRevision) {
-                    isFavoriteBgmCached(appContext, favorite)
+            removedFavorite?.let { favorite ->
+                item(key = "bgm-undo-${favorite.audioUrl}") {
+                    BaGuideBgmUndoBlock(
+                        removedFavorite = favorite,
+                        accent = accent,
+                        onUndo = {
+                            GuideBgmFavoriteStore.restoreFavorite(favorite)
+                            removedFavorite = null
+                        }
+                    )
                 }
-                BaGuideBgmFavoriteCard(
+            }
+
+            if (displayedFavorites.isEmpty()) {
+                item {
+                    FrostedBlock(
+                        backdrop = null,
+                        title = emptyTitle,
+                        subtitle = emptySubtitle,
+                        accent = accent
+                    )
+                }
+            } else {
+                selectedFavorite?.let { favorite ->
+                    item(key = "bgm-queue-${favorite.audioUrl}") {
+                        val cached = remember(favorite, cacheRevision) {
+                            isFavoriteBgmCached(appContext, favorite)
+                        }
+                        BaGuideBgmQueueCard(
+                            favorite = favorite,
+                            queueIndex = selectedIndex.coerceAtLeast(0),
+                            queueSize = displayedFavorites.size,
+                            queueMode = queueMode,
+                            cached = cached,
+                            accent = accent,
+                            audioAutoPlayRequestToken = 0,
+                            mediaUrlResolver = { raw -> resolveFavoriteBgmMediaUrl(appContext, favorite, raw) },
+                            onPrevious = { selectQueueOffset(offset = -1, startPlayback = true) },
+                            onNext = { selectQueueOffset(offset = 1, startPlayback = true) },
+                            onToggleQueueMode = {
+                                val nextMode = if (queueMode == BaGuideBgmQueueMode.Continuous) {
+                                    BaGuideBgmQueueMode.SingleLoop
+                                } else {
+                                    BaGuideBgmQueueMode.Continuous
+                                }
+                                queueModeName = nextMode.name
+                                applyFavoriteBgmQueueMode(appContext, favorite, nextMode)
+                            },
+                            onPlaybackEnded = {
+                                if (queueMode == BaGuideBgmQueueMode.Continuous && displayedFavorites.size > 1) {
+                                    selectQueueOffset(offset = 1, startPlayback = true)
+                                }
+                            },
+                            onOpenGuide = { openFavoriteGuide(favorite) }
+                        )
+                    }
+                }
+
+                items(
+                    items = displayedFavorites,
+                    key = { it.audioUrl }
+                ) { favorite ->
+                    val cached = remember(favorite, cacheRevision) {
+                        isFavoriteBgmCached(appContext, favorite)
+                    }
+                    BaGuideBgmFavoriteCard(
+                        favorite = favorite,
+                        selected = favorite.audioUrl == selectedAudioUrl,
+                        cached = cached,
+                        caching = cachingAudioUrls.contains(favorite.audioUrl),
+                        accent = accent,
+                        onOpenGuide = { openFavoriteGuide(favorite) },
+                        onSelect = { selectedAudioUrl = favorite.audioUrl },
+                        onPlay = { startFavoritePlayback(favorite) },
+                        onCache = { cacheFavorite(favorite) },
+                        onRemove = { removeFavorite(favorite) }
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = showMiniPlayer,
+            enter = appFloatingEnter(),
+            exit = appFloatingExit(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    start = AppChromeTokens.pageHorizontalPadding,
+                    end = AppChromeTokens.pageHorizontalPadding,
+                    bottom = innerPadding.calculateBottomPadding() + AppChromeTokens.pageSectionGap
+                )
+        ) {
+            selectedFavorite?.let { favorite ->
+                BaGuideBgmMiniPlayer(
                     favorite = favorite,
-                    selected = favorite.audioUrl == selectedAudioUrl,
-                    cached = cached,
-                    caching = cachingAudioUrls.contains(favorite.audioUrl),
+                    runtimeState = playbackRuntimeState,
+                    queueIndex = selectedIndex.coerceAtLeast(0),
+                    queueSize = displayedFavorites.size,
                     accent = accent,
-                    onOpenGuide = { openFavoriteGuide(favorite) },
-                    onSelect = { selectedAudioUrl = favorite.audioUrl },
-                    onPlay = { startFavoritePlayback(favorite) },
-                    onCache = { cacheFavorite(favorite) },
-                    onRemove = { removeFavorite(favorite) }
+                    onOpenQueue = {
+                        pageScope.launch {
+                            listState.animateScrollToItem(queueItemIndex)
+                        }
+                    },
+                    onPrevious = { selectQueueOffset(offset = -1, startPlayback = true) },
+                    onTogglePlayback = {
+                        val resumePosition = GuideBgmFavoritePlaybackStore
+                            .progressFor(favorite.audioUrl)
+                            ?.resumePositionMs
+                            ?: 0L
+                        toggleFavoriteBgmPlayback(
+                            context = appContext,
+                            favorite = favorite,
+                            queueMode = queueMode,
+                            startPositionMs = resumePosition
+                        )
+                    },
+                    onNext = { selectQueueOffset(offset = 1, startPlayback = true) }
                 )
             }
         }

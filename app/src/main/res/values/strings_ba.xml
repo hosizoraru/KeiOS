@@ -78,6 +78,8 @@
     <string name="ba_catalog_bgm_action_previous">上一首</string>
     <string name="ba_catalog_bgm_action_next">下一首</string>
     <string name="ba_catalog_bgm_action_play">播放 BGM</string>
+    <string name="ba_catalog_bgm_action_pause">暂停 BGM</string>
+    <string name="ba_catalog_bgm_action_open_queue">回到播放队列</string>
     <string name="ba_catalog_bgm_action_delete">移除收藏</string>
     <string name="ba_catalog_bgm_action_cache">缓存 BGM</string>
     <string name="ba_catalog_bgm_action_cache_busy">正在缓存</string>
