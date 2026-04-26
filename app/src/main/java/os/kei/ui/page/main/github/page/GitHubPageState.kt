@@ -91,6 +91,8 @@ internal class GitHubPageState(
     var deleteInProgress by mutableStateOf(false)
     var showFloatingAddButton by mutableStateOf(true)
     var showSearchBar by mutableStateOf(true)
+    private var pendingShowFloatingAddButton: Boolean? = null
+    private var pendingShowSearchBar: Boolean? = null
     private var canScrollBackward by mutableStateOf(false)
     private var canScrollForward by mutableStateOf(false)
     private val searchBarVisibilityController = ScrollChromeVisibilityController(searchBarHideThresholdPx)
@@ -112,19 +114,19 @@ internal class GitHubPageState(
         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
             addButtonVisibilityController.updateWithinScrollBounds(
                 deltaY = available.y,
-                visible = showFloatingAddButton,
+                visible = pendingShowFloatingAddButton ?: showFloatingAddButton,
                 canScrollBackward = canScrollBackward,
                 canScrollForward = canScrollForward
             ) {
-                showFloatingAddButton = it
+                pendingShowFloatingAddButton = it
             }
             searchBarVisibilityController.updateWithinScrollBounds(
                 deltaY = available.y,
-                visible = showSearchBar,
+                visible = pendingShowSearchBar ?: showSearchBar,
                 canScrollBackward = canScrollBackward,
                 canScrollForward = canScrollForward
             ) {
-                showSearchBar = it
+                pendingShowSearchBar = it
             }
             return Offset.Zero
         }
@@ -136,6 +138,23 @@ internal class GitHubPageState(
     ) {
         this.canScrollBackward = canScrollBackward
         this.canScrollForward = canScrollForward
+    }
+
+    fun settleScrollChromeVisibility() {
+        pendingShowFloatingAddButton?.let { target ->
+            if (showFloatingAddButton != target) {
+                showFloatingAddButton = target
+            }
+        }
+        pendingShowSearchBar?.let { target ->
+            if (showSearchBar != target) {
+                showSearchBar = target
+            }
+        }
+        pendingShowFloatingAddButton = null
+        pendingShowSearchBar = null
+        addButtonVisibilityController.reset()
+        searchBarVisibilityController.reset()
     }
 
     fun activeStrategyId(): String = lookupConfig.selectedStrategy.storageId

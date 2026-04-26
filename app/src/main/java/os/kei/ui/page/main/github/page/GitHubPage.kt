@@ -82,6 +82,11 @@ fun GitHubPage(
     val installedOnlineShareTargets by githubPageViewModel.installedOnlineShareTargets.collectAsState()
     val checkLogicDownloaderOptions by githubPageViewModel.checkLogicDownloaderOptions.collectAsState()
     val contentDerivedState by githubPageViewModel.contentDerivedState.collectAsState()
+    LaunchedEffect(isListScrolling) {
+        if (!isListScrolling) {
+            state.settleScrollChromeVisibility()
+        }
+    }
     LaunchedEffect(context, state) {
         githubPageViewModel.bindContextObservers(
             context = context,
@@ -219,8 +224,7 @@ fun GitHubPage(
             topBarColor = topBarColor,
             enableSearchBar = enableSearchBar,
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-            reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
-            reduceEffectsDuringListScroll = isListScrolling,
+            reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress || isListScrolling,
             showSearchBar = state.showSearchBar,
             trackedSearch = state.trackedSearch,
             sortMode = state.sortMode,
