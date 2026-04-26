@@ -70,7 +70,7 @@
     <string name="ba_catalog_bgm_student_note">学生：%1$s</string>
     <string name="ba_catalog_bgm_sort_recent">最近收藏</string>
     <string name="ba_catalog_bgm_sort_student">学生名</string>
-    <string name="ba_catalog_bgm_sort_title">BGM 标题</string>
+    <string name="ba_catalog_bgm_sort_title">标题</string>
     <string name="ba_catalog_bgm_queue_title">播放队列</string>
     <string name="ba_catalog_bgm_queue_position">%1$d / %2$d</string>
     <string name="ba_catalog_bgm_queue_continuous">连续播放</string>

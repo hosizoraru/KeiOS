@@ -224,6 +224,12 @@ internal fun BaGuideBgmFavoriteCard(
     val deleteContentDescription = stringResource(R.string.ba_catalog_bgm_action_delete)
     val playContentDescription = stringResource(R.string.ba_catalog_bgm_action_play)
     val openGalleryContentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
+    val detailTitle = favorite.title.takeIf { isMeaningfulBgmFavoriteDetail(it, studentTitle) }
+    val detailNote = favorite.note.takeIf { note ->
+        isMeaningfulBgmFavoriteDetail(note, studentTitle) &&
+            (detailTitle?.let { !sameBgmFavoriteDetail(note, it) } ?: true)
+    }
+    val hasDetails = detailTitle != null || detailNote != null
     val cardShape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) accent.copy(alpha = 0.42f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.18f)
     Card(
@@ -293,6 +299,53 @@ internal fun BaGuideBgmFavoriteCard(
                 }
                 GlassIconButton(
                     backdrop = null,
+                    icon = appLucidePlayIcon(),
+                    contentDescription = playContentDescription,
+                    onClick = onPlay,
+                    width = 44.dp,
+                    height = 44.dp,
+                    variant = GlassVariant.Compact,
+                    iconTint = accent,
+                    containerColor = accent
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (hasDetails) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        detailTitle?.let { title ->
+                            Text(
+                                text = title,
+                                color = MiuixTheme.colorScheme.onBackground,
+                                fontSize = AppTypographyTokens.CardHeader.fontSize,
+                                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                                fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        detailNote?.let { note ->
+                            Text(
+                                text = note,
+                                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                                fontSize = AppTypographyTokens.Supporting.fontSize,
+                                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                } else {
+                    Box(modifier = Modifier.weight(1f))
+                }
+                GlassIconButton(
+                    backdrop = null,
                     icon = appLucideExternalLinkIcon(),
                     contentDescription = openGalleryContentDescription,
                     onClick = onOpenGuide,
@@ -323,53 +376,6 @@ internal fun BaGuideBgmFavoriteCard(
                     variant = GlassVariant.Compact,
                     iconTint = Color(0xFFEF4444),
                     containerColor = Color(0xFFEF4444)
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = favorite.title,
-                        color = MiuixTheme.colorScheme.onBackground,
-                        fontSize = AppTypographyTokens.CardHeader.fontSize,
-                        lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    favorite.note
-                        .takeIf { note ->
-                            note.isNotBlank() &&
-                                !note.equals(favorite.title, ignoreCase = true) &&
-                                !note.equals(studentTitle, ignoreCase = true)
-                        }
-                        ?.let { note ->
-                            Text(
-                                text = note,
-                                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                fontSize = AppTypographyTokens.Supporting.fontSize,
-                                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                }
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucidePlayIcon(),
-                    contentDescription = playContentDescription,
-                    onClick = onPlay,
-                    width = 44.dp,
-                    height = 44.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = accent,
-                    containerColor = accent
                 )
             }
         }
@@ -435,4 +441,29 @@ private fun GuideBgmFavoriteItem.toGalleryItem(): BaGuideGalleryItem {
         mediaUrl = audioUrl,
         note = displayNote
     )
+}
+
+private fun isMeaningfulBgmFavoriteDetail(
+    raw: String,
+    studentTitle: String
+): Boolean {
+    if (raw.isBlank()) return false
+    if (sameBgmFavoriteDetail(raw, studentTitle)) return false
+    val compact = raw.bgmFavoriteDetailKey()
+    return compact != "bgm" &&
+        compact != "回忆大厅" &&
+        compact != "回忆大厅bgm"
+}
+
+private fun sameBgmFavoriteDetail(
+    first: String,
+    second: String
+): Boolean {
+    return first.bgmFavoriteDetailKey() == second.bgmFavoriteDetailKey()
+}
+
+private fun String.bgmFavoriteDetailKey(): String {
+    return replace(Regex("\\s+"), "")
+        .trim()
+        .lowercase()
 }
