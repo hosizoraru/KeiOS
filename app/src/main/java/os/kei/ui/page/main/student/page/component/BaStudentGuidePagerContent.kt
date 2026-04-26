@@ -45,7 +45,7 @@ internal fun BaStudentGuidePagerContent(
 ) {
     HorizontalPager(
         state = pagerState,
-        key = { index -> bottomTabs[index].name },
+        key = { index -> bottomTabs.getOrNull(index)?.name ?: "stale-$index" },
         overscrollEffect = null,
         beyondViewportPageCount = guidePagerBeyondViewportPageCount,
         modifier = Modifier
