@@ -34,6 +34,8 @@ internal fun LazyListScope.renderGuideGalleryStateContent(
     backdrop: LayerBackdrop,
     context: Context,
     sourceUrl: String,
+    studentTitle: String,
+    studentImageUrl: String,
     galleryCacheRevision: Int,
     onOpenExternal: (String) -> Unit,
     onSaveMedia: (url: String, title: String) -> Unit,
@@ -106,7 +108,10 @@ internal fun LazyListScope.renderGuideGalleryStateContent(
                     onOpenMedia = onOpenExternal,
                     onSaveMedia = onSaveMedia,
                     audioLoopScopeKey = sourceUrl,
-                    mediaUrlResolver = mediaUrlResolver
+                    mediaUrlResolver = mediaUrlResolver,
+                    bgmFavoriteStudentTitle = studentTitle,
+                    bgmFavoriteStudentImageUrl = studentImageUrl,
+                    bgmFavoriteSourceUrl = sourceUrl
                 )
             }
         }

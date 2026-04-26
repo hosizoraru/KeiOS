@@ -21,6 +21,7 @@ import os.kei.ui.page.main.student.GuideVideoControlAction
 import os.kei.ui.page.main.student.GuideVideoFullscreenActivity
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.student.section.GuidePressableMediaSurface
+import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
@@ -30,6 +31,7 @@ import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
+import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Replace
@@ -58,6 +60,10 @@ internal fun GuideGalleryCardContent(
     itemMediaUrl: String,
     onOpenMedia: (String) -> Unit,
     onSaveMedia: (url: String, title: String) -> Unit,
+    showBgmFavoriteAction: Boolean,
+    isBgmFavorite: Boolean,
+    bgmFavoriteContentDescription: String,
+    onToggleBgmFavorite: () -> Unit,
     audioState: GuideGalleryAudioPlayerState,
     gestureState: GuideGalleryGestureState,
     modifier: Modifier = Modifier
@@ -155,6 +161,20 @@ internal fun GuideGalleryCardContent(
                 )
             }
             if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
+                if (showBgmFavoriteAction) {
+                    val favoriteColor = if (isBgmFavorite) Color(0xFFEC4899) else Color(0xFF3B82F6)
+                    GlassIconButton(
+                        backdrop = backdrop,
+                        icon = MiuixIcons.Regular.FavoritesFill,
+                        contentDescription = bgmFavoriteContentDescription,
+                        onClick = onToggleBgmFavorite,
+                        width = 34.dp,
+                        height = 34.dp,
+                        variant = GlassVariant.Compact,
+                        iconTint = favoriteColor,
+                        containerColor = favoriteColor
+                    )
+                }
                 GlassTextButton(
                     backdrop = backdrop,
                     text = "",

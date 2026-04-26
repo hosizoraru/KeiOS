@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.student.section
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -11,11 +12,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideGalleryItem
+import os.kei.ui.page.main.student.GuideBgmFavoriteItem
+import os.kei.ui.page.main.student.GuideBgmFavoriteStore
 import os.kei.ui.page.main.student.extractGuideWebLinks
 import os.kei.ui.page.main.student.isInteractiveFurnitureAnimatedGalleryItem
 import os.kei.ui.page.main.student.isInteractiveFurnitureGalleryItem
+import os.kei.ui.page.main.student.isGuideBgmFavoriteCandidateTitle
 import os.kei.ui.page.main.student.normalizeGalleryDisplayTitle
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.student.section.gallery.BindGuideGalleryAudioPlayerEffects
@@ -40,6 +46,11 @@ fun GuideGalleryCardItem(
     mediaUrlResolver: (String) -> String = { it },
     embedded: Boolean = false,
     showMediaTypeLabel: Boolean = true,
+    showSaveAction: Boolean = true,
+    showBgmFavoriteAction: Boolean = true,
+    bgmFavoriteStudentTitle: String = "",
+    bgmFavoriteStudentImageUrl: String = "",
+    bgmFavoriteSourceUrl: String = "",
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -100,7 +111,7 @@ fun GuideGalleryCardItem(
             }
         }
     }
-    val canSaveMedia = saveTargetUrl.isNotBlank()
+    val canSaveMedia = showSaveAction && saveTargetUrl.isNotBlank()
     val isImageType = normalizedMediaType != "video" && normalizedMediaType != "audio"
     val canOpenMedia = item.mediaUrl.isNotBlank() &&
         normalizeGuideMediaSource(displayMediaUrl) != normalizeGuideMediaSource(displayImageUrl)
@@ -113,6 +124,48 @@ fun GuideGalleryCardItem(
 
     val audioTargetUrl = remember(normalizedMediaType, displayMediaUrl) {
         if (normalizedMediaType == "audio") normalizeGuideMediaSource(displayMediaUrl) else ""
+    }
+    val favoriteAudioUrl = remember(normalizedMediaType, item.mediaUrl, displayMediaUrl) {
+        if (normalizedMediaType == "audio") {
+            normalizeGuideMediaSource(item.mediaUrl.ifBlank { displayMediaUrl })
+        } else {
+            ""
+        }
+    }
+    val canFavoriteBgm = showBgmFavoriteAction &&
+        normalizedMediaType == "audio" &&
+        favoriteAudioUrl.isNotBlank() &&
+        isGuideBgmFavoriteCandidateTitle(item.title, displayTitle)
+    val bgmFavorites by GuideBgmFavoriteStore.favoritesFlow().collectAsState()
+    val isBgmFavorite = canFavoriteBgm && bgmFavorites.any { it.audioUrl == favoriteAudioUrl }
+    val favoriteContentDescription = stringResource(
+        if (isBgmFavorite) {
+            R.string.guide_bgm_cd_unfavorite
+        } else {
+            R.string.guide_bgm_cd_favorite
+        }
+    )
+    val favoriteAddedText = stringResource(R.string.guide_bgm_toast_favorite_added)
+    val favoriteRemovedText = stringResource(R.string.guide_bgm_toast_favorite_removed)
+    val bgmFavoriteItem = remember(
+        favoriteAudioUrl,
+        displayTitle,
+        bgmFavoriteStudentTitle,
+        bgmFavoriteStudentImageUrl,
+        displayImageUrl,
+        bgmFavoriteSourceUrl,
+        notePlainText
+    ) {
+        GuideBgmFavoriteItem(
+            audioUrl = favoriteAudioUrl,
+            title = displayTitle,
+            studentTitle = bgmFavoriteStudentTitle,
+            studentImageUrl = bgmFavoriteStudentImageUrl,
+            imageUrl = displayImageUrl,
+            sourceUrl = bgmFavoriteSourceUrl,
+            note = notePlainText,
+            favoritedAtMs = 0L
+        )
     }
     val audioState = rememberGuideGalleryAudioPlayerState(
         context = context,
@@ -150,6 +203,17 @@ fun GuideGalleryCardItem(
             itemMediaUrl = item.mediaUrl,
             onOpenMedia = onOpenMedia,
             onSaveMedia = onSaveMedia,
+            showBgmFavoriteAction = canFavoriteBgm,
+            isBgmFavorite = isBgmFavorite,
+            bgmFavoriteContentDescription = favoriteContentDescription,
+            onToggleBgmFavorite = {
+                val added = GuideBgmFavoriteStore.toggleFavorite(bgmFavoriteItem)
+                Toast.makeText(
+                    context,
+                    if (added) favoriteAddedText else favoriteRemovedText,
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
             audioState = audioState,
             gestureState = gestureState,
             modifier = contentModifier

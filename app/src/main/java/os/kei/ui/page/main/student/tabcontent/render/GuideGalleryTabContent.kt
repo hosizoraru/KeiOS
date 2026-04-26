@@ -40,6 +40,8 @@ internal fun LazyListScope.renderGuideGalleryTabContent(
         backdrop = backdrop,
         context = context,
         sourceUrl = sourceUrl,
+        studentTitle = guide.title,
+        studentImageUrl = guide.imageUrl,
         galleryCacheRevision = galleryCacheRevision,
         onOpenExternal = onOpenExternal,
         onSaveMedia = onSaveMedia,
