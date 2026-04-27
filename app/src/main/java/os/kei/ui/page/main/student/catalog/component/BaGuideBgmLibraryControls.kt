@@ -1,13 +1,10 @@
 package os.kei.ui.page.main.student.catalog.component
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,8 +25,8 @@ import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
+import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
-import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
@@ -52,7 +49,6 @@ internal fun BaGuideBgmLibraryHeader(
     onSortModeChange: (BaGuideBgmFavoriteSortMode) -> Unit,
     onGroupModeChange: (BaGuideBgmFavoriteGroupMode) -> Unit
 ) {
-    val cardShape = RoundedCornerShape(18.dp)
     val summary = if (searchActive) {
         stringResource(
             R.string.ba_catalog_bgm_library_search_summary,
@@ -67,69 +63,55 @@ internal fun BaGuideBgmLibraryHeader(
             cachedCount.coerceAtLeast(0)
         )
     }
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = accent.copy(alpha = 0.22f),
-                shape = cardShape
-            ),
-        cornerRadius = 18.dp,
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surface.copy(alpha = 0.76f)
-        )
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.ba_catalog_bgm_library_title),
-                        color = MiuixTheme.colorScheme.onBackground,
-                        fontSize = AppTypographyTokens.CardHeader.fontSize,
-                        lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = summary,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        fontSize = AppTypographyTokens.Supporting.fontSize,
-                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                StatusPill(
-                    label = stringResource(
-                        R.string.ba_catalog_bgm_library_queue_summary,
-                        displayedCount.coerceAtLeast(0)
-                    ),
-                    color = accent,
-                    size = AppStatusPillSize.Compact
+                Text(
+                    text = stringResource(R.string.ba_catalog_bgm_library_title),
+                    color = MiuixTheme.colorScheme.onBackground,
+                    fontSize = AppTypographyTokens.CardHeader.fontSize,
+                    lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                    fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = summary,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            BaGuideBgmSortGroupDropdownRow(
-                sortMode = sortMode,
-                groupMode = groupMode,
-                accent = accent,
-                onSortModeChange = onSortModeChange,
-                onGroupModeChange = onGroupModeChange
+            StatusPill(
+                label = stringResource(
+                    R.string.ba_catalog_bgm_library_queue_summary,
+                    displayedCount.coerceAtLeast(0)
+                ),
+                color = accent,
+                size = AppStatusPillSize.Compact
             )
         }
+        BaGuideBgmSortGroupDropdownRow(
+            sortMode = sortMode,
+            groupMode = groupMode,
+            accent = accent,
+            onSortModeChange = onSortModeChange,
+            onGroupModeChange = onGroupModeChange
+        )
     }
 }
 
@@ -182,9 +164,16 @@ internal fun BaGuideBgmLibraryToolsCard(
             R.string.ba_catalog_bgm_action_cache_all
         }
     )
+    val cacheEnabled = !batchCaching &&
+        (
+            retryMode ||
+                (favoriteCount > 0 && cachedCount < favoriteCount)
+            )
+    val importEnabled = !exporting && !importing
+    val exportEnabled = favoriteCount > 0 && !exporting && !importing
     Card(
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 16.dp,
+        cornerRadius = 14.dp,
         colors = CardDefaults.defaultColors(
             color = Color(0x1A3B82F6)
         )
@@ -192,8 +181,8 @@ internal fun BaGuideBgmLibraryToolsCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(CardLayoutRhythm.cardContentPadding),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -202,7 +191,7 @@ internal fun BaGuideBgmLibraryToolsCard(
             ) {
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.ba_catalog_bgm_tools_title),
@@ -222,21 +211,20 @@ internal fun BaGuideBgmLibraryToolsCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                GlassTextButton(
+                GlassIconButton(
                     backdrop = null,
-                    text = cacheActionText,
-                    leadingIcon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
-                    onClick = if (retryMode) onRetryFailed else onCacheAll,
-                    enabled = !batchCaching &&
-                        (
-                            retryMode ||
-                                (favoriteCount > 0 && cachedCount < favoriteCount)
-                            ),
-                    textColor = accent,
+                    icon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
+                    contentDescription = cacheActionText,
+                    onClick = {
+                        if (cacheEnabled) {
+                            if (retryMode) onRetryFailed() else onCacheAll()
+                        }
+                    },
+                    width = 34.dp,
+                    height = 34.dp,
+                    iconTint = accent.copy(alpha = if (cacheEnabled) 1f else 0.42f),
                     containerColor = accent,
-                    variant = GlassVariant.Compact,
-                    textMaxLines = 1,
-                    textOverflow = TextOverflow.Ellipsis
+                    variant = GlassVariant.Compact
                 )
             }
             if (batchCaching) {
@@ -255,27 +243,27 @@ internal fun BaGuideBgmLibraryToolsCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassTextButton(
+                GlassIconButton(
                     backdrop = null,
-                    text = stringResource(R.string.ba_catalog_bgm_action_import),
-                    leadingIcon = appLucideAddIcon(),
-                    onClick = onImport,
-                    enabled = !exporting && !importing,
-                    textColor = accent,
-                    variant = GlassVariant.Compact,
-                    textMaxLines = 1,
-                    textOverflow = TextOverflow.Ellipsis
+                    icon = appLucideAddIcon(),
+                    contentDescription = stringResource(R.string.ba_catalog_bgm_action_import),
+                    onClick = { if (importEnabled) onImport() },
+                    width = 34.dp,
+                    height = 34.dp,
+                    iconTint = accent.copy(alpha = if (importEnabled) 1f else 0.42f),
+                    containerColor = accent,
+                    variant = GlassVariant.Compact
                 )
-                GlassTextButton(
+                GlassIconButton(
                     backdrop = null,
-                    text = stringResource(R.string.ba_catalog_bgm_action_export),
-                    leadingIcon = appLucideShareIcon(),
-                    onClick = onExport,
-                    enabled = favoriteCount > 0 && !exporting && !importing,
-                    textColor = accent,
-                    variant = GlassVariant.Compact,
-                    textMaxLines = 1,
-                    textOverflow = TextOverflow.Ellipsis
+                    icon = appLucideShareIcon(),
+                    contentDescription = stringResource(R.string.ba_catalog_bgm_action_export),
+                    onClick = { if (exportEnabled) onExport() },
+                    width = 34.dp,
+                    height = 34.dp,
+                    iconTint = accent.copy(alpha = if (exportEnabled) 1f else 0.42f),
+                    containerColor = accent,
+                    variant = GlassVariant.Compact
                 )
             }
         }
@@ -352,7 +340,10 @@ internal fun BaGuideBgmSortGroupDropdownRow(
             onAnchorBoundsChange = { sortAnchorBounds = it },
             modifier = Modifier.weight(1f),
             variant = GlassVariant.Compact,
-            textColor = accent
+            textColor = accent,
+            minHeight = 30.dp,
+            horizontalPadding = 8.dp,
+            verticalPadding = 4.dp
         )
         AppDropdownSelector(
             selectedText = stringResource(
@@ -370,7 +361,10 @@ internal fun BaGuideBgmSortGroupDropdownRow(
             onAnchorBoundsChange = { groupAnchorBounds = it },
             modifier = Modifier.weight(1f),
             variant = GlassVariant.Compact,
-            textColor = accent
+            textColor = accent,
+            minHeight = 30.dp,
+            horizontalPadding = 8.dp,
+            verticalPadding = 4.dp
         )
     }
 }

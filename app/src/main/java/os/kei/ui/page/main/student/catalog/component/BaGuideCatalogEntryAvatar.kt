@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogIconCache
 import kotlinx.coroutines.Dispatchers
@@ -27,15 +28,17 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun BaGuideCatalogEntryAvatar(
     imageUrl: String,
     fallbackRes: Int,
-    loadEnabled: Boolean = true
+    loadEnabled: Boolean = true,
+    size: Dp = 56.dp
 ) {
     if (imageUrl.isBlank()) {
-        BaGuideCatalogEntryAvatarFallback(iconRes = fallbackRes)
+        BaGuideCatalogEntryAvatarFallback(iconRes = fallbackRes, size = size)
     } else {
         BaGuideCatalogEntryAvatarImage(
             imageUrl = imageUrl,
             fallbackRes = fallbackRes,
-            loadEnabled = loadEnabled
+            loadEnabled = loadEnabled,
+            size = size
         )
     }
 }
@@ -44,7 +47,8 @@ internal fun BaGuideCatalogEntryAvatar(
 private fun BaGuideCatalogEntryAvatarImage(
     imageUrl: String,
     fallbackRes: Int,
-    loadEnabled: Boolean
+    loadEnabled: Boolean,
+    size: Dp
 ) {
     val context = LocalContext.current
     val bitmap by produceState<Bitmap?>(
@@ -61,7 +65,7 @@ private fun BaGuideCatalogEntryAvatarImage(
     }
     val rendered = bitmap
     if (rendered == null) {
-        BaGuideCatalogEntryAvatarFallback(iconRes = fallbackRes)
+        BaGuideCatalogEntryAvatarFallback(iconRes = fallbackRes, size = size)
         return
     }
     Image(
@@ -69,16 +73,19 @@ private fun BaGuideCatalogEntryAvatarImage(
         contentDescription = null,
         contentScale = ContentScale.Fit,
         modifier = Modifier
-            .size(56.dp)
+            .size(size)
             .clip(RoundedCornerShape(12.dp))
     )
 }
 
 @Composable
-private fun BaGuideCatalogEntryAvatarFallback(iconRes: Int) {
+private fun BaGuideCatalogEntryAvatarFallback(
+    iconRes: Int,
+    size: Dp
+) {
     Box(
         modifier = Modifier
-            .size(56.dp)
+            .size(size)
             .clip(RoundedCornerShape(12.dp))
             .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.42f)),
         contentAlignment = Alignment.Center
@@ -87,7 +94,7 @@ private fun BaGuideCatalogEntryAvatarFallback(iconRes: Int) {
             painter = painterResource(id = iconRes),
             contentDescription = null,
             tint = MiuixTheme.colorScheme.onBackgroundVariant,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(size * 0.5f)
         )
     }
 }

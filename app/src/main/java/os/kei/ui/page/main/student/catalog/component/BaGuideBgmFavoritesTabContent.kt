@@ -427,7 +427,7 @@ internal fun BaGuideBgmFavoritesTabContent(
                 start = AppChromeTokens.pageHorizontalPadding,
                 end = AppChromeTokens.pageHorizontalPadding
             ),
-            verticalArrangement = Arrangement.spacedBy(AppChromeTokens.pageSectionGap)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item(key = "bgm-library-header") {
                 BaGuideBgmLibraryHeader(
@@ -515,27 +515,6 @@ internal fun BaGuideBgmFavoritesTabContent(
                     }
                 }
 
-                item(key = "bgm-library-tools") {
-                    BaGuideBgmLibraryToolsCard(
-                        favoriteCount = displayedFavorites.size,
-                        cachedCount = cachedFavoriteCount,
-                        cacheBytes = cachedFavoriteBytes,
-                        batchCaching = batchCaching,
-                        batchDone = batchCacheDone,
-                        batchTotal = batchCacheTotal,
-                        batchFailedCount = displayedFavorites.count { favorite ->
-                            favorite.audioUrl in batchFailedAudioUrls && !isFavoriteBgmCached(appContext, favorite)
-                        },
-                        exporting = exportingFavorites,
-                        importing = importingFavorites,
-                        accent = accent,
-                        onCacheAll = ::cacheDisplayedFavorites,
-                        onRetryFailed = ::retryFailedCache,
-                        onExport = ::exportFavorites,
-                        onImport = ::importFavorites
-                    )
-                }
-
                 item(key = "bgm-playlist-header") {
                     BaGuideBgmPlaylistHeader(
                         count = displayedFavorites.size,
@@ -573,6 +552,27 @@ internal fun BaGuideBgmFavoritesTabContent(
                             onRemove = { removeFavorite(favorite) }
                         )
                     }
+                }
+
+                item(key = "bgm-library-tools") {
+                    BaGuideBgmLibraryToolsCard(
+                        favoriteCount = displayedFavorites.size,
+                        cachedCount = cachedFavoriteCount,
+                        cacheBytes = cachedFavoriteBytes,
+                        batchCaching = batchCaching,
+                        batchDone = batchCacheDone,
+                        batchTotal = batchCacheTotal,
+                        batchFailedCount = displayedFavorites.count { favorite ->
+                            favorite.audioUrl in batchFailedAudioUrls && !isFavoriteBgmCached(appContext, favorite)
+                        },
+                        exporting = exportingFavorites,
+                        importing = importingFavorites,
+                        accent = accent,
+                        onCacheAll = ::cacheDisplayedFavorites,
+                        onRetryFailed = ::retryFailedCache,
+                        onExport = ::exportFavorites,
+                        onImport = ::importFavorites
+                    )
                 }
             }
         }

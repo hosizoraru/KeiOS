@@ -143,7 +143,8 @@ internal fun BaGuideBgmMiniPlayer(
                 ) {
                     BaGuideCatalogEntryAvatar(
                         imageUrl = favorite.studentImageUrl.ifBlank { favorite.imageUrl },
-                        fallbackRes = R.drawable.ba_tab_bgm
+                        fallbackRes = R.drawable.ba_tab_bgm,
+                        size = 40.dp
                     )
                 }
                 Column(
