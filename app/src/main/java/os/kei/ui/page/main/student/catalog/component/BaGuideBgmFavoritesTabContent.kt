@@ -6,11 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,7 +30,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
@@ -43,16 +39,13 @@ import os.kei.ui.page.main.student.GuideBgmFavoriteStore
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.state.GuideDetailTabRequestStore
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
-import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.FrostedBlock
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import top.yukonga.miuix.kmp.basic.SmallTitle
 
 @Composable
 internal fun BaGuideBgmFavoritesTabContent(
@@ -330,8 +323,6 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
 
     val listState = rememberLazyListState()
-    val bgmLabel = stringResource(R.string.ba_catalog_tab_bgm)
-    val tabTitle = stringResource(R.string.ba_catalog_tab_title, bgmLabel)
     val emptyTitle = stringResource(R.string.ba_catalog_bgm_empty_title)
     val emptySubtitle = if (searchQuery.isBlank()) {
         stringResource(R.string.ba_catalog_bgm_empty_subtitle)
@@ -358,9 +349,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
     val selectedIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
     val selectedFavorite = displayedFavorites.getOrNull(selectedIndex)
-    val queueItemIndex = 1 +
-        if (removedFavorite == null) 0 else 1 +
-        if (displayedFavorites.isEmpty()) 0 else 2
+    val queueItemIndex = 1 + if (removedFavorite == null) 0 else 1
     val showMiniPlayer by remember(listState, selectedFavorite, queueItemIndex) {
         derivedStateOf {
             selectedFavorite != null &&
@@ -440,30 +429,18 @@ internal fun BaGuideBgmFavoritesTabContent(
             ),
             verticalArrangement = Arrangement.spacedBy(AppChromeTokens.pageSectionGap)
         ) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            SmallTitle(tabTitle)
-                        }
-                    }
-                    BaGuideBgmSortGroupDropdownRow(
-                        sortMode = sortMode,
-                        groupMode = groupMode,
-                        accent = accent,
-                        onSortModeChange = { sortModeName = it.name },
-                        onGroupModeChange = { groupModeName = it.name }
-                    )
-                }
+            item(key = "bgm-library-header") {
+                BaGuideBgmLibraryHeader(
+                    favoriteCount = favorites.size,
+                    displayedCount = displayedFavorites.size,
+                    cachedCount = cachedFavoriteCount,
+                    searchActive = searchQuery.isNotBlank(),
+                    sortMode = sortMode,
+                    groupMode = groupMode,
+                    accent = accent,
+                    onSortModeChange = { sortModeName = it.name },
+                    onGroupModeChange = { groupModeName = it.name }
+                )
             }
 
             removedFavorite?.let { favorite ->
@@ -497,33 +474,6 @@ internal fun BaGuideBgmFavoritesTabContent(
                     )
                 }
             } else {
-                item(key = "bgm-cache-controls") {
-                    BaGuideBgmCacheControls(
-                        favoriteCount = displayedFavorites.size,
-                        cachedCount = cachedFavoriteCount,
-                        cacheBytes = cachedFavoriteBytes,
-                        batchCaching = batchCaching,
-                        batchDone = batchCacheDone,
-                        batchTotal = batchCacheTotal,
-                        batchFailedCount = displayedFavorites.count { favorite ->
-                            favorite.audioUrl in batchFailedAudioUrls && !isFavoriteBgmCached(appContext, favorite)
-                        },
-                        accent = accent,
-                        onCacheAll = ::cacheDisplayedFavorites,
-                        onRetryFailed = ::retryFailedCache
-                    )
-                }
-                item(key = "bgm-transfer-controls") {
-                    BaGuideBgmTransferControls(
-                        favoriteCount = favorites.size,
-                        exporting = exportingFavorites,
-                        importing = importingFavorites,
-                        accent = accent,
-                        onExport = ::exportFavorites,
-                        onImport = ::importFavorites
-                    )
-                }
-
                 selectedFavorite?.let { favorite ->
                     item(key = "bgm-queue-${favorite.audioUrl}") {
                         val cached = remember(favorite, cacheRevision) {
@@ -534,11 +484,22 @@ internal fun BaGuideBgmFavoritesTabContent(
                             queueIndex = selectedIndex.coerceAtLeast(0),
                             queueSize = displayedFavorites.size,
                             queueMode = queueMode,
+                            runtimeState = playbackRuntimeState,
                             cached = cached,
                             accent = accent,
-                            audioAutoPlayRequestToken = 0,
-                            mediaUrlResolver = { raw -> resolveFavoriteBgmMediaUrl(appContext, favorite, raw) },
                             onPrevious = { selectQueueOffset(offset = -1, startPlayback = true) },
+                            onTogglePlayback = {
+                                val resumePosition = GuideBgmFavoritePlaybackStore
+                                    .progressFor(favorite.audioUrl)
+                                    ?.resumePositionMs
+                                    ?: 0L
+                                toggleFavoriteBgmPlayback(
+                                    context = appContext,
+                                    favorite = favorite,
+                                    queueMode = queueMode,
+                                    startPositionMs = resumePosition
+                                )
+                            },
                             onNext = { selectQueueOffset(offset = 1, startPlayback = true) },
                             onToggleQueueMode = {
                                 val nextMode = if (queueMode == BaGuideBgmQueueMode.Continuous) {
@@ -549,14 +510,37 @@ internal fun BaGuideBgmFavoritesTabContent(
                                 queueModeName = nextMode.name
                                 applyFavoriteBgmQueueMode(appContext, favorite, nextMode)
                             },
-                            onPlaybackEnded = {
-                                if (queueMode == BaGuideBgmQueueMode.Continuous && displayedFavorites.size > 1) {
-                                    selectQueueOffset(offset = 1, startPlayback = true)
-                                }
-                            },
                             onOpenGuide = { openFavoriteGuide(favorite) }
                         )
                     }
+                }
+
+                item(key = "bgm-library-tools") {
+                    BaGuideBgmLibraryToolsCard(
+                        favoriteCount = displayedFavorites.size,
+                        cachedCount = cachedFavoriteCount,
+                        cacheBytes = cachedFavoriteBytes,
+                        batchCaching = batchCaching,
+                        batchDone = batchCacheDone,
+                        batchTotal = batchCacheTotal,
+                        batchFailedCount = displayedFavorites.count { favorite ->
+                            favorite.audioUrl in batchFailedAudioUrls && !isFavoriteBgmCached(appContext, favorite)
+                        },
+                        exporting = exportingFavorites,
+                        importing = importingFavorites,
+                        accent = accent,
+                        onCacheAll = ::cacheDisplayedFavorites,
+                        onRetryFailed = ::retryFailedCache,
+                        onExport = ::exportFavorites,
+                        onImport = ::importFavorites
+                    )
+                }
+
+                item(key = "bgm-playlist-header") {
+                    BaGuideBgmPlaylistHeader(
+                        count = displayedFavorites.size,
+                        accent = accent
+                    )
                 }
 
                 displayedFavoriteGroups.forEach { group ->
@@ -637,68 +621,5 @@ internal fun BaGuideBgmFavoritesTabContent(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun BaGuideBgmSortGroupDropdownRow(
-    sortMode: BaGuideBgmFavoriteSortMode,
-    groupMode: BaGuideBgmFavoriteGroupMode,
-    accent: Color,
-    onSortModeChange: (BaGuideBgmFavoriteSortMode) -> Unit,
-    onGroupModeChange: (BaGuideBgmFavoriteGroupMode) -> Unit
-) {
-    var sortExpanded by remember { mutableStateOf(false) }
-    var sortAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
-    var groupExpanded by remember { mutableStateOf(false) }
-    var groupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
-    val sortModes = BaGuideBgmFavoriteSortMode.entries
-    val groupModes = BaGuideBgmFavoriteGroupMode.entries
-    val sortOptions = sortModes.map { mode -> stringResource(mode.labelRes) }
-    val groupOptions = groupModes.map { mode -> stringResource(mode.labelRes) }
-    val sortIndex = sortModes.indexOf(sortMode).coerceAtLeast(0)
-    val groupIndex = groupModes.indexOf(groupMode).coerceAtLeast(0)
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AppDropdownSelector(
-            selectedText = stringResource(
-                R.string.ba_catalog_bgm_sort_dropdown_label,
-                sortOptions.getOrElse(sortIndex) { "" }
-            ),
-            options = sortOptions,
-            selectedIndex = sortIndex,
-            expanded = sortExpanded,
-            anchorBounds = sortAnchorBounds,
-            onExpandedChange = { sortExpanded = it },
-            onSelectedIndexChange = { index ->
-                sortModes.getOrNull(index)?.let(onSortModeChange)
-            },
-            onAnchorBoundsChange = { sortAnchorBounds = it },
-            modifier = Modifier.weight(1f),
-            variant = GlassVariant.Compact,
-            textColor = accent
-        )
-        AppDropdownSelector(
-            selectedText = stringResource(
-                R.string.ba_catalog_bgm_group_dropdown_label,
-                groupOptions.getOrElse(groupIndex) { "" }
-            ),
-            options = groupOptions,
-            selectedIndex = groupIndex,
-            expanded = groupExpanded,
-            anchorBounds = groupAnchorBounds,
-            onExpandedChange = { groupExpanded = it },
-            onSelectedIndexChange = { index ->
-                groupModes.getOrNull(index)?.let(onGroupModeChange)
-            },
-            onAnchorBoundsChange = { groupAnchorBounds = it },
-            modifier = Modifier.weight(1f),
-            variant = GlassVariant.Compact,
-            textColor = accent
-        )
     }
 }

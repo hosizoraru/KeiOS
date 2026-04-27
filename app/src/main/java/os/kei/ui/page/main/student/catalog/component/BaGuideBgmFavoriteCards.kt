@@ -12,37 +12,46 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideExternalLinkIcon
+import os.kei.ui.page.main.os.appLucideMoreIcon
+import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
-import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
 import os.kei.ui.page.main.os.appLucideRepeatOneIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
-import os.kei.ui.page.main.os.appLucideTrashIcon
 import os.kei.ui.page.main.os.appLucideUndoIcon
-import os.kei.ui.page.main.student.BaGuideGalleryItem
-import os.kei.ui.page.main.student.GUIDE_BGM_FAVORITE_AUDIO_SCOPE_KEY
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
-import os.kei.ui.page.main.student.section.GuideGalleryCardItem
+import os.kei.ui.page.main.student.section.gallery.formatAudioDuration
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
+import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
+import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
+import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -52,19 +61,31 @@ internal fun BaGuideBgmQueueCard(
     queueIndex: Int,
     queueSize: Int,
     queueMode: BaGuideBgmQueueMode,
+    runtimeState: BaGuideBgmPlaybackRuntimeState,
     cached: Boolean,
     accent: Color,
-    audioAutoPlayRequestToken: Int,
-    mediaUrlResolver: (String) -> String,
     onPrevious: () -> Unit,
+    onTogglePlayback: () -> Unit,
     onNext: () -> Unit,
     onToggleQueueMode: () -> Unit,
-    onPlaybackEnded: () -> Unit,
     onOpenGuide: () -> Unit
 ) {
+    val unknownStudent = stringResource(R.string.ba_catalog_bgm_student_unknown)
+    val studentTitle = favorite.studentTitle.ifBlank { unknownStudent }
+    val trackTitle = favorite.title
+        .takeIf { isMeaningfulBgmFavoriteDetail(it, studentTitle) }
+        ?: favorite.note.takeIf { isMeaningfulBgmFavoriteDetail(it, studentTitle) }
+        ?: stringResource(R.string.ba_catalog_bgm_track_fallback)
     val modeText = stringResource(queueMode.labelRes)
     val previousContentDescription = stringResource(R.string.ba_catalog_bgm_action_previous)
     val nextContentDescription = stringResource(R.string.ba_catalog_bgm_action_next)
+    val playPauseContentDescription = stringResource(
+        if (runtimeState.isPlaying) {
+            R.string.ba_catalog_bgm_action_pause
+        } else {
+            R.string.ba_catalog_bgm_action_play
+        }
+    )
     val openGalleryText = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
     val queueTitle = stringResource(R.string.ba_catalog_bgm_queue_title)
     val positionText = stringResource(
@@ -98,44 +119,115 @@ internal fun BaGuideBgmQueueCard(
                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    modifier = Modifier.size(70.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BaGuideCatalogEntryAvatar(
+                        imageUrl = favorite.studentImageUrl.ifBlank { favorite.imageUrl },
+                        fallbackRes = R.drawable.ba_tab_bgm
+                    )
+                }
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    Text(
+                        text = queueTitle,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = AppTypographyTokens.Supporting.fontSize,
+                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = studentTitle,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        fontSize = AppTypographyTokens.CardHeader.fontSize,
+                        lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = trackTitle,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = AppTypographyTokens.Supporting.fontSize,
+                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = queueTitle,
-                            color = MiuixTheme.colorScheme.onBackground,
-                            fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                            lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                            fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
                         StatusPill(
                             label = positionText,
                             color = accent,
                             size = AppStatusPillSize.Compact
                         )
-                    }
-                    if (cached) {
-                        StatusPill(
-                            label = cacheReadyLabel,
-                            color = Color(0xFF22C55E),
-                            size = AppStatusPillSize.Compact
-                        )
+                        if (cached) {
+                            StatusPill(
+                                label = cacheReadyLabel,
+                                color = Color(0xFF22C55E),
+                                size = AppStatusPillSize.Compact
+                            )
+                        }
                     }
                 }
+            }
+            LinearProgressIndicator(
+                progress = runtimeState.progress,
+                modifier = Modifier.fillMaxWidth(),
+                height = 4.dp,
+                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                    foregroundColor = accent,
+                    backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
+                )
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatAudioDuration(runtimeState.positionMs),
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1
+                )
+                Text(
+                    text = formatAudioDuration(runtimeState.durationMs),
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 GlassIconButton(
                     backdrop = null,
                     icon = appLucideSkipBackIcon(),
                     contentDescription = previousContentDescription,
                     onClick = onPrevious,
-                    width = 34.dp,
-                    height = 34.dp,
+                    width = 38.dp,
+                    height = 38.dp,
+                    variant = GlassVariant.Compact,
+                    iconTint = accent,
+                    containerColor = accent
+                )
+                GlassIconButton(
+                    backdrop = null,
+                    icon = if (runtimeState.isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
+                    contentDescription = playPauseContentDescription,
+                    onClick = onTogglePlayback,
+                    width = 48.dp,
+                    height = 48.dp,
                     variant = GlassVariant.Compact,
                     iconTint = accent,
                     containerColor = accent
@@ -145,8 +237,8 @@ internal fun BaGuideBgmQueueCard(
                     icon = appLucideSkipForwardIcon(),
                     contentDescription = nextContentDescription,
                     onClick = onNext,
-                    width = 34.dp,
-                    height = 34.dp,
+                    width = 38.dp,
+                    height = 38.dp,
                     variant = GlassVariant.Compact,
                     iconTint = accent,
                     containerColor = accent
@@ -179,25 +271,10 @@ internal fun BaGuideBgmQueueCard(
                     textColor = accent,
                     variant = GlassVariant.Compact,
                     horizontalPadding = 10.dp,
-                    textMaxLines = 1
+                    textMaxLines = 1,
+                    textOverflow = TextOverflow.Ellipsis
                 )
             }
-            GuideGalleryCardItem(
-                item = favorite.toGalleryItem(),
-                backdrop = null,
-                onOpenMedia = {},
-                onSaveMedia = { _, _ -> },
-                audioLoopScopeKey = GUIDE_BGM_FAVORITE_AUDIO_SCOPE_KEY,
-                mediaUrlResolver = mediaUrlResolver,
-                embedded = true,
-                showMediaTypeLabel = false,
-                showSaveAction = false,
-                showBgmFavoriteAction = false,
-                showAudioLoopAction = false,
-                audioLoopEnabledOverride = queueMode == BaGuideBgmQueueMode.SingleLoop,
-                audioAutoPlayRequestToken = audioAutoPlayRequestToken,
-                onAudioPlaybackEnded = onPlaybackEnded
-            )
         }
     }
 }
@@ -224,14 +301,19 @@ internal fun BaGuideBgmFavoriteCard(
     val deleteContentDescription = stringResource(R.string.ba_catalog_bgm_action_delete)
     val playContentDescription = stringResource(R.string.ba_catalog_bgm_action_play)
     val openGalleryContentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
+    val moreContentDescription = stringResource(R.string.ba_catalog_bgm_action_more)
+    val currentLabel = stringResource(R.string.ba_catalog_bgm_status_current)
+    val fallbackTrackTitle = stringResource(R.string.ba_catalog_bgm_track_fallback)
     val detailTitle = favorite.title.takeIf { isMeaningfulBgmFavoriteDetail(it, studentTitle) }
     val detailNote = favorite.note.takeIf { note ->
         isMeaningfulBgmFavoriteDetail(note, studentTitle) &&
             (detailTitle?.let { !sameBgmFavoriteDetail(note, it) } ?: true)
     }
-    val hasDetails = detailTitle != null || detailNote != null
+    val trackSubtitle = detailTitle ?: detailNote ?: fallbackTrackTitle
     val cardShape = RoundedCornerShape(16.dp)
-    val borderColor = if (selected) accent.copy(alpha = 0.42f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.18f)
+    val borderColor = if (selected) accent.copy(alpha = 0.38f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.16f)
+    var actionExpanded by remember { mutableStateOf(false) }
+    var actionAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -245,141 +327,157 @@ internal fun BaGuideBgmFavoriteCard(
                 indication = null,
                 onClick = onSelect,
                 onLongClick = onRemove
-            ),
+        ),
         cornerRadius = 16.dp,
         colors = CardDefaults.defaultColors(
-            color = if (selected) accent.copy(alpha = 0.12f) else Color(0x223B82F6)
+            color = if (selected) accent.copy(alpha = 0.11f) else MiuixTheme.colorScheme.surface.copy(alpha = 0.76f)
         )
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(CardLayoutRhythm.cardContentPadding),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.denseSectionGap)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier.size(56.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.size(56.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    BaGuideCatalogEntryAvatar(
-                        imageUrl = favorite.studentImageUrl.ifBlank { favorite.imageUrl },
-                        fallbackRes = R.drawable.ba_tab_bgm
-                    )
-                }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Text(
-                        text = studentTitle,
-                        color = MiuixTheme.colorScheme.onBackground,
-                        fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                        lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                        fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (cached) {
-                            StatusPill(
-                                label = cacheReadyLabel,
-                                color = Color(0xFF22C55E),
-                                size = AppStatusPillSize.Compact
-                            )
-                        }
-                    }
-                }
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucidePlayIcon(),
-                    contentDescription = playContentDescription,
-                    onClick = onPlay,
-                    width = 44.dp,
-                    height = 44.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = accent,
-                    containerColor = accent
+                BaGuideCatalogEntryAvatar(
+                    imageUrl = favorite.studentImageUrl.ifBlank { favorite.imageUrl },
+                    fallbackRes = R.drawable.ba_tab_bgm
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (hasDetails) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        detailTitle?.let { title ->
-                            Text(
-                                text = title,
-                                color = MiuixTheme.colorScheme.onBackground,
-                                fontSize = AppTypographyTokens.CardHeader.fontSize,
-                                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                                fontWeight = AppTypographyTokens.CardHeader.fontWeight,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        detailNote?.let { note ->
-                            Text(
-                                text = note,
-                                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                                fontSize = AppTypographyTokens.Supporting.fontSize,
-                                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                Text(
+                    text = studentTitle,
+                    color = MiuixTheme.colorScheme.onBackground,
+                    fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                    lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                    fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = trackSubtitle,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (selected) {
+                        StatusPill(
+                            label = currentLabel,
+                            color = accent,
+                            size = AppStatusPillSize.Compact
+                        )
                     }
-                } else {
-                    Box(modifier = Modifier.weight(1f))
+                    if (cached) {
+                        StatusPill(
+                            label = cacheReadyLabel,
+                            color = Color(0xFF22C55E),
+                            size = AppStatusPillSize.Compact
+                        )
+                    }
                 }
+            }
+            GlassIconButton(
+                backdrop = null,
+                icon = appLucidePlayIcon(),
+                contentDescription = playContentDescription,
+                onClick = onPlay,
+                width = 42.dp,
+                height = 42.dp,
+                variant = GlassVariant.Compact,
+                iconTint = accent,
+                containerColor = accent
+            )
+            Box(
+                modifier = Modifier.capturePopupAnchor { actionAnchorBounds = it },
+                contentAlignment = Alignment.Center
+            ) {
                 GlassIconButton(
                     backdrop = null,
-                    icon = appLucideExternalLinkIcon(),
-                    contentDescription = openGalleryContentDescription,
-                    onClick = onOpenGuide,
-                    width = 34.dp,
-                    height = 34.dp,
+                    icon = appLucideMoreIcon(),
+                    contentDescription = moreContentDescription,
+                    onClick = { actionExpanded = true },
+                    width = 36.dp,
+                    height = 36.dp,
                     variant = GlassVariant.Compact,
                     iconTint = accent,
                     containerColor = accent
                 )
-                GlassIconButton(
-                    backdrop = null,
-                    icon = if (caching) appLucideRefreshIcon() else appLucideDownloadIcon(),
-                    contentDescription = cacheContentDescription,
-                    onClick = onCache,
-                    width = 34.dp,
-                    height = 34.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = if (cached) Color(0xFF22C55E) else accent,
-                    containerColor = if (cached) Color(0xFF22C55E) else accent
-                )
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucideTrashIcon(),
-                    contentDescription = deleteContentDescription,
-                    onClick = onRemove,
-                    width = 34.dp,
-                    height = 34.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = Color(0xFFEF4444),
-                    containerColor = Color(0xFFEF4444)
-                )
+                if (actionExpanded) {
+                    SnapshotWindowListPopup(
+                        show = true,
+                        alignment = PopupPositionProvider.Align.BottomEnd,
+                        anchorBounds = actionAnchorBounds,
+                        placement = SnapshotPopupPlacement.ButtonEnd,
+                        enableWindowDim = false,
+                        onDismissRequest = { actionExpanded = false }
+                    ) {
+                        LiquidDropdownColumn {
+                            BaGuideBgmFavoriteActionItem(
+                                text = openGalleryContentDescription,
+                                index = 0,
+                                optionSize = 3,
+                                onClick = {
+                                    actionExpanded = false
+                                    onOpenGuide()
+                                }
+                            )
+                            BaGuideBgmFavoriteActionItem(
+                                text = cacheContentDescription,
+                                index = 1,
+                                optionSize = 3,
+                                onClick = {
+                                    actionExpanded = false
+                                    onCache()
+                                }
+                            )
+                            BaGuideBgmFavoriteActionItem(
+                                text = deleteContentDescription,
+                                index = 2,
+                                optionSize = 3,
+                                variant = GlassVariant.SheetDangerAction,
+                                onClick = {
+                                    actionExpanded = false
+                                    onRemove()
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun BaGuideBgmFavoriteActionItem(
+    text: String,
+    index: Int,
+    optionSize: Int,
+    onClick: () -> Unit,
+    variant: GlassVariant = GlassVariant.SheetAction
+) {
+    LiquidDropdownItem(
+        text = text,
+        selected = false,
+        onClick = onClick,
+        index = index,
+        optionSize = optionSize,
+        variant = variant
+    )
 }
 
 @Composable
@@ -432,20 +530,6 @@ internal fun BaGuideBgmUndoBlock(
             )
         }
     }
-}
-
-private fun GuideBgmFavoriteItem.toGalleryItem(): BaGuideGalleryItem {
-    val studentNote = studentTitle
-    val displayNote = listOf(studentNote, note)
-        .filter { it.isNotBlank() }
-        .joinToString(" / ")
-    return BaGuideGalleryItem(
-        title = title,
-        imageUrl = imageUrl.ifBlank { studentImageUrl },
-        mediaType = "audio",
-        mediaUrl = audioUrl,
-        note = displayNote
-    )
 }
 
 private fun isMeaningfulBgmFavoriteDetail(
