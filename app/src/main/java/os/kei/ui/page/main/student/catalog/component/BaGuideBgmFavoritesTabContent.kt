@@ -7,7 +7,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -394,6 +397,13 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
     val playlistHeaderItemIndex = 1 + if (removedFavorite == null) 0 else 1
     val showNowPlaying = selectedFavorite != null && nowPlayingVisible
+    val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val listBottomChromePadding = if (showNowPlaying) {
+        navigationBarBottom
+    } else {
+        innerPadding.calculateBottomPadding()
+    }
+    val nowPlayingBottomPadding = navigationBarBottom + AppChromeTokens.pageSectionGap
 
     LaunchedEffect(selectedAudioUrl, queueModeName) {
         GuideBgmFavoritePlaybackStore.saveSelection(
@@ -461,7 +471,7 @@ internal fun BaGuideBgmFavoritesTabContent(
                 .nestedScroll(nestedScrollConnection),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() +
+                bottom = listBottomChromePadding +
                     AppChromeTokens.pageSectionGap +
                     if (showNowPlaying) {
                         if (nowPlayingExpanded) 210.dp else 96.dp
@@ -589,7 +599,7 @@ internal fun BaGuideBgmFavoritesTabContent(
                 .padding(
                     start = AppChromeTokens.pageHorizontalPadding,
                     end = AppChromeTokens.pageHorizontalPadding,
-                    bottom = innerPadding.calculateBottomPadding() + AppChromeTokens.pageSectionGap
+                    bottom = nowPlayingBottomPadding
                 )
         ) {
             selectedFavorite?.let { favorite ->

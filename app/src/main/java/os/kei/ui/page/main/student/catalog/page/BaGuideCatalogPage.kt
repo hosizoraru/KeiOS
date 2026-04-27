@@ -27,6 +27,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -221,7 +222,23 @@ fun BaGuideCatalogPage(
     val bottomBarVisibilityController = remember(searchBarHideThresholdPx) {
         ScrollChromeVisibilityController(searchBarHideThresholdPx)
     }
+    var activeListCanScrollBackward by remember { mutableStateOf(false) }
+    var activeListCanScrollForward by remember { mutableStateOf(false) }
+    var bgmNowPlayingVisible by remember { mutableStateOf(false) }
+    val chromeActivePageIndex = if (pagerState.isScrollInProgress) {
+        pagerState.targetPage
+    } else {
+        selectedTabIndex
+    }.coerceIn(0, tabs.lastIndex)
+    val suppressBottomBarForBgmNowPlaying =
+        tabs.getOrNull(chromeActivePageIndex) == BaGuideCatalogPageTab.Bgm && bgmNowPlayingVisible
+    val currentShowBottomBar = rememberUpdatedState(showBottomBar)
+    val currentShowSearchBar = rememberUpdatedState(showSearchBar)
+    val currentActiveListCanScrollBackward = rememberUpdatedState(activeListCanScrollBackward)
+    val currentActiveListCanScrollForward = rememberUpdatedState(activeListCanScrollForward)
     LaunchedEffect(selectedTabIndex) {
+        activeListCanScrollBackward = false
+        activeListCanScrollForward = false
         if (tabs.getOrNull(selectedTabIndex)?.catalogTab == null) {
             filterSortState.showSortPopup = false
         }
@@ -233,8 +250,18 @@ fun BaGuideCatalogPage(
     ) {
         object : NestedScrollConnection {
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
-                searchBarVisibilityController.update(consumed.y, showSearchBar) { showSearchBar = it }
+                bottomBarVisibilityController.updateWithinScrollBounds(
+                    deltaY = consumed.y,
+                    visible = currentShowBottomBar.value,
+                    canScrollBackward = currentActiveListCanScrollBackward.value,
+                    canScrollForward = currentActiveListCanScrollForward.value
+                ) { showBottomBar = it }
+                searchBarVisibilityController.updateWithinScrollBounds(
+                    deltaY = consumed.y,
+                    visible = currentShowSearchBar.value,
+                    canScrollBackward = currentActiveListCanScrollBackward.value,
+                    canScrollForward = currentActiveListCanScrollForward.value
+                ) { showSearchBar = it }
                 return Offset.Zero
             }
         }
@@ -280,7 +307,7 @@ fun BaGuideCatalogPage(
             bottomBar = {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     AnimatedVisibility(
-                        visible = showBottomBar,
+                        visible = showBottomBar && !suppressBottomBarForBgmNowPlaying,
                         enter = appFloatingEnter(),
                         exit = appFloatingExit(),
                         modifier = Modifier.align(Alignment.BottomCenter)
@@ -381,6 +408,10 @@ fun BaGuideCatalogPage(
                         nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                         isPageActive = pageIndex == pagerState.currentPage,
                         renderHeavyContent = renderHeavyContent,
+                        onScrollBoundsChange = { canScrollBackward, canScrollForward ->
+                            activeListCanScrollBackward = canScrollBackward
+                            activeListCanScrollForward = canScrollForward
+                        },
                         onOpenGuide = onOpenGuide
                     )
                 } else if (renderHeavyContent) {
@@ -389,6 +420,14 @@ fun BaGuideCatalogPage(
                         innerPadding = innerPadding,
                         nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                         accent = accent,
+                        isPageActive = pageIndex == pagerState.currentPage,
+                        onScrollBoundsChange = { canScrollBackward, canScrollForward ->
+                            activeListCanScrollBackward = canScrollBackward
+                            activeListCanScrollForward = canScrollForward
+                        },
+                        onNowPlayingVisibilityChange = { visible ->
+                            bgmNowPlayingVisible = visible
+                        },
                         onOpenGuide = onOpenGuide
                     )
                 } else {

@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,6 +19,8 @@ import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogFilterSortState
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabContentUiState
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabListState
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -34,6 +38,7 @@ internal fun BaGuideCatalogTabContent(
     nestedScrollConnection: NestedScrollConnection,
     isPageActive: Boolean,
     renderHeavyContent: Boolean,
+    onScrollBoundsChange: (canScrollBackward: Boolean, canScrollForward: Boolean) -> Unit,
     onOpenGuide: (String) -> Unit
 ) {
     if (!renderHeavyContent) {
@@ -73,6 +78,14 @@ internal fun BaGuideCatalogTabContent(
         error = error,
         filteredEntriesEmpty = tabListState.filteredEntries.isEmpty()
     )
+    LaunchedEffect(tabListState.listState, isPageActive) {
+        if (!isPageActive) return@LaunchedEffect
+        snapshotFlow { tabListState.listState.canScrollBackward to tabListState.listState.canScrollForward }
+            .distinctUntilChanged()
+            .collect { (canScrollBackward, canScrollForward) ->
+                onScrollBoundsChange(canScrollBackward, canScrollForward)
+            }
+    }
     BaGuideCatalogTabListLayout(
         listState = tabListState.listState,
         nestedScrollConnection = nestedScrollConnection,
