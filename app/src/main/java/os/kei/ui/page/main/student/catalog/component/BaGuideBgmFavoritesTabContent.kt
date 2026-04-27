@@ -90,6 +90,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
     var selectedAudioUrl by rememberSaveable { mutableStateOf(savedPlayback.selectedAudioUrl) }
     var playbackRuntimeState by remember { mutableStateOf(BaGuideBgmPlaybackRuntimeState()) }
+    var seekPreviewProgress by remember { mutableStateOf<Float?>(null) }
     var cacheRevision by remember { mutableIntStateOf(0) }
     var cachingAudioUrls by remember { mutableStateOf<Set<String>>(emptySet()) }
     var batchCaching by remember { mutableStateOf(false) }
@@ -349,6 +350,19 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
     val selectedIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
     val selectedFavorite = displayedFavorites.getOrNull(selectedIndex)
+    val displayedPlaybackRuntimeState = remember(playbackRuntimeState, seekPreviewProgress) {
+        val previewProgress = seekPreviewProgress
+        if (previewProgress != null && playbackRuntimeState.durationMs > 0L) {
+            val durationMs = playbackRuntimeState.durationMs
+            playbackRuntimeState.copy(
+                positionMs = (durationMs * previewProgress.coerceIn(0f, 1f))
+                    .toLong()
+                    .coerceIn(0L, durationMs)
+            )
+        } else {
+            playbackRuntimeState
+        }
+    }
     val queueItemIndex = 1 + if (removedFavorite == null) 0 else 1
     val showMiniPlayer by remember(listState, selectedFavorite, queueItemIndex) {
         derivedStateOf {
@@ -368,6 +382,10 @@ internal fun BaGuideBgmFavoritesTabContent(
             audioUrl = selectedAudioUrl,
             queueModeName = queueModeName
         )
+    }
+
+    LaunchedEffect(selectedFavorite?.audioUrl) {
+        seekPreviewProgress = null
     }
 
     LaunchedEffect(selectedFavorite?.audioUrl, queueMode) {
@@ -484,7 +502,7 @@ internal fun BaGuideBgmFavoritesTabContent(
                             queueIndex = selectedIndex.coerceAtLeast(0),
                             queueSize = displayedFavorites.size,
                             queueMode = queueMode,
-                            runtimeState = playbackRuntimeState,
+                            runtimeState = displayedPlaybackRuntimeState,
                             cached = cached,
                             accent = accent,
                             onPrevious = { selectQueueOffset(offset = -1, startPlayback = true) },
@@ -501,6 +519,33 @@ internal fun BaGuideBgmFavoritesTabContent(
                                 )
                             },
                             onNext = { selectQueueOffset(offset = 1, startPlayback = true) },
+                            onSeekChanged = { progress ->
+                                seekPreviewProgress = progress.coerceIn(0f, 1f)
+                            },
+                            onSeekFinished = {
+                                val seekProgress = seekPreviewProgress
+                                    ?: displayedPlaybackRuntimeState.progress
+                                val runtimeState = seekFavoriteBgmPlayback(
+                                    context = appContext,
+                                    favorite = favorite,
+                                    queueMode = queueMode,
+                                    progress = seekProgress
+                                )
+                                playbackRuntimeState = runtimeState
+                                if (
+                                    runtimeState.durationMs > 0L ||
+                                    runtimeState.positionMs > 0L ||
+                                    runtimeState.isPlaying
+                                ) {
+                                    GuideBgmFavoritePlaybackStore.saveProgress(
+                                        audioUrl = favorite.audioUrl,
+                                        positionMs = runtimeState.positionMs,
+                                        durationMs = runtimeState.durationMs,
+                                        isPlaying = runtimeState.isPlaying
+                                    )
+                                }
+                                seekPreviewProgress = null
+                            },
                             onToggleQueueMode = {
                                 val nextMode = if (queueMode == BaGuideBgmQueueMode.Continuous) {
                                     BaGuideBgmQueueMode.SingleLoop
@@ -592,7 +637,7 @@ internal fun BaGuideBgmFavoritesTabContent(
             selectedFavorite?.let { favorite ->
                 BaGuideBgmMiniPlayer(
                     favorite = favorite,
-                    runtimeState = playbackRuntimeState,
+                    runtimeState = displayedPlaybackRuntimeState,
                     queueIndex = selectedIndex.coerceAtLeast(0),
                     queueSize = displayedFavorites.size,
                     accent = accent,

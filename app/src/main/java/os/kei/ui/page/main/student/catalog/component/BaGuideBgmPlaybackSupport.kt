@@ -157,6 +157,26 @@ internal fun toggleFavoriteBgmPlayback(
     }
 }
 
+internal fun seekFavoriteBgmPlayback(
+    context: Context,
+    favorite: GuideBgmFavoriteItem,
+    queueMode: BaGuideBgmQueueMode,
+    progress: Float
+): BaGuideBgmPlaybackRuntimeState {
+    val player = prepareFavoriteBgmPlayback(
+        context = context,
+        favorite = favorite,
+        queueMode = queueMode
+    ) ?: return BaGuideBgmPlaybackRuntimeState()
+    val duration = player.duration.coerceAtLeast(0L)
+    if (duration <= 0L) return favoriteBgmRuntimeState(context, favorite)
+    val targetPosition = (duration * progress.coerceIn(0f, 1f))
+        .toLong()
+        .coerceIn(0L, duration)
+    runCatching { player.seekTo(targetPosition) }
+    return favoriteBgmRuntimeState(context, favorite)
+}
+
 internal fun applyFavoriteBgmQueueMode(
     context: Context,
     favorite: GuideBgmFavoriteItem,

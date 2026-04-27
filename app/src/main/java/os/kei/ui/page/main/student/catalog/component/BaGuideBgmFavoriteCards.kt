@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
@@ -49,9 +52,9 @@ import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -67,6 +70,8 @@ internal fun BaGuideBgmQueueCard(
     onPrevious: () -> Unit,
     onTogglePlayback: () -> Unit,
     onNext: () -> Unit,
+    onSeekChanged: (Float) -> Unit,
+    onSeekFinished: () -> Unit,
     onToggleQueueMode: () -> Unit,
     onOpenGuide: () -> Unit
 ) {
@@ -87,6 +92,7 @@ internal fun BaGuideBgmQueueCard(
         }
     )
     val openGalleryContentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
+    val seekContentDescription = stringResource(R.string.ba_catalog_bgm_seekbar)
     val queueTitle = stringResource(R.string.ba_catalog_bgm_queue_title)
     val positionText = stringResource(
         R.string.ba_catalog_bgm_queue_position,
@@ -210,14 +216,13 @@ internal fun BaGuideBgmQueueCard(
                     )
                 }
             }
-            LinearProgressIndicator(
+            BaGuideBgmPlaybackSeekBar(
                 progress = runtimeState.progress,
-                modifier = Modifier.fillMaxWidth(),
-                height = 3.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = accent,
-                    backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
-                )
+                enabled = runtimeState.durationMs > 0L,
+                accent = accent,
+                contentDescription = seekContentDescription,
+                onSeekChanged = onSeekChanged,
+                onSeekFinished = onSeekFinished
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -271,6 +276,38 @@ internal fun BaGuideBgmQueueCard(
             }
         }
     }
+}
+
+@Composable
+private fun BaGuideBgmPlaybackSeekBar(
+    progress: Float,
+    enabled: Boolean,
+    accent: Color,
+    contentDescription: String,
+    onSeekChanged: (Float) -> Unit,
+    onSeekFinished: () -> Unit
+) {
+    Slider(
+        value = progress.coerceIn(0f, 1f),
+        onValueChange = { value -> onSeekChanged(value.coerceIn(0f, 1f)) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+            .semantics { this.contentDescription = contentDescription },
+        enabled = enabled,
+        valueRange = 0f..1f,
+        onValueChangeFinished = onSeekFinished,
+        height = 10.dp,
+        colors = SliderDefaults.sliderColors(
+            foregroundColor = accent,
+            disabledForegroundColor = accent.copy(alpha = 0.28f),
+            backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f),
+            disabledBackgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.24f),
+            thumbColor = MiuixTheme.colorScheme.onPrimary,
+            disabledThumbColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.44f)
+        ),
+        hapticEffect = SliderDefaults.SliderHapticEffect.Edge
+    )
 }
 
 @Composable
