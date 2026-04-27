@@ -388,9 +388,14 @@ internal fun BaGuideBgmUndoBlock(
     accent: Color,
     onUndo: () -> Unit
 ) {
+    val studentName = removedFavorite.studentTitle.ifBlank {
+        stringResource(R.string.ba_catalog_bgm_student_unknown)
+    }
+    val bgmTitle = removedFavorite.title.ifBlank { removedFavorite.note }
     val message = stringResource(
         R.string.ba_catalog_bgm_removed_message,
-        removedFavorite.title
+        studentName,
+        bgmTitle
     )
     val undoText = stringResource(R.string.ba_catalog_bgm_action_undo)
     Card(

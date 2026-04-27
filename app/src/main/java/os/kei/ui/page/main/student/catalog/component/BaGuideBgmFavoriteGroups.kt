@@ -1,12 +1,10 @@
 package os.kei.ui.page.main.student.catalog.component
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,8 +22,6 @@ import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
 import os.kei.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.GlassTextButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -64,35 +60,6 @@ internal fun rememberBaGuideBgmFavoriteGroupLabels(): BaGuideBgmFavoriteGroupLab
         played = stringResource(R.string.ba_catalog_bgm_group_played),
         unplayed = stringResource(R.string.ba_catalog_bgm_group_unplayed)
     )
-}
-
-@Composable
-internal fun BaGuideBgmGroupModeRow(
-    groupMode: BaGuideBgmFavoriteGroupMode,
-    accent: Color,
-    onGroupModeChange: (BaGuideBgmFavoriteGroupMode) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        BaGuideBgmFavoriteGroupMode.entries.forEach { mode ->
-            val selected = mode == groupMode
-            GlassTextButton(
-                backdrop = null,
-                text = stringResource(mode.labelRes),
-                onClick = { onGroupModeChange(mode) },
-                textColor = if (selected) accent else Color(0xFF64748B),
-                containerColor = if (selected) accent else null,
-                variant = GlassVariant.Compact,
-                textMaxLines = 1,
-                textOverflow = TextOverflow.Ellipsis
-            )
-        }
-    }
 }
 
 @Composable

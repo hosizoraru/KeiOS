@@ -69,12 +69,15 @@
     <string name="ba_catalog_bgm_empty_subtitle">在学生图鉴的回忆大厅 BGM 卡片点击收藏后会显示在这里</string>
     <string name="ba_catalog_bgm_student_note">学生：%1$s</string>
     <string name="ba_catalog_bgm_sort_recent">最近收藏</string>
+    <string name="ba_catalog_bgm_sort_added_order">添加顺序</string>
     <string name="ba_catalog_bgm_sort_student">学生名</string>
     <string name="ba_catalog_bgm_sort_title">标题</string>
+    <string name="ba_catalog_bgm_sort_dropdown_label">排序：%1$s</string>
     <string name="ba_catalog_bgm_group_all">全部</string>
     <string name="ba_catalog_bgm_group_school">学院</string>
     <string name="ba_catalog_bgm_group_role_type">类型</string>
     <string name="ba_catalog_bgm_group_recent_played">播放记录</string>
+    <string name="ba_catalog_bgm_group_dropdown_label">分组：%1$s</string>
     <string name="ba_catalog_bgm_group_unknown_school">未知学院</string>
     <string name="ba_catalog_bgm_group_unknown_type">未知类型</string>
     <string name="ba_catalog_bgm_group_played">有播放记录</string>
@@ -104,7 +107,8 @@
     <string name="ba_catalog_bgm_cache_scope_hint">作用于当前筛选列表</string>
     <string name="ba_catalog_bgm_cache_batch_progress">正在缓存 %1$d / %2$d</string>
     <string name="ba_catalog_bgm_cache_batch_failed_summary">%1$d 首缓存失败</string>
-    <string name="ba_catalog_bgm_removed_message">已移除：%1$s</string>
+    <string name="ba_catalog_bgm_removed_message">已移除：%1$s · %2$s</string>
+    <string name="ba_catalog_bgm_restore_success">已恢复：%1$s 的 BGM 收藏</string>
     <string name="ba_catalog_bgm_cache_success">BGM 已缓存</string>
     <string name="ba_catalog_bgm_cache_failed">BGM 缓存失败</string>
     <string name="ba_catalog_bgm_cache_all_ready">当前列表已全部缓存</string>

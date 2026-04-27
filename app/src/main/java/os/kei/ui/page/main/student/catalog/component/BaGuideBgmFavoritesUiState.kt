@@ -6,6 +6,7 @@ import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 
 internal enum class BaGuideBgmFavoriteSortMode(@param:StringRes val labelRes: Int) {
     Recent(R.string.ba_catalog_bgm_sort_recent),
+    AddedOrder(R.string.ba_catalog_bgm_sort_added_order),
     Student(R.string.ba_catalog_bgm_sort_student),
     Title(R.string.ba_catalog_bgm_sort_title)
 }
@@ -28,6 +29,7 @@ internal fun filterAndSortBgmFavorites(
     }
     return when (sortMode) {
         BaGuideBgmFavoriteSortMode.Recent -> filtered.sortedByDescending { it.favoritedAtMs }
+        BaGuideBgmFavoriteSortMode.AddedOrder -> filtered.sortedBy { it.favoritedAtMs }
         BaGuideBgmFavoriteSortMode.Student -> filtered.sortedWith(
             compareBy<GuideBgmFavoriteItem> { it.studentTitle.ifBlank { it.title }.lowercase() }
                 .thenBy { it.title.lowercase() }

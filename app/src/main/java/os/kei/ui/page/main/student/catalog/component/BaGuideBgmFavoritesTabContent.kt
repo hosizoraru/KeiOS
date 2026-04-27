@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,7 +33,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
@@ -45,8 +43,8 @@ import os.kei.ui.page.main.student.GuideBgmFavoriteStore
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.state.GuideDetailTabRequestStore
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.FrostedBlock
-import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
@@ -458,14 +456,11 @@ internal fun BaGuideBgmFavoritesTabContent(
                             SmallTitle(tabTitle)
                         }
                     }
-                    BaGuideBgmSortModeRow(
+                    BaGuideBgmSortGroupDropdownRow(
                         sortMode = sortMode,
-                        accent = accent,
-                        onSortModeChange = { sortModeName = it.name }
-                    )
-                    BaGuideBgmGroupModeRow(
                         groupMode = groupMode,
                         accent = accent,
+                        onSortModeChange = { sortModeName = it.name },
                         onGroupModeChange = { groupModeName = it.name }
                     )
                 }
@@ -479,6 +474,14 @@ internal fun BaGuideBgmFavoritesTabContent(
                         onUndo = {
                             GuideBgmFavoriteStore.restoreFavorite(favorite)
                             removedFavorite = null
+                            val studentName = favorite.studentTitle.ifBlank {
+                                context.getString(R.string.ba_catalog_bgm_student_unknown)
+                            }
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.ba_catalog_bgm_restore_success, studentName),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     )
                 }
@@ -638,30 +641,64 @@ internal fun BaGuideBgmFavoritesTabContent(
 }
 
 @Composable
-private fun BaGuideBgmSortModeRow(
+private fun BaGuideBgmSortGroupDropdownRow(
     sortMode: BaGuideBgmFavoriteSortMode,
+    groupMode: BaGuideBgmFavoriteGroupMode,
     accent: Color,
-    onSortModeChange: (BaGuideBgmFavoriteSortMode) -> Unit
+    onSortModeChange: (BaGuideBgmFavoriteSortMode) -> Unit,
+    onGroupModeChange: (BaGuideBgmFavoriteGroupMode) -> Unit
 ) {
+    var sortExpanded by remember { mutableStateOf(false) }
+    var sortAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
+    var groupExpanded by remember { mutableStateOf(false) }
+    var groupAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
+    val sortModes = BaGuideBgmFavoriteSortMode.entries
+    val groupModes = BaGuideBgmFavoriteGroupMode.entries
+    val sortOptions = sortModes.map { mode -> stringResource(mode.labelRes) }
+    val groupOptions = groupModes.map { mode -> stringResource(mode.labelRes) }
+    val sortIndex = sortModes.indexOf(sortMode).coerceAtLeast(0)
+    val groupIndex = groupModes.indexOf(groupMode).coerceAtLeast(0)
+
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BaGuideBgmFavoriteSortMode.entries.forEach { mode ->
-            val selected = mode == sortMode
-            GlassTextButton(
-                backdrop = null,
-                text = stringResource(mode.labelRes),
-                onClick = { onSortModeChange(mode) },
-                textColor = if (selected) accent else androidx.compose.ui.graphics.Color(0xFF64748B),
-                containerColor = if (selected) accent else null,
-                variant = GlassVariant.Compact,
-                textMaxLines = 1,
-                textOverflow = TextOverflow.Ellipsis
-            )
-        }
+        AppDropdownSelector(
+            selectedText = stringResource(
+                R.string.ba_catalog_bgm_sort_dropdown_label,
+                sortOptions.getOrElse(sortIndex) { "" }
+            ),
+            options = sortOptions,
+            selectedIndex = sortIndex,
+            expanded = sortExpanded,
+            anchorBounds = sortAnchorBounds,
+            onExpandedChange = { sortExpanded = it },
+            onSelectedIndexChange = { index ->
+                sortModes.getOrNull(index)?.let(onSortModeChange)
+            },
+            onAnchorBoundsChange = { sortAnchorBounds = it },
+            modifier = Modifier.weight(1f),
+            variant = GlassVariant.Compact,
+            textColor = accent
+        )
+        AppDropdownSelector(
+            selectedText = stringResource(
+                R.string.ba_catalog_bgm_group_dropdown_label,
+                groupOptions.getOrElse(groupIndex) { "" }
+            ),
+            options = groupOptions,
+            selectedIndex = groupIndex,
+            expanded = groupExpanded,
+            anchorBounds = groupAnchorBounds,
+            onExpandedChange = { groupExpanded = it },
+            onSelectedIndexChange = { index ->
+                groupModes.getOrNull(index)?.let(onGroupModeChange)
+            },
+            onAnchorBoundsChange = { groupAnchorBounds = it },
+            modifier = Modifier.weight(1f),
+            variant = GlassVariant.Compact,
+            textColor = accent
+        )
     }
 }
