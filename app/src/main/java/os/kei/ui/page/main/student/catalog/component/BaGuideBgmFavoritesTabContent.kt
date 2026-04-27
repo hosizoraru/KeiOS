@@ -89,7 +89,9 @@ internal fun BaGuideBgmFavoritesTabContent(
             ?: BaGuideBgmQueueMode.Continuous
     }
     var selectedAudioUrl by rememberSaveable { mutableStateOf(savedPlayback.selectedAudioUrl) }
-    var playbackRuntimeState by remember { mutableStateOf(BaGuideBgmPlaybackRuntimeState()) }
+    var playbackRuntimeState by remember {
+        mutableStateOf(BaGuideBgmPlaybackRuntimeState(volume = savedPlayback.volume))
+    }
     var seekPreviewProgress by remember { mutableStateOf<Float?>(null) }
     var cacheRevision by remember { mutableIntStateOf(0) }
     var cachingAudioUrls by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -545,6 +547,14 @@ internal fun BaGuideBgmFavoritesTabContent(
                                     )
                                 }
                                 seekPreviewProgress = null
+                            },
+                            onVolumeChanged = { volume ->
+                                val safeVolume = volume.coerceIn(0f, 1f)
+                                playbackRuntimeState = updateFavoriteBgmVolume(
+                                    context = appContext,
+                                    favorite = favorite,
+                                    volume = safeVolume
+                                )
                             },
                             onToggleQueueMode = {
                                 val nextMode = if (queueMode == BaGuideBgmQueueMode.Continuous) {

@@ -82,6 +82,12 @@ internal fun appLucideRepeatIcon(): ImageVector = osLucideVector(LucideR.drawabl
 internal fun appLucideRepeatOneIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_repeat_1)
 
 @Composable
+internal fun appLucideVolume2Icon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_volume_2)
+
+@Composable
+internal fun appLucideVolumeOffIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_volume_off)
+
+@Composable
 internal fun appLucideFullscreenIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_fullscreen)
 
 @Composable

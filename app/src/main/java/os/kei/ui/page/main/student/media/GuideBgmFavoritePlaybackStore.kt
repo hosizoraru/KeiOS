@@ -8,6 +8,7 @@ private const val BA_GUIDE_BGM_PLAYBACK_KV_ID = "ba_guide_bgm_favorite_playback"
 private const val KEY_SELECTED_AUDIO_URL = "selected_audio_url"
 private const val KEY_QUEUE_MODE_NAME = "queue_mode_name"
 private const val KEY_PROGRESS_RAW = "progress_raw"
+private const val KEY_VOLUME = "volume"
 private const val PLAYBACK_PROGRESS_WRITE_STEP_MS = 1500L
 
 internal data class GuideBgmFavoritePlaybackProgress(
@@ -28,6 +29,7 @@ internal data class GuideBgmFavoritePlaybackProgress(
 internal data class GuideBgmFavoritePlaybackSnapshot(
     val selectedAudioUrl: String,
     val queueModeName: String,
+    val volume: Float,
     val progressByAudioUrl: Map<String, GuideBgmFavoritePlaybackProgress>
 ) {
     fun progressFor(audioUrl: String): GuideBgmFavoritePlaybackProgress? {
@@ -45,6 +47,7 @@ internal object GuideBgmFavoritePlaybackStore {
     private var loaded = false
     private var selectedAudioUrl: String = ""
     private var queueModeName: String = ""
+    private var volume: Float = 1f
     private var progressByAudioUrl: Map<String, GuideBgmFavoritePlaybackProgress> = emptyMap()
 
     fun snapshot(): GuideBgmFavoritePlaybackSnapshot {
@@ -52,8 +55,16 @@ internal object GuideBgmFavoritePlaybackStore {
         return GuideBgmFavoritePlaybackSnapshot(
             selectedAudioUrl = selectedAudioUrl,
             queueModeName = queueModeName,
+            volume = volume,
             progressByAudioUrl = progressByAudioUrl
         )
+    }
+
+    fun volume(): Float {
+        synchronized(lock) {
+            ensureLoadedLocked()
+            return volume
+        }
     }
 
     fun progressFor(audioUrl: String): GuideBgmFavoritePlaybackProgress? {
@@ -68,6 +79,15 @@ internal object GuideBgmFavoritePlaybackStore {
             this.queueModeName = queueModeName.trim()
             store.encode(KEY_SELECTED_AUDIO_URL, selectedAudioUrl)
             store.encode(KEY_QUEUE_MODE_NAME, this.queueModeName)
+        }
+    }
+
+    fun saveVolume(value: Float) {
+        val safeVolume = value.coerceIn(0f, 1f)
+        synchronized(lock) {
+            ensureLoadedLocked()
+            volume = safeVolume
+            store.encode(KEY_VOLUME, volume)
         }
     }
 
@@ -120,6 +140,7 @@ internal object GuideBgmFavoritePlaybackStore {
             store.decodeString(KEY_SELECTED_AUDIO_URL, "").orEmpty()
         )
         queueModeName = store.decodeString(KEY_QUEUE_MODE_NAME, "").orEmpty().trim()
+        volume = store.decodeFloat(KEY_VOLUME, 1f).coerceIn(0f, 1f)
         progressByAudioUrl = decodeProgress(store.decodeString(KEY_PROGRESS_RAW, "").orEmpty())
         loaded = true
     }

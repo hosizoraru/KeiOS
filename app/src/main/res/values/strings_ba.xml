@@ -110,6 +110,8 @@
     <string name="ba_catalog_bgm_action_more">更多操作</string>
     <string name="ba_catalog_bgm_action_undo">撤销</string>
     <string name="ba_catalog_bgm_seekbar">播放进度</string>
+    <string name="ba_catalog_bgm_volume">BGM 音量</string>
+    <string name="ba_catalog_bgm_volume_value">%1$d%%</string>
     <string name="ba_catalog_bgm_student_unknown">未知学生</string>
     <string name="ba_catalog_bgm_source_gamekee">GameKee</string>
     <string name="ba_catalog_bgm_cache_ready">已缓存</string>

@@ -81,6 +81,9 @@ internal fun BaGuideBgmMiniPlayer(
         }
     )
     val shape = RoundedCornerShape(18.dp)
+    val neutralControlTint = MiuixTheme.colorScheme.onBackgroundVariant
+    val neutralControlContainer = MiuixTheme.colorScheme.surfaceContainer
+    val primaryControlTint = MiuixTheme.colorScheme.onBackground
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
     Card(
         modifier = modifier
@@ -188,8 +191,8 @@ internal fun BaGuideBgmMiniPlayer(
                     width = 34.dp,
                     height = 34.dp,
                     variant = GlassVariant.Compact,
-                    iconTint = accent,
-                    containerColor = accent
+                    iconTint = neutralControlTint,
+                    containerColor = neutralControlContainer
                 )
                 GlassIconButton(
                     backdrop = null,
@@ -199,7 +202,7 @@ internal fun BaGuideBgmMiniPlayer(
                     width = 40.dp,
                     height = 40.dp,
                     variant = GlassVariant.Compact,
-                    iconTint = accent,
+                    iconTint = primaryControlTint,
                     containerColor = accent
                 )
             }
@@ -244,8 +247,8 @@ internal fun BaGuideBgmMiniPlayer(
                     width = 32.dp,
                     height = 32.dp,
                     variant = GlassVariant.Compact,
-                    iconTint = accent,
-                    containerColor = accent
+                    iconTint = neutralControlTint,
+                    containerColor = neutralControlContainer
                 )
                 GlassIconButton(
                     backdrop = null,
@@ -255,8 +258,8 @@ internal fun BaGuideBgmMiniPlayer(
                     width = 32.dp,
                     height = 32.dp,
                     variant = GlassVariant.Compact,
-                    iconTint = accent,
-                    containerColor = accent
+                    iconTint = neutralControlTint,
+                    containerColor = neutralControlContainer
                 )
                 Text(
                     text = formatAudioDuration(runtimeState.durationMs),

@@ -36,6 +36,8 @@ import os.kei.ui.page.main.os.appLucideRepeatOneIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.os.appLucideUndoIcon
+import os.kei.ui.page.main.os.appLucideVolume2Icon
+import os.kei.ui.page.main.os.appLucideVolumeOffIcon
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 import os.kei.ui.page.main.student.section.gallery.formatAudioDuration
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
@@ -52,11 +54,13 @@ import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.roundToInt
 
 @Composable
 internal fun BaGuideBgmQueueCard(
@@ -72,6 +76,7 @@ internal fun BaGuideBgmQueueCard(
     onNext: () -> Unit,
     onSeekChanged: (Float) -> Unit,
     onSeekFinished: () -> Unit,
+    onVolumeChanged: (Float) -> Unit,
     onToggleQueueMode: () -> Unit,
     onOpenGuide: () -> Unit
 ) {
@@ -93,6 +98,11 @@ internal fun BaGuideBgmQueueCard(
     )
     val openGalleryContentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
     val seekContentDescription = stringResource(R.string.ba_catalog_bgm_seekbar)
+    val volumeContentDescription = stringResource(R.string.ba_catalog_bgm_volume)
+    val volumeText = stringResource(
+        R.string.ba_catalog_bgm_volume_value,
+        (runtimeState.volume * 100f).roundToInt().coerceIn(0, 100)
+    )
     val queueTitle = stringResource(R.string.ba_catalog_bgm_queue_title)
     val positionText = stringResource(
         R.string.ba_catalog_bgm_queue_position,
@@ -102,6 +112,9 @@ internal fun BaGuideBgmQueueCard(
     val cacheReadyLabel = stringResource(R.string.ba_catalog_bgm_cache_ready)
     val cardShape = RoundedCornerShape(16.dp)
     val timeText = "${formatAudioDuration(runtimeState.positionMs)} / ${formatAudioDuration(runtimeState.durationMs)}"
+    val neutralControlTint = MiuixTheme.colorScheme.onBackgroundVariant
+    val neutralControlContainer = MiuixTheme.colorScheme.surfaceContainer
+    val primaryControlTint = MiuixTheme.colorScheme.onBackground
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -189,8 +202,8 @@ internal fun BaGuideBgmQueueCard(
                         width = 32.dp,
                         height = 32.dp,
                         variant = GlassVariant.Compact,
-                        iconTint = accent,
-                        containerColor = accent
+                        iconTint = neutralControlTint,
+                        containerColor = neutralControlContainer
                     )
                     GlassIconButton(
                         backdrop = null,
@@ -200,7 +213,7 @@ internal fun BaGuideBgmQueueCard(
                         width = 40.dp,
                         height = 40.dp,
                         variant = GlassVariant.Compact,
-                        iconTint = accent,
+                        iconTint = primaryControlTint,
                         containerColor = accent
                     )
                     GlassIconButton(
@@ -211,8 +224,8 @@ internal fun BaGuideBgmQueueCard(
                         width = 32.dp,
                         height = 32.dp,
                         variant = GlassVariant.Compact,
-                        iconTint = accent,
-                        containerColor = accent
+                        iconTint = neutralControlTint,
+                        containerColor = neutralControlContainer
                     )
                 }
             }
@@ -254,7 +267,16 @@ internal fun BaGuideBgmQueueCard(
                         appLucideRepeatIcon()
                     },
                     onClick = onToggleQueueMode,
-                    textColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) Color(0xFF22C55E) else accent,
+                    textColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                        Color(0xFF22C55E)
+                    } else {
+                        neutralControlTint
+                    },
+                    containerColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                        Color(0xFF22C55E)
+                    } else {
+                        neutralControlContainer
+                    },
                     variant = GlassVariant.Compact,
                     minHeight = 30.dp,
                     horizontalPadding = 8.dp,
@@ -269,11 +291,17 @@ internal fun BaGuideBgmQueueCard(
                     onClick = onOpenGuide,
                     width = 30.dp,
                     height = 30.dp,
-                    iconTint = accent,
-                    containerColor = accent,
+                    iconTint = neutralControlTint,
+                    containerColor = neutralControlContainer,
                     variant = GlassVariant.Compact
                 )
             }
+            BaGuideBgmVolumeRow(
+                volume = runtimeState.volume,
+                contentDescription = volumeContentDescription,
+                valueText = volumeText,
+                onVolumeChanged = onVolumeChanged
+            )
         }
     }
 }
@@ -304,6 +332,72 @@ private fun BaGuideBgmPlaybackSeekBar(
             backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f),
             disabledBackgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.24f),
             thumbColor = MiuixTheme.colorScheme.onPrimary,
+            disabledThumbColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.44f)
+        ),
+        hapticEffect = SliderDefaults.SliderHapticEffect.Edge
+    )
+}
+
+@Composable
+private fun BaGuideBgmVolumeRow(
+    volume: Float,
+    contentDescription: String,
+    valueText: String,
+    onVolumeChanged: (Float) -> Unit
+) {
+    val neutralTint = MiuixTheme.colorScheme.onBackgroundVariant
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (volume <= 0.01f) {
+                appLucideVolumeOffIcon()
+            } else {
+                appLucideVolume2Icon()
+            },
+            contentDescription = null,
+            tint = neutralTint,
+            modifier = Modifier.size(18.dp)
+        )
+        BaGuideBgmVolumeSlider(
+            volume = volume,
+            contentDescription = contentDescription,
+            onVolumeChanged = onVolumeChanged,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = valueText,
+            color = neutralTint,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun BaGuideBgmVolumeSlider(
+    volume: Float,
+    contentDescription: String,
+    onVolumeChanged: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Slider(
+        value = volume.coerceIn(0f, 1f),
+        onValueChange = { value -> onVolumeChanged(value.coerceIn(0f, 1f)) },
+        modifier = modifier
+            .height(26.dp)
+            .semantics { this.contentDescription = contentDescription },
+        valueRange = 0f..1f,
+        height = 8.dp,
+        colors = SliderDefaults.sliderColors(
+            foregroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.78f),
+            disabledForegroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.28f),
+            backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
+            disabledBackgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.24f),
+            thumbColor = MiuixTheme.colorScheme.onBackground,
             disabledThumbColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.44f)
         ),
         hapticEffect = SliderDefaults.SliderHapticEffect.Edge
@@ -343,6 +437,8 @@ internal fun BaGuideBgmFavoriteCard(
     val trackSubtitle = detailTitle ?: detailNote ?: fallbackTrackTitle
     val cardShape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) accent.copy(alpha = 0.38f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.16f)
+    val listActionTint = MiuixTheme.colorScheme.onBackgroundVariant
+    val listActionContainer = MiuixTheme.colorScheme.surfaceContainer
     var actionExpanded by remember { mutableStateOf(false) }
     var actionAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
     Card(
@@ -430,8 +526,8 @@ internal fun BaGuideBgmFavoriteCard(
                 width = 38.dp,
                 height = 38.dp,
                 variant = GlassVariant.Compact,
-                iconTint = accent,
-                containerColor = accent
+                iconTint = listActionTint,
+                containerColor = listActionContainer
             )
             Box(
                 modifier = Modifier.capturePopupAnchor { actionAnchorBounds = it },
@@ -445,8 +541,8 @@ internal fun BaGuideBgmFavoriteCard(
                     width = 32.dp,
                     height = 32.dp,
                     variant = GlassVariant.Compact,
-                    iconTint = accent,
-                    containerColor = accent
+                    iconTint = listActionTint,
+                    containerColor = listActionContainer
                 )
                 if (actionExpanded) {
                     SnapshotWindowListPopup(

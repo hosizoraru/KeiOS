@@ -6,6 +6,7 @@ import androidx.media3.common.Player
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
 import os.kei.ui.page.main.student.GUIDE_BGM_FAVORITE_AUDIO_SCOPE_KEY
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
+import os.kei.ui.page.main.student.GuideBgmFavoritePlaybackStore
 import os.kei.ui.page.main.student.GuideBgmPlayerStore
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 
@@ -14,7 +15,8 @@ internal data class BaGuideBgmPlaybackRuntimeState(
     val durationMs: Long = 0L,
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = false,
-    val isEnded: Boolean = false
+    val isEnded: Boolean = false,
+    val volume: Float = 1f
 ) {
     val progress: Float
         get() {
@@ -64,7 +66,8 @@ internal fun favoriteBgmRuntimeState(
     context: Context,
     favorite: GuideBgmFavoriteItem
 ): BaGuideBgmPlaybackRuntimeState {
-    val player = existingFavoriteBgmPlayer(context, favorite) ?: return BaGuideBgmPlaybackRuntimeState()
+    val player = existingFavoriteBgmPlayer(context, favorite)
+        ?: return BaGuideBgmPlaybackRuntimeState(volume = GuideBgmFavoritePlaybackStore.volume())
     val duration = player.duration.coerceAtLeast(0L)
     val position = player.currentPosition.coerceAtLeast(0L)
     return BaGuideBgmPlaybackRuntimeState(
@@ -72,7 +75,8 @@ internal fun favoriteBgmRuntimeState(
         durationMs = duration,
         isPlaying = player.isPlaying,
         isBuffering = player.playbackState == Player.STATE_BUFFERING,
-        isEnded = player.playbackState == Player.STATE_ENDED
+        isEnded = player.playbackState == Player.STATE_ENDED,
+        volume = player.volume.coerceIn(0f, 1f)
     )
 }
 
@@ -93,6 +97,10 @@ internal fun prepareFavoriteBgmPlayback(
     if (shouldAttachMedia) {
         player.setMediaItem(MediaItem.fromUri(playbackUrl))
         player.prepare()
+    }
+    val savedVolume = GuideBgmFavoritePlaybackStore.volume()
+    if (player.volume != savedVolume) {
+        player.volume = savedVolume
     }
     player.repeatMode = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
         Player.REPEAT_MODE_ONE
@@ -174,6 +182,17 @@ internal fun seekFavoriteBgmPlayback(
         .toLong()
         .coerceIn(0L, duration)
     runCatching { player.seekTo(targetPosition) }
+    return favoriteBgmRuntimeState(context, favorite)
+}
+
+internal fun updateFavoriteBgmVolume(
+    context: Context,
+    favorite: GuideBgmFavoriteItem,
+    volume: Float
+): BaGuideBgmPlaybackRuntimeState {
+    val safeVolume = volume.coerceIn(0f, 1f)
+    GuideBgmFavoritePlaybackStore.saveVolume(safeVolume)
+    existingFavoriteBgmPlayer(context, favorite)?.volume = safeVolume
     return favoriteBgmRuntimeState(context, favorite)
 }
 
