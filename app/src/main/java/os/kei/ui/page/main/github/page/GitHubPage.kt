@@ -232,7 +232,7 @@ fun GitHubPage(
             topBarColor = topBarColor,
             enableSearchBar = enableSearchBar,
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-            reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress || isListScrolling,
+            reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
             reduceEffectsDuringListScroll = isListScrolling,
             showSearchBar = state.showSearchBar,
             trackedSearch = state.trackedSearch,
