@@ -225,29 +225,18 @@ fun BaGuideCatalogPage(
         if (tabs.getOrNull(selectedTabIndex)?.catalogTab == null) {
             filterSortState.showSortPopup = false
         }
+        bottomBarVisibilityController.showNow(showBottomBar) { showBottomBar = it }
     }
     val bottomBarNestedScrollConnection = remember(
         searchBarVisibilityController,
-        bottomBarVisibilityController,
-        selectedTabIndex,
-        tabs
+        bottomBarVisibilityController
     ) {
         object : NestedScrollConnection {
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                val currentPageTab = tabs.getOrNull(selectedTabIndex)
-                if (currentPageTab == BaGuideCatalogPageTab.Bgm) {
-                    showBottomBar = true
-                } else {
-                    bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
-                }
+                bottomBarVisibilityController.update(consumed.y, showBottomBar) { showBottomBar = it }
                 searchBarVisibilityController.update(consumed.y, showSearchBar) { showSearchBar = it }
                 return Offset.Zero
             }
-        }
-    }
-    LaunchedEffect(selectedTabIndex) {
-        if (tabs.getOrNull(selectedTabIndex) == BaGuideCatalogPageTab.Bgm) {
-            showBottomBar = true
         }
     }
     val actionBarEffectsReduced = pagerState.isScrollInProgress

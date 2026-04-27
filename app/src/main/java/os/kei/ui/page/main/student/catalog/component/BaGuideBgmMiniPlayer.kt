@@ -26,10 +26,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import os.kei.R
+import os.kei.ui.page.main.os.appLucideChevronDownIcon
+import os.kei.ui.page.main.os.appLucideChevronUpIcon
+import os.kei.ui.page.main.os.appLucideExternalLinkIcon
 import os.kei.ui.page.main.os.appLucideListIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
+import os.kei.ui.page.main.os.appLucideRepeatIcon
+import os.kei.ui.page.main.os.appLucideRepeatOneIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
@@ -38,6 +44,7 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
@@ -53,17 +60,26 @@ internal fun BaGuideBgmMiniPlayer(
     runtimeState: BaGuideBgmPlaybackRuntimeState,
     queueIndex: Int,
     queueSize: Int,
+    queueMode: BaGuideBgmQueueMode,
     accent: Color,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
     onOpenQueue: () -> Unit,
     onPrevious: () -> Unit,
     onTogglePlayback: () -> Unit,
     onNext: () -> Unit,
-    collapsed: Boolean,
-    onCollapsedChange: (Boolean) -> Unit,
+    onSeekChanged: (Float) -> Unit,
+    onSeekFinished: () -> Unit,
+    onVolumeChanged: (Float) -> Unit,
+    onToggleQueueMode: () -> Unit,
+    onOpenGuide: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val studentName = favorite.studentTitle.ifBlank {
         stringResource(R.string.ba_catalog_bgm_student_unknown)
+    }
+    val subtitle = miniPlayerSubtitle(favorite).ifBlank {
+        stringResource(R.string.ba_catalog_bgm_track_fallback)
     }
     val queuePosition = stringResource(
         R.string.ba_catalog_bgm_queue_position,
@@ -73,6 +89,21 @@ internal fun BaGuideBgmMiniPlayer(
     val openQueueDescription = stringResource(R.string.ba_catalog_bgm_action_open_queue)
     val previousDescription = stringResource(R.string.ba_catalog_bgm_action_previous)
     val nextDescription = stringResource(R.string.ba_catalog_bgm_action_next)
+    val modeText = stringResource(queueMode.labelRes)
+    val openGalleryDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
+    val seekDescription = stringResource(R.string.ba_catalog_bgm_seekbar)
+    val volumeDescription = stringResource(R.string.ba_catalog_bgm_volume)
+    val volumeText = stringResource(
+        R.string.ba_catalog_bgm_volume_value,
+        (runtimeState.volume * 100f).roundToInt().coerceIn(0, 100)
+    )
+    val expandCollapseDescription = stringResource(
+        if (expanded) {
+            R.string.ba_catalog_bgm_action_collapse_now_playing
+        } else {
+            R.string.ba_catalog_bgm_action_expand_now_playing
+        }
+    )
     val playPauseDescription = stringResource(
         if (runtimeState.isPlaying) {
             R.string.ba_catalog_bgm_action_pause
@@ -84,11 +115,13 @@ internal fun BaGuideBgmMiniPlayer(
     val neutralControlTint = MiuixTheme.colorScheme.onBackgroundVariant
     val neutralControlContainer = MiuixTheme.colorScheme.surfaceContainer
     val primaryControlTint = MiuixTheme.colorScheme.onBackground
+    val timeText = "${formatAudioDuration(runtimeState.positionMs)} / ${formatAudioDuration(runtimeState.durationMs)}"
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .pointerInput(collapsed) {
+            .pointerInput(expanded) {
                 detectVerticalDragGestures(
                     onDragStart = { dragOffsetY = 0f },
                     onVerticalDrag = { change, dragAmount ->
@@ -97,8 +130,8 @@ internal fun BaGuideBgmMiniPlayer(
                     },
                     onDragEnd = {
                         when {
-                            dragOffsetY > 28f -> onCollapsedChange(true)
-                            dragOffsetY < -28f -> onCollapsedChange(false)
+                            dragOffsetY < -28f -> onExpandedChange(true)
+                            dragOffsetY > 28f -> onExpandedChange(false)
                         }
                         dragOffsetY = 0f
                     },
@@ -112,7 +145,7 @@ internal fun BaGuideBgmMiniPlayer(
             ),
         cornerRadius = 18.dp,
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surface.copy(alpha = 0.92f)
+            color = MiuixTheme.colorScheme.surface.copy(alpha = 0.94f)
         )
     ) {
         Column(
@@ -121,33 +154,23 @@ internal fun BaGuideBgmMiniPlayer(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(34.dp)
-                        .height(4.dp)
-                        .background(
-                            color = MiuixTheme.colorScheme.outline.copy(alpha = 0.34f),
-                            shape = CircleShape
-                        )
-                )
-            }
+            NowPlayingDragHandle(
+                expanded = expanded,
+                accent = accent
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(42.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     BaGuideCatalogEntryAvatar(
                         imageUrl = favorite.studentImageUrl.ifBlank { favorite.imageUrl },
                         fallbackRes = R.drawable.ba_tab_bgm,
-                        size = 40.dp
+                        size = 42.dp
                     )
                 }
                 Column(
@@ -175,7 +198,7 @@ internal fun BaGuideBgmMiniPlayer(
                         )
                     }
                     Text(
-                        text = miniPlayerSubtitle(favorite),
+                        text = subtitle,
                         color = MiuixTheme.colorScheme.onBackgroundVariant,
                         fontSize = AppTypographyTokens.Supporting.fontSize,
                         lineHeight = AppTypographyTokens.Supporting.lineHeight,
@@ -185,9 +208,9 @@ internal fun BaGuideBgmMiniPlayer(
                 }
                 GlassIconButton(
                     backdrop = null,
-                    icon = appLucideListIcon(),
-                    contentDescription = openQueueDescription,
-                    onClick = onOpenQueue,
+                    icon = if (expanded) appLucideChevronDownIcon() else appLucideChevronUpIcon(),
+                    contentDescription = expandCollapseDescription,
+                    onClick = { onExpandedChange(!expanded) },
                     width = 34.dp,
                     height = 34.dp,
                     variant = GlassVariant.Compact,
@@ -206,7 +229,8 @@ internal fun BaGuideBgmMiniPlayer(
                     containerColor = accent
                 )
             }
-            if (collapsed) {
+
+            if (!expanded) {
                 LinearProgressIndicator(
                     progress = runtimeState.progress,
                     modifier = Modifier.fillMaxWidth(),
@@ -216,60 +240,144 @@ internal fun BaGuideBgmMiniPlayer(
                         backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
                     )
                 )
-                return@Column
             }
-            LinearProgressIndicator(
-                progress = runtimeState.progress,
-                modifier = Modifier.fillMaxWidth(),
-                height = 4.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = accent,
-                    backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
-                )
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = formatAudioDuration(runtimeState.positionMs),
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    modifier = Modifier.weight(1f)
-                )
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucideSkipBackIcon(),
-                    contentDescription = previousDescription,
-                    onClick = onPrevious,
-                    width = 32.dp,
-                    height = 32.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = neutralControlTint,
-                    containerColor = neutralControlContainer
-                )
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucideSkipForwardIcon(),
-                    contentDescription = nextDescription,
-                    onClick = onNext,
-                    width = 32.dp,
-                    height = 32.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = neutralControlTint,
-                    containerColor = neutralControlContainer
-                )
-                Text(
-                    text = formatAudioDuration(runtimeState.durationMs),
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1
-                )
+
+            if (expanded) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BaGuideBgmPlaybackSeekBar(
+                        progress = runtimeState.progress,
+                        enabled = runtimeState.durationMs > 0L,
+                        accent = accent,
+                        contentDescription = seekDescription,
+                        onSeekChanged = onSeekChanged,
+                        onSeekFinished = onSeekFinished
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = timeText,
+                            color = MiuixTheme.colorScheme.onBackgroundVariant,
+                            fontSize = AppTypographyTokens.Supporting.fontSize,
+                            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = appLucideListIcon(),
+                            contentDescription = openQueueDescription,
+                            onClick = onOpenQueue,
+                            width = 32.dp,
+                            height = 32.dp,
+                            variant = GlassVariant.Compact,
+                            iconTint = neutralControlTint,
+                            containerColor = neutralControlContainer
+                        )
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = appLucideSkipBackIcon(),
+                            contentDescription = previousDescription,
+                            onClick = onPrevious,
+                            width = 32.dp,
+                            height = 32.dp,
+                            variant = GlassVariant.Compact,
+                            iconTint = neutralControlTint,
+                            containerColor = neutralControlContainer
+                        )
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = appLucideSkipForwardIcon(),
+                            contentDescription = nextDescription,
+                            onClick = onNext,
+                            width = 32.dp,
+                            height = 32.dp,
+                            variant = GlassVariant.Compact,
+                            iconTint = neutralControlTint,
+                            containerColor = neutralControlContainer
+                        )
+                        GlassTextButton(
+                            backdrop = null,
+                            text = modeText,
+                            leadingIcon = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                                appLucideRepeatOneIcon()
+                            } else {
+                                appLucideRepeatIcon()
+                            },
+                            onClick = onToggleQueueMode,
+                            textColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                                Color(0xFF22C55E)
+                            } else {
+                                neutralControlTint
+                            },
+                            containerColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                                Color(0xFF22C55E)
+                            } else {
+                                neutralControlContainer
+                            },
+                            variant = GlassVariant.Compact,
+                            minHeight = 30.dp,
+                            horizontalPadding = 8.dp,
+                            verticalPadding = 4.dp,
+                            textMaxLines = 1,
+                            textOverflow = TextOverflow.Ellipsis
+                        )
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = appLucideExternalLinkIcon(),
+                            contentDescription = openGalleryDescription,
+                            onClick = onOpenGuide,
+                            width = 32.dp,
+                            height = 32.dp,
+                            variant = GlassVariant.Compact,
+                            iconTint = neutralControlTint,
+                            containerColor = neutralControlContainer
+                        )
+                    }
+
+                    BaGuideBgmVolumeRow(
+                        volume = runtimeState.volume,
+                        contentDescription = volumeDescription,
+                        valueText = volumeText,
+                        onVolumeChanged = onVolumeChanged
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun NowPlayingDragHandle(
+    expanded: Boolean,
+    accent: Color
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .width(if (expanded) 44.dp else 36.dp)
+                .height(4.dp)
+                .background(
+                    color = if (expanded) {
+                        accent.copy(alpha = 0.40f)
+                    } else {
+                        MiuixTheme.colorScheme.outline.copy(alpha = 0.34f)
+                    },
+                    shape = CircleShape
+                )
+        )
     }
 }
 

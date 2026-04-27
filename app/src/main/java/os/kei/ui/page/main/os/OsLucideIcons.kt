@@ -124,6 +124,12 @@ internal fun appLucidePackageIcon(): ImageVector = osLucideVector(LucideR.drawab
 internal fun appLucideListIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_list)
 
 @Composable
+internal fun appLucideChevronUpIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_chevron_up)
+
+@Composable
+internal fun appLucideChevronDownIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_chevron_down)
+
+@Composable
 internal fun appLucideLockIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_lock)
 
 @Composable

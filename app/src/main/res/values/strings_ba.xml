@@ -109,6 +109,8 @@
     <string name="ba_catalog_bgm_action_open_gallery">打开影画鉴赏</string>
     <string name="ba_catalog_bgm_action_more">更多操作</string>
     <string name="ba_catalog_bgm_action_undo">撤销</string>
+    <string name="ba_catalog_bgm_action_expand_now_playing">展开正在播放</string>
+    <string name="ba_catalog_bgm_action_collapse_now_playing">收起正在播放</string>
     <string name="ba_catalog_bgm_seekbar">播放进度</string>
     <string name="ba_catalog_bgm_volume">BGM 音量</string>
     <string name="ba_catalog_bgm_volume_value">%1$d%%</string>
