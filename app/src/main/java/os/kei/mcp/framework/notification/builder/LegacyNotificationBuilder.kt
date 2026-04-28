@@ -13,8 +13,8 @@ class LegacyNotificationBuilder(
     private companion object {
         private const val ICON_DEFAULT = R.drawable.ic_kei_logo_live_update
         private const val ICON_AP = R.drawable.ic_ba_ap_live_update
-        private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_schale_live_update
-        private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_schale_live_update
+        private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_live_update
+        private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_live_update
     }
 
     private data class LiveProgressState(
