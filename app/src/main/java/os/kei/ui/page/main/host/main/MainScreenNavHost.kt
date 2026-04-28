@@ -16,7 +16,9 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.NavDisplayTransitionEffects
 import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
+import os.kei.core.platform.PredictiveBackOemCompat
 import os.kei.core.prefs.AppThemeMode
 import os.kei.mcp.server.McpServerManager
 import os.kei.ui.navigation.KeiosRoute
@@ -149,14 +151,22 @@ internal fun MainScreenNavHost(
             )
         }
     }
-    val predictiveBackPreviewEnabled = prefsState.transitionAnimationsEnabled &&
-        prefsState.predictiveBackAnimationsEnabled
+    val predictiveBackPolicy = PredictiveBackOemCompat.currentPolicy(
+        transitionAnimationsEnabled = prefsState.transitionAnimationsEnabled,
+        predictiveBackAnimationsEnabled = prefsState.predictiveBackAnimationsEnabled
+    )
+    val predictiveBackPreviewEnabled = predictiveBackPolicy.frameworkAnimationsEnabled
     val predictivePopTransitionSpec =
         if (predictiveBackPreviewEnabled) {
             defaultPredictivePopTransitionSpec<NavKey>()
         } else {
             disabledPredictiveBackTransitionSpec<NavKey>()
         }
+    val transitionEffects = if (predictiveBackPolicy.popDirectionFollowsSwipeEdge) {
+        NavDisplayTransitionEffects.Default.copy(popDirectionFollowsSwipeEdge = true)
+    } else {
+        NavDisplayTransitionEffects.Default
+    }
     val entries = rememberDecoratedNavEntries(
         backStack = backStack,
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
@@ -164,12 +174,13 @@ internal fun MainScreenNavHost(
     )
     CompositionLocalProvider(
         LocalTransitionAnimationsEnabled provides prefsState.transitionAnimationsEnabled,
-        LocalPredictiveBackAnimationsEnabled provides prefsState.predictiveBackAnimationsEnabled
+        LocalPredictiveBackAnimationsEnabled provides predictiveBackPreviewEnabled
     ) {
         NavDisplay(
             entries = entries,
             onBack = { navigator.pop() },
             predictivePopTransitionSpec = predictivePopTransitionSpec,
+            transitionEffects = transitionEffects,
             modifier = Modifier.fillMaxSize()
         )
         BackHandler(enabled = !predictiveBackPreviewEnabled && backStack.size > 1) {
