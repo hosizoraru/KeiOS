@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.os.shortcut
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -109,6 +110,9 @@ internal fun launchGoogleSystemServiceActivity(
         normalized.intentExtras.forEach { extra ->
             putShortcutIntentExtra(extra)
         }
+    }
+    if (intent.resolveActivity(context.packageManager) == null) {
+        throw ActivityNotFoundException("$packageName/$className")
     }
     context.startActivity(intent)
 }

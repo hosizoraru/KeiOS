@@ -442,7 +442,6 @@ class ShizukuApiUtils(
             val method = Shizuku::class.java.methods.firstOrNull {
                 it.name == methodName && it.parameterTypes.isEmpty()
             } ?: return null
-            method.isAccessible = true
             method.invoke(null)
         }.getOrNull()
     }

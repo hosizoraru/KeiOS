@@ -221,20 +221,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun consumeIntentNavigation(intent: Intent?) {
-        val target = intent?.getStringExtra(EXTRA_TARGET_BOTTOM_PAGE)
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: return
-        requestedBottomPage = target
+        pendingMcpServerAction = null
+        pendingShortcutAction = null
+        val route = MainActivityIntentRouting.sanitize(
+            rawTargetBottomPage = intent?.getStringExtra(EXTRA_TARGET_BOTTOM_PAGE),
+            rawMcpServerAction = intent?.getStringExtra(EXTRA_MCP_SERVER_ACTION),
+            rawShortcutAction = intent?.getStringExtra(EXTRA_SHORTCUT_ACTION)
+        ) ?: return
+        requestedBottomPage = route.targetBottomPage
         requestedBottomPageToken += 1
-        if (target == TARGET_BOTTOM_PAGE_MCP) {
-            pendingMcpServerAction = intent.getStringExtra(EXTRA_MCP_SERVER_ACTION)
-                ?.trim()
-                ?.takeIf { it.isNotBlank() }
-        }
-        pendingShortcutAction = intent.getStringExtra(EXTRA_SHORTCUT_ACTION)
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
+        pendingMcpServerAction = route.mcpServerAction
+        pendingShortcutAction = route.shortcutAction
     }
 
     private fun applyPendingShortcutActions() {

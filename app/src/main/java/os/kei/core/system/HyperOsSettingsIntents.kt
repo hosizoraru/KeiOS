@@ -81,12 +81,7 @@ internal object HyperOsSettingsIntents {
     }
 
     private fun readSystemProperty(key: String): String? {
-        return runCatching {
-            val clazz = Class.forName("android.os.SystemProperties")
-            val method = clazz.getDeclaredMethod("get", String::class.java)
-            method.isAccessible = true
-            method.invoke(null, key) as? String
-        }.getOrNull()?.trim()?.takeIf { it.isNotBlank() }
+        return findPropString(key).trim().takeIf { it.isNotBlank() }
     }
 
     private fun resolveAndroidUserId(uid: Int): Int {

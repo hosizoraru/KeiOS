@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import os.kei.core.system.findPropString
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.feature.github.data.remote.GitHubVersionUtils
 
@@ -442,8 +443,7 @@ private fun queryOemAutoStartRestriction(context: Context): Boolean? {
 private fun queryAutoStartRestrictionViaInjector(packageName: String): Boolean? {
     return runCatching {
         val method = Class.forName("android.app.AppOpsManagerInjector")
-            .getDeclaredMethod("isAutoStartRestriction", String::class.java)
-        method.isAccessible = true
+            .getMethod("isAutoStartRestriction", String::class.java)
         method.invoke(null, packageName) as? Boolean
     }.getOrNull()
 }
@@ -468,12 +468,7 @@ private fun queryAutoStartRestrictionViaAppOps(context: Context): Boolean? {
 }
 
 private fun readSystemProperty(key: String): String? {
-    return runCatching {
-        val clazz = Class.forName("android.os.SystemProperties")
-        val method = clazz.getDeclaredMethod("get", String::class.java)
-        method.isAccessible = true
-        method.invoke(null, key) as? String
-    }.getOrNull()?.trim()?.takeIf { it.isNotBlank() }
+    return findPropString(key).trim().takeIf { it.isNotBlank() }
 }
 
 private fun buildNotificationSettingsIntent(context: Context): Intent? {
