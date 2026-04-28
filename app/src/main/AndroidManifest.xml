@@ -24,8 +24,8 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@mipmap/ic_launcher_adaptive_v2"
+        android:roundIcon="@mipmap/ic_launcher_round_adaptive_v2"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.KeiOS">
@@ -51,6 +51,8 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:icon="@mipmap/ic_launcher_adaptive_v2"
+            android:roundIcon="@mipmap/ic_launcher_round_adaptive_v2"
             android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
