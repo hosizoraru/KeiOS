@@ -20,7 +20,10 @@ class ModernNotificationBuilder(
 
     override fun build(payload: NotificationPayload): Notification {
         val state = payload.state
-        val spec = ModernNotificationSpecResolver.resolve(state)
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = state,
+            preferOemLiveIconLayout = payload.environment.preferOemLiveIconLayout
+        )
         return baseNotificationBuilder
             .clearActions()
             // Prevent state leakage between updates.

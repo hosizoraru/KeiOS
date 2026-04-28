@@ -1,6 +1,7 @@
 package os.kei.mcp.framework.notification.builder
 
 import android.app.PendingIntent
+import os.kei.R
 import os.kei.mcp.notification.McpNotificationPayload
 import kotlin.test.assertEquals
 import org.junit.Test
@@ -78,6 +79,57 @@ class ModernNotificationSpecResolverTest {
         assertEquals(ModernShortCriticalMode.NONE, spec.shortCriticalMode)
         assertEquals(false, spec.ongoing)
         assertEquals(false, spec.requestPromotedOngoing)
+    }
+
+    @Test
+    fun `arena refresh uses oem icon order for oem live layout`() {
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = createState(
+                serverName = McpNotificationPayload.BA_ARENA_REFRESH_SERVER_NAME,
+                running = true,
+                port = 0,
+                clients = 0,
+                ongoing = true
+            ),
+            preferOemLiveIconLayout = true
+        )
+
+        assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.iconResId)
+        assertEquals(R.drawable.ic_kei_logo_color, spec.expandedIconResId)
+    }
+
+    @Test
+    fun `arena refresh uses system icon order for standard live layout`() {
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = createState(
+                serverName = McpNotificationPayload.BA_ARENA_REFRESH_SERVER_NAME,
+                running = true,
+                port = 0,
+                clients = 0,
+                ongoing = true
+            ),
+            preferOemLiveIconLayout = false
+        )
+
+        assertEquals(R.drawable.ic_kei_notification_small, spec.iconResId)
+        assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.expandedIconResId)
+    }
+
+    @Test
+    fun `default notification keeps oem app icon without expanded icon`() {
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = createState(
+                serverName = "KeiOS MCP",
+                running = true,
+                port = 0,
+                clients = 0,
+                ongoing = true
+            ),
+            preferOemLiveIconLayout = true
+        )
+
+        assertEquals(R.drawable.ic_kei_logo_live_update, spec.iconResId)
+        assertEquals(null, spec.expandedIconResId)
     }
 
     private fun createState(

@@ -10,13 +10,6 @@ class LegacyNotificationBuilder(
     private val context: Context
 ) : SessionNotificationBuilder {
 
-    private companion object {
-        private const val ICON_DEFAULT = R.drawable.ic_kei_logo_live_update
-        private const val ICON_AP = R.drawable.ic_ba_ap_live_update
-        private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_live_update
-        private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_live_update
-    }
-
     private data class LiveProgressState(
         val current: Int,
         val indeterminate: Boolean
@@ -24,7 +17,10 @@ class LegacyNotificationBuilder(
 
     override fun build(payload: NotificationPayload): android.app.Notification {
         val state = payload.state
-        val spec = ModernNotificationSpecResolver.resolve(state)
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = state,
+            preferOemLiveIconLayout = payload.environment.preferOemLiveIconLayout
+        )
         val isBlueArchiveAp = spec.kind == ModernNotificationKind.BA_AP
         val isBlueArchiveCafeVisit = spec.kind == ModernNotificationKind.BA_CAFE_VISIT
         val isBlueArchiveArenaRefresh = spec.kind == ModernNotificationKind.BA_ARENA_REFRESH

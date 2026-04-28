@@ -37,7 +37,8 @@ class SessionNotifierImpl(
             settings = UserSettings(miIslandOuterGlow = payload.outerGlow),
             environment = EnvironmentContext(
                 channelId = helper.resolveChannel(style),
-                isHyperOS = helper.isHyperOS
+                isHyperOS = helper.isHyperOS,
+                preferOemLiveIconLayout = helper.preferOemLiveIconLayout
             )
         )
         val notification = when (style) {

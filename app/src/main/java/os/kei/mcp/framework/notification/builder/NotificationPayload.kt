@@ -14,7 +14,8 @@ data class UserSettings(
 
 data class EnvironmentContext(
     val channelId: String,
-    val isHyperOS: Boolean
+    val isHyperOS: Boolean,
+    val preferOemLiveIconLayout: Boolean = false
 )
 
 enum class NotificationRenderStyle {
@@ -22,4 +23,3 @@ enum class NotificationRenderStyle {
     LIVE_UPDATE,
     LEGACY
 }
-

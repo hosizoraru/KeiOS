@@ -33,21 +33,23 @@ internal data class ModernNotificationSpec(
 internal object ModernNotificationSpecResolver {
     private const val PROGRESS_ACTIVE_COLOR = 0xFF2E7D32.toInt()
     private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
-    private const val ICON_DEFAULT = R.drawable.ic_kei_logo_live_update
-    private const val ICON_AP = R.drawable.ic_ba_ap_live_update
-    private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_live_update
-    private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_live_update
-    private const val EXPANDED_ICON_AP = R.drawable.ic_kei_logo_color
-    private const val EXPANDED_ICON_BA_CAFE_VISIT = R.drawable.ic_kei_logo_color
-    private const val EXPANDED_ICON_BA_ARENA_REFRESH = R.drawable.ic_kei_logo_color
+    private const val ICON_DEFAULT = R.drawable.ic_kei_notification_small
+    private const val ICON_DEFAULT_OEM = R.drawable.ic_kei_logo_live_update
+    private const val EXPANDED_ICON_APP = R.drawable.ic_kei_logo_color
+    private const val CONTENT_ICON_AP = R.drawable.ic_ba_ap_live_update
+    private const val CONTENT_ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_live_update
+    private const val CONTENT_ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_live_update
 
-    fun resolve(state: McpNotificationPayload): ModernNotificationSpec {
+    fun resolve(
+        state: McpNotificationPayload,
+        preferOemLiveIconLayout: Boolean = false
+    ): ModernNotificationSpec {
         val kind = resolveKind(state.serverName)
         val isRunning = state.running
         return ModernNotificationSpec(
             kind = kind,
-            iconResId = resolveIcon(kind),
-            expandedIconResId = resolveExpandedIcon(kind),
+            iconResId = resolveIcon(kind, preferOemLiveIconLayout),
+            expandedIconResId = resolveExpandedIcon(kind, preferOemLiveIconLayout),
             progressPercent = resolveProgressPercent(state = state, kind = kind),
             progressColor = if (isRunning) PROGRESS_ACTIVE_COLOR else PROGRESS_IDLE_COLOR,
             category = if (isRunning) {
@@ -70,21 +72,38 @@ internal object ModernNotificationSpecResolver {
         }
     }
 
-    private fun resolveIcon(kind: ModernNotificationKind): Int {
-        return when (kind) {
-            ModernNotificationKind.DEFAULT -> ICON_DEFAULT
-            ModernNotificationKind.BA_AP -> ICON_AP
-            ModernNotificationKind.BA_CAFE_VISIT -> ICON_BA_CAFE_VISIT
-            ModernNotificationKind.BA_ARENA_REFRESH -> ICON_BA_ARENA_REFRESH
+    private fun resolveIcon(
+        kind: ModernNotificationKind,
+        preferOemLiveIconLayout: Boolean
+    ): Int {
+        return if (preferOemLiveIconLayout) {
+            resolveContentIcon(kind) ?: ICON_DEFAULT_OEM
+        } else {
+            ICON_DEFAULT
         }
     }
 
-    private fun resolveExpandedIcon(kind: ModernNotificationKind): Int? {
+    private fun resolveExpandedIcon(
+        kind: ModernNotificationKind,
+        preferOemLiveIconLayout: Boolean
+    ): Int? {
+        if (preferOemLiveIconLayout) {
+            return when (kind) {
+                ModernNotificationKind.DEFAULT -> null
+                ModernNotificationKind.BA_AP,
+                ModernNotificationKind.BA_CAFE_VISIT,
+                ModernNotificationKind.BA_ARENA_REFRESH -> EXPANDED_ICON_APP
+            }
+        }
+        return resolveContentIcon(kind)
+    }
+
+    private fun resolveContentIcon(kind: ModernNotificationKind): Int? {
         return when (kind) {
             ModernNotificationKind.DEFAULT -> null
-            ModernNotificationKind.BA_AP -> EXPANDED_ICON_AP
-            ModernNotificationKind.BA_CAFE_VISIT -> EXPANDED_ICON_BA_CAFE_VISIT
-            ModernNotificationKind.BA_ARENA_REFRESH -> EXPANDED_ICON_BA_ARENA_REFRESH
+            ModernNotificationKind.BA_AP -> CONTENT_ICON_AP
+            ModernNotificationKind.BA_CAFE_VISIT -> CONTENT_ICON_BA_CAFE_VISIT
+            ModernNotificationKind.BA_ARENA_REFRESH -> CONTENT_ICON_BA_ARENA_REFRESH
         }
     }
 
