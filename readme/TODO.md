@@ -20,7 +20,7 @@ Official references checked on 2026-04-29:
 
 - [x] Build baseline is `minSdk=35`, `compileSdk=37`, `targetSdk=37`, with Java / Kotlin toolchains on 21.
 - [x] Manifest declares `NEARBY_WIFI_DEVICES(maxSdk=36)`, `ACCESS_LOCAL_NETWORK`, `USE_LOOPBACK_INTERFACE`, `POST_PROMOTED_NOTIFICATIONS`, and `FOREGROUND_SERVICE_SPECIAL_USE`.
-- [x] Main Activity enables `enableEdgeToEdge()`, launcher icons provide monochrome assets, and main navigation plus guide fullscreen image flow use predictive-back paths.
+- [x] Main Activity enables `enableEdgeToEdge()`, launcher icons provide monochrome assets, main navigation plus guide fullscreen image flow use predictive-back paths, and `OnBackInvokedCallback` is explicitly enabled.
 - [x] Source search currently finds zero Contacts, Bluetooth, custom RemoteViews, `MediaStore#getVersion()`, `scheduleAtFixedRate`, WorkManager, or direct JobScheduler adaptation surfaces.
 - [x] Add a shared API-version helper for `SDK_INT_FULL`, API 36, API 36.1, and API 37 gates.
 - [x] Add Runtime API Full and Advanced Protection Mode status to About build details.
@@ -29,6 +29,8 @@ Official references checked on 2026-04-29:
 
 - [ ] Validate edge-to-edge, IME, status bar, and navigation bar insets on Android 16 / API 36 devices or AVDs across Home, OS, BA, MCP, GitHub, Settings, About, GitHub share import window, uCrop, and video fullscreen.
 - [ ] Validate predictive back across Nav3 main pages, Settings, student guide detail, guide fullscreen image, OS Shell Runner, and GitHub share import Activity with gesture and 3-button navigation.
+- [x] Add predictive-back OEM compatibility for HyperOS / MIUI / Xiaomi, ColorOS, OriginOS, MagicOS, EMUI, and One UI so main-navigation return transitions follow the active swipe edge.
+- [x] Complete Android 17 / API 37 AVD predictive-back smoke: Home -> Settings -> left-edge back, Home -> About -> right-edge back, with logcat confirming the `CoreBackPreview` callback path.
 - [x] Add constrained `NEARBY_WIFI_DEVICES(maxSdk=36)` support and route MCP LAN permission requests through shared API 36 / API 37 permission logic.
 - [x] Add `scripts/qa/android_api_compat_probe.sh` for API 36 / 37 device version, manifest permission, AppOps, and optional `RESTRICT_LOCAL_NETWORK` compat-flag checks.
 - [ ] Use the Android 16 `RESTRICT_LOCAL_NETWORK` compat flag to validate MCP loopback / LAN mode.

@@ -20,7 +20,7 @@
 
 - [x] 构建基线为 `minSdk=35`、`compileSdk=37`、`targetSdk=37`，Java / Kotlin toolchain 为 21。
 - [x] Manifest 已声明 `NEARBY_WIFI_DEVICES(maxSdk=36)`、`ACCESS_LOCAL_NETWORK`、`USE_LOOPBACK_INTERFACE`、`POST_PROMOTED_NOTIFICATIONS`、`FOREGROUND_SERVICE_SPECIAL_USE`。
-- [x] 主 Activity 已启用 `enableEdgeToEdge()`，启动图标已提供 monochrome 资源，主导航与图鉴全屏图已接入预测返回路径。
+- [x] 主 Activity 已启用 `enableEdgeToEdge()`，启动图标已提供 monochrome 资源，主导航与图鉴全屏图已接入预测返回路径，并显式开启 `OnBackInvokedCallback`。
 - [x] 源码搜索当前无 Contacts、Bluetooth、自定义 RemoteViews、`MediaStore#getVersion()`、`scheduleAtFixedRate`、WorkManager、JobScheduler 直接适配面。
 - [x] 新增统一 API 版本辅助，覆盖 `SDK_INT_FULL`、API 36、API 36.1、API 37 判断。
 - [x] About 构建信息中增加 Runtime API Full 与 Advanced Protection Mode 状态检测。
@@ -29,6 +29,8 @@
 
 - [ ] 在 Android 16 / API 36 真机或 AVD 上回归 Home、OS、BA、MCP、GitHub、Settings、About、GitHub 分享导入窗口、uCrop、视频全屏页的 edge-to-edge、IME、状态栏、导航栏 inset 表现。
 - [ ] 全量验证预测返回：Nav3 主页面、设置页、学生图鉴详情、图鉴全屏图片、OS Shell Runner、GitHub 分享导入 Activity，并覆盖手势导航与三键导航。
+- [x] 为 HyperOS / MIUI / Xiaomi、ColorOS、OriginOS、MagicOS、EMUI、One UI 增加预测返回 OEM 兼容策略，主导航返回动画会跟随左右边缘方向。
+- [x] 在 Android 17 / API 37 AVD 上完成预测返回 smoke：Home -> 设置 -> 左边缘返回、Home -> About -> 右边缘返回，logcat 确认进入 `CoreBackPreview` 回调路径。
 - [x] 为 API 36 本地网络限制测试补充 `NEARBY_WIFI_DEVICES(maxSdk=36)`，并把 MCP 局域网权限请求统一接入 API 36 / API 37 权限辅助。
 - [x] 增加 `scripts/qa/android_api_compat_probe.sh`，用于读取 API 36 / 37 设备版本、Manifest 权限、AppOps，并可按需启用 `RESTRICT_LOCAL_NETWORK` compat flag。
 - [ ] 使用 Android 16 compat flag `RESTRICT_LOCAL_NETWORK` 验证 MCP loopback / 局域网模式。
