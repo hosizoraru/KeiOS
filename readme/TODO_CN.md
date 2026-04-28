@@ -34,16 +34,16 @@
 ### P0-A 显示、输入、返回
 
 - [x] 在 API 36 普通窗口完成 Home、OS、BA、MCP、GitHub、Settings、About、GitHub 分享导入窗口、uCrop、OS Shell Runner、视频全屏页的 edge-to-edge、状态栏、导航栏 smoke；证据目录：`artifacts/api36-p0/smoke4/`。
-- [ ] 继续验证 API 36 IME 与聚焦输入 inset，覆盖 OS Shell Runner、GitHub Token / 分享导入、Settings 权限流、BA 图鉴筛选。
-- [ ] 在 API 36 上做字体 smoke，覆盖中文、日文、拉丁字符、大字体、粗体文字、outline text 设置，以及 Home、GitHub、BA 图鉴 / 图鉴目录、Settings、About、OS Shell、GitHub 分享导入；记录 chip 裁切、基线漂移、Miuix / Compose 行高回归。
-- [ ] 全量验证预测返回：Nav3 主页面、设置页、学生图鉴详情、图鉴全屏图片、OS Shell Runner、GitHub 分享导入 Activity，并覆盖手势导航与三键导航。
+- [x] 完成 API 36 IME 与聚焦输入 inset 验证，覆盖 OS Shell Runner、GitHub Token / 分享导入、Settings 权限流、BA 图鉴筛选；证据目录：`artifacts/api36-p0/p0a-display-input-accessibility-run2/`。本轮在 Xiaomi `25098PN5AC` 上采集 OS Shell Runner、GitHub API Token、BA 图鉴目录筛选的截图、UI XML 与 `dumpsys input_method`。
+- [x] 完成 API 36 字体 smoke，覆盖中文、日文、拉丁字符、大字体、粗体文字、outline text 设置，以及 Home、GitHub、BA 图鉴 / 图鉴目录、Settings、About、OS Shell、GitHub 分享导入；证据目录：`artifacts/api36-p0/p0a-display-input-accessibility-run2/`。本轮使用 `font_scale=1.35`、高对比文字、`font_weight_adjustment=200`，结束后已恢复设备文字设置。
+- [x] 完成预测返回验证：Nav3 主页面、设置页、学生图鉴详情、图鉴全屏图片、OS Shell Runner、GitHub 分享导入 Activity，并覆盖手势返回与按键返回；证据目录：`artifacts/api36-p0/p0a-display-input-accessibility-run2/`。已采集 `CoreBackPreview` 证据，过滤后的 KeiOS 进程 fatal 计数为 0。本轮记录到 1 条 `uiautomator` dump 进程注册冲突崩溃，归入后续 QA 工具过滤项。
 - [x] 为 HyperOS / MIUI / Xiaomi、ColorOS、OriginOS、MagicOS、EMUI、One UI 增加预测返回 OEM 兼容策略，主导航返回动画会跟随左右边缘方向。
 - [x] 在 Android 17 / API 37 AVD 上完成预测返回 smoke：Home -> 设置 -> 左边缘返回、Home -> About -> 右边缘返回，logcat 确认进入 `CoreBackPreview` 回调路径。
 
 ### P0-B 运行时、打包、Native 依赖
 
-- [ ] 用打包后的 debug 或 benchmark APK 做 API 36 16 KB page-size 验证，覆盖依赖带入的 native libraries；记录 page-size compat 警告、具体 `.so`、临时 `android:pageSizeCompat` 决策。
-- [ ] 在 API 36 上做 ART / native dependency smoke，覆盖全新安装、升级安装、启动、MMKV 读写、缓存清理、Coil GIF 解码、Media3 BGM / 视频、Shizuku 初始化、focus-api 通知构建、backdrop / liquid-glass 渲染；记录 `UnsatisfiedLinkError`、ART 内部结构、hidden-API 栈。
+- [x] 完成打包 debug APK 的 API 36 16 KB page-size 验证，使用 `KeiOS_API36_16K` AVD；证据目录：`artifacts/api36-p0/p0b-runtime-native-api36-16k-run2/`。模拟器报告 `PAGE_SIZE=16384`，`zipalign -P 16` 退出码为 0，依赖带入的 native libraries `libandroidx.graphics.path.so` 与 `libmmkv.so` 最小 LOAD alignment 均为 `16384`，当前决策为保持 `android:pageSizeCompat` 未设置。
+- [x] 完成 API 36 ART / native dependency smoke，覆盖全新安装、升级安装、启动、MMKV 读写、缓存清理、Coil GIF 解码、Media3 BGM / 视频、Shizuku 初始化、focus-api 通知构建、backdrop / liquid-glass 渲染；证据目录：`artifacts/api36-p0/p0b-runtime-native-api36-16k-run2/`。全新安装与升级安装均返回 `Success`，runtime probe 全部 `PASS`，`UnsatisfiedLinkError`、KeiOS 进程 fatal exception、KeiOS native `dlopen failed` 的运行阻断计数为 0。`AccessibilityNodeInfo.getSelection/setSelection` 的 hidden-API denied 残留进入下一轮 hidden-API 审计。
 - [x] 完成 `setAccessible` / hidden API 首轮收敛：HyperOS 设置跳转与保活权限辅助的系统属性读取改用统一 PropUtils，AppOpsManagerInjector 改为公开方法探测；Shizuku private `newProcess` 兼容入口保留并受状态门控。
 
 ### P0-C 本地网络与 MCP 服务
@@ -75,6 +75,7 @@
 
 - [x] 增加 `scripts/qa/android_api_compat_probe.sh`，用于读取 API 36 / 37 设备版本、Manifest 权限、AppOps，并可按需启用 `RESTRICT_LOCAL_NETWORK` compat flag。
 - [x] 增加 debug-only API 兼容 QA 入口与 `scripts/qa/android_api36_p0_smoke.sh`，用于采集 API 36 页面、URI grant、分享导入、Shell、全屏、uCrop、通知证据。
+- [x] 增加 API 36 P0-A / P0-B 专用 QA 脚本：`scripts/qa/android_api36_p0a_display_input_accessibility.sh` 采集显示、输入、返回、无障碍证据，`scripts/qa/android_api36_p0b_runtime_native_smoke.sh` 采集 16 KB native library 与运行时依赖证据。
 - [x] 扩展 `scripts/qa/android_api_compat_probe.sh`，输出 page size、显示 / 窗口尺寸、已启用 compat flags、alarm / job / download 状态；API 36 真机当前报告 4096-byte page 与 `1220x2656 @ 520dpi`。
 
 ## P1 - API 37 强制适配
