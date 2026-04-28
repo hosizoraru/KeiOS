@@ -106,8 +106,8 @@ Official references checked on 2026-04-29:
 ### P1-D Input And Media Lifecycle
 
 - [x] Add Android 17 foreground-only guard and hardening validation for BA guide media playback.
-- [ ] Validate GitHub API token password masking on Android 17 with a physical keyboard and the system show-password setting; adopt `ShowSecretsSetting.shouldShowPassword(...)` only if Compose masking diverges from platform behavior.
-- [ ] Re-validate BA guide BGM/video foreground-only playback on Android 17 during app switch, screen lock, split-screen, notification shade, and low-power mode; keep the playback lifecycle contract explicit until a MediaSession service is intentionally added.
+- [x] Validate GitHub API token password masking on Android 17 with a physical keyboard and the system show-password setting; artifacts: `artifacts/api37-p1/p1d-input-media-lifecycle-20260429-2/`. The token field now uses `KeyboardType.Password`; API 37 `dumpsys input_method` reports `inputTypeString = Password` / `inputType=0x8081`, UI nodes stay `password=true` with physical show-password on and off, and the explicit "Show Token" control remains the only plaintext entry point.
+- [x] Re-validate BA guide BGM/video foreground-only playback on Android 17 during app switch, screen lock, split-screen, notification shade, and low-power mode; artifacts: `artifacts/api37-p1/p1d-input-media-lifecycle-20260429-2/`. BGM and video keep active audio tracks in foreground, expanded notification shade, multi-window, and foreground low-power mode; Home, screen lock, and low-power background all go idle. `dumpsys media_session` still reports app audio playback with zero sessions in the media session stack, so playback remains UI/foreground-bound until a MediaSession service is intentionally added.
 
 ### P1-E Notifications, Advanced Protection, And Hidden APIs
 

@@ -106,8 +106,8 @@
 ### P1-D 输入、媒体生命周期
 
 - [x] 为 BA 图鉴媒体播放增加 Android 17 前台播放保护，并完成 audio hardening 验证。
-- [ ] 在 Android 17 物理键盘与系统显示密码设置下验证 GitHub API Token 密码遮罩；Compose 遮罩和平台行为不一致时再接入 `ShowSecretsSetting.shouldShowPassword(...)`。
-- [ ] 在 Android 17 上复验 BA 图鉴 BGM / 视频前台播放保护，覆盖切后台、锁屏、分屏、通知栏、低电量模式；在明确加入 MediaSession service 前保持当前播放生命周期契约。
+- [x] 在 Android 17 物理键盘与系统显示密码设置下验证 GitHub API Token 密码遮罩；证据目录：`artifacts/api37-p1/p1d-input-media-lifecycle-20260429-2/`。Token 输入已切到 `KeyboardType.Password`，API 37 `dumpsys input_method` 显示 `inputTypeString = Password` / `inputType=0x8081`，物理键盘 show-password 开关两态下 UI 节点保持 `password=true`，显式“显示 Token”按钮继续作为唯一明文入口。
+- [x] 在 Android 17 上复验 BA 图鉴 BGM / 视频前台播放保护，覆盖切后台、锁屏、分屏、通知栏、低电量模式；证据目录：`artifacts/api37-p1/p1d-input-media-lifecycle-20260429-2/`。BGM 与视频在前台、通知栏展开、多窗口和低电量前台均保持活动音轨；Home、锁屏、低电量后台均转为 idle。`dumpsys media_session` 仍显示 app audio playback、media session stack 为 0，播放生命周期契约继续保持 UI/前台绑定，等待明确加入 MediaSession service 后再扩展系统媒体控制。
 
 ### P1-E 通知、Advanced Protection、Hidden API
 

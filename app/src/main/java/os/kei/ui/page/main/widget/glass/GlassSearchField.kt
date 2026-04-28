@@ -57,6 +57,7 @@ fun GlassSearchField(
     minHeight: Dp = AppInteractiveTokens.glassSearchFieldMinHeight,
     horizontalPadding: Dp = AppInteractiveTokens.glassSearchFieldHorizontalPadding,
     verticalPadding: Dp = AppInteractiveTokens.glassSearchFieldVerticalPadding,
+    keyboardOptions: KeyboardOptions? = null,
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
@@ -106,6 +107,11 @@ fun GlassSearchField(
         TextAlign.Center -> Alignment.Center
         TextAlign.End, TextAlign.Right -> Alignment.CenterEnd
         else -> Alignment.CenterStart
+    }
+    val effectiveKeyboardOptions = keyboardOptions ?: if (singleLine) {
+        KeyboardOptions(imeAction = ImeAction.Done)
+    } else {
+        KeyboardOptions.Default
     }
 
     Box(
@@ -171,7 +177,7 @@ fun GlassSearchField(
             textStyle = inputTextStyle,
             cursorBrush = SolidColor(textColor),
             visualTransformation = visualTransformation,
-            keyboardOptions = if (singleLine) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
+            keyboardOptions = effectiveKeyboardOptions,
             keyboardActions = KeyboardActions(
                 onDone = {
                     onImeActionDone?.invoke()
