@@ -99,9 +99,9 @@ Official references checked on 2026-04-29:
 ### P1-C Activity Launch, URI Grants, And IntentSender
 
 - [x] Add explicit URI grant support for the non-Home background FileProvider / uCrop crop flow.
-- [ ] Continue validating custom media-save and ZIP export URI grant flows on Android 17; add explicit package grants where chooser or third-party targets drop access.
+- [x] Validate custom media-save and ZIP export URI grant flows on Android 17 / API 37 AVD; artifacts: `artifacts/api37-p1/p1c-uri-intentsender-20260429-1/`. Single-media save uses `ACTION_CREATE_DOCUMENT` or `ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`; ZIP pack export uses `CreateDocument(application/zip)` or fixed-folder `DocumentFile`, with output centralized through `ContentResolver.openOutputStream` / `ZipOutputStream`. API 37 DocumentsUI successfully launched ZIP `CreateDocument` and `OpenDocumentTree`; current chooser paths share plain-text URLs only, leaving zero extra explicit package-grant surface.
 - [x] Add user-visible notification action background-activity-start allowance for MCP and GitHub notification open PendingIntents.
-- [ ] Continue auditing IntentSender UI launch paths for Android 17 background-activity-start behavior.
+- [x] Complete the IntentSender UI launch-path audit; artifacts: `artifacts/api37-p1/p1c-uri-intentsender-20260429-1/`. Source hits show app-owned UI launches are `ActivityResult` / SAF, browser `ACTION_VIEW`, text chooser, or notification `PendingIntent`; direct `IntentSender` / `StartIntentSenderForResult` hits are 0. MCP / GitHub notification-open `PendingIntent`s already use `PendingIntentLaunchOptionsCompat` for the user-visible notification BAL allowance, leaving zero extra Android 17 change surface.
 
 ### P1-D Input And Media Lifecycle
 

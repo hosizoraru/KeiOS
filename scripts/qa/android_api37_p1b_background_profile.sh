@@ -172,7 +172,7 @@ grep -iE "A17AnomalyProfiler|os\\.kei|AndroidRuntime|FATAL EXCEPTION|MemoryLimit
   "$OUT_DIR/logcat.txt" > "$OUT_DIR/logcat_filtered.txt" || true
 grep -iE "EXCESSIVE_RESOURCE_USAGE|MemoryLimiter|excessive" \
   "$OUT_DIR/after_idle_exit_info.txt" > "$OUT_DIR/exit_resource_alerts.txt" || true
-grep -iE "AndroidRuntime|FATAL EXCEPTION" \
+grep -E "FATAL EXCEPTION| E/AndroidRuntime" \
   "$OUT_DIR/logcat_filtered.txt" > "$OUT_DIR/logcat_fatal_alerts.txt" || true
 
 github_alarm_count="$(grep -c "os.kei.background.action.GITHUB_TICK" "$OUT_DIR/after_idle_alarm_${PACKAGE_NAME}.txt" || true)"

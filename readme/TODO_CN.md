@@ -99,9 +99,9 @@
 ### P1-C Activity 启动、URI Grant、IntentSender
 
 - [x] 为非 Home 背景裁剪的 FileProvider / uCrop 链路增加显式 URI grant 辅助。
-- [ ] 在 Android 17 上继续验证自定义媒体保存、ZIP 导出等 URI grant 链路；chooser 或第三方目标丢权限时补充显式包授权。
+- [x] 在 Android 17 / API 37 AVD 上验证自定义媒体保存、ZIP 导出等 URI grant 链路；证据目录：`artifacts/api37-p1/p1c-uri-intentsender-20260429-1/`。单媒体保存通过 `ACTION_CREATE_DOCUMENT` 或 `ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`；ZIP 打包通过 `CreateDocument(application/zip)` 或固定目录 `DocumentFile` 写入，输出统一走 `ContentResolver.openOutputStream` / `ZipOutputStream`。API 37 系统 DocumentsUI 已成功拉起 ZIP `CreateDocument` 与 `OpenDocumentTree`；现有 chooser 路径仅分享纯文本 URL，额外显式包授权面为 0。
 - [x] 为 MCP 与 GitHub 通知点击打开 App 的 PendingIntent 增加用户可见通知动作专用的后台 Activity 启动 allowance。
-- [ ] 继续审计 IntentSender 拉起界面的链路，适配 Android 17 后台启动 Activity 行为。
+- [x] 完成 IntentSender 拉起界面链路审计；证据目录：`artifacts/api37-p1/p1c-uri-intentsender-20260429-1/`。源码命中显示 app 自有 UI 拉起路径集中在 `ActivityResult` / SAF、浏览器 `ACTION_VIEW`、文本 chooser 和通知 `PendingIntent`，直接 `IntentSender` / `StartIntentSenderForResult` 命中数为 0；MCP / GitHub 打开通知的 `PendingIntent` 已通过 `PendingIntentLaunchOptionsCompat` 设置用户可见通知动作 BAL allowance，Android 17 额外改动面为 0。
 
 ### P1-D 输入、媒体生命周期
 
