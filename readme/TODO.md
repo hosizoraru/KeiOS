@@ -53,7 +53,7 @@ Official references checked on 2026-04-29:
 - [x] Validate MCP LAN mode on Android 16 / API 36 hardware with `RESTRICT_LOCAL_NETWORK` enabled: same-subnet `http://192.168.31.209:38888/mcp` and device loopback both return the expected `401 Unauthorized`.
 - [x] Validate MCP `specialUse` foreground service behavior on Android 17 / API 37 AVD: foreground start is allowed, denied notification permission keeps the service running without crashes, and restored permission allows normal stop.
 - [x] Validate MCP `specialUse` foreground start on Android 16 / API 36 hardware: `McpKeepAliveService` runs foreground with type `0x40000000`, service notification `38887`, and live update notification `38888`.
-- [ ] Validate MCP `specialUse` foreground service recovery on Android 16 when background start limits, battery saver, and inactive Shizuku states are present.
+- [x] Validate MCP `specialUse` foreground service recovery through the MCP shortcut path on Android 16 when background start limits, battery saver, and inactive Shizuku states are present; artifacts: `artifacts/api36-p0/mcp-recovery-20260429-6/`. `os.kei.benchmark` started with `low_power=1`, standby bucket `45`, and Shizuku permission `not_granted`; after 22s in the background it kept foreground service type `0x40000000`, service notification `38887`, Live Update notification `38888`, and loopback `401 Unauthorized`, with no `ForegroundServiceStartNotAllowedException` or fatal exception recorded.
 
 ### P0-D Intents, URI Grants, And File Flows
 

@@ -53,7 +53,7 @@
 - [x] 使用 Android 16 / API 36 设备验证 MCP 局域网模式在 `RESTRICT_LOCAL_NETWORK` 下的同网段访问：同网段 `http://192.168.31.209:38888/mcp` 与设备 loopback 均返回预期 `401 Unauthorized`。
 - [x] 在 Android 17 / API 37 AVD 验证 MCP `specialUse` 前台服务：前台启动被系统允许，通知权限拒绝时服务保持前台运行且无崩溃，权限恢复后可正常停止。
 - [x] 在 Android 16 / API 36 真机验证 MCP `specialUse` 前台启动：`McpKeepAliveService` 以前台 type `0x40000000` 运行，服务通知为 `38887`，Live Update 通知为 `38888`。
-- [ ] 验证 MCP `specialUse` 前台服务在 Android 16 后台启动、省电策略、Shizuku 未激活状态下的恢复路径。
+- [x] 验证 MCP `specialUse` 前台服务在 Android 16 后台启动、省电策略、Shizuku 未激活状态下的快捷入口恢复路径；证据目录：`artifacts/api36-p0/mcp-recovery-20260429-6/`。`os.kei.benchmark` 在 `low_power=1`、standby bucket `45`、Shizuku permission `not_granted` 下启动，后台 22s 后仍保持前台 service type `0x40000000`、服务通知 `38887`、Live Update 通知 `38888`、loopback `401 Unauthorized`，未记录 `ForegroundServiceStartNotAllowedException` 或 fatal exception。
 
 ### P0-D Intent、URI Grant、文件流
 
