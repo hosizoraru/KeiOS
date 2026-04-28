@@ -10,6 +10,7 @@ import coil3.SingletonImageLoader
 import coil3.gif.AnimatedImageDecoder
 import os.kei.core.background.AppBackgroundScheduler
 import os.kei.core.log.AppLogger
+import os.kei.core.perf.Android17AnomalyProfiler
 import os.kei.core.system.AppPackageChangedEvent
 import os.kei.core.system.AppPackageChangedEvents
 import os.kei.feature.github.data.remote.GitHubVersionUtils
@@ -60,6 +61,7 @@ class KeiOSApp : Application() {
         }
         MMKV.initialize(this)
         AppLogger.refreshEnabledFromPrefs()
+        Android17AnomalyProfiler.install(this)
         AppBackgroundScheduler.scheduleAll(this)
         registerPackageChangedReceiver()
     }
