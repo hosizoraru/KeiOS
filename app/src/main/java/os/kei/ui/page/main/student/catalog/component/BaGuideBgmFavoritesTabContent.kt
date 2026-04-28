@@ -127,10 +127,16 @@ internal fun BaGuideBgmFavoritesTabContent(
         onNowPlayingVisibilityChange(visible && selectedAudioUrl.isNotBlank())
     }
 
-    fun startFavoritePlayback(favorite: GuideBgmFavoriteItem, restart: Boolean = false) {
+    fun startFavoritePlayback(
+        favorite: GuideBgmFavoriteItem,
+        restart: Boolean = false,
+        collapseNowPlaying: Boolean = true
+    ) {
         selectedAudioUrl = favorite.audioUrl
         setNowPlayingVisible(true)
-        nowPlayingExpanded = false
+        if (collapseNowPlaying) {
+            nowPlayingExpanded = false
+        }
         val resumePosition = if (restart) {
             0L
         } else {
@@ -159,7 +165,11 @@ internal fun BaGuideBgmFavoritesTabContent(
         onOpenGuide(favorite.sourceUrl)
     }
 
-    fun selectQueueOffset(offset: Int, startPlayback: Boolean) {
+    fun selectQueueOffset(
+        offset: Int,
+        startPlayback: Boolean,
+        collapseNowPlaying: Boolean = true
+    ) {
         if (displayedFavorites.isEmpty()) return
         val currentIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
             .takeIf { it >= 0 }
@@ -168,7 +178,10 @@ internal fun BaGuideBgmFavoritesTabContent(
         val nextFavorite = displayedFavorites[nextIndex]
         selectedAudioUrl = nextFavorite.audioUrl
         if (startPlayback) {
-            startFavoritePlayback(nextFavorite)
+            startFavoritePlayback(
+                favorite = nextFavorite,
+                collapseNowPlaying = collapseNowPlaying
+            )
         }
     }
 
@@ -414,7 +427,6 @@ internal fun BaGuideBgmFavoritesTabContent(
 
     LaunchedEffect(selectedFavorite?.audioUrl) {
         seekPreviewProgress = null
-        nowPlayingExpanded = false
     }
 
     LaunchedEffect(showNowPlaying) {
@@ -456,7 +468,11 @@ internal fun BaGuideBgmFavoritesTabContent(
                 queueMode == BaGuideBgmQueueMode.Continuous &&
                 displayedFavorites.size > 1
             ) {
-                selectQueueOffset(offset = 1, startPlayback = true)
+                selectQueueOffset(
+                    offset = 1,
+                    startPlayback = true,
+                    collapseNowPlaying = false
+                )
                 return@LaunchedEffect
             }
             delay(500L)
@@ -617,7 +633,13 @@ internal fun BaGuideBgmFavoritesTabContent(
                             listState.animateScrollToItem(playlistHeaderItemIndex)
                         }
                     },
-                    onPrevious = { selectQueueOffset(offset = -1, startPlayback = true) },
+                    onPrevious = {
+                        selectQueueOffset(
+                            offset = -1,
+                            startPlayback = true,
+                            collapseNowPlaying = false
+                        )
+                    },
                     onTogglePlayback = {
                         setNowPlayingVisible(true)
                         val resumePosition = GuideBgmFavoritePlaybackStore
@@ -631,7 +653,13 @@ internal fun BaGuideBgmFavoritesTabContent(
                             startPositionMs = resumePosition
                         )
                     },
-                    onNext = { selectQueueOffset(offset = 1, startPlayback = true) },
+                    onNext = {
+                        selectQueueOffset(
+                            offset = 1,
+                            startPlayback = true,
+                            collapseNowPlaying = false
+                        )
+                    },
                     onSeekChanged = { progress ->
                         seekPreviewProgress = progress.coerceIn(0f, 1f)
                     },
