@@ -95,6 +95,12 @@
     <string name="about_value_foreground_info_handler">协程串行处理 GitHub/AP 任务并回写状态</string>
     <string name="about_row_background_jobs">后台任务</string>
     <string name="about_value_background_jobs">GitHub 定时刷新 / BA AP 阈值检查（Broadcast Tick）</string>
+    <string name="about_permission_access_local_network_title">本地网络</string>
+    <string name="about_permission_access_local_network_purpose">允许 MCP 局域网模式接受同一网络中的客户端连接</string>
+    <string name="about_permission_access_local_network_used_in">MCP 页面局域网模式与导出连接配置</string>
+    <string name="about_permission_use_loopback_interface_title">本机回环网络</string>
+    <string name="about_permission_use_loopback_interface_purpose">允许 MCP 本机模式通过 127.0.0.1 / localhost 提供服务</string>
+    <string name="about_permission_use_loopback_interface_used_in">MCP 页面本机访问模式</string>
     <string name="about_row_media3">Media3</string>
     <string name="about_row_zoomimage">ZoomImage</string>
     <string name="about_row_coil3">Coil3</string>

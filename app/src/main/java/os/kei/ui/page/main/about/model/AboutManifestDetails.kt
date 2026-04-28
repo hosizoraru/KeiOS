@@ -58,6 +58,16 @@ private val permissionExplainMap = mapOf(
         purposeRes = R.string.about_permission_access_network_state_purpose,
         usedInRes = R.string.about_permission_access_network_state_used_in
     ),
+    "android.permission.ACCESS_LOCAL_NETWORK" to AboutExplainRes(
+        titleRes = R.string.about_permission_access_local_network_title,
+        purposeRes = R.string.about_permission_access_local_network_purpose,
+        usedInRes = R.string.about_permission_access_local_network_used_in
+    ),
+    "android.permission.USE_LOOPBACK_INTERFACE" to AboutExplainRes(
+        titleRes = R.string.about_permission_use_loopback_interface_title,
+        purposeRes = R.string.about_permission_use_loopback_interface_purpose,
+        usedInRes = R.string.about_permission_use_loopback_interface_used_in
+    ),
     "android.permission.POST_NOTIFICATIONS" to AboutExplainRes(
         titleRes = R.string.about_permission_post_notifications_title,
         purposeRes = R.string.about_permission_post_notifications_purpose,

@@ -69,6 +69,20 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             notificationPermissionGranted = granted
         }
+    private val requestLocalNetworkPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            Toast.makeText(
+                this,
+                getString(
+                    if (granted || hasLocalNetworkPermission()) {
+                        R.string.mcp_toast_local_network_permission_granted
+                    } else {
+                        R.string.mcp_toast_local_network_permission_denied
+                    }
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -178,6 +192,25 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
 
+    private fun requestLocalNetworkPermissionIfNeeded(): Boolean {
+        if (hasLocalNetworkPermission()) return true
+        requestLocalNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        Toast.makeText(
+            this,
+            getString(R.string.mcp_toast_local_network_permission_requested),
+            Toast.LENGTH_SHORT
+        ).show()
+        return false
+    }
+
+    private fun hasLocalNetworkPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return true
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_LOCAL_NETWORK
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     private fun applyWindowColorMode(hdrEnabled: Boolean) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         runCatching {
@@ -223,6 +256,7 @@ class MainActivity : ComponentActivity() {
         if (state.running) {
             mcpServerManager.stop()
         } else {
+            if (state.allowExternal && !requestLocalNetworkPermissionIfNeeded()) return
             mcpServerManager.start(
                 port = state.port,
                 allowExternal = state.allowExternal

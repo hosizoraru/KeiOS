@@ -1,5 +1,9 @@
 package os.kei.ui.page.main.mcp
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,9 +20,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -30,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
 import os.kei.mcp.server.McpServerManager
@@ -138,6 +145,25 @@ fun McpPage(
     val scrollBehavior = MiuixScrollBehavior()
     val currentUiState by rememberUpdatedState(uiState)
     val serverNameHint = context.getString(R.string.mcp_input_service_name_hint)
+    var localNetworkPermissionGranted by remember {
+        mutableStateOf(hasMcpLocalNetworkPermission(context))
+    }
+    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        localNetworkPermissionGranted = granted || hasMcpLocalNetworkPermission(context)
+        Toast.makeText(
+            context,
+            context.getString(
+                if (localNetworkPermissionGranted) {
+                    R.string.mcp_toast_local_network_permission_granted
+                } else {
+                    R.string.mcp_toast_local_network_permission_denied
+                }
+            ),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
     val serverNameFieldWidth = remember(serverName, serverNameHint) {
         val visibleChars = serverName.trim().ifBlank { serverNameHint }.length.coerceIn(6, 18)
         (visibleChars * 11 + 36).dp
@@ -154,7 +180,19 @@ fun McpPage(
         isListScrolling = isListScrolling,
         label = "mcpListGlassEffectProgress"
     )
-    val toggleServer: () -> Unit = {
+    val toggleServer: () -> Unit = toggleServer@{
+        localNetworkPermissionGranted = hasMcpLocalNetworkPermission(context)
+        if (!uiState.running && allowExternal && !localNetworkPermissionGranted) {
+            runCatching {
+                localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+            }
+            Toast.makeText(
+                context,
+                context.getString(R.string.mcp_toast_local_network_permission_requested),
+                Toast.LENGTH_SHORT
+            ).show()
+            return@toggleServer
+        }
         scope.launch {
             when (val result = mcpPageViewModel.toggleServer(mcpServerManager)) {
                 McpToggleServerResult.InvalidPort -> {
@@ -517,4 +555,12 @@ fun McpPage(
         onDismissRequest = { mcpPageViewModel.updateResetTokenConfirmVisible(false) }
     )
     }
+}
+
+private fun hasMcpLocalNetworkPermission(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return true
+    return ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_LOCAL_NETWORK
+    ) == PackageManager.PERMISSION_GRANTED
 }

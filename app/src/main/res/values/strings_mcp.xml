@@ -67,6 +67,9 @@
     <string name="mcp_toast_test_notification_sent">已发送 MCP 测试通知</string>
     <string name="mcp_toast_config_reset">MCP 服务配置已重置为默认值</string>
     <string name="mcp_toast_config_reset_requires_restart">MCP 服务配置已重置为默认值，运行中的端口与网络模式会在重启服务后生效</string>
+    <string name="mcp_toast_local_network_permission_requested">局域网模式需要本地网络权限，授权后可启动 MCP 服务</string>
+    <string name="mcp_toast_local_network_permission_granted">本地网络权限已授权，可启动局域网模式</string>
+    <string name="mcp_toast_local_network_permission_denied">本地网络权限被拒绝，局域网模式暂不可用</string>
     <string name="mcp_toast_logs_exported">日志导出成功</string>
     <string name="mcp_toast_logs_export_failed">日志导出失败: %1$s</string>
     <string name="mcp_toast_saved_requires_restart">已保存，修改将在下次启动或重启服务后生效</string>
