@@ -144,7 +144,7 @@ class MiIslandNotificationBuilder(
             IslandAction(
                 key = "mcp_action_open",
                 title = context.getString(R.string.common_open),
-                pendingIntent = state.openPendingIntent,
+                pendingIntent = state.focusOpenPendingIntent,
                 isHighlighted = true
             )
         ).apply {

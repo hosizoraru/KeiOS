@@ -436,7 +436,8 @@ object GitHubRefreshNotificationHelper {
             state = state,
             title = title,
             content = content,
-            iconResId = iconResId
+            iconResId = iconResId,
+            focusOpenPendingIntent = buildFocusOpenPendingIntent(context)
         )?.let(baseBuilder::addExtras)
         return baseBuilder.build()
     }
@@ -446,7 +447,8 @@ object GitHubRefreshNotificationHelper {
         state: RefreshState,
         title: String,
         content: String,
-        iconResId: Int
+        iconResId: Int,
+        focusOpenPendingIntent: PendingIntent
     ) = runCatching {
         val progressPercent = state.progressPercent.coerceIn(0, 100)
         val fractionText = resolveCompactFractionText(context, state)
@@ -531,7 +533,7 @@ object GitHubRefreshNotificationHelper {
                         val nativeAction = Notification.Action.Builder(
                             Icon.createWithResource(context, iconResId),
                             context.getString(R.string.common_open),
-                            buildOpenPendingIntent(context)
+                            focusOpenPendingIntent
                         ).build()
                         action = createAction("github_action_open", nativeAction)
                         actionTitle = context.getString(R.string.common_open)
@@ -568,6 +570,23 @@ object GitHubRefreshNotificationHelper {
         return PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
             context,
             2001,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun buildFocusOpenPendingIntent(context: Context): PendingIntent {
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+            )
+            putExtra(MainActivity.EXTRA_TARGET_BOTTOM_PAGE, MainActivity.TARGET_BOTTOM_PAGE_GITHUB)
+        }
+        return PendingIntent.getActivity(
+            context,
+            4201,
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

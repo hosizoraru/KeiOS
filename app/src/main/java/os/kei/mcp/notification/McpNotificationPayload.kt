@@ -14,6 +14,7 @@ data class McpNotificationPayload(
     val onlyAlertOnce: Boolean,
     val openPendingIntent: PendingIntent,
     val stopPendingIntent: PendingIntent,
+    val focusOpenPendingIntent: PendingIntent = openPendingIntent,
     val secondaryActionLabel: String? = null,
     val outerGlow: Boolean = true
 ) {

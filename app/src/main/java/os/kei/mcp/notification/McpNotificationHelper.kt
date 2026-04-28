@@ -257,6 +257,7 @@ object McpNotificationHelper {
     ): SessionNotifier.NotificationBuildResult {
         val isBlueArchiveNotification = McpNotificationPayload.Companion.isBaNotificationServerName(serverName)
         val openRequestCode = 110_100 + notificationId
+        val focusOpenRequestCode = 410_100 + notificationId
         val secondaryRequestCode = 110_200 + notificationId
         val openIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -269,6 +270,12 @@ object McpNotificationHelper {
                 }
             )
         }
+        val focusOpenPendingIntent = PendingIntent.getActivity(
+            context,
+            focusOpenRequestCode,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val openPendingIntent = PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
             context,
             openRequestCode,
@@ -325,6 +332,7 @@ object McpNotificationHelper {
             onlyAlertOnce = onlyAlertOnce,
             openPendingIntent = openPendingIntent,
             stopPendingIntent = stopPendingIntent,
+            focusOpenPendingIntent = focusOpenPendingIntent,
             secondaryActionLabel = secondaryActionLabel
         )
         val notifier = SessionNotifierImpl(NotificationHelper(context))
