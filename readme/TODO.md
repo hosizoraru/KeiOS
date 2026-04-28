@@ -35,11 +35,12 @@ Official references checked on 2026-04-29:
 - [x] Add `scripts/qa/android_api_compat_probe.sh` for API 36 / 37 device version, manifest permission, AppOps, and optional `RESTRICT_LOCAL_NETWORK` compat-flag checks.
 - [ ] Use the Android 16 `RESTRICT_LOCAL_NETWORK` compat flag to validate MCP loopback / LAN mode.
 - [x] Harden high-traffic Safer Intents paths across GitHub `ACTION_SEND` import Activity, downloader selection, external links, and share-APK-link flows with stricter action, MIME, scheme, host, and package boundaries.
-- [ ] Continue auditing lower-frequency user-defined OS shortcut intents plus notification / shortcut extras.
+- [x] Complete the first lower-frequency OS shortcut and notification / shortcut extras audit: MainActivity external extras are paired by target-page and action allowlists, and OS Activity cards now verify a resolvable target before launch.
+- [x] Complete Android 17 / API 37 AVD external-extras smoke: valid GitHub shortcut action opens GitHub, mismatched actions open only the target page, and unknown targets fall back to Home.
 - [ ] Validate DownloadManager, GitHub background refresh, and BA AP / cafe / arena reminders under Android 16 idle, lockscreen, and battery-saver states; retain the source-audit finding that fixed-rate work paths are absent.
 - [ ] Validate MCP `specialUse` foreground service recovery on Android 16 when background start limits, denied notification permission, battery saver, and inactive Shizuku states are present.
 - [ ] Validate MCP, GitHub, BA, and Super Island notification visuals and tap behavior on Android 16 promoted notifications and `NotificationCompat.ProgressStyle`.
-- [ ] Audit `setAccessible` / hidden-API risk points, prioritizing Shizuku, HyperOS settings jumps, and keep-alive permission helper paths.
+- [x] Complete the first `setAccessible` / hidden-API reduction pass: HyperOS settings and keep-alive property reads now use shared PropUtils, AppOpsManagerInjector uses public-method probing, and the Shizuku private `newProcess` compatibility path remains guarded by runtime status.
 
 ## P1 - API 37 Enforced Adaptation
 

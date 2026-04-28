@@ -35,11 +35,12 @@
 - [x] 增加 `scripts/qa/android_api_compat_probe.sh`，用于读取 API 36 / 37 设备版本、Manifest 权限、AppOps，并可按需启用 `RESTRICT_LOCAL_NETWORK` compat flag。
 - [ ] 使用 Android 16 compat flag `RESTRICT_LOCAL_NETWORK` 验证 MCP loopback / 局域网模式。
 - [x] 加固 GitHub `ACTION_SEND` 导入 Activity、下载器选择、外部链接打开、分享 APK 链接等 Safer Intents 高频链路，确保 action、mime、scheme、host、package 边界更明确。
-- [ ] 继续审计用户自定义 OS shortcut intents、通知 / shortcut extras 的低频链路。
+- [x] 完成用户自定义 OS shortcut intents、通知 / shortcut extras 首轮审计：MainActivity 外部 extras 已按目标页和动作白名单配对，OS Activity card 启动前补充目标可解析校验。
+- [x] 在 Android 17 / API 37 AVD 上完成外部 extras smoke：合法 GitHub 快捷动作进入 GitHub，错配动作进入目标页但丢弃动作，未知目标回落 Home。
 - [ ] 验证 DownloadManager、GitHub 后台刷新、BA AP / 咖啡厅 / 竞技场提醒在 Android 16 空闲、锁屏、省电模式下的调度表现；保留当前无 fixed-rate work 路径的源码审计结果。
 - [ ] 验证 MCP `specialUse` 前台服务在 Android 16 后台启动、通知权限拒绝、省电策略、Shizuku 未激活状态下的恢复路径。
 - [ ] 验证 MCP / GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉和点击行为。
-- [ ] 审计 `setAccessible` / hidden API 风险点，优先覆盖 Shizuku、HyperOS 设置跳转、保活权限辅助路径。
+- [x] 完成 `setAccessible` / hidden API 首轮收敛：HyperOS 设置跳转与保活权限辅助的系统属性读取改用统一 PropUtils，AppOpsManagerInjector 改为公开方法探测；Shizuku private `newProcess` 兼容入口保留并受状态门控。
 
 ## P1 - API 37 强制适配
 
