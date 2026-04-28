@@ -32,6 +32,53 @@ import os.kei.ui.page.main.student.fetch.stripHtml
 import org.json.JSONObject
 import kotlin.collections.plusAssign
 
+private val singleValueGuideRowKeys = setOf(
+    "稀有度",
+    "战术作用",
+    "作用",
+    "攻击类型",
+    "防御类型",
+    "位置",
+    "市街",
+    "屋外",
+    "屋内",
+    "室内",
+    "武器类型"
+).map(::normalizeGuideRowKey).toSet()
+
+private fun firstGuideTextValue(textValues: List<String>): String {
+    return textValues.firstOrNull { it.trim().isNotBlank() }?.trim().orEmpty()
+}
+
+private fun compactGuideText(raw: String): String {
+    return raw
+        .replace(Regex("""\s+"""), "")
+        .replace("　", "")
+        .trim()
+}
+
+private fun resolveGuideRowValue(
+    key: String,
+    textValues: List<String>,
+    memoryUnlockLevel: String,
+    momotalkStatusMessage: String
+): String {
+    val joined = textValues.joinToString(" / ").trim()
+    val normalizedKey = normalizeGuideRowKey(key)
+    if (normalizedKey == normalizeGuideRowKey("MomoTalk解锁等级")) {
+        val compactValue = compactGuideText(joined)
+        val compactStatus = compactGuideText(momotalkStatusMessage)
+        val duplicatesStatus = compactStatus.isNotBlank() && compactValue == compactStatus
+        if (memoryUnlockLevel.isNotBlank() && (joined.isBlank() || duplicatesStatus)) {
+            return memoryUnlockLevel
+        }
+    }
+    if (normalizedKey in singleValueGuideRowKeys) {
+        return firstGuideTextValue(textValues).ifBlank { joined }
+    }
+    return joined
+}
+
 internal fun parseGuideDetailFromObjectContentJson(raw: String, sourceUrl: String): GuideDetailExtract {
     return runCatching {
         val root = JSONObject(raw)
@@ -77,6 +124,9 @@ internal fun parseGuideDetailFromObjectContentJson(raw: String, sourceUrl: Strin
             val digits = Regex("""\d+""").find(rawLevel)?.value.orEmpty()
             if (digits.isNotBlank()) digits else rawLevel
         }
+        val momotalkStatusMessage = baseRows.firstOrNull {
+            normalizeGuideRowKey(it.key) == normalizeGuideRowKey("MomoTalk状态消息")
+        }?.textValues?.joinToString(" ")?.trim().orEmpty()
 
         fun containsAny(target: String, keywords: List<String>): Boolean {
             return keywords.any { key -> target.contains(key, ignoreCase = true) }
@@ -183,7 +233,12 @@ internal fun parseGuideDetailFromObjectContentJson(raw: String, sourceUrl: Strin
 
         baseRows.forEach { row ->
             val key = row.key
-            val value = row.textValues.joinToString(" / ")
+            val value = resolveGuideRowValue(
+                key = key,
+                textValues = row.textValues,
+                memoryUnlockLevel = memoryUnlockLevel,
+                momotalkStatusMessage = momotalkStatusMessage
+            )
             val imageUrl = row.imageValues.firstOrNull().orEmpty()
             val videoUrl = row.videoValues.firstOrNull().orEmpty()
             if (key.isBlank() && value.isBlank() && imageUrl.isBlank() && videoUrl.isBlank()) return@forEach
