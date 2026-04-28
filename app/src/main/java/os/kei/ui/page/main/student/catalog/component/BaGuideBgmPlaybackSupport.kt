@@ -107,11 +107,12 @@ internal fun prepareFavoriteBgmPlayback(
     } else {
         Player.REPEAT_MODE_OFF
     }
+    val safeStartPosition = startPositionMs.coerceAtLeast(0L)
     if (
-        startPositionMs > 0L &&
-        (shouldAttachMedia || player.currentPosition <= 0L || player.playbackState == Player.STATE_ENDED)
+        player.playbackState == Player.STATE_ENDED ||
+        (safeStartPosition > 0L && (shouldAttachMedia || player.currentPosition <= 0L))
     ) {
-        runCatching { player.seekTo(startPositionMs.coerceAtLeast(0L)) }
+        runCatching { player.seekTo(safeStartPosition) }
     }
     return player
 }

@@ -168,7 +168,8 @@ internal fun BaGuideBgmFavoritesTabContent(
     fun selectQueueOffset(
         offset: Int,
         startPlayback: Boolean,
-        collapseNowPlaying: Boolean = true
+        collapseNowPlaying: Boolean = true,
+        restart: Boolean = false
     ) {
         if (displayedFavorites.isEmpty()) return
         val currentIndex = displayedFavorites.indexOfFirst { it.audioUrl == selectedAudioUrl }
@@ -180,6 +181,7 @@ internal fun BaGuideBgmFavoritesTabContent(
         if (startPlayback) {
             startFavoritePlayback(
                 favorite = nextFavorite,
+                restart = restart,
                 collapseNowPlaying = collapseNowPlaying
             )
         }
@@ -471,7 +473,8 @@ internal fun BaGuideBgmFavoritesTabContent(
                 selectQueueOffset(
                     offset = 1,
                     startPlayback = true,
-                    collapseNowPlaying = false
+                    collapseNowPlaying = false,
+                    restart = true
                 )
                 return@LaunchedEffect
             }
@@ -637,7 +640,8 @@ internal fun BaGuideBgmFavoritesTabContent(
                         selectQueueOffset(
                             offset = -1,
                             startPlayback = true,
-                            collapseNowPlaying = false
+                            collapseNowPlaying = false,
+                            restart = true
                         )
                     },
                     onTogglePlayback = {
@@ -657,7 +661,8 @@ internal fun BaGuideBgmFavoritesTabContent(
                         selectQueueOffset(
                             offset = 1,
                             startPlayback = true,
-                            collapseNowPlaying = false
+                            collapseNowPlaying = false,
+                            restart = true
                         )
                     },
                     onSeekChanged = { progress ->
