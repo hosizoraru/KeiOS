@@ -3,6 +3,7 @@ package os.kei.mcp.framework.notification.builder
 import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.IconCompat
 import os.kei.R
 import os.kei.mcp.notification.McpNotificationPayload
 
@@ -63,6 +64,11 @@ class ModernNotificationBuilder(
             )
             .setStyledByProgress(true)
             .setProgress(spec.progressPercent)
+            .setProgressTrackerIcon(
+                spec.trackerIconResId?.let { resId ->
+                    IconCompat.createWithResource(context, resId)
+                }
+            )
     }
 
     private fun resolveShortCriticalText(

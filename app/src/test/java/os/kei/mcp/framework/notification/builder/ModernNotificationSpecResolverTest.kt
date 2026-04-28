@@ -82,7 +82,7 @@ class ModernNotificationSpecResolverTest {
     }
 
     @Test
-    fun `arena refresh uses oem icon order for oem live layout`() {
+    fun `arena refresh uses semantic compact icon for oem live layout`() {
         val spec = ModernNotificationSpecResolver.resolve(
             state = createState(
                 serverName = McpNotificationPayload.BA_ARENA_REFRESH_SERVER_NAME,
@@ -94,8 +94,45 @@ class ModernNotificationSpecResolverTest {
             preferOemLiveIconLayout = true
         )
 
-        assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.iconResId)
-        assertEquals(R.drawable.ic_kei_logo_color, spec.expandedIconResId)
+        assertEquals(R.drawable.ic_ba_arena_coin_notification_small, spec.iconResId)
+        assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.expandedIconResId)
+        assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.trackerIconResId)
+    }
+
+    @Test
+    fun `cafe visit uses semantic compact icon for oem live layout`() {
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = createState(
+                serverName = McpNotificationPayload.BA_CAFE_VISIT_SERVER_NAME,
+                running = true,
+                port = 0,
+                clients = 0,
+                ongoing = true
+            ),
+            preferOemLiveIconLayout = true
+        )
+
+        assertEquals(R.drawable.ic_ba_tea_party_notification_small, spec.iconResId)
+        assertEquals(R.drawable.ic_ba_tea_party_live_update, spec.expandedIconResId)
+        assertEquals(R.drawable.ic_ba_tea_party_live_update, spec.trackerIconResId)
+    }
+
+    @Test
+    fun `ap uses semantic compact icon for oem live layout`() {
+        val spec = ModernNotificationSpecResolver.resolve(
+            state = createState(
+                serverName = McpNotificationPayload.BA_AP_SERVER_NAME,
+                running = true,
+                port = 154,
+                clients = 240,
+                ongoing = true
+            ),
+            preferOemLiveIconLayout = true
+        )
+
+        assertEquals(R.drawable.ic_ba_ap_notification_small, spec.iconResId)
+        assertEquals(R.drawable.ic_ba_ap_live_update, spec.expandedIconResId)
+        assertEquals(R.drawable.ic_ba_ap_live_update, spec.trackerIconResId)
     }
 
     @Test
@@ -113,6 +150,7 @@ class ModernNotificationSpecResolverTest {
 
         assertEquals(R.drawable.ic_kei_notification_small, spec.iconResId)
         assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.expandedIconResId)
+        assertEquals(R.drawable.ic_ba_arena_coin_live_update, spec.trackerIconResId)
     }
 
     @Test
@@ -130,6 +168,7 @@ class ModernNotificationSpecResolverTest {
 
         assertEquals(R.drawable.ic_kei_logo_live_update, spec.iconResId)
         assertEquals(null, spec.expandedIconResId)
+        assertEquals(null, spec.trackerIconResId)
     }
 
     private fun createState(

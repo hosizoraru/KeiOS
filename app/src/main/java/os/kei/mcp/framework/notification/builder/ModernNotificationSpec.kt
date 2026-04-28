@@ -22,6 +22,7 @@ internal data class ModernNotificationSpec(
     val kind: ModernNotificationKind,
     val iconResId: Int,
     val expandedIconResId: Int?,
+    val trackerIconResId: Int?,
     val progressPercent: Int,
     val progressColor: Int,
     val category: String,
@@ -35,7 +36,9 @@ internal object ModernNotificationSpecResolver {
     private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
     private const val ICON_DEFAULT = R.drawable.ic_kei_notification_small
     private const val ICON_DEFAULT_OEM = R.drawable.ic_kei_logo_live_update
-    private const val EXPANDED_ICON_APP = R.drawable.ic_kei_logo_color
+    private const val ICON_BA_AP_OEM = R.drawable.ic_ba_ap_notification_small
+    private const val ICON_BA_CAFE_VISIT_OEM = R.drawable.ic_ba_tea_party_notification_small
+    private const val ICON_BA_ARENA_REFRESH_OEM = R.drawable.ic_ba_arena_coin_notification_small
     private const val CONTENT_ICON_AP = R.drawable.ic_ba_ap_live_update
     private const val CONTENT_ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_live_update
     private const val CONTENT_ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_live_update
@@ -49,7 +52,8 @@ internal object ModernNotificationSpecResolver {
         return ModernNotificationSpec(
             kind = kind,
             iconResId = resolveIcon(kind, preferOemLiveIconLayout),
-            expandedIconResId = resolveExpandedIcon(kind, preferOemLiveIconLayout),
+            expandedIconResId = resolveExpandedIcon(kind),
+            trackerIconResId = resolveTrackerIcon(kind),
             progressPercent = resolveProgressPercent(state = state, kind = kind),
             progressColor = if (isRunning) PROGRESS_ACTIVE_COLOR else PROGRESS_IDLE_COLOR,
             category = if (isRunning) {
@@ -77,24 +81,26 @@ internal object ModernNotificationSpecResolver {
         preferOemLiveIconLayout: Boolean
     ): Int {
         return if (preferOemLiveIconLayout) {
-            resolveContentIcon(kind) ?: ICON_DEFAULT_OEM
+            resolveOemCompactIcon(kind)
         } else {
             ICON_DEFAULT
         }
     }
 
-    private fun resolveExpandedIcon(
-        kind: ModernNotificationKind,
-        preferOemLiveIconLayout: Boolean
-    ): Int? {
-        if (preferOemLiveIconLayout) {
-            return when (kind) {
-                ModernNotificationKind.DEFAULT -> null
-                ModernNotificationKind.BA_AP,
-                ModernNotificationKind.BA_CAFE_VISIT,
-                ModernNotificationKind.BA_ARENA_REFRESH -> EXPANDED_ICON_APP
-            }
+    private fun resolveOemCompactIcon(kind: ModernNotificationKind): Int {
+        return when (kind) {
+            ModernNotificationKind.BA_AP -> ICON_BA_AP_OEM
+            ModernNotificationKind.BA_CAFE_VISIT -> ICON_BA_CAFE_VISIT_OEM
+            ModernNotificationKind.BA_ARENA_REFRESH -> ICON_BA_ARENA_REFRESH_OEM
+            ModernNotificationKind.DEFAULT -> ICON_DEFAULT_OEM
         }
+    }
+
+    private fun resolveExpandedIcon(kind: ModernNotificationKind): Int? {
+        return resolveContentIcon(kind)
+    }
+
+    private fun resolveTrackerIcon(kind: ModernNotificationKind): Int? {
         return resolveContentIcon(kind)
     }
 
