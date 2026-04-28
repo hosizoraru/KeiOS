@@ -59,6 +59,7 @@
             android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
             android:icon="@mipmap/ic_launcher_adaptive_v2"
+            android:launchMode="singleTop"
             android:roundIcon="@mipmap/ic_launcher_round_adaptive_v2"
             android:screenOrientation="portrait"
             android:exported="true">

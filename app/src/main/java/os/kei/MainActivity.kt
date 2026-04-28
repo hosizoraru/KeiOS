@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
     private var requestedGitHubRefreshToken by mutableStateOf(0)
     private var pendingMcpServerAction: String? = null
     private var pendingShortcutAction: String? = null
+    private var startMcpAfterLocalNetworkPermission = false
     private val shizukuApiUtils = ShizukuApiUtils()
     private lateinit var localMcpService: LocalMcpService
     private lateinit var mcpServerManager: McpServerManager
@@ -72,10 +73,11 @@ class MainActivity : ComponentActivity() {
         }
     private val requestLocalNetworkPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val permissionGranted = granted || hasLocalNetworkPermission()
             Toast.makeText(
                 this,
                 getString(
-                    if (granted || hasLocalNetworkPermission()) {
+                    if (permissionGranted) {
                         R.string.mcp_toast_local_network_permission_granted
                     } else {
                         R.string.mcp_toast_local_network_permission_denied
@@ -83,6 +85,11 @@ class MainActivity : ComponentActivity() {
                 ),
                 Toast.LENGTH_SHORT
             ).show()
+            val shouldStartMcp = startMcpAfterLocalNetworkPermission && permissionGranted
+            startMcpAfterLocalNetworkPermission = false
+            if (shouldStartMcp) {
+                startMcpServerFromShortcutIfAllowed()
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -193,9 +200,10 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
 
-    private fun requestLocalNetworkPermissionIfNeeded(): Boolean {
+    private fun requestLocalNetworkPermissionIfNeeded(startMcpAfterGrant: Boolean = false): Boolean {
         if (hasLocalNetworkPermission()) return true
         val permission = LocalNetworkPermissionCompat.requiredPermissionOrNull() ?: return true
+        startMcpAfterLocalNetworkPermission = startMcpAfterGrant
         requestLocalNetworkPermissionLauncher.launch(permission)
         Toast.makeText(
             this,
@@ -251,12 +259,19 @@ class MainActivity : ComponentActivity() {
         if (state.running) {
             mcpServerManager.stop()
         } else {
-            if (state.allowExternal && !requestLocalNetworkPermissionIfNeeded()) return
-            mcpServerManager.start(
-                port = state.port,
-                allowExternal = state.allowExternal
-            )
+            startMcpServerFromShortcutIfAllowed()
         }
+    }
+
+    private fun startMcpServerFromShortcutIfAllowed() {
+        if (!::mcpServerManager.isInitialized) return
+        val state = mcpServerManager.uiState.value
+        if (state.running) return
+        if (state.allowExternal && !requestLocalNetworkPermissionIfNeeded(startMcpAfterGrant = true)) return
+        mcpServerManager.start(
+            port = state.port,
+            allowExternal = state.allowExternal
+        )
     }
 
     private fun applyPendingBaApIslandAction() {

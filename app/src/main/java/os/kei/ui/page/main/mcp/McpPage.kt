@@ -145,50 +145,8 @@ fun McpPage(
     var localNetworkPermissionGranted by remember {
         mutableStateOf(hasMcpLocalNetworkPermission(context))
     }
-    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        localNetworkPermissionGranted = granted || hasMcpLocalNetworkPermission(context)
-        Toast.makeText(
-            context,
-            context.getString(
-                if (localNetworkPermissionGranted) {
-                    R.string.mcp_toast_local_network_permission_granted
-                } else {
-                    R.string.mcp_toast_local_network_permission_denied
-                }
-            ),
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-    val serverNameFieldWidth = remember(serverName, serverNameHint) {
-        val visibleChars = serverName.trim().ifBlank { serverNameHint }.length.coerceIn(6, 18)
-        (visibleChars * 11 + 36).dp
-    }
-    val portFieldWidth = remember(portText) {
-        val visibleChars = portText.trim().ifBlank { "38888" }.length.coerceIn(4, 6)
-        (visibleChars * 14 + 28).dp
-    }
-    val pageBackdropEffectsEnabled = runtime.isPageActive &&
-        !runtime.isPagerScrollInProgress
-    val fullBackdropEffectsEnabled = pageBackdropEffectsEnabled &&
-        !isListScrolling
-    val mcpGlassRuntime = rememberListScrollGlassRuntime(
-        isListScrolling = isListScrolling,
-        label = "mcpListGlassEffectProgress"
-    )
-    val toggleServer: () -> Unit = toggleServer@{
-        localNetworkPermissionGranted = hasMcpLocalNetworkPermission(context)
-        if (!uiState.running && allowExternal && !localNetworkPermissionGranted) {
-            LocalNetworkPermissionCompat.requiredPermissionOrNull()
-                ?.let { permission -> runCatching { localNetworkPermissionLauncher.launch(permission) } }
-            Toast.makeText(
-                context,
-                context.getString(R.string.mcp_toast_local_network_permission_requested),
-                Toast.LENGTH_SHORT
-            ).show()
-            return@toggleServer
-        }
+    var startAfterLocalNetworkPermission by remember { mutableStateOf(false) }
+    fun launchServerToggle() {
         scope.launch {
             when (val result = mcpPageViewModel.toggleServer(mcpServerManager)) {
                 McpToggleServerResult.InvalidPort -> {
@@ -212,6 +170,61 @@ fun McpPage(
                 }
             }
         }
+    }
+    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        localNetworkPermissionGranted = granted || hasMcpLocalNetworkPermission(context)
+        Toast.makeText(
+            context,
+            context.getString(
+                if (localNetworkPermissionGranted) {
+                    R.string.mcp_toast_local_network_permission_granted
+                } else {
+                    R.string.mcp_toast_local_network_permission_denied
+                }
+            ),
+            Toast.LENGTH_SHORT
+        ).show()
+        val shouldStartServer = startAfterLocalNetworkPermission && localNetworkPermissionGranted
+        startAfterLocalNetworkPermission = false
+        if (shouldStartServer && !mcpServerManager.uiState.value.running) {
+            launchServerToggle()
+        }
+    }
+    val serverNameFieldWidth = remember(serverName, serverNameHint) {
+        val visibleChars = serverName.trim().ifBlank { serverNameHint }.length.coerceIn(6, 18)
+        (visibleChars * 11 + 36).dp
+    }
+    val portFieldWidth = remember(portText) {
+        val visibleChars = portText.trim().ifBlank { "38888" }.length.coerceIn(4, 6)
+        (visibleChars * 14 + 28).dp
+    }
+    val pageBackdropEffectsEnabled = runtime.isPageActive &&
+        !runtime.isPagerScrollInProgress
+    val fullBackdropEffectsEnabled = pageBackdropEffectsEnabled &&
+        !isListScrolling
+    val mcpGlassRuntime = rememberListScrollGlassRuntime(
+        isListScrolling = isListScrolling,
+        label = "mcpListGlassEffectProgress"
+    )
+    val toggleServer: () -> Unit = toggleServer@{
+        localNetworkPermissionGranted = hasMcpLocalNetworkPermission(context)
+        if (!uiState.running && allowExternal && !localNetworkPermissionGranted) {
+            LocalNetworkPermissionCompat.requiredPermissionOrNull()
+                ?.let { permission ->
+                    startAfterLocalNetworkPermission = true
+                    runCatching { localNetworkPermissionLauncher.launch(permission) }
+                }
+            Toast.makeText(
+                context,
+                context.getString(R.string.mcp_toast_local_network_permission_requested),
+                Toast.LENGTH_SHORT
+            ).show()
+            return@toggleServer
+        }
+        startAfterLocalNetworkPermission = false
+        launchServerToggle()
     }
     val saveServiceConfig: () -> Unit = {
         scope.launch {
