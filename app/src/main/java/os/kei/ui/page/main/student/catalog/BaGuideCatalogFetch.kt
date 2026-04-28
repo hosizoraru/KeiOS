@@ -468,11 +468,16 @@ private fun formatAliasDisplay(alias: String): String {
 private fun normalizeCatalogImageUrl(raw: String): String {
     val value = raw.trim()
     if (value.isBlank()) return ""
-    if (value.startsWith("http://") || value.startsWith("https://")) return value
+    if (value.startsWith("http://", ignoreCase = true)) return value.upgradeHttpSchemeToHttps()
+    if (value.startsWith("https://", ignoreCase = true)) return value
     if (value.startsWith("//")) return "https:$value"
     return if (value.startsWith("/")) {
         "https://www.gamekee.com$value"
     } else {
         "https://www.gamekee.com/$value"
     }
+}
+
+private fun String.upgradeHttpSchemeToHttps(): String {
+    return replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
 }

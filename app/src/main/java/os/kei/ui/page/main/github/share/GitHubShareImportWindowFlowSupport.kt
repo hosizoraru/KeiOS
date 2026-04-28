@@ -4,7 +4,6 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import os.kei.R
 import os.kei.core.background.AppBackgroundScheduler
+import os.kei.core.intent.SafeExternalIntents
 import os.kei.core.system.AppPackageChangedEvent
 import os.kei.core.system.AppPackageChangedEvents
 import os.kei.feature.github.data.local.GitHubPendingShareImportTrackRecord
@@ -75,18 +75,21 @@ internal suspend fun sendAssetToConfiguredChannel(
     lookupConfig: GitHubLookupConfig,
     asset: GitHubReleaseAssetFile
 ): ShareImportDeliveryResult {
-    val resolvedUrl = resolvePreferredAssetUrl(lookupConfig, asset)
+    val resolvedUrl = SafeExternalIntents.httpsExternalUrlOrNull(
+        resolvePreferredAssetUrl(lookupConfig, asset)
+    ) ?: return ShareImportDeliveryResult.Failure(R.string.github_toast_open_downloader_failed)
     val onlineSharePackage = lookupConfig.onlineShareTargetPackage.trim()
     if (onlineSharePackage.isNotBlank()) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, asset.name)
-            putExtra(Intent.EXTRA_TEXT, resolvedUrl)
-            `package` = onlineSharePackage
-            putExtra("channel", "Online")
-            putExtra("extra_channel", "Online")
-            putExtra("online_channel", true)
-        }
+        val intent = SafeExternalIntents.textShareIntent(
+            text = resolvedUrl,
+            subject = asset.name,
+            targetPackage = onlineSharePackage,
+            extras = mapOf(
+                "channel" to "Online",
+                "extra_channel" to "Online",
+                "online_channel" to true
+            )
+        )
         return runCatching {
             context.startActivity(intent)
             ShareImportDeliveryResult.Success(R.string.github_toast_downloader_selected)
@@ -106,32 +109,18 @@ internal suspend fun sendAssetToConfiguredChannel(
         }
     }
     if (preferredPackage.isBlank()) {
-        return runCatching {
-            context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
-                    addCategory(Intent.CATEGORY_BROWSABLE)
-                }
-            )
+        return if (SafeExternalIntents.startBrowsableUrl(context, resolvedUrl)) {
             ShareImportDeliveryResult.Success(R.string.github_toast_downloader_system_default)
-        }.getOrElse {
+        } else {
             ShareImportDeliveryResult.Failure(R.string.github_toast_open_downloader_failed)
         }
     }
 
     return runCatching {
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
-                addCategory(Intent.CATEGORY_BROWSABLE)
-                setPackage(preferredPackage)
-            }
-        )
+        require(SafeExternalIntents.startBrowsableUrl(context, resolvedUrl, preferredPackage))
         ShareImportDeliveryResult.Success(R.string.github_toast_downloader_selected)
     }.recoverCatching {
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
-                addCategory(Intent.CATEGORY_BROWSABLE)
-            }
-        )
+        require(SafeExternalIntents.startBrowsableUrl(context, resolvedUrl))
         ShareImportDeliveryResult.Success(R.string.github_toast_downloader_fallback_system)
     }.getOrElse {
         ShareImportDeliveryResult.Failure(R.string.github_toast_open_downloader_failed)
@@ -158,7 +147,9 @@ internal fun enqueueWithSystemDownloadManager(
     url: String,
     fileName: String
 ) {
-    val request = DownloadManager.Request(url.toUri()).apply {
+    val safeUrl = SafeExternalIntents.httpsExternalUrlOrNull(url)
+        ?: throw IllegalArgumentException("download url must be https")
+    val request = DownloadManager.Request(safeUrl.toUri()).apply {
         setAllowedNetworkTypes(
             DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE
         )

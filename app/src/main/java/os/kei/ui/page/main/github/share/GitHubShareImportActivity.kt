@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import os.kei.MainActivity
 import os.kei.R
+import os.kei.core.intent.SafeExternalIntents
 import os.kei.core.prefs.AppThemeMode
 import os.kei.core.prefs.UiPrefs
 import os.kei.feature.github.data.local.GitHubTrackStore
@@ -100,11 +101,11 @@ class GitHubShareImportActivity : ComponentActivity() {
     }
 
     private fun consumeIncomingShareIntent(intent: Intent?) {
-        if (intent?.action != Intent.ACTION_SEND) {
+        if (!SafeExternalIntents.isPlainTextSend(intent)) {
             finishSafely()
             return
         }
-        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        val sharedText = intent?.getStringExtra(Intent.EXTRA_TEXT)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
             ?: run {

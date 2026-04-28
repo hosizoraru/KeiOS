@@ -162,8 +162,13 @@ object GameKeeFetchHelper {
 
     private fun normalizeUrl(base: String, pathOrUrl: String): String {
         val raw = pathOrUrl.trim()
-        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
+        if (raw.startsWith("http://", ignoreCase = true)) return raw.upgradeHttpSchemeToHttps()
+        if (raw.startsWith("https://", ignoreCase = true)) return raw
         return if (raw.startsWith("/")) "$base$raw" else "$base/$raw"
+    }
+
+    private fun String.upgradeHttpSchemeToHttps(): String {
+        return replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
     }
 
     private fun extractPathHint(pathOrUrl: String): String {

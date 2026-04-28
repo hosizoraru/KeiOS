@@ -14,6 +14,13 @@ class GitHubShareIntentParserTest {
     }
 
     @Test
+    fun `extract github url upgrades http to https`() {
+        val text = "http://www.github.com/open-ani/animeko/releases"
+        val url = GitHubShareIntentParser.extractFirstGitHubUrl(text)
+        assertEquals("https://github.com/open-ani/animeko/releases", url)
+    }
+
+    @Test
     fun `parse repo link to project target`() {
         val parsed = GitHubShareIntentParser.parseSharedReleaseLink(
             "https://github.com/open-ani/animeko"
@@ -123,6 +130,14 @@ class GitHubShareIntentParserTest {
     @Test
     fun `non github text returns null`() {
         val parsed = GitHubShareIntentParser.parseSharedReleaseLink("https://example.com/demo")
+        assertNull(parsed)
+    }
+
+    @Test
+    fun `github url with userinfo is rejected`() {
+        val parsed = GitHubShareIntentParser.parseSharedReleaseLink(
+            "https://github.com@evil.example/open-ani/animeko/releases"
+        )
         assertNull(parsed)
     }
 }

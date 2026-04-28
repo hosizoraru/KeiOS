@@ -17,6 +17,7 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import os.kei.R
+import os.kei.core.intent.SafeExternalIntents
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.fetch.extractGuideContentIdFromUrl
@@ -434,10 +435,7 @@ internal fun rememberBaStudentGuidePageActions(
                     Toast.makeText(context, shareSourceEmptyText, Toast.LENGTH_SHORT).show()
                 } else {
                     runCatching {
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, target)
-                        }
+                        val intent = SafeExternalIntents.textShareIntent(text = target)
                         val chooser = Intent.createChooser(intent, shareSourceChooserTitle).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
@@ -450,12 +448,7 @@ internal fun rememberBaStudentGuidePageActions(
             openExternal = { rawUrl ->
                 val target = normalizeGuideUrl(rawUrl)
                 if (target.isNotBlank()) {
-                    runCatching {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(target)).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
-                    }.onFailure {
+                    if (!SafeExternalIntents.startBrowsableUrl(context, target, newTask = true)) {
                         Toast.makeText(context, openLinkFailedText, Toast.LENGTH_SHORT).show()
                     }
                 }

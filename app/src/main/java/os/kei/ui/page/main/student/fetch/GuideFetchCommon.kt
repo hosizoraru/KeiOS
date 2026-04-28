@@ -10,7 +10,8 @@ fun normalizeGuideUrl(raw: String): String {
     if (value.isBlank()) return ""
     if (value.startsWith("data:image", ignoreCase = true)) return value
     return when {
-        value.startsWith("http://") || value.startsWith("https://") -> value
+        value.startsWith("http://", ignoreCase = true) -> value.upgradeHttpSchemeToHttps()
+        value.startsWith("https://", ignoreCase = true) -> value
         value.startsWith("//") -> "https:$value"
         value.startsWith("/") -> "https://www.gamekee.com$value"
         else -> "https://www.gamekee.com/$value"
@@ -79,7 +80,8 @@ internal fun isMeaningfulGuideRowValue(raw: String): Boolean {
 internal fun normalizeImageUrl(sourceUrl: String, imageRaw: String): String {
     val img = imageRaw.trim()
     if (img.isBlank()) return ""
-    if (img.startsWith("http://") || img.startsWith("https://")) return img
+    if (img.startsWith("http://", ignoreCase = true)) return img.upgradeHttpSchemeToHttps()
+    if (img.startsWith("https://", ignoreCase = true)) return img
     if (img.startsWith("data:image", ignoreCase = true)) return img
     if (img.startsWith("//")) return "https:$img"
     return if (img.startsWith("/")) {
@@ -89,6 +91,10 @@ internal fun normalizeImageUrl(sourceUrl: String, imageRaw: String): String {
     } else {
         "https://www.gamekee.com/$img"
     }
+}
+
+private fun String.upgradeHttpSchemeToHttps(): String {
+    return replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
 }
 
 internal fun extractStatsFromHtml(html: String): List<Pair<String, String>> {

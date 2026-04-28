@@ -16,7 +16,8 @@ internal fun gameKeeServerId(serverIndex: Int): Int {
 internal fun normalizeGameKeeLink(url: String): String {
     val raw = url.trim()
     if (raw.isBlank()) return "https://www.gamekee.com/ba/huodong"
-    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
+    if (raw.startsWith("http://", ignoreCase = true)) return raw.upgradeHttpSchemeToHttps()
+    if (raw.startsWith("https://", ignoreCase = true)) return raw
     return if (raw.startsWith("/")) "https://www.gamekee.com$raw" else "https://www.gamekee.com/$raw"
 }
 
@@ -24,9 +25,14 @@ internal fun normalizeGameKeeImageLink(url: String): String {
     val raw = url.trim()
     if (raw.isBlank()) return ""
     if (raw.startsWith("file://")) return raw
-    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
+    if (raw.startsWith("http://", ignoreCase = true)) return raw.upgradeHttpSchemeToHttps()
+    if (raw.startsWith("https://", ignoreCase = true)) return raw
     if (raw.startsWith("//")) return "https:$raw"
     return if (raw.startsWith("/")) "https://www.gamekee.com$raw" else "https://www.gamekee.com/$raw"
+}
+
+private fun String.upgradeHttpSchemeToHttps(): String {
+    return replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "https://")
 }
 
 internal fun looksLikeImageUrl(raw: String): Boolean {

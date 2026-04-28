@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import os.kei.core.intent.SafeExternalIntents
 import os.kei.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import os.kei.ui.page.main.student.fetch.normalizeGuideUrl
 
@@ -24,12 +25,12 @@ private fun isMainScreenGuideDetailLink(rawUrl: String): Boolean {
 }
 
 private fun openMainScreenExternalLink(url: String, onFailure: () -> Unit, launch: (Intent) -> Unit) {
-    runCatching {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        launch(intent)
-    }.onFailure {
+    val intent = SafeExternalIntents.browsableViewIntent(url, newTask = true)
+    if (intent == null) {
+        onFailure()
+        return
+    }
+    runCatching { launch(intent) }.onFailure {
         onFailure()
     }
 }

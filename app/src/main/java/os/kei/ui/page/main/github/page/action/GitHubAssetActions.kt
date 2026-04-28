@@ -3,10 +3,10 @@ package os.kei.ui.page.main.github.page.action
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Environment
 import androidx.core.net.toUri
 import os.kei.R
+import os.kei.core.intent.SafeExternalIntents
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubTrackedApp
@@ -28,9 +28,7 @@ internal class GitHubAssetActions(
         url: String,
         failureMessage: String = env.openLinkFailureMessage
     ) {
-        runCatching {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        }.onFailure {
+        if (!SafeExternalIntents.startBrowsableUrl(context, url)) {
             env.toast(failureMessage)
         }
     }
@@ -221,19 +219,26 @@ internal class GitHubAssetActions(
     }
 
     private suspend fun shareApkLinkInternal(asset: GitHubReleaseAssetFile): Boolean {
-        val resolvedUrl = resolvePreferredAssetUrl(asset)
-        val onlineSharePackage = state.lookupConfig.onlineShareTargetPackage.trim()
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, asset.name)
-            putExtra(Intent.EXTRA_TEXT, resolvedUrl)
-            if (onlineSharePackage.isNotBlank()) {
-                `package` = onlineSharePackage
-                putExtra("channel", "Online")
-                putExtra("extra_channel", "Online")
-                putExtra("online_channel", true)
+        val resolvedUrl = SafeExternalIntents.httpsExternalUrlOrNull(resolvePreferredAssetUrl(asset))
+            ?: run {
+                env.toast(R.string.github_toast_share_link_failed)
+                return false
             }
-        }
+        val onlineSharePackage = state.lookupConfig.onlineShareTargetPackage.trim()
+        val intent = SafeExternalIntents.textShareIntent(
+            text = resolvedUrl,
+            subject = asset.name,
+            targetPackage = onlineSharePackage,
+            extras = if (onlineSharePackage.isNotBlank()) {
+                mapOf(
+                    "channel" to "Online",
+                    "extra_channel" to "Online",
+                    "online_channel" to true
+                )
+            } else {
+                emptyMap()
+            }
+        )
         return runCatching {
             if (onlineSharePackage.isNotBlank()) {
                 context.startActivity(intent)
@@ -250,7 +255,11 @@ internal class GitHubAssetActions(
     }
 
     private suspend fun openApkInDownloaderInternal(asset: GitHubReleaseAssetFile): Boolean {
-        val resolvedUrl = resolvePreferredAssetUrl(asset)
+        val resolvedUrl = SafeExternalIntents.httpsExternalUrlOrNull(resolvePreferredAssetUrl(asset))
+            ?: run {
+                env.toast(R.string.github_toast_open_downloader_failed)
+                return false
+            }
         val preferredPackage = state.lookupConfig.preferredDownloaderPackage.trim()
         return runCatching {
             when (preferredPackage) {
@@ -259,31 +268,18 @@ internal class GitHubAssetActions(
                     env.toast(R.string.github_toast_downloader_system_builtin)
                 }
                 "" -> {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
-                            addCategory(Intent.CATEGORY_BROWSABLE)
-                        }
-                    )
+                    require(SafeExternalIntents.startBrowsableUrl(context, resolvedUrl))
                     env.toast(R.string.github_toast_downloader_system_default)
                 }
                 else -> {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
-                            addCategory(Intent.CATEGORY_BROWSABLE)
-                            setPackage(preferredPackage)
-                        }
-                    )
+                    require(SafeExternalIntents.startBrowsableUrl(context, resolvedUrl, preferredPackage))
                     env.toast(R.string.github_toast_downloader_selected)
                 }
             }
             true
         }.recoverCatching {
             if (preferredPackage.isNotBlank() && preferredPackage != systemDmOption.packageName) {
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse(resolvedUrl)).apply {
-                        addCategory(Intent.CATEGORY_BROWSABLE)
-                    }
-                )
+                require(SafeExternalIntents.startBrowsableUrl(context, resolvedUrl))
                 env.toast(R.string.github_toast_downloader_fallback_system)
                 true
             } else {
@@ -296,7 +292,9 @@ internal class GitHubAssetActions(
     }
 
     private fun enqueueWithSystemDownloadManager(url: String, fileName: String) {
-        val request = DownloadManager.Request(url.toUri()).apply {
+        val safeUrl = SafeExternalIntents.httpsExternalUrlOrNull(url)
+            ?: throw IllegalArgumentException("download url must be https")
+        val request = DownloadManager.Request(safeUrl.toUri()).apply {
             setAllowedNetworkTypes(
                 DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE
             )

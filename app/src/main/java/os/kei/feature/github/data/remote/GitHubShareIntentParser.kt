@@ -31,7 +31,9 @@ internal object GitHubShareIntentParser {
         val rawText = text.trim()
         if (rawText.isBlank()) return emptyList()
         return githubUrlRegex.findAll(rawText)
-            .map { match -> match.value.trim().trimGitHubUrlTrailingPunctuation() }
+            .mapNotNull { match ->
+                normalizeGitHubWebUrl(match.value.trim().trimGitHubUrlTrailingPunctuation())
+            }
             .filter { it.isNotBlank() }
             .distinct()
             .toList()
@@ -58,8 +60,8 @@ internal object GitHubShareIntentParser {
     }
 
     fun parseSharedReleaseUrl(rawUrl: String): GitHubSharedReleaseLink? {
-        val normalizedUrl = rawUrl.trim().trimGitHubUrlTrailingPunctuation()
-        if (normalizedUrl.isBlank()) return null
+        val normalizedUrl = normalizeGitHubWebUrl(rawUrl.trim().trimGitHubUrlTrailingPunctuation())
+            ?: return null
 
         val uri = runCatching { URI(normalizedUrl) }.getOrNull()
         val host = uri?.host.orEmpty().lowercase()
@@ -164,6 +166,26 @@ internal object GitHubShareIntentParser {
 
     private fun buildProjectUrl(owner: String, repo: String): String {
         return "https://github.com/${owner.trim()}/${repo.trim()}"
+    }
+
+    private fun normalizeGitHubWebUrl(rawUrl: String): String? {
+        val uri = runCatching { URI(rawUrl.trim()) }.getOrNull() ?: return null
+        val scheme = uri.scheme?.lowercase().orEmpty()
+        val host = uri.host?.lowercase().orEmpty()
+        if (scheme != "http" && scheme != "https") return null
+        if (host != "github.com" && host != "www.github.com") return null
+        if (!uri.userInfo.isNullOrBlank()) return null
+        return runCatching {
+            URI(
+                "https",
+                null,
+                "github.com",
+                -1,
+                uri.rawPath.orEmpty().ifBlank { "/" },
+                uri.rawQuery,
+                uri.rawFragment
+            ).toASCIIString()
+        }.getOrNull()
     }
 
     private fun GitHubSharedUrlType.priority(): Int {

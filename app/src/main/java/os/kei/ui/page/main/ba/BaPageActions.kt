@@ -3,10 +3,9 @@ package os.kei.ui.page.main.ba
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import os.kei.R
+import os.kei.core.intent.SafeExternalIntents
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.ba.support.BA_AP_LIMIT_MAX
 import os.kei.ui.page.main.ba.support.BA_AP_MAX
@@ -54,12 +53,7 @@ internal fun openBaExternalLink(
     url: String,
     failureMessage: String = context.getString(R.string.ba_error_open_activity_link),
 ) {
-    runCatching {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-    }.onFailure {
+    if (!SafeExternalIntents.startBrowsableUrl(context, url, newTask = true)) {
         Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
     }
 }
