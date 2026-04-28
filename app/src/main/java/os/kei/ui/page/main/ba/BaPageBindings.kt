@@ -154,6 +154,7 @@ internal fun buildBaPageContentActions(
         onApCurrentDone = {
             val finalValue = office.apCurrentInput.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 0
             office.updateCurrentAp(finalValue, markSync = true)
+            AppBackgroundScheduler.scheduleBaApThreshold(context)
             office.apCurrentInput = finalValue.toString()
         },
         onApLimitInputChange = { office.apLimitInput = it },
@@ -162,6 +163,7 @@ internal fun buildBaPageContentActions(
                 ?: BA_AP_LIMIT_MAX
             office.updateApLimit(finalValue)
             office.applyApRegen()
+            AppBackgroundScheduler.scheduleBaApThreshold(context)
             office.apLimitInput = finalValue.toString()
         },
         onOverviewServerPopupAnchorBoundsChange = { ui.overviewServerPopupAnchorBounds = it },
@@ -198,9 +200,13 @@ internal fun buildBaPageContentActions(
             }
             onRefreshCalendar()
             onRefreshPool()
+            AppBackgroundScheduler.scheduleBaApThreshold(context)
             ui.showOverviewServerPopup = false
         },
-        onClaimCafeStoredAp = { office.claimCafeStoredAp(context) },
+        onClaimCafeStoredAp = {
+            office.claimCafeStoredAp(context)
+            AppBackgroundScheduler.scheduleBaApThreshold(context)
+        },
         onInitStateChange = { ui.initState = it },
         onTouchHead = { office.touchHead(ui.serverIndex) },
         onForceResetHeadpatCooldown = { office.forceResetHeadpatCooldown() },
