@@ -5,6 +5,8 @@
     android:viewportWidth="1800"
     android:viewportHeight="1800">
 
+    <!-- Source: https://github.com/Mizera-Mondo/blue-archive-logos/blob/main/clubs/S.C.H.A.L.E.svg -->
+    <!-- License: MIT, Copyright (c) 2024 Avrona. -->
     <group android:translateX="-540">
         <path
             android:fillColor="#00000000"

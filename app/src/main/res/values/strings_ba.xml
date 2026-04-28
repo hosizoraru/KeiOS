@@ -43,7 +43,7 @@
     <string name="ba_cafe_visit_notification_title">咖啡厅学生来访问啦</string>
     <string name="ba_cafe_visit_notification_content">咖啡厅学生来访问啦</string>
     <string name="ba_cafe_visit_notification_content_detail">%1$s %2$d:00 学生来访问啦</string>
-    <string name="ba_cafe_visit_notification_island_text">咖啡厅来访</string>
+    <string name="ba_cafe_visit_notification_island_text">来访</string>
     <string name="ba_arena_refresh_notification_title">竞技场已刷新</string>
     <string name="ba_arena_refresh_notification_content">竞技场已刷新</string>
     <string name="ba_arena_refresh_notification_content_detail">%1$s %2$d:00 竞技场已刷新</string>

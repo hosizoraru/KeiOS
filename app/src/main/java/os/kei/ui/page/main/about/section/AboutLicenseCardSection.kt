@@ -51,6 +51,12 @@ fun AboutLicenseCardSection(
             icon = appLucideLayersIcon()
         ),
         AboutLicenseEntry(
+            titleRes = R.string.about_license_row_blue_archive_logos,
+            value = stringResource(R.string.about_license_value_blue_archive_logos),
+            sourceUrl = stringResource(R.string.about_license_url_blue_archive_logos),
+            icon = appLucideLayersIcon()
+        ),
+        AboutLicenseEntry(
             titleRes = R.string.about_license_row_liquid_glass,
             value = stringResource(
                 R.string.about_license_value_liquid_glass,

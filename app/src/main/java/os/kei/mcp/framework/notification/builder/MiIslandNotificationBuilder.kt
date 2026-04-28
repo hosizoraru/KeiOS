@@ -50,7 +50,7 @@ class MiIslandNotificationBuilder(
         private const val BA_EVENT_ACCENT_COLOR = "#4DA3FF"
         private const val ISLAND_ICON_RES_ID_DEFAULT = R.drawable.ic_kei_logo_island
         private const val ISLAND_ICON_RES_ID_AP = R.drawable.ic_ba_ap_island_notification
-        private const val ISLAND_ICON_RES_ID_BA_CAFE_VISIT = R.drawable.ic_ba_schale_island
+        private const val ISLAND_ICON_RES_ID_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_island
         private const val ISLAND_ICON_RES_ID_BA_ARENA_REFRESH = R.drawable.ic_ba_schale_island
     }
 

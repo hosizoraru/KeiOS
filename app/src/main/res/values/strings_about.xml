@@ -110,6 +110,8 @@
     <string name="about_license_value_miuix">v%1$s · Apache-2.0</string>
     <string name="about_license_row_lucide">Lucide Icons</string>
     <string name="about_license_value_lucide">v%1$s · MIT</string>
+    <string name="about_license_row_blue_archive_logos">Blue Archive Logos</string>
+    <string name="about_license_value_blue_archive_logos">MIT · Copyright (c) 2024 Avrona</string>
     <string name="about_license_row_liquid_glass">AndroidLiquidGlassView</string>
     <string name="about_license_value_liquid_glass">v%1$s · MIT</string>
     <string name="about_license_row_installerx">InstallerX-Revived 引用代码</string>
@@ -126,6 +128,7 @@
     <string name="about_license_value_media_stack">Media3 %1$s · Coil %2$s · ZoomImage %3$s · uCrop %4$s · Apache-2.0</string>
     <string name="about_license_url_miuix">https://github.com/compose-miuix-ui/miuix/blob/main/LICENSE</string>
     <string name="about_license_url_lucide">https://github.com/composablehorizons/composeicons/blob/main/LICENSE</string>
+    <string name="about_license_url_blue_archive_logos">https://github.com/Mizera-Mondo/blue-archive-logos/blob/main/LICENSE</string>
     <string name="about_license_url_liquid_glass">https://github.com/QmDeve/AndroidLiquidGlassView/blob/main/LICENSE</string>
     <string name="about_license_url_installerx">https://github.com/wxxsfxyzm/InstallerX-Revived/</string>
     <string name="about_license_url_shizuku">https://github.com/RikkaApps/Shizuku-API/blob/master/LICENSE</string>
