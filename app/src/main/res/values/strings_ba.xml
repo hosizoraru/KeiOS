@@ -47,7 +47,7 @@
     <string name="ba_arena_refresh_notification_title">竞技场已刷新</string>
     <string name="ba_arena_refresh_notification_content">竞技场已刷新</string>
     <string name="ba_arena_refresh_notification_content_detail">%1$s %2$d:00 竞技场已刷新</string>
-    <string name="ba_arena_refresh_notification_island_text">竞技场刷新</string>
+    <string name="ba_arena_refresh_notification_island_text">刷新</string>
 
     <string name="ba_catalog_page_title">图鉴</string>
     <string name="ba_catalog_tab_title">当前分区：%1$s</string>
