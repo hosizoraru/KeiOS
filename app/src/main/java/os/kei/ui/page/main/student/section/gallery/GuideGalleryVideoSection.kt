@@ -268,6 +268,15 @@ internal fun GuideInlineVideoPlayer(
             onIsPlayingChange(false)
         }
     )
+    BindGuideVideoForegroundPlaybackGuard(
+        player = player,
+        onForegroundStopped = {
+            isBuffering = false
+            isPlaying = false
+            onBufferingChange(false)
+            onIsPlayingChange(false)
+        }
+    )
 
     LaunchedEffect(player, loopEnabled) {
         player?.repeatMode = if (loopEnabled) {

@@ -4,6 +4,11 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -32,6 +37,28 @@ internal fun rememberGuidePreparedVideoPlayer(
                 playWhenReady = true
                 prepare()
             }
+        }
+    }
+}
+
+@Composable
+internal fun BindGuideVideoForegroundPlaybackGuard(
+    player: ExoPlayer?,
+    onForegroundStopped: () -> Unit = {}
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val latestOnForegroundStopped by rememberUpdatedState(onForegroundStopped)
+    DisposableEffect(lifecycleOwner, player) {
+        val boundPlayer = player ?: return@DisposableEffect onDispose { }
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                runCatching { boundPlayer.pause() }
+                latestOnForegroundStopped()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 }

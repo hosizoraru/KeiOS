@@ -94,7 +94,7 @@
 - [x] 注册 Android 17 资源异常 profiling trigger。
 - [x] 读取历史进程退出记录，识别 MemoryLimiter 或 excessive resource usage 信号。
 - [x] 为 GitHub 与 BA 后台 tick 增加公平资源调度适配，减少固定轮询和 idle 强唤醒。
-- [ ] 在 Android 17 AVD 上做长 idle profiling，检查 alarm window、唤醒次数、历史退出日志，并和 GitHub / BA 公平调度策略对比。
+- [x] 在 Android 17 AVD 上做长 idle profiling，检查 alarm window、唤醒次数、历史退出日志，并和 GitHub / BA 公平调度策略对比。
 
 ### P1-C Activity 启动、URI Grant、IntentSender
 

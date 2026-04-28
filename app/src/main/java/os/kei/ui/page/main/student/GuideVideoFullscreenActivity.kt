@@ -33,6 +33,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import os.kei.ui.page.main.ba.support.BASettingsStore
+import os.kei.ui.page.main.student.section.gallery.BindGuideVideoForegroundPlaybackGuard
 import top.yukonga.miuix.kmp.basic.Text
 
 class GuideVideoFullscreenActivity : ComponentActivity() {
@@ -140,6 +141,7 @@ private fun GuideVideoFullscreenScreen(
             runCatching { boundPlayer.release() }
         }
     }
+    BindGuideVideoForegroundPlaybackGuard(player = player)
 
     Box(
         modifier = Modifier

@@ -94,7 +94,7 @@ Official references checked on 2026-04-29:
 - [x] Register Android 17 anomaly profiling trigger for resource anomalies.
 - [x] Inspect previous process exits for MemoryLimiter or excessive resource usage signals.
 - [x] Add fair background scheduling pass for GitHub and BA tick jobs.
-- [ ] Run Android 17 AVD profiling for alarm windows, wakeups, and previous-exit logs after long idle; compare GitHub and BA tick behavior with the fair scheduling policy.
+- [x] Run Android 17 AVD profiling for alarm windows, wakeups, and previous-exit logs after long idle; compare GitHub and BA tick behavior with the fair scheduling policy.
 
 ### P1-C Activity Launch, URI Grants, And IntentSender
 

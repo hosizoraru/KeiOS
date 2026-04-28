@@ -280,6 +280,7 @@ internal fun GuideVideoFullscreenDialog(
         onVideoRatioChanged = { ratio -> videoRatio = ratio },
         onPlayerErrorChanged = { errorCode -> loadError = errorCode }
     )
+    BindGuideVideoForegroundPlaybackGuard(player = player)
 
     AppWindowDialogHost(
         show = true,
