@@ -31,13 +31,12 @@ Official references checked on 2026-04-29:
 
 ## P0 - API 36 Primary-Device Validation
 
-### P0-A Display, Input, Back, And Accessibility
+### P0-A Display, Input, And Back
 
 - [x] Run API 36 normal-window edge-to-edge, status bar, and navigation bar smoke across Home, OS, BA, MCP, GitHub, Settings, About, GitHub share import window, uCrop, OS Shell Runner, and video fullscreen; artifacts: `artifacts/api36-p0/smoke4/`.
 - [ ] Continue API 36 IME and focused-input inset smoke across OS Shell Runner, GitHub token/share import surfaces, Settings permission flows, and BA guide filters.
 - [ ] Run API 36 typography smoke with Chinese, Japanese, Latin, large-font, bold-text, and outline-text settings across Home, GitHub, BA guide/catalog, Settings, About, OS Shell, and GitHub share import; record clipped chips, baseline drift, and Miuix / Compose line-height regressions.
 - [ ] Validate predictive back across Nav3 main pages, Settings, student guide detail, guide fullscreen image, OS Shell Runner, and GitHub share import Activity with gesture and 3-button navigation.
-- [ ] Run Android 16 TalkBack / accessibility smoke for dynamic feedback across GitHub share import, BA fetch/save/export flows, Settings permission flows, OS Shell output, and notification permission prompts; replace deprecated announcement patterns with pane titles, focus moves, or live-region semantics where runtime feedback is silent or duplicated.
 - [x] Add predictive-back OEM compatibility for HyperOS / MIUI / Xiaomi, ColorOS, OriginOS, MagicOS, EMUI, and One UI so main-navigation return transitions follow the active swipe edge.
 - [x] Complete Android 17 / API 37 AVD predictive-back smoke: Home -> Settings -> left-edge back, Home -> About -> right-edge back, with logcat confirming the `CoreBackPreview` callback path.
 
@@ -103,11 +102,10 @@ Official references checked on 2026-04-29:
 - [x] Add user-visible notification action background-activity-start allowance for MCP and GitHub notification open PendingIntents.
 - [ ] Continue auditing IntentSender UI launch paths for Android 17 background-activity-start behavior.
 
-### P1-D Input, Accessibility, And Media Lifecycle
+### P1-D Input And Media Lifecycle
 
 - [x] Add Android 17 foreground-only guard and hardening validation for BA guide media playback.
 - [ ] Validate GitHub API token password masking on Android 17 with a physical keyboard and the system show-password setting; adopt `ShowSecretsSetting.shouldShowPassword(...)` only if Compose masking diverges from platform behavior.
-- [ ] Validate Android 17 text-change accessibility for custom Compose input surfaces: `GlassSearchField`, OS Shell command input, GitHub token input, and BA guide filters; cover CJKV IME, physical keyboard, TalkBack, and text selection.
 - [ ] Re-validate BA guide BGM/video foreground-only playback on Android 17 during app switch, screen lock, split-screen, notification shade, and low-power mode; keep the playback lifecycle contract explicit until a MediaSession service is intentionally added.
 
 ### P1-E Notifications, Advanced Protection, And Hidden APIs
@@ -124,7 +122,7 @@ Official references checked on 2026-04-29:
 
 - [ ] Test Android 17 OEM beta builds on HyperOS, ColorOS, OriginOS, MagicOS, and One UI when devices are available.
 
-## P2 - Optional APIs, Large Screens, And Long-Term Tracking
+## P2 - Optional APIs, Accessibility, Large Screens, And Long-Term Tracking
 
 ### P2-A Optional Platform APIs
 
@@ -143,7 +141,12 @@ Official references checked on 2026-04-29:
 - [ ] Evaluate richer haptics and frame-rate APIs for liquid bottom bar, sliders, gallery video, and fullscreen media after the current animation / material behavior is stable.
 - [ ] Evaluate `ApplicationStartInfo`, `reportFullyDrawn`, allow-while-idle alarm listener APIs, and JobScheduler `JobDebugInfo` only when the performance telemetry roadmap needs deeper platform signals.
 
-### P2-D Large Screen And Windowing
+### P2-D Accessibility And Inclusive UX
+
+- [ ] Run Android 16 TalkBack / accessibility smoke after the current core UI iteration stabilizes, covering dynamic feedback across GitHub share import, BA fetch/save/export flows, Settings permission flows, OS Shell output, and notification permission prompts; replace deprecated announcement patterns with pane titles, focus moves, or live-region semantics where runtime feedback is silent or duplicated.
+- [ ] Validate Android 17 text-change accessibility after custom Compose input surfaces stabilize: `GlassSearchField`, OS Shell command input, GitHub token input, and BA guide filters; cover CJKV IME, physical keyboard, TalkBack, and text selection.
+
+### P2-E Large Screen And Windowing
 
 - [ ] Run API 36 `sw600dp` / desktop-window smoke for MainActivity, GitHub share import, uCrop, video fullscreen, and OS Shell Runner; record orientation, resizeability, edge-to-edge, and IME breakages before the broader large-screen redesign.
 - [ ] Create a large-screen navigation plan for tablet, foldable, desktop, and landscape window sizes.

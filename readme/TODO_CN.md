@@ -31,13 +31,12 @@
 
 ## P0 - API 36 主力机验收
 
-### P0-A 显示、输入、返回、无障碍
+### P0-A 显示、输入、返回
 
 - [x] 在 API 36 普通窗口完成 Home、OS、BA、MCP、GitHub、Settings、About、GitHub 分享导入窗口、uCrop、OS Shell Runner、视频全屏页的 edge-to-edge、状态栏、导航栏 smoke；证据目录：`artifacts/api36-p0/smoke4/`。
 - [ ] 继续验证 API 36 IME 与聚焦输入 inset，覆盖 OS Shell Runner、GitHub Token / 分享导入、Settings 权限流、BA 图鉴筛选。
 - [ ] 在 API 36 上做字体 smoke，覆盖中文、日文、拉丁字符、大字体、粗体文字、outline text 设置，以及 Home、GitHub、BA 图鉴 / 图鉴目录、Settings、About、OS Shell、GitHub 分享导入；记录 chip 裁切、基线漂移、Miuix / Compose 行高回归。
 - [ ] 全量验证预测返回：Nav3 主页面、设置页、学生图鉴详情、图鉴全屏图片、OS Shell Runner、GitHub 分享导入 Activity，并覆盖手势导航与三键导航。
-- [ ] 在 Android 16 上做 TalkBack / 无障碍 smoke，覆盖 GitHub 分享导入、BA 拉取 / 保存 / 打包导出、Settings 权限、OS Shell 输出、通知权限弹窗；运行反馈沉默或重复时改用 pane title、焦点移动、live-region 语义。
 - [x] 为 HyperOS / MIUI / Xiaomi、ColorOS、OriginOS、MagicOS、EMUI、One UI 增加预测返回 OEM 兼容策略，主导航返回动画会跟随左右边缘方向。
 - [x] 在 Android 17 / API 37 AVD 上完成预测返回 smoke：Home -> 设置 -> 左边缘返回、Home -> About -> 右边缘返回，logcat 确认进入 `CoreBackPreview` 回调路径。
 
@@ -103,11 +102,10 @@
 - [x] 为 MCP 与 GitHub 通知点击打开 App 的 PendingIntent 增加用户可见通知动作专用的后台 Activity 启动 allowance。
 - [ ] 继续审计 IntentSender 拉起界面的链路，适配 Android 17 后台启动 Activity 行为。
 
-### P1-D 输入、无障碍、媒体生命周期
+### P1-D 输入、媒体生命周期
 
 - [x] 为 BA 图鉴媒体播放增加 Android 17 前台播放保护，并完成 audio hardening 验证。
 - [ ] 在 Android 17 物理键盘与系统显示密码设置下验证 GitHub API Token 密码遮罩；Compose 遮罩和平台行为不一致时再接入 `ShowSecretsSetting.shouldShowPassword(...)`。
-- [ ] 验证 Android 17 自定义 Compose 输入面的文本变化无障碍反馈：`GlassSearchField`、OS Shell 命令输入、GitHub Token 输入、BA 图鉴筛选；覆盖 CJKV 输入法、物理键盘、TalkBack、文本选择。
 - [ ] 在 Android 17 上复验 BA 图鉴 BGM / 视频前台播放保护，覆盖切后台、锁屏、分屏、通知栏、低电量模式；在明确加入 MediaSession service 前保持当前播放生命周期契约。
 
 ### P1-E 通知、Advanced Protection、Hidden API
@@ -124,7 +122,7 @@
 
 - [ ] 在 HyperOS、ColorOS、OriginOS、MagicOS、One UI 的 Android 17 OEM Beta 设备可用后做兼容性测试。
 
-## P2 - 可选 API、大屏、长期跟踪
+## P2 - 可选 API、无障碍、大屏、长期跟踪
 
 ### P2-A 可选平台 API
 
@@ -143,7 +141,12 @@
 - [ ] 当前动画 / 材质表现稳定后，再评估 richer haptics 与 frame-rate API 在液态底栏、slider、画廊视频、全屏媒体中的收益。
 - [ ] 性能遥测路线需要更深平台信号时，再评估 `ApplicationStartInfo`、`reportFullyDrawn`、allow-while-idle alarm listener API、JobScheduler `JobDebugInfo`。
 
-### P2-D 大屏与窗口模式
+### P2-D 无障碍与包容性体验
+
+- [ ] 当前核心 UI 迭代稳定后，在 Android 16 上做 TalkBack / 无障碍 smoke，覆盖 GitHub 分享导入、BA 拉取 / 保存 / 打包导出、Settings 权限、OS Shell 输出、通知权限弹窗；运行反馈沉默或重复时改用 pane title、焦点移动、live-region 语义。
+- [ ] 自定义 Compose 输入面稳定后，验证 Android 17 文本变化无障碍反馈：`GlassSearchField`、OS Shell 命令输入、GitHub Token 输入、BA 图鉴筛选；覆盖 CJKV 输入法、物理键盘、TalkBack、文本选择。
+
+### P2-E 大屏与窗口模式
 
 - [ ] 在 API 36 `sw600dp` / 桌面窗口模式下 smoke MainActivity、GitHub 分享导入、uCrop、视频全屏页、OS Shell Runner；先记录方向、resizeability、edge-to-edge、IME 破损点，再进入大屏重构。
 - [ ] 制定平板、折叠屏、桌面模式、横屏窗口尺寸下的大屏导航方案。
