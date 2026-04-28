@@ -277,7 +277,15 @@ class MiIslandNotificationBuilder(
             return IslandPresentation(
                 allowFloat = false,
                 showTextButtons = true,
-                rightTitle = context.getString(R.string.ba_notification_ap_island_text),
+                rightTitle = context.getString(
+                    R.string.ba_notification_ap_island_title,
+                    state.port.coerceAtLeast(0),
+                    state.clients.coerceAtLeast(0)
+                ),
+                rightContent = context.getString(
+                    R.string.ba_notification_ap_island_threshold,
+                    state.path.trim().ifBlank { "0" }
+                ),
                 notificationOngoing = true,
                 requestPromotedOngoing = true,
                 focusUpdatable = true,
