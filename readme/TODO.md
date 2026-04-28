@@ -33,13 +33,16 @@ Official references checked on 2026-04-29:
 - [x] Complete Android 17 / API 37 AVD predictive-back smoke: Home -> Settings -> left-edge back, Home -> About -> right-edge back, with logcat confirming the `CoreBackPreview` callback path.
 - [x] Add constrained `NEARBY_WIFI_DEVICES(maxSdk=36)` support and route MCP LAN permission requests through shared API 36 / API 37 permission logic.
 - [x] Add `scripts/qa/android_api_compat_probe.sh` for API 36 / 37 device version, manifest permission, AppOps, and optional `RESTRICT_LOCAL_NETWORK` compat-flag checks.
-- [ ] Use the Android 16 `RESTRICT_LOCAL_NETWORK` compat flag to validate MCP loopback / LAN mode.
+- [x] Validate MCP loopback on an Android 17 / API 37 AVD with `RESTRICT_LOCAL_NETWORK` enabled: `127.0.0.1:38888/mcp` remains reachable and returns the expected auth rejection, with no Network Security Config needed.
+- [ ] Continue validating MCP LAN mode on Android 16 / API 36 hardware with `RESTRICT_LOCAL_NETWORK` enabled for same-subnet access.
 - [x] Harden high-traffic Safer Intents paths across GitHub `ACTION_SEND` import Activity, downloader selection, external links, and share-APK-link flows with stricter action, MIME, scheme, host, and package boundaries.
-- [x] Complete the first lower-frequency OS shortcut and notification / shortcut extras audit: MainActivity external extras are paired by target-page and action allowlists, and OS Activity cards now verify a resolvable target before launch.
+- [x] Complete the first lower-frequency OS shortcut and notification / shortcut extras audit: MainActivity external extras are paired by target-page and action allowlists, OS Activity cards now verify a resolvable target before launch, and the top-of-stack MCP shortcut is verified through `singleTop` start/stop delivery.
 - [x] Complete Android 17 / API 37 AVD external-extras smoke: valid GitHub shortcut action opens GitHub, mismatched actions open only the target page, and unknown targets fall back to Home.
 - [ ] Validate DownloadManager, GitHub background refresh, and BA AP / cafe / arena reminders under Android 16 idle, lockscreen, and battery-saver states; retain the source-audit finding that fixed-rate work paths are absent.
-- [ ] Validate MCP `specialUse` foreground service recovery on Android 16 when background start limits, denied notification permission, battery saver, and inactive Shizuku states are present.
-- [ ] Validate MCP, GitHub, BA, and Super Island notification visuals and tap behavior on Android 16 promoted notifications and `NotificationCompat.ProgressStyle`.
+- [x] Validate MCP `specialUse` foreground service behavior on Android 17 / API 37 AVD: foreground start is allowed, denied notification permission keeps the service running without crashes, and restored permission allows normal stop.
+- [ ] Validate MCP `specialUse` foreground service recovery on Android 16 when background start limits, battery saver, and inactive Shizuku states are present.
+- [x] Validate MCP Live Update / promoted notification on Android 17 / API 37 AVD: records include `PROMOTED_ONGOING`, `ProgressStyle` actions, and notification PendingIntent allowlists while preserving the existing notification framework.
+- [ ] Validate GitHub, BA, and Super Island notification visuals and tap behavior on Android 16 promoted notifications and `NotificationCompat.ProgressStyle`.
 - [x] Complete the first `setAccessible` / hidden-API reduction pass: HyperOS settings and keep-alive property reads now use shared PropUtils, AppOpsManagerInjector uses public-method probing, and the Shizuku private `newProcess` compatibility path remains guarded by runtime status.
 
 ## P1 - API 37 Enforced Adaptation
@@ -51,12 +54,14 @@ Official references checked on 2026-04-29:
 - [x] Add fair background scheduling pass for GitHub and BA tick jobs.
 - [x] Add Android 17 foreground-only guard and hardening validation for BA guide media playback.
 - [x] Normalize `http://` GitHub share links, GitHub downloader URLs, and GameKee / BA guide asset links to `https://`; restrict DownloadManager to HTTPS external download URLs.
-- [ ] Continue auditing MCP loopback / LAN HTTP endpoints; add a narrow Network Security Config only if API 37 validation blocks legitimate traffic.
+- [x] Audit MCP loopback HTTP endpoints: API 37 AVD with the local-network compat flag enabled can reach the legitimate port, and no Network Security Config block was observed.
+- [ ] Continue auditing MCP LAN HTTP endpoints; add a narrow Network Security Config only if API 37 / OEM Beta validation blocks legitimate same-subnet traffic.
 - [x] Add explicit URI grant support for the non-Home background FileProvider / uCrop crop flow.
 - [ ] Continue validating custom media-save and ZIP export URI grant flows on Android 17; add explicit package grants where chooser or third-party targets drop access.
 - [x] Add user-visible notification action background-activity-start allowance for MCP and GitHub notification open PendingIntents.
 - [ ] Continue auditing IntentSender UI launch paths for Android 17 background-activity-start behavior.
-- [ ] Validate MCP, GitHub, BA AP/cafe/arena, and Super Island notification surfaces against Android 17 promoted-notification and Live Update behavior.
+- [x] Validate MCP notification surfaces against Android 17 promoted-notification and Live Update behavior.
+- [ ] Validate GitHub, BA AP/cafe/arena, and Super Island notification surfaces against Android 17 promoted-notification and Live Update behavior.
 - [x] Add an Advanced Protection Mode status detector and expose it in About build details.
 - [ ] Add behavior downgrade plans for Shizuku, package enumeration, battery-optimization, and local MCP LAN flows when Advanced Protection Mode is enabled.
 - [ ] Run Android 17 AVD profiling for alarm windows, wakeups, and previous-exit logs after long idle; compare GitHub and BA tick behavior with the fair scheduling policy.

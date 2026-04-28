@@ -33,13 +33,16 @@
 - [x] 在 Android 17 / API 37 AVD 上完成预测返回 smoke：Home -> 设置 -> 左边缘返回、Home -> About -> 右边缘返回，logcat 确认进入 `CoreBackPreview` 回调路径。
 - [x] 为 API 36 本地网络限制测试补充 `NEARBY_WIFI_DEVICES(maxSdk=36)`，并把 MCP 局域网权限请求统一接入 API 36 / API 37 权限辅助。
 - [x] 增加 `scripts/qa/android_api_compat_probe.sh`，用于读取 API 36 / 37 设备版本、Manifest 权限、AppOps，并可按需启用 `RESTRICT_LOCAL_NETWORK` compat flag。
-- [ ] 使用 Android 16 compat flag `RESTRICT_LOCAL_NETWORK` 验证 MCP loopback / 局域网模式。
+- [x] 在 Android 17 / API 37 AVD 开启 `RESTRICT_LOCAL_NETWORK` 后验证 MCP loopback：`127.0.0.1:38888/mcp` 可达并返回预期鉴权拦截，暂不需要 Network Security Config。
+- [ ] 使用 Android 16 / API 36 设备继续验证 MCP 局域网模式在 `RESTRICT_LOCAL_NETWORK` 下的同网段访问。
 - [x] 加固 GitHub `ACTION_SEND` 导入 Activity、下载器选择、外部链接打开、分享 APK 链接等 Safer Intents 高频链路，确保 action、mime、scheme、host、package 边界更明确。
-- [x] 完成用户自定义 OS shortcut intents、通知 / shortcut extras 首轮审计：MainActivity 外部 extras 已按目标页和动作白名单配对，OS Activity card 启动前补充目标可解析校验。
+- [x] 完成用户自定义 OS shortcut intents、通知 / shortcut extras 首轮审计：MainActivity 外部 extras 已按目标页和动作白名单配对，OS Activity card 启动前补充目标可解析校验，MCP 栈顶快捷入口已用 `singleTop` 验证可稳定启动/停止。
 - [x] 在 Android 17 / API 37 AVD 上完成外部 extras smoke：合法 GitHub 快捷动作进入 GitHub，错配动作进入目标页但丢弃动作，未知目标回落 Home。
 - [ ] 验证 DownloadManager、GitHub 后台刷新、BA AP / 咖啡厅 / 竞技场提醒在 Android 16 空闲、锁屏、省电模式下的调度表现；保留当前无 fixed-rate work 路径的源码审计结果。
-- [ ] 验证 MCP `specialUse` 前台服务在 Android 16 后台启动、通知权限拒绝、省电策略、Shizuku 未激活状态下的恢复路径。
-- [ ] 验证 MCP / GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉和点击行为。
+- [x] 在 Android 17 / API 37 AVD 验证 MCP `specialUse` 前台服务：前台启动被系统允许，通知权限拒绝时服务保持前台运行且无崩溃，权限恢复后可正常停止。
+- [ ] 验证 MCP `specialUse` 前台服务在 Android 16 后台启动、省电策略、Shizuku 未激活状态下的恢复路径。
+- [x] 在 Android 17 / API 37 AVD 验证 MCP Live Update / promoted notification：通知记录包含 `PROMOTED_ONGOING`、`ProgressStyle` 动作、打开/停止 PendingIntent allowlist，点击链路保持现有通知框架。
+- [ ] 验证 GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉和点击行为。
 - [x] 完成 `setAccessible` / hidden API 首轮收敛：HyperOS 设置跳转与保活权限辅助的系统属性读取改用统一 PropUtils，AppOpsManagerInjector 改为公开方法探测；Shizuku private `newProcess` 兼容入口保留并受状态门控。
 
 ## P1 - API 37 强制适配
@@ -51,12 +54,14 @@
 - [x] 为 GitHub 与 BA 后台 tick 增加公平资源调度适配，减少固定轮询和 idle 强唤醒。
 - [x] 为 BA 图鉴媒体播放增加 Android 17 前台播放保护，并完成 audio hardening 验证。
 - [x] 将 GitHub 分享链接、GitHub 下载器入口、GameKee / BA 图鉴资源链接里的 `http://` 规范化到 `https://`，并限制 DownloadManager 只接收 HTTPS 外部下载 URL。
-- [ ] 继续审计 MCP loopback / 局域网 HTTP 端点；API 37 实测拦截合法流量时补充最小范围 Network Security Config。
+- [x] 审计 MCP loopback HTTP 端点：API 37 AVD 开启本地网络 compat flag 后合法端口可达，未发现需要 Network Security Config 的拦截。
+- [ ] 继续审计 MCP 局域网 HTTP 端点；API 37 / OEM Beta 实测拦截合法同网段流量时补充最小范围 Network Security Config。
 - [x] 为非 Home 背景裁剪的 FileProvider / uCrop 链路增加显式 URI grant 辅助。
 - [ ] 在 Android 17 上继续验证自定义媒体保存、ZIP 导出等 URI grant 链路；chooser 或第三方目标丢权限时补充显式包授权。
 - [x] 为 MCP 与 GitHub 通知点击打开 App 的 PendingIntent 增加用户可见通知动作专用的后台 Activity 启动 allowance。
 - [ ] 继续审计 IntentSender 拉起界面的链路，适配 Android 17 后台启动 Activity 行为。
-- [ ] 验证 MCP、GitHub、BA AP / 咖啡厅 / 竞技场、超级岛通知在 Android 17 promoted notification 与 Live Update 规则下的表现。
+- [x] 验证 MCP 通知在 Android 17 promoted notification 与 Live Update 规则下的表现。
+- [ ] 验证 GitHub、BA AP / 咖啡厅 / 竞技场、超级岛通知在 Android 17 promoted notification 与 Live Update 规则下的表现。
 - [x] 新增 Advanced Protection Mode 状态检测入口，先在 About 构建信息中暴露当前状态。
 - [ ] 为 Advanced Protection Mode 制定行为降级方案，覆盖 Shizuku、包枚举、电池优化、本地 MCP 局域网等高风险能力入口。
 - [ ] 在 Android 17 AVD 上做长 idle profiling，检查 alarm window、唤醒次数、历史退出日志，并和 GitHub / BA 公平调度策略对比。
