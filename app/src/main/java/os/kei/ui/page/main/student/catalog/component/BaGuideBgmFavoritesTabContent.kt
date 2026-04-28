@@ -130,7 +130,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     fun startFavoritePlayback(
         favorite: GuideBgmFavoriteItem,
         restart: Boolean = false,
-        collapseNowPlaying: Boolean = true
+        collapseNowPlaying: Boolean = false
     ) {
         selectedAudioUrl = favorite.audioUrl
         setNowPlayingVisible(true)
@@ -168,7 +168,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     fun selectQueueOffset(
         offset: Int,
         startPlayback: Boolean,
-        collapseNowPlaying: Boolean = true,
+        collapseNowPlaying: Boolean = false,
         restart: Boolean = false
     ) {
         if (displayedFavorites.isEmpty()) return
@@ -585,7 +585,12 @@ internal fun BaGuideBgmFavoritesTabContent(
                             accent = accent,
                             onOpenGuide = { openFavoriteGuide(favorite) },
                             onSelect = { selectedAudioUrl = favorite.audioUrl },
-                            onPlay = { startFavoritePlayback(favorite) },
+                            onPlay = {
+                                startFavoritePlayback(
+                                    favorite = favorite,
+                                    collapseNowPlaying = false
+                                )
+                            },
                             onCache = { cacheFavorite(favorite) },
                             onRemove = { removeFavorite(favorite) }
                         )

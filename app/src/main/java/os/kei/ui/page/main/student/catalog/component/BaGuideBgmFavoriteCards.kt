@@ -228,15 +228,36 @@ internal fun BaGuideBgmFavoriteCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = studentTitle,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                    lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                    fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = studentTitle,
+                        modifier = Modifier.weight(1f),
+                        color = MiuixTheme.colorScheme.onBackground,
+                        fontSize = AppTypographyTokens.CompactTitle.fontSize,
+                        lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
+                        fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (selected) {
+                        StatusPill(
+                            label = currentLabel,
+                            color = accent,
+                            size = AppStatusPillSize.Compact
+                        )
+                    }
+                    if (cached) {
+                        StatusPill(
+                            label = cacheReadyLabel,
+                            color = Color(0xFF22C55E),
+                            size = AppStatusPillSize.Compact
+                        )
+                    }
+                }
                 trackSubtitle?.let { subtitle ->
                     Text(
                         text = subtitle,
@@ -246,27 +267,6 @@ internal fun BaGuideBgmFavoriteCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-                if (selected || cached) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (selected) {
-                            StatusPill(
-                                label = currentLabel,
-                                color = accent,
-                                size = AppStatusPillSize.Compact
-                            )
-                        }
-                        if (cached) {
-                            StatusPill(
-                                label = cacheReadyLabel,
-                                color = Color(0xFF22C55E),
-                                size = AppStatusPillSize.Compact
-                            )
-                        }
-                    }
                 }
             }
             GlassIconButton(
