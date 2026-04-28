@@ -129,7 +129,7 @@ val nonReleaseVersionCode = nonReleaseVersion.toVersionCode(
 val miuixVersion =
     providers.gradleProperty("miuix.version").orNull
         ?: readLocalPropertyOrNull("miuix.version")
-        ?: "0.9.0-d9dc35b5-SNAPSHOT"
+        ?: "0.9.0-81ad71b1-SNAPSHOT"
 val composeVersion = "1.10.6"
 val navigation3Version = "1.1.0"
 val navigationCommonVersion = "2.9.7"
