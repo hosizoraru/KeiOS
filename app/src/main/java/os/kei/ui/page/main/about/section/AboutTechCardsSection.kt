@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.BuildConfig
 import os.kei.R
+import os.kei.core.platform.AndroidPlatformVersions
+import os.kei.core.security.AdvancedProtectionCompat
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.ui.page.main.os.appLucideAlertIcon
 import os.kei.ui.page.main.os.appLucideAppWindowIcon
@@ -42,6 +45,7 @@ fun AboutBuildSdkCardSection(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     val rows = listOf(
         AboutInfoRow(R.string.about_row_kotlin, KotlinVersion.CURRENT.toString(), appLucideConfigIcon()),
         AboutInfoRow(R.string.about_row_gradle, BuildConfig.GRADLE_VERSION, appLucideConfigIcon()),
@@ -50,7 +54,21 @@ fun AboutBuildSdkCardSection(
         AboutInfoRow(R.string.about_row_compile_sdk, BuildConfig.COMPILE_SDK_VERSION.toString(), appLucideFilterIcon()),
         AboutInfoRow(R.string.about_row_min_sdk, BuildConfig.MIN_SDK_VERSION.toString(), appLucideFilterIcon()),
         AboutInfoRow(R.string.about_row_target_sdk, BuildConfig.TARGET_SDK_VERSION.toString(), appLucideFilterIcon()),
-        AboutInfoRow(R.string.about_row_runtime_api, Build.VERSION.SDK_INT.toString(), appLucideFilterIcon())
+        AboutInfoRow(R.string.about_row_runtime_api, Build.VERSION.SDK_INT.toString(), appLucideFilterIcon()),
+        AboutInfoRow(
+            R.string.about_row_runtime_api_full,
+            AndroidPlatformVersions.sdkIntFull.toString(),
+            appLucideFilterIcon()
+        ),
+        AboutInfoRow(
+            R.string.about_row_advanced_protection,
+            when (AdvancedProtectionCompat.isEnabled(context)) {
+                true -> stringResource(R.string.about_value_advanced_protection_enabled)
+                false -> stringResource(R.string.about_value_advanced_protection_disabled)
+                null -> stringResource(R.string.common_na)
+            },
+            appLucideLockIcon()
+        )
     )
     AboutSectionCard(
         cardColor = cardColor,

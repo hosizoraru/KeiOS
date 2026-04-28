@@ -1,9 +1,6 @@
 package os.kei.ui.page.main.mcp
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,9 +33,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
+import os.kei.core.platform.LocalNetworkPermissionCompat
 import os.kei.mcp.server.McpServerManager
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
@@ -183,9 +180,8 @@ fun McpPage(
     val toggleServer: () -> Unit = toggleServer@{
         localNetworkPermissionGranted = hasMcpLocalNetworkPermission(context)
         if (!uiState.running && allowExternal && !localNetworkPermissionGranted) {
-            runCatching {
-                localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
-            }
+            LocalNetworkPermissionCompat.requiredPermissionOrNull()
+                ?.let { permission -> runCatching { localNetworkPermissionLauncher.launch(permission) } }
             Toast.makeText(
                 context,
                 context.getString(R.string.mcp_toast_local_network_permission_requested),
@@ -558,9 +554,5 @@ fun McpPage(
 }
 
 private fun hasMcpLocalNetworkPermission(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return true
-    return ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_LOCAL_NETWORK
-    ) == PackageManager.PERMISSION_GRANTED
+    return LocalNetworkPermissionCompat.hasPermission(context)
 }

@@ -56,6 +56,8 @@
     <string name="about_row_min_sdk">Min SDK</string>
     <string name="about_row_target_sdk">Target SDK</string>
     <string name="about_row_runtime_api">Runtime API</string>
+    <string name="about_row_runtime_api_full">Runtime API Full</string>
+    <string name="about_row_advanced_protection">高级保护模式</string>
     <string name="about_row_ui_framework">UI 框架</string>
     <string name="about_row_declarative_ui">声明式界面</string>
     <string name="about_row_navigation">页面导航</string>
@@ -177,6 +179,9 @@
     <string name="about_permission_access_network_state_title">网络状态</string>
     <string name="about_permission_access_network_state_purpose">读取当前网络连接状态</string>
     <string name="about_permission_access_network_state_used_in">请求链路状态判断、后台广播任务网络容错</string>
+    <string name="about_permission_nearby_wifi_devices_title">附近 Wi-Fi 设备</string>
+    <string name="about_permission_nearby_wifi_devices_purpose">适配 Android 16 本地网络限制测试下的 MCP 局域网访问</string>
+    <string name="about_permission_nearby_wifi_devices_used_in">MCP 页面局域网模式，限制到 Android 16 及以下</string>
     <string name="about_permission_post_notifications_title">通知权限</string>
     <string name="about_permission_post_notifications_purpose">显示系统通知、实时动态与超级岛通知</string>
     <string name="about_permission_post_notifications_used_in">MCP 常驻通知、BA AP 通知、GitHub 刷新通知</string>
@@ -189,6 +194,8 @@
     <string name="about_permission_foreground_service_special_use_title">特殊用途前台服务</string>
     <string name="about_permission_foreground_service_special_use_purpose">允许以 specialUse 类型运行前台服务</string>
     <string name="about_permission_foreground_service_special_use_used_in">HyperOS 实时动态 / 超级岛通知保活场景</string>
+    <string name="about_value_advanced_protection_enabled">已开启</string>
+    <string name="about_value_advanced_protection_disabled">未开启</string>
 
     <string name="about_component_empty">未读取到服务组件信息</string>
     <string name="about_component_type_service">Service</string>

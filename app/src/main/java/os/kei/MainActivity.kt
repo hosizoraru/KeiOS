@@ -28,6 +28,7 @@ import androidx.metrics.performance.JankStats
 import os.kei.core.prefs.AppThemeMode
 import os.kei.core.prefs.UiPrefs
 import os.kei.core.perf.AppJankMonitor
+import os.kei.core.platform.LocalNetworkPermissionCompat
 import os.kei.core.shortcut.AppShortcuts
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.mcp.server.LocalMcpService
@@ -194,7 +195,8 @@ class MainActivity : ComponentActivity() {
 
     private fun requestLocalNetworkPermissionIfNeeded(): Boolean {
         if (hasLocalNetworkPermission()) return true
-        requestLocalNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        val permission = LocalNetworkPermissionCompat.requiredPermissionOrNull() ?: return true
+        requestLocalNetworkPermissionLauncher.launch(permission)
         Toast.makeText(
             this,
             getString(R.string.mcp_toast_local_network_permission_requested),
@@ -204,11 +206,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun hasLocalNetworkPermission(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return true
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_LOCAL_NETWORK
-        ) == PackageManager.PERMISSION_GRANTED
+        return LocalNetworkPermissionCompat.hasPermission(this)
     }
 
     private fun applyWindowColorMode(hdrEnabled: Boolean) {

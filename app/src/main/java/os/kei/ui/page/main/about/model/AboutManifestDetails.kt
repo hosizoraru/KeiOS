@@ -63,6 +63,11 @@ private val permissionExplainMap = mapOf(
         purposeRes = R.string.about_permission_access_local_network_purpose,
         usedInRes = R.string.about_permission_access_local_network_used_in
     ),
+    "android.permission.NEARBY_WIFI_DEVICES" to AboutExplainRes(
+        titleRes = R.string.about_permission_nearby_wifi_devices_title,
+        purposeRes = R.string.about_permission_nearby_wifi_devices_purpose,
+        usedInRes = R.string.about_permission_nearby_wifi_devices_used_in
+    ),
     "android.permission.USE_LOOPBACK_INTERFACE" to AboutExplainRes(
         titleRes = R.string.about_permission_use_loopback_interface_title,
         purposeRes = R.string.about_permission_use_loopback_interface_purpose,

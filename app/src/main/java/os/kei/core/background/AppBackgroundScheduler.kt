@@ -3,7 +3,7 @@ package os.kei.core.background
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
-import android.os.Build
+import os.kei.core.platform.AndroidPlatformVersions
 import os.kei.feature.github.data.local.GitHubTrackStore
 import os.kei.ui.page.main.ba.support.BASettingsStore
 
@@ -76,7 +76,7 @@ object AppBackgroundScheduler {
             nowMs + AppBackgroundSchedulePolicy.MIN_ALARM_DELAY_MS
         )
         alarmManager.cancel(pendingIntent)
-        if (Build.VERSION.SDK_INT >= AppBackgroundSchedulePolicy.ANDROID_17_API_LEVEL) {
+        if (AndroidPlatformVersions.isAtLeastAndroid17) {
             scheduleAndroid17Alarm(alarmManager, schedule, triggerAtMillis, nowMs, pendingIntent)
         } else {
             alarmManager.setAndAllowWhileIdle(

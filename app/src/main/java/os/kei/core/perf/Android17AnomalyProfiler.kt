@@ -4,12 +4,12 @@ import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
 import android.app.ApplicationExitInfo
-import android.os.Build
 import android.os.ProfilingManager
 import android.os.ProfilingResult
 import android.os.ProfilingTrigger
 import android.util.Log
 import os.kei.core.log.AppLogger
+import os.kei.core.platform.AndroidPlatformVersions
 import java.util.Locale
 
 object Android17AnomalyProfiler {
@@ -19,7 +19,7 @@ object Android17AnomalyProfiler {
 
     fun install(application: Application) {
         inspectPreviousResourceExit(application)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) return
+        if (!AndroidPlatformVersions.isAtLeastAndroid17) return
         registerAnomalyTrigger(application)
     }
 

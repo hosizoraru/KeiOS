@@ -13,7 +13,6 @@ import os.kei.ui.page.main.ba.support.normalizeAp
 import kotlin.math.ceil
 
 internal object AppBackgroundSchedulePolicy {
-    const val ANDROID_17_API_LEVEL = 37
     const val MIN_ALARM_DELAY_MS = 15_000L
 
     private const val GITHUB_FIRST_TICK_DELAY_MS = 2L * 60L * 1000L

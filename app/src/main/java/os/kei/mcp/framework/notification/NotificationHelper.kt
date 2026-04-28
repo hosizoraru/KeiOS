@@ -3,6 +3,7 @@ package os.kei.mcp.framework.notification
 import android.content.Context
 import android.os.Build
 import com.xzakota.hyper.notification.focus.util.FocusUtils
+import os.kei.core.platform.AndroidPlatformVersions
 import os.kei.core.system.findPropString
 import os.kei.mcp.notification.McpNotificationHelper
 import os.kei.mcp.framework.notification.builder.NotificationRenderStyle
@@ -41,7 +42,7 @@ class NotificationHelper(
         get() = isHyperOS && isSupportMiIsland && hasMiIslandPermission
 
     val isModernLiveUpdateEligible: Boolean
-        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+        get() = AndroidPlatformVersions.isAtLeastAndroid16
 
     fun resolveChannel(style: NotificationRenderStyle): String {
         return when (style) {
