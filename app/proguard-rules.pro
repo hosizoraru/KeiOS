@@ -10,10 +10,16 @@
 -keepnames class os.kei.** extends android.content.BroadcastReceiver
 -keepnames class os.kei.** extends android.content.ContentProvider
 
-# Keep navigation key class names stable across save/restore boundaries.
-# The route surface is tiny, and preserving names keeps release-only navigation debugging clearer.
--keepnames class os.kei.ui.navigation.KeiosRoute
--keepnames class os.kei.ui.navigation.KeiosRoute$*
+# Keep Navigation3 route keys stable across release save/restore boundaries.
+# The route surface is tiny; keeping members preserves Kotlin object instances and serializer entry points.
+-keep class os.kei.ui.navigation.KeiosRoute { *; }
+-keep class os.kei.ui.navigation.KeiosRoute$* { *; }
+-keep class os.kei.ui.navigation.KeiosRoute$*$$serializer { *; }
+-keepclassmembers class os.kei.ui.navigation.KeiosRoute$* {
+    public static ** Companion;
+    public static ** INSTANCE;
+    public static *** serializer(...);
+}
 
 # ShizukuApiUtils reflects these no-arg static method names.
 # Keep only the reflective surface so the rest can still be optimized/shrunk.
