@@ -5,6 +5,8 @@
 构建文档：
 - [Build Guide (EN)](README_BUILD.md)
 - [构建指南 (CN)](README_CN_BUILD.md)
+- [Todo List (EN)](README_TODO.md)
+- [待办清单 (CN)](README_TODO_CN.md)
 
 ## 当前分发方式
 
