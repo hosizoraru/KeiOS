@@ -78,6 +78,7 @@ internal fun MainPagerLayout(
     navigator: Navigator,
     settingsReturnToken: Int,
     liquidBottomBarEnabled: Boolean,
+    bottomBarScrollEffectReductionEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
@@ -163,8 +164,11 @@ internal fun MainPagerLayout(
                 selectedPageIndex = coordinator.pagerState.targetPage,
                 selectedPageIndexProvider = { coordinator.pagerState.targetPage },
                 backdrop = coordinator.backdrop,
-                reduceEffectsDuringPagerScroll = coordinator.pagerState.isScrollInProgress ||
-                    activePageListScrollInProgress,
+                reduceEffectsDuringPagerScroll = shouldReduceBottomBarEffectsDuringMotion(
+                    scrollEffectReductionEnabled = bottomBarScrollEffectReductionEnabled,
+                    pagerScrollInProgress = coordinator.pagerState.isScrollInProgress,
+                    activePageListScrollInProgress = activePageListScrollInProgress
+                ),
                 liquidBottomBarEnabled = liquidBottomBarEnabled,
                 onPageSelected = coordinator.onPageSelected
             )

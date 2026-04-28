@@ -33,6 +33,12 @@ internal class MainScreenPrefsViewModel : ViewModel() {
         }
     }
 
+    fun updateBottomBarScrollEffectReductionEnabled(value: Boolean) {
+        launchRepositoryUpdate {
+            setBottomBarScrollEffectReductionEnabled(value)
+        }
+    }
+
     fun updateLiquidActionBarLayeredStyleEnabled(value: Boolean) {
         launchRepositoryUpdate {
             setLiquidActionBarLayeredStyleEnabled(value)

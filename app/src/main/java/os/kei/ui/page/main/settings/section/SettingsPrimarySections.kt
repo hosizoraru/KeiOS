@@ -393,6 +393,7 @@ internal fun SettingsComponentEffectsSection(
 ) {
     val componentEffectsGroupActive = state.liquidActionBarLayeredStyleEnabled ||
         state.liquidBottomBarEnabled ||
+        state.bottomBarScrollEffectReductionEnabled ||
         state.liquidGlassSwitchEnabled ||
         state.cardPressFeedbackEnabled
     SettingsGroupCard(
@@ -418,6 +419,18 @@ internal fun SettingsComponentEffectsSection(
             summary = stringResource(R.string.settings_bottom_bar_summary),
             checked = state.liquidBottomBarEnabled,
             onCheckedChange = actions.onLiquidBottomBarChanged
+        )
+        SettingsToggleItem(
+            title = stringResource(R.string.settings_bottom_bar_scroll_reduction_title),
+            summary = if (state.bottomBarScrollEffectReductionEnabled) {
+                stringResource(R.string.settings_bottom_bar_scroll_reduction_summary_enabled)
+            } else {
+                stringResource(R.string.settings_bottom_bar_scroll_reduction_summary_disabled)
+            },
+            checked = state.bottomBarScrollEffectReductionEnabled,
+            onCheckedChange = actions.onBottomBarScrollEffectReductionChanged,
+            infoKey = stringResource(R.string.common_scope),
+            infoValue = stringResource(R.string.settings_bottom_bar_scroll_reduction_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_liquid_switch_title),

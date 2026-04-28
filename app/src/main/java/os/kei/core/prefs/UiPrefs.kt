@@ -14,6 +14,7 @@ enum class AppThemeMode {
 
 data class UiPrefsSnapshot(
     val liquidBottomBarEnabled: Boolean,
+    val bottomBarScrollEffectReductionEnabled: Boolean,
     val liquidActionBarLayeredStyleEnabled: Boolean,
     val liquidGlassSwitchEnabled: Boolean,
     val transitionAnimationsEnabled: Boolean,
@@ -37,6 +38,7 @@ data class UiPrefsSnapshot(
 object UiPrefs {
     private const val KV_ID = "ui_prefs"
     private const val KEY_LIQUID_BOTTOM_BAR = "liquid_bottom_bar"
+    private const val KEY_BOTTOM_BAR_SCROLL_EFFECT_REDUCTION = "bottom_bar_scroll_effect_reduction"
     private const val KEY_LIQUID_ACTION_BAR_LAYERED_STYLE = "liquid_action_bar_layered_style"
     private const val KEY_LIQUID_GLASS_SWITCH = "liquid_glass_switch"
     private const val KEY_TRANSITION_ANIMATIONS = "transition_animations"
@@ -79,6 +81,14 @@ object UiPrefs {
 
     fun setLiquidBottomBarEnabled(value: Boolean) {
         kv().encode(KEY_LIQUID_BOTTOM_BAR, value)
+    }
+
+    fun isBottomBarScrollEffectReductionEnabled(defaultValue: Boolean = false): Boolean {
+        return kv().decodeBool(KEY_BOTTOM_BAR_SCROLL_EFFECT_REDUCTION, defaultValue)
+    }
+
+    fun setBottomBarScrollEffectReductionEnabled(value: Boolean) {
+        kv().encode(KEY_BOTTOM_BAR_SCROLL_EFFECT_REDUCTION, value)
     }
 
     fun isLiquidActionBarLayeredStyleEnabled(defaultValue: Boolean = true): Boolean {
@@ -268,6 +278,7 @@ object UiPrefs {
     fun defaultSnapshot(appThemeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM): UiPrefsSnapshot {
         return UiPrefsSnapshot(
             liquidBottomBarEnabled = true,
+            bottomBarScrollEffectReductionEnabled = false,
             liquidActionBarLayeredStyleEnabled = true,
             liquidGlassSwitchEnabled = false,
             transitionAnimationsEnabled = true,
@@ -293,6 +304,10 @@ object UiPrefs {
         val store = kv()
         return UiPrefsSnapshot(
             liquidBottomBarEnabled = store.decodeBool(KEY_LIQUID_BOTTOM_BAR, true),
+            bottomBarScrollEffectReductionEnabled = store.decodeBool(
+                KEY_BOTTOM_BAR_SCROLL_EFFECT_REDUCTION,
+                false
+            ),
             liquidActionBarLayeredStyleEnabled = store.decodeBool(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, true),
             liquidGlassSwitchEnabled = store.decodeBool(KEY_LIQUID_GLASS_SWITCH, false),
             transitionAnimationsEnabled = store.decodeBool(KEY_TRANSITION_ANIMATIONS, true),
