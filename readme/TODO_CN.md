@@ -13,37 +13,54 @@
 官方资料核对日期：2026-04-29。
 参考：[Android 16 target SDK 行为变更](https://developer.android.com/about/versions/16/behavior-changes-16)、
 [Android 16 全应用行为变更](https://developer.android.com/about/versions/16/behavior-changes-all)、
+[Android 16 新特性与 API](https://developer.android.com/about/versions/16/features)、
 [Android 17 target SDK 行为变更](https://developer.android.com/about/versions/17/behavior-changes-17)、
 [Android 17 全应用行为变更](https://developer.android.com/about/versions/17/behavior-changes-all)、
 [Android 17 新特性与 API](https://developer.android.com/about/versions/17/features)、
-[本地网络权限](https://developer.android.com/privacy-and-security/local-network-permission)。
+[本地网络权限](https://developer.android.com/privacy-and-security/local-network-permission)、
+[16 KB page-size 支持](https://developer.android.com/guide/practices/page-sizes)。
 
 - [x] 构建基线为 `minSdk=35`、`compileSdk=37`、`targetSdk=37`，Java / Kotlin toolchain 为 21。
 - [x] Manifest 已声明 `NEARBY_WIFI_DEVICES(maxSdk=36)`、`ACCESS_LOCAL_NETWORK`、`USE_LOOPBACK_INTERFACE`、`POST_PROMOTED_NOTIFICATIONS`、`FOREGROUND_SERVICE_SPECIAL_USE`。
 - [x] 主 Activity 已启用 `enableEdgeToEdge()`，启动图标已提供 monochrome 资源，主导航与图鉴全屏图已接入预测返回路径，并显式开启 `OnBackInvokedCallback`。
-- [x] 源码搜索当前无 Contacts、Bluetooth、自定义 RemoteViews、`MediaStore#getVersion()`、`scheduleAtFixedRate`、WorkManager、JobScheduler 直接适配面。
+- [x] 源码搜索当前未命中 Contacts、Bluetooth、Health Connect / sensor 权限、`READ_MEDIA*`、自定义 RemoteViews、`MediaStore#getVersion()`、`scheduleAtFixedRate`、WorkManager、JobScheduler、`announceForAccessibility` / `TYPE_ANNOUNCEMENT`、项目 JNI、`System.load*` 直接适配面。
+- [x] 非 Home 背景导入与 BA 媒体保存 / ZIP 导出当前使用 SAF、FileProvider、显式 URI grant、DocumentFile，宽媒体权限面为 0。
 - [x] 新增统一 API 版本辅助，覆盖 `SDK_INT_FULL`、API 36、API 36.1、API 37 判断。
 - [x] About 构建信息中增加 Runtime API Full 与 Advanced Protection Mode 状态检测。
+- [x] GitHub API Token sheet 是当前唯一密码型输入面；已使用 Compose 密码遮罩与显式显示开关，后续需要做 Android 17 物理键盘验证。
 
 ## P0 - API 36 主力机验收
 
-- [ ] 在 Android 16 / API 36 真机或 AVD 上回归 Home、OS、BA、MCP、GitHub、Settings、About、GitHub 分享导入窗口、uCrop、视频全屏页的 edge-to-edge、IME、状态栏、导航栏 inset 表现。
+- [x] 在 API 36 普通窗口完成 Home、OS、BA、MCP、GitHub、Settings、About、GitHub 分享导入窗口、uCrop、OS Shell Runner、视频全屏页的 edge-to-edge、状态栏、导航栏 smoke；证据目录：`artifacts/api36-p0/smoke4/`。
+- [ ] 继续验证 API 36 IME 与聚焦输入 inset，覆盖 OS Shell Runner、GitHub Token / 分享导入、Settings 权限流、BA 图鉴筛选。
+- [ ] 用打包后的 debug 或 benchmark APK 做 API 36 16 KB page-size 验证，覆盖依赖带入的 native libraries；记录 page-size compat 警告、具体 `.so`、临时 `android:pageSizeCompat` 决策。
+- [ ] 在 API 36 上做 ART / native dependency smoke，覆盖全新安装、升级安装、启动、MMKV 读写、缓存清理、Coil GIF 解码、Media3 BGM / 视频、Shizuku 初始化、focus-api 通知构建、backdrop / liquid-glass 渲染；记录 `UnsatisfiedLinkError`、ART 内部结构、hidden-API 栈。
+- [ ] 在 API 36 上做字体 smoke，覆盖中文、日文、拉丁字符、大字体、粗体文字、outline text 设置，以及 Home、GitHub、BA 图鉴 / 图鉴目录、Settings、About、OS Shell、GitHub 分享导入；记录 chip 裁切、基线漂移、Miuix / Compose 行高回归。
 - [ ] 全量验证预测返回：Nav3 主页面、设置页、学生图鉴详情、图鉴全屏图片、OS Shell Runner、GitHub 分享导入 Activity，并覆盖手势导航与三键导航。
+- [ ] 在 Android 16 上做 TalkBack / 无障碍 smoke，覆盖 GitHub 分享导入、BA 拉取 / 保存 / 打包导出、Settings 权限、OS Shell 输出、通知权限弹窗；运行反馈沉默或重复时改用 pane title、焦点移动、live-region 语义。
 - [x] 为 HyperOS / MIUI / Xiaomi、ColorOS、OriginOS、MagicOS、EMUI、One UI 增加预测返回 OEM 兼容策略，主导航返回动画会跟随左右边缘方向。
 - [x] 在 Android 17 / API 37 AVD 上完成预测返回 smoke：Home -> 设置 -> 左边缘返回、Home -> About -> 右边缘返回，logcat 确认进入 `CoreBackPreview` 回调路径。
 - [x] 为 API 36 本地网络限制测试补充 `NEARBY_WIFI_DEVICES(maxSdk=36)`，并把 MCP 局域网权限请求统一接入 API 36 / API 37 权限辅助。
 - [x] 增加 `scripts/qa/android_api_compat_probe.sh`，用于读取 API 36 / 37 设备版本、Manifest 权限、AppOps，并可按需启用 `RESTRICT_LOCAL_NETWORK` compat flag。
+- [x] 增加 debug-only API 兼容 QA 入口与 `scripts/qa/android_api36_p0_smoke.sh`，用于采集 API 36 页面、URI grant、分享导入、Shell、全屏、uCrop、通知证据。
 - [x] 在 Android 17 / API 37 AVD 开启 `RESTRICT_LOCAL_NETWORK` 后验证 MCP loopback：`127.0.0.1:38888/mcp` 可达并返回预期鉴权拦截，暂不需要 Network Security Config。
-- [ ] 使用 Android 16 / API 36 设备继续验证 MCP 局域网模式在 `RESTRICT_LOCAL_NETWORK` 下的同网段访问。
+- [x] 使用 Android 16 / API 36 设备验证 MCP 局域网模式在 `RESTRICT_LOCAL_NETWORK` 下的同网段访问：同网段 `http://192.168.31.209:38888/mcp` 与设备 loopback 均返回预期 `401 Unauthorized`。
+- [ ] 在 API 36 上验证 SAF / URI grant：非 Home 背景 `OpenDocument -> uCrop`、BA 媒体自定义保存位置、BA ZIP 导出、日志归档导出；保持免媒体权限 SAF 主链路。
 - [x] 加固 GitHub `ACTION_SEND` 导入 Activity、下载器选择、外部链接打开、分享 APK 链接等 Safer Intents 高频链路，确保 action、mime、scheme、host、package 边界更明确。
+- [x] 在 API 36 上完成 GitHub 分享导入 strict smoke，使用 direct release APK URL；窗口可解析 `topjohnwu/Magisk` `v27.0`，列出 `Magisk-v27.0.apk`，并保持安装确认 sheet 可见。
+- [ ] 在 API 36 上对 OS 用户自定义 shortcut card、OEM 设置辅助、外部浏览器 / 下载 / 分享 Intent、GitHub 分享导入做 Safer Intents strict-matching smoke；严格解析拦截合法启动时补充 action、filter、scheme、host 或 package 约束。
 - [x] 完成用户自定义 OS shortcut intents、通知 / shortcut extras 首轮审计：MainActivity 外部 extras 已按目标页和动作白名单配对，OS Activity card 启动前补充目标可解析校验，MCP 栈顶快捷入口已用 `singleTop` 验证可稳定启动/停止。
 - [x] 在 Android 17 / API 37 AVD 上完成外部 extras smoke：合法 GitHub 快捷动作进入 GitHub，错配动作进入目标页但丢弃动作，未知目标回落 Home。
 - [ ] 验证 DownloadManager、GitHub 后台刷新、BA AP / 咖啡厅 / 竞技场提醒在 Android 16 空闲、锁屏、省电模式下的调度表现；保留当前无 fixed-rate work 路径的源码审计结果。
 - [x] 在 Android 17 / API 37 AVD 验证 MCP `specialUse` 前台服务：前台启动被系统允许，通知权限拒绝时服务保持前台运行且无崩溃，权限恢复后可正常停止。
+- [x] 在 Android 16 / API 36 真机验证 MCP `specialUse` 前台启动：`McpKeepAliveService` 以前台 type `0x40000000` 运行，服务通知为 `38887`，Live Update 通知为 `38888`。
 - [ ] 验证 MCP `specialUse` 前台服务在 Android 16 后台启动、省电策略、Shizuku 未激活状态下的恢复路径。
 - [x] 在 Android 17 / API 37 AVD 验证 MCP Live Update / promoted notification：通知记录包含 `PROMOTED_ONGOING`、`ProgressStyle` 动作、打开/停止 PendingIntent allowlist，点击链路保持现有通知框架。
-- [ ] 验证 GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉和点击行为。
+- [x] 在 API 36 验证 MCP、GitHub、BA promoted notification 记录构建，保持现有通知框架；记录包含 `PROMOTED_ONGOING`、`NotificationCompat.ProgressStyle`、action PendingIntent allowlist，以及预期通知 id `38888`、`38990`、`38889`、`38890`、`38891`。
+- [ ] 继续验证 GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉面和点击行为。
 - [x] 完成 `setAccessible` / hidden API 首轮收敛：HyperOS 设置跳转与保活权限辅助的系统属性读取改用统一 PropUtils，AppOpsManagerInjector 改为公开方法探测；Shizuku private `newProcess` 兼容入口保留并受状态门控。
+- [ ] 在 API 36 `sw600dp` / 桌面窗口模式下 smoke MainActivity、GitHub 分享导入、uCrop、视频全屏页、OS Shell Runner；先记录方向、resizeability、edge-to-edge、IME 破损点，再进入大屏重构。
+- [x] 扩展 `scripts/qa/android_api_compat_probe.sh`，输出 page size、显示 / 窗口尺寸、已启用 compat flags、alarm / job / download 状态；API 36 真机当前报告 4096-byte page 与 `1220x2656 @ 520dpi`。
 
 ## P1 - API 37 强制适配
 
@@ -60,19 +77,28 @@
 - [ ] 在 Android 17 上继续验证自定义媒体保存、ZIP 导出等 URI grant 链路；chooser 或第三方目标丢权限时补充显式包授权。
 - [x] 为 MCP 与 GitHub 通知点击打开 App 的 PendingIntent 增加用户可见通知动作专用的后台 Activity 启动 allowance。
 - [ ] 继续审计 IntentSender 拉起界面的链路，适配 Android 17 后台启动 Activity 行为。
+- [ ] 在 Android 17 物理键盘与系统显示密码设置下验证 GitHub API Token 密码遮罩；Compose 遮罩和平台行为不一致时再接入 `ShowSecretsSetting.shouldShowPassword(...)`。
+- [ ] 验证 Android 17 自定义 Compose 输入面的文本变化无障碍反馈：`GlassSearchField`、OS Shell 命令输入、GitHub Token 输入、BA 图鉴筛选；覆盖 CJKV 输入法、物理键盘、TalkBack、文本选择。
 - [x] 验证 MCP 通知在 Android 17 promoted notification 与 Live Update 规则下的表现。
 - [ ] 验证 GitHub、BA AP / 咖啡厅 / 竞技场、超级岛通知在 Android 17 promoted notification 与 Live Update 规则下的表现。
+- [ ] 在 Android 17 上复验 BA 图鉴 BGM / 视频前台播放保护，覆盖切后台、锁屏、分屏、通知栏、低电量模式；在明确加入 MediaSession service 前保持当前播放生命周期契约。
 - [x] 新增 Advanced Protection Mode 状态检测入口，先在 About 构建信息中暴露当前状态。
 - [ ] 为 Advanced Protection Mode 制定行为降级方案，覆盖 Shizuku、包枚举、电池优化、本地 MCP 局域网等高风险能力入口。
 - [ ] 在 Android 17 AVD 上做长 idle profiling，检查 alarm window、唤醒次数、历史退出日志，并和 GitHub / BA 公平调度策略对比。
 - [ ] 审计 Shizuku、系统设置辅助、保活权限辅助中的 hidden API / 反射风险；有官方替代路径时替换为文档化 fallback。
-- [ ] 评估 OkHttp HTTPS 加固准备度，覆盖 Certificate Transparency opt-in 与 ECH 兼容性，并结合 GitHub / GameKee 端点实测决定落地范围。
+- [ ] 依赖升级后继续审计 Android 17 MessageQueue / `static final` 反射风险；当前 ActivityOptions、Shizuku、AppOps、OEM 设置反射路径保持公开方法探测或状态门控 fallback。
+- [ ] `packageDebug` / `packageBenchmark` 后验证 Android 17 Safer Native DCL 与打包 native library 表现；源码当前项目 JNI / `System.load*` 命中数为 0，依赖 `.so` 仍需 read-only 与 16 KB 检查。
+- [ ] 评估 OkHttp HTTPS 加固准备度，覆盖 Android 17 CT 默认行为、Certificate Transparency opt-in 缺口、ECH 兼容性，并结合 GitHub、GitHub 下载跳转、GameKee、BA 媒体 CDN、MCP loopback 实测决定落地范围。
 - [ ] 在 HyperOS、ColorOS、OriginOS、MagicOS、One UI 的 Android 17 OEM Beta 设备可用后做兼容性测试。
 
 ## P2 - 可选新 API 与长期跟踪
 
 - [x] Android 36.1 / 37.x 细分 API 使用前的统一 `SDK_INT_FULL` 判断辅助已加入。
+- [ ] 评估 Android 16 embedded Photo Picker 用于未来非 Home 背景图片导入或 BA 媒体选择；在 picker UX 与 URI grant 验证完成前保持当前 SAF 兼容基线。
 - [ ] 项目出现联系人导入需求时，优先评估 Android 17 Contact Picker，避免引入 `READ_CONTACTS` 宽权限。
+- [ ] 跟踪 Android 17 post-quantum / hybrid APK signing 在 AGP、apksigner、GitHub Actions、本地发布 keystore 中的稳定支持，再规划发布管线调整。
+- [ ] 当前动画 / 材质表现稳定后，再评估 richer haptics 与 frame-rate API 在液态底栏、slider、画廊视频、全屏媒体中的收益。
+- [ ] 性能遥测路线需要更深平台信号时，再评估 `ApplicationStartInfo`、`reportFullyDrawn`、allow-while-idle alarm listener API、JobScheduler `JobDebugInfo`。
 - [ ] 项目出现跨设备连续性需求时，再评估 Android 17 Handoff API。
 - [ ] 继续跟踪 OkHttp、Ktor、Coil、Media3、Navigation3、Activity Compose 对 Android 36 / 37 新平台能力的稳定版支持。
 

@@ -81,6 +81,15 @@ tmp/
 # Local tooling state
 /.codex/
 
+# Local QA artifacts
+/artifacts/
+
+# Local device QA smoke harnesses
+/scripts/qa/android_api36_p0_smoke.sh
+/scripts/qa/*.local.sh
+/app/src/debug/AndroidManifest.xml
+/app/src/debug/java/os/kei/debug/
+
 # Root-level preview screenshots
 /keios_*.png
 
