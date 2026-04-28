@@ -66,10 +66,10 @@ Official references checked on 2026-04-29:
 
 ### P0-E Background Work And Notifications
 
-- [ ] Validate DownloadManager, GitHub background refresh, and BA AP / cafe / arena reminders under Android 16 idle, lockscreen, and battery-saver states; retain the source-audit finding that fixed-rate work paths are absent.
+- [x] Validate DownloadManager, GitHub background refresh, and BA AP / cafe / arena reminders under Android 16 idle, lockscreen, and battery-saver states; artifacts: `artifacts/api36-p0/p0e-background-notifications-20260429-1/`. On API 36 Xiaomi hardware, `os.kei.debug` retained GitHub / BA one-shot `AlarmManager` tick records under `low_power=1` and standby bucket `45`, `jobscheduler` showed no KeiOS jobs, and `dumpsys download` showed no pending KeiOS downloads. The source audit keeps the no `WorkManager` / `JobScheduler` / fixed-rate work-path finding, and validation restored `low_power=0` plus bucket `10`.
 - [x] Validate MCP Live Update / promoted notification on Android 17 / API 37 AVD: records include `PROMOTED_ONGOING`, `ProgressStyle` actions, and notification PendingIntent allowlists while preserving the existing notification framework.
 - [x] Validate API 36 MCP, GitHub, and BA promoted notification record construction without changing the notification framework: records include `PROMOTED_ONGOING`, `NotificationCompat.ProgressStyle`, action PendingIntent allowlists, and expected notification ids `38888`, `38990`, `38889`, `38890`, `38891`.
-- [ ] Validate GitHub, BA, and Super Island notification visual surfaces and tap behavior on Android 16 promoted notifications and `NotificationCompat.ProgressStyle`.
+- [x] Validate GitHub, BA, and Super Island notification visual surfaces and tap behavior on Android 16 promoted notifications and `NotificationCompat.ProgressStyle`; artifacts: `artifacts/api36-p0/p0e-background-notifications-20260429-1/`. Notification shade and lockscreen screenshots / XML cover GitHub, BA AP, cafe, and arena; records include `PROMOTED_ONGOING`, `NotificationCompat.ProgressStyle`, and PendingIntent allowlists. GitHub `Open` enters the GitHub page, BA `Open` enters the BlueArchive page, and the Super Island-compatible path keeps the existing helper/source contract and notification framework.
 
 ### P0-F QA Tooling And Evidence
 

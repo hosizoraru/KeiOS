@@ -66,10 +66,10 @@
 
 ### P0-E 后台任务与通知
 
-- [ ] 验证 DownloadManager、GitHub 后台刷新、BA AP / 咖啡厅 / 竞技场提醒在 Android 16 空闲、锁屏、省电模式下的调度表现；保留当前无 fixed-rate work 路径的源码审计结果。
+- [x] 验证 DownloadManager、GitHub 后台刷新、BA AP / 咖啡厅 / 竞技场提醒在 Android 16 空闲、锁屏、省电模式下的调度表现；证据目录：`artifacts/api36-p0/p0e-background-notifications-20260429-1/`。API 36 小米真机 `os.kei.debug` 在 `low_power=1`、standby bucket `45` 下保留 GitHub / BA 一次性 `AlarmManager` tick 记录，`jobscheduler` 无 KeiOS 任务，`dumpsys download` 无 KeiOS 待处理下载；源码审计保留无 `WorkManager` / `JobScheduler` / fixed-rate work 路径结论，验证后已恢复 `low_power=0`、bucket `10`。
 - [x] 在 Android 17 / API 37 AVD 验证 MCP Live Update / promoted notification：通知记录包含 `PROMOTED_ONGOING`、`ProgressStyle` 动作、打开/停止 PendingIntent allowlist，点击链路保持现有通知框架。
 - [x] 在 API 36 验证 MCP、GitHub、BA promoted notification 记录构建，保持现有通知框架；记录包含 `PROMOTED_ONGOING`、`NotificationCompat.ProgressStyle`、action PendingIntent allowlist，以及预期通知 id `38888`、`38990`、`38889`、`38890`、`38891`。
-- [ ] 继续验证 GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉面和点击行为。
+- [x] 继续验证 GitHub / BA / 超级岛通知在 Android 16 promoted notification 与 `NotificationCompat.ProgressStyle` 下的视觉面和点击行为；证据目录：`artifacts/api36-p0/p0e-background-notifications-20260429-1/`。通知栏与锁屏截图 / XML 覆盖 GitHub、BA AP、咖啡厅、竞技场，通知记录包含 `PROMOTED_ONGOING`、`NotificationCompat.ProgressStyle`、PendingIntent allowlist；GitHub `打开` 动作进入 GitHub 页，BA `打开` 动作进入 BlueArchive 页；超级岛兼容链路保持现有 helper/source contract 与通知框架。
 
 ### P0-F QA 工具与证据
 
