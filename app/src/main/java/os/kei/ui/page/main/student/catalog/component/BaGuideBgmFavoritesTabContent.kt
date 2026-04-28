@@ -35,6 +35,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import os.kei.R
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
 import os.kei.ui.page.main.student.GuideBgmFavoritePlaybackStore
@@ -65,6 +68,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     onOpenGuide: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val appContext = remember(context) { context.applicationContext }
     val pageScope = rememberCoroutineScope()
     val favorites by GuideBgmFavoriteStore.favoritesFlow().collectAsState()
@@ -433,6 +437,24 @@ internal fun BaGuideBgmFavoritesTabContent(
 
     LaunchedEffect(showNowPlaying) {
         onNowPlayingVisibilityChange(showNowPlaying)
+    }
+
+    DisposableEffect(lifecycleOwner, selectedFavorite?.audioUrl) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                selectedFavorite?.let { favorite ->
+                    playbackRuntimeState = pauseFavoriteBgmPlayback(
+                        context = appContext,
+                        favorite = favorite
+                    )
+                }
+                setNowPlayingVisible(false)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     LaunchedEffect(selectedFavorite?.audioUrl, queueMode) {

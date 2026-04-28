@@ -9,7 +9,7 @@ This file tracks roadmap items that need a stable device, OEM beta, or focused v
 - [x] Register Android 17 anomaly profiling trigger for resource anomalies.
 - [x] Inspect previous process exits for MemoryLimiter or excessive resource usage signals.
 - [x] Add fair background scheduling pass for GitHub and BA tick jobs.
-- [ ] Add Android 17 background audio validation for BA guide media playback.
+- [x] Add Android 17 foreground-only guard and hardening validation for BA guide media playback.
 - [ ] Test Android 17 OEM beta builds on HyperOS, ColorOS, OriginOS, MagicOS, and One UI when devices are available.
 
 ## Large Screen Adaptation

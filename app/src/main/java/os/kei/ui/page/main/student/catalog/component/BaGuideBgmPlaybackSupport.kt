@@ -166,6 +166,25 @@ internal fun toggleFavoriteBgmPlayback(
     }
 }
 
+internal fun pauseFavoriteBgmPlayback(
+    context: Context,
+    favorite: GuideBgmFavoriteItem
+): BaGuideBgmPlaybackRuntimeState {
+    existingFavoriteBgmPlayer(context, favorite)?.let { player ->
+        runCatching { player.pause() }
+    }
+    val runtimeState = favoriteBgmRuntimeState(context, favorite)
+    if (runtimeState.durationMs > 0L || runtimeState.positionMs > 0L) {
+        GuideBgmFavoritePlaybackStore.saveProgress(
+            audioUrl = favorite.audioUrl,
+            positionMs = runtimeState.positionMs,
+            durationMs = runtimeState.durationMs,
+            isPlaying = false
+        )
+    }
+    return runtimeState.copy(isPlaying = false)
+}
+
 internal fun seekFavoriteBgmPlayback(
     context: Context,
     favorite: GuideBgmFavoriteItem,

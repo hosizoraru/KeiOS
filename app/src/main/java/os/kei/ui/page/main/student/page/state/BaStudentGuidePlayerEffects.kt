@@ -5,6 +5,9 @@ import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -14,6 +17,7 @@ import os.kei.ui.page.main.student.BaGuideTempMediaCache
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.clearGuideBgmLoopScope
 import os.kei.ui.page.main.student.clearGuideBgmPlaybackScope
+import os.kei.ui.page.main.student.pauseGuideBgmPlaybackScope
 import kotlinx.coroutines.delay
 
 @Composable
@@ -33,6 +37,32 @@ internal fun BindBaStudentGuidePlayerLifecycleEffects(
             clearGuideBgmLoopScope(sourceUrl)
             clearGuideBgmPlaybackScope(sourceUrl)
             BaGuideTempMediaCache.clearGuideCache(context, sourceUrl)
+        }
+    }
+}
+
+@Composable
+internal fun BindBaStudentGuideForegroundAudioGuard(
+    sourceUrl: String,
+    voicePlayer: ExoPlayer,
+    onPlayingVoiceUrlChange: (String) -> Unit,
+    onIsVoicePlayingChange: (Boolean) -> Unit,
+    onVoicePlayProgressChange: (Float) -> Unit
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, sourceUrl, voicePlayer) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                runCatching { voicePlayer.pause() }
+                pauseGuideBgmPlaybackScope(sourceUrl)
+                onPlayingVoiceUrlChange("")
+                onIsVoicePlayingChange(false)
+                onVoicePlayProgressChange(0f)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 }

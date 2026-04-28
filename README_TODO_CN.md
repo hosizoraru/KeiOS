@@ -9,7 +9,7 @@
 - [x] 注册 Android 17 资源异常 profiling trigger。
 - [x] 读取历史进程退出记录，识别 MemoryLimiter 或 excessive resource usage 信号。
 - [x] 为 GitHub 与 BA 后台 tick 增加公平资源调度适配，减少固定轮询和 idle 强唤醒。
-- [ ] 验证 Android 17 下 BA 图鉴媒体的后台音频行为。
+- [x] 为 BA 图鉴媒体播放增加 Android 17 前台播放保护，并完成 audio hardening 验证。
 - [ ] 在 HyperOS、ColorOS、OriginOS、MagicOS、One UI 的 Android 17 OEM Beta 设备可用后做兼容性测试。
 
 ## 大屏适配

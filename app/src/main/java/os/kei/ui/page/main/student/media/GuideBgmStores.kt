@@ -81,6 +81,16 @@ internal object GuideBgmPlayerStore {
         }
     }
 
+    fun pauseScope(scopeKey: String) {
+        if (scopeKey.isBlank()) return
+        val prefix = "$scopeKey|"
+        playerByScopedAudio.forEach { (key, player) ->
+            if (key.startsWith(prefix)) {
+                runCatching { player.pause() }
+            }
+        }
+    }
+
     fun clearScope(scopeKey: String) {
         if (scopeKey.isBlank()) return
         val prefix = "$scopeKey|"
@@ -96,4 +106,8 @@ internal object GuideBgmPlayerStore {
 
 internal fun clearGuideBgmPlaybackScope(scopeKey: String) {
     GuideBgmPlayerStore.clearScope(scopeKey)
+}
+
+internal fun pauseGuideBgmPlaybackScope(scopeKey: String) {
+    GuideBgmPlayerStore.pauseScope(scopeKey)
 }

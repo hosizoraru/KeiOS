@@ -67,6 +67,7 @@ import os.kei.ui.page.main.student.page.state.rememberBaStudentGuideMediaPackSav
 import os.kei.ui.page.main.student.page.state.rememberBaStudentGuidePageActions
 import os.kei.ui.page.main.student.page.state.rememberBaStudentGuideTabSelectCoordinator
 import os.kei.ui.page.main.student.page.state.rememberBaStudentGuideTopBarActionItems
+import os.kei.ui.page.main.student.page.state.BindBaStudentGuideForegroundAudioGuard
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePagerSyncEffects
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePlayerLifecycleEffects
 import os.kei.ui.page.main.student.page.state.BindBaStudentGuidePrefetchEffects
@@ -264,6 +265,13 @@ fun BaStudentGuidePage(
         context = context,
         sourceUrl = sourceUrl,
         voicePlayer = voicePlayer
+    )
+    BindBaStudentGuideForegroundAudioGuard(
+        sourceUrl = sourceUrl,
+        voicePlayer = voicePlayer,
+        onPlayingVoiceUrlChange = { playingVoiceUrl = it },
+        onIsVoicePlayingChange = { isVoicePlaying = it },
+        onVoicePlayProgressChange = { voicePlayProgress = it }
     )
     BindBaStudentGuideVoiceListenerEffect(
         context = context,
