@@ -15,6 +15,46 @@ import kotlin.coroutines.resumeWithException
 class ShizukuApiUtils(
     private val requestCode: Int = DEFAULT_REQUEST_CODE
 ) {
+    private enum class CommandIdentity(val label: String) {
+        ROOT("root"),
+        SHELL("shell"),
+        UNSUPPORTED("unsupported");
+
+        val canRunCommand: Boolean
+            get() = this == ROOT || this == SHELL
+
+        companion object {
+            fun fromUid(uid: Int?): CommandIdentity = when (uid) {
+                0 -> ROOT
+                2000 -> SHELL
+                else -> UNSUPPORTED
+            }
+        }
+    }
+
+    private data class RuntimeState(
+        val binderAlive: Boolean,
+        val preV11: Boolean,
+        val permissionGranted: Boolean,
+        val serviceUid: Int?,
+        val commandIdentity: CommandIdentity
+    ) {
+        val commandReady: Boolean =
+            binderAlive && !preV11 && permissionGranted && commandIdentity.canRunCommand
+
+        val statusText: String
+            get() = when {
+                !binderAlive -> "Shizuku service unavailable (start Shizuku app first)"
+                preV11 -> "Shizuku pre-v11 is unsupported"
+                !permissionGranted -> "Shizuku permission: not granted"
+                commandIdentity.canRunCommand -> "Shizuku permission: granted (${commandIdentity.label})"
+                else -> {
+                    val uidText = serviceUid?.toString() ?: "unknown"
+                    "Shizuku command unavailable: unsupported service uid $uidText"
+                }
+            }
+    }
+
     private data class InteractiveCommandRewriteResult(
         val command: String,
         val adaptedTopOnce: Boolean = false
@@ -36,12 +76,13 @@ class ShizukuApiUtils(
 
     private val binderDeadListener = Shizuku.OnBinderDeadListener {
         publishStatus("Shizuku service disconnected")
+        cachedNewProcessMethod = null
     }
 
     private val permissionResultListener = Shizuku.OnRequestPermissionResultListener { code, grantResult ->
         if (code != requestCode) return@OnRequestPermissionResultListener
         if (grantResult == PackageManager.PERMISSION_GRANTED) {
-            publishStatus("Shizuku permission: granted")
+            publishStatus(currentStatus())
         } else {
             publishStatus("Shizuku permission: denied")
         }
@@ -74,7 +115,7 @@ class ShizukuApiUtils(
                 !Shizuku.pingBinder() -> publishStatus("Shizuku service unavailable (start Shizuku app first)")
                 Shizuku.isPreV11() -> publishStatus("Shizuku pre-v11 is unsupported")
                 Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
-                    publishStatus("Shizuku permission: granted")
+                    publishStatus(currentStatus())
                 }
 
                 Shizuku.shouldShowRequestPermissionRationale() -> {
@@ -92,21 +133,11 @@ class ShizukuApiUtils(
     }
 
     fun currentStatus(): String {
-        return runCatching {
-            if (!Shizuku.pingBinder()) return "Shizuku service unavailable (start Shizuku app first)"
-            if (Shizuku.isPreV11()) return "Shizuku pre-v11 is unsupported"
-            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-                "Shizuku permission: granted"
-            } else {
-                "Shizuku permission: not granted"
-            }
-        }.getOrDefault("Shizuku unavailable")
+        return resolveRuntimeState().statusText
     }
 
     fun canUseCommand(): Boolean {
-        return runCatching {
-            Shizuku.pingBinder() && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-        }.getOrDefault(false)
+        return resolveRuntimeState().commandReady
     }
 
     fun execCommand(command: String, timeoutMs: Long = 2000L): String? {
@@ -334,23 +365,22 @@ class ShizukuApiUtils(
 
     fun detailedRows(): List<Pair<String, String>> {
         val rows = mutableListOf<Pair<String, String>>()
-        val binderAlive = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
-        val granted = runCatching { Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
-        val activated = binderAlive && granted
+        val state = resolveRuntimeState()
 
-        rows += "Shizuku Binder Alive" to binderAlive.toString()
-        rows += "Shizuku Permission Granted" to granted.toString()
-        rows += "Shizuku Activated" to activated.toString()
-        rows += "Shizuku Pre-v11" to runCatching { Shizuku.isPreV11().toString() }.getOrDefault("unknown")
+        rows += "Shizuku Binder Alive" to state.binderAlive.toString()
+        rows += "Shizuku Permission Granted" to state.permissionGranted.toString()
+        rows += "Shizuku Activated" to state.commandReady.toString()
+        rows += "Shizuku Command Identity" to state.commandIdentity.label
+        rows += "Shizuku Pre-v11" to state.preV11.toString()
         rows += "Shizuku Permission Rationale" to runCatching { Shizuku.shouldShowRequestPermissionRationale().toString() }.getOrDefault("unknown")
+        state.serviceUid?.let { rows += "Shizuku Service UID" to it.toString() }
 
-        reflectAny("getUid")?.let { rows += "Shizuku Service UID" to it.toString() }
         reflectAny("getVersion")?.let { rows += "Shizuku Service Version" to it.toString() }
         reflectAny("getServerPatchVersion")?.let { rows += "Shizuku Server Patch Version" to it.toString() }
         reflectAny("getSELinuxContext")?.let { rows += "Shizuku SELinux Context" to it.toString() }
         reflectAny("getLatestServiceVersion")?.let { rows += "Shizuku Latest Service Version" to it.toString() }
 
-        if (activated) {
+        if (state.commandReady) {
             execCommand("id")?.let { rows += "Shizuku id" to it.lineSequence().firstOrNull().orEmpty() }
             execCommand("whoami")?.let { rows += "Shizuku whoami" to it.lineSequence().firstOrNull().orEmpty() }
             execCommand("uname -a")?.let { rows += "Shizuku uname" to it.lineSequence().firstOrNull().orEmpty() }
@@ -359,6 +389,52 @@ class ShizukuApiUtils(
         }
 
         return rows.filter { it.first.isNotBlank() && it.second.isNotBlank() }
+    }
+
+    private fun resolveRuntimeState(): RuntimeState {
+        val binderAlive = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+        if (!binderAlive) {
+            return RuntimeState(
+                binderAlive = false,
+                preV11 = false,
+                permissionGranted = false,
+                serviceUid = null,
+                commandIdentity = CommandIdentity.UNSUPPORTED
+            )
+        }
+
+        val preV11 = runCatching { Shizuku.isPreV11() }.getOrDefault(true)
+        if (preV11) {
+            return RuntimeState(
+                binderAlive = true,
+                preV11 = true,
+                permissionGranted = false,
+                serviceUid = null,
+                commandIdentity = CommandIdentity.UNSUPPORTED
+            )
+        }
+
+        val permissionGranted = runCatching {
+            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+        }.getOrDefault(false)
+        val serviceUid = if (permissionGranted) {
+            runCatching { Shizuku.getUid() }
+                .onFailure {
+                    AppLogger.w(TAG, "resolveRuntimeState getUid failed: ${it.javaClass.simpleName}")
+                }
+                .getOrNull()
+        } else {
+            null
+        }
+        val identity = CommandIdentity.fromUid(serviceUid)
+
+        return RuntimeState(
+            binderAlive = true,
+            preV11 = false,
+            permissionGranted = permissionGranted,
+            serviceUid = serviceUid,
+            commandIdentity = identity
+        )
     }
 
     private fun reflectAny(methodName: String): Any? {

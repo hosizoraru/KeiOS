@@ -20,13 +20,16 @@ import os.kei.mcp.domain.notification.SessionNotifier
 import os.kei.mcp.framework.notification.NotificationHelper
 import os.kei.mcp.framework.notification.SessionNotifierImpl
 import os.kei.mcp.framework.notification.builder.NotificationRenderStyle
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 object McpNotificationHelper {
     private const val TAG = "McpNotifyHelper"
@@ -627,16 +630,42 @@ object McpNotificationHelper {
 
         magicScope.launch {
             networkMutex.withLock {
+                var notificationDispatched = false
+                var networkTouched = false
                 try {
                     healXmsfNetworkingLocked(nonNullUid)
                     AppLogger.i(TAG, "blocking xmsf network for uid=$nonNullUid")
                     blockXmsfNetworkingLocked(nonNullUid)
+                    networkTouched = isXmsfNetworkBlocked || isUidFirewallChainEnabled
                     notificationManager.notify(notificationId, notification)
+                    notificationDispatched = true
                     delay(resolveXiaomiMagicBlockIntervalMs())
+                } catch (throwable: Throwable) {
+                    if (throwable is CancellationException) throw throwable
+                    AppLogger.e(TAG, "Xiaomi magic execution failed", throwable)
+                    if (!notificationDispatched) {
+                        runCatching {
+                            notificationManager.notify(notificationId, notification)
+                        }.onFailure {
+                            AppLogger.e(TAG, "Fallback notification dispatch failed", it)
+                        }
+                    }
                 } finally {
-                    AppLogger.i(TAG, "restoring xmsf network for uid=$nonNullUid")
-                    restoreXmsfNetworkingLocked(nonNullUid)
-                    healXmsfNetworkingLocked(nonNullUid)
+                    withContext(NonCancellable) {
+                        if (networkTouched || isXmsfNetworkBlocked || isUidFirewallChainEnabled) {
+                            AppLogger.i(TAG, "restoring xmsf network for uid=$nonNullUid")
+                            runCatching {
+                                restoreXmsfNetworkingLocked(nonNullUid)
+                            }.onFailure {
+                                AppLogger.e(TAG, "Xiaomi magic network restoration failed", it)
+                            }
+                            runCatching {
+                                healXmsfNetworkingLocked(nonNullUid)
+                            }.onFailure {
+                                AppLogger.e(TAG, "Xiaomi magic network healing failed", it)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -660,10 +689,14 @@ object McpNotificationHelper {
         }
         val idOutput = shizukuApiUtils.execCommand("id").orEmpty()
         val isShellOrRoot = idOutput.contains("uid=2000") || idOutput.contains("uid=0")
+        if (!isShellOrRoot) {
+            AppLogger.w(TAG, "shouldExecuteXiaomiMagic=false: unsupported Shizuku identity '$idOutput'")
+            return false
+        }
         val mode = resolveMagicCommandSet()
         val canUseMode = mode != XiaomiMagicCommandSet.NONE
-        AppLogger.i(TAG, "Shizuku id='$idOutput', mode=$mode, allowMagic=${isShellOrRoot && canUseMode}")
-        return isShellOrRoot && canUseMode
+        AppLogger.i(TAG, "Shizuku id='$idOutput', mode=$mode, allowMagic=$canUseMode")
+        return canUseMode
     }
 
     private fun blockXmsfNetworkingLocked(uid: Int) {
@@ -745,7 +778,11 @@ object McpNotificationHelper {
 
     private fun resolveMagicCommandSet(): XiaomiMagicCommandSet {
         commandSet?.let { return it }
-        val helpText = shizukuApiUtils.execCommand("cmd connectivity help").orEmpty()
+        val helpText = shizukuApiUtils.execCommand("cmd connectivity help")
+        if (helpText.isNullOrBlank()) {
+            AppLogger.w(TAG, "resolveMagicCommandSet skipped: connectivity help unavailable")
+            return XiaomiMagicCommandSet.NONE
+        }
         val resolved = when {
             helpText.contains("set-package-networking-enabled") -> XiaomiMagicCommandSet.PACKAGE_NETWORKING
             helpText.contains("set-firewall-chain-enabled") &&
