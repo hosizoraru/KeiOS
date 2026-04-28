@@ -57,21 +57,58 @@ private fun compactGuideText(raw: String): String {
         .trim()
 }
 
+private fun normalizeFullWidthDigits(raw: String): String {
+    return raw.map { char ->
+        if (char in '０'..'９') {
+            '0' + (char - '０')
+        } else {
+            char
+        }
+    }.joinToString("")
+}
+
+private fun sanitizeMomotalkUnlockLevel(
+    raw: String,
+    momotalkStatusMessage: String
+): String {
+    val cleaned = raw.trim()
+    if (cleaned.isBlank()) return ""
+    val compactValue = compactGuideText(cleaned)
+    val compactStatus = compactGuideText(momotalkStatusMessage)
+    if (compactStatus.isNotBlank() && compactValue == compactStatus) return ""
+
+    val levelText = normalizeFullWidthDigits(cleaned)
+        .replace(Regex("""(?i)lv\.?|level"""), "")
+        .replace("好感度", "")
+        .replace("羁绊", "")
+        .replace("等级", "")
+        .replace("级", "")
+        .replace("，", ",")
+        .replace("、", "/")
+        .replace("／", "/")
+        .replace("|", "/")
+        .replace("｜", "/")
+        .replace(Regex("""\s+"""), "/")
+        .trim()
+    val levels = levelText
+        .split(Regex("""[/,;；]+"""))
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    if (levels.isEmpty() || levels.any { !it.matches(Regex("""\d{1,3}""")) }) {
+        return ""
+    }
+    return levels.joinToString(" / ")
+}
+
 private fun resolveGuideRowValue(
     key: String,
     textValues: List<String>,
-    memoryUnlockLevel: String,
     momotalkStatusMessage: String
 ): String {
     val joined = textValues.joinToString(" / ").trim()
     val normalizedKey = normalizeGuideRowKey(key)
     if (normalizedKey == normalizeGuideRowKey("MomoTalk解锁等级")) {
-        val compactValue = compactGuideText(joined)
-        val compactStatus = compactGuideText(momotalkStatusMessage)
-        val duplicatesStatus = compactStatus.isNotBlank() && compactValue == compactStatus
-        if (memoryUnlockLevel.isNotBlank() && (joined.isBlank() || duplicatesStatus)) {
-            return memoryUnlockLevel
-        }
+        return sanitizeMomotalkUnlockLevel(joined, momotalkStatusMessage)
     }
     if (normalizedKey in singleValueGuideRowKeys) {
         return firstGuideTextValue(textValues).ifBlank { joined }
@@ -236,7 +273,6 @@ internal fun parseGuideDetailFromObjectContentJson(raw: String, sourceUrl: Strin
             val value = resolveGuideRowValue(
                 key = key,
                 textValues = row.textValues,
-                memoryUnlockLevel = memoryUnlockLevel,
                 momotalkStatusMessage = momotalkStatusMessage
             )
             val imageUrl = row.imageValues.firstOrNull().orEmpty()

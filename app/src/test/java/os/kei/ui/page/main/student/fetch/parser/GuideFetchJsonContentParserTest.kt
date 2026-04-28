@@ -40,7 +40,7 @@ class GuideFetchJsonContentParserTest {
     }
 
     @Test
-    fun `momotalk unlock level falls back to memory lobby level when duplicated from status message`() {
+    fun `momotalk unlock level clears status text instead of using memory lobby level`() {
         val status = "奉行不回头看过去的原则。"
         val detail = parseGuideDetailFromObjectContentJson(
             raw = objectContentJson(
@@ -52,8 +52,22 @@ class GuideFetchJsonContentParserTest {
         )
 
         val profileValues = detail.profileRows.associate { it.key to it.value }
-        assertEquals("5", profileValues["MomoTalk解锁等级"])
+        assertEquals("", profileValues["MomoTalk解锁等级"])
         assertEquals(status, profileValues["MomoTalk状态消息"])
+    }
+
+    @Test
+    fun `momotalk unlock level keeps numeric level lists`() {
+        val detail = parseGuideDetailFromObjectContentJson(
+            raw = objectContentJson(
+                row("MomoTalk解锁等级", textCell("Lv.2、Lv.3、5级")),
+                row("MomoTalk状态消息", textCell("今天也会认真执行任务。"))
+            ),
+            sourceUrl = "https://www.gamekee.com/ba/tj/sample.html"
+        )
+
+        val profileValues = detail.profileRows.associate { it.key to it.value }
+        assertEquals("2 / 3 / 5", profileValues["MomoTalk解锁等级"])
     }
 
     private fun objectContentJson(vararg rows: JSONArray): String {
