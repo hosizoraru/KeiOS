@@ -26,6 +26,18 @@ class GitHubShareIntentParserTest {
     }
 
     @Test
+    fun `parse pixiv viewer repo link to project target`() {
+        val parsed = GitHubShareIntentParser.parseSharedReleaseLink(
+            "https://github.com/asadahimeka/pixiv-viewer-app"
+        )
+        assertNotNull(parsed)
+        assertEquals(GitHubSharedUrlType.Repo, parsed.type)
+        assertEquals("asadahimeka", parsed.owner)
+        assertEquals("pixiv-viewer-app", parsed.repo)
+        assertEquals("https://github.com/asadahimeka/pixiv-viewer-app", parsed.projectUrl)
+    }
+
+    @Test
     fun `parse releases page link`() {
         val parsed = GitHubShareIntentParser.parseSharedReleaseLink(
             "https://github.com/open-ani/animeko/releases"
@@ -84,6 +96,28 @@ class GitHubShareIntentParserTest {
         assertNotNull(parsed)
         assertEquals(GitHubSharedUrlType.ReleaseTag, parsed.type)
         assertEquals("v5.5.0-alpha02", parsed.releaseTag)
+    }
+
+    @Test
+    fun `multiple same priority links choose latest shared url`() {
+        val parsed = GitHubShareIntentParser.parseSharedReleaseLink(
+            "https://github.com/open-ani/animeko\nhttps://github.com/asadahimeka/pixiv-viewer-app"
+        )
+        assertNotNull(parsed)
+        assertEquals(GitHubSharedUrlType.Repo, parsed.type)
+        assertEquals("asadahimeka", parsed.owner)
+        assertEquals("pixiv-viewer-app", parsed.repo)
+    }
+
+    @Test
+    fun `multiple links keep stronger release target priority`() {
+        val parsed = GitHubShareIntentParser.parseSharedReleaseLink(
+            "https://github.com/open-ani/animeko/releases/download/v5.5.0-alpha02/ani-5.5.0-alpha02-arm64-v8a.apk\nhttps://github.com/asadahimeka/pixiv-viewer-app"
+        )
+        assertNotNull(parsed)
+        assertEquals(GitHubSharedUrlType.ReleaseDownloadAsset, parsed.type)
+        assertEquals("open-ani", parsed.owner)
+        assertEquals("animeko", parsed.repo)
     }
 
     @Test

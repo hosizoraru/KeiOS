@@ -27,6 +27,7 @@ import os.kei.feature.github.data.local.GitHubTrackStoreSignals
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.data.remote.GitHubReleaseAssetRepository
 import os.kei.feature.github.data.remote.GitHubShareImportResolver
+import os.kei.feature.github.data.remote.GitHubShareIntentParser
 import os.kei.feature.github.domain.GitHubReleaseCheckService
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubLookupStrategyOption
@@ -73,6 +74,9 @@ internal fun GitHubShareImportWindowFlowHost(
     val handledAtByPackage = remember { mutableStateMapOf<String, Long>() }
 
     LaunchedEffect(Unit) {
+        if (!incomingGitHubShareText.isNullOrBlank()) {
+            return@LaunchedEffect
+        }
         val loaded = withContext(Dispatchers.IO) {
             GitHubTrackStore.loadPendingShareImportTrack()
         }
@@ -163,9 +167,19 @@ internal fun GitHubShareImportWindowFlowHost(
             val lookupConfig = withContext(Dispatchers.IO) { GitHubTrackStore.loadLookupConfig() }
             if (!lookupConfig.shareImportLinkageEnabled) return@LaunchedEffect
             try {
+                val parsedIncoming = GitHubShareIntentParser.parseSharedReleaseLink(sharedText)
+                    ?: error("未识别到有效的 GitHub 链接")
+                withContext(Dispatchers.IO) {
+                    GitHubTrackStore.savePendingShareImportTrack(null)
+                }
+                GitHubTrackStoreSignals.notifyChanged()
+                pendingTrack = null
+                attachCandidate = null
+                attachDuplicateExists = false
+                handledAtByPackage.clear()
                 val plan = withContext(Dispatchers.IO) {
                     GitHubShareImportResolver.resolve(
-                        sharedText = sharedText,
+                        sharedText = parsedIncoming.sourceUrl,
                         lookupConfig = lookupConfig
                     ).getOrThrow()
                 }
@@ -338,6 +352,7 @@ internal fun GitHubShareImportWindowFlowHost(
                 GitHubTrackStoreSignals.notifyChanged()
                 pendingTrack = pending
                 attachCandidate = null
+                handledAtByPackage.clear()
                 pendingPreview = null
                 toast(context, R.string.github_toast_share_import_wait_install, selectedAsset.name)
             }

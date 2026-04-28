@@ -323,20 +323,36 @@ internal fun findRecentInstalledCandidateForPendingTrack(
                 firstInstallTimeMs = info.firstInstallTime
             )
         }
+        .toList()
+
+    return selectRecentInstalledCandidateForPendingTrack(
+        pendingTrack = pendingTrack,
+        candidates = candidates
+    )
+}
+
+internal fun selectRecentInstalledCandidateForPendingTrack(
+    pendingTrack: GitHubPendingShareImportTrackRecord,
+    candidates: List<ShareImportInstalledPackageSnapshot>
+): ShareImportInstalledPackageSnapshot? {
+    val eligible = candidates.asSequence()
+        .filter { it.packageName.isNotBlank() }
+        // Polling reconciliation must only pick packages updated after this share was armed.
+        .filter { it.lastUpdateTimeMs >= pendingTrack.armedAtMillis }
         .sortedByDescending { it.lastUpdateTimeMs }
         .take(3)
         .toList()
 
-    if (candidates.isEmpty()) return null
-    if (candidates.size >= 2) {
-        val first = candidates[0]
-        val second = candidates[1]
+    if (eligible.isEmpty()) return null
+    if (eligible.size >= 2) {
+        val first = eligible[0]
+        val second = eligible[1]
         val updateGap = (first.lastUpdateTimeMs - second.lastUpdateTimeMs).coerceAtLeast(0L)
         if (updateGap < 90_000L) {
             return null
         }
     }
-    return candidates.first()
+    return eligible.first()
 }
 
 internal fun isShareImportAttachEventValid(

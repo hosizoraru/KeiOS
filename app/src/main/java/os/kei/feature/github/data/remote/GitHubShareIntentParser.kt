@@ -52,7 +52,7 @@ internal object GitHubShareIntentParser {
         return parsedLinks.withIndex()
             .maxWithOrNull(
                 compareBy<IndexedValue<GitHubSharedReleaseLink>> { it.value.type.priority() }
-                    .thenBy { -it.index }
+                    .thenBy { it.index }
             )
             ?.value
     }
