@@ -30,6 +30,7 @@ Official references checked on 2026-04-29:
 - [ ] Validate edge-to-edge, IME, status bar, and navigation bar insets on Android 16 / API 36 devices or AVDs across Home, OS, BA, MCP, GitHub, Settings, About, GitHub share import window, uCrop, and video fullscreen.
 - [ ] Validate predictive back across Nav3 main pages, Settings, student guide detail, guide fullscreen image, OS Shell Runner, and GitHub share import Activity with gesture and 3-button navigation.
 - [x] Add constrained `NEARBY_WIFI_DEVICES(maxSdk=36)` support and route MCP LAN permission requests through shared API 36 / API 37 permission logic.
+- [x] Add `scripts/qa/android_api_compat_probe.sh` for API 36 / 37 device version, manifest permission, AppOps, and optional `RESTRICT_LOCAL_NETWORK` compat-flag checks.
 - [ ] Use the Android 16 `RESTRICT_LOCAL_NETWORK` compat flag to validate MCP loopback / LAN mode.
 - [x] Harden high-traffic Safer Intents paths across GitHub `ACTION_SEND` import Activity, downloader selection, external links, and share-APK-link flows with stricter action, MIME, scheme, host, and package boundaries.
 - [ ] Continue auditing lower-frequency user-defined OS shortcut intents plus notification / shortcut extras.
@@ -48,8 +49,10 @@ Official references checked on 2026-04-29:
 - [x] Add Android 17 foreground-only guard and hardening validation for BA guide media playback.
 - [x] Normalize `http://` GitHub share links, GitHub downloader URLs, and GameKee / BA guide asset links to `https://`; restrict DownloadManager to HTTPS external download URLs.
 - [ ] Continue auditing MCP loopback / LAN HTTP endpoints; add a narrow Network Security Config only if API 37 validation blocks legitimate traffic.
-- [ ] Validate FileProvider, uCrop, custom media-save, and ZIP export URI grant flows on Android 17; add explicit package grants where chooser or third-party targets drop access.
-- [ ] Audit PendingIntent and IntentSender UI launches for Android 17 background-activity-start behavior; keep explicit launch allowances limited to user-visible notification actions.
+- [x] Add explicit URI grant support for the non-Home background FileProvider / uCrop crop flow.
+- [ ] Continue validating custom media-save and ZIP export URI grant flows on Android 17; add explicit package grants where chooser or third-party targets drop access.
+- [x] Add user-visible notification action background-activity-start allowance for MCP and GitHub notification open PendingIntents.
+- [ ] Continue auditing IntentSender UI launch paths for Android 17 background-activity-start behavior.
 - [ ] Validate MCP, GitHub, BA AP/cafe/arena, and Super Island notification surfaces against Android 17 promoted-notification and Live Update behavior.
 - [x] Add an Advanced Protection Mode status detector and expose it in About build details.
 - [ ] Add behavior downgrade plans for Shizuku, package enumeration, battery-optimization, and local MCP LAN flows when Advanced Protection Mode is enabled.

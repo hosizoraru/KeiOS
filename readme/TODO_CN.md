@@ -30,6 +30,7 @@
 - [ ] 在 Android 16 / API 36 真机或 AVD 上回归 Home、OS、BA、MCP、GitHub、Settings、About、GitHub 分享导入窗口、uCrop、视频全屏页的 edge-to-edge、IME、状态栏、导航栏 inset 表现。
 - [ ] 全量验证预测返回：Nav3 主页面、设置页、学生图鉴详情、图鉴全屏图片、OS Shell Runner、GitHub 分享导入 Activity，并覆盖手势导航与三键导航。
 - [x] 为 API 36 本地网络限制测试补充 `NEARBY_WIFI_DEVICES(maxSdk=36)`，并把 MCP 局域网权限请求统一接入 API 36 / API 37 权限辅助。
+- [x] 增加 `scripts/qa/android_api_compat_probe.sh`，用于读取 API 36 / 37 设备版本、Manifest 权限、AppOps，并可按需启用 `RESTRICT_LOCAL_NETWORK` compat flag。
 - [ ] 使用 Android 16 compat flag `RESTRICT_LOCAL_NETWORK` 验证 MCP loopback / 局域网模式。
 - [x] 加固 GitHub `ACTION_SEND` 导入 Activity、下载器选择、外部链接打开、分享 APK 链接等 Safer Intents 高频链路，确保 action、mime、scheme、host、package 边界更明确。
 - [ ] 继续审计用户自定义 OS shortcut intents、通知 / shortcut extras 的低频链路。
@@ -48,8 +49,10 @@
 - [x] 为 BA 图鉴媒体播放增加 Android 17 前台播放保护，并完成 audio hardening 验证。
 - [x] 将 GitHub 分享链接、GitHub 下载器入口、GameKee / BA 图鉴资源链接里的 `http://` 规范化到 `https://`，并限制 DownloadManager 只接收 HTTPS 外部下载 URL。
 - [ ] 继续审计 MCP loopback / 局域网 HTTP 端点；API 37 实测拦截合法流量时补充最小范围 Network Security Config。
-- [ ] 在 Android 17 上验证 FileProvider、uCrop、自定义媒体保存、ZIP 导出等 URI grant 链路；chooser 或第三方目标丢权限时补充显式包授权。
-- [ ] 审计 PendingIntent 与 IntentSender 拉起界面的链路，适配 Android 17 后台启动 Activity 行为；显式放行仅用于用户可见的通知动作。
+- [x] 为非 Home 背景裁剪的 FileProvider / uCrop 链路增加显式 URI grant 辅助。
+- [ ] 在 Android 17 上继续验证自定义媒体保存、ZIP 导出等 URI grant 链路；chooser 或第三方目标丢权限时补充显式包授权。
+- [x] 为 MCP 与 GitHub 通知点击打开 App 的 PendingIntent 增加用户可见通知动作专用的后台 Activity 启动 allowance。
+- [ ] 继续审计 IntentSender 拉起界面的链路，适配 Android 17 后台启动 Activity 行为。
 - [ ] 验证 MCP、GitHub、BA AP / 咖啡厅 / 竞技场、超级岛通知在 Android 17 promoted notification 与 Live Update 规则下的表现。
 - [x] 新增 Advanced Protection Mode 状态检测入口，先在 About 构建信息中暴露当前状态。
 - [ ] 为 Advanced Protection Mode 制定行为降级方案，覆盖 Shizuku、包枚举、电池优化、本地 MCP 局域网等高风险能力入口。
