@@ -2,12 +2,39 @@
 
 This file tracks roadmap items that need a stable device, OEM beta, or focused validation window.
 
-## Android 17 Adaptation
+## Priority Legend
+
+- P0: API 36 primary-device paths and current `targetSdk=37` paths that directly affect existing user flows.
+- P1: API 37 enforced behavior, OEM beta, and long-run stability validation.
+- P2: optional new APIs, low-frequency surfaces, and deferred roadmap items.
+
+## API Baseline Audit
 
 Official references checked on 2026-04-29:
-[target SDK behavior changes](https://developer.android.com/about/versions/17/behavior-changes-17),
-[all-app behavior changes](https://developer.android.com/about/versions/17/behavior-changes-all),
-[new features and APIs](https://developer.android.com/about/versions/17/features).
+[Android 16 target SDK behavior changes](https://developer.android.com/about/versions/16/behavior-changes-16),
+[Android 16 all-app behavior changes](https://developer.android.com/about/versions/16/behavior-changes-all),
+[Android 17 target SDK behavior changes](https://developer.android.com/about/versions/17/behavior-changes-17),
+[Android 17 all-app behavior changes](https://developer.android.com/about/versions/17/behavior-changes-all),
+[Android 17 new features and APIs](https://developer.android.com/about/versions/17/features),
+[local network permission](https://developer.android.com/privacy-and-security/local-network-permission).
+
+- [x] Build baseline is `minSdk=35`, `compileSdk=37`, `targetSdk=37`, with Java / Kotlin toolchains on 21.
+- [x] Manifest declares `ACCESS_LOCAL_NETWORK`, `USE_LOOPBACK_INTERFACE`, `POST_PROMOTED_NOTIFICATIONS`, and `FOREGROUND_SERVICE_SPECIAL_USE`.
+- [x] Main Activity enables `enableEdgeToEdge()`, launcher icons provide monochrome assets, and main navigation plus guide fullscreen image flow use predictive-back paths.
+- [x] Source search currently finds zero Contacts, Bluetooth, custom RemoteViews, `MediaStore#getVersion()`, `scheduleAtFixedRate`, WorkManager, or direct JobScheduler adaptation surfaces.
+
+## P0 - API 36 Primary-Device Validation
+
+- [ ] Validate edge-to-edge, IME, status bar, and navigation bar insets on Android 16 / API 36 devices or AVDs across Home, OS, BA, MCP, GitHub, Settings, About, GitHub share import window, uCrop, and video fullscreen.
+- [ ] Validate predictive back across Nav3 main pages, Settings, student guide detail, guide fullscreen image, OS Shell Runner, and GitHub share import Activity with gesture and 3-button navigation.
+- [ ] Use the Android 16 `RESTRICT_LOCAL_NETWORK` compat flag to validate MCP loopback / LAN mode; evaluate a constrained `NEARBY_WIFI_DEVICES` declaration and permission note for API 36 opt-in testing if needed.
+- [ ] Audit Android 16 Safer Intents across GitHub `ACTION_SEND` import Activity, downloader selection, external links, notification extras, and shortcut extras; keep action, MIME, scheme, host, and package boundaries explicit.
+- [ ] Validate DownloadManager, GitHub background refresh, and BA AP / cafe / arena reminders under Android 16 idle, lockscreen, and battery-saver states; retain the source-audit finding that fixed-rate work paths are absent.
+- [ ] Validate MCP `specialUse` foreground service recovery on Android 16 when background start limits, denied notification permission, battery saver, and inactive Shizuku states are present.
+- [ ] Validate MCP, GitHub, BA, and Super Island notification visuals and tap behavior on Android 16 promoted notifications and `NotificationCompat.ProgressStyle`.
+- [ ] Audit `setAccessible` / hidden-API risk points, prioritizing Shizuku, HyperOS settings jumps, and keep-alive permission helper paths.
+
+## P1 - API 37 Enforced Adaptation
 
 - [x] Add Android 17 local network permissions for MCP LAN mode.
 - [x] Request local network permission before starting MCP in LAN mode.
@@ -25,12 +52,14 @@ Official references checked on 2026-04-29:
 - [ ] Evaluate HTTPS hardening readiness for OkHttp traffic, including Certificate Transparency opt-in and ECH compatibility, after checking GitHub and GameKee endpoint behavior.
 - [ ] Test Android 17 OEM beta builds on HyperOS, ColorOS, OriginOS, MagicOS, and One UI when devices are available.
 
-### Android 17 Source-Audit Notes
+## P2 - Optional New APIs And Long-Term Tracking
 
-- Contacts, Bluetooth, and custom RemoteViews paths are currently non-applicable after source search.
-- Large-screen behavior changes are tracked in the large-screen section because the project has no active large-screen implementation plan.
+- [ ] Add a shared `SDK_INT_FULL` / extension-version helper before using Android 36.1 / 37.x minor APIs, so feature gates can distinguish platform minor releases.
+- [ ] Prefer Android 17 Contact Picker if contact import ever becomes a product requirement, keeping broad `READ_CONTACTS` out of the app.
+- [ ] Evaluate Android 17 Handoff API only after a cross-device continuity feature enters the roadmap.
+- [ ] Continue tracking stable OkHttp, Ktor, Coil, Media3, Navigation3, and Activity Compose support for Android 36 / 37 platform capabilities.
 
-## Large Screen Adaptation
+## P2 - Large Screen Adaptation
 
 - [ ] Create a large-screen navigation plan for tablet, foldable, desktop, and landscape window sizes.
 - [ ] Audit pages with locked portrait assumptions and identify screens that need pane or rail layouts.
