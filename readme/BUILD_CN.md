@@ -1,6 +1,6 @@
 # KeiOS 构建指南 (CN)
 
-[主 README](README_CN.md)
+[主 README](CN.md) · [文档索引](INDEX.md)
 
 ## 安装方式
 

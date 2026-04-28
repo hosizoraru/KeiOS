@@ -1,12 +1,13 @@
 # KeiOS
 
-[中文版本 (CN)](README_CN.md)
+[中文版本 (CN)](readme/CN.md)
 
-Build docs:
-- [Build Guide (EN)](README_BUILD.md)
-- [构建指南 (CN)](README_CN_BUILD.md)
-- [Todo List (EN)](README_TODO.md)
-- [待办清单 (CN)](README_TODO_CN.md)
+Docs:
+- [Documentation Index](readme/INDEX.md)
+- [Build Guide (EN)](readme/BUILD.md)
+- [构建指南 (CN)](readme/BUILD_CN.md)
+- [Todo List (EN)](readme/TODO.md)
+- [待办清单 (CN)](readme/TODO_CN.md)
 
 ## Current Distribution
 

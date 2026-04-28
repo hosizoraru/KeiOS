@@ -1,6 +1,6 @@
 # KeiOS Build Guide (EN)
 
-[Main README](README.md)
+[Main README](../README.md) · [Documentation Index](INDEX.md)
 
 ## Install Channels
 

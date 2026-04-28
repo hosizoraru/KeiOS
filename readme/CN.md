@@ -1,12 +1,13 @@
 # KeiOS
 
-[English Version](README.md)
+[English Version](../README.md)
 
 构建文档：
-- [Build Guide (EN)](README_BUILD.md)
-- [构建指南 (CN)](README_CN_BUILD.md)
-- [Todo List (EN)](README_TODO.md)
-- [待办清单 (CN)](README_TODO_CN.md)
+- [文档索引](INDEX.md)
+- [Build Guide (EN)](BUILD.md)
+- [构建指南 (CN)](BUILD_CN.md)
+- [Todo List (EN)](TODO.md)
+- [待办清单 (CN)](TODO_CN.md)
 
 ## 当前分发方式
 
