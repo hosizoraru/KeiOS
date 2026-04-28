@@ -176,13 +176,12 @@ internal fun BaGuideBgmFavoriteCard(
     val openGalleryContentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
     val moreContentDescription = stringResource(R.string.ba_catalog_bgm_action_more)
     val currentLabel = stringResource(R.string.ba_catalog_bgm_status_current)
-    val fallbackTrackTitle = stringResource(R.string.ba_catalog_bgm_track_fallback)
     val detailTitle = favorite.title.takeIf { isMeaningfulBgmFavoriteDetail(it, studentTitle) }
     val detailNote = favorite.note.takeIf { note ->
         isMeaningfulBgmFavoriteDetail(note, studentTitle) &&
             (detailTitle?.let { !sameBgmFavoriteDetail(note, it) } ?: true)
     }
-    val trackSubtitle = detailTitle ?: detailNote ?: fallbackTrackTitle
+    val trackSubtitle = detailTitle ?: detailNote
     val cardShape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) accent.copy(alpha = 0.38f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.16f)
     val listActionTint = MiuixTheme.colorScheme.onBackgroundVariant
@@ -238,31 +237,35 @@ internal fun BaGuideBgmFavoriteCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = trackSubtitle,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (selected) {
-                        StatusPill(
-                            label = currentLabel,
-                            color = accent,
-                            size = AppStatusPillSize.Compact
-                        )
-                    }
-                    if (cached) {
-                        StatusPill(
-                            label = cacheReadyLabel,
-                            color = Color(0xFF22C55E),
-                            size = AppStatusPillSize.Compact
-                        )
+                trackSubtitle?.let { subtitle ->
+                    Text(
+                        text = subtitle,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = AppTypographyTokens.Supporting.fontSize,
+                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (selected || cached) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (selected) {
+                            StatusPill(
+                                label = currentLabel,
+                                color = accent,
+                                size = AppStatusPillSize.Compact
+                            )
+                        }
+                        if (cached) {
+                            StatusPill(
+                                label = cacheReadyLabel,
+                                color = Color(0xFF22C55E),
+                                size = AppStatusPillSize.Compact
+                            )
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.student.catalog.component
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +21,8 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideAddIcon
+import os.kei.ui.page.main.os.appLucideChevronDownIcon
+import os.kei.ui.page.main.os.appLucideChevronUpIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
@@ -42,13 +46,25 @@ internal fun BaGuideBgmLibraryHeader(
     favoriteCount: Int,
     displayedCount: Int,
     cachedCount: Int,
+    cacheBytes: Long,
     searchActive: Boolean,
     sortMode: BaGuideBgmFavoriteSortMode,
     groupMode: BaGuideBgmFavoriteGroupMode,
+    batchCaching: Boolean,
+    batchDone: Int,
+    batchTotal: Int,
+    batchFailedCount: Int,
+    exporting: Boolean,
+    importing: Boolean,
     accent: Color,
     onSortModeChange: (BaGuideBgmFavoriteSortMode) -> Unit,
-    onGroupModeChange: (BaGuideBgmFavoriteGroupMode) -> Unit
+    onGroupModeChange: (BaGuideBgmFavoriteGroupMode) -> Unit,
+    onCacheAll: () -> Unit,
+    onRetryFailed: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit
 ) {
+    var toolsExpanded by rememberSaveable { mutableStateOf(false) }
     val summary = if (searchActive) {
         stringResource(
             R.string.ba_catalog_bgm_library_search_summary,
@@ -63,60 +79,104 @@ internal fun BaGuideBgmLibraryHeader(
             cachedCount.coerceAtLeast(0)
         )
     }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+    val toolsDescription = stringResource(
+        if (toolsExpanded) {
+            R.string.ba_catalog_bgm_overview_collapse_tools
+        } else {
+            R.string.ba_catalog_bgm_overview_expand_tools
+        }
+    )
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        cornerRadius = 16.dp,
+        colors = CardDefaults.defaultColors(
+            color = Color(0x123B82F6)
+        )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.ba_catalog_bgm_library_title),
-                    color = MiuixTheme.colorScheme.onBackground,
-                    fontSize = AppTypographyTokens.CardHeader.fontSize,
-                    lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                    fontWeight = AppTypographyTokens.CardHeader.fontWeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.ba_catalog_bgm_library_title),
+                        color = MiuixTheme.colorScheme.onBackground,
+                        fontSize = AppTypographyTokens.Body.fontSize,
+                        lineHeight = AppTypographyTokens.Body.lineHeight,
+                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = summary,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = AppTypographyTokens.Supporting.fontSize,
+                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                StatusPill(
+                    label = stringResource(
+                        R.string.ba_catalog_bgm_library_queue_summary,
+                        displayedCount.coerceAtLeast(0)
+                    ),
+                    color = accent,
+                    size = AppStatusPillSize.Compact
                 )
-                Text(
-                    text = summary,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                GlassIconButton(
+                    backdrop = null,
+                    icon = if (toolsExpanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
+                    contentDescription = toolsDescription,
+                    onClick = { toolsExpanded = !toolsExpanded },
+                    width = 30.dp,
+                    height = 30.dp,
+                    iconTint = MiuixTheme.colorScheme.onBackgroundVariant,
+                    containerColor = MiuixTheme.colorScheme.surfaceContainer,
+                    variant = GlassVariant.Compact
                 )
             }
-            StatusPill(
-                label = stringResource(
-                    R.string.ba_catalog_bgm_library_queue_summary,
-                    displayedCount.coerceAtLeast(0)
-                ),
-                color = accent,
-                size = AppStatusPillSize.Compact
+            BaGuideBgmSortGroupDropdownRow(
+                sortMode = sortMode,
+                groupMode = groupMode,
+                accent = accent,
+                onSortModeChange = onSortModeChange,
+                onGroupModeChange = onGroupModeChange
             )
+            AnimatedVisibility(visible = toolsExpanded) {
+                BaGuideBgmLibraryToolsContent(
+                    favoriteCount = favoriteCount,
+                    cachedCount = cachedCount,
+                    cacheBytes = cacheBytes,
+                    batchCaching = batchCaching,
+                    batchDone = batchDone,
+                    batchTotal = batchTotal,
+                    batchFailedCount = batchFailedCount,
+                    exporting = exporting,
+                    importing = importing,
+                    accent = accent,
+                    onCacheAll = onCacheAll,
+                    onRetryFailed = onRetryFailed,
+                    onExport = onExport,
+                    onImport = onImport
+                )
+            }
         }
-        BaGuideBgmSortGroupDropdownRow(
-            sortMode = sortMode,
-            groupMode = groupMode,
-            accent = accent,
-            onSortModeChange = onSortModeChange,
-            onGroupModeChange = onGroupModeChange
-        )
     }
 }
 
 @Composable
-internal fun BaGuideBgmLibraryToolsCard(
+private fun BaGuideBgmLibraryToolsContent(
     favoriteCount: Int,
     cachedCount: Int,
     cacheBytes: Long,
@@ -171,101 +231,85 @@ internal fun BaGuideBgmLibraryToolsCard(
             )
     val importEnabled = !exporting && !importing
     val exportEnabled = favoriteCount > 0 && !exporting && !importing
-    Card(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 14.dp,
-        colors = CardDefaults.defaultColors(
-            color = Color(0x1A3B82F6)
-        )
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 9.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.ba_catalog_bgm_tools_title),
-                        color = MiuixTheme.colorScheme.onBackground,
-                        fontSize = AppTypographyTokens.Body.fontSize,
-                        lineHeight = AppTypographyTokens.Body.lineHeight,
-                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = cacheTitle,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        fontSize = AppTypographyTokens.Supporting.fontSize,
-                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                GlassIconButton(
-                    backdrop = null,
-                    icon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
-                    contentDescription = cacheActionText,
-                    onClick = {
-                        if (cacheEnabled) {
-                            if (retryMode) onRetryFailed() else onCacheAll()
-                        }
-                    },
-                    width = 34.dp,
-                    height = 34.dp,
-                    iconTint = accent.copy(alpha = if (cacheEnabled) 1f else 0.42f),
-                    containerColor = accent,
-                    variant = GlassVariant.Compact
+                Text(
+                    text = stringResource(R.string.ba_catalog_bgm_tools_title),
+                    color = MiuixTheme.colorScheme.onBackground,
+                    fontSize = AppTypographyTokens.Body.fontSize,
+                    lineHeight = AppTypographyTokens.Body.lineHeight,
+                    fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = cacheTitle,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            if (batchCaching) {
-                LinearProgressIndicator(
-                    progress = progress,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 4.dp,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = accent,
-                        backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
-                    )
-                )
-            }
-            Row(
+            GlassIconButton(
+                backdrop = null,
+                icon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
+                contentDescription = cacheActionText,
+                onClick = {
+                    if (cacheEnabled) {
+                        if (retryMode) onRetryFailed() else onCacheAll()
+                    }
+                },
+                width = 32.dp,
+                height = 32.dp,
+                iconTint = accent.copy(alpha = if (cacheEnabled) 1f else 0.42f),
+                containerColor = accent,
+                variant = GlassVariant.Compact
+            )
+            GlassIconButton(
+                backdrop = null,
+                icon = appLucideAddIcon(),
+                contentDescription = stringResource(R.string.ba_catalog_bgm_action_import),
+                onClick = { if (importEnabled) onImport() },
+                width = 32.dp,
+                height = 32.dp,
+                iconTint = accent.copy(alpha = if (importEnabled) 1f else 0.42f),
+                containerColor = accent,
+                variant = GlassVariant.Compact
+            )
+            GlassIconButton(
+                backdrop = null,
+                icon = appLucideShareIcon(),
+                contentDescription = stringResource(R.string.ba_catalog_bgm_action_export),
+                onClick = { if (exportEnabled) onExport() },
+                width = 32.dp,
+                height = 32.dp,
+                iconTint = accent.copy(alpha = if (exportEnabled) 1f else 0.42f),
+                containerColor = accent,
+                variant = GlassVariant.Compact
+            )
+        }
+        if (batchCaching) {
+            LinearProgressIndicator(
+                progress = progress,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucideAddIcon(),
-                    contentDescription = stringResource(R.string.ba_catalog_bgm_action_import),
-                    onClick = { if (importEnabled) onImport() },
-                    width = 34.dp,
-                    height = 34.dp,
-                    iconTint = accent.copy(alpha = if (importEnabled) 1f else 0.42f),
-                    containerColor = accent,
-                    variant = GlassVariant.Compact
+                height = 4.dp,
+                colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                    foregroundColor = accent,
+                    backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
                 )
-                GlassIconButton(
-                    backdrop = null,
-                    icon = appLucideShareIcon(),
-                    contentDescription = stringResource(R.string.ba_catalog_bgm_action_export),
-                    onClick = { if (exportEnabled) onExport() },
-                    width = 34.dp,
-                    height = 34.dp,
-                    iconTint = accent.copy(alpha = if (exportEnabled) 1f else 0.42f),
-                    containerColor = accent,
-                    variant = GlassVariant.Compact
-                )
-            }
+            )
         }
     }
 }

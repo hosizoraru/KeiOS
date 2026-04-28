@@ -44,7 +44,6 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
@@ -77,9 +76,6 @@ internal fun BaGuideBgmMiniPlayer(
 ) {
     val studentName = favorite.studentTitle.ifBlank {
         stringResource(R.string.ba_catalog_bgm_student_unknown)
-    }
-    val subtitle = miniPlayerSubtitle(favorite).ifBlank {
-        stringResource(R.string.ba_catalog_bgm_track_fallback)
     }
     val queuePosition = stringResource(
         R.string.ba_catalog_bgm_queue_position,
@@ -197,14 +193,6 @@ internal fun BaGuideBgmMiniPlayer(
                             size = AppStatusPillSize.Compact
                         )
                     }
-                    Text(
-                        text = subtitle,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        fontSize = AppTypographyTokens.Supporting.fontSize,
-                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
                 }
                 GlassIconButton(
                     backdrop = null,
@@ -303,31 +291,28 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        GlassTextButton(
+                        GlassIconButton(
                             backdrop = null,
-                            text = modeText,
-                            leadingIcon = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                            icon = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
                                 appLucideRepeatOneIcon()
                             } else {
                                 appLucideRepeatIcon()
                             },
+                            contentDescription = modeText,
                             onClick = onToggleQueueMode,
-                            textColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
+                            width = 32.dp,
+                            height = 32.dp,
+                            variant = GlassVariant.Compact,
+                            iconTint = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
                                 Color(0xFF22C55E)
                             } else {
                                 neutralControlTint
                             },
                             containerColor = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
-                                Color(0xFF22C55E)
+                                Color(0x3322C55E)
                             } else {
                                 neutralControlContainer
-                            },
-                            variant = GlassVariant.Compact,
-                            minHeight = 30.dp,
-                            horizontalPadding = 8.dp,
-                            verticalPadding = 4.dp,
-                            textMaxLines = 1,
-                            textOverflow = TextOverflow.Ellipsis
+                            }
                         )
                         GlassIconButton(
                             backdrop = null,
@@ -379,8 +364,4 @@ private fun NowPlayingDragHandle(
                 )
         )
     }
-}
-
-private fun miniPlayerSubtitle(favorite: GuideBgmFavoriteItem): String {
-    return favorite.title.ifBlank { favorite.note }
 }

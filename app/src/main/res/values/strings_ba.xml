@@ -71,6 +71,8 @@
     <string name="ba_catalog_bgm_library_summary">%1$d 首收藏 · 已缓存 %2$d 首</string>
     <string name="ba_catalog_bgm_library_search_summary">匹配 %1$d / %2$d 首 · 已缓存 %3$d 首</string>
     <string name="ba_catalog_bgm_library_queue_summary">队列 %1$d 首</string>
+    <string name="ba_catalog_bgm_overview_expand_tools">展开资料库管理</string>
+    <string name="ba_catalog_bgm_overview_collapse_tools">收起资料库管理</string>
     <string name="ba_catalog_bgm_playlist_title">播放列表</string>
     <string name="ba_catalog_bgm_playlist_count">%1$d 首</string>
     <string name="ba_catalog_bgm_track_fallback">回忆大厅 BGM</string>
