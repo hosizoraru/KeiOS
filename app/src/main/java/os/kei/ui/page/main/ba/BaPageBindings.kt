@@ -135,7 +135,6 @@ internal fun saveBaPageSettings(
     }
 
     office.applyApRegen()
-    office.refreshApNotificationIfActive(context)
     AppBackgroundScheduler.scheduleBaApThreshold(context)
     ui.closeSettingsSheet(office)
 }
@@ -156,7 +155,6 @@ internal fun buildBaPageContentActions(
             val finalValue = office.apCurrentInput.toIntOrNull()?.coerceIn(0, BA_AP_MAX) ?: 0
             office.updateCurrentAp(finalValue, markSync = true)
             office.apCurrentInput = finalValue.toString()
-            office.refreshApNotificationIfActive(context)
         },
         onApLimitInputChange = { office.apLimitInput = it },
         onApLimitDone = {
@@ -165,7 +163,6 @@ internal fun buildBaPageContentActions(
             office.updateApLimit(finalValue)
             office.applyApRegen()
             office.apLimitInput = finalValue.toString()
-            office.refreshApNotificationIfActive(context)
         },
         onOverviewServerPopupAnchorBoundsChange = { ui.overviewServerPopupAnchorBounds = it },
         onOverviewServerPopupChange = { ui.showOverviewServerPopup = it },
