@@ -86,8 +86,8 @@
 - [x] 在启动 MCP 局域网模式前请求本地网络权限。
 - [x] 将 GitHub 分享链接、GitHub 下载器入口、GameKee / BA 图鉴资源链接里的 `http://` 规范化到 `https://`，并限制 DownloadManager 只接收 HTTPS 外部下载 URL。
 - [x] 审计 MCP loopback HTTP 端点：API 37 AVD 开启本地网络 compat flag 后合法端口可达，未发现需要 Network Security Config 的拦截。
-- [ ] 继续审计 MCP 局域网 HTTP 端点；API 37 / OEM Beta 实测拦截合法同网段流量时补充最小范围 Network Security Config。
-- [ ] 评估 OkHttp HTTPS 加固准备度，覆盖 Android 17 CT 默认行为、Certificate Transparency opt-in 缺口、ECH 兼容性，并结合 GitHub、GitHub 下载跳转、GameKee、BA 媒体 CDN、MCP loopback 实测决定落地范围。
+- [x] 继续审计 MCP 局域网 HTTP 端点；证据目录：`artifacts/api37-p1/p1a-network-security-20260429-1/`。API 37 AVD 本机 MCP loopback 监听 `127.0.0.1:38888` 并对未鉴权 `/mcp` 返回 `401 Unauthorized`；API 36 真机局域网模式监听 `[::]:38888`，设备本机与同网段主机访问 `http://192.168.31.209:38888/mcp` 均返回 `401 Unauthorized`。当前落地范围保持 Manifest 权限 + runtime permission + bearer-token 拦截，Network Security Config 保持空白；OEM Beta 同网段矩阵归入 P1-F。
+- [x] 评估 OkHttp HTTPS 加固准备度，覆盖 Android 17 CT 默认行为、Certificate Transparency opt-in 缺口、ECH 兼容性，并结合 GitHub、GitHub 下载跳转、GameKee、BA 媒体 CDN、MCP loopback 实测决定落地范围；证据目录：`artifacts/api37-p1/p1a-network-security-20260429-1/`。GitHub API、GitHub release 跳转、GameKee 页面、BA 媒体 CDN 探针均通过 TLS 校验，GitHub / GameKee 证书链包含 CT SCT；OkHttp 5.3.2 源码探针覆盖 `NetworkSecurityPolicy` / Conscrypt / `ConnectionSpec`，当前无 ECH 专用调用面。落地范围为继续依赖 Android 17 默认 CT 与现有 HTTPS 规范化，暂缓 certificate pinning、CT 例外配置和 `domainEncryption` 强制配置，等待 OkHttp / 平台 ECH 集成成熟后再接入。
 
 ### P1-B 后台调度、资源画像、退出信号
 
