@@ -185,6 +185,15 @@ internal class BaOfficeController(
         }
     }
 
+    fun refreshApNotificationIfActive(context: Context): Boolean {
+        return BaApNotificationDispatcher.refreshIfActive(
+            context = context,
+            currentDisplay = displayAp(apCurrent),
+            limitDisplay = apLimit.coerceIn(0, BA_AP_MAX),
+            thresholdDisplay = apNotifyThreshold.coerceIn(0, BA_AP_MAX),
+        )
+    }
+
     fun updateApLimit(newLimit: Int) {
         val clamped = coerceBaApLimit(newLimit)
         apLimit = clamped
@@ -245,6 +254,7 @@ internal class BaOfficeController(
         addCurrentAp(claim, markSync = true)
         cafeStoredAp = 0.0
         BASettingsStore.saveCafeStoredAp(0.0)
+        refreshApNotificationIfActive(context)
         Toast.makeText(context, "已领取 ${claim.roundToInt()} 体力", Toast.LENGTH_SHORT).show()
     }
 
