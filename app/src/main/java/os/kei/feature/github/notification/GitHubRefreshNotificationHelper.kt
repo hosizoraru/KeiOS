@@ -14,6 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.xzakota.hyper.notification.focus.FocusNotification
 import os.kei.MainActivity
 import os.kei.R
+import os.kei.core.intent.PendingIntentLaunchOptionsCompat
 import os.kei.core.log.AppLogger
 import os.kei.core.prefs.UiPrefs
 import os.kei.feature.notification.NotificationActionReceiver
@@ -564,7 +565,7 @@ object GitHubRefreshNotificationHelper {
             )
             putExtra(MainActivity.EXTRA_TARGET_BOTTOM_PAGE, MainActivity.TARGET_BOTTOM_PAGE_GITHUB)
         }
-        return PendingIntent.getActivity(
+        return PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
             context,
             2001,
             openIntent,

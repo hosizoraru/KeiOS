@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import os.kei.MainActivity
 import os.kei.R
+import os.kei.core.intent.PendingIntentLaunchOptionsCompat
 import os.kei.core.log.AppLogger
 import os.kei.core.prefs.UiPrefs
 import os.kei.core.system.ShizukuApiUtils
@@ -210,7 +211,7 @@ object McpNotificationHelper {
                 }
             )
         }
-        val openPendingIntent = PendingIntent.getActivity(
+        val openPendingIntent = PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
             context,
             310_100 + notificationId,
             openIntent,
@@ -268,7 +269,7 @@ object McpNotificationHelper {
                 }
             )
         }
-        val openPendingIntent = PendingIntent.getActivity(
+        val openPendingIntent = PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
             context,
             openRequestCode,
             openIntent,

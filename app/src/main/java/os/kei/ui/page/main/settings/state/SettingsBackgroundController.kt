@@ -13,12 +13,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import com.yalantis.ucrop.UCrop
 import os.kei.R
+import os.kei.core.intent.UriGrantCompat
 import os.kei.ui.page.main.settings.support.createNonHomeBackgroundCropOutputUri
 import os.kei.ui.page.main.settings.support.deleteManagedNonHomeBackgroundFile
 import os.kei.ui.page.main.settings.support.resolveNonHomeBackgroundAspectRatio
 import os.kei.ui.page.main.settings.support.resolveNonHomeBackgroundCropSize
-import com.yalantis.ucrop.UCrop
 
 @Stable
 internal data class SettingsBackgroundController(
@@ -124,7 +125,14 @@ internal fun rememberSettingsBackgroundController(
             return@rememberLauncherForActivityResult
         }
 
-        cropIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        val cropGrantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        cropIntent.addFlags(cropGrantFlags)
+        UriGrantCompat.grantToIntentTargets(
+            context = context,
+            intent = cropIntent,
+            uris = listOf(uri, outputUri),
+            flags = cropGrantFlags
+        )
         cropLauncher.launch(cropIntent)
     }
 
