@@ -44,12 +44,13 @@ internal class ScrollChromeVisibilityController(
         canScrollForward: Boolean,
         onVisibleChange: (Boolean) -> Unit
     ) {
+        val isRevealGesture = deltaY > 1f && !visible
         val canMoveInDragDirection = when {
             deltaY < -1f -> canScrollForward
             deltaY > 1f -> canScrollBackward
             else -> true
         }
-        if (!canMoveInDragDirection) {
+        if (!canMoveInDragDirection && !isRevealGesture) {
             reset()
             return
         }
