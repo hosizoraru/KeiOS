@@ -73,6 +73,49 @@ class MiIslandNotificationBuilderTest {
         assertTrue(focusParam.contains("mcp_action_stop"))
     }
 
+    @Test
+    fun `ba ap progress island title uses current ap value`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val notificationOpenPendingIntent = buildOpenPendingIntent(
+            context = context,
+            requestCode = 601,
+            action = "os.kei.test.OPEN_BA_AP"
+        )
+        val stopPendingIntent = PendingIntent.getBroadcast(
+            context,
+            602,
+            Intent("os.kei.test.MARK_BA_AP_READ").setPackage(context.packageName),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val payload = NotificationPayload(
+            state = McpNotificationPayload(
+                serverName = McpNotificationPayload.BA_AP_SERVER_NAME,
+                running = true,
+                port = 128,
+                path = "120",
+                clients = 240,
+                ongoing = true,
+                onlyAlertOnce = true,
+                openPendingIntent = notificationOpenPendingIntent,
+                stopPendingIntent = stopPendingIntent,
+                focusOpenPendingIntent = notificationOpenPendingIntent
+            ),
+            settings = UserSettings(miIslandOuterGlow = true),
+            environment = EnvironmentContext(
+                channelId = "test_mi_island_channel",
+                isHyperOS = true
+            )
+        )
+
+        val notification = MiIslandNotificationBuilder(context).build(payload)
+        val focusParam = notification.extras.getString("miui.focus.param").orEmpty()
+
+        assertTrue(
+            actual = focusParam.contains("\"title\":\"128\""),
+            message = "AP progress island title should show current AP. focusParam=$focusParam"
+        )
+    }
+
     private fun buildOpenPendingIntent(
         context: Application,
         requestCode: Int,
