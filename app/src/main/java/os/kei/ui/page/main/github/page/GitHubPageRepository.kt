@@ -16,13 +16,30 @@ import os.kei.feature.github.data.local.GitHubTrackStoreSignals
 import os.kei.feature.github.data.local.GitHubTrackStore
 import os.kei.feature.github.data.local.GitHubTrackedItemsImportPayload
 import os.kei.feature.github.data.remote.GitHubApiTokenReleaseStrategy
+import os.kei.feature.github.data.remote.GitHubActionsRepository
 import os.kei.feature.github.data.remote.GitHubReleaseAssetBundle
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.data.remote.GitHubReleaseAssetRepository
 import os.kei.feature.github.data.remote.GitHubReleaseStrategyRegistry
 import os.kei.feature.github.data.remote.GitHubVersionUtils
+import os.kei.feature.github.domain.GitHubActionsArtifactSelector
+import os.kei.feature.github.domain.GitHubActionsRunSelector
+import os.kei.feature.github.domain.GitHubActionsWorkflowSelector
 import os.kei.feature.github.domain.GitHubReleaseCheckService
 import os.kei.feature.github.domain.GitHubStrategyBenchmarkService
+import os.kei.feature.github.model.GitHubActionsArtifact
+import os.kei.feature.github.model.GitHubActionsArtifactDownloadResolution
+import os.kei.feature.github.model.GitHubActionsArtifactMatch
+import os.kei.feature.github.model.GitHubActionsArtifactSelectionOptions
+import os.kei.feature.github.model.GitHubActionsRepositoryInfo
+import os.kei.feature.github.model.GitHubActionsRunArtifacts
+import os.kei.feature.github.model.GitHubActionsRunMatch
+import os.kei.feature.github.model.GitHubActionsRunSelectionOptions
+import os.kei.feature.github.model.GitHubActionsWorkflowArtifactSignal
+import os.kei.feature.github.model.GitHubActionsWorkflow
+import os.kei.feature.github.model.GitHubActionsWorkflowArtifactsSnapshot
+import os.kei.feature.github.model.GitHubActionsWorkflowMatch
+import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
 import os.kei.feature.github.model.GitHubApiCredentialStatus
 import os.kei.feature.github.model.GitHubCheckCacheEntry
 import os.kei.feature.github.model.GitHubLookupConfig
@@ -439,6 +456,184 @@ internal class GitHubPageRepository(
     ): GitHubStrategyLoadTrace<GitHubApiCredentialStatus> {
         return withContext(ioDispatcher) {
             GitHubApiTokenReleaseStrategy(apiToken).checkCredentialTrace()
+        }
+    }
+
+    suspend fun fetchGitHubActionsWorkflows(
+        owner: String,
+        repo: String,
+        lookupConfig: GitHubLookupConfig
+    ): GitHubStrategyLoadTrace<List<GitHubActionsWorkflow>> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .fetchWorkflows(owner = owner, repo = repo)
+        }
+    }
+
+    suspend fun fetchGitHubActionsRepositoryInfo(
+        owner: String,
+        repo: String,
+        lookupConfig: GitHubLookupConfig
+    ): GitHubStrategyLoadTrace<GitHubActionsRepositoryInfo> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .fetchRepositoryInfo(owner = owner, repo = repo)
+        }
+    }
+
+    suspend fun fetchGitHubActionsRepositoryDefaultBranch(
+        owner: String,
+        repo: String,
+        lookupConfig: GitHubLookupConfig
+    ): GitHubStrategyLoadTrace<String> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .fetchRepositoryDefaultBranch(owner = owner, repo = repo)
+        }
+    }
+
+    suspend fun fetchGitHubActionsWorkflowArtifactSnapshot(
+        owner: String,
+        repo: String,
+        workflowId: String,
+        lookupConfig: GitHubLookupConfig,
+        runLimit: Int = 20,
+        artifactsPerRun: Int = 100,
+        branch: String = "",
+        event: String = "",
+        status: String = "",
+        actor: String = "",
+        created: String = "",
+        headSha: String = "",
+        excludePullRequests: Boolean = false
+    ): GitHubStrategyLoadTrace<GitHubActionsWorkflowArtifactsSnapshot> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .fetchWorkflowArtifactSnapshot(
+                    owner = owner,
+                    repo = repo,
+                    workflowId = workflowId,
+                    runLimit = runLimit,
+                    artifactsPerRun = artifactsPerRun,
+                    branch = branch,
+                    event = event,
+                    status = status,
+                    actor = actor,
+                    created = created,
+                    headSha = headSha,
+                    excludePullRequests = excludePullRequests
+                )
+        }
+    }
+
+    suspend fun fetchGitHubActionsWorkflowArtifactSignals(
+        owner: String,
+        repo: String,
+        workflows: List<GitHubActionsWorkflow>,
+        lookupConfig: GitHubLookupConfig,
+        runLimit: Int = 3,
+        artifactsPerRun: Int = 100,
+        defaultBranch: String = ""
+    ): GitHubStrategyLoadTrace<Map<Long, GitHubActionsWorkflowArtifactSignal>> {
+        return withContext(ioDispatcher) {
+            val startedAt = System.currentTimeMillis()
+            val actionsRepository = GitHubActionsRepository.fromLookupConfig(lookupConfig)
+            val signals = mutableMapOf<Long, GitHubActionsWorkflowArtifactSignal>()
+            workflows.forEach { workflow ->
+                val recentSnapshot = actionsRepository.fetchWorkflowArtifactSnapshot(
+                    owner = owner,
+                    repo = repo,
+                    workflowId = workflow.id.toString(),
+                    runLimit = runLimit,
+                    artifactsPerRun = artifactsPerRun
+                ).result.getOrElse {
+                    return@forEach
+                }
+                val defaultBranchRuns = defaultBranch
+                    .takeIf { it.isNotBlank() }
+                    ?.let { branch ->
+                        actionsRepository.fetchWorkflowArtifactSnapshot(
+                            owner = owner,
+                            repo = repo,
+                            workflowId = workflow.id.toString(),
+                            runLimit = 1,
+                            artifactsPerRun = artifactsPerRun,
+                            branch = branch,
+                            status = "completed",
+                            excludePullRequests = true
+                        ).result.getOrNull()?.runs
+                    }
+                    .orEmpty()
+                val mergedRuns = (recentSnapshot.runs + defaultBranchRuns)
+                    .distinctBy { it.run.id }
+                signals[workflow.id] = GitHubActionsWorkflowSelector.buildArtifactSignal(
+                    workflow = workflow,
+                    runs = mergedRuns,
+                    defaultBranch = defaultBranch
+                )
+            }
+            GitHubStrategyLoadTrace(
+                result = Result.success(signals),
+                fromCache = false,
+                elapsedMs = System.currentTimeMillis() - startedAt,
+                authMode = actionsRepository.authMode
+            )
+        }
+    }
+
+    suspend fun selectGitHubActionsRuns(
+        runs: List<GitHubActionsRunArtifacts>,
+        options: GitHubActionsRunSelectionOptions,
+        workflow: GitHubActionsWorkflow? = null
+    ): List<GitHubActionsRunMatch> {
+        return withContext(defaultDispatcher) {
+            GitHubActionsRunSelector.selectRuns(
+                runs = runs,
+                options = options,
+                workflowTraits = workflow?.let(GitHubActionsWorkflowSelector::inspectWorkflow)
+            )
+        }
+    }
+
+    suspend fun selectGitHubActionsArtifacts(
+        artifacts: List<GitHubActionsArtifact>,
+        options: GitHubActionsArtifactSelectionOptions
+    ): List<GitHubActionsArtifactMatch> {
+        return withContext(defaultDispatcher) {
+            GitHubActionsArtifactSelector.selectDisplayArtifacts(
+                artifacts = artifacts,
+                options = options
+            )
+        }
+    }
+
+    suspend fun selectGitHubActionsWorkflows(
+        workflows: List<GitHubActionsWorkflow>,
+        artifactSignals: Map<Long, GitHubActionsWorkflowArtifactSignal>,
+        options: GitHubActionsWorkflowSelectionOptions
+    ): List<GitHubActionsWorkflowMatch> {
+        return withContext(defaultDispatcher) {
+            GitHubActionsWorkflowSelector.selectWorkflows(
+                workflows = workflows,
+                artifactSignals = artifactSignals,
+                options = options
+            )
+        }
+    }
+
+    suspend fun resolveGitHubActionsArtifactDownloadUrl(
+        artifact: GitHubActionsArtifact,
+        owner: String,
+        repo: String,
+        lookupConfig: GitHubLookupConfig
+    ): Result<GitHubActionsArtifactDownloadResolution> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .resolveArtifactDownloadUrl(
+                    artifact = artifact,
+                    owner = owner,
+                    repo = repo
+                )
         }
     }
 
