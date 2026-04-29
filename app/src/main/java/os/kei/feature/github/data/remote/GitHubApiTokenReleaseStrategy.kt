@@ -17,6 +17,7 @@ import okhttp3.Response
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 private data class GitHubApiCachedValue<T>(
@@ -444,9 +445,12 @@ class GitHubApiTokenReleaseStrategy(
         private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
         private const val DEFAULT_GITHUB_API_BASE_URL = "https://api.github.com"
 
-        private val releaseCache = mutableMapOf<String, GitHubApiCachedValue<Result<List<GitHubAtomReleaseEntry>>>>()
-        private val stableCache = mutableMapOf<String, GitHubApiCachedValue<Result<GitHubReleaseVersionSignals>>>()
-        private val credentialCache = mutableMapOf<String, GitHubApiCachedValue<Result<GitHubApiCredentialStatus>>>()
+        private val releaseCache =
+            ConcurrentHashMap<String, GitHubApiCachedValue<Result<List<GitHubAtomReleaseEntry>>>>()
+        private val stableCache =
+            ConcurrentHashMap<String, GitHubApiCachedValue<Result<GitHubReleaseVersionSignals>>>()
+        private val credentialCache =
+            ConcurrentHashMap<String, GitHubApiCachedValue<Result<GitHubApiCredentialStatus>>>()
 
         private val githubClient: OkHttpClient by lazy {
             OkHttpClient.Builder()

@@ -9,9 +9,12 @@ import os.kei.feature.github.model.GitHubStrategyBenchmarkSample
 import os.kei.feature.github.model.GitHubStrategyLoadTrace
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.feature.github.model.GitHubRepositoryReleaseSnapshot
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 object GitHubStrategyBenchmarkService {
     private const val DEFAULT_TARGET_LIMIT = 6
+    private const val DEFAULT_BENCHMARK_CONCURRENCY = 4
 
     fun buildTargets(
         trackedItems: List<GitHubTrackedApp>,
@@ -38,13 +41,13 @@ object GitHubStrategyBenchmarkService {
 
         val apiStrategy = GitHubApiTokenReleaseStrategy(apiToken = apiToken.trim())
         val runners = listOf(
-            StrategyRunner(
+            GitHubStrategyBenchmarkRunner(
                 strategyId = GitHubAtomReleaseStrategy.id,
                 displayName = "Atom",
                 clearCaches = { GitHubAtomReleaseStrategy.clearCaches() },
                 load = { target -> GitHubAtomReleaseStrategy.loadSnapshotTrace(target.owner, target.repo) }
             ),
-            StrategyRunner(
+            GitHubStrategyBenchmarkRunner(
                 strategyId = apiStrategy.id,
                 displayName = "API",
                 clearCaches = { apiStrategy.clearCaches() },
@@ -52,31 +55,87 @@ object GitHubStrategyBenchmarkService {
             )
         )
 
-        return GitHubStrategyBenchmarkReport(
+        return compareTargetsWithRunners(
             targets = distinctTargets,
-            results = runners.map { runner -> runner.run(distinctTargets) }
+            runners = runners
         )
     }
 
-    private data class StrategyRunner(
-        val strategyId: String,
-        val displayName: String,
-        val clearCaches: () -> Unit,
-        val load: (GitHubRepoTarget) -> GitHubStrategyLoadTrace<GitHubRepositoryReleaseSnapshot>
-    ) {
-        fun run(targets: List<GitHubRepoTarget>): GitHubStrategyBenchmarkResult {
-            clearCaches()
-            val coldSamples = targets.map { target -> load(target).toSample(target) }
-            val warmSamples = targets.map { target -> load(target).toSample(target) }
-            val authMode = coldSamples.firstOrNull()?.authMode ?: warmSamples.firstOrNull()?.authMode
-
-            return GitHubStrategyBenchmarkResult(
-                strategyId = strategyId,
-                displayName = displayName,
-                authMode = authMode,
-                coldSamples = coldSamples.map { it.sample },
-                warmSamples = warmSamples.map { it.sample }
+    internal fun compareTargetsWithRunners(
+        targets: List<GitHubRepoTarget>,
+        runners: List<GitHubStrategyBenchmarkRunner>,
+        maxConcurrency: Int = DEFAULT_BENCHMARK_CONCURRENCY
+    ): GitHubStrategyBenchmarkReport {
+        if (targets.isEmpty() || runners.isEmpty()) {
+            return GitHubStrategyBenchmarkReport(
+                targets = targets,
+                results = emptyList()
             )
+        }
+        return GitHubStrategyBenchmarkReport(
+            targets = targets,
+            results = runConcurrently(
+                items = runners,
+                maxConcurrency = maxConcurrency.coerceAtLeast(1)
+            ) { runner ->
+                runner.run(
+                    targets = targets,
+                    maxConcurrency = maxConcurrency
+                )
+            }
+        )
+    }
+
+    private fun GitHubStrategyBenchmarkRunner.run(
+        targets: List<GitHubRepoTarget>,
+        maxConcurrency: Int
+    ): GitHubStrategyBenchmarkResult {
+        clearCaches()
+        val coldSamples = loadSamples(
+            targets = targets,
+            maxConcurrency = maxConcurrency
+        )
+        val warmSamples = loadSamples(
+            targets = targets,
+            maxConcurrency = maxConcurrency
+        )
+        val authMode = coldSamples.firstOrNull()?.authMode ?: warmSamples.firstOrNull()?.authMode
+
+        return GitHubStrategyBenchmarkResult(
+            strategyId = strategyId,
+            displayName = displayName,
+            authMode = authMode,
+            coldSamples = coldSamples.map { it.sample },
+            warmSamples = warmSamples.map { it.sample }
+        )
+    }
+
+    private fun GitHubStrategyBenchmarkRunner.loadSamples(
+        targets: List<GitHubRepoTarget>,
+        maxConcurrency: Int
+    ): List<SampleEnvelope> {
+        return runConcurrently(
+            items = targets,
+            maxConcurrency = maxConcurrency
+        ) { target ->
+            load(target).toSample(target)
+        }
+    }
+
+    private fun <T, R> runConcurrently(
+        items: List<T>,
+        maxConcurrency: Int,
+        block: (T) -> R
+    ): List<R> {
+        if (items.isEmpty()) return emptyList()
+        val concurrency = items.size.coerceAtMost(maxConcurrency.coerceAtLeast(1))
+        if (concurrency <= 1) return items.map(block)
+        val executor = Executors.newFixedThreadPool(concurrency)
+        return try {
+            executor.invokeAll(items.map { item -> Callable { block(item) } })
+                .map { future -> future.get() }
+        } finally {
+            executor.shutdownNow()
         }
     }
 
@@ -104,3 +163,10 @@ object GitHubStrategyBenchmarkService {
         )
     }
 }
+
+internal data class GitHubStrategyBenchmarkRunner(
+    val strategyId: String,
+    val displayName: String,
+    val clearCaches: () -> Unit,
+    val load: (GitHubRepoTarget) -> GitHubStrategyLoadTrace<GitHubRepositoryReleaseSnapshot>
+)

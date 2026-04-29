@@ -13,6 +13,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.net.URLDecoder
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 private data class CachedValue<T>(
@@ -31,8 +32,8 @@ object GitHubAtomReleaseStrategy : GitHubReleaseLookupStrategy {
     private const val CACHE_TTL_MS = 90_000L
     private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
 
-    private val feedCache = mutableMapOf<String, CachedValue<Result<GitHubAtomFeed>>>()
-    private val stableCache = mutableMapOf<String, CachedValue<Result<GitHubAtomLatestStableLookup>>>()
+    private val feedCache = ConcurrentHashMap<String, CachedValue<Result<GitHubAtomFeed>>>()
+    private val stableCache = ConcurrentHashMap<String, CachedValue<Result<GitHubAtomLatestStableLookup>>>()
 
     private val githubClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
