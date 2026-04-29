@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import os.kei.R
 import os.kei.core.system.findPropString
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.feature.github.data.remote.GitHubVersionUtils
@@ -429,7 +430,11 @@ private fun buildOemAutoStartLaunchPlan(context: Context): SettingsOemAutoStartL
     }
     return SettingsOemAutoStartLaunchPlan(
         intents = resolvedIntents,
-        vendorLabel = vendor.label,
+        vendorLabel = if (vendor == OemAutoStartVendor.Unknown) {
+            context.getString(R.string.settings_oem_autostart_vendor_system_app_info)
+        } else {
+            vendor.label
+        },
         directRouteAvailable = resolvedDirectIntents.isNotEmpty(),
         supportsStateDetection = vendor.supportsStateDetection
     )
@@ -552,7 +557,7 @@ private enum class OemAutoStartVendor(
     Huawei(label = "HUAWEI"),
     Honor(label = "HONOR"),
     Asus(label = "ASUS"),
-    Unknown(label = "系统应用信息")
+    Unknown(label = "")
 }
 
 private const val OEM_SECURITY_CENTER_PACKAGE = "com.miui.securitycenter"

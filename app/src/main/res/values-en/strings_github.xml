@@ -289,6 +289,9 @@
     <string name="github_strategy_impact_no_track">No tracked projects yet</string>
     <string name="github_strategy_card_title_recommended">Recommended new setup</string>
     <string name="github_strategy_badge_least_privilege">Least privilege</string>
+    <string name="github_strategy_credential_guest_available">Guest API available</string>
+    <string name="github_strategy_credential_token_available">Token available</string>
+    <string name="github_strategy_benchmark_title_with_auth">%1$s · %2$s</string>
     <string name="github_strategy_metric_cold_avg">Cold avg</string>
     <string name="github_strategy_metric_warm_avg">Warm avg</string>
     <string name="github_strategy_metric_cache_hit">Cache hit</string>

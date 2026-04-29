@@ -60,9 +60,9 @@ internal data class OsUiSnapshot(
 )
 
 internal data class OsGoogleSystemServiceConfig(
-    val title: String = "Google系统服务",
-    val subtitle: String = "更新Google系统服务App",
-    val appName: String = "Google Play 商店",
+    val title: String = "Google system services",
+    val subtitle: String = "Update Google system service app",
+    val appName: String = "Google Play Store",
     val packageName: String = "com.android.vending",
     val className: String = "com.google.android.finsky.systemservicesactivity.SystemServicesActivity",
     val intentAction: String = "android.intent.action.VIEW",

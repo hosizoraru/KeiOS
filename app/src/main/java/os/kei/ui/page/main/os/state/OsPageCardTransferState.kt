@@ -15,10 +15,13 @@ import os.kei.ui.page.main.os.shell.OsShellCommandCardStore
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCardStore
 import os.kei.ui.page.main.os.transfer.OsActivityCardImportPayload
+import os.kei.ui.page.main.os.transfer.OsCardImportError
+import os.kei.ui.page.main.os.transfer.OsCardImportException
 import os.kei.ui.page.main.os.transfer.OsCardImportFileKind
 import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 import os.kei.ui.page.main.os.transfer.OsShellCardImportPayload
 import os.kei.ui.page.main.os.transfer.OsUnknownCardImportPayload
+import os.kei.ui.page.main.os.transfer.localizedOsCardImportMessage
 import os.kei.ui.page.main.os.transfer.parseOsCardImportRoot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -150,7 +153,7 @@ internal fun rememberOsPageCardTransferState(
                     context,
                     String.format(
                         cardImportFailedWithReason,
-                        error.message ?: error.javaClass.simpleName
+                        error.localizedOsCardImportMessage(context)
                     ),
                     Toast.LENGTH_SHORT
                 ).show()
@@ -171,14 +174,14 @@ internal fun rememberOsPageCardTransferState(
                 when (val payload = preview.payload) {
                     is OsActivityCardImportPayload -> applyActivityImport(payload)
                     is OsShellCardImportPayload -> applyShellImport(payload)
-                    is OsUnknownCardImportPayload -> error("当前文件没有可导入的数据")
+                    is OsUnknownCardImportPayload -> throw OsCardImportException(OsCardImportError.NoImportableData)
                 }
             }.onFailure { error ->
                 Toast.makeText(
                     context,
                     String.format(
                         cardImportFailedWithReason,
-                        error.message ?: error.javaClass.simpleName
+                        error.localizedOsCardImportMessage(context)
                     ),
                     Toast.LENGTH_SHORT
                 ).show()

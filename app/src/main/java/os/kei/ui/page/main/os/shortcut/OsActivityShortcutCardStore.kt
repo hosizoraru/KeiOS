@@ -4,6 +4,8 @@ import os.kei.ui.page.main.os.OsGoogleSystemServiceConfig
 import os.kei.ui.page.main.os.OsShortcutCardStore
 import os.kei.ui.page.main.os.transfer.OS_ACTIVITY_CARD_EXPORT_SCHEMA
 import os.kei.ui.page.main.os.transfer.OsActivityCardImportPayload
+import os.kei.ui.page.main.os.transfer.OsCardImportError
+import os.kei.ui.page.main.os.transfer.OsCardImportException
 import os.kei.ui.page.main.os.transfer.OsCardImportRoot
 import com.tencent.mmkv.MMKV
 import org.json.JSONArray
@@ -228,7 +230,7 @@ internal object OsActivityShortcutCardStore {
             builtInSampleDefaults = builtInSampleDefaults
         )
         if (payload.cards.isEmpty()) {
-            throw IllegalArgumentException("文件中没有有效的活动 card")
+            throw OsCardImportException(OsCardImportError.NoValidActivityCards)
         }
         return applyImportedCards(
             payload = payload,

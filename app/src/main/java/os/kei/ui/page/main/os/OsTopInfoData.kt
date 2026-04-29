@@ -1,35 +1,39 @@
 package os.kei.ui.page.main.os
 
+import android.content.Context
+import androidx.annotation.StringRes
+import os.kei.R
+
 internal data class TopInfoTopic(
     val order: Int,
-    val title: String
+    @param:StringRes val titleRes: Int
 )
 
 internal fun topInfoTopicOf(key: String): TopInfoTopic {
     val k = key.lowercase()
     return when {
-        k.startsWith("long_press_") -> TopInfoTopic(0, "按键长按")
-        k.contains("fbo") || k == "key_fbo_data" -> TopInfoTopic(1, "FBO")
-        k.contains("dex2oat") || k.contains("dexopt") -> TopInfoTopic(2, "Dex 优化")
-        k.startsWith("tango.") || k.contains("tango") -> TopInfoTopic(3, "Tango")
-        k.contains("aod") -> TopInfoTopic(4, "AOD")
-        k.contains("zygote") -> TopInfoTopic(5, "Zygote")
-        k.contains("density") -> TopInfoTopic(6, "显示密度")
-        k.contains("autofill") || k.contains("credential") -> TopInfoTopic(7, "自动填充与凭据")
-        k.startsWith("gsm.") || k.contains("gsm") -> TopInfoTopic(8, "GSM / 蜂窝网络")
-        k.contains("level") -> TopInfoTopic(9, "Level / 等级")
-        k.startsWith("adb_") || k.contains("adb") -> TopInfoTopic(10, "ADB / 调试")
-        k.startsWith("voice_") || k.contains("assistant") || k.contains("recognition") -> TopInfoTopic(11, "语音与助手")
-        k.startsWith("share_") -> TopInfoTopic(12, "共享相关")
-        k.contains("bluetooth") || k.contains("bt_") || k.contains("lc3") || k.contains("lea_") -> TopInfoTopic(13, "蓝牙音频")
-        k.contains("usb") -> TopInfoTopic(14, "USB")
-        k.contains("vulkan") || k.contains("opengl") || k.contains("egl") || k.contains("graphics") || k.contains("hwui") -> TopInfoTopic(15, "图形渲染")
-        k.startsWith("miui_") || k.startsWith("ro.miui") || k.startsWith("ro.mi.") || k.contains("xiaomi") -> TopInfoTopic(16, "MIUI / Xiaomi")
-        k.contains("version") || k.contains("build") || k.contains("fingerprint") || k.contains("security_patch") -> TopInfoTopic(17, "版本与构建")
-        k.contains("time") || k.contains("timestamp") -> TopInfoTopic(18, "时间戳")
-        k.startsWith("java.") || k.startsWith("android.") || k.startsWith("os.") || k.startsWith("user.") -> TopInfoTopic(19, "Java / 系统属性")
-        k.startsWith("env.") || k == "uname-a" || k == "proc.version" || k == "toybox --version" || k == "getenforce" -> TopInfoTopic(20, "Linux 环境")
-        else -> TopInfoTopic(99, "其他")
+        k.startsWith("long_press_") -> TopInfoTopic(0, R.string.os_top_info_topic_long_press)
+        k.contains("fbo") || k == "key_fbo_data" -> TopInfoTopic(1, R.string.os_top_info_topic_fbo)
+        k.contains("dex2oat") || k.contains("dexopt") -> TopInfoTopic(2, R.string.os_top_info_topic_dex_optimization)
+        k.startsWith("tango.") || k.contains("tango") -> TopInfoTopic(3, R.string.os_top_info_topic_tango)
+        k.contains("aod") -> TopInfoTopic(4, R.string.os_top_info_topic_aod)
+        k.contains("zygote") -> TopInfoTopic(5, R.string.os_top_info_topic_zygote)
+        k.contains("density") -> TopInfoTopic(6, R.string.os_top_info_topic_display_density)
+        k.contains("autofill") || k.contains("credential") -> TopInfoTopic(7, R.string.os_top_info_topic_autofill_credentials)
+        k.startsWith("gsm.") || k.contains("gsm") -> TopInfoTopic(8, R.string.os_top_info_topic_cellular_network)
+        k.contains("level") -> TopInfoTopic(9, R.string.os_top_info_topic_level)
+        k.startsWith("adb_") || k.contains("adb") -> TopInfoTopic(10, R.string.os_top_info_topic_adb_debugging)
+        k.startsWith("voice_") || k.contains("assistant") || k.contains("recognition") -> TopInfoTopic(11, R.string.os_top_info_topic_voice_assistant)
+        k.startsWith("share_") -> TopInfoTopic(12, R.string.os_top_info_topic_sharing)
+        k.contains("bluetooth") || k.contains("bt_") || k.contains("lc3") || k.contains("lea_") -> TopInfoTopic(13, R.string.os_top_info_topic_bluetooth_audio)
+        k.contains("usb") -> TopInfoTopic(14, R.string.os_top_info_topic_usb)
+        k.contains("vulkan") || k.contains("opengl") || k.contains("egl") || k.contains("graphics") || k.contains("hwui") -> TopInfoTopic(15, R.string.os_top_info_topic_graphics_rendering)
+        k.startsWith("miui_") || k.startsWith("ro.miui") || k.startsWith("ro.mi.") || k.contains("xiaomi") -> TopInfoTopic(16, R.string.os_top_info_topic_miui_xiaomi)
+        k.contains("version") || k.contains("build") || k.contains("fingerprint") || k.contains("security_patch") -> TopInfoTopic(17, R.string.os_top_info_topic_version_build)
+        k.contains("time") || k.contains("timestamp") -> TopInfoTopic(18, R.string.os_top_info_topic_timestamp)
+        k.startsWith("java.") || k.startsWith("android.") || k.startsWith("os.") || k.startsWith("user.") -> TopInfoTopic(19, R.string.os_top_info_topic_java_system_properties)
+        k.startsWith("env.") || k == "uname-a" || k == "proc.version" || k == "toybox --version" || k == "getenforce" -> TopInfoTopic(20, R.string.os_top_info_topic_linux_environment)
+        else -> TopInfoTopic(99, R.string.os_top_info_topic_other)
     }
 }
 
@@ -43,11 +47,11 @@ internal fun sortTopInfoRows(rows: List<InfoRow>): List<InfoRow> {
     )
 }
 
-internal fun groupTopInfoRows(rows: List<InfoRow>): List<Pair<String, List<InfoRow>>> {
+internal fun groupTopInfoRows(context: Context, rows: List<InfoRow>): List<Pair<String, List<InfoRow>>> {
     val grouped = rows.groupBy { topInfoTopicOf(it.key) }
     return grouped.entries
         .sortedBy { it.key.order }
-        .map { entry -> entry.key.title to entry.value }
+        .map { entry -> context.getString(entry.key.titleRes) to entry.value }
 }
 
 internal fun removeTopInfoRows(section: SectionKind, rows: List<InfoRow>): List<InfoRow> {

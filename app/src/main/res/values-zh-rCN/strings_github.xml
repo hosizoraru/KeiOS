@@ -289,6 +289,9 @@
     <string name="github_strategy_impact_no_track">暂无已跟踪项目</string>
     <string name="github_strategy_card_title_recommended">推荐新建方案</string>
     <string name="github_strategy_badge_least_privilege">最小权限</string>
+    <string name="github_strategy_credential_guest_available">游客 API 可用</string>
+    <string name="github_strategy_credential_token_available">Token 可用</string>
+    <string name="github_strategy_benchmark_title_with_auth">%1$s · %2$s</string>
     <string name="github_strategy_metric_cold_avg">首轮均时</string>
     <string name="github_strategy_metric_warm_avg">缓存均时</string>
     <string name="github_strategy_metric_cache_hit">缓存命中</string>

@@ -23,9 +23,9 @@ import os.kei.core.prefs.UiPrefs
 internal val LocalTextCopyExpandedOverride = compositionLocalOf<Boolean?> { null }
 
 internal fun buildTextCopyPayload(key: String, value: String): String {
-    val title = key.trim().ifBlank { "信息" }
+    val title = key.trim().ifBlank { "Info" }
     val content = value.trim().ifBlank { "-" }
-    return "$title：$content"
+    return "$title: $content"
 }
 
 @Composable

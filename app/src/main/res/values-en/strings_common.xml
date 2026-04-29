@@ -7,6 +7,7 @@
     <string name="common_save">Save</string>
     <string name="common_cancel">Cancel</string>
     <string name="common_delete">Delete</string>
+    <string name="common_clear">Clear</string>
     <string name="common_refresh">Refresh</string>
     <string name="common_refreshed">Refreshed</string>
     <string name="common_reset">Reset</string>
@@ -15,6 +16,7 @@
     <string name="common_mark_read">Mark read</string>
     <string name="common_acknowledge">OK</string>
     <string name="common_note">Note</string>
+    <string name="common_info">Info</string>
     <string name="common_scope">Scope</string>
     <string name="common_processing">Processing</string>
     <string name="common_na">N/A</string>

@@ -1,6 +1,7 @@
 package os.kei.mcp.server
 
 import android.content.Context
+import os.kei.R
 import os.kei.core.log.AppLogger
 import os.kei.mcp.service.McpKeepAliveService
 import os.kei.mcp.notification.McpNotificationHelper
@@ -76,11 +77,28 @@ class McpServerManager(
         private const val DEFAULT_SERVER_NAME = "KeiOS MCP"
         private const val DEFAULT_PORT = 38888
 
-        fun loadSavedCacheSummary(): String {
+        fun loadSavedCacheSummary(context: Context): String {
             val snapshot = Prefs.loadSnapshot()
-            val tokenState = if (snapshot.authToken.isBlank()) "无 token" else "已保存 token"
-            val network = if (snapshot.allowExternal) "局域网" else "本机"
-            return "端口 ${snapshot.port} · $network · $tokenState"
+            val tokenState = context.getString(
+                if (snapshot.authToken.isBlank()) {
+                    R.string.settings_cache_entry_mcp_token_empty
+                } else {
+                    R.string.settings_cache_entry_mcp_token_saved
+                }
+            )
+            val network = context.getString(
+                if (snapshot.allowExternal) {
+                    R.string.settings_cache_entry_mcp_network_lan
+                } else {
+                    R.string.settings_cache_entry_mcp_network_local
+                }
+            )
+            return context.getString(
+                R.string.settings_cache_entry_mcp_detail,
+                snapshot.port,
+                network,
+                tokenState
+            )
         }
 
         fun clearSavedCacheOnly() {
@@ -197,7 +215,7 @@ class McpServerManager(
     @Synchronized
     fun start(port: Int, allowExternal: Boolean): Result<Unit> {
         if (port !in 1..65535) {
-            val message = "端口无效: $port"
+            val message = "${appContext.getString(R.string.common_port_invalid)}: $port"
             _uiState.value = _uiState.value.copy(lastError = message)
             return Result.failure(IllegalArgumentException(message))
         }
@@ -314,7 +332,7 @@ class McpServerManager(
     @Synchronized
     fun updatePort(port: Int): Result<Unit> {
         if (port !in 1..65535) {
-            val message = "端口无效: $port"
+            val message = "${appContext.getString(R.string.common_port_invalid)}: $port"
             _uiState.value = _uiState.value.copy(lastError = message)
             return Result.failure(IllegalArgumentException(message))
         }
@@ -506,7 +524,10 @@ ${headersText.prependIndent("        ")}
                 socket.bind(InetSocketAddress(host, port))
             }
         }.getOrElse {
-            throw IllegalStateException("端口 $port 已被占用: ${it.message}", it)
+            throw IllegalStateException(
+                appContext.getString(R.string.mcp_error_port_in_use, port, it.message.orEmpty()),
+                it
+            )
         }
     }
 

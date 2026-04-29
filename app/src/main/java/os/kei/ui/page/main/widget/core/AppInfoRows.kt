@@ -11,11 +11,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import os.kei.R
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import os.kei.ui.page.main.widget.support.buildTextCopyPayload
 import os.kei.ui.page.main.widget.support.copyModeAwareRow
@@ -54,8 +56,8 @@ fun AppInfoRow(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null
 ) {
-    val displayLabel = label.ifBlank { "信息" }
-    val displayValue = value.ifBlank { "N/A" }
+    val displayLabel = label.ifBlank { stringResource(R.string.common_info) }
+    val displayValue = value.ifBlank { stringResource(R.string.common_na) }
     val copyPayload = remember(displayLabel, displayValue, copyPayloadOverride) {
         copyPayloadOverride?.takeIf { it.isNotBlank() }
             ?: buildTextCopyPayload(displayLabel, displayValue)

@@ -121,8 +121,8 @@ internal fun rememberOsPageDerivedState(
             sortRowsByType(filterRows(prunedLinuxRows, query))
         }
     }
-    val groupedTopInfoRows = remember(displayedTopInfoRows, topInfoExpanded, query) {
-        if (query.isBlank() && !topInfoExpanded) emptyList() else groupTopInfoRows(displayedTopInfoRows)
+    val groupedTopInfoRows = remember(context, displayedTopInfoRows, topInfoExpanded, query) {
+        if (query.isBlank() && !topInfoExpanded) emptyList() else groupTopInfoRows(context, displayedTopInfoRows)
     }
     val shellRunnerRows = remember(
         shizukuStatus,

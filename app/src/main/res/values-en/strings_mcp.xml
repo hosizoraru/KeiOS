@@ -74,6 +74,7 @@
     <string name="mcp_toast_logs_export_failed">Log export failed: %1$s</string>
     <string name="mcp_toast_saved_requires_restart">Saved. Changes take effect on the next service start or restart.</string>
     <string name="mcp_toast_token_reset_reconnect">Token reset. Reconnect clients.</string>
+    <string name="mcp_error_port_in_use">Port %1$d is already in use: %2$s</string>
     <string name="mcp_log_label">Log</string>
     <string name="mcp_log_empty">No logs</string>
     <string name="mcp_uptime_days_hours">%1$dd %2$dh</string>

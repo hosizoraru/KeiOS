@@ -37,13 +37,13 @@ internal fun GitHubStrategyGuideCard(
         modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
         details = {
             Text(
-                text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString("；")),
+                text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString(" · ")),
                 color = MiuixTheme.colorScheme.onBackground,
                 fontSize = AppTypographyTokens.Body.fontSize,
                 lineHeight = AppTypographyTokens.Body.lineHeight
             )
             Text(
-                text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString("；")),
+                text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString(" · ")),
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight
@@ -75,13 +75,13 @@ internal fun GitHubActionsStrategyGuideCard(
         modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
         details = {
             Text(
-                text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString("；")),
+                text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString(" · ")),
                 color = MiuixTheme.colorScheme.onBackground,
                 fontSize = AppTypographyTokens.Body.fontSize,
                 lineHeight = AppTypographyTokens.Body.lineHeight
             )
             Text(
-                text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString("；")),
+                text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString(" · ")),
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight
@@ -211,7 +211,7 @@ internal fun GitHubStrategyBenchmarkCard(
         else -> GitHubStatusPalette.Active
     }
     SheetSummaryCard(
-        title = result.summaryLabel,
+        title = result.localizedSummaryLabel(),
         accentColor = accent,
         badgeLabel = "${result.coldSuccessCount}/${result.totalTargets}",
         badgeColor = if (result.failures.isEmpty()) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease,
@@ -270,14 +270,14 @@ internal fun GitHubCredentialStatusCard(
     SheetSummaryCard(
         title = stringResource(R.string.github_strategy_card_title_credential_status),
         accentColor = accent,
-        badgeLabel = status.summaryLabel,
+        badgeLabel = status.localizedSummaryLabel(),
         badgeColor = accent,
         modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
         containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
     ) {
         GitHubCompactInfoRow(
             label = stringResource(R.string.github_strategy_label_mode),
-            value = status.authMode.label,
+            value = status.authMode.localizedLabel(),
             valueColor = accent,
             emphasized = true,
             titleMinWidth = 44.dp
@@ -301,6 +301,32 @@ internal fun GitHubCredentialStatusCard(
             valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
             titleMinWidth = 44.dp
         )
+    }
+}
+
+@Composable
+private fun GitHubApiAuthMode.localizedLabel(): String {
+    return when (this) {
+        GitHubApiAuthMode.Guest -> stringResource(R.string.common_guest)
+        GitHubApiAuthMode.Token -> stringResource(R.string.github_strategy_label_token)
+    }
+}
+
+@Composable
+private fun GitHubApiCredentialStatus.localizedSummaryLabel(): String {
+    return when (authMode) {
+        GitHubApiAuthMode.Guest -> stringResource(R.string.github_strategy_credential_guest_available)
+        GitHubApiAuthMode.Token -> stringResource(R.string.github_strategy_credential_token_available)
+    }
+}
+
+@Composable
+private fun GitHubStrategyBenchmarkResult.localizedSummaryLabel(): String {
+    val authModeLabel = authMode?.localizedLabel()
+    return if (authModeLabel == null) {
+        displayName
+    } else {
+        stringResource(R.string.github_strategy_benchmark_title_with_auth, displayName, authModeLabel)
     }
 }
 

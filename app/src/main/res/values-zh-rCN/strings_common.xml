@@ -7,6 +7,7 @@
     <string name="common_save">保存</string>
     <string name="common_cancel">取消</string>
     <string name="common_delete">删除</string>
+    <string name="common_clear">清理</string>
     <string name="common_refresh">刷新</string>
     <string name="common_refreshed">已刷新</string>
     <string name="common_reset">重置</string>
@@ -15,6 +16,7 @@
     <string name="common_mark_read">已读</string>
     <string name="common_acknowledge">知道了</string>
     <string name="common_note">说明</string>
+    <string name="common_info">信息</string>
     <string name="common_scope">作用范围</string>
     <string name="common_processing">处理中</string>
     <string name="common_na">N/A</string>
@@ -52,7 +54,7 @@
     <string name="common_progress_with_value">进度 %1$s</string>
     <string name="common_item_count">%1$d 条</string>
     <string name="common_item_count_cached">%1$d 条（缓存）</string>
-    <string name="common_no_matched_results">No matched results.</string>
+    <string name="common_no_matched_results">没有匹配结果</string>
     <string name="common_expand_details_hint">点按展开详细说明</string>
     <string name="common_collapse_details_hint">点按收起详细说明</string>
     <string name="common_export_success">导出成功</string>

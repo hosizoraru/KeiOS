@@ -9,7 +9,7 @@ data class GitHubRepoTarget(
 }
 
 enum class GitHubApiAuthMode(val label: String) {
-    Guest("游客"),
+    Guest("Guest"),
     Token("Token")
 }
 
@@ -29,8 +29,8 @@ data class GitHubApiCredentialStatus(
 ) {
     val summaryLabel: String
         get() = when (authMode) {
-            GitHubApiAuthMode.Guest -> "游客 API 可用"
-            GitHubApiAuthMode.Token -> "Token 可用"
+            GitHubApiAuthMode.Guest -> "Guest API available"
+            GitHubApiAuthMode.Token -> "Token available"
         }
 }
 

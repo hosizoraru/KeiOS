@@ -1,6 +1,7 @@
 package os.kei.core.prefs
 
 import android.content.Context
+import os.kei.R
 import os.kei.feature.github.data.local.AppIconCache
 import os.kei.feature.github.data.local.GitHubReleaseAssetCacheStore
 import os.kei.feature.github.data.local.GitHubTrackStore
@@ -53,13 +54,13 @@ internal object CacheStores {
             baCalendarSummary(context),
             baStudentGuideSummary(context),
             osSummary(context),
-            appIconSummary(),
+            appIconSummary(context),
             baMediaPlaybackSummary(context),
             baTempMediaSummary(context),
             debugUiDumpSummary(context),
             mcpSummary(context)
         )
-        return listOf(buildOverview(entries)) + entries
+        return listOf(buildOverview(context, entries)) + entries
     }
 
     fun clear(context: Context, id: String) {
@@ -100,7 +101,7 @@ internal object CacheStores {
             }
     }
 
-    private fun buildOverview(entries: List<CacheEntrySummary>): CacheEntrySummary {
+    private fun buildOverview(context: Context, entries: List<CacheEntrySummary>): CacheEntrySummary {
         val cacheBytes = entries.sumOf(CacheEntrySummary::cacheBytes)
         val configBytes = entries.sumOf(CacheEntrySummary::configBytes)
         val diskBytes = entries.sumOf(CacheEntrySummary::diskBytes)
@@ -109,11 +110,20 @@ internal object CacheStores {
         val clearedAtMs = entries.maxOfOrNull(CacheEntrySummary::clearedAtMs)?.takeIf { it > 0L } ?: 0L
         return CacheEntrySummary(
             id = "cache_overview",
-            title = "总缓存概览",
-            summary = "跨页面缓存与配置占用总览",
-            detail = "缓存估算 ${formatBytes(cacheBytes)} · 配置估算 ${formatBytes(configBytes)} · 合计 ${formatBytes(cacheBytes + configBytes)}",
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "磁盘占用 ${formatBytes(diskBytes)} · 内存占用 ${formatBytes(memoryBytes)}",
+            title = context.getString(R.string.settings_cache_entry_overview_title),
+            summary = context.getString(R.string.settings_cache_entry_overview_summary),
+            detail = context.getString(
+                R.string.settings_cache_entry_overview_detail,
+                formatBytes(cacheBytes),
+                formatBytes(configBytes),
+                formatBytes(cacheBytes + configBytes)
+            ),
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_disk_memory,
+                formatBytes(diskBytes),
+                formatBytes(memoryBytes)
+            ),
             clearLabel = "",
             cacheBytes = cacheBytes,
             configBytes = configBytes,
@@ -131,20 +141,34 @@ internal object CacheStores {
         val clearedAtMs = CacheEventStore.loadClearedAt("github")
         val iconMemory = AppIconCache.estimatedMemoryBytes()
         val assetCacheCount = GitHubReleaseAssetCacheStore.cachedEntryCount()
-        val detail = buildString {
-            append("跟踪 ${snapshot.items.size} 项")
-            append(" · 检查缓存 ${snapshot.checkCache.size} 项")
-            append(" · 资产缓存 ${assetCacheCount} 项")
-            if (snapshot.lastRefreshMs > 0L) append(" · 已有刷新记录") else append(" · 暂无刷新记录")
-        }
+        val refreshState = context.getString(
+            if (snapshot.lastRefreshMs > 0L) {
+                R.string.settings_cache_refresh_record_present
+            } else {
+                R.string.settings_cache_refresh_record_empty
+            }
+        )
+        val detail = context.getString(
+            R.string.settings_cache_entry_github_detail,
+            snapshot.items.size,
+            snapshot.checkCache.size,
+            assetCacheCount,
+            refreshState
+        )
         return CacheEntrySummary(
             id = "github",
-            title = "主页 / GitHub",
-            summary = "版本检查结果与 GitHub 追踪配置",
+            title = context.getString(R.string.settings_cache_entry_github_title),
+            summary = context.getString(R.string.settings_cache_entry_github_summary),
             detail = detail,
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(GitHubTrackStore.cacheBytesEstimated())} · 配置估算 ${formatBytes(GitHubTrackStore.configBytesEstimated())} · MMKV 已用 ${formatBytes(GitHubTrackStore.actualDataBytes())} · 图标内存 ${formatBytes(iconMemory)}",
-            clearLabel = "清理",
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_mmkv_icon,
+                formatBytes(GitHubTrackStore.cacheBytesEstimated()),
+                formatBytes(GitHubTrackStore.configBytesEstimated()),
+                formatBytes(GitHubTrackStore.actualDataBytes()),
+                formatBytes(iconMemory)
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = GitHubTrackStore.cacheBytesEstimated(),
             configBytes = GitHubTrackStore.configBytesEstimated(),
             diskBytes = GitHubTrackStore.actualDataBytes(),
@@ -165,22 +189,29 @@ internal object CacheStores {
         val updatedAtMs = maxOf(calendar.syncMs, pool.syncMs, mediaUpdatedAtMs).takeIf { it > 0L }
             ?: mmkvLastModified(context, "ba_page_settings")
         val clearedAtMs = CacheEventStore.loadClearedAt("ba_calendar")
-        val detail = buildString {
-            append("当前服区 ${snapshot.serverIndex}")
-            append(" · 日程缓存 ")
-            append(if (calendar.raw.isNotBlank()) "已缓存" else "空")
-            append(" · 池子缓存 ")
-            append(if (pool.raw.isNotBlank()) "已缓存" else "空")
-            append(" · 图片 $mediaFiles 张")
-        }
+        val cachedState = context.getString(R.string.common_status_cached)
+        val emptyState = context.getString(R.string.settings_cache_state_empty)
+        val detail = context.getString(
+            R.string.settings_cache_entry_ba_page_detail,
+            snapshot.serverIndex,
+            if (calendar.raw.isNotBlank()) cachedState else emptyState,
+            if (pool.raw.isNotBlank()) cachedState else emptyState,
+            mediaFiles
+        )
         return CacheEntrySummary(
             id = "ba_calendar",
-            title = "BA 页面",
-            summary = "活动日程、卡池缓存与页面状态",
+            title = context.getString(R.string.settings_cache_entry_ba_page_title),
+            summary = context.getString(R.string.settings_cache_entry_ba_page_summary),
             detail = detail,
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(mergedCacheBytes)} · 配置估算 ${formatBytes(BASettingsStore.configBytesEstimated())} · MMKV 已用 ${formatBytes(BASettingsStore.actualDataBytes())} · 媒体磁盘 ${formatBytes(mediaBytes)}",
-            clearLabel = "清理",
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_mmkv_media,
+                formatBytes(mergedCacheBytes),
+                formatBytes(BASettingsStore.configBytesEstimated()),
+                formatBytes(BASettingsStore.actualDataBytes()),
+                formatBytes(mediaBytes)
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = mergedCacheBytes,
             configBytes = BASettingsStore.configBytesEstimated(),
             diskBytes = BASettingsStore.actualDataBytes() + mediaBytes,
@@ -208,12 +239,22 @@ internal object CacheStores {
         val clearedAtMs = CacheEventStore.loadClearedAt("ba_student_guide")
         return CacheEntrySummary(
             id = "ba_student_guide",
-            title = "BA 图鉴页",
-            summary = "角色图鉴详情与图鉴总览列表缓存",
-            detail = "详情缓存 $detailCount 条 · 总览 实装 $studentCount 条 / NPC及卫星 $npcSatelliteCount 条",
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(cacheBytes)} · 配置估算 ${formatBytes(configBytes)} · MMKV 已用 ${formatBytes(diskBytes)}",
-            clearLabel = "清理",
+            title = context.getString(R.string.settings_cache_entry_ba_guide_title),
+            summary = context.getString(R.string.settings_cache_entry_ba_guide_summary),
+            detail = context.getString(
+                R.string.settings_cache_entry_ba_guide_detail,
+                detailCount,
+                studentCount,
+                npcSatelliteCount
+            ),
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_mmkv,
+                formatBytes(cacheBytes),
+                formatBytes(configBytes),
+                formatBytes(diskBytes)
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = cacheBytes,
             configBytes = configBytes,
             diskBytes = diskBytes,
@@ -236,12 +277,17 @@ internal object CacheStores {
         val clearedAtMs = CacheEventStore.loadClearedAt("os_info")
         return CacheEntrySummary(
             id = "os_info",
-            title = "系统页面",
-            summary = "各类系统表与属性缓存",
-            detail = "显示卡片 $visible 张 · 已缓存分区 $cachedSections 个",
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(cacheBytes)} · 配置估算 ${formatBytes(configBytes)} · MMKV 已用 ${formatBytes(OsInfoCache.actualDataBytes() + OsUiStateStore.actualDataBytes())}",
-            clearLabel = "清理",
+            title = context.getString(R.string.settings_cache_entry_os_title),
+            summary = context.getString(R.string.settings_cache_entry_os_summary),
+            detail = context.getString(R.string.settings_cache_entry_os_detail, visible, cachedSections),
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_mmkv,
+                formatBytes(cacheBytes),
+                formatBytes(configBytes),
+                formatBytes(OsInfoCache.actualDataBytes() + OsUiStateStore.actualDataBytes())
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = cacheBytes,
             configBytes = configBytes,
             diskBytes = OsInfoCache.actualDataBytes() + OsUiStateStore.actualDataBytes(),
@@ -250,18 +296,23 @@ internal object CacheStores {
         )
     }
 
-    private fun appIconSummary(): CacheEntrySummary {
+    private fun appIconSummary(context: Context): CacheEntrySummary {
         val memoryBytes = AppIconCache.estimatedMemoryBytes()
         val updatedAtMs = AppIconCache.lastUpdatedAtMs()
         val clearedAtMs = CacheEventStore.loadClearedAt("app_icon")
         return CacheEntrySummary(
             id = "app_icon",
-            title = "GitHub 图标",
-            summary = "GitHub 页面与相关列表的图标内存缓存",
-            detail = "当前内存命中 ${AppIconCache.size()} 项",
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(memoryBytes)} · 配置估算 0 B · 内存占用 ${formatBytes(memoryBytes)}",
-            clearLabel = "清理",
+            title = context.getString(R.string.settings_cache_entry_app_icon_title),
+            summary = context.getString(R.string.settings_cache_entry_app_icon_summary),
+            detail = context.getString(R.string.settings_cache_entry_app_icon_detail, AppIconCache.size()),
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_memory,
+                formatBytes(memoryBytes),
+                formatBytes(0L),
+                formatBytes(memoryBytes)
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = memoryBytes,
             configBytes = 0L,
             memoryBytes = memoryBytes,
@@ -277,12 +328,17 @@ internal object CacheStores {
         val clearedAtMs = CacheEventStore.loadClearedAt("ba_temp_media")
         return CacheEntrySummary(
             id = "ba_temp_media",
-            title = "图鉴媒体",
-            summary = "图鉴页临时图片与媒体文件",
-            detail = "文件 $fileCount 个",
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(diskBytes)} · 配置估算 0 B · 磁盘占用 ${formatBytes(diskBytes)}",
-            clearLabel = "清理",
+            title = context.getString(R.string.settings_cache_entry_ba_temp_media_title),
+            summary = context.getString(R.string.settings_cache_entry_ba_temp_media_summary),
+            detail = context.getString(R.string.settings_cache_entry_file_count_detail, fileCount),
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_disk,
+                formatBytes(diskBytes),
+                formatBytes(0L),
+                formatBytes(diskBytes)
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = diskBytes,
             configBytes = 0L,
             diskBytes = diskBytes,
@@ -298,20 +354,30 @@ internal object CacheStores {
             diagnostics.lastCleanupAtMs
         ).takeIf { it > 0L } ?: 0L
         val clearedAtMs = CacheEventStore.loadClearedAt("ba_media_playback")
-        val detail = buildString {
-            append("文件 ${diagnostics.fileCount} 个")
-            append(" · 清理运行 ${diagnostics.cleanupRunCount} 次")
-            append(" · 最近命中 ${diagnostics.lastRemovedResourceCount} 项")
-            append(" · 最近释放 ${formatBytes(diagnostics.lastRemovedBytes)}")
-        }
+        val detail = context.getString(
+            R.string.settings_cache_entry_ba_playback_detail,
+            diagnostics.fileCount,
+            diagnostics.cleanupRunCount,
+            diagnostics.lastRemovedResourceCount,
+            formatBytes(diagnostics.lastRemovedBytes)
+        )
         return CacheEntrySummary(
             id = "ba_media_playback",
-            title = "图鉴播放缓存",
-            summary = "语音台词与媒体播放的 ExoPlayer 缓存",
+            title = context.getString(R.string.settings_cache_entry_ba_playback_title),
+            summary = context.getString(R.string.settings_cache_entry_ba_playback_summary),
             detail = detail,
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(diagnostics.diskBytes)} · 配置估算 0 B · 磁盘占用 ${formatBytes(diagnostics.diskBytes)} · 累计扫描 ${diagnostics.scannedResourceCount} 项 · 累计命中 ${diagnostics.removedResourceCount} 项/${diagnostics.removedSpanCount} 片段/${formatBytes(diagnostics.removedBytes)}",
-            clearLabel = "清理",
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_ba_playback,
+                formatBytes(diagnostics.diskBytes),
+                formatBytes(0L),
+                formatBytes(diagnostics.diskBytes),
+                diagnostics.scannedResourceCount,
+                diagnostics.removedResourceCount,
+                diagnostics.removedSpanCount,
+                formatBytes(diagnostics.removedBytes)
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = diagnostics.diskBytes,
             configBytes = 0L,
             diskBytes = diagnostics.diskBytes,
@@ -326,12 +392,22 @@ internal object CacheStores {
         val clearedAtMs = CacheEventStore.loadClearedAt("debug_ui_dump")
         return CacheEntrySummary(
             id = "debug_ui_dump",
-            title = "调试 UI Dump",
-            summary = "uiautomator dump 重定向输出目录",
-            detail = "环境 ${AppBuildEnv.displayName} · 文件 ${stats.fileCount} 个",
-            activity = formatActivity(stats.latestModifiedAtMs, clearedAtMs),
-            storage = "缓存估算 ${formatBytes(stats.totalBytes)} · 配置估算 0 B · 磁盘占用 ${formatBytes(stats.totalBytes)} · 目录 ${targetDir.absolutePath}",
-            clearLabel = "清理",
+            title = context.getString(R.string.settings_cache_entry_debug_ui_dump_title),
+            summary = context.getString(R.string.settings_cache_entry_debug_ui_dump_summary),
+            detail = context.getString(
+                R.string.settings_cache_entry_debug_ui_dump_detail,
+                AppBuildEnv.displayName,
+                stats.fileCount
+            ),
+            activity = formatActivity(context, stats.latestModifiedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_debug_ui_dump,
+                formatBytes(stats.totalBytes),
+                formatBytes(0L),
+                formatBytes(stats.totalBytes),
+                targetDir.absolutePath
+            ),
+            clearLabel = context.getString(R.string.common_clear),
             cacheBytes = stats.totalBytes,
             configBytes = 0L,
             diskBytes = stats.totalBytes,
@@ -341,17 +417,22 @@ internal object CacheStores {
     }
 
     private fun mcpSummary(context: Context): CacheEntrySummary {
-        val snapshot = McpServerManager.loadSavedCacheSummary()
+        val snapshot = McpServerManager.loadSavedCacheSummary(context)
         val updatedAtMs = mmkvLastModified(context, "mcp_server_prefs")
         val clearedAtMs = CacheEventStore.loadClearedAt("mcp_prefs")
         return CacheEntrySummary(
             id = "mcp_prefs",
-            title = "MCP 页面",
-            summary = "服务名称、端口、鉴权 token 等本地持久项",
+            title = context.getString(R.string.settings_cache_entry_mcp_title),
+            summary = context.getString(R.string.settings_cache_entry_mcp_summary),
             detail = snapshot,
-            activity = formatActivity(updatedAtMs, clearedAtMs),
-            storage = "缓存估算 0 B · 配置估算 ${formatBytes(McpServerManager.configBytesEstimated())} · MMKV 已用 ${formatBytes(McpServerManager.actualDataBytes())}",
-            clearLabel = "重置",
+            activity = formatActivity(context, updatedAtMs, clearedAtMs),
+            storage = context.getString(
+                R.string.settings_cache_storage_cache_config_mmkv,
+                formatBytes(0L),
+                formatBytes(McpServerManager.configBytesEstimated()),
+                formatBytes(McpServerManager.actualDataBytes())
+            ),
+            clearLabel = context.getString(R.string.common_reset),
             cacheBytes = 0L,
             configBytes = McpServerManager.configBytesEstimated(),
             diskBytes = McpServerManager.actualDataBytes(),
@@ -360,14 +441,14 @@ internal object CacheStores {
         )
     }
 
-    private fun formatActivity(updatedAtMs: Long, clearedAtMs: Long): String {
-        val updated = formatTimestamp(updatedAtMs)
-        val cleared = formatTimestamp(clearedAtMs)
-        return "更新：$updated · 清理：$cleared"
+    private fun formatActivity(context: Context, updatedAtMs: Long, clearedAtMs: Long): String {
+        val updated = formatTimestamp(context, updatedAtMs)
+        val cleared = formatTimestamp(context, clearedAtMs)
+        return context.getString(R.string.settings_cache_activity, updated, cleared)
     }
 
-    private fun formatTimestamp(epochMs: Long): String {
-        if (epochMs <= 0L) return "未记录"
+    private fun formatTimestamp(context: Context, epochMs: Long): String {
+        if (epochMs <= 0L) return context.getString(R.string.settings_cache_no_record)
         return SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()).format(Date(epochMs))
     }
 

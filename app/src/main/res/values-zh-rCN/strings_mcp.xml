@@ -74,6 +74,7 @@
     <string name="mcp_toast_logs_export_failed">日志导出失败: %1$s</string>
     <string name="mcp_toast_saved_requires_restart">已保存，修改将在下次启动或重启服务后生效</string>
     <string name="mcp_toast_token_reset_reconnect">Token 已重置，需重连客户端</string>
+    <string name="mcp_error_port_in_use">端口 %1$d 已被占用: %2$s</string>
     <string name="mcp_log_label">Log</string>
     <string name="mcp_log_empty">暂无日志</string>
     <string name="mcp_uptime_days_hours">%1$dd %2$dh</string>

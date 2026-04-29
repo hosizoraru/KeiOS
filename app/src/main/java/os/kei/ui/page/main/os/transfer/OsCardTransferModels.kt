@@ -1,7 +1,10 @@
 package os.kei.ui.page.main.os.transfer
 
+import android.content.Context
+import androidx.annotation.StringRes
 import org.json.JSONArray
 import org.json.JSONObject
+import os.kei.R
 import os.kei.ui.page.main.os.state.OsCardImportTarget
 import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
@@ -13,6 +16,27 @@ internal enum class OsCardImportFileKind {
     Activity,
     Shell,
     Unknown
+}
+
+internal enum class OsCardImportError(@param:StringRes val messageRes: Int, val code: String) {
+    EmptyFile(R.string.os_import_error_empty_file, "OS_CARD_IMPORT_EMPTY_FILE"),
+    MissingData(R.string.os_import_error_missing_data, "OS_CARD_IMPORT_MISSING_DATA"),
+    NoImportableData(R.string.os_import_error_no_importable_data, "OS_CARD_IMPORT_NO_IMPORTABLE_DATA"),
+    NoValidActivityCards(R.string.os_import_error_no_valid_activity_cards, "OS_CARD_IMPORT_NO_VALID_ACTIVITY_CARDS"),
+    NoValidShellCards(R.string.os_import_error_no_valid_shell_cards, "OS_CARD_IMPORT_NO_VALID_SHELL_CARDS")
+}
+
+internal class OsCardImportException(
+    val importError: OsCardImportError
+) : IllegalArgumentException(importError.code)
+
+internal fun Throwable.localizedOsCardImportMessage(context: Context): String {
+    val error = this as? OsCardImportException
+    return if (error != null) {
+        context.getString(error.importError.messageRes)
+    } else {
+        message ?: javaClass.simpleName
+    }
 }
 
 internal data class OsCardImportRoot(
@@ -88,7 +112,7 @@ internal fun OsCardImportTarget.expectedFileKind(): OsCardImportFileKind {
 internal fun parseOsCardImportRoot(raw: String): OsCardImportRoot {
     val normalizedRaw = raw.trim()
     if (normalizedRaw.isBlank()) {
-        throw IllegalArgumentException("文件内容为空")
+        throw OsCardImportException(OsCardImportError.EmptyFile)
     }
     if (normalizedRaw.startsWith("[")) {
         val items = JSONArray(normalizedRaw)
@@ -101,7 +125,7 @@ internal fun parseOsCardImportRoot(raw: String): OsCardImportRoot {
     }
     val root = JSONObject(normalizedRaw)
     val items = root.optJSONArray("items")
-        ?: throw IllegalArgumentException("未找到可导入的数据")
+        ?: throw OsCardImportException(OsCardImportError.MissingData)
     val declaredSchema = root.optString("schema").trim().ifBlank {
         root.optString("format").trim()
     }

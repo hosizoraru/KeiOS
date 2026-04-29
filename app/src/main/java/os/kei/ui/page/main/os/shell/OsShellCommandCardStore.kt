@@ -2,6 +2,8 @@ package os.kei.ui.page.main.os.shell
 
 import com.tencent.mmkv.MMKV
 import os.kei.ui.page.main.os.transfer.OS_SHELL_CARD_EXPORT_SCHEMA
+import os.kei.ui.page.main.os.transfer.OsCardImportError
+import os.kei.ui.page.main.os.transfer.OsCardImportException
 import os.kei.ui.page.main.os.transfer.OsCardImportRoot
 import os.kei.ui.page.main.os.transfer.OsShellCardImportPayload
 import org.json.JSONArray
@@ -419,7 +421,7 @@ internal object OsShellCommandCardStore {
     fun importCardsFromJsonMerged(raw: String): OsShellCardImportMergeResult {
         val payload = parseCardsImport(root = os.kei.ui.page.main.os.transfer.parseOsCardImportRoot(raw))
         if (payload.cards.isEmpty()) {
-            throw IllegalArgumentException("文件中没有有效的 shell card")
+            throw OsCardImportException(OsCardImportError.NoValidShellCards)
         }
         return applyImportedCards(payload = payload, existingCards = loadCards())
     }
