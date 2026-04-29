@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.ui.page.main.github.actions.GitHubActionsUiStateStore
 import os.kei.ui.page.main.github.query.DownloaderOption
 import os.kei.ui.page.main.github.query.OnlineShareTargetOption
 
@@ -69,7 +70,10 @@ internal class GitHubPageViewModel : ViewModel() {
     fun pageState(searchBarHideThresholdPx: Float): GitHubPageState {
         val current = pageState
         if (current != null) return current
-        return GitHubPageState(searchBarHideThresholdPx).also {
+        return GitHubPageState(
+            searchBarHideThresholdPx = searchBarHideThresholdPx,
+            actionsSectionExpansionState = GitHubActionsUiStateStore.loadSectionExpansionState()
+        ).also {
             pageState = it
             bindContentState(it)
         }

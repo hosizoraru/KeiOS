@@ -31,6 +31,7 @@ import os.kei.feature.github.model.InstalledAppItem
 import os.kei.ui.page.main.github.GitHubSortMode
 import os.kei.ui.page.main.github.OverviewRefreshState
 import os.kei.ui.page.main.github.VersionCheckUi
+import os.kei.ui.page.main.github.actions.GitHubActionsSectionExpansionState
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportAttachCandidate
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
 import os.kei.ui.page.main.github.share.GitHubShareImportPreview
@@ -39,7 +40,8 @@ import kotlinx.coroutines.Job
 
 @Stable
 internal class GitHubPageState(
-    private val searchBarHideThresholdPx: Float
+    private val searchBarHideThresholdPx: Float,
+    actionsSectionExpansionState: GitHubActionsSectionExpansionState = GitHubActionsSectionExpansionState()
 ) {
     var trackedSearch by mutableStateOf("")
     var repoUrlInput by mutableStateOf("")
@@ -66,8 +68,8 @@ internal class GitHubPageState(
     var actionsRuns by mutableStateOf<List<GitHubActionsRunMatch>>(emptyList())
     var actionsRunLimit by mutableStateOf(6)
     var actionsSelectedRunId by mutableStateOf<Long?>(null)
-    var actionsWorkflowsExpanded by mutableStateOf(false)
-    var actionsRunsExpanded by mutableStateOf(false)
+    var actionsWorkflowsExpanded by mutableStateOf(actionsSectionExpansionState.workflowsExpanded)
+    var actionsRunsExpanded by mutableStateOf(actionsSectionExpansionState.runsExpanded)
     var actionsArtifactsExpanded by mutableStateOf(true)
     var actionsDownloadHistory by mutableStateOf<List<GitHubActionsDownloadRecord>>(emptyList())
     var actionsRunTrackingPlans by mutableStateOf<Map<Long, GitHubActionsRunTrackingPlan>>(emptyMap())
@@ -302,8 +304,6 @@ internal class GitHubPageState(
         actionsRuns = emptyList()
         actionsRunLimit = 6
         actionsSelectedRunId = null
-        actionsWorkflowsExpanded = false
-        actionsRunsExpanded = false
         actionsArtifactsExpanded = true
         actionsDownloadHistory = emptyList()
         actionsRunTrackingPlans = emptyMap()

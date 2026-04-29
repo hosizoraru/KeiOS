@@ -100,6 +100,7 @@
     <string name="github_actions_action_open_run">打开 Run</string>
     <string name="github_actions_action_refresh_run">刷新 Run</string>
     <string name="github_actions_action_load_more_runs">更多 Runs（%1$d）</string>
+    <string name="github_actions_cd_copy_digest">复制 sha256</string>
     <string name="github_actions_cd_share_artifact">分享 %1$s</string>
     <string name="github_actions_share_artifact_title">分享 Actions artifact 链接</string>
     <string name="github_actions_action_need_token">需要 Token</string>
@@ -113,6 +114,7 @@
     <string name="github_actions_toast_download_failed">Actions artifact 下载失败：%1$s</string>
     <string name="github_actions_toast_share_started">已发送 Actions artifact 链接</string>
     <string name="github_actions_toast_share_failed">Actions artifact 分享失败：%1$s</string>
+    <string name="github_actions_toast_digest_copied">已复制 sha256</string>
     <string name="github_actions_toast_refresh_run_failed">Run 状态刷新失败：%1$s</string>
     <string name="github_actions_error_download_url_invalid">下载地址无效</string>
     <string name="github_msg_checking">检查中...</string>

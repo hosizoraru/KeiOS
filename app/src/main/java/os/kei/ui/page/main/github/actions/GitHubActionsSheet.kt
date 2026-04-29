@@ -1,6 +1,10 @@
 package os.kei.ui.page.main.github.actions
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -131,6 +135,7 @@ internal fun GitHubActionsSheet(
                 countLabel = stringResource(R.string.github_actions_value_count, workflows.size),
                 expanded = state.actionsWorkflowsExpanded,
                 accent = GitHubStatusPalette.Active,
+                isDark = isDark,
                 onExpandedChange = onWorkflowsExpandedChange
             ) {
                 when {
@@ -166,6 +171,7 @@ internal fun GitHubActionsSheet(
                 countLabel = stringResource(R.string.github_actions_label_runs_with_count, state.actionsRuns.size),
                 expanded = state.actionsRunsExpanded,
                 accent = GitHubStatusPalette.Update,
+                isDark = isDark,
                 onExpandedChange = onRunsExpandedChange
             ) {
                 when {
@@ -222,6 +228,7 @@ internal fun GitHubActionsSheet(
                 ),
                 expanded = state.actionsArtifactsExpanded,
                 accent = GitHubStatusPalette.PreRelease,
+                isDark = isDark,
                 onExpandedChange = onArtifactsExpandedChange
             ) {
                 if (selectedRun != null) {
@@ -456,6 +463,16 @@ private fun GitHubActionsArtifactCard(
     val busy = downloading || sharing
     val canDownload = hasToken && runMatch.traits.completed && !artifact.expired && !busy
     val canShare = hasToken && runMatch.traits.completed && !artifact.expired && !busy
+    val copyDigestLabel = stringResource(R.string.github_actions_cd_copy_digest)
+    val digestCopiedToast = stringResource(R.string.github_actions_toast_digest_copied)
+    val hasDigest = artifact.digest.isNotBlank()
+    val digestText = if (hasDigest) {
+        shortArtifactDigest(artifact.digest)
+    } else {
+        formatReleaseUpdatedAtNoYear(artifact.updatedAtMillis)
+            ?: stringResource(R.string.common_unknown)
+    }
+    val artifactSizeLabel = formatAssetSize(artifact.sizeBytes, context)
     GitHubActionsSelectableCard(
         selected = false,
         accent = accent,
@@ -465,18 +482,12 @@ private fun GitHubActionsArtifactCard(
         GitHubActionsTitleRow(
             title = artifact.name,
             accent = MiuixTheme.colorScheme.onBackground,
-            trailing = {
-                StatusPill(
-                    label = artifactKindLabel(artifactMatch.traits.kind),
-                    color = accent,
-                    size = AppStatusPillSize.Compact
-                )
-            }
+            trailing = {}
         )
         GitHubActionsPillRow {
             StatusPill(
-                label = formatAssetSize(artifact.sizeBytes, context),
-                color = MiuixTheme.colorScheme.primary
+                label = artifactKindLabel(artifactMatch.traits.kind),
+                color = accent
             )
             artifactMatch.traits.abi.takeIf { it.isNotBlank() }?.let { abi ->
                 StatusPill(label = abi, color = GitHubStatusPalette.Active)
@@ -524,12 +535,28 @@ private fun GitHubActionsArtifactCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = artifact.digest.ifBlank {
-                    formatReleaseUpdatedAtNoYear(artifact.updatedAtMillis)
-                        ?: stringResource(R.string.common_unknown)
+                text = digestText,
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (hasDigest) {
+                            Modifier.clickable(onClickLabel = copyDigestLabel) {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                    as? ClipboardManager
+                                clipboard?.setPrimaryClip(
+                                    ClipData.newPlainText("sha256", artifact.digest)
+                                )
+                                Toast.makeText(context, digestCopiedToast, Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Modifier
+                        }
+                    ),
+                color = if (hasDigest) {
+                    MiuixTheme.colorScheme.primary
+                } else {
+                    MiuixTheme.colorScheme.onBackgroundVariant
                 },
-                modifier = Modifier.weight(1f),
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight,
                 maxLines = 1,
@@ -542,13 +569,14 @@ private fun GitHubActionsArtifactCard(
                     hasToken = hasToken,
                     completed = runMatch.traits.completed,
                     expired = artifact.expired,
-                    downloading = downloading
+                    downloading = downloading,
+                    readyLabel = artifactSizeLabel
                 ),
                 leadingIcon = appLucideDownloadIcon(),
                 enabled = canDownload,
                 textColor = accent,
                 iconTint = accent,
-                modifier = Modifier.widthIn(min = 96.dp),
+                modifier = Modifier.widthIn(min = 104.dp),
                 onClick = onDownload,
                 textMaxLines = 1,
                 textOverflow = TextOverflow.Ellipsis
@@ -887,15 +915,27 @@ private fun artifactDownloadLabel(
     hasToken: Boolean,
     completed: Boolean,
     expired: Boolean,
-    downloading: Boolean
+    downloading: Boolean,
+    readyLabel: String
 ): String {
     return when {
         downloading -> stringResource(R.string.github_actions_action_downloading)
         !hasToken -> stringResource(R.string.github_actions_action_need_token)
         expired -> stringResource(R.string.github_actions_action_expired)
         !completed -> stringResource(R.string.github_actions_action_wait_run)
-        else -> stringResource(R.string.common_download)
+        else -> readyLabel
     }
+}
+
+private fun shortArtifactDigest(digest: String): String {
+    val trimmed = digest.trim()
+    val prefix = trimmed.substringBefore(':', missingDelimiterValue = "")
+        .takeIf { ':' in trimmed }
+        ?.let { "$it:" }
+        .orEmpty()
+    val value = if (prefix.isBlank()) trimmed else trimmed.substringAfter(':')
+    if (value.length <= 18) return trimmed
+    return "$prefix${value.take(8)}...${value.takeLast(4)}"
 }
 
 private const val ACTIONS_MAX_RUN_LIMIT = 30

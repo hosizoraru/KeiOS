@@ -71,6 +71,10 @@ internal class GitHubPageActions(
 
     fun loadMoreActionsRuns() = actionsActions.loadMoreActionsRuns()
 
+    fun setActionsWorkflowsExpanded(value: Boolean) = actionsActions.setWorkflowsExpanded(value)
+
+    fun setActionsRunsExpanded(value: Boolean) = actionsActions.setRunsExpanded(value)
+
     fun refreshActionsRunStatus(runId: Long) = actionsActions.refreshActionsRunStatus(runId)
 
     fun downloadActionsArtifact(runId: Long, artifactId: Long) =

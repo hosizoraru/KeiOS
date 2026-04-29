@@ -1,7 +1,6 @@
 package os.kei.ui.page.main.github.actions
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -157,6 +156,7 @@ internal fun GitHubActionsCollapsibleSection(
     countLabel: String,
     expanded: Boolean,
     accent: Color,
+    isDark: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -164,45 +164,57 @@ internal fun GitHubActionsCollapsibleSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onExpandedChange(!expanded) },
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        SheetSurfaceCard(
+            containerColor = GitHubStatusPalette.tonedSurface(accent, isDark).copy(
+                alpha = if (expanded) {
+                    if (isDark) 0.24f else 0.13f
+                } else {
+                    if (isDark) 0.16f else 0.08f
+                }
+            ),
+            borderColor = accent.copy(alpha = if (expanded) 0.30f else 0.18f),
+            verticalSpacing = 0.dp,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+            onClick = { onExpandedChange(!expanded) }
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = title,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    fontSize = AppTypographyTokens.CardHeader.fontSize,
-                    lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                    fontWeight = AppTypographyTokens.CardHeader.fontWeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = summary,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = title,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        fontSize = AppTypographyTokens.CardHeader.fontSize,
+                        lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                        fontWeight = AppTypographyTokens.CardHeader.fontWeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = summary,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        fontSize = AppTypographyTokens.Supporting.fontSize,
+                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                StatusPill(label = countLabel, color = accent)
+                AppCompactIconAction(
+                    icon = if (expanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
+                    contentDescription = stringResource(
+                        if (expanded) R.string.common_collapse else R.string.common_expand
+                    ),
+                    tint = accent,
+                    minSize = 40.dp,
+                    onClick = { onExpandedChange(!expanded) }
                 )
             }
-            StatusPill(label = countLabel, color = accent)
-            AppCompactIconAction(
-                icon = if (expanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
-                contentDescription = stringResource(
-                    if (expanded) R.string.common_collapse else R.string.common_expand
-                ),
-                tint = accent,
-                minSize = 40.dp,
-                onClick = { onExpandedChange(!expanded) }
-            )
         }
         AnimatedVisibility(
             visible = expanded,

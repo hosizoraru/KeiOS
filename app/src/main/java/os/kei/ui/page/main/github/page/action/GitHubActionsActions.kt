@@ -20,6 +20,7 @@ import os.kei.feature.github.model.GitHubActionsWorkflowArtifactsSnapshot
 import os.kei.feature.github.model.GitHubActionsWorkflowMatch
 import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.ui.page.main.github.actions.GitHubActionsUiStateStore
 
 internal class GitHubActionsActions(
     private val env: GitHubPageActionEnvironment
@@ -86,6 +87,16 @@ internal class GitHubActionsActions(
                 keepCurrentRunsWhileLoading = true
             )
         }
+    }
+
+    fun setWorkflowsExpanded(value: Boolean) {
+        state.actionsWorkflowsExpanded = value
+        GitHubActionsUiStateStore.setWorkflowsExpanded(value)
+    }
+
+    fun setRunsExpanded(value: Boolean) {
+        state.actionsRunsExpanded = value
+        GitHubActionsUiStateStore.setRunsExpanded(value)
     }
 
     fun selectActionsRun(runId: Long) {
