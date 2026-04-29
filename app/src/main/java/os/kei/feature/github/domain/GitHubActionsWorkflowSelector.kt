@@ -96,6 +96,15 @@ object GitHubActionsWorkflowSelector {
                 .filter { it.isNotBlank() }
                 .groupingBy { it }
                 .eachCount(),
+            branchArtifactCounts = runs
+                .asSequence()
+                .map { runArtifacts ->
+                    runArtifacts.run.headBranch.trim() to
+                        runArtifacts.artifacts.count { artifact -> !artifact.expired }
+                }
+                .filter { (branch, count) -> branch.isNotBlank() && count > 0 }
+                .groupBy({ it.first }, { it.second })
+                .mapValues { (_, counts) -> counts.sum() },
             artifactNames = artifacts.map { it.name }.distinct()
         )
     }

@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.feature.github.data.remote.GitHubReleaseAssetBundle
+import os.kei.feature.github.model.GitHubActionsBranchOption
 import os.kei.feature.github.model.GitHubActionsDownloadRecord
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.feature.github.model.GitHubActionsRunTrackingPlan
@@ -60,14 +61,19 @@ internal class GitHubPageState(
     var actionsError by mutableStateOf<String?>(null)
     var actionsAuthMode by mutableStateOf<GitHubApiAuthMode?>(null)
     var actionsDefaultBranch by mutableStateOf("")
+    var actionsSelectedBranch by mutableStateOf("")
+    var actionsBranchManuallySelected by mutableStateOf(false)
+    var actionsBranchOptions by mutableStateOf<List<GitHubActionsBranchOption>>(emptyList())
     var actionsRawWorkflows by mutableStateOf<List<GitHubActionsWorkflow>>(emptyList())
     var actionsWorkflowSignals by mutableStateOf<Map<Long, GitHubActionsWorkflowArtifactSignal>>(emptyMap())
     var actionsWorkflows by mutableStateOf<List<GitHubActionsWorkflowMatch>>(emptyList())
     var actionsSelectedWorkflowId by mutableStateOf<Long?>(null)
+    var actionsWorkflowManuallySelected by mutableStateOf(false)
     var actionsSnapshot by mutableStateOf<GitHubActionsWorkflowArtifactsSnapshot?>(null)
     var actionsRuns by mutableStateOf<List<GitHubActionsRunMatch>>(emptyList())
     var actionsRunLimit by mutableStateOf(6)
     var actionsSelectedRunId by mutableStateOf<Long?>(null)
+    var actionsBranchesExpanded by mutableStateOf(actionsSectionExpansionState.branchesExpanded)
     var actionsWorkflowsExpanded by mutableStateOf(actionsSectionExpansionState.workflowsExpanded)
     var actionsRunsExpanded by mutableStateOf(actionsSectionExpansionState.runsExpanded)
     var actionsArtifactsExpanded by mutableStateOf(true)
@@ -298,10 +304,14 @@ internal class GitHubPageState(
         actionsError = null
         actionsAuthMode = null
         actionsDefaultBranch = ""
+        actionsSelectedBranch = ""
+        actionsBranchManuallySelected = false
+        actionsBranchOptions = emptyList()
         actionsRawWorkflows = emptyList()
         actionsWorkflowSignals = emptyMap()
         actionsWorkflows = emptyList()
         actionsSelectedWorkflowId = null
+        actionsWorkflowManuallySelected = false
         actionsSnapshot = null
         actionsRuns = emptyList()
         actionsRunLimit = 6

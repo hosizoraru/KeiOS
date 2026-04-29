@@ -50,6 +50,7 @@
     <string name="github_actions_menu">Actions</string>
     <string name="github_actions_sheet_title">Actions</string>
     <string name="github_actions_sheet_cd_refresh">刷新 Actions</string>
+    <string name="github_actions_section_branch">Branch</string>
     <string name="github_actions_section_workflows">Workflows</string>
     <string name="github_actions_section_runs">Runs</string>
     <string name="github_actions_section_artifacts">Artifacts</string>
@@ -64,8 +65,10 @@
     <string name="github_actions_value_run_number">#%1$d</string>
     <string name="github_actions_value_run_attempt">第 %1$d 次</string>
     <string name="github_actions_loading_workflows">正在读取 workflows 与最近 runs...</string>
+    <string name="github_actions_loading_branches">正在判断活跃分支...</string>
     <string name="github_actions_loading_runs">正在读取 run 与 artifact...</string>
     <string name="github_actions_loading_artifacts">正在读取该 run 的 artifact...</string>
+    <string name="github_actions_empty_branches">读取 workflow 后显示分支</string>
     <string name="github_actions_empty_workflows">该仓库当前没有可展示的 active workflow</string>
     <string name="github_actions_empty_runs">当前 workflow 没有可展示的 run</string>
     <string name="github_actions_empty_artifacts">当前 run 没有可展示的 artifact</string>
@@ -77,6 +80,7 @@
     <string name="github_actions_hint_token_required">下载 Actions artifact 需要填写 GitHub token</string>
     <string name="github_actions_hint_run_in_progress">该 run 仍在执行，完成后会自动刷新状态，也可手动刷新</string>
     <string name="github_actions_badge_recommended">推荐</string>
+    <string name="github_actions_badge_current">当前</string>
     <string name="github_actions_badge_last_downloaded">上次下载</string>
     <string name="github_actions_badge_running">运行中</string>
     <string name="github_actions_badge_queued">排队</string>

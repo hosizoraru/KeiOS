@@ -67,9 +67,13 @@ internal class GitHubPageActions(
 
     fun selectActionsWorkflow(workflowId: Long) = actionsActions.selectActionsWorkflow(workflowId)
 
+    fun selectActionsBranch(branch: String) = actionsActions.selectActionsBranch(branch)
+
     fun selectActionsRun(runId: Long) = actionsActions.selectActionsRun(runId)
 
     fun loadMoreActionsRuns() = actionsActions.loadMoreActionsRuns()
+
+    fun setActionsBranchesExpanded(value: Boolean) = actionsActions.setBranchesExpanded(value)
 
     fun setActionsWorkflowsExpanded(value: Boolean) = actionsActions.setWorkflowsExpanded(value)
 

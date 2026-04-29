@@ -17,8 +17,10 @@ internal fun GitHubActionsSheetContent(
     state: GitHubPageState,
     backdrop: LayerBackdrop,
     onSelectWorkflow: (Long) -> Unit,
+    onSelectBranch: (String) -> Unit,
     onSelectRun: (Long) -> Unit,
     onLoadMoreRuns: () -> Unit,
+    onBranchesExpandedChange: (Boolean) -> Unit,
     onWorkflowsExpandedChange: (Boolean) -> Unit,
     onRunsExpandedChange: (Boolean) -> Unit,
     onArtifactsExpandedChange: (Boolean) -> Unit,
@@ -67,6 +69,13 @@ internal fun GitHubActionsSheetContent(
                 isDark = isDark
             )
         }
+
+        GitHubActionsBranchSection(
+            state = state,
+            isDark = isDark,
+            onExpandedChange = onBranchesExpandedChange,
+            onSelectBranch = onSelectBranch
+        )
 
         GitHubActionsWorkflowsSection(
             state = state,

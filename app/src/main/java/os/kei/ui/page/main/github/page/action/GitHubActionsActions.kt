@@ -6,6 +6,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import os.kei.R
+import os.kei.feature.github.domain.GitHubActionsBranchSelector
 import os.kei.feature.github.domain.GitHubActionsWorkflowSelector
 import os.kei.feature.github.model.GitHubActionsArtifactSelectionOptions
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
@@ -61,7 +62,11 @@ internal class GitHubActionsActions(
             ?.workflow
             ?: return
         state.actionsSelectedWorkflowId = workflow.id
+        state.actionsWorkflowManuallySelected = true
         state.actionsRunLimit = DEFAULT_RUN_LIMIT
+        state.actionsSelectedBranch = ""
+        state.actionsBranchManuallySelected = false
+        state.actionsBranchOptions = emptyList()
         state.actionsSelectedRunId = null
         state.actionsRunWatchJob?.cancel()
         scope.launch {
@@ -88,6 +93,31 @@ internal class GitHubActionsActions(
                 keepCurrentRunsWhileLoading = true
             )
         }
+    }
+
+    fun selectActionsBranch(branch: String) {
+        val item = state.actionsTargetItem ?: return
+        val workflow = selectedWorkflowMatch()?.workflow ?: return
+        val normalized = branch.trim()
+        if (normalized.isBlank()) return
+        if (state.actionsSelectedBranch.equals(normalized, ignoreCase = true)) return
+        state.actionsSelectedBranch = normalized
+        state.actionsBranchManuallySelected = true
+        state.actionsRunLimit = DEFAULT_RUN_LIMIT
+        state.actionsSelectedRunId = null
+        state.actionsRunWatchJob?.cancel()
+        scope.launch {
+            loadWorkflowSnapshot(
+                item = item,
+                workflow = workflow,
+                preferredRunId = null
+            )
+        }
+    }
+
+    fun setBranchesExpanded(value: Boolean) {
+        state.actionsBranchesExpanded = value
+        GitHubActionsUiStateStore.setBranchesExpanded(value)
     }
 
     fun setWorkflowsExpanded(value: Boolean) {
@@ -140,10 +170,14 @@ internal class GitHubActionsActions(
         state.actionsRunsLoading = false
         state.actionsError = null
         state.actionsDefaultBranch = ""
+        state.actionsSelectedBranch = ""
+        state.actionsBranchManuallySelected = false
+        state.actionsBranchOptions = emptyList()
         state.actionsRawWorkflows = emptyList()
         state.actionsWorkflowSignals = emptyMap()
         state.actionsWorkflows = emptyList()
         state.actionsSelectedWorkflowId = null
+        state.actionsWorkflowManuallySelected = false
         state.actionsSnapshot = null
         state.actionsRuns = emptyList()
         state.actionsSelectedRunId = null
@@ -183,6 +217,7 @@ internal class GitHubActionsActions(
             if (!isCurrentTarget(item)) return
             state.actionsDownloadHistory = history
             state.actionsDefaultBranch = info.defaultBranch
+            state.actionsSelectedBranch = info.defaultBranch
             state.actionsAuthMode = infoTrace.authMode
             state.actionsAuthMode = workflowsTrace.authMode ?: state.actionsAuthMode
 
@@ -206,6 +241,7 @@ internal class GitHubActionsActions(
                 ?: state.actionsWorkflows.firstOrNull()
             if (selectedWorkflow != null) {
                 state.actionsSelectedWorkflowId = selectedWorkflow.workflow.id
+                state.actionsWorkflowManuallySelected = false
                 state.actionsRunLimit = DEFAULT_RUN_LIMIT
                 loadWorkflowSnapshot(
                     item = item,
@@ -242,7 +278,8 @@ internal class GitHubActionsActions(
     ) {
         val cachedSignals = state.actionsWorkflowSignals
         val missingCandidateWorkflows = candidateWorkflows.filter { workflow ->
-            workflow.id !in cachedSignals
+            val signal = cachedSignals[workflow.id]
+            signal == null || signal.nonExpiredArtifactCount == 0
         }
         if (missingCandidateWorkflows.isEmpty()) return
         val expectedWorkflowIds = workflows.map { it.id }
@@ -270,7 +307,60 @@ internal class GitHubActionsActions(
             state.actionsAuthMode = signalsTrace.authMode ?: state.actionsAuthMode
             state.actionsWorkflowSignals = mergedSignals
             state.actionsWorkflows = updatedWorkflows
+            val autoSwitchedWorkflow = autoSwitchWorkflowFromSignals(
+                item = item,
+                updatedWorkflows = updatedWorkflows,
+                mergedSignals = mergedSignals
+            )
+            if (autoSwitchedWorkflow) return@launch
+            val selectedWorkflow = state.actionsSelectedWorkflowId
+                ?.let { id -> updatedWorkflows.firstOrNull { it.workflow.id == id } }
+                ?.workflow
+            if (selectedWorkflow != null && !state.actionsBranchManuallySelected) {
+                val previousBranch = selectedBranchForRequest()
+                refreshBranchSelection(
+                    workflow = selectedWorkflow,
+                    snapshot = state.actionsSnapshot
+                )
+                val nextBranch = selectedBranchForRequest()
+                if (!previousBranch.equals(nextBranch, ignoreCase = true)) {
+                    state.actionsRunLimit = DEFAULT_RUN_LIMIT
+                    loadWorkflowSnapshot(
+                        item = item,
+                        workflow = selectedWorkflow,
+                        preferredRunId = null
+                    )
+                }
+            }
         }
+    }
+
+    private suspend fun autoSwitchWorkflowFromSignals(
+        item: GitHubTrackedApp,
+        updatedWorkflows: List<GitHubActionsWorkflowMatch>,
+        mergedSignals: Map<Long, os.kei.feature.github.model.GitHubActionsWorkflowArtifactSignal>
+    ): Boolean {
+        if (state.actionsWorkflowManuallySelected) return false
+        val currentWorkflowId = state.actionsSelectedWorkflowId ?: return false
+        val recommended = updatedWorkflows.firstOrNull() ?: return false
+        if (recommended.workflow.id == currentWorkflowId) return false
+        val currentSignal = mergedSignals[currentWorkflowId]
+        val recommendedSignal = mergedSignals[recommended.workflow.id]
+        val currentHasArtifacts = (currentSignal?.nonExpiredArtifactCount ?: 0) > 0 ||
+            state.actionsSnapshot?.artifacts.orEmpty().any { artifact -> !artifact.expired }
+        val recommendedHasArtifacts = (recommendedSignal?.nonExpiredArtifactCount ?: 0) > 0
+        if (currentHasArtifacts || !recommendedHasArtifacts) return false
+        state.actionsSelectedWorkflowId = recommended.workflow.id
+        state.actionsSelectedBranch = ""
+        state.actionsBranchManuallySelected = false
+        state.actionsBranchOptions = emptyList()
+        state.actionsRunLimit = DEFAULT_RUN_LIMIT
+        loadWorkflowSnapshot(
+            item = item,
+            workflow = recommended.workflow,
+            preferredRunId = null
+        )
+        return true
     }
 
     private suspend fun loadWorkflowSnapshot(
@@ -289,7 +379,12 @@ internal class GitHubActionsActions(
             state.actionsRunTrackingPlans = emptyMap()
             state.actionsStatusRefreshingRunIds.clear()
         }
+        refreshBranchSelection(
+            workflow = workflow,
+            snapshot = if (keepCurrentRunsWhileLoading) state.actionsSnapshot else null
+        )
         try {
+            val branch = selectedBranchForRequest()
             val snapshotTrace = actionsRepository.fetchGitHubActionsWorkflowArtifactSnapshot(
                 owner = item.owner,
                 repo = item.repo,
@@ -298,7 +393,7 @@ internal class GitHubActionsActions(
                 runLimit = state.actionsRunLimit.coerceIn(DEFAULT_RUN_LIMIT, MAX_RUN_LIMIT),
                 artifactsPerRun = ARTIFACTS_PER_RUN,
                 artifactRunLimit = INITIAL_ARTIFACT_RUN_LIMIT,
-                branch = state.actionsDefaultBranch
+                branch = branch
             )
             val snapshot = snapshotTrace.result.getOrThrow()
             if (!isCurrentTarget(item) || state.actionsSelectedWorkflowId != workflow.id) return
@@ -312,6 +407,10 @@ internal class GitHubActionsActions(
             state.actionsRuns = runMatches
             state.actionsRunTrackingPlans = buildTrackingPlans(runMatches)
             updateWorkflowSignalFromSnapshot(
+                workflow = workflow,
+                snapshot = snapshot
+            )
+            refreshBranchSelection(
                 workflow = workflow,
                 snapshot = snapshot
             )
@@ -357,6 +456,30 @@ internal class GitHubActionsActions(
             signals = mergedSignals,
             history = state.actionsDownloadHistory
         )
+    }
+
+    private fun refreshBranchSelection(
+        workflow: GitHubActionsWorkflow,
+        snapshot: GitHubActionsWorkflowArtifactsSnapshot?
+    ) {
+        val signal = state.actionsWorkflowSignals[workflow.id]
+        val options = GitHubActionsBranchSelector.buildOptions(
+            defaultBranch = state.actionsDefaultBranch,
+            workflow = workflow,
+            signal = signal,
+            snapshot = snapshot
+        )
+        state.actionsBranchOptions = options
+        if (state.actionsBranchManuallySelected && state.actionsSelectedBranch.isNotBlank()) {
+            return
+        }
+        val recommendedBranch = GitHubActionsBranchSelector.recommendBranch(
+            defaultBranch = state.actionsDefaultBranch,
+            workflow = workflow,
+            signal = signal,
+            snapshot = snapshot
+        )
+        state.actionsSelectedBranch = recommendedBranch.ifBlank { state.actionsDefaultBranch }
     }
 
     private fun loadRunArtifactsIfNeeded(
@@ -556,11 +679,15 @@ internal class GitHubActionsActions(
         }
     }
 
+    private fun selectedBranchForRequest(): String {
+        return state.actionsSelectedBranch.trim().ifBlank { state.actionsDefaultBranch.trim() }
+    }
+
     private fun preferredBranchesForRunSelection(): Set<String> {
         val baseBranches = if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
-            listOf(state.actionsDefaultBranch, "dev", "develop")
+            listOf(selectedBranchForRequest(), state.actionsDefaultBranch, "dev", "develop")
         } else {
-            listOf(state.actionsDefaultBranch)
+            listOf(selectedBranchForRequest(), state.actionsDefaultBranch)
         }
         return baseBranches
             .map { branch -> branch.trim() }

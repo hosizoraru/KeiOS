@@ -220,7 +220,16 @@ data class GitHubActionsWorkflowArtifactSignal(
     val recommendedRunEvent: String = "",
     val recommendedArtifactCount: Int = 0,
     val branchRunCounts: Map<String, Int> = emptyMap(),
+    val branchArtifactCounts: Map<String, Int> = emptyMap(),
     val artifactNames: List<String> = emptyList()
+)
+
+data class GitHubActionsBranchOption(
+    val name: String,
+    val runCount: Int = 0,
+    val artifactCount: Int = 0,
+    val defaultBranch: Boolean = false,
+    val recommended: Boolean = false
 )
 
 data class GitHubActionsWorkflowSelectionOptions(
