@@ -1,29 +1,14 @@
 package os.kei.ui.page.main.student.page
 
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -48,14 +33,12 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.exoplayer.ExoPlayer
 import os.kei.R
+import os.kei.ui.page.main.host.pager.shouldReduceBottomBarEffectsDuringMotion
 import os.kei.ui.page.main.student.createGameKeeMediaSourceFactory
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.component.BaStudentGuideBottomBar
@@ -78,22 +61,15 @@ import os.kei.ui.page.main.student.page.state.GuideDetailTabRequestStore
 import os.kei.ui.perf.ReportPagerPerformanceState
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
-import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBar
-import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
-import os.kei.ui.page.main.widget.motion.appFloatingEnter
-import os.kei.ui.page.main.widget.motion.appFloatingExit
-import os.kei.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
-import os.kei.core.prefs.UiPrefs
 import os.kei.core.ui.effect.getMiuixAppBarColor
 import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -105,6 +81,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun BaStudentGuidePage(
+    liquidBottomBarEnabled: Boolean = true,
+    bottomBarScrollEffectReductionEnabled: Boolean = false,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     preloadingEnabled: Boolean = false,
     onBack: () -> Unit
@@ -209,8 +187,8 @@ fun BaStudentGuidePage(
         animationsEnabled = transitionAnimationsEnabled
     )
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
+    var activeListScrollInProgress by remember { mutableStateOf(false) }
     val farJumpAlpha = remember { Animatable(1f) }
     val selectBottomTabAction = rememberBaStudentGuideTabSelectCoordinator(
         bottomTabs = bottomTabsList,
@@ -245,6 +223,9 @@ fun BaStudentGuidePage(
                 return Offset.Zero
             }
         }
+    }
+    LaunchedEffect(selectedBottomTabIndex) {
+        activeListScrollInProgress = false
     }
     val pageTitle = info?.title?.ifBlank { defaultPageTitle } ?: defaultPageTitle
     val voicePlayer = remember(context, sourceUrl) {
@@ -377,6 +358,11 @@ fun BaStudentGuidePage(
                     selectedPage = pagerState.targetPage,
                     selectedPageProvider = { pagerState.targetPage },
                     backdrop = navBackdrop,
+                    reduceEffectsDuringPagerScroll = shouldReduceBottomBarEffectsDuringMotion(
+                        scrollEffectReductionEnabled = bottomBarScrollEffectReductionEnabled,
+                        pagerScrollInProgress = pagerState.isScrollInProgress,
+                        activePageListScrollInProgress = activeListScrollInProgress
+                    ),
                     isLiquidEffectEnabled = liquidBottomBarEnabled,
                     onSelectTab = selectBottomTabAction
                 )
@@ -408,6 +394,9 @@ fun BaStudentGuidePage(
                 onSaveMedia = pageActions.saveGuideMedia,
                 onSaveMediaPack = pageActions.saveGuideMediaPack,
                 onToggleVoicePlayback = pageActions.toggleVoicePlayback,
+                onListScrollInProgressChange = { scrolling ->
+                    activeListScrollInProgress = scrolling
+                },
                 onSelectedVoiceLanguageChange = { selectedVoiceLanguage = it }
             )
         }

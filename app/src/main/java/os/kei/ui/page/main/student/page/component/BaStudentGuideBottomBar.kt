@@ -36,6 +36,7 @@ internal fun BaStudentGuideBottomBar(
     selectedPage: Int,
     selectedPageProvider: () -> Int,
     backdrop: LayerBackdrop,
+    reduceEffectsDuringPagerScroll: Boolean,
     isLiquidEffectEnabled: Boolean,
     onSelectTab: (Int) -> Unit
 ) {
@@ -111,6 +112,7 @@ internal fun BaStudentGuideBottomBar(
                 },
                 backdrop = backdrop,
                 tabsCount = bottomTabs.size,
+                reduceEffectsDuringPagerScroll = reduceEffectsDuringPagerScroll,
                 isLiquidEffectEnabled = isLiquidEffectEnabled,
                 content = bottomBarTabs
             )

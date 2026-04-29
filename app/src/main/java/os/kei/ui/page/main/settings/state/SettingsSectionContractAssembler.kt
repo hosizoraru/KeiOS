@@ -188,7 +188,7 @@ internal fun rememberSettingsSectionContractBundle(
         SettingsComponentEffectsSectionState(
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
             liquidBottomBarEnabled = liquidBottomBarEnabled,
-            bottomBarScrollEffectReductionEnabled = bottomBarScrollEffectReductionEnabled,
+            bottomBarFullEffectDuringScrollEnabled = !bottomBarScrollEffectReductionEnabled,
             liquidGlassSwitchEnabled = liquidGlassSwitchEnabled,
             cardPressFeedbackEnabled = cardPressFeedbackEnabled
         )
@@ -203,7 +203,9 @@ internal fun rememberSettingsSectionContractBundle(
         SettingsComponentEffectsSectionActions(
             onLiquidActionBarLayeredStyleChanged = onLiquidActionBarLayeredStyleChanged,
             onLiquidBottomBarChanged = onLiquidBottomBarChanged,
-            onBottomBarScrollEffectReductionChanged = onBottomBarScrollEffectReductionChanged,
+            onBottomBarFullEffectDuringScrollChanged = { enabled ->
+                onBottomBarScrollEffectReductionChanged(!enabled)
+            },
             onLiquidGlassSwitchChanged = onLiquidGlassSwitchChanged,
             onCardPressFeedbackChanged = onCardPressFeedbackChanged
         )

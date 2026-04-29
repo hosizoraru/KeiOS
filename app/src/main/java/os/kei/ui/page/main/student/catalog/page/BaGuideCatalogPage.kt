@@ -46,9 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
-import os.kei.core.prefs.UiPrefs
 import os.kei.core.ui.effect.getMiuixAppBarColor
 import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
+import os.kei.ui.page.main.host.pager.shouldReduceBottomBarEffectsDuringMotion
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideSortIcon
@@ -112,6 +112,8 @@ private enum class BaGuideCatalogPageTab(
 fun BaGuideCatalogPage(
     onBack: () -> Unit,
     onOpenGuide: (String) -> Unit,
+    liquidBottomBarEnabled: Boolean = true,
+    bottomBarScrollEffectReductionEnabled: Boolean = false,
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     preloadingEnabled: Boolean = false,
     enableSearchBar: Boolean = true,
@@ -202,7 +204,6 @@ fun BaGuideCatalogPage(
     }
 
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val liquidBottomBarEnabled = remember { UiPrefs.isLiquidBottomBarEnabled() }
     var showBottomBar by remember { mutableStateOf(true) }
     val farJumpAlpha = remember { Animatable(1f) }
     val selectCatalogTabAction = rememberBaGuideCatalogTabSelectCoordinator(
@@ -224,6 +225,7 @@ fun BaGuideCatalogPage(
     }
     var activeListCanScrollBackward by remember { mutableStateOf(false) }
     var activeListCanScrollForward by remember { mutableStateOf(false) }
+    var activeListScrollInProgress by remember { mutableStateOf(false) }
     var bgmNowPlayingVisible by remember { mutableStateOf(false) }
     val chromeActivePageIndex = if (pagerState.isScrollInProgress) {
         pagerState.targetPage
@@ -239,6 +241,7 @@ fun BaGuideCatalogPage(
     LaunchedEffect(selectedTabIndex) {
         activeListCanScrollBackward = false
         activeListCanScrollForward = false
+        activeListScrollInProgress = false
         if (tabs.getOrNull(selectedTabIndex)?.catalogTab == null) {
             filterSortState.showSortPopup = false
         }
@@ -363,6 +366,11 @@ fun BaGuideCatalogPage(
                             },
                             backdrop = bottomBarBackdrop,
                             tabsCount = tabs.size,
+                            reduceEffectsDuringPagerScroll = shouldReduceBottomBarEffectsDuringMotion(
+                                scrollEffectReductionEnabled = bottomBarScrollEffectReductionEnabled,
+                                pagerScrollInProgress = pagerState.isScrollInProgress,
+                                activePageListScrollInProgress = activeListScrollInProgress
+                            ),
                             isLiquidEffectEnabled = liquidBottomBarEnabled,
                             content = bottomBarTabs
                         )
@@ -412,6 +420,9 @@ fun BaGuideCatalogPage(
                             activeListCanScrollBackward = canScrollBackward
                             activeListCanScrollForward = canScrollForward
                         },
+                        onListScrollInProgressChange = { scrolling ->
+                            activeListScrollInProgress = scrolling
+                        },
                         onOpenGuide = onOpenGuide
                     )
                 } else if (renderHeavyContent) {
@@ -424,6 +435,9 @@ fun BaGuideCatalogPage(
                         onScrollBoundsChange = { canScrollBackward, canScrollForward ->
                             activeListCanScrollBackward = canScrollBackward
                             activeListCanScrollForward = canScrollForward
+                        },
+                        onListScrollInProgressChange = { scrolling ->
+                            activeListScrollInProgress = scrolling
                         },
                         onNowPlayingVisibilityChange = { visible ->
                             bgmNowPlayingVisible = visible

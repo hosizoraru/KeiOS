@@ -41,6 +41,7 @@ internal fun BaStudentGuidePagerContent(
     onSaveMedia: (String, String) -> Unit,
     onSaveMediaPack: (List<Pair<String, String>>, String) -> Unit,
     onToggleVoicePlayback: (String) -> Unit,
+    onListScrollInProgressChange: (Boolean) -> Unit,
     onSelectedVoiceLanguageChange: (String) -> Unit
 ) {
     HorizontalPager(
@@ -77,6 +78,7 @@ internal fun BaStudentGuidePagerContent(
             onSaveMedia = onSaveMedia,
             onSaveMediaPack = onSaveMediaPack,
             onToggleVoicePlayback = onToggleVoicePlayback,
+            onListScrollInProgressChange = onListScrollInProgressChange,
             onSelectedVoiceLanguageChange = onSelectedVoiceLanguageChange
         )
     }

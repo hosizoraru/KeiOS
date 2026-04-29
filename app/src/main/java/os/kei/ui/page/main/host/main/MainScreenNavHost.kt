@@ -140,6 +140,8 @@ internal fun MainScreenNavHost(
         }
         entry<KeiosRoute.BaStudentGuide> {
             BaStudentGuidePage(
+                liquidBottomBarEnabled = prefsState.liquidBottomBarEnabled,
+                bottomBarScrollEffectReductionEnabled = prefsState.bottomBarScrollEffectReductionEnabled,
                 liquidActionBarLayeredStyleEnabled = prefsState.liquidActionBarLayeredStyleEnabled,
                 preloadingEnabled = prefsState.preloadingEnabled,
                 onBack = { navigator.pop() }
@@ -147,6 +149,8 @@ internal fun MainScreenNavHost(
         }
         entry<KeiosRoute.BaGuideCatalog> {
             BaGuideCatalogPage(
+                liquidBottomBarEnabled = prefsState.liquidBottomBarEnabled,
+                bottomBarScrollEffectReductionEnabled = prefsState.bottomBarScrollEffectReductionEnabled,
                 liquidActionBarLayeredStyleEnabled = prefsState.liquidActionBarLayeredStyleEnabled,
                 preloadingEnabled = prefsState.preloadingEnabled,
                 onBack = { navigator.pop() },

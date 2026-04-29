@@ -393,7 +393,7 @@ internal fun SettingsComponentEffectsSection(
 ) {
     val componentEffectsGroupActive = state.liquidActionBarLayeredStyleEnabled ||
         state.liquidBottomBarEnabled ||
-        state.bottomBarScrollEffectReductionEnabled ||
+        state.bottomBarFullEffectDuringScrollEnabled ||
         state.liquidGlassSwitchEnabled ||
         state.cardPressFeedbackEnabled
     SettingsGroupCard(
@@ -421,16 +421,16 @@ internal fun SettingsComponentEffectsSection(
             onCheckedChange = actions.onLiquidBottomBarChanged
         )
         SettingsToggleItem(
-            title = stringResource(R.string.settings_bottom_bar_scroll_reduction_title),
-            summary = if (state.bottomBarScrollEffectReductionEnabled) {
-                stringResource(R.string.settings_bottom_bar_scroll_reduction_summary_enabled)
+            title = stringResource(R.string.settings_bottom_bar_full_effect_title),
+            summary = if (state.bottomBarFullEffectDuringScrollEnabled) {
+                stringResource(R.string.settings_bottom_bar_full_effect_summary_enabled)
             } else {
-                stringResource(R.string.settings_bottom_bar_scroll_reduction_summary_disabled)
+                stringResource(R.string.settings_bottom_bar_full_effect_summary_disabled)
             },
-            checked = state.bottomBarScrollEffectReductionEnabled,
-            onCheckedChange = actions.onBottomBarScrollEffectReductionChanged,
+            checked = state.bottomBarFullEffectDuringScrollEnabled,
+            onCheckedChange = actions.onBottomBarFullEffectDuringScrollChanged,
             infoKey = stringResource(R.string.common_scope),
-            infoValue = stringResource(R.string.settings_bottom_bar_scroll_reduction_scope)
+            infoValue = stringResource(R.string.settings_bottom_bar_full_effect_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_liquid_switch_title),

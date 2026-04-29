@@ -64,6 +64,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     accent: Color,
     isPageActive: Boolean,
     onScrollBoundsChange: (canScrollBackward: Boolean, canScrollForward: Boolean) -> Unit,
+    onListScrollInProgressChange: (Boolean) -> Unit,
     onNowPlayingVisibilityChange: (Boolean) -> Unit,
     onOpenGuide: (String) -> Unit
 ) {
@@ -370,6 +371,14 @@ internal fun BaGuideBgmFavoritesTabContent(
             .distinctUntilChanged()
             .collect { (canScrollBackward, canScrollForward) ->
                 onScrollBoundsChange(canScrollBackward, canScrollForward)
+            }
+    }
+    LaunchedEffect(listState, isPageActive) {
+        if (!isPageActive) return@LaunchedEffect
+        snapshotFlow { listState.isScrollInProgress }
+            .distinctUntilChanged()
+            .collect { scrolling ->
+                onListScrollInProgressChange(scrolling)
             }
     }
     DisposableEffect(Unit) {

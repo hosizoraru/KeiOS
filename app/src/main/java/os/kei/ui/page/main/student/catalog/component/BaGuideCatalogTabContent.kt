@@ -39,6 +39,7 @@ internal fun BaGuideCatalogTabContent(
     isPageActive: Boolean,
     renderHeavyContent: Boolean,
     onScrollBoundsChange: (canScrollBackward: Boolean, canScrollForward: Boolean) -> Unit,
+    onListScrollInProgressChange: (Boolean) -> Unit,
     onOpenGuide: (String) -> Unit
 ) {
     if (!renderHeavyContent) {
@@ -84,6 +85,14 @@ internal fun BaGuideCatalogTabContent(
             .distinctUntilChanged()
             .collect { (canScrollBackward, canScrollForward) ->
                 onScrollBoundsChange(canScrollBackward, canScrollForward)
+            }
+    }
+    LaunchedEffect(tabListState.listState, isPageActive) {
+        if (!isPageActive) return@LaunchedEffect
+        snapshotFlow { tabListState.listState.isScrollInProgress }
+            .distinctUntilChanged()
+            .collect { scrolling ->
+                onListScrollInProgressChange(scrolling)
             }
     }
     BaGuideCatalogTabListLayout(

@@ -14,9 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +38,7 @@ import os.kei.ui.page.main.widget.glass.FrostedBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import kotlinx.coroutines.flow.distinctUntilChanged
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -67,6 +70,7 @@ internal fun BaStudentGuidePagerPage(
     onSaveMedia: (String, String) -> Unit,
     onSaveMediaPack: (List<Pair<String, String>>, String) -> Unit,
     onToggleVoicePlayback: (String) -> Unit,
+    onListScrollInProgressChange: (Boolean) -> Unit,
     onSelectedVoiceLanguageChange: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -107,6 +111,15 @@ internal fun BaStudentGuidePagerPage(
             drawRect(surfaceColor)
             drawContent()
         }
+    }
+    val isActivePage = pageIndex == pagerState.currentPage
+    LaunchedEffect(pageListState, isActivePage) {
+        if (!isActivePage) return@LaunchedEffect
+        snapshotFlow { pageListState.isScrollInProgress }
+            .distinctUntilChanged()
+            .collect { scrolling ->
+                onListScrollInProgressChange(scrolling)
+            }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
