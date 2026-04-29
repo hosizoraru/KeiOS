@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.annotation.StringRes
 import os.kei.ui.page.main.github.page.GitHubPageState
+import os.kei.ui.page.main.github.page.GitHubActionsPageRepository
 import os.kei.ui.page.main.github.page.GitHubPageRepository
 import os.kei.ui.page.main.github.query.DownloaderOption
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +15,7 @@ internal class GitHubPageActionEnvironment(
     val scope: CoroutineScope,
     val state: GitHubPageState,
     val repository: GitHubPageRepository,
+    val actionsRepository: GitHubActionsPageRepository = GitHubActionsPageRepository(),
     val systemDmOption: DownloaderOption,
     val openLinkFailureMessage: String
 ) {
