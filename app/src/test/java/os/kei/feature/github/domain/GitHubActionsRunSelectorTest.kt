@@ -225,6 +225,33 @@ class GitHubActionsRunSelectorTest {
         assertTrue(matches.single().reasons.contains("in-progress"))
     }
 
+    @Test
+    fun `generic artifacts remain visible when artifact fallback is enabled`() {
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = listOf(
+                runArtifacts(
+                    run = run(
+                        id = 4001,
+                        event = "push",
+                        branch = "main",
+                        title = "Wild artifact build"
+                    ),
+                    artifactNames = listOf("KeiOS-debug")
+                )
+            ),
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = "main",
+                requireAndroidArtifacts = false,
+                artifactOptions = GitHubActionsArtifactSelectionOptions(
+                    fallbackToAllArtifacts = true
+                )
+            )
+        )
+
+        assertEquals(4001, matches.single().runArtifacts.run.id)
+        assertEquals("KeiOS-debug", matches.single().artifactMatches.single().artifact.name)
+    }
+
     private fun workflow(
         name: String,
         path: String

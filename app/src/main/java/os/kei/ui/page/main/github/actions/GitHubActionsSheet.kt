@@ -29,7 +29,6 @@ import os.kei.feature.github.model.GitHubActionsRunWatchState
 import os.kei.feature.github.model.GitHubActionsWorkflowKind
 import os.kei.feature.github.model.GitHubActionsWorkflowMatch
 import os.kei.feature.github.model.GitHubApiAuthMode
-import os.kei.ui.page.main.github.GitHubCompactInfoRow
 import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.github.asset.assetRelativeTimeLabel
 import os.kei.ui.page.main.github.asset.formatAssetSize
@@ -47,7 +46,6 @@ import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
-import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SheetSummaryCard
 import os.kei.ui.page.main.widget.sheet.SheetSurfaceCard
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
@@ -67,6 +65,9 @@ internal fun GitHubActionsSheet(
     onSelectWorkflow: (Long) -> Unit,
     onSelectRun: (Long) -> Unit,
     onLoadMoreRuns: () -> Unit,
+    onWorkflowsExpandedChange: (Boolean) -> Unit,
+    onRunsExpandedChange: (Boolean) -> Unit,
+    onArtifactsExpandedChange: (Boolean) -> Unit,
     onRefreshRun: (Long) -> Unit,
     onDownloadArtifact: (Long, Long) -> Unit,
     onOpenRun: () -> Unit
@@ -124,129 +125,160 @@ internal fun GitHubActionsSheet(
                 )
             }
 
-            SheetSectionTitle(stringResource(R.string.github_actions_section_workflows))
-            when {
-                state.actionsLoading && workflows.isEmpty() -> {
-                    GitHubActionsLoadingCard(
-                        text = stringResource(R.string.github_actions_loading_workflows)
-                    )
-                }
-                workflows.isEmpty() -> {
-                    GitHubActionsNoticeCard(
-                        text = stringResource(R.string.github_actions_empty_workflows),
-                        accent = MiuixTheme.colorScheme.onBackgroundVariant,
-                        isDark = isDark
-                    )
-                }
-                else -> {
-                    workflows.forEach { match ->
-                        GitHubActionsWorkflowCard(
-                            match = match,
-                            selected = match.workflow.id == selectedWorkflowId,
-                            recommended = match.workflow.id == recommendedWorkflowId,
-                            isDark = isDark,
-                            onClick = { onSelectWorkflow(match.workflow.id) }
+            GitHubActionsCollapsibleSection(
+                title = stringResource(R.string.github_actions_section_workflows),
+                summary = workflowSectionSummary(state, selectedWorkflowId),
+                countLabel = stringResource(R.string.github_actions_value_count, workflows.size),
+                expanded = state.actionsWorkflowsExpanded,
+                accent = GitHubStatusPalette.Active,
+                onExpandedChange = onWorkflowsExpandedChange
+            ) {
+                when {
+                    state.actionsLoading && workflows.isEmpty() -> {
+                        GitHubActionsLoadingCard(
+                            text = stringResource(R.string.github_actions_loading_workflows)
                         )
+                    }
+                    workflows.isEmpty() -> {
+                        GitHubActionsNoticeCard(
+                            text = stringResource(R.string.github_actions_empty_workflows),
+                            accent = MiuixTheme.colorScheme.onBackgroundVariant,
+                            isDark = isDark
+                        )
+                    }
+                    else -> {
+                        workflows.forEach { match ->
+                            GitHubActionsWorkflowCard(
+                                match = match,
+                                selected = match.workflow.id == selectedWorkflowId,
+                                recommended = match.workflow.id == recommendedWorkflowId,
+                                isDark = isDark,
+                                onClick = { onSelectWorkflow(match.workflow.id) }
+                            )
+                        }
                     }
                 }
             }
 
-            SheetSectionTitle(stringResource(R.string.github_actions_section_runs))
-            when {
-                state.actionsRunsLoading -> {
-                    GitHubActionsLoadingCard(
-                        text = stringResource(R.string.github_actions_loading_runs)
-                    )
-                }
-                state.actionsRuns.isEmpty() -> {
-                    GitHubActionsNoticeCard(
-                        text = stringResource(R.string.github_actions_empty_runs),
-                        accent = MiuixTheme.colorScheme.onBackgroundVariant,
-                        isDark = isDark
-                    )
-                }
-                else -> {
-                    state.actionsRuns.forEach { match ->
-                        val runId = match.runArtifacts.run.id
-                        GitHubActionsRunCard(
-                            match = match,
-                            trackingPlan = state.actionsRunTrackingPlans[runId],
-                            selected = runId == state.actionsSelectedRunId,
-                            recommended = runId == recommendedRunId,
-                            refreshing = state.actionsStatusRefreshingRunIds[runId] == true,
-                            isDark = isDark,
-                            onClick = { onSelectRun(runId) },
-                            onRefresh = { onRefreshRun(runId) }
+            GitHubActionsCollapsibleSection(
+                title = stringResource(R.string.github_actions_section_runs),
+                summary = runSectionSummary(state, selectedRun),
+                countLabel = stringResource(R.string.github_actions_label_runs_with_count, state.actionsRuns.size),
+                expanded = state.actionsRunsExpanded,
+                accent = GitHubStatusPalette.Update,
+                onExpandedChange = onRunsExpandedChange
+            ) {
+                when {
+                    state.actionsRunsLoading && state.actionsRuns.isEmpty() -> {
+                        GitHubActionsLoadingCard(
+                            text = stringResource(R.string.github_actions_loading_runs)
                         )
                     }
-                    if (
-                        state.actionsRuns.size >= state.actionsRunLimit &&
-                        state.actionsRunLimit < ACTIONS_MAX_RUN_LIMIT
-                    ) {
-                        GitHubActionsLoadMoreRunsButton(
-                            backdrop = backdrop,
-                            visibleRunLimit = state.actionsRunLimit,
-                            onClick = onLoadMoreRuns
+                    state.actionsRuns.isEmpty() -> {
+                        GitHubActionsNoticeCard(
+                            text = stringResource(R.string.github_actions_empty_runs),
+                            accent = MiuixTheme.colorScheme.onBackgroundVariant,
+                            isDark = isDark
                         )
+                    }
+                    else -> {
+                        state.actionsRuns.forEach { match ->
+                            val runId = match.runArtifacts.run.id
+                            GitHubActionsRunCard(
+                                match = match,
+                                trackingPlan = state.actionsRunTrackingPlans[runId],
+                                selected = runId == state.actionsSelectedRunId,
+                                recommended = runId == recommendedRunId,
+                                refreshing = state.actionsStatusRefreshingRunIds[runId] == true,
+                                isDark = isDark,
+                                onClick = { onSelectRun(runId) },
+                                onRefresh = { onRefreshRun(runId) }
+                            )
+                        }
+                        val showLoadMoreButton =
+                            (state.actionsRunsLoading && state.actionsRuns.isNotEmpty()) ||
+                                (
+                                    state.actionsRuns.size >= state.actionsRunLimit &&
+                                        state.actionsRunLimit < ACTIONS_MAX_RUN_LIMIT
+                                    )
+                        if (showLoadMoreButton) {
+                            GitHubActionsLoadMoreRunsButton(
+                                backdrop = backdrop,
+                                visibleRunLimit = state.actionsRunLimit,
+                                loading = state.actionsRunsLoading,
+                                onClick = onLoadMoreRuns
+                            )
+                        }
                     }
                 }
             }
 
-            SheetSectionTitle(stringResource(R.string.github_actions_section_artifacts))
-            if (selectedRun != null) {
-                GitHubActionsRunOpenButton(
-                    backdrop = backdrop,
-                    onOpenRun = onOpenRun
-                )
-            }
-            when {
-                selectedRun == null -> {
-                    GitHubActionsNoticeCard(
-                        text = stringResource(R.string.github_actions_empty_artifacts),
-                        accent = MiuixTheme.colorScheme.onBackgroundVariant,
-                        isDark = isDark
+            GitHubActionsCollapsibleSection(
+                title = stringResource(R.string.github_actions_section_artifacts),
+                summary = artifactSectionSummary(selectedRun),
+                countLabel = stringResource(
+                    R.string.github_actions_label_artifacts_with_count,
+                    selectedRun?.artifactMatches?.size ?: 0
+                ),
+                expanded = state.actionsArtifactsExpanded,
+                accent = GitHubStatusPalette.PreRelease,
+                onExpandedChange = onArtifactsExpandedChange
+            ) {
+                if (selectedRun != null) {
+                    GitHubActionsRunOpenButton(
+                        backdrop = backdrop,
+                        onOpenRun = onOpenRun
                     )
                 }
-                selectedRun.traits.inProgress -> {
-                    GitHubActionsNoticeCard(
-                        text = stringResource(R.string.github_actions_hint_run_in_progress),
-                        accent = GitHubStatusPalette.Active,
-                        isDark = isDark
-                    )
-                }
-                selectedRun.artifactMatches.isEmpty() -> {
-                    GitHubActionsNoticeCard(
-                        text = stringResource(R.string.github_actions_empty_artifacts),
-                        accent = MiuixTheme.colorScheme.onBackgroundVariant,
-                        isDark = isDark
-                    )
-                }
-                else -> {
-                    SheetDescriptionText(
-                        text = if (hasToken) {
-                            stringResource(R.string.github_actions_hint_zip_download)
-                        } else {
-                            stringResource(R.string.github_actions_hint_token_required)
-                        },
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    selectedRun.artifactMatches.forEach { artifactMatch ->
-                        GitHubActionsArtifactCard(
-                            runMatch = selectedRun,
-                            artifactMatch = artifactMatch,
-                            hasToken = hasToken,
-                            downloading = state.actionsArtifactDownloadLoadingId == artifactMatch.artifact.id,
-                            context = context,
-                            isDark = isDark,
-                            backdrop = backdrop,
-                            onDownload = {
-                                onDownloadArtifact(
-                                    selectedRun.runArtifacts.run.id,
-                                    artifactMatch.artifact.id
-                                )
-                            }
+                when {
+                    selectedRun == null -> {
+                        GitHubActionsNoticeCard(
+                            text = stringResource(R.string.github_actions_empty_artifacts),
+                            accent = MiuixTheme.colorScheme.onBackgroundVariant,
+                            isDark = isDark
                         )
+                    }
+                    selectedRun.traits.inProgress -> {
+                        GitHubActionsNoticeCard(
+                            text = stringResource(R.string.github_actions_hint_run_in_progress),
+                            accent = GitHubStatusPalette.Active,
+                            isDark = isDark
+                        )
+                    }
+                    selectedRun.artifactMatches.isEmpty() -> {
+                        GitHubActionsNoticeCard(
+                            text = stringResource(R.string.github_actions_empty_artifacts),
+                            accent = MiuixTheme.colorScheme.onBackgroundVariant,
+                            isDark = isDark
+                        )
+                    }
+                    else -> {
+                        SheetDescriptionText(
+                            text = if (hasToken) {
+                                stringResource(R.string.github_actions_hint_zip_download)
+                            } else {
+                                stringResource(R.string.github_actions_hint_token_required)
+                            },
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        selectedRun.artifactMatches.forEach { artifactMatch ->
+                            GitHubActionsArtifactCard(
+                                runMatch = selectedRun,
+                                artifactMatch = artifactMatch,
+                                hasToken = hasToken,
+                                downloading = state.actionsArtifactDownloadLoadingId == artifactMatch.artifact.id,
+                                context = context,
+                                isDark = isDark,
+                                backdrop = backdrop,
+                                onDownload = {
+                                    onDownloadArtifact(
+                                        selectedRun.runArtifacts.run.id,
+                                        artifactMatch.artifact.id
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -277,26 +309,27 @@ private fun GitHubActionsSummaryCard(
         borderColor = accent.copy(alpha = if (isDark) 0.34f else 0.24f)
     ) {
         if (target != null) {
-            GitHubCompactInfoRow(
-                label = stringResource(R.string.github_actions_label_repo),
-                value = "${target.owner}/${target.repo}",
-                valueColor = MiuixTheme.colorScheme.primary,
-                titleColor = MiuixTheme.colorScheme.primary
+            Text(
+                text = "${target.owner}/${target.repo}",
+                color = MiuixTheme.colorScheme.primary,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
-        GitHubCompactInfoRow(
-            label = stringResource(R.string.github_actions_label_default_branch),
-            value = state.actionsDefaultBranch.ifBlank { stringResource(R.string.common_unknown) },
-            valueColor = MiuixTheme.colorScheme.onBackground,
-            titleColor = MiuixTheme.colorScheme.primary
-        )
-        GitHubCompactInfoRow(
-            label = stringResource(R.string.github_actions_label_strategy),
-            value = state.actionsAuthMode?.label ?: state.lookupConfig.selectedStrategy.label,
-            valueColor = accent,
-            titleColor = MiuixTheme.colorScheme.primary
-        )
         GitHubActionsPillRow {
+            StatusPill(
+                label = stringResource(
+                    R.string.github_actions_summary_default_branch,
+                    state.actionsDefaultBranch.ifBlank { stringResource(R.string.common_unknown) }
+                ),
+                color = MiuixTheme.colorScheme.primary
+            )
+            StatusPill(
+                label = state.actionsAuthMode?.label ?: state.lookupConfig.selectedStrategy.label,
+                color = accent
+            )
             StatusPill(
                 label = stringResource(R.string.github_actions_value_count, state.actionsWorkflows.size),
                 color = GitHubStatusPalette.Active
@@ -314,6 +347,55 @@ private fun GitHubActionsSummaryCard(
             )
         }
     }
+}
+
+@Composable
+private fun workflowSectionSummary(
+    state: GitHubPageState,
+    selectedWorkflowId: Long?
+): String {
+    if (state.actionsLoading && state.actionsWorkflows.isEmpty()) {
+        return stringResource(R.string.github_actions_loading_workflows)
+    }
+    val selected = selectedWorkflowId?.let { id ->
+        state.actionsWorkflows.firstOrNull { it.workflow.id == id }
+    }
+    return selected?.workflow?.displayName
+        ?: stringResource(R.string.github_actions_empty_workflows)
+}
+
+@Composable
+private fun runSectionSummary(
+    state: GitHubPageState,
+    selectedRun: GitHubActionsRunMatch?
+): String {
+    if (state.actionsRunsLoading && state.actionsRuns.isEmpty()) {
+        return stringResource(R.string.github_actions_loading_runs)
+    }
+    val match = selectedRun ?: return stringResource(R.string.github_actions_empty_runs)
+    val run = match.runArtifacts.run
+    val number = run.runNumber.takeIf { it > 0L }?.let {
+        stringResource(R.string.github_actions_value_run_number, it)
+    }
+    return listOfNotNull(
+        number,
+        run.headBranch.ifBlank { null },
+        run.displayName.takeIf { it.isNotBlank() }
+    ).joinToString(" · ")
+}
+
+@Composable
+private fun artifactSectionSummary(
+    selectedRun: GitHubActionsRunMatch?
+): String {
+    if (selectedRun == null) {
+        return stringResource(R.string.github_actions_empty_artifacts)
+    }
+    if (selectedRun.traits.inProgress) {
+        return stringResource(R.string.github_actions_hint_run_in_progress)
+    }
+    return selectedRun.artifactMatches.firstOrNull()?.artifact?.name
+        ?: stringResource(R.string.github_actions_empty_artifacts)
 }
 
 @Composable
@@ -603,6 +685,7 @@ private fun GitHubActionsRunOpenButton(
 private fun GitHubActionsLoadMoreRunsButton(
     backdrop: LayerBackdrop,
     visibleRunLimit: Int,
+    loading: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -612,8 +695,13 @@ private fun GitHubActionsLoadMoreRunsButton(
         GlassTextButton(
             backdrop = backdrop,
             variant = GlassVariant.SheetAction,
-            text = stringResource(R.string.github_actions_action_load_more_runs, visibleRunLimit),
+            text = if (loading) {
+                stringResource(R.string.common_loading)
+            } else {
+                stringResource(R.string.github_actions_action_load_more_runs, visibleRunLimit)
+            },
             leadingIcon = appLucideRefreshIcon(),
+            enabled = !loading,
             textColor = MiuixTheme.colorScheme.primary,
             iconTint = MiuixTheme.colorScheme.primary,
             onClick = onClick,

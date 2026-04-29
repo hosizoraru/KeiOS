@@ -170,6 +170,7 @@ data class GitHubActionsArtifactSelectionOptions(
     val hideBuildNoise: Boolean = true,
     val includeNonAndroidArtifacts: Boolean = false,
     val aggressiveAbiFiltering: Boolean = false,
+    val fallbackToAllArtifacts: Boolean = false,
     val downloadHistory: List<GitHubActionsDownloadRecord> = emptyList()
 )
 

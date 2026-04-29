@@ -56,15 +56,23 @@ object GitHubActionsArtifactSelector {
         artifacts: List<GitHubActionsArtifact>,
         options: GitHubActionsArtifactSelectionOptions = GitHubActionsArtifactSelectionOptions()
     ): List<GitHubActionsArtifactMatch> {
-        return artifacts
+        val primaryMatches = artifacts
             .asSequence()
             .mapNotNull { artifact -> matchArtifact(artifact, options) }
-            .sortedWith(
-                compareByDescending<GitHubActionsArtifactMatch> { it.score }
-                    .thenByDescending { it.artifact.updatedAtMillis ?: Long.MIN_VALUE }
-                    .thenBy { it.artifact.name.lowercase(Locale.ROOT) }
-            )
             .toList()
+        if (primaryMatches.isNotEmpty() || !options.fallbackToAllArtifacts) {
+            return sortMatches(primaryMatches)
+        }
+
+        val relaxedOptions = options.copy(
+            hideBuildNoise = false,
+            includeNonAndroidArtifacts = true,
+            aggressiveAbiFiltering = false,
+            fallbackToAllArtifacts = false
+        )
+        return sortMatches(
+            artifacts.mapNotNull { artifact -> matchArtifact(artifact, relaxedOptions) }
+        )
     }
 
     fun matchArtifact(
@@ -178,6 +186,16 @@ object GitHubActionsArtifactSelector {
             score = score,
             lastDownload = lastDownload,
             reasons = reasons
+        )
+    }
+
+    private fun sortMatches(
+        matches: List<GitHubActionsArtifactMatch>
+    ): List<GitHubActionsArtifactMatch> {
+        return matches.sortedWith(
+            compareByDescending<GitHubActionsArtifactMatch> { it.score }
+                .thenByDescending { it.artifact.updatedAtMillis ?: Long.MIN_VALUE }
+                .thenBy { it.artifact.name.lowercase(Locale.ROOT) }
         )
     }
 

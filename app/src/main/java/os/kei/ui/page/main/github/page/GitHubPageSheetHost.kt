@@ -117,6 +117,9 @@ internal fun GitHubPageSheetHost(
         onSelectWorkflow = actions::selectActionsWorkflow,
         onSelectRun = actions::selectActionsRun,
         onLoadMoreRuns = actions::loadMoreActionsRuns,
+        onWorkflowsExpandedChange = { state.actionsWorkflowsExpanded = it },
+        onRunsExpandedChange = { state.actionsRunsExpanded = it },
+        onArtifactsExpandedChange = { state.actionsArtifactsExpanded = it },
         onRefreshRun = actions::refreshActionsRunStatus,
         onDownloadArtifact = actions::downloadActionsArtifact,
         onOpenRun = actions::openSelectedActionsRun

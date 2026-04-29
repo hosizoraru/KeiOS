@@ -66,6 +66,9 @@ internal class GitHubPageState(
     var actionsRuns by mutableStateOf<List<GitHubActionsRunMatch>>(emptyList())
     var actionsRunLimit by mutableStateOf(6)
     var actionsSelectedRunId by mutableStateOf<Long?>(null)
+    var actionsWorkflowsExpanded by mutableStateOf(false)
+    var actionsRunsExpanded by mutableStateOf(false)
+    var actionsArtifactsExpanded by mutableStateOf(true)
     var actionsDownloadHistory by mutableStateOf<List<GitHubActionsDownloadRecord>>(emptyList())
     var actionsRunTrackingPlans by mutableStateOf<Map<Long, GitHubActionsRunTrackingPlan>>(emptyMap())
     var actionsArtifactDownloadLoadingId by mutableStateOf<Long?>(null)
@@ -298,6 +301,9 @@ internal class GitHubPageState(
         actionsRuns = emptyList()
         actionsRunLimit = 6
         actionsSelectedRunId = null
+        actionsWorkflowsExpanded = false
+        actionsRunsExpanded = false
+        actionsArtifactsExpanded = true
         actionsDownloadHistory = emptyList()
         actionsRunTrackingPlans = emptyMap()
         actionsArtifactDownloadLoadingId = null

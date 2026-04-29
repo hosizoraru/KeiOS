@@ -154,6 +154,21 @@ class GitHubActionsArtifactSelectorTest {
     }
 
     @Test
+    fun `fallback exposes generic artifacts when strict selector finds nothing`() {
+        val matches = GitHubActionsArtifactSelector.selectDisplayArtifacts(
+            artifacts = listOf(
+                artifact("KeiOS-debug"),
+                artifact("metadata")
+            ),
+            options = GitHubActionsArtifactSelectionOptions(
+                fallbackToAllArtifacts = true
+            )
+        )
+
+        assertEquals(listOf("KeiOS-debug", "metadata"), matches.map { it.artifact.name })
+    }
+
+    @Test
     fun `selector boosts and exposes last downloaded artifact`() {
         val downloaded = artifact("app-universal-release.apk", id = 20L)
         val fresh = artifact("app-arm64-v8a-release.apk", id = 21L)

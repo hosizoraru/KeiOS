@@ -81,7 +81,8 @@ internal class GitHubActionsActions(
             loadWorkflowSnapshot(
                 item = item,
                 workflow = workflow,
-                preferredRunId = currentRunId
+                preferredRunId = currentRunId,
+                keepCurrentRunsWhileLoading = true
             )
         }
     }
@@ -273,16 +274,19 @@ internal class GitHubActionsActions(
     private suspend fun loadWorkflowSnapshot(
         item: GitHubTrackedApp,
         workflow: GitHubActionsWorkflow,
-        preferredRunId: Long?
+        preferredRunId: Long?,
+        keepCurrentRunsWhileLoading: Boolean = false
     ) {
         state.actionsRunWatchJob?.cancel()
         state.actionsRunsLoading = true
         state.actionsError = null
-        state.actionsSnapshot = null
-        state.actionsRuns = emptyList()
-        state.actionsSelectedRunId = null
-        state.actionsRunTrackingPlans = emptyMap()
-        state.actionsStatusRefreshingRunIds.clear()
+        if (!keepCurrentRunsWhileLoading) {
+            state.actionsSnapshot = null
+            state.actionsRuns = emptyList()
+            state.actionsSelectedRunId = null
+            state.actionsRunTrackingPlans = emptyMap()
+            state.actionsStatusRefreshingRunIds.clear()
+        }
         try {
             val snapshotTrace = repository.fetchGitHubActionsWorkflowArtifactSnapshot(
                 owner = item.owner,
@@ -310,6 +314,9 @@ internal class GitHubActionsActions(
         } catch (error: Throwable) {
             if (isCurrentTarget(item) && state.actionsSelectedWorkflowId == workflow.id) {
                 state.actionsError = error.message ?: error.javaClass.simpleName
+                if (keepCurrentRunsWhileLoading) {
+                    scheduleSelectedRunWatch()
+                }
             }
         } finally {
             if (isCurrentTarget(item) && state.actionsSelectedWorkflowId == workflow.id) {
@@ -448,6 +455,7 @@ internal class GitHubActionsActions(
         val artifactOptions = GitHubActionsArtifactSelectionOptions(
             preferredAbis = Build.SUPPORTED_ABIS.toList(),
             aggressiveAbiFiltering = state.lookupConfig.aggressiveApkFiltering,
+            fallbackToAllArtifacts = true,
             downloadHistory = history
         )
         return repository.selectGitHubActionsRuns(

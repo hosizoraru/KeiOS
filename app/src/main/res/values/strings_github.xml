@@ -49,6 +49,7 @@
     <string name="github_actions_label_repo">仓库</string>
     <string name="github_actions_label_default_branch">默认分支</string>
     <string name="github_actions_label_strategy">链路</string>
+    <string name="github_actions_summary_default_branch">默认 %1$s</string>
     <string name="github_actions_value_count">%1$d 项</string>
     <string name="github_actions_label_runs_with_count">Runs %1$d</string>
     <string name="github_actions_label_artifacts_with_count">Artifacts %1$d</string>
@@ -58,7 +59,7 @@
     <string name="github_actions_loading_runs">正在读取 run 与 artifact...</string>
     <string name="github_actions_empty_workflows">该仓库当前没有可展示的 active workflow</string>
     <string name="github_actions_empty_runs">当前 workflow 没有可展示的 run</string>
-    <string name="github_actions_empty_artifacts">当前 run 没有可展示的 Android artifact</string>
+    <string name="github_actions_empty_artifacts">当前 run 没有可展示的 artifact</string>
     <string name="github_actions_error_load_failed">Actions 读取失败：%1$s</string>
     <string name="github_actions_hint_token_required">下载 Actions artifact 需要填写 GitHub token</string>
     <string name="github_actions_hint_run_in_progress">该 run 仍在执行，完成后会自动刷新状态，也可手动刷新</string>
@@ -98,7 +99,7 @@
     <string name="github_actions_badge_source">Source</string>
     <string name="github_actions_action_open_run">打开 Run</string>
     <string name="github_actions_action_refresh_run">刷新 Run</string>
-    <string name="github_actions_action_load_more_runs">加载更多 Runs（已显示 %1$d）</string>
+    <string name="github_actions_action_load_more_runs">更多 Runs（%1$d）</string>
     <string name="github_actions_action_need_token">需要 Token</string>
     <string name="github_actions_action_wait_run">等待完成</string>
     <string name="github_actions_action_expired">已过期</string>
