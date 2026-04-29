@@ -5,7 +5,7 @@ import android.content.pm.PackageManager
 import os.kei.R
 import os.kei.mcp.notification.McpNotificationHelper
 import os.kei.mcp.notification.McpNotificationPayload
-import os.kei.ui.page.main.ba.support.baServerLabel
+import os.kei.ui.page.main.ba.support.baServerLabelRes
 import os.kei.ui.page.main.ba.support.serverRefreshTimeZone
 
 internal object BaArenaRefreshNotificationDispatcher {
@@ -52,7 +52,7 @@ internal object BaArenaRefreshNotificationDispatcher {
         val slotHour = calendar.get(java.util.Calendar.HOUR_OF_DAY).coerceIn(0, 23)
         return context.getString(
             R.string.ba_arena_refresh_notification_content_detail,
-            baServerLabel(serverIndex),
+            context.getString(baServerLabelRes(serverIndex)),
             slotHour
         )
     }

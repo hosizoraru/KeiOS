@@ -11,9 +11,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.ba.BaGlassCard
 import os.kei.ui.page.main.ba.BaGlassPanel
 import os.kei.ui.page.main.ba.support.BaCalendarEntry
@@ -62,6 +64,14 @@ internal fun BaCalendarSectionHeaderCard(
 ) {
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    val syncText = when {
+        baCalendarLoading -> stringResource(R.string.ba_syncing)
+        baCalendarLastSyncMs > 0L -> formatBaDateTimeNoYearInTimeZone(
+            baCalendarLastSyncMs,
+            serverTimeZone
+        )
+        else -> stringResource(R.string.ba_state_not_synced)
+    }
     BaGlassCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
@@ -69,13 +79,10 @@ internal fun BaCalendarSectionHeaderCard(
         effectsEnabled = effectsEnabled,
     ) {
         BaCardHeader(
-            title = "活动日历 · ${serverOptions[serverIndex]}",
+            title = stringResource(R.string.ba_calendar_title_format, serverOptions[serverIndex]),
             trailing = {
                 Text(
-                    text = if (baCalendarLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
-                        baCalendarLastSyncMs,
-                        serverTimeZone
-                    ),
+                    text = syncText,
                     color = countdownBlue,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -83,7 +90,7 @@ internal fun BaCalendarSectionHeaderCard(
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
-                    contentDescription = "刷新活动日历",
+                    contentDescription = stringResource(R.string.ba_calendar_cd_refresh),
                     variant = GlassVariant.Content,
                     onClick = onRefreshCalendar,
                 )
@@ -111,6 +118,14 @@ internal fun BaCalendarCard(
 ) {
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    val syncText = when {
+        baCalendarLoading -> stringResource(R.string.ba_syncing)
+        baCalendarLastSyncMs > 0L -> formatBaDateTimeNoYearInTimeZone(
+            baCalendarLastSyncMs,
+            serverTimeZone
+        )
+        else -> stringResource(R.string.ba_state_not_synced)
+    }
     BaGlassCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
@@ -118,13 +133,10 @@ internal fun BaCalendarCard(
         effectsEnabled = effectsEnabled,
     ) {
         BaCardHeader(
-            title = "活动日历 · ${serverOptions[serverIndex]}",
+            title = stringResource(R.string.ba_calendar_title_format, serverOptions[serverIndex]),
             trailing = {
                 Text(
-                    text = if (baCalendarLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
-                        baCalendarLastSyncMs,
-                        serverTimeZone
-                    ),
+                    text = syncText,
                     color = countdownBlue,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -132,7 +144,7 @@ internal fun BaCalendarCard(
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
-                    contentDescription = "刷新活动日历",
+                    contentDescription = stringResource(R.string.ba_calendar_cd_refresh),
                     variant = GlassVariant.Content,
                     onClick = onRefreshCalendar,
                 )
@@ -151,7 +163,11 @@ internal fun BaCalendarCard(
             !baCalendarLoading && visibleCalendarEntries.isEmpty() -> {
                 BaCalendarStatePanel(
                     backdrop = backdrop,
-                    text = if (showEndedActivities) "暂无活动" else "暂无进行中或即将开始的活动",
+                    text = if (showEndedActivities) {
+                        stringResource(R.string.ba_calendar_empty_all)
+                    } else {
+                        stringResource(R.string.ba_calendar_empty_active)
+                    },
                     accentColor = MiuixTheme.colorScheme.onBackgroundVariant,
                     effectsEnabled = effectsEnabled
                 )
@@ -214,11 +230,12 @@ internal fun BaCalendarEntryPanel(
     val isRunningNow = nowMs in activity.beginAtMs until activity.endAtMs
     val isEnded = activity.endAtMs <= nowMs
     val remainTarget = if (isRunningNow || isEnded) activity.endAtMs else activity.beginAtMs
-    val remainText = if (isEnded) "已结束" else formatBaRemainingTime(remainTarget, nowMs)
+    val endedText = stringResource(R.string.ba_status_ended)
+    val remainText = if (isEnded) endedText else formatBaRemainingTime(remainTarget, nowMs)
     val statusText = when {
-        isRunningNow -> "进行中"
-        isEnded -> "已结束"
-        else -> "即将开始"
+        isRunningNow -> stringResource(R.string.ba_status_running)
+        isEnded -> endedText
+        else -> stringResource(R.string.ba_status_upcoming)
     }
     val statusColor = when {
         isRunningNow -> accentGreen
@@ -226,6 +243,7 @@ internal fun BaCalendarEntryPanel(
         else -> accentBlue
     }
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    val kindLabel = baCalendarKindLabel(activity.kindId, activity.kindName)
 
     BaGlassPanel(
         backdrop = backdrop,
@@ -253,7 +271,7 @@ internal fun BaCalendarEntryPanel(
             )
         }
         Text(
-            text = "${activity.kindName} · ${activity.title}",
+            text = "$kindLabel · ${activity.title}",
             color = MiuixTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             maxLines = 2,
@@ -299,6 +317,14 @@ internal fun BaPoolSectionHeaderCard(
 ) {
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    val syncText = when {
+        baPoolLoading -> stringResource(R.string.ba_syncing)
+        baPoolLastSyncMs > 0L -> formatBaDateTimeNoYearInTimeZone(
+            baPoolLastSyncMs,
+            serverTimeZone
+        )
+        else -> stringResource(R.string.ba_state_not_synced)
+    }
     BaGlassCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
@@ -306,13 +332,10 @@ internal fun BaPoolSectionHeaderCard(
         effectsEnabled = effectsEnabled,
     ) {
         BaCardHeader(
-            title = "卡池信息 · ${serverOptions[serverIndex]}",
+            title = stringResource(R.string.ba_pool_title_format, serverOptions[serverIndex]),
             trailing = {
                 Text(
-                    text = if (baPoolLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
-                        baPoolLastSyncMs,
-                        serverTimeZone
-                    ),
+                    text = syncText,
                     color = countdownBlue,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -320,7 +343,7 @@ internal fun BaPoolSectionHeaderCard(
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
-                    contentDescription = "刷新卡池",
+                    contentDescription = stringResource(R.string.ba_pool_cd_refresh),
                     variant = GlassVariant.Content,
                     onClick = onRefreshPool,
                 )
@@ -349,6 +372,14 @@ internal fun BaPoolCard(
 ) {
     val countdownBlue = Color(0xFF60A5FA)
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
+    val syncText = when {
+        baPoolLoading -> stringResource(R.string.ba_syncing)
+        baPoolLastSyncMs > 0L -> formatBaDateTimeNoYearInTimeZone(
+            baPoolLastSyncMs,
+            serverTimeZone
+        )
+        else -> stringResource(R.string.ba_state_not_synced)
+    }
     BaGlassCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
@@ -356,13 +387,10 @@ internal fun BaPoolCard(
         effectsEnabled = effectsEnabled,
     ) {
         BaCardHeader(
-            title = "卡池信息 · ${serverOptions[serverIndex]}",
+            title = stringResource(R.string.ba_pool_title_format, serverOptions[serverIndex]),
             trailing = {
                 Text(
-                    text = if (baPoolLoading) "同步中..." else formatBaDateTimeNoYearInTimeZone(
-                        baPoolLastSyncMs,
-                        serverTimeZone
-                    ),
+                    text = syncText,
                     color = countdownBlue,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -370,7 +398,7 @@ internal fun BaPoolCard(
                 GlassIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
-                    contentDescription = "刷新卡池",
+                    contentDescription = stringResource(R.string.ba_pool_cd_refresh),
                     variant = GlassVariant.Content,
                     onClick = onRefreshPool,
                 )
@@ -389,7 +417,11 @@ internal fun BaPoolCard(
             !baPoolLoading && visiblePoolEntries.isEmpty() -> {
                 BaPoolStatePanel(
                     backdrop = backdrop,
-                    text = if (showEndedPools) "暂无卡池" else "暂无进行中或即将开始的卡池",
+                    text = if (showEndedPools) {
+                        stringResource(R.string.ba_pool_empty_all)
+                    } else {
+                        stringResource(R.string.ba_pool_empty_active)
+                    },
                     accentColor = MiuixTheme.colorScheme.onBackgroundVariant,
                     effectsEnabled = effectsEnabled
                 )
@@ -455,11 +487,12 @@ internal fun BaPoolEntryPanel(
     val isRunningNow = nowMs in pool.startAtMs until pool.endAtMs
     val isEnded = pool.endAtMs <= nowMs
     val remainTarget = if (isRunningNow || isEnded) pool.endAtMs else pool.startAtMs
-    val remainText = if (isEnded) "已结束" else formatBaRemainingTime(remainTarget, nowMs)
+    val endedText = stringResource(R.string.ba_status_ended)
+    val remainText = if (isEnded) endedText else formatBaRemainingTime(remainTarget, nowMs)
     val statusText = when {
-        isRunningNow -> "进行中"
-        isEnded -> "已结束"
-        else -> "即将开始"
+        isRunningNow -> stringResource(R.string.ba_status_running)
+        isEnded -> endedText
+        else -> stringResource(R.string.ba_status_upcoming)
     }
     val statusColor = when {
         isRunningNow -> accentGreen
@@ -467,6 +500,7 @@ internal fun BaPoolEntryPanel(
         else -> accentBlue
     }
     val showPoolCoverImage = showCalendarPoolImages && pool.imageUrl.isNotBlank()
+    val tagLabel = baPoolTagLabel(pool.tagId, pool.tagName)
 
     BaGlassPanel(
         backdrop = backdrop,
@@ -508,7 +542,7 @@ internal fun BaPoolEntryPanel(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${pool.tagName} · ${pool.name}",
+                    text = "$tagLabel · ${pool.name}",
                     color = MiuixTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
@@ -540,5 +574,34 @@ internal fun BaPoolEntryPanel(
                 backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f),
             ),
         )
+    }
+}
+
+@Composable
+private fun baCalendarKindLabel(kindId: Int, fallback: String): String {
+    val fallbackText = fallback.ifBlank { stringResource(R.string.ba_calendar_kind_other) }
+    return when (kindId) {
+        14 -> stringResource(R.string.ba_calendar_kind_event)
+        15 -> stringResource(R.string.ba_calendar_kind_total_grand_assault)
+        16 -> stringResource(R.string.ba_calendar_kind_double_rewards)
+        17 -> stringResource(R.string.ba_calendar_kind_tower)
+        18 -> stringResource(R.string.ba_calendar_kind_guide_mission)
+        19 -> stringResource(R.string.ba_calendar_kind_tactical_test)
+        31 -> stringResource(R.string.ba_calendar_kind_other)
+        else -> fallbackText
+    }
+}
+
+@Composable
+private fun baPoolTagLabel(tagId: Int, fallback: String): String {
+    val fallbackText = fallback.ifBlank { stringResource(R.string.ba_pool_tag_recruitment) }
+    return when (tagId) {
+        5 -> stringResource(R.string.ba_pool_tag_permanent)
+        6 -> stringResource(R.string.ba_pool_tag_limited)
+        7 -> stringResource(R.string.ba_pool_tag_fes_limited)
+        8 -> stringResource(R.string.ba_pool_tag_collab)
+        9 -> stringResource(R.string.ba_pool_tag_rerun)
+        92 -> stringResource(R.string.ba_pool_tag_recollection)
+        else -> fallbackText
     }
 }

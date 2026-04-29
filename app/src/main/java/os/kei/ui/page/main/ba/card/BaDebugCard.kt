@@ -31,7 +31,7 @@ internal fun BaDebugCard(
         accentColor = accentAmber,
         accentAlpha = 0f,
     ) {
-        BaCardHeader(title = "Debug")
+        BaCardHeader(title = stringResource(R.string.ba_debug_title))
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(

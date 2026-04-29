@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
@@ -79,12 +80,12 @@ internal fun BaCafeCard(
         accentAlpha = 0f,
     ) {
         BaCardHeader(
-            title = "咖啡厅",
+            title = stringResource(R.string.ba_cafe_title),
             trailing = {
                 GlassIconButton(
                     backdrop = backdrop,
                     painter = painterResource(id = R.drawable.mp_cafe),
-                    contentDescription = "咖啡厅",
+                    contentDescription = stringResource(R.string.ba_cafe_title),
                     onClick = {},
                     variant = GlassVariant.Content,
                     width = 52.dp,
@@ -119,7 +120,7 @@ internal fun BaCafeCard(
         ) {
             BaGlassMetricPanel(
                 backdrop = backdrop,
-                label = "竞技场",
+                label = stringResource(R.string.ba_cafe_metric_tactical_challenge),
                 value = nextArenaRefreshText,
                 accentColor = accentPink,
                 valueColor = countdownBlue,
@@ -127,7 +128,7 @@ internal fun BaCafeCard(
             )
             BaGlassMetricPanel(
                 backdrop = backdrop,
-                label = "学生访问",
+                label = stringResource(R.string.ba_cafe_metric_student_visit),
                 value = nextStudentRefreshText,
                 accentColor = accentPink,
                 valueColor = countdownBlue,
@@ -137,7 +138,7 @@ internal fun BaCafeCard(
 
         BaInlineActionPanel(
             backdrop = backdrop,
-            buttonText = "摸摸头",
+            buttonText = stringResource(R.string.ba_cafe_action_headpat),
             buttonIconRes = R.drawable.fx_tex_ch0071_prop_05,
             countdownText = nextHeadpatText,
             timeText = headpatTimeText,
@@ -149,7 +150,7 @@ internal fun BaCafeCard(
 
         BaInlineActionPanel(
             backdrop = backdrop,
-            buttonText = "邀请券1",
+            buttonText = stringResource(R.string.ba_cafe_action_invite_ticket_1),
             buttonIconRes = R.drawable.cafe_icon_coupon,
             countdownText = invite1Text,
             timeText = invite1TimeText,
@@ -161,7 +162,7 @@ internal fun BaCafeCard(
 
         BaInlineActionPanel(
             backdrop = backdrop,
-            buttonText = "邀请券2",
+            buttonText = stringResource(R.string.ba_cafe_action_invite_ticket_2),
             buttonIconRes = R.drawable.cafe_icon_coupon,
             countdownText = invite2Text,
             timeText = invite2TimeText,

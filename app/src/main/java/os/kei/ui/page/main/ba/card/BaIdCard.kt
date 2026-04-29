@@ -14,12 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.R
+import os.kei.ui.page.main.ba.BaGlassCard
+import os.kei.ui.page.main.ba.BaGlassPanel
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_FRIEND_CODE
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_NICKNAME
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -50,19 +53,19 @@ internal fun BaIdCard(
     )
     val accentBlue = Color(0xFF3B82F6)
 
-    _root_ide_package_.os.kei.ui.page.main.ba.BaGlassCard(
+    BaGlassCard(
         backdrop = backdrop,
         accentColor = accentBlue,
         accentAlpha = 0f,
     ) {
-        BaCardHeader(title = "ID 卡")
+        BaCardHeader(title = stringResource(R.string.ba_id_card_title))
 
-        _root_ide_package_.os.kei.ui.page.main.ba.BaGlassPanel(
+        BaGlassPanel(
             backdrop = backdrop,
             accentColor = accentBlue,
         ) {
             BaIdFieldRow(
-                label = "昵称",
+                label = stringResource(R.string.ba_id_label_nickname),
                 trailingSlotWidth = trailingSlotWidth,
                 labelIconRes = R.drawable.collectible_icon_guidemission_s3,
             ) {
@@ -94,7 +97,7 @@ internal fun BaIdCard(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "老师",
+                            text = stringResource(R.string.ba_id_nickname_suffix),
                             color = accentBlue,
                             fontWeight = FontWeight.Medium,
                             fontSize = AppTypographyTokens.Body.fontSize,
@@ -108,12 +111,12 @@ internal fun BaIdCard(
             }
         }
 
-        _root_ide_package_.os.kei.ui.page.main.ba.BaGlassPanel(
+        BaGlassPanel(
             backdrop = backdrop,
             accentColor = accentBlue,
         ) {
             BaIdFieldRow(
-                label = "好友码",
+                label = stringResource(R.string.ba_id_label_friend_code),
                 trailingSlotWidth = trailingSlotWidth,
             ) {
                 GlassSearchField(

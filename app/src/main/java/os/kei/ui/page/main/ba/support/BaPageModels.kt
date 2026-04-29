@@ -1,5 +1,7 @@
 package os.kei.ui.page.main.ba.support
 
+import os.kei.R
+
 internal enum class BAInitState {
     Empty,
     Draft
@@ -45,12 +47,12 @@ internal object BASessionState {
     var didResetScrollOnThisProcess: Boolean = false
 }
 
-internal enum class BaCalendarRefreshIntervalOption(val hours: Int, val label: String) {
-    Hour1(1, "1 小时"),
-    Hour3(3, "3 小时"),
-    Hour6(6, "6 小时"),
-    Hour12(12, "12 小时"),
-    Hour24(24, "24 小时");
+internal enum class BaCalendarRefreshIntervalOption(val hours: Int, val labelRes: Int) {
+    Hour1(1, R.string.ba_refresh_interval_1h),
+    Hour3(3, R.string.ba_refresh_interval_3h),
+    Hour6(6, R.string.ba_refresh_interval_6h),
+    Hour12(12, R.string.ba_refresh_interval_12h),
+    Hour24(24, R.string.ba_refresh_interval_24h);
 
     companion object {
         fun fromHours(hours: Int): BaCalendarRefreshIntervalOption {

@@ -1,4 +1,9 @@
 <resources>
     <string name="common_open">Open</string>
+    <string name="common_close">Close</string>
+    <string name="common_save">Save</string>
+    <string name="common_refresh">Refresh</string>
     <string name="common_scope">Scope</string>
+    <string name="common_open_link_failed">Unable to open link</string>
+    <string name="common_share_failed">Share failed</string>
 </resources>

@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.ba.support
 
+import os.kei.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -91,11 +92,11 @@ internal fun serverRefreshTimeZone(serverIndex: Int): TimeZone {
     return if (serverIndex == 0) TimeZone.getTimeZone("Asia/Shanghai") else TimeZone.getTimeZone("Asia/Tokyo")
 }
 
-internal fun baServerLabel(serverIndex: Int): String {
+internal fun baServerLabelRes(serverIndex: Int): Int {
     return when (serverIndex.coerceIn(0, 2)) {
-        0 -> "国服"
-        1 -> "国际服"
-        else -> "日服"
+        0 -> R.string.ba_server_cn
+        1 -> R.string.ba_server_global
+        else -> R.string.ba_server_jp
     }
 }
 

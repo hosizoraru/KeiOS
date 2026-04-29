@@ -69,7 +69,11 @@ fun BAPage(
         distinctLayers = fullBackdropEffectsEnabled
     )
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = pageBackdropEffectsEnabled)
-    val serverOptions = remember { listOf("国服", "国际服", "日服") }
+    val serverOptions = listOf(
+        stringResource(R.string.ba_server_cn),
+        stringResource(R.string.ba_server_global),
+        stringResource(R.string.ba_server_jp)
+    )
     val cafeLevelOptions = remember { (1..10).toList() }
 
     // Reset once per cold process start so app relaunch always lands at BA top.

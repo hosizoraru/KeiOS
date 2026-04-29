@@ -335,7 +335,13 @@ internal class BaOfficeController(
             return false
         }
         if (showToast) {
-            val notifyText = if (thresholdTriggered) "已发送AP阈值提醒" else "已发送AP通知"
+            val notifyText = context.getString(
+                if (thresholdTriggered) {
+                    R.string.ba_toast_ap_threshold_notification_sent
+                } else {
+                    R.string.ba_toast_ap_notification_sent
+                }
+            )
             Toast.makeText(context, notifyText, Toast.LENGTH_SHORT).show()
         }
         return true

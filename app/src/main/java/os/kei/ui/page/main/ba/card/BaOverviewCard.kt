@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,7 +87,7 @@ internal fun BaOverviewCard(
         nowMs = uiNowMs,
     )
     val apNextPointRemain = formatBaRemainingTime(apNextPointAt, uiNowMs)
-    val apSyncTimeText = if (apSyncMs > 0L) formatBaDateTime(apSyncMs) else "未同步"
+    val apSyncTimeText = if (apSyncMs > 0L) formatBaDateTime(apSyncMs) else stringResource(R.string.ba_state_not_synced)
     val apFullText = formatBaRemainingTime(apFullAt, uiNowMs)
     val apFullTimeText = formatBaDateTime(apFullAt)
     val accentBlue = Color(0xFF3B82F6)
@@ -107,7 +108,11 @@ internal fun BaOverviewCard(
             title = overviewTitle,
             trailing = {
                 Text(
-                    text = if (isWorkActivated) "已激活" else "默认",
+                    text = if (isWorkActivated) {
+                        stringResource(R.string.ba_state_activated)
+                    } else {
+                        stringResource(R.string.ba_state_default)
+                    },
                     color = stateAccent,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -132,12 +137,12 @@ internal fun BaOverviewCard(
                         modifier = Modifier.heightIn(min = 40.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
-                        Text("学生/NPC/卫星图鉴", color = MiuixTheme.colorScheme.onBackground)
+                        Text(stringResource(R.string.ba_overview_catalog_title), color = MiuixTheme.colorScheme.onBackground)
                     }
                     GlassIconButton(
                         backdrop = backdrop,
                         painter = painterResource(id = R.drawable.common_icon_dailyreward),
-                        contentDescription = "打开图鉴",
+                        contentDescription = stringResource(R.string.ba_overview_cd_open_catalog),
                         variant = GlassVariant.Content,
                         onClick = onOpenGuideCatalog,
                         width = 48.dp,
@@ -162,10 +167,10 @@ internal fun BaOverviewCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("服务器", color = MiuixTheme.colorScheme.onBackground)
+                            Text(stringResource(R.string.ba_overview_server_label), color = MiuixTheme.colorScheme.onBackground)
                             Image(
                                 painter = painterResource(id = R.drawable.lobby_icon_work),
-                                contentDescription = "服务器图标",
+                                contentDescription = stringResource(R.string.ba_overview_cd_server_icon),
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -206,7 +211,7 @@ internal fun BaOverviewCard(
                         Text("AP", color = accentGreen, fontWeight = FontWeight.Bold)
                         Image(
                             painter = painterResource(id = R.drawable.ba_ap_icon_tight),
-                            contentDescription = "AP Icon",
+                            contentDescription = stringResource(R.string.ba_overview_cd_ap_icon),
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -245,7 +250,7 @@ internal fun BaOverviewCard(
                 }
             }
             Text(
-                text = "AP +1 $apNextPointRemain · Full AP $apFullText",
+                text = stringResource(R.string.ba_overview_ap_regen_status, apNextPointRemain, apFullText),
                 color = Color(0xFF60A5FA),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -265,7 +270,7 @@ internal fun BaOverviewCard(
                     modifier = Modifier.heightIn(min = 40.dp),
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    Text("咖啡厅AP", color = MiuixTheme.colorScheme.onBackground)
+                    Text(stringResource(R.string.ba_overview_cafe_ap_title), color = MiuixTheme.colorScheme.onBackground)
                 }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -274,7 +279,7 @@ internal fun BaOverviewCard(
                     GlassIconButton(
                         backdrop = backdrop,
                         painter = painterResource(id = R.drawable.item_icon_consumable_ap_3),
-                        contentDescription = "领取咖啡厅AP",
+                        contentDescription = stringResource(R.string.ba_overview_cd_claim_cafe_ap),
                         variant = GlassVariant.Content,
                         iconTint = Color.Unspecified,
                         onClick = onClaimCafeStoredAp,
@@ -298,7 +303,7 @@ internal fun BaOverviewCard(
         ) {
             BaGlassMetricPanel(
                 backdrop = backdrop,
-                label = "AP Sync",
+                label = stringResource(R.string.ba_metric_ap_sync),
                 value = apSyncTimeText,
                 accentColor = accentBlue,
                 valueColor = accentBlue,
@@ -306,7 +311,7 @@ internal fun BaOverviewCard(
             )
             BaGlassMetricPanel(
                 backdrop = backdrop,
-                label = "AP Full",
+                label = stringResource(R.string.ba_metric_ap_full),
                 value = apFullTimeText,
                 accentColor = Color(0xFF60A5FA),
                 valueColor = Color(0xFF60A5FA),

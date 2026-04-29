@@ -119,7 +119,7 @@ internal fun BaTopBarActions(
                         )
                         options.forEachIndexed { index, option ->
                             LiquidDropdownImpl(
-                                text = option.label,
+                                text = stringResource(option.labelRes),
                                 optionSize = options.size,
                                 isSelected = selected == option,
                                 index = index,

@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.ba
 
 import android.content.Context
+import os.kei.R
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.ba.support.BA_CALENDAR_CACHE_SCHEMA_VERSION
 import os.kei.ui.page.main.ba.support.BA_POOL_CACHE_SCHEMA_VERSION
@@ -103,9 +104,9 @@ internal object BaCalendarPoolRepository {
                 entries = cachedEntriesWithLocalImages,
                 loading = false,
                 error = if (hasCache) {
-                    "当前离线，已显示本地缓存"
+                    context.getString(R.string.ba_calendar_pool_error_offline_cached)
                 } else {
-                    "当前离线且无缓存，请联网后刷新"
+                    context.getString(R.string.ba_calendar_pool_error_offline_no_cache)
                 },
                 lastSyncMs = cacheSnapshot.syncMs
             )
@@ -154,7 +155,7 @@ internal object BaCalendarPoolRepository {
             return BaCalendarSyncSnapshot(
                 entries = cachedEntriesWithLocalImages,
                 loading = false,
-                error = if (hasCache) "本次返回空数据，已保留本地缓存" else null,
+                error = if (hasCache) context.getString(R.string.ba_calendar_pool_error_empty_keep_cached) else null,
                 lastSyncMs = cacheSnapshot.syncMs
             )
         }
@@ -163,9 +164,9 @@ internal object BaCalendarPoolRepository {
             entries = cachedEntriesWithLocalImages,
             loading = false,
             error = if (hasCache) {
-                "同步超时或网络失败，已显示本地缓存"
+                context.getString(R.string.ba_calendar_pool_error_sync_failed_cached)
             } else {
-                "活动日历同步失败（超时或网络异常）"
+                context.getString(R.string.ba_calendar_error_sync_failed)
             },
             lastSyncMs = cacheSnapshot.syncMs
         )
@@ -241,9 +242,9 @@ internal object BaCalendarPoolRepository {
                 entries = cachedEntriesWithLocalImages,
                 loading = false,
                 error = if (hasCache) {
-                    "当前离线，已显示本地缓存"
+                    context.getString(R.string.ba_calendar_pool_error_offline_cached)
                 } else {
-                    "当前离线且无缓存，请联网后刷新"
+                    context.getString(R.string.ba_calendar_pool_error_offline_no_cache)
                 },
                 lastSyncMs = cacheSnapshot.syncMs
             )
@@ -292,7 +293,7 @@ internal object BaCalendarPoolRepository {
             return BaPoolSyncSnapshot(
                 entries = cachedEntriesWithLocalImages,
                 loading = false,
-                error = if (hasCache) "本次返回空数据，已保留本地缓存" else null,
+                error = if (hasCache) context.getString(R.string.ba_calendar_pool_error_empty_keep_cached) else null,
                 lastSyncMs = cacheSnapshot.syncMs
             )
         }
@@ -301,9 +302,9 @@ internal object BaCalendarPoolRepository {
             entries = cachedEntriesWithLocalImages,
             loading = false,
             error = if (hasCache) {
-                "同步超时或网络失败，已显示本地缓存"
+                context.getString(R.string.ba_calendar_pool_error_sync_failed_cached)
             } else {
-                "卡池同步失败（超时或网络异常）"
+                context.getString(R.string.ba_pool_error_sync_failed)
             },
             lastSyncMs = cacheSnapshot.syncMs
         )
