@@ -21,16 +21,24 @@ data class HomeGitHubOverview(
     val cacheHitCount: Int = 0,
     val updatableCount: Int = 0,
     val preReleaseUpdateCount: Int = 0,
+    val failedCount: Int = 0,
     val strategy: GitHubLookupStrategyOption = GitHubLookupStrategyOption.AtomFeed,
     val apiTokenConfigured: Boolean = false,
+    val shareImportLinkageEnabled: Boolean = false,
+    val pendingShareImport: Boolean = false,
+    val refreshIntervalHours: Int = 3,
     val cachedRefreshMs: Long = 0L,
     val loaded: Boolean = false
 )
 
 data class HomeBaOverview(
     val activated: Boolean = false,
+    val serverIndex: Int = 2,
     val apCurrent: Int = 0,
     val apLimit: Int = HOME_BA_AP_LIMIT_MAX,
+    val apNotifyEnabled: Boolean = false,
+    val apNotifyThreshold: Int = 120,
+    val cafeLevel: Int = 10,
     val cafeStored: Int = 0,
     val cafeCap: Int = HOME_BA_CAFE_DAILY_AP_BY_LEVEL.last(),
     val loaded: Boolean = false

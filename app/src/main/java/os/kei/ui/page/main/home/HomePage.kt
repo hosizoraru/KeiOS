@@ -190,10 +190,14 @@ fun HomePage(
         githubUpdatableLine = contentState.githubUpdatableLine,
         homeStatPreReleaseUpdates = contentState.homeStatPreReleaseUpdates,
         githubPreReleaseUpdateLine = contentState.githubPreReleaseUpdateLine,
+        homeStatFailed = contentState.homeStatFailed,
+        githubFailedLine = contentState.githubFailedLine,
         homeStatTracked = contentState.homeStatTracked,
         trackedCountLine = contentState.trackedCountLine,
         homeStatCached = contentState.homeStatCached,
         cacheHitCountLine = contentState.cacheHitCountLine,
+        homeStatShare = contentState.homeStatShare,
+        githubShareLine = contentState.githubShareLine,
         homeStatStrategy = contentState.homeStatStrategy,
         githubStrategyText = contentState.githubStrategyText,
         homeStatApi = contentState.homeStatApi,
@@ -206,7 +210,11 @@ fun HomePage(
         homeStatCafeAp = contentState.homeStatCafeAp,
         baCafeApLine = contentState.baCafeApLine,
         homeStatApRemaining = contentState.homeStatApRemaining,
-        baApRemainingLine = contentState.baApRemainingLine
+        baApRemainingLine = contentState.baApRemainingLine,
+        homeStatBaServer = contentState.homeStatBaServer,
+        baServerLine = contentState.baServerLine,
+        homeStatBaNotify = contentState.homeStatBaNotify,
+        baNotifyLine = contentState.baNotifyLine
     )
 
     Box(modifier = Modifier.fillMaxSize()) {

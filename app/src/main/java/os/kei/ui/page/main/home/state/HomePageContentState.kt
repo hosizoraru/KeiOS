@@ -53,10 +53,14 @@ internal data class HomePageContentState(
     val githubUpdatableLine: String,
     val homeStatPreReleaseUpdates: String,
     val githubPreReleaseUpdateLine: String,
+    val homeStatFailed: String,
+    val githubFailedLine: String,
     val homeStatTracked: String,
     val trackedCountLine: String,
     val homeStatCached: String,
     val cacheHitCountLine: String,
+    val homeStatShare: String,
+    val githubShareLine: String,
     val homeStatStrategy: String,
     val githubStrategyText: String,
     val homeStatApi: String,
@@ -69,7 +73,11 @@ internal data class HomePageContentState(
     val homeStatCafeAp: String,
     val baCafeApLine: String,
     val homeStatApRemaining: String,
-    val baApRemainingLine: String
+    val baApRemainingLine: String,
+    val homeStatBaServer: String,
+    val baServerLine: String,
+    val homeStatBaNotify: String,
+    val baNotifyLine: String
 )
 
 @Composable
@@ -88,6 +96,7 @@ internal fun rememberHomePageContentState(
     val cacheHitCount = githubOverview.cacheHitCount
     val updatableCount = githubOverview.updatableCount
     val preReleaseUpdateCount = githubOverview.preReleaseUpdateCount
+    val failedCount = githubOverview.failedCount
     val cacheStateColor = when {
         !githubOverview.loaded -> inactiveColor
         cacheHitCount > 0 -> githubCacheColor
@@ -103,6 +112,8 @@ internal fun rememberHomePageContentState(
     val homeMcpRuntimePending = stringResource(R.string.mcp_runtime_pending)
     val homeBaStatusActive = stringResource(R.string.home_ba_status_active)
     val homeBaStatusInactive = stringResource(R.string.home_ba_status_inactive)
+    val homeValueOn = stringResource(R.string.home_value_on)
+    val homeValueOff = stringResource(R.string.home_value_off)
     val homeAppVersionUnknownFallback = stringResource(R.string.home_app_version_unknown_fallback)
     val homeAppVersionUnknown = stringResource(R.string.home_app_version_unknown)
     val appVersionText = remember(homeAppVersionUnknownFallback, homeAppVersionUnknown) {
@@ -140,6 +151,10 @@ internal fun rememberHomePageContentState(
         githubOverview.apiTokenConfigured -> homeCommonFilled
         else -> stringResource(R.string.common_guest)
     }
+    val githubRefreshIntervalLine = stringResource(
+        R.string.home_value_short_hours,
+        githubOverview.refreshIntervalHours.coerceAtLeast(1)
+    )
     val cacheRefreshLine = formatGitHubCacheAgo(
         lastRefreshMs = githubOverview.cachedRefreshMs,
         notRefreshedText = stringResource(R.string.github_refresh_ago_not_refreshed),
@@ -148,8 +163,8 @@ internal fun rememberHomePageContentState(
     val githubLastUpdateLine = when {
         !githubOverview.loaded -> homeStatusLoading
         trackedCount == 0 -> homeGitHubUnconfigured
-        cacheHitCount == 0 -> homeGitHubNoCache
-        else -> cacheRefreshLine
+        cacheHitCount == 0 -> stringResource(R.string.home_value_refresh_pair, githubRefreshIntervalLine, homeGitHubNoCache)
+        else -> stringResource(R.string.home_value_refresh_pair, githubRefreshIntervalLine, cacheRefreshLine)
     }
     val githubUpdatableLine = when {
         !githubOverview.loaded -> homeStatusLoading
@@ -162,6 +177,17 @@ internal fun rememberHomePageContentState(
             stringResource(R.string.github_overview_value_count, 0)
         else -> stringResource(R.string.github_overview_value_count, preReleaseUpdateCount)
     }
+    val githubFailedLine = when {
+        !githubOverview.loaded || trackedCount == 0 || cacheHitCount == 0 ->
+            stringResource(R.string.github_overview_value_count, 0)
+        else -> stringResource(R.string.github_overview_value_count, failedCount)
+    }
+    val githubShareLine = when {
+        !githubOverview.loaded -> homeStatusLoading
+        githubOverview.pendingShareImport -> stringResource(R.string.home_github_share_pending)
+        githubOverview.shareImportLinkageEnabled -> homeValueOn
+        else -> homeValueOff
+    }
     val trackedCountLine = stringResource(R.string.github_overview_value_count, trackedCount)
     val cacheHitCountLine = stringResource(R.string.github_overview_value_count, cacheHitCount)
     val baApLine = if (baOverview.loaded) {
@@ -170,7 +196,12 @@ internal fun rememberHomePageContentState(
         homeStatusLoading
     }
     val baCafeApLine = if (baOverview.loaded) {
-        stringResource(R.string.home_value_fraction, baOverview.cafeStored, baOverview.cafeCap)
+        stringResource(
+            R.string.home_value_cafe_fraction,
+            baOverview.cafeLevel,
+            baOverview.cafeStored,
+            baOverview.cafeCap
+        )
     } else {
         homeStatusLoading
     }
@@ -181,6 +212,24 @@ internal fun rememberHomePageContentState(
     }
     val baApRemainingLine = if (baOverview.loaded) {
         (baOverview.apLimit - baOverview.apCurrent).coerceAtLeast(0).toString()
+    } else {
+        homeStatusLoading
+    }
+    val baServerLine = if (baOverview.loaded) {
+        when (baOverview.serverIndex.coerceIn(0, 2)) {
+            0 -> stringResource(R.string.home_ba_server_cn)
+            1 -> stringResource(R.string.home_ba_server_global)
+            else -> stringResource(R.string.home_ba_server_jp)
+        }
+    } else {
+        homeStatusLoading
+    }
+    val baNotifyLine = if (baOverview.loaded) {
+        if (baOverview.apNotifyEnabled) {
+            stringResource(R.string.home_value_threshold_plus, baOverview.apNotifyThreshold)
+        } else {
+            homeValueOff
+        }
     } else {
         homeStatusLoading
     }
@@ -223,10 +272,14 @@ internal fun rememberHomePageContentState(
         githubUpdatableLine = githubUpdatableLine,
         homeStatPreReleaseUpdates = stringResource(R.string.home_stat_prerelease_updates),
         githubPreReleaseUpdateLine = githubPreReleaseUpdateLine,
+        homeStatFailed = stringResource(R.string.home_stat_failed),
+        githubFailedLine = githubFailedLine,
         homeStatTracked = stringResource(R.string.home_stat_tracked),
         trackedCountLine = trackedCountLine,
         homeStatCached = stringResource(R.string.home_stat_cached),
         cacheHitCountLine = cacheHitCountLine,
+        homeStatShare = stringResource(R.string.home_stat_share),
+        githubShareLine = githubShareLine,
         homeStatStrategy = stringResource(R.string.home_stat_strategy),
         githubStrategyText = githubStrategyText,
         homeStatApi = stringResource(R.string.home_stat_api),
@@ -239,6 +292,10 @@ internal fun rememberHomePageContentState(
         homeStatCafeAp = stringResource(R.string.home_stat_cafe_ap),
         baCafeApLine = baCafeApLine,
         homeStatApRemaining = stringResource(R.string.home_stat_ap_remaining),
-        baApRemainingLine = baApRemainingLine
+        baApRemainingLine = baApRemainingLine,
+        homeStatBaServer = stringResource(R.string.home_stat_ba_server),
+        baServerLine = baServerLine,
+        homeStatBaNotify = stringResource(R.string.home_stat_ba_notify),
+        baNotifyLine = baNotifyLine
     )
 }

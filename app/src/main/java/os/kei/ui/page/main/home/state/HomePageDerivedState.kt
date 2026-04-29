@@ -234,10 +234,14 @@ internal fun rememberHomePageOverviewCardState(
     githubUpdatableLine: String,
     homeStatPreReleaseUpdates: String,
     githubPreReleaseUpdateLine: String,
+    homeStatFailed: String,
+    githubFailedLine: String,
     homeStatTracked: String,
     trackedCountLine: String,
     homeStatCached: String,
     cacheHitCountLine: String,
+    homeStatShare: String,
+    githubShareLine: String,
     homeStatStrategy: String,
     githubStrategyText: String,
     homeStatApi: String,
@@ -250,7 +254,11 @@ internal fun rememberHomePageOverviewCardState(
     homeStatCafeAp: String,
     baCafeApLine: String,
     homeStatApRemaining: String,
-    baApRemainingLine: String
+    baApRemainingLine: String,
+    homeStatBaServer: String,
+    baServerLine: String,
+    homeStatBaNotify: String,
+    baNotifyLine: String
 ): HomePageOverviewCardState {
     val homeHeaderStatusPills = remember(
         homeStatusMcp,
@@ -331,10 +339,14 @@ internal fun rememberHomePageOverviewCardState(
         githubUpdatableLine,
         homeStatPreReleaseUpdates,
         githubPreReleaseUpdateLine,
+        homeStatFailed,
+        githubFailedLine,
         homeStatTracked,
         trackedCountLine,
         homeStatCached,
         cacheHitCountLine,
+        homeStatShare,
+        githubShareLine,
         homeStatStrategy,
         githubStrategyText,
         homeStatApi,
@@ -349,8 +361,10 @@ internal fun rememberHomePageOverviewCardState(
                 value = githubPreReleaseUpdateLine,
                 emphasize = true
             ),
+            HomeCardStatItem(label = homeStatFailed, value = githubFailedLine),
             HomeCardStatItem(label = homeStatTracked, value = trackedCountLine),
             HomeCardStatItem(label = homeStatCached, value = cacheHitCountLine),
+            HomeCardStatItem(label = homeStatShare, value = githubShareLine),
             HomeCardStatItem(label = homeStatStrategy, value = githubStrategyText),
             HomeCardStatItem(label = homeStatApi, value = githubApiText),
             HomeCardStatItem(label = homeStatLastUpdate, value = githubLastUpdateLine)
@@ -364,13 +378,19 @@ internal fun rememberHomePageOverviewCardState(
         homeStatCafeAp,
         baCafeApLine,
         homeStatApRemaining,
-        baApRemainingLine
+        baApRemainingLine,
+        homeStatBaServer,
+        baServerLine,
+        homeStatBaNotify,
+        baNotifyLine
     ) {
         listOf(
             HomeCardStatItem(label = homeStatStatus, value = baActivationLine, emphasize = true),
             HomeCardStatItem(label = homeStatAp, value = baApLine, emphasize = true),
+            HomeCardStatItem(label = homeStatApRemaining, value = baApRemainingLine),
             HomeCardStatItem(label = homeStatCafeAp, value = baCafeApLine),
-            HomeCardStatItem(label = homeStatApRemaining, value = baApRemainingLine)
+            HomeCardStatItem(label = homeStatBaServer, value = baServerLine),
+            HomeCardStatItem(label = homeStatBaNotify, value = baNotifyLine)
         )
     }
 

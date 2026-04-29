@@ -422,6 +422,7 @@ internal fun HomePageOverviewCards(
                 HomeInfoGridCard(
                     title = homeCardBa,
                     naText = homeNa,
+                    columns = 3,
                     stats = baStats
                 )
             }
