@@ -87,30 +87,27 @@ Current baseline scope:
 
 Workflow: `.github/workflows/ci-debug-apk.yml`
 
-- Trigger: `push` with any commit message containing `Build-CI`.
+- Trigger: `push` on `master`; Markdown/readme-only changes are ignored.
+- Manual trigger: `workflow_dispatch` with optional `commit` (commit SHA / branch / tag).
 - Job output: debug APK artifact uploaded to GitHub Actions.
 - Intended use: quick preview builds for development validation.
-- APK file name format: `KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>.apk` (UTC).
-- Artifact name format: `KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`.
+- nightly.link: `https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master`
+- APK file name format: `keios-android-debug-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>.apk`.
+- Artifact name format: `keios-android-debug-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>`.
 
-Example commit message:
-
-```text
-chore: tune guide cache Build-CI
-```
-
-## GitHub Actions: CI / Benchmark APK (Manual)
+## GitHub Actions: CI / Benchmark APK
 
 Workflow: `.github/workflows/ci-benchmark-apk.yml`
 
-- Trigger: manual run via `workflow_dispatch`.
-- Optional input: `commit` (commit SHA / branch / tag).
+- Trigger: `push` on `master`; Markdown/readme-only changes are ignored.
+- Manual trigger: `workflow_dispatch` with optional `commit` (commit SHA / branch / tag).
 - Default behavior: build latest commit on selected branch when `commit` is empty.
 - Build task: `./gradlew :app:assembleBenchmark --stacktrace`.
 - Job output: benchmark APK artifact uploaded to GitHub Actions.
-- Intended use: manual benchmark / preview verification outside the stable release channel.
-- APK file name format: `KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>.apk` (UTC).
-- Artifact name format: `KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`.
+- Intended use: benchmark / preview verification outside the stable release channel.
+- nightly.link: `https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master`
+- APK file name format: `keios-android-benchmark-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>.apk`.
+- Artifact name format: `keios-android-benchmark-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>`.
 
 ## GitHub Live Benchmark Test
 

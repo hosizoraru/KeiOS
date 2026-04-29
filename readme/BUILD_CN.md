@@ -86,30 +86,27 @@ JDK 兜底示例路径：
 
 工作流路径：`.github/workflows/ci-debug-apk.yml`
 
-- 触发方式：`push` 事件中任一 commit message 包含 `Build-CI`。
+- 触发方式：`master` 分支 `push`；仅 Markdown/readme 变更会跳过。
+- 手动触发：`workflow_dispatch`，可选 `commit`（commit SHA / branch / tag）。
 - 构建产物：自动构建并上传 Debug APK 到 GitHub Actions。
 - 使用场景：开发过程中的快速预览与验证。
-- APK 文件名格式：`KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>.apk`（UTC 时间）。
-- Artifact 名称格式：`KeiOS-debug-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`。
+- nightly.link：`https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master`
+- APK 文件名格式：`keios-android-debug-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>.apk`。
+- Artifact 名称格式：`keios-android-debug-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>`。
 
-示例提交信息：
-
-```text
-chore: tune guide cache Build-CI
-```
-
-## GitHub Actions：CI / Benchmark APK（手动）
+## GitHub Actions：CI / Benchmark APK
 
 工作流路径：`.github/workflows/ci-benchmark-apk.yml`
 
-- 触发方式：`workflow_dispatch` 手动运行。
-- 可选输入：`commit`（commit SHA / branch / tag）。
+- 触发方式：`master` 分支 `push`；仅 Markdown/readme 变更会跳过。
+- 手动触发：`workflow_dispatch`，可选 `commit`（commit SHA / branch / tag）。
 - 默认行为：`commit` 为空时构建所选分支的最新提交。
 - 构建任务：`./gradlew :app:assembleBenchmark --stacktrace`。
 - 构建产物：自动上传 Benchmark APK 到 GitHub Actions Artifact。
-- 使用场景：稳定版通道之外的手动基准验证与尝鲜预览。
-- APK 文件名格式：`KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>.apk`（UTC 时间）。
-- Artifact 名称格式：`KeiOS-benchmark-YYYYMMDD-HHMMSS-<shortSha>-run<run_number>`。
+- 使用场景：稳定版通道之外的基准验证与尝鲜预览。
+- nightly.link：`https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master`
+- APK 文件名格式：`keios-android-benchmark-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>.apk`。
+- Artifact 名称格式：`keios-android-benchmark-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>`。
 
 ## GitHub 实时基准测试（GitHub Live Benchmark Test）
 
