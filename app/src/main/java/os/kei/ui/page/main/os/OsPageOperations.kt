@@ -2,6 +2,7 @@ package os.kei.ui.page.main.os
 
 import android.content.Context
 import android.widget.Toast
+import os.kei.R
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shell.OsShellCommandCardStore
@@ -368,7 +369,7 @@ internal suspend fun exportOsPageCard(
         onExportFailed = { throwable ->
             Toast.makeText(
                 context,
-                "导出失败: ${throwable.javaClass.simpleName}",
+                context.getString(R.string.common_export_failed_with_reason, throwable.javaClass.simpleName),
                 Toast.LENGTH_SHORT
             ).show()
         }

@@ -36,6 +36,10 @@
     <string name="ba_settings_label_show_ended_pool">显示已结束卡池</string>
     <string name="ba_settings_label_show_images">显示活动/卡池图片</string>
     <string name="ba_settings_note_timezone">不同服务器时区不同，建议按实际游玩服务器设置。</string>
+    <string name="ba_toast_friend_code_invalid">好友码需为 8 位大写字母</string>
+    <string name="ba_toast_cafe_no_ap">咖啡厅暂无可领取体力</string>
+    <string name="ba_toast_cafe_claimed_ap">已领取 %1$d 体力</string>
+    <string name="ba_toast_cafe_debug_added">已增加 +3h 咖啡厅体力（+%1$d）</string>
     <string name="ba_debug_action_ap_notification">AP 通知</string>
     <string name="ba_debug_action_cafe_visit_notification">咖啡厅学生访问通知</string>
     <string name="ba_debug_action_arena_refresh_notification">竞技场刷新通知</string>
@@ -148,6 +152,10 @@
     <string name="guide_media_save_success">已保存：%1$s</string>
     <string name="guide_media_save_failed">保存失败</string>
     <string name="guide_media_save_empty">无可保存的媒体</string>
+    <string name="guide_media_video_url_invalid">视频链接无效</string>
+    <string name="guide_media_audio_url_invalid">音频地址无效</string>
+    <string name="guide_media_audio_play_failed">音频播放失败</string>
+    <string name="guide_media_audio_play_failed_with_reason">音频播放失败：%1$s</string>
     <string name="guide_toast_item_copied">条目已复制</string>
     <string name="guide_loading_title">阿罗娜帮老师连接中！</string>
     <string name="guide_toast_voice_play_failed_with_reason">语音播放失败：%1$s</string>

@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import os.kei.R
 import os.kei.ui.page.main.os.appLucideFullscreenIcon
 import os.kei.ui.page.main.student.GuideRemoteImageAdaptive
 import os.kei.ui.page.main.student.GuideVideoControlAction
@@ -111,7 +112,11 @@ internal fun GuideGalleryCardContent(
                     variant = GlassVariant.Compact,
                     onClick = {
                         if (normalizeGuideMediaSource(displayMediaUrl).isBlank()) {
-                            Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.guide_media_video_url_invalid),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else if (!gestureState.videoInlineExpanded) {
                             gestureState.videoInlineExpanded = true
                         } else {
@@ -128,7 +133,11 @@ internal fun GuideGalleryCardContent(
                     onClick = {
                         val normalized = normalizeGuideMediaSource(displayMediaUrl)
                         if (normalized.isBlank()) {
-                            Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.guide_media_video_url_invalid),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             GuideVideoFullscreenActivity.Companion.launch(
                                 context = context,
@@ -298,7 +307,7 @@ internal fun GuideGalleryCardContent(
 
         audioState.loadError?.takeIf { it.isNotBlank() }?.let { err ->
             Text(
-                text = "音频播放失败：$err",
+                text = context.getString(R.string.guide_media_audio_play_failed_with_reason, err),
                 color = MiuixTheme.colorScheme.error,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

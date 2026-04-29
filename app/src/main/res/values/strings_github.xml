@@ -25,6 +25,10 @@
     <string name="github_toast_strategy_unchanged">抓取方案未变化</string>
     <string name="github_toast_check_logic_updated_recheck">已更新检查逻辑，正在重新检查</string>
     <string name="github_toast_check_logic_saved">已保存检查逻辑</string>
+    <string name="github_toast_preferences_saved">已保存 GitHub 偏好设置</string>
+    <string name="github_toast_share_import_setting_saved">已保存分享导入设置</string>
+    <string name="github_toast_online_share_target_saved">已保存在线分享目标</string>
+    <string name="github_toast_downloader_setting_saved">已保存下载器设置</string>
     <string name="github_toast_refresh_interval_saved">已保存更新间隔</string>
     <string name="github_toast_check_logic_unchanged">检查逻辑未变化</string>
     <string name="github_toast_require_track_item">请先新增至少一个跟踪项目</string>

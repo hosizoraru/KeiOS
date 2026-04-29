@@ -145,7 +145,7 @@ internal class BaOfficeController(
     fun saveIdFriendCodeFromInput(context: Context) {
         val sanitized = sanitizeBaFriendCodeInput(idFriendCodeInput)
         if (sanitized.length != 8) {
-            Toast.makeText(context, "好友码需为8位大写字母", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.ba_toast_friend_code_invalid), Toast.LENGTH_SHORT).show()
             idFriendCodeInput = idFriendCode
             return
         }
@@ -239,13 +239,17 @@ internal class BaOfficeController(
         applyCafeStorage()
         val claim = applyBaCafeClaim(cafeStoredAp)
         if (claim <= 0.0) {
-            Toast.makeText(context, "咖啡厅暂无可领取体力", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.ba_toast_cafe_no_ap), Toast.LENGTH_SHORT).show()
             return
         }
         addCurrentAp(claim, markSync = true)
         cafeStoredAp = 0.0
         BASettingsStore.saveCafeStoredAp(0.0)
-        Toast.makeText(context, "已领取 ${claim.roundToInt()} 体力", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            context,
+            context.getString(R.string.ba_toast_cafe_claimed_ap, claim.roundToInt()),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     fun testCafePlus3Hours(context: Context) {
@@ -256,7 +260,11 @@ internal class BaOfficeController(
         )
         cafeStoredAp = nextStoredAp
         BASettingsStore.saveCafeStoredAp(cafeStoredAp)
-        Toast.makeText(context, "已增加 +3h 咖啡厅体力（+$gainedInt）", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            context,
+            context.getString(R.string.ba_toast_cafe_debug_added, gainedInt),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     fun copyFriendCodeToClipboard(context: Context) {

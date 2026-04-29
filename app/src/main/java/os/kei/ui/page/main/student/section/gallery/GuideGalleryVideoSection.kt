@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideGalleryItem
 import os.kei.ui.page.main.student.GuideVideoControlAction
 import os.kei.ui.page.main.student.GuideVideoFullscreenActivity
@@ -94,7 +95,11 @@ fun GuideGalleryVideoGroupCardItem(
                 backdrop = backdrop,
                 onToggleInlinePlay = {
                     if (normalizeGuideMediaSource(displayMediaUrl).isBlank()) {
-                        Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.guide_media_video_url_invalid),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else if (!videoInlineExpanded) {
                         videoInlineExpanded = true
                     } else {
@@ -104,7 +109,11 @@ fun GuideGalleryVideoGroupCardItem(
                 onOpenFullscreen = {
                     val normalized = normalizeGuideMediaSource(displayMediaUrl)
                     if (normalized.isBlank()) {
-                        Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.guide_media_video_url_invalid),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
                         GuideVideoFullscreenActivity.Companion.launch(
                             context = context,
@@ -211,7 +220,11 @@ internal fun GuideInlineVideoPlayer(
     val openFullscreen = remember(context, normalizedUrl) {
         {
             if (normalizedUrl.isBlank()) {
-                Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.guide_media_video_url_invalid),
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
                 GuideVideoFullscreenActivity.Companion.launch(
                     context = context,

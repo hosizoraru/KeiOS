@@ -185,7 +185,17 @@ internal class GitHubConfigActions(
             val filteringChanged = previousConfig.aggressiveApkFiltering != newConfig.aggressiveApkFiltering
             val shareImportChanged =
                 previousConfig.shareImportLinkageEnabled != newConfig.shareImportLinkageEnabled
+            val onlineShareTargetChanged =
+                previousConfig.onlineShareTargetPackage != newConfig.onlineShareTargetPackage
+            val downloaderChanged =
+                previousConfig.preferredDownloaderPackage != newConfig.preferredDownloaderPackage
             val intervalChanged = previousRefreshIntervalHours != state.refreshIntervalHoursInput
+            val preferenceChangedCount = listOf(
+                shareImportChanged,
+                onlineShareTargetChanged,
+                downloaderChanged,
+                intervalChanged
+            ).count { it }
             when {
                 checkScopeChanged || filteringChanged -> {
                     repository.clearCheckCache()
@@ -201,8 +211,17 @@ internal class GitHubConfigActions(
                         env.toast(R.string.github_toast_check_logic_saved)
                     }
                 }
+                preferenceChangedCount > 1 -> {
+                    env.toast(R.string.github_toast_preferences_saved)
+                }
                 shareImportChanged -> {
-                    env.toast(R.string.github_toast_check_logic_saved)
+                    env.toast(R.string.github_toast_share_import_setting_saved)
+                }
+                onlineShareTargetChanged -> {
+                    env.toast(R.string.github_toast_online_share_target_saved)
+                }
+                downloaderChanged -> {
+                    env.toast(R.string.github_toast_downloader_setting_saved)
                 }
                 intervalChanged -> {
                     env.toast(R.string.github_toast_refresh_interval_saved)

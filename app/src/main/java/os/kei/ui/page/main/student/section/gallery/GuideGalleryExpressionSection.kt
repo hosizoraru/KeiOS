@@ -313,7 +313,11 @@ fun GuideGalleryExpressionCardItem(
                         variant = GlassVariant.Compact,
                         onClick = {
                             if (normalizeGuideMediaSource(displayMediaUrl).isBlank()) {
-                                Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.guide_media_video_url_invalid),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else if (!videoInlineExpanded) {
                                 videoInlineExpanded = true
                             } else {
@@ -330,7 +334,11 @@ fun GuideGalleryExpressionCardItem(
                         onClick = {
                             val normalized = normalizeGuideMediaSource(displayMediaUrl)
                             if (normalized.isBlank()) {
-                                Toast.makeText(context, "视频链接无效", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.guide_media_video_url_invalid),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else {
                                 GuideVideoFullscreenActivity.Companion.launch(
                                     context = context,

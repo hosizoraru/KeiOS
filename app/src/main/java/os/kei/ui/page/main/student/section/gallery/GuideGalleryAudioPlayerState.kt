@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import os.kei.R
 import os.kei.ui.page.main.student.GuideBgmLoopStore
 import os.kei.ui.page.main.student.GuideBgmPlayerStore
 import kotlinx.coroutines.delay
@@ -74,7 +75,7 @@ internal class GuideGalleryAudioPlayerState(
 
     fun play(context: Context, restart: Boolean = false) {
         val currentPlayer = player ?: run {
-            Toast.makeText(context, "音频地址无效", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.guide_media_audio_url_invalid), Toast.LENGTH_SHORT).show()
             return
         }
         runCatching {
@@ -89,13 +90,13 @@ internal class GuideGalleryAudioPlayerState(
             currentPlayer.play()
         }.onFailure {
             loadError = it.message
-            Toast.makeText(context, "音频播放失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.guide_media_audio_play_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
     fun togglePlay(context: Context) {
         val currentPlayer = player ?: run {
-            Toast.makeText(context, "音频地址无效", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.guide_media_audio_url_invalid), Toast.LENGTH_SHORT).show()
             return
         }
         runCatching {
@@ -107,7 +108,7 @@ internal class GuideGalleryAudioPlayerState(
             }
         }.onFailure {
             loadError = it.message
-            Toast.makeText(context, "音频播放失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.guide_media_audio_play_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
