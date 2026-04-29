@@ -2,38 +2,33 @@
 
 [中文版本 (CN)](readme/CN.md)
 
-Docs:
+KeiOS is an Android utility console for system inspection, local MCP service control, GitHub release tracking, and Blue Archive helper workflows. It combines a Compose + Miuix interface with liquid-glass style chrome, quick status cards, import/export tools, notifications, and cache diagnostics.
+
+## Main Features
+
+- Home dashboard for OS, MCP, GitHub, and BA status at a glance.
+- OS tools for system tables, Android/Java/Linux properties, activity shortcuts, and Shizuku-powered shell cards.
+- Local MCP server controls with config copy, tool overview, logs, foreground service support, and notification testing.
+- GitHub release tracking for APK projects, prerelease strategies, downloadable assets, share-import links, and installed-app linkage.
+- BA office helpers for AP, cafe visit, arena refresh reminders, server-aware timing, media settings, and student-guide entry points.
+- Student guide catalog with search, sorting, media cache, BGM favorites, gallery viewing, media export, and import/export for favorites.
+- Settings for theme, motion, liquid-glass components, bottom-bar effect policy, background images, permissions, cache diagnostics, logs, and notification compatibility.
+
+Read the full feature tour:
+- [Feature Overview (EN)](readme/FEATURES.md)
+- [功能完整介绍 (CN)](readme/FEATURES_CN.md)
+
+## Current Distribution
+
+- Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
+- Current stable tag: [v1.2.3](https://github.com/hosizoraru/KeiOS/releases/tag/v1.2.3).
+- Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
+- Runtime and build baseline: `targetSdk=37`, Java 21, Kotlin/Gradle project toolchain.
+
+## Documentation
+
 - [Documentation Index](readme/INDEX.md)
 - [Build Guide (EN)](readme/BUILD.md)
 - [构建指南 (CN)](readme/BUILD_CN.md)
 - [Todo List (EN)](readme/TODO.md)
 - [待办清单 (CN)](readme/TODO_CN.md)
-
-## Current Distribution
-
-- Stable release APKs are available on [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
-- The latest public release is [KeiOS v1.1.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.1.0).
-- Release package baseline: `os.kei`, `arm64-v8a`, `Android 15+` (`minSdk 35`).
-- Local clone + build remains the preferred path for source users, contributors, and rapid preview validation.
-- `CI / Benchmark APK` workflow (`.github/workflows/ci-benchmark-apk.yml`) still supports manual benchmark APK builds and uploads downloadable artifacts.
-
-## Project Snapshot
-
-- Android app focused on system utility + GitHub tracking + BA content pages.
-- UI stack: Compose + Miuix KMP + Lifecycle ViewModel Compose + liquid glass style components.
-- Runtime baseline: `minSdk=35`, `targetSdk=37`, Java/Kotlin toolchain on Java 21.
-
-## Runtime Settings Map (Recent)
-
-- `Settings > Visual & Interaction`
-  Theme mode, transition animations, ActionBar layered style, liquid bottom bar, card press feedback, home icon HDR highlight, non-home page custom background image.
-- `Settings > Notification & Compatibility`
-  Super Island style toggle and HyperOS compatibility bypass toggle.
-- `Settings > Copy & Text Selection`
-  Lightweight row copy mode and expanded system text-selection mode.
-- `Settings > Cache`
-  Cache diagnostics summary for GitHub / MCP / OS / BA modules.
-- `BA Page > BA Config`
-  AP settings, media settings, adaptive media rotation, custom media save location.
-- `GitHub Page > Check & Download / Track Sheet`
-  Refresh interval, prerelease strategy, downloader routing, latest-release download behavior.
