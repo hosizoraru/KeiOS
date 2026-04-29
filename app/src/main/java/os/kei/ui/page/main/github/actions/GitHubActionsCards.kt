@@ -45,13 +45,14 @@ internal fun GitHubActionsWorkflowCard(
                 GitHubActionsInfoPill(
                     label = workflowKindLabel(match.traits.kind),
                     color = kindColor,
-                    emphasized = selected
+                    emphasized = selected,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
             }
         )
         Text(
             text = match.workflow.path.ifBlank { match.workflow.id.toString() },
-            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            color = githubActionsSecondaryTextColor(isDark),
             fontSize = AppTypographyTokens.Supporting.fontSize,
             lineHeight = AppTypographyTokens.Supporting.lineHeight,
             maxLines = 2,
@@ -62,27 +63,31 @@ internal fun GitHubActionsWorkflowCard(
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_badge_recommended),
                     color = GitHubStatusPalette.Update,
-                    emphasized = true
+                    emphasized = true,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
             }
             if (match.lastDownload != null) {
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_badge_last_downloaded),
                     color = GitHubStatusPalette.Active,
-                    emphasized = true
+                    emphasized = true,
+                    minWidth = GitHubActionsStatePillMinWidth
                 )
             }
             match.signal?.let { signal ->
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_label_runs_with_count, signal.recentRunCount),
-                    color = GitHubStatusPalette.Active
+                    color = GitHubStatusPalette.Active,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
                 GitHubActionsInfoPill(
                     label = stringResource(
                         R.string.github_actions_label_artifacts_with_count,
                         signal.androidArtifactCount
                     ),
-                    color = GitHubStatusPalette.PreRelease
+                    color = GitHubStatusPalette.PreRelease,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
             }
         }
@@ -117,13 +122,14 @@ internal fun GitHubActionsRunCard(
                 GitHubActionsInfoPill(
                     label = runStatusLabel(match, trackingPlan),
                     color = stateAccent,
-                    emphasized = selected
+                    emphasized = selected,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
             }
         )
         Text(
             text = buildRunSubtitle(match, context = LocalContext.current),
-            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            color = githubActionsSecondaryTextColor(isDark),
             fontSize = AppTypographyTokens.Supporting.fontSize,
             lineHeight = AppTypographyTokens.Supporting.lineHeight,
             maxLines = 2,
@@ -134,14 +140,16 @@ internal fun GitHubActionsRunCard(
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_badge_recommended),
                     color = GitHubStatusPalette.Update,
-                    emphasized = true
+                    emphasized = true,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
             }
             if (match.lastDownload != null) {
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_badge_last_downloaded),
                     color = GitHubStatusPalette.Active,
-                    emphasized = true
+                    emphasized = true,
+                    minWidth = GitHubActionsStatePillMinWidth
                 )
             }
             runBranchTrustPill(match)

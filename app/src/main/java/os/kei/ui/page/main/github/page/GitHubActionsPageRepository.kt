@@ -337,14 +337,16 @@ internal class GitHubActionsPageRepository(
         artifact: GitHubActionsArtifact,
         owner: String,
         repo: String,
-        lookupConfig: GitHubLookupConfig
+        lookupConfig: GitHubLookupConfig,
+        preferApiTokenRedirect: Boolean = false
     ): Result<GitHubActionsArtifactDownloadResolution> {
         return withContext(ioDispatcher) {
             GitHubActionsRepository.fromLookupConfig(lookupConfig)
                 .resolveArtifactDownloadUrl(
                     artifact = artifact,
                     owner = owner,
-                    repo = repo
+                    repo = repo,
+                    preferApiTokenRedirect = preferApiTokenRedirect
                 )
         }
     }

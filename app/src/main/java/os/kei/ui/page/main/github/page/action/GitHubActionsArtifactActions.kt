@@ -50,7 +50,8 @@ internal class GitHubActionsArtifactActions(
                     artifact = artifact,
                     owner = item.owner,
                     repo = item.repo,
-                    lookupConfig = state.lookupConfig
+                    lookupConfig = state.lookupConfig,
+                    preferApiTokenRedirect = true
                 ).getOrThrow()
                 val resolvedUrl = SafeExternalIntents.httpsExternalUrlOrNull(resolution.downloadUrl)
                     ?: error(context.getString(R.string.github_actions_error_download_url_invalid))

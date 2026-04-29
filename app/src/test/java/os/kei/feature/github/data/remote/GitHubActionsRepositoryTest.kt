@@ -404,6 +404,145 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `nightly link strategy falls back to public api workflow id when file preview fails`() {
+        MockWebServer().use { server ->
+            val nightlyBaseUrl = server.url("/nightly/").toString()
+            val base = nightlyBaseUrl.trimEnd('/')
+            server.enqueue(MockResponse().setResponseCode(500).setBody("workflow preview failed"))
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "workflows": [
+                                {
+                                  "id": 97592034,
+                                  "node_id": "W_97592034",
+                                  "name": "Build Example App",
+                                  "path": ".github/workflows/Action CI.yml",
+                                  "state": "active",
+                                  "html_url": "https://github.com/demo/app/blob/main/.github/workflows/Action%20CI.yml",
+                                  "badge_url": ""
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "workflow_runs": [
+                                {
+                                  "id": 251,
+                                  "name": "Build Example App",
+                                  "display_title": "app: add android 37.0 to androidList",
+                                  "workflow_id": 97592034,
+                                  "workflow_name": "Build Example App",
+                                  "run_number": 661,
+                                  "run_attempt": 1,
+                                  "event": "push",
+                                  "status": "completed",
+                                  "conclusion": "success",
+                                  "head_branch": "main",
+                                  "head_sha": "def456",
+                                  "html_url": "https://github.com/demo/app/actions/runs/251",
+                                  "artifacts_url": "https://api.github.com/repos/demo/app/actions/runs/251/artifacts",
+                                  "repository": {"full_name":"demo/app"},
+                                  "head_repository": {"full_name":"demo/app", "fork": false},
+                                  "pull_requests": [],
+                                  "created_at": "2026-04-29T09:55:12Z",
+                                  "run_started_at": "2026-04-29T09:55:12Z",
+                                  "updated_at": "2026-04-29T10:09:49Z"
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 2,
+                              "artifacts": [
+                                {
+                                  "id": 6704426665,
+                                  "node_id": "A_6704426665",
+                                  "name": "Updater-android-universal-apk.apk",
+                                  "size_in_bytes": 1933410,
+                                  "expired": false,
+                                  "digest": "sha256:android",
+                                  "archive_download_url": "https://api.github.com/repos/demo/app/actions/artifacts/6704426665/zip",
+                                  "created_at": "2026-04-29T10:01:32Z",
+                                  "updated_at": "2026-04-29T10:01:32Z",
+                                  "expires_at": "2026-07-28T09:55:12Z",
+                                  "workflow_run": {"id": 251, "head_branch": "main", "head_sha": "def456"}
+                                },
+                                {
+                                  "id": 6704426443,
+                                  "node_id": "A_6704426443",
+                                  "name": "Updater-linux-x64-bin",
+                                  "size_in_bytes": 67171008,
+                                  "expired": false,
+                                  "digest": "sha256:linux",
+                                  "archive_download_url": "https://api.github.com/repos/demo/app/actions/artifacts/6704426443/zip",
+                                  "created_at": "2026-04-29T10:01:31Z",
+                                  "updated_at": "2026-04-29T10:01:31Z",
+                                  "expires_at": "2026-07-28T09:55:12Z",
+                                  "workflow_run": {"id": 251, "head_branch": "main", "head_sha": "def456"}
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                apiBaseUrl = server.url("/api/").toString(),
+                nightlyLinkBaseUrl = nightlyBaseUrl
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/Action CI.yml",
+                branch = "main",
+                resolveNightlyRunDetail = false
+            ).result.getOrThrow()
+
+            assertEquals("97592034", snapshot.workflowId)
+            assertEquals(251L, snapshot.runs.single().run.id)
+            assertEquals(
+                listOf("Updater-android-universal-apk.apk", "Updater-linux-x64-bin"),
+                snapshot.artifacts.map { it.name }
+            )
+            assertEquals(
+                "$base/demo/app/actions/runs/251/Updater-android-universal-apk.apk.zip",
+                snapshot.artifacts.first().archiveDownloadUrl
+            )
+            assertEquals(
+                listOf(
+                    "/nightly/demo/app/workflows/Action%20CI/main?preview",
+                    "/api/repos/demo/app/actions/workflows?per_page=50",
+                    "/api/repos/demo/app/actions/workflows/97592034/runs?per_page=20&branch=main&status=success",
+                    "/api/repos/demo/app/actions/runs/251/artifacts?per_page=100"
+                ),
+                List(4) { server.takeRequest().path }
+            )
+        }
+    }
+
+    @Test
     fun `nightly link strategy can skip run detail for background signals`() {
         MockWebServer().use { nightly ->
             val base = nightly.url("/").toString().trimEnd('/')
@@ -609,6 +748,40 @@ class GitHubActionsRepositoryTest {
             assertEquals(10L, result.artifactId)
             assertEquals(url, result.downloadUrl)
             assertEquals(0, nightly.requestCount)
+        }
+    }
+
+    @Test
+    fun `nightly link download resolver uses api artifact redirect when token exists`() {
+        MockWebServer().use { server ->
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(302)
+                    .addHeader("Location", "https://pipelines.actions.githubusercontent.com/demo/artifact.zip")
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "test-token-123",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                apiBaseUrl = server.url("/api/").toString(),
+                nightlyLinkBaseUrl = server.url("/nightly/").toString()
+            )
+
+            val result = repository.resolveArtifactDownloadUrl(
+                artifact = GitHubActionsArtifact(
+                    id = 6704426665,
+                    name = "Updater-android-universal-apk.apk",
+                    archiveDownloadUrl = "https://nightly.link/demo/app/actions/runs/251/Updater-android-universal-apk.apk.zip"
+                ),
+                owner = "demo",
+                repo = "app",
+                preferApiTokenRedirect = true
+            ).getOrThrow()
+
+            assertEquals(6704426665L, result.artifactId)
+            assertEquals("https://pipelines.actions.githubusercontent.com/demo/artifact.zip", result.downloadUrl)
+            val request = server.takeRequest()
+            assertEquals("/api/repos/demo/app/actions/artifacts/6704426665/zip", request.path)
+            assertEquals("Bearer test-token-123", request.getHeader("Authorization"))
         }
     }
 

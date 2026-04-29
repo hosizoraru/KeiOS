@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
@@ -32,6 +34,11 @@ import os.kei.ui.page.main.widget.sheet.SheetSurfaceCard
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+internal val GitHubActionsPillMinHeight = 30.dp
+internal val GitHubActionsShortPillMinWidth = 48.dp
+internal val GitHubActionsCountPillMinWidth = GitHubActionsShortPillMinWidth
+internal val GitHubActionsStatePillMinWidth = 66.dp
 
 @Composable
 internal fun GitHubActionsSummaryCard(
@@ -91,7 +98,7 @@ internal fun GitHubActionsSummaryCard(
                 Text(
                     text = "${target.owner}/${target.repo}",
                     modifier = Modifier.weight(1f),
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    color = githubActionsSecondaryTextColor(isDark),
                     fontSize = AppTypographyTokens.Supporting.fontSize,
                     lineHeight = AppTypographyTokens.Supporting.lineHeight,
                     maxLines = 1,
@@ -199,7 +206,7 @@ internal fun GitHubActionsCollapsibleSection(
                     )
                     Text(
                         text = summary,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        color = githubActionsSecondaryTextColor(isDark),
                         fontSize = AppTypographyTokens.Supporting.fontSize,
                         lineHeight = AppTypographyTokens.Supporting.lineHeight,
                         maxLines = 1,
@@ -208,7 +215,8 @@ internal fun GitHubActionsCollapsibleSection(
                 }
                 GitHubActionsInfoPill(
                     label = countLabel,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    minWidth = GitHubActionsCountPillMinWidth
                 )
                 AppCompactIconAction(
                     icon = if (expanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
@@ -240,24 +248,30 @@ internal fun GitHubActionsInfoPill(
     label: String,
     color: Color,
     modifier: Modifier = Modifier,
-    emphasized: Boolean = false
+    emphasized: Boolean = false,
+    minWidth: Dp = GitHubActionsShortPillMinWidth
 ) {
     val isDark = isSystemInDarkTheme()
     StatusPill(
         label = label,
         color = color,
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(
+            minWidth = minWidth,
+            minHeight = GitHubActionsPillMinHeight
+        ),
         size = AppStatusPillSize.Compact,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
         backgroundAlphaOverride = when {
-            emphasized && isDark -> 0.17f
-            emphasized -> 0.13f
-            isDark -> 0.10f
-            else -> 0.08f
+            emphasized && isDark -> 0.24f
+            emphasized -> 0.18f
+            isDark -> 0.16f
+            else -> 0.12f
         },
         borderAlphaOverride = when {
-            emphasized && isDark -> 0.18f
-            emphasized -> 0.12f
-            else -> 0f
+            emphasized && isDark -> 0.34f
+            emphasized -> 0.28f
+            isDark -> 0.22f
+            else -> 0.18f
         }
     )
 }

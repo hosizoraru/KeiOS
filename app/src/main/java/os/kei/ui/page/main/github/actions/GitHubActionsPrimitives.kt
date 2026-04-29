@@ -34,7 +34,7 @@ internal fun GitHubActionsArtifactHintText(
     Text(
         text = text,
         modifier = Modifier.fillMaxWidth(),
-        color = MiuixTheme.colorScheme.onBackgroundVariant,
+        color = githubActionsSecondaryTextColor(isSystemInDarkTheme()),
         fontSize = AppTypographyTokens.Supporting.fontSize,
         lineHeight = AppTypographyTokens.Supporting.lineHeight,
         maxLines = 2,
@@ -132,6 +132,7 @@ internal fun GitHubActionsPillRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
         content = { content() }
     )
 }
@@ -192,7 +193,7 @@ internal fun GitHubActionsNoticeCard(
     ) {
         Text(
             text = text,
-            color = if (isError) GitHubStatusPalette.Error else MiuixTheme.colorScheme.onBackgroundVariant,
+            color = if (isError) GitHubStatusPalette.Error else githubActionsSecondaryTextColor(isDark),
             fontSize = AppTypographyTokens.Body.fontSize,
             lineHeight = AppTypographyTokens.Body.lineHeight
         )

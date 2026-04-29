@@ -260,14 +260,41 @@ class GitHubActionsRepository(
     ): GitHubStrategyLoadTrace<GitHubActionsWorkflowArtifactsSnapshot> {
         val startedAt = System.currentTimeMillis()
         if (useNightlyLink) {
-            return nightlyRepository.fetchWorkflowArtifactSnapshot(
+            val nightlyResult = nightlyRepository.fetchWorkflowArtifactSnapshot(
                 owner = owner,
                 repo = repo,
                 workflowId = workflowId,
                 branch = branch,
                 artifactsPerRun = artifactsPerRun,
                 resolveRunDetail = resolveNightlyRunDetail
-            ).toTrace(startedAt)
+            )
+            val nightlySnapshot = nightlyResult.getOrNull()
+            if (nightlySnapshot != null && nightlySnapshot.artifacts.isNotEmpty()) {
+                return nightlyResult.toTrace(startedAt)
+            }
+            val fallbackResult = fetchNightlyCompatibleWorkflowArtifactSnapshotFromPublicApi(
+                owner = owner,
+                repo = repo,
+                workflowId = workflowId,
+                runLimit = runLimit,
+                artifactsPerRun = artifactsPerRun,
+                artifactRunLimit = artifactRunLimit,
+                branch = branch,
+                event = event,
+                status = status,
+                actor = actor,
+                created = created,
+                headSha = headSha,
+                excludePullRequests = excludePullRequests
+            )
+            val fallbackSnapshot = fallbackResult.getOrNull()
+            return when {
+                fallbackSnapshot != null && fallbackSnapshot.artifacts.isNotEmpty() ->
+                    fallbackResult.toTrace(startedAt)
+                nightlyResult.isSuccess -> nightlyResult.toTrace(startedAt)
+                fallbackResult.isSuccess -> fallbackResult.toTrace(startedAt)
+                else -> nightlyResult.toTrace(startedAt)
+            }
         }
         requireActionsApiToken().onFailure { error ->
             return Result.failure<GitHubActionsWorkflowArtifactsSnapshot>(error).toTrace(startedAt)
@@ -348,13 +375,137 @@ class GitHubActionsRepository(
         }
     }
 
+    private fun fetchNightlyCompatibleWorkflowArtifactSnapshotFromPublicApi(
+        owner: String,
+        repo: String,
+        workflowId: String,
+        runLimit: Int,
+        artifactsPerRun: Int,
+        artifactRunLimit: Int,
+        branch: String,
+        event: String,
+        status: String,
+        actor: String,
+        created: String,
+        headSha: String,
+        excludePullRequests: Boolean
+    ): Result<GitHubActionsWorkflowArtifactsSnapshot> = runCatching {
+        val workflow = findPublicApiWorkflowForNightly(owner, repo, workflowId).getOrThrow()
+        val runs = fetchJson(
+            url = buildWorkflowRunsUrl(
+                owner = owner,
+                repo = repo,
+                workflowId = workflow.id.toString(),
+                limit = runLimit,
+                branch = branch,
+                event = event,
+                status = status.nightlyPublicApiRunStatus(),
+                actor = actor,
+                created = created,
+                headSha = headSha,
+                excludePullRequests = excludePullRequests
+            ),
+            cacheTtlMillis = ACTIONS_RUNS_CACHE_TTL_MS
+        ).getOrThrow().let(::parseWorkflowRuns)
+        val artifactRuns = runs.take(artifactRunLimit.coerceAtLeast(0))
+        val artifactsByRunId = mutableMapOf<Long, List<GitHubActionsArtifact>>()
+        artifactRuns.forEach { run ->
+            val artifacts = fetchJson(
+                url = buildRunArtifactsUrl(owner, repo, run.id, artifactsPerRun),
+                cacheTtlMillis = ACTIONS_ARTIFACT_CACHE_TTL_MS
+            ).getOrThrow()
+                .let { json -> parseArtifacts(json, fallbackWorkflowRunId = run.id) }
+                .map { artifact ->
+                    artifact.copy(
+                        archiveDownloadUrl = buildNightlyRunArtifactDownloadUrl(
+                            owner = owner,
+                            repo = repo,
+                            runId = run.id,
+                            artifactName = artifact.name
+                        )
+                    )
+                }
+            artifactsByRunId[run.id] = artifacts
+        }
+        GitHubActionsWorkflowArtifactsSnapshot(
+            owner = owner,
+            repo = repo,
+            workflowId = workflow.id.toString(),
+            runs = runs.map { run ->
+                GitHubActionsRunArtifacts(
+                    run = run,
+                    artifacts = artifactsByRunId[run.id].orEmpty()
+                )
+            }
+        )
+    }
+
+    private fun findPublicApiWorkflowForNightly(
+        owner: String,
+        repo: String,
+        workflowId: String
+    ): Result<GitHubActionsWorkflow> = runCatching {
+        workflowId.trim().toLongOrNull()?.takeIf { it > 0L }?.let { id ->
+            return@runCatching GitHubActionsWorkflow(
+                id = id,
+                name = id.toString(),
+                path = workflowId.trim()
+            )
+        }
+        val workflows = fetchJson(
+            url = buildWorkflowsUrl(owner, repo, DEFAULT_WORKFLOW_LIMIT),
+            cacheTtlMillis = ACTIONS_METADATA_CACHE_TTL_MS
+        ).getOrThrow().let(::parseWorkflows)
+        selectPublicApiWorkflowForNightly(workflows, workflowId)
+            ?: error("GitHub 公开 API 没有找到匹配 workflow：$workflowId")
+    }
+
+    private fun selectPublicApiWorkflowForNightly(
+        workflows: List<GitHubActionsWorkflow>,
+        workflowId: String
+    ): GitHubActionsWorkflow? {
+        val lookup = workflowId.trim()
+            .substringBefore('?')
+            .trim()
+        val lookupFile = lookup.substringAfterLast('/').trim()
+        val lookupPath = lookup.trimStart('/')
+        return workflows.firstOrNull { workflow -> workflow.id.toString() == lookup } ?:
+            workflows.firstOrNull { workflow -> workflow.path.equals(lookupPath, ignoreCase = true) } ?:
+            workflows.firstOrNull { workflow ->
+                workflow.path.substringAfterLast('/').equals(lookupFile, ignoreCase = true)
+            } ?:
+            workflows.firstOrNull { workflow -> workflow.name.equals(lookup, ignoreCase = true) }
+    }
+
     fun resolveArtifactDownloadUrl(
         artifact: GitHubActionsArtifact,
         owner: String = "",
-        repo: String = ""
+        repo: String = "",
+        preferApiTokenRedirect: Boolean = false
     ): Result<GitHubActionsArtifactDownloadResolution> {
         if (useNightlyLink) {
-            return nightlyRepository.resolveArtifactDownloadUrl(artifact = artifact, owner = owner, repo = repo)
+            val nightlyResult = nightlyRepository.resolveArtifactDownloadUrl(
+                artifact = artifact,
+                owner = owner,
+                repo = repo
+            )
+            if (
+                !preferApiTokenRedirect ||
+                sanitizedToken.isBlank() ||
+                owner.isBlank() ||
+                repo.isBlank() ||
+                artifact.id <= 0L
+            ) {
+                return nightlyResult
+            }
+            return resolveArtifactDownloadUrl(buildArtifactDownloadUrl(owner, repo, artifact.id))
+                .map { resolvedUrl ->
+                    GitHubActionsArtifactDownloadResolution(
+                        artifactId = artifact.id,
+                        downloadUrl = resolvedUrl
+                    )
+                }
+                .recoverCatching { nightlyResult.getOrThrow() }
         }
         if (sanitizedToken.isBlank()) {
             return Result.failure(IllegalStateException("下载 GitHub Actions artifact 需要填写 token"))
@@ -665,6 +816,16 @@ class GitHubActionsRepository(
         return "${apiBaseUrl.trimEnd('/')}/repos/$owner/$repo/actions/artifacts/$artifactId/zip"
     }
 
+    private fun buildNightlyRunArtifactDownloadUrl(
+        owner: String,
+        repo: String,
+        runId: Long,
+        artifactName: String
+    ): String {
+        return "${nightlyLinkBaseUrl.trimEnd('/')}/${owner.urlEncode()}/${repo.urlEncode()}/" +
+            "actions/runs/$runId/${artifactName.urlEncode()}.zip"
+    }
+
     private fun buildErrorMessage(response: Response, bodyText: String): String {
         val apiMessage = runCatching {
             JSONObject(bodyText).optString("message").trim()
@@ -689,6 +850,15 @@ class GitHubActionsRepository(
 
     private fun String.toErrorSuffix(prefix: String = ": "): String {
         return takeIf { it.isNotBlank() }?.let { "$prefix$it" }.orEmpty()
+    }
+
+    private fun String.nightlyPublicApiRunStatus(): String {
+        val normalized = trim()
+        return when {
+            normalized.isBlank() -> "success"
+            normalized.equals("completed", ignoreCase = true) -> "success"
+            else -> normalized
+        }
     }
 
     private fun String.urlEncode(): String {

@@ -53,6 +53,9 @@ internal fun GitHubActionsArtifactCard(
     val busy = downloading || sharing
     val canDownload = hasToken && runMatch.traits.completed && !artifact.expired && !busy
     val canShare = hasToken && runMatch.traits.completed && !artifact.expired && !busy
+    val metadataTextColor = githubActionsSecondaryTextColor(isDark)
+    val neutralPillColor = MiuixTheme.colorScheme.onBackgroundVariant
+    val actionButtonHeight = 54.dp
     val copyDigestLabel = stringResource(R.string.github_actions_cd_copy_digest)
     val digestCopiedToast = stringResource(R.string.github_actions_toast_digest_copied)
     val hasDigest = artifact.digest.isNotBlank()
@@ -71,7 +74,7 @@ internal fun GitHubActionsArtifactCard(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -88,21 +91,24 @@ internal fun GitHubActionsArtifactCard(
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_badge_recommended),
                     color = GitHubStatusPalette.Update,
-                    emphasized = true
+                    emphasized = true,
+                    minWidth = GitHubActionsShortPillMinWidth
                 )
             }
             if (artifactMatch.lastDownload != null) {
                 GitHubActionsInfoPill(
                     label = stringResource(R.string.github_actions_badge_last_downloaded),
                     color = GitHubStatusPalette.Active,
-                    emphasized = true
+                    emphasized = true,
+                    minWidth = GitHubActionsStatePillMinWidth
                 )
             }
         }
         GitHubActionsPillRow {
             GitHubActionsInfoPill(
                 label = artifactKindLabel(artifactMatch.traits.kind),
-                color = kindColor
+                color = kindColor,
+                minWidth = GitHubActionsShortPillMinWidth
             )
             artifactMatch.traits.version.takeIf { it.isNotBlank() }?.let { version ->
                 GitHubActionsInfoPill(label = version, color = GitHubStatusPalette.Update)
@@ -147,7 +153,7 @@ internal fun GitHubActionsArtifactCard(
                 )
             }
             assetRelativeTimeLabel(artifact.updatedAtMillis, context)?.let { label ->
-                GitHubActionsInfoPill(label = label, color = MiuixTheme.colorScheme.onBackgroundVariant)
+                GitHubActionsInfoPill(label = label, color = neutralPillColor)
             }
         }
         Row(
@@ -177,7 +183,7 @@ internal fun GitHubActionsArtifactCard(
                     color = if (hasDigest) {
                         MiuixTheme.colorScheme.primary
                     } else {
-                        MiuixTheme.colorScheme.onBackgroundVariant
+                        metadataTextColor
                     },
                     fontSize = AppTypographyTokens.Supporting.fontSize,
                     lineHeight = AppTypographyTokens.Supporting.lineHeight,
@@ -202,6 +208,7 @@ internal fun GitHubActionsArtifactCard(
                 textColor = actionColor,
                 iconTint = actionColor,
                 modifier = Modifier.widthIn(min = 104.dp),
+                minHeight = actionButtonHeight,
                 onClick = onDownload,
                 textMaxLines = 1,
                 textOverflow = TextOverflow.Ellipsis
@@ -214,9 +221,9 @@ internal fun GitHubActionsArtifactCard(
                     R.string.github_actions_cd_share_artifact,
                     artifact.name
                 ),
-                iconTint = if (canShare) actionColor else MiuixTheme.colorScheme.onBackgroundVariant,
+                iconTint = if (canShare) actionColor else neutralPillColor,
                 width = 54.dp,
-                height = 54.dp,
+                height = actionButtonHeight,
                 onClick = onShare
             )
         }

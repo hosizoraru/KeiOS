@@ -68,7 +68,8 @@ internal fun runBranchTrustPill(match: GitHubActionsRunMatch) {
         label = label,
         color = color,
         emphasized = trust == GitHubActionsRunBranchTrust.DefaultBranch ||
-            trust == GitHubActionsRunBranchTrust.ReleaseTag
+            trust == GitHubActionsRunBranchTrust.ReleaseTag,
+        minWidth = GitHubActionsShortPillMinWidth
     )
 }
 

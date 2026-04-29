@@ -16,10 +16,10 @@ internal fun githubActionsNeutralCardColor(
     prominent: Boolean = false
 ): Color {
     val alpha = when {
-        isDark && prominent -> 0.16f
-        isDark -> 0.12f
-        prominent -> 0.08f
-        else -> 0.055f
+        isDark && prominent -> 0.19f
+        isDark -> 0.15f
+        prominent -> 0.11f
+        else -> 0.085f
     }
     return MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = alpha)
 }
@@ -30,12 +30,21 @@ internal fun githubActionsNeutralBorderColor(
     prominent: Boolean = false
 ): Color {
     val alpha = when {
-        isDark && prominent -> 0.18f
-        isDark -> 0.14f
-        prominent -> 0.12f
-        else -> 0.08f
+        isDark && prominent -> 0.26f
+        isDark -> 0.20f
+        prominent -> 0.18f
+        else -> 0.14f
     }
     return MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = alpha)
+}
+
+@Composable
+internal fun githubActionsSecondaryTextColor(isDark: Boolean): Color {
+    return if (isDark) {
+        MiuixTheme.colorScheme.onBackground.copy(alpha = 0.80f)
+    } else {
+        MiuixTheme.colorScheme.onBackground.copy(alpha = 0.70f)
+    }
 }
 
 @Composable
