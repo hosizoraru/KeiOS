@@ -613,7 +613,16 @@ internal class GitHubPageRepository(
                         ).result.getOrElse {
                             return@async null
                         }
-                        val defaultBranchRuns = if (useNightlyLink) {
+                        val recentRuns = recentSnapshot.runs
+                        val recentHasDefaultBranchArtifact = defaultBranch.isNotBlank() &&
+                            recentRuns.any { runArtifacts ->
+                                val run = runArtifacts.run
+                                run.headBranch.equals(defaultBranch, ignoreCase = true) &&
+                                    run.status.equals("completed", ignoreCase = true) &&
+                                    run.conclusion.equals("success", ignoreCase = true) &&
+                                    runArtifacts.artifacts.any { artifact -> !artifact.expired }
+                            }
+                        val defaultBranchRuns = if (useNightlyLink || recentHasDefaultBranchArtifact) {
                             emptyList()
                         } else {
                             defaultBranch
@@ -633,7 +642,7 @@ internal class GitHubPageRepository(
                                 }
                                 .orEmpty()
                         }
-                        val mergedRuns = (recentSnapshot.runs + defaultBranchRuns)
+                        val mergedRuns = (recentRuns + defaultBranchRuns)
                             .distinctBy { it.run.id }
                         workflow.id to GitHubActionsWorkflowSelector.buildArtifactSignal(
                             workflow = workflow,

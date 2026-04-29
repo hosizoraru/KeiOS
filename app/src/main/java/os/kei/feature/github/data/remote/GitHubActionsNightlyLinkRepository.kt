@@ -26,7 +26,7 @@ internal class GitHubActionsNightlyLinkRepository(
         repo: String
     ): Result<GitHubActionsRepositoryInfo> = runCatching {
         val cacheKey = metadataCacheKey(owner, repo)
-        cachedValue(repositoryInfoCache[cacheKey])?.let { return@runCatching it }
+        cachedValue(repositoryInfoCache[cacheKey], PUBLIC_METADATA_CACHE_TTL_MS)?.let { return@runCatching it }
         val html = fetchPublicHtml(buildGitHubRepoUrl(owner, repo)).getOrThrow()
         val defaultBranch = Regex(""""defaultBranch"\s*:\s*"([^"]+)"""")
             .find(html)
@@ -234,7 +234,7 @@ internal class GitHubActionsNightlyLinkRepository(
 
     private fun fetchWorkflowFiles(owner: String, repo: String): List<String> {
         val cacheKey = metadataCacheKey(owner, repo)
-        cachedValue(workflowFilesCache[cacheKey])?.let { return it }
+        cachedValue(workflowFilesCache[cacheKey], PUBLIC_METADATA_CACHE_TTL_MS)?.let { return it }
         val workflowsTreeUrl = "${githubHtmlBaseUrl.trimEnd('/')}/$owner/$repo/tree/HEAD/.github/workflows"
         val treeHtml = fetchPublicHtml(workflowsTreeUrl).getOrThrow()
         val fromTree = parseWorkflowFilesFromGitHubHtml(treeHtml, owner, repo)
@@ -400,7 +400,15 @@ internal class GitHubActionsNightlyLinkRepository(
         )
     }
 
-    private fun fetchPublicHtml(url: String): Result<String> = runCatching {
+    private fun fetchPublicHtml(
+        url: String,
+        cacheTtlMillis: Long = PUBLIC_HTML_CACHE_TTL_MS
+    ): Result<String> = runCatching {
+        if (cacheTtlMillis > 0L) {
+            cachedValue(publicHtmlCache[url], cacheTtlMillis)?.let { cached ->
+                return@runCatching cached
+            }
+        }
         val request = Request.Builder()
             .url(url)
             .get()
@@ -411,6 +419,9 @@ internal class GitHubActionsNightlyLinkRepository(
             val bodyText = response.body.string()
             if (!response.isSuccessful) {
                 error("公开页面读取失败 (HTTP ${response.code})")
+            }
+            if (cacheTtlMillis > 0L) {
+                putCachedValue(publicHtmlCache, url, bodyText)
             }
             bodyText
         }
@@ -515,10 +526,10 @@ internal class GitHubActionsNightlyLinkRepository(
         ).joinToString("|")
     }
 
-    private fun <T> cachedValue(entry: CachedValue<T>?): T? {
+    private fun <T> cachedValue(entry: CachedValue<T>?, ttlMillis: Long): T? {
         if (entry == null) return null
         val ageMillis = System.currentTimeMillis() - entry.fetchedAtMillis
-        return entry.value.takeIf { ageMillis in 0 until PUBLIC_METADATA_CACHE_TTL_MS }
+        return entry.value.takeIf { ageMillis in 0 until ttlMillis }
     }
 
     private fun <T> putCachedValue(
@@ -548,10 +559,12 @@ internal class GitHubActionsNightlyLinkRepository(
         const val DEFAULT_ARTIFACT_LIMIT = 100
         const val DEFAULT_PUBLIC_BRANCH = "main"
         const val USER_AGENT = "KeiOS-App/1.0 (Android)"
+        const val PUBLIC_HTML_CACHE_TTL_MS = 30_000L
         const val PUBLIC_METADATA_CACHE_TTL_MS = 120_000L
         const val PUBLIC_METADATA_CACHE_MAX_ENTRIES = 64
 
         val repositoryInfoCache = ConcurrentHashMap<String, CachedValue<GitHubActionsRepositoryInfo>>()
         val workflowFilesCache = ConcurrentHashMap<String, CachedValue<List<String>>>()
+        val publicHtmlCache = ConcurrentHashMap<String, CachedValue<String>>()
     }
 }

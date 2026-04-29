@@ -18,9 +18,11 @@ import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubStrategyLoadTrace
 import java.net.URLEncoder
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.ConcurrentHashMap
 
 class GitHubActionsRepository(
     private val apiToken: String = "",
@@ -41,6 +43,12 @@ class GitHubActionsRepository(
             nightlyLinkBaseUrl = nightlyLinkBaseUrl
         )
     }
+    private val noRedirectClient: OkHttpClient by lazy {
+        client.newBuilder()
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .build()
+    }
 
     val authMode: GitHubApiAuthMode
         get() = if (sanitizedToken.isBlank()) GitHubApiAuthMode.Guest else GitHubApiAuthMode.Token
@@ -54,7 +62,10 @@ class GitHubActionsRepository(
             nightlyRepository.fetchRepositoryInfo(owner, repo)
         } else {
             requireActionsApiToken().mapCatching {
-                fetchJson(buildRepositoryUrl(owner, repo)).getOrThrow()
+                fetchJson(
+                    url = buildRepositoryUrl(owner, repo),
+                    cacheTtlMillis = ACTIONS_METADATA_CACHE_TTL_MS
+                ).getOrThrow()
                     .let { json -> parseRepositoryInfo(json, owner, repo) }
             }
         }
@@ -70,7 +81,10 @@ class GitHubActionsRepository(
             nightlyRepository.fetchRepositoryInfo(owner, repo).mapCatching { it.defaultBranch }
         } else {
             requireActionsApiToken().mapCatching {
-                fetchJson(buildRepositoryUrl(owner, repo)).getOrThrow()
+                fetchJson(
+                    url = buildRepositoryUrl(owner, repo),
+                    cacheTtlMillis = ACTIONS_METADATA_CACHE_TTL_MS
+                ).getOrThrow()
                     .let { json -> parseRepositoryInfo(json, owner, repo).defaultBranch }
             }
         }
@@ -87,7 +101,10 @@ class GitHubActionsRepository(
             nightlyRepository.fetchWorkflows(owner, repo, limit)
         } else {
             requireActionsApiToken().mapCatching {
-                fetchJson(buildWorkflowsUrl(owner, repo, limit)).getOrThrow()
+                fetchJson(
+                    url = buildWorkflowsUrl(owner, repo, limit),
+                    cacheTtlMillis = ACTIONS_METADATA_CACHE_TTL_MS
+                ).getOrThrow()
                     .let(::parseWorkflows)
             }
         }
@@ -118,7 +135,7 @@ class GitHubActionsRepository(
         } else {
             requireActionsApiToken().mapCatching {
                 fetchJson(
-                    buildWorkflowRunsUrl(
+                    url = buildWorkflowRunsUrl(
                         owner = owner,
                         repo = repo,
                         workflowId = workflowId,
@@ -130,7 +147,8 @@ class GitHubActionsRepository(
                         created = created,
                         headSha = headSha,
                         excludePullRequests = excludePullRequests
-                    )
+                    ),
+                    cacheTtlMillis = ACTIONS_RUNS_CACHE_TTL_MS
                 ).getOrThrow().let(::parseWorkflowRuns)
             }
         }
@@ -165,7 +183,10 @@ class GitHubActionsRepository(
             nightlyRepository.fetchRunArtifacts(owner = owner, repo = repo, runId = runId, limit = limit)
         } else {
             requireActionsApiToken().mapCatching {
-                fetchJson(buildRunArtifactsUrl(owner, repo, runId, limit)).getOrThrow()
+                fetchJson(
+                    url = buildRunArtifactsUrl(owner, repo, runId, limit),
+                    cacheTtlMillis = ACTIONS_ARTIFACT_CACHE_TTL_MS
+                ).getOrThrow()
                     .let { json -> parseArtifacts(json, fallbackWorkflowRunId = runId) }
             }
         }
@@ -500,10 +521,6 @@ class GitHubActionsRepository(
             .header("X-GitHub-Api-Version", GITHUB_API_VERSION)
             .header("User-Agent", GITHUB_USER_AGENT)
             .build()
-        val noRedirectClient = client.newBuilder()
-            .followRedirects(false)
-            .followSslRedirects(false)
-            .build()
         noRedirectClient.newCall(request).execute().use { response ->
             when {
                 response.isRedirect -> response.header("Location").orEmpty().ifBlank {
@@ -515,7 +532,16 @@ class GitHubActionsRepository(
         }
     }
 
-    private fun fetchJson(url: String): Result<String> = runCatching {
+    private fun fetchJson(
+        url: String,
+        cacheTtlMillis: Long = 0L
+    ): Result<String> = runCatching {
+        val cacheKey = jsonResponseCacheKey(url)
+        if (cacheTtlMillis > 0L) {
+            cachedValue(jsonResponseCache[cacheKey], cacheTtlMillis)?.let { cached ->
+                return@runCatching cached
+            }
+        }
         val requestBuilder = Request.Builder()
             .url(url)
             .get()
@@ -530,8 +556,49 @@ class GitHubActionsRepository(
             if (!response.isSuccessful) {
                 error(buildErrorMessage(response, bodyText))
             }
+            if (cacheTtlMillis > 0L) {
+                putCachedValue(jsonResponseCache, cacheKey, bodyText)
+            }
             bodyText
         }
+    }
+
+    private fun jsonResponseCacheKey(url: String): String {
+        return listOf(
+            authCachePartition(),
+            apiBaseUrl.trimEnd('/'),
+            url
+        ).joinToString("|")
+    }
+
+    private fun authCachePartition(): String {
+        return sanitizedToken
+            .takeIf { it.isNotBlank() }
+            ?.let { token -> "token:${stableHash(token)}" }
+            ?: "guest"
+    }
+
+    private fun stableHash(value: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(Charsets.UTF_8))
+        return digest.take(8).joinToString("") { byte -> "%02x".format(byte) }
+    }
+
+    private fun <T> cachedValue(entry: CachedValue<T>?, ttlMillis: Long): T? {
+        if (entry == null) return null
+        val ageMillis = System.currentTimeMillis() - entry.fetchedAtMillis
+        return entry.value.takeIf { ageMillis in 0 until ttlMillis }
+    }
+
+    private fun <T> putCachedValue(
+        cache: ConcurrentHashMap<String, CachedValue<T>>,
+        key: String,
+        value: T
+    ) {
+        if (cache.size >= ACTIONS_CACHE_MAX_ENTRIES) {
+            cache.clear()
+        }
+        cache[key] = CachedValue(value, System.currentTimeMillis())
     }
 
     private fun <T> Result<T>.toTrace(startedAt: Long): GitHubStrategyLoadTrace<T> {
@@ -639,11 +706,22 @@ class GitHubActionsRepository(
         private const val DEFAULT_RUN_LIMIT = 20
         private const val DEFAULT_ARTIFACT_LIMIT = 100
         private const val MAX_ARTIFACT_FETCH_CONCURRENCY = 4
+        private const val ACTIONS_METADATA_CACHE_TTL_MS = 90_000L
+        private const val ACTIONS_RUNS_CACHE_TTL_MS = 10_000L
+        private const val ACTIONS_ARTIFACT_CACHE_TTL_MS = 45_000L
+        private const val ACTIONS_CACHE_MAX_ENTRIES = 160
         private const val GITHUB_API_VERSION = "2022-11-28"
         private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
         private const val DEFAULT_GITHUB_API_BASE_URL = "https://api.github.com"
         private const val DEFAULT_GITHUB_HTML_BASE_URL = "https://github.com"
         private const val DEFAULT_NIGHTLY_LINK_BASE_URL = "https://nightly.link"
+
+        private data class CachedValue<T>(
+            val value: T,
+            val fetchedAtMillis: Long
+        )
+
+        private val jsonResponseCache = ConcurrentHashMap<String, CachedValue<String>>()
 
         private val githubClient: OkHttpClient by lazy {
             OkHttpClient.Builder()

@@ -39,6 +39,16 @@ class GitHubActionsArtifactSelectorTest {
     }
 
     @Test
+    fun `name inspector treats extensionless android artifacts as android-like`() {
+        val traits = GitHubActionsArtifactSelector.inspectName("ani-android-arm64-v8a-release")
+
+        assertEquals(GitHubActionsArtifactPlatform.Android, traits.platform)
+        assertEquals(GitHubActionsArtifactKind.Unknown, traits.kind)
+        assertEquals("arm64-v8a", traits.abi)
+        assertTrue(traits.androidLike)
+    }
+
+    @Test
     fun `libchecker flavor artifacts stay selectable while mappings stay hidden`() {
         val matches = GitHubActionsArtifactSelector.selectDisplayArtifacts(
             artifacts = listOf(

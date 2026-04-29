@@ -160,6 +160,32 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `api run artifact request reuses short cache`() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setResponseCode(200).setBody(sampleArtifactsJson(runId = 101)))
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                apiBaseUrl = server.url("/").toString()
+            )
+
+            val first = repository.fetchRunArtifacts(
+                owner = "demo",
+                repo = "app",
+                runId = 101
+            ).result.getOrThrow()
+            val second = repository.fetchRunArtifacts(
+                owner = "demo",
+                repo = "app",
+                runId = 101
+            ).result.getOrThrow()
+
+            assertEquals(first.map { it.id }, second.map { it.id })
+            assertEquals("/repos/demo/app/actions/runs/101/artifacts?per_page=100", server.takeRequest().path)
+            assertEquals(1, server.requestCount)
+        }
+    }
+
+    @Test
     fun `workflow run status snapshot fetches artifacts after completion`() {
         MockWebServer().use { server ->
             server.enqueue(MockResponse().setResponseCode(200).setBody(sampleWorkflowRunJson(status = "completed")))
@@ -395,6 +421,47 @@ class GitHubActionsRepositoryTest {
                 "https://github.com/demo/app/actions?query=event%3Apush%20is%3Asuccess%20branch%3Amaster",
                 snapshot.runs.first().run.htmlUrl
             )
+            assertEquals(listOf("/demo/app/workflows/android/master?preview"), List(1) { nightly.takeRequest().path })
+            assertEquals(1, nightly.requestCount)
+        }
+    }
+
+    @Test
+    fun `nightly link preview page reuses short cache`() {
+        MockWebServer().use { nightly ->
+            val base = nightly.url("/").toString().trimEnd('/')
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/workflows/android/master/Foss.zip">Foss.zip</a>
+                            <a href="$base/demo/app/workflows/android/master/Market.zip">Market.zip</a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val first = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/android.yml",
+                branch = "master",
+                resolveNightlyRunDetail = false
+            ).result.getOrThrow()
+            val second = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/android.yml",
+                branch = "master",
+                resolveNightlyRunDetail = false
+            ).result.getOrThrow()
+
+            assertEquals(first.artifacts.map { it.name }, second.artifacts.map { it.name })
             assertEquals(listOf("/demo/app/workflows/android/master?preview"), List(1) { nightly.takeRequest().path })
             assertEquals(1, nightly.requestCount)
         }

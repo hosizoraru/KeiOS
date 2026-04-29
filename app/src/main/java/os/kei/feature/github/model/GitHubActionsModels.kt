@@ -158,7 +158,8 @@ data class GitHubActionsArtifactNameTraits(
     val buildNoise: Boolean = false
 ) {
     val androidLike: Boolean
-        get() = kind == GitHubActionsArtifactKind.AndroidPackage ||
+        get() = platform == GitHubActionsArtifactPlatform.Android ||
+            kind == GitHubActionsArtifactKind.AndroidPackage ||
             kind == GitHubActionsArtifactKind.AndroidBundle
 }
 

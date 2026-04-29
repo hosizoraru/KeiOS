@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import os.kei.R
 import os.kei.core.intent.SafeExternalIntents
+import os.kei.feature.github.domain.GitHubActionsWorkflowSelector
 import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsArtifactSelectionOptions
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
@@ -360,13 +361,17 @@ internal class GitHubActionsActions(
         lookupConfig: os.kei.feature.github.model.GitHubLookupConfig,
         defaultBranch: String
     ) {
-        if (candidateWorkflows.isEmpty()) return
+        val cachedSignals = state.actionsWorkflowSignals
+        val missingCandidateWorkflows = candidateWorkflows.filter { workflow ->
+            workflow.id !in cachedSignals
+        }
+        if (missingCandidateWorkflows.isEmpty()) return
         val expectedWorkflowIds = workflows.map { it.id }
         scope.launch {
             val signalsTrace = repository.fetchGitHubActionsWorkflowArtifactSignals(
                 owner = item.owner,
                 repo = item.repo,
-                workflows = candidateWorkflows,
+                workflows = missingCandidateWorkflows,
                 lookupConfig = lookupConfig,
                 runLimit = SIGNAL_RUN_LIMIT,
                 artifactsPerRun = SIGNAL_ARTIFACT_LIMIT,
@@ -375,15 +380,16 @@ internal class GitHubActionsActions(
             val signals = signalsTrace.result.getOrElse { return@launch }
             if (!isCurrentTarget(item)) return@launch
             if (state.actionsRawWorkflows.map { it.id } != expectedWorkflowIds) return@launch
+            val mergedSignals = state.actionsWorkflowSignals + signals
             val updatedWorkflows = selectWorkflows(
                 workflows = state.actionsRawWorkflows,
-                signals = signals,
+                signals = mergedSignals,
                 history = history
             )
             if (!isCurrentTarget(item)) return@launch
             if (state.actionsRawWorkflows.map { it.id } != expectedWorkflowIds) return@launch
             state.actionsAuthMode = signalsTrace.authMode ?: state.actionsAuthMode
-            state.actionsWorkflowSignals = signals
+            state.actionsWorkflowSignals = mergedSignals
             state.actionsWorkflows = updatedWorkflows
         }
     }
@@ -426,6 +432,10 @@ internal class GitHubActionsActions(
             state.actionsSnapshot = snapshot
             state.actionsRuns = runMatches
             state.actionsRunTrackingPlans = buildTrackingPlans(runMatches)
+            updateWorkflowSignalFromSnapshot(
+                workflow = workflow,
+                snapshot = snapshot
+            )
             state.actionsSelectedRunId = preferredRunId
                 ?.takeIf { runId -> runMatches.any { it.runArtifacts.run.id == runId } }
                 ?: runMatches.firstOrNull()?.runArtifacts?.run?.id
@@ -449,6 +459,25 @@ internal class GitHubActionsActions(
                 state.actionsRunsLoading = false
             }
         }
+    }
+
+    private suspend fun updateWorkflowSignalFromSnapshot(
+        workflow: GitHubActionsWorkflow,
+        snapshot: GitHubActionsWorkflowArtifactsSnapshot
+    ) {
+        if (state.actionsRawWorkflows.none { it.id == workflow.id }) return
+        val signal = GitHubActionsWorkflowSelector.buildArtifactSignal(
+            workflow = workflow,
+            runs = snapshot.runs,
+            defaultBranch = state.actionsDefaultBranch
+        )
+        val mergedSignals = state.actionsWorkflowSignals + (workflow.id to signal)
+        state.actionsWorkflowSignals = mergedSignals
+        state.actionsWorkflows = selectWorkflows(
+            workflows = state.actionsRawWorkflows,
+            signals = mergedSignals,
+            history = state.actionsDownloadHistory
+        )
     }
 
     private fun loadRunArtifactsIfNeeded(
