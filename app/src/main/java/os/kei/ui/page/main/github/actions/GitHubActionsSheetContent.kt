@@ -37,9 +37,14 @@ internal fun GitHubActionsSheetContent(
         it.runArtifacts.run.id == state.actionsSelectedRunId
     }
     val recommendedWorkflowId = workflows.firstOrNull()?.workflow?.id
-    val recommendedRunId = state.actionsRuns
-        .firstOrNull { it.traits.safeForRecommendation }
-        ?.runArtifacts
+    val recommendedRunId = (
+        state.actionsRuns.firstOrNull { match ->
+            match.traits.completed &&
+                match.traits.successful &&
+                !match.traits.pullRequestLike &&
+                match.artifactMatches.isNotEmpty()
+        } ?: state.actionsRuns.firstOrNull { it.traits.safeForRecommendation }
+        )?.runArtifacts
         ?.run
         ?.id
     val selectedRunArtifactsLoading = selectedRun?.let { runMatch ->

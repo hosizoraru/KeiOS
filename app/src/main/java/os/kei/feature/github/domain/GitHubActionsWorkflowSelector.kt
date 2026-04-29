@@ -76,6 +76,7 @@ object GitHubActionsWorkflowSelector {
             options = GitHubActionsRunSelectionOptions(defaultBranch = defaultBranch)
         )
         val recommendedRun = runMatches.firstOrNull { it.traits.safeForRecommendation }
+            ?: runMatches.firstOrNull(::actionDownloadRecommendedRun)
         return GitHubActionsWorkflowArtifactSignal(
             workflowId = workflow.id,
             recentRunCount = runs.size,
@@ -155,15 +156,15 @@ object GitHubActionsWorkflowSelector {
                 reasons += "android-build"
             }
             GitHubActionsWorkflowKind.Release -> {
-                score += 38
+                score += 12
                 reasons += "release"
             }
             GitHubActionsWorkflowKind.Nightly -> {
-                score += 34
+                score += 48
                 reasons += "nightly"
             }
             GitHubActionsWorkflowKind.Ci -> {
-                score += 28
+                score += 34
                 reasons += "ci"
             }
             GitHubActionsWorkflowKind.Quality -> score -= 24
@@ -173,10 +174,13 @@ object GitHubActionsWorkflowSelector {
             GitHubActionsWorkflowKind.Automation -> score -= 32
             GitHubActionsWorkflowKind.Unknown -> Unit
         }
-        if (traits.releaseLike) score += 12
-        if (traits.nightlyLike) score += 8
+        if (traits.releaseLike) {
+            score -= 8
+            reasons += "release-publish"
+        }
+        if (traits.nightlyLike) score += 14
         if (traits.buildLike && traits.nightlyLike) {
-            score += 20
+            score += 24
             reasons += "nightly-build"
         }
         if (traits.maintenanceLike) score -= 20
@@ -194,36 +198,44 @@ object GitHubActionsWorkflowSelector {
             if (it.recentRunCount > 0) score += 4
             if (it.successfulRunCount > 0) score += 8
             if (it.nonExpiredArtifactCount > 0) {
-                score += 32
+                score += 36
                 reasons += "artifacts"
             }
             if (it.androidArtifactCount > 0) {
-                score += 24
+                score += 30
                 reasons += "android-artifacts"
             }
             if (it.recommendedRunId != null) {
-                score += 28
+                score += 20
                 reasons += "recommended-run"
             }
             if (it.trustedRunCount > 0) {
-                score += 18
+                score += 12
                 reasons += "trusted-run"
             }
             if (it.defaultBranchRunCount > 0) {
-                score += 16
+                score += 10
                 reasons += "default-branch"
             }
             if (it.releaseTagRunCount > 0 && traits.releaseLike) {
-                score += 12
+                score -= 10
                 reasons += "release-tag"
             }
+            if (it.branchArtifactCounts.keys.any(::looksLikeDevelopmentBranch)) {
+                score += 14
+                reasons += "development-branch"
+            }
             if (it.pullRequestRunCount > 0 && it.trustedRunCount == 0) {
-                score -= 18
+                score -= 36
                 reasons += "pull-request-only"
             }
             if (it.artifactCount > it.nonExpiredArtifactCount) {
                 score -= 4
                 reasons += "expired-artifacts"
+            }
+            if (traits.releaseLike && it.nonExpiredArtifactCount == 0) {
+                score -= 18
+                reasons += "publish-only"
             }
         }
 
@@ -250,4 +262,37 @@ object GitHubActionsWorkflowSelector {
     private fun containsAny(value: String, vararg needles: String): Boolean {
         return needles.any { value.contains(it, ignoreCase = true) }
     }
+
+    private fun actionDownloadRecommendedRun(match: os.kei.feature.github.model.GitHubActionsRunMatch): Boolean {
+        val traits = match.traits
+        return traits.completed &&
+            traits.successful &&
+            !traits.pullRequestLike &&
+            !traits.forkLike &&
+            looksLikeDevelopmentBranch(traits.normalizedBranch) &&
+            match.artifactMatches.isNotEmpty()
+    }
+
+    private fun looksLikeDevelopmentBranch(branch: String): Boolean {
+        val normalized = branch.trim().lowercase(Locale.ROOT)
+        return normalized in developmentBranches ||
+            normalized.endsWith("-dev") ||
+            normalized.endsWith("/dev") ||
+            normalized.contains("nightly") ||
+            normalized.contains("preview") ||
+            normalized.contains("unstable")
+    }
+
+    private val developmentBranches = setOf(
+        "dev",
+        "develop",
+        "development",
+        "nightly",
+        "preview",
+        "next",
+        "canary",
+        "alpha",
+        "beta",
+        "unstable"
+    )
 }

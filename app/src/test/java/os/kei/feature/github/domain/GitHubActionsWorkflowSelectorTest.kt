@@ -144,6 +144,73 @@ class GitHubActionsWorkflowSelectorTest {
     }
 
     @Test
+    fun `release publishing workflow stays behind nightly artifact workflow`() {
+        val workflows = listOf(
+            workflow(1, "Automatic Alpha Pre-Release", ".github/workflows/auto-preview-release.yml"),
+            workflow(2, "Nightly Dev Artifact", ".github/workflows/nightly-dev.yml")
+        )
+        val signals = mapOf(
+            1L to GitHubActionsWorkflowSelector.buildArtifactSignal(
+                workflow = workflows[0],
+                defaultBranch = "main",
+                runs = listOf(
+                    runArtifacts(
+                        workflows[0],
+                        runId = 100,
+                        branch = "v1.2.0",
+                        event = "release",
+                        artifactNames = listOf("app-arm64-v8a-release.apk")
+                    )
+                )
+            ),
+            2L to GitHubActionsWorkflowSelector.buildArtifactSignal(
+                workflow = workflows[1],
+                defaultBranch = "main",
+                runs = listOf(
+                    runArtifacts(
+                        workflows[1],
+                        runId = 200,
+                        branch = "dev",
+                        event = "push",
+                        artifactNames = listOf("app-unstable-arm64-v8a.apk")
+                    )
+                )
+            )
+        )
+
+        val matches = GitHubActionsWorkflowSelector.selectWorkflows(
+            workflows = workflows,
+            artifactSignals = signals
+        )
+
+        assertEquals("Nightly Dev Artifact", matches.first().workflow.name)
+        assertTrue(matches.first().reasons.contains("development-branch"))
+        assertTrue(matches.first { it.workflow.id == 1L }.reasons.contains("release-publish"))
+    }
+
+    @Test
+    fun `dev branch run can become workflow recommendation without trusting feature branches`() {
+        val workflow = workflow(172991813, "Nightly Dev Artifact", ".github/workflows/nightly-dev.yml")
+        val signal = GitHubActionsWorkflowSelector.buildArtifactSignal(
+            workflow = workflow,
+            defaultBranch = "main",
+            runs = listOf(
+                runArtifacts(
+                    workflow,
+                    runId = 25115668266,
+                    branch = "dev",
+                    event = "push",
+                    artifactNames = listOf("app-online-Unstable-release.apk")
+                )
+            )
+        )
+
+        assertEquals(25115668266, signal.recommendedRunId)
+        assertEquals("dev", signal.recommendedRunBranch)
+        assertEquals(0, signal.trustedRunCount)
+    }
+
+    @Test
     fun `require artifacts removes release workflows that publish elsewhere`() {
         val workflows = listOf(
             workflow(172991813, "Dev Branch Build & Artifact", ".github/workflows/auto-preview-dev.yml"),

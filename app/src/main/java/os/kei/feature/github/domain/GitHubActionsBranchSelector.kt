@@ -66,6 +66,20 @@ object GitHubActionsBranchSelector {
 
         val defaultStats = stats[normalizedDefault]
         if (normalizedDefault.isNotBlank() && (defaultStats?.artifactCount ?: 0) > 0) {
+            val strongerDevelopmentBranch = stats.values
+                .filter { normalize(it.name) != normalizedDefault }
+                .filter { it.artifactCount >= (defaultStats?.artifactCount ?: 0) * 2 }
+                .filter { it.runCount > (defaultStats?.runCount ?: 0) }
+                .filter { isDevelopmentBranch(it.name) }
+                .maxWithOrNull(
+                    compareBy<BranchStats> { it.artifactCount }
+                        .thenBy { it.runCount }
+                        .thenBy { branchPriority(it.name, defaultBranch) }
+                        .thenBy { it.name.lowercase(Locale.ROOT) }
+                )
+            if (strongerDevelopmentBranch != null) {
+                return strongerDevelopmentBranch.name
+            }
             return defaultStats?.name ?: defaultBranch.trim()
         }
 
@@ -177,7 +191,7 @@ object GitHubActionsBranchSelector {
             normalized.isBlank() -> 0
             normalized == normalize(defaultBranch) -> 100
             normalized in commonMainlineBranches -> 88
-            normalized in commonDevBranches -> 78
+            isDevelopmentBranch(normalized) -> 78
             normalized.startsWith("release/") ||
                 normalized.startsWith("releases/") ||
                 normalized.startsWith("stable/") ||
@@ -191,6 +205,16 @@ object GitHubActionsBranchSelector {
 
     private fun normalize(value: String): String = value.trim().lowercase(Locale.ROOT)
 
+    private fun isDevelopmentBranch(branch: String): Boolean {
+        val normalized = normalize(branch)
+        return normalized in commonDevBranches ||
+            normalized.endsWith("-dev") ||
+            normalized.endsWith("/dev") ||
+            normalized.contains("nightly") ||
+            normalized.contains("preview") ||
+            normalized.contains("unstable")
+    }
+
     private data class BranchStats(
         val name: String,
         var runCount: Int = 0,
@@ -199,5 +223,16 @@ object GitHubActionsBranchSelector {
     )
 
     private val commonMainlineBranches = setOf("main", "master", "trunk")
-    private val commonDevBranches = setOf("dev", "develop", "development", "nightly", "preview")
+    private val commonDevBranches = setOf(
+        "dev",
+        "develop",
+        "development",
+        "nightly",
+        "preview",
+        "next",
+        "canary",
+        "alpha",
+        "beta",
+        "unstable"
+    )
 }

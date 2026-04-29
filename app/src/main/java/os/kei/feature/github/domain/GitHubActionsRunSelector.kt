@@ -148,7 +148,7 @@ object GitHubActionsRunSelector {
                 reasons += "default-branch"
             }
             GitHubActionsRunBranchTrust.ReleaseTag -> {
-                score += 42
+                score += 8
                 reasons += "release-tag"
             }
             GitHubActionsRunBranchTrust.MainlineBranch -> {
@@ -156,7 +156,7 @@ object GitHubActionsRunSelector {
                 reasons += "mainline-branch"
             }
             GitHubActionsRunBranchTrust.ReleaseBranch -> {
-                score += 20
+                score += 10
                 reasons += "release-branch"
             }
             GitHubActionsRunBranchTrust.PullRequest -> {
@@ -164,7 +164,7 @@ object GitHubActionsRunSelector {
                 reasons += "pull-request"
             }
             GitHubActionsRunBranchTrust.FeatureBranch -> {
-                score -= 24
+                score -= 18
                 reasons += "feature-branch"
             }
             GitHubActionsRunBranchTrust.Unknown -> score -= 8
@@ -174,7 +174,7 @@ object GitHubActionsRunSelector {
             reasons += "fork"
         }
         if (traits.normalizedBranch in normalizedPreferredBranches) {
-            score += 26
+            score += 36
             reasons += "preferred-branch"
         }
         if (traits.normalizedEvent in normalizedPreferredEvents) {
@@ -206,6 +206,18 @@ object GitHubActionsRunSelector {
         score += androidArtifactCount.coerceAtMost(8) * 3
         if (artifactMatches.any { it.traits.debugLike }) {
             score -= 4
+        }
+        if (artifactMatches.any { it.traits.channel == os.kei.feature.github.model.GitHubReleaseChannel.DEV }) {
+            score += 8
+            reasons += "dev-artifact"
+        }
+        if (
+            traits.branchTrust == GitHubActionsRunBranchTrust.ReleaseTag ||
+            traits.branchTrust == GitHubActionsRunBranchTrust.ReleaseBranch ||
+            traits.normalizedEvent == "release"
+        ) {
+            score -= 28
+            reasons += "release-publish"
         }
 
         return GitHubActionsRunMatch(

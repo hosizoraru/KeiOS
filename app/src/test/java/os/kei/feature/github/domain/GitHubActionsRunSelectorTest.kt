@@ -154,6 +154,83 @@ class GitHubActionsRunSelectorTest {
     }
 
     @Test
+    fun `release tag run stays behind default push run in actions download ranking`() {
+        val workflow = workflow("Release", ".github/workflows/release.yml")
+        val workflowTraits = GitHubActionsWorkflowSelector.inspectWorkflow(workflow)
+        val runs = listOf(
+            runArtifacts(
+                run = run(
+                    id = 6403,
+                    event = "release",
+                    branch = "v6.4.0",
+                    title = "Release v6.4.0"
+                ),
+                artifactNames = listOf("app-arm64-v8a-release.apk")
+            ),
+            runArtifacts(
+                run = run(
+                    id = 6402,
+                    event = "push",
+                    branch = "main",
+                    title = "Main branch build"
+                ),
+                artifactNames = listOf("app-arm64-v8a-release.apk")
+            )
+        )
+
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = runs,
+            workflowTraits = workflowTraits,
+            options = GitHubActionsRunSelectionOptions(defaultBranch = "main")
+        )
+
+        assertEquals(6402, matches.first().runArtifacts.run.id)
+        assertTrue(matches.first { it.runArtifacts.run.id == 6403L }.reasons.contains("release-publish"))
+    }
+
+    @Test
+    fun `preferred dev branch unstable artifact outranks release tag artifact`() {
+        val workflow = workflow("Nightly", ".github/workflows/nightly.yml")
+        val workflowTraits = GitHubActionsWorkflowSelector.inspectWorkflow(workflow)
+        val runs = listOf(
+            runArtifacts(
+                run = run(
+                    id = 7001,
+                    event = "release",
+                    branch = "v7.0.0",
+                    title = "Release build"
+                ),
+                artifactNames = listOf("app-arm64-v8a-release.apk")
+            ),
+            runArtifacts(
+                run = run(
+                    id = 7000,
+                    event = "push",
+                    branch = "dev",
+                    title = "Dev build"
+                ),
+                artifactNames = listOf("app-online-Unstable-release.apk")
+            )
+        )
+
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = runs,
+            workflowTraits = workflowTraits,
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = "main",
+                preferredBranches = setOf("dev"),
+                artifactOptions = GitHubActionsArtifactSelectionOptions(
+                    fallbackToAllArtifacts = true
+                )
+            )
+        )
+
+        assertEquals(7000, matches.first().runArtifacts.run.id)
+        assertTrue(matches.first().reasons.contains("preferred-branch"))
+        assertTrue(matches.first().reasons.contains("dev-artifact"))
+    }
+
+    @Test
     fun `last downloaded run gains priority and exposes history`() {
         val runs = listOf(
             runArtifacts(

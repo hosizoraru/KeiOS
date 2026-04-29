@@ -110,6 +110,48 @@ class GitHubActionsBranchSelectorTest {
     }
 
     @Test
+    fun `more active development branch can replace stale default artifact branch`() {
+        val workflow = workflow()
+        val snapshot = snapshot(
+            workflow = workflow,
+            runs = listOf(
+                runArtifacts(
+                    workflow = workflow,
+                    runId = 100,
+                    branch = "main",
+                    artifacts = listOf("app-arm64-v8a-release.apk")
+                ),
+                runArtifacts(
+                    workflow = workflow,
+                    runId = 101,
+                    branch = "dev",
+                    artifacts = listOf("app-online-Unstable-release.apk", "app-offline-Unstable-release.apk")
+                ),
+                runArtifacts(
+                    workflow = workflow,
+                    runId = 102,
+                    branch = "dev",
+                    artifacts = listOf("app-online-Unstable-debug.apk")
+                )
+            )
+        )
+        val signal = GitHubActionsWorkflowSelector.buildArtifactSignal(
+            workflow = workflow,
+            runs = snapshot.runs,
+            defaultBranch = "main"
+        )
+
+        val branch = GitHubActionsBranchSelector.recommendBranch(
+            defaultBranch = "main",
+            workflow = workflow,
+            signal = signal,
+            snapshot = snapshot
+        )
+
+        assertEquals("dev", branch)
+    }
+
+    @Test
     fun `active branch can replace inactive default branch without artifacts`() {
         val workflow = workflow()
         val snapshot = snapshot(
