@@ -24,7 +24,12 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -36,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.feature.github.data.remote.GitHubReleaseAssetBundle
@@ -55,6 +61,7 @@ import os.kei.ui.page.main.github.VersionValueRow
 import os.kei.ui.page.main.os.appLucideAddIcon
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
+import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.github.formatReleaseValue
@@ -75,6 +82,8 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
 import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.status.StatusPill
@@ -97,8 +106,12 @@ import os.kei.ui.page.main.github.asset.formatReleaseUpdatedAtCompact
 import os.kei.ui.page.main.github.asset.formatReleaseUpdatedAtNoYear
 import os.kei.ui.page.main.github.asset.formatAssetSize
 import os.kei.ui.page.main.github.asset.prefersApiAssetTransport
+import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
+import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
+import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
@@ -123,6 +136,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
     trackedCardExpanded: SnapshotStateMap<String, Boolean>,
     onRefreshTrackedItem: (GitHubTrackedApp) -> Unit,
     onOpenTrackSheetForEdit: (GitHubTrackedApp) -> Unit,
+    onRequestDeleteTrackedItem: (GitHubTrackedApp) -> Unit,
     onClearApkAssetUiState: (String) -> Unit,
     onCollapseApkAssetPanel: (GitHubTrackedApp, VersionCheckUi) -> Unit,
     onLoadApkAssets: (GitHubTrackedApp, VersionCheckUi, Boolean, Boolean) -> Unit,
@@ -248,12 +262,12 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
                             )
                         }
                     } else {
-                        AppCompactIconAction(
-                            icon = appLucideRefreshIcon(),
-                            contentDescription = stringResource(R.string.common_refresh),
-                            tint = if (state.loading) iconTint.copy(alpha = 0.68f) else iconTint,
-                            enabled = !state.loading,
-                            onClick = { onRefreshTrackedItem(item) }
+                        GitHubTrackedItemMoreActions(
+                            item = item,
+                            state = state,
+                            iconTint = iconTint,
+                            onRefreshTrackedItem = onRefreshTrackedItem,
+                            onRequestDeleteTrackedItem = onRequestDeleteTrackedItem
                         )
                     }
                 }
@@ -359,6 +373,80 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
             }
         }
     }
+}
+
+@Composable
+private fun GitHubTrackedItemMoreActions(
+    item: GitHubTrackedApp,
+    state: VersionCheckUi,
+    iconTint: Color,
+    onRefreshTrackedItem: (GitHubTrackedApp) -> Unit,
+    onRequestDeleteTrackedItem: (GitHubTrackedApp) -> Unit
+) {
+    var menuExpanded by remember(item.id) { mutableStateOf(false) }
+    var menuAnchorBounds by remember(item.id) { mutableStateOf<IntRect?>(null) }
+    Box(
+        modifier = Modifier.capturePopupAnchor { menuAnchorBounds = it },
+        contentAlignment = Alignment.Center
+    ) {
+        AppCompactIconAction(
+            icon = appLucideMoreIcon(),
+            contentDescription = stringResource(R.string.github_item_cd_more_actions),
+            tint = if (state.loading) iconTint.copy(alpha = 0.68f) else iconTint,
+            enabled = true,
+            onClick = { menuExpanded = !menuExpanded }
+        )
+        if (menuExpanded) {
+            SnapshotWindowListPopup(
+                show = true,
+                alignment = PopupPositionProvider.Align.BottomEnd,
+                anchorBounds = menuAnchorBounds,
+                placement = SnapshotPopupPlacement.ButtonEnd,
+                enableWindowDim = false,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+                LiquidDropdownColumn {
+                    GitHubTrackedItemMenuAction(
+                        text = stringResource(R.string.common_refresh),
+                        index = 0,
+                        optionSize = 2,
+                        onClick = {
+                            menuExpanded = false
+                            onRefreshTrackedItem(item)
+                        }
+                    )
+                    GitHubTrackedItemMenuAction(
+                        text = stringResource(R.string.github_track_sheet_btn_delete),
+                        index = 1,
+                        optionSize = 2,
+                        variant = GlassVariant.SheetDangerAction,
+                        onClick = {
+                            menuExpanded = false
+                            onRequestDeleteTrackedItem(item)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GitHubTrackedItemMenuAction(
+    text: String,
+    index: Int,
+    optionSize: Int,
+    onClick: () -> Unit,
+    variant: GlassVariant = GlassVariant.SheetAction
+) {
+    LiquidDropdownItem(
+        text = text,
+        selected = false,
+        onClick = onClick,
+        index = index,
+        optionSize = optionSize,
+        variant = variant
+    )
 }
 
 internal fun formatLocalVersionText(

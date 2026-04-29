@@ -55,6 +55,12 @@ internal class GitHubTrackActions(
         state.dismissTrackSheet()
     }
 
+    fun requestDeleteItem(item: GitHubTrackedApp) {
+        if (state.deleteInProgress) return
+        if (state.trackedItems.none { it.id == item.id }) return
+        state.pendingDeleteItem = item
+    }
+
     fun applyTrackSheet() {
         val draft = GitHubTrackEditorDraft(
             repoUrl = state.repoUrlInput,

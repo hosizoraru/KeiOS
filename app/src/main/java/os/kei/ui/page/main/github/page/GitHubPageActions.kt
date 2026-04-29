@@ -213,6 +213,8 @@ internal class GitHubPageActions(
 
     fun requestDeleteEditingItem() = trackActions.requestDeleteEditingItem()
 
+    fun requestDeleteTrackedItem(item: GitHubTrackedApp) = trackActions.requestDeleteItem(item)
+
     fun applyTrackSheet() = trackActions.applyTrackSheet()
 
     fun confirmDeletePendingItem() = trackActions.confirmDeletePendingItem()

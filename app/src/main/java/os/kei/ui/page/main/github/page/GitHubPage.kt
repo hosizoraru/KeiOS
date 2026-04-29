@@ -270,6 +270,7 @@ fun GitHubPage(
             onRefreshTrackedItem = { actions.refreshTrackedItem(it, showToastOnError = true) },
             onOpenTrackSheetForAdd = actions::openTrackSheetForAdd,
             onOpenTrackSheetForEdit = actions::openTrackSheetForEdit,
+            onRequestDeleteTrackedItem = actions::requestDeleteTrackedItem,
             onClearApkAssetUiState = actions::clearApkAssetUiState,
             onCollapseApkAssetPanel = { item, itemState ->
                 actions.clearApkAssetUiState(item.id)

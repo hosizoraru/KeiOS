@@ -103,6 +103,7 @@
     <string name="github_item_label_updated_at">更新时间</string>
     <string name="github_item_label_hint">提示</string>
     <string name="github_item_label_update_assets">更新</string>
+    <string name="github_item_cd_more_actions">更多功能</string>
     <string name="github_asset_hint_loading">正在准备可下载文件</string>
     <string name="github_asset_hint_all_loaded">未找到 APK 或已手动全加载</string>
     <string name="github_asset_hint_error">资源读取失败</string>
