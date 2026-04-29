@@ -41,6 +41,7 @@ internal fun rememberSettingsSectionContractBundle(
     preloadingEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
     appThemeMode: AppThemeMode,
+    appLanguageActionAvailable: Boolean,
     transitionAnimationsEnabled: Boolean,
     predictiveBackAnimationsEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
@@ -68,6 +69,7 @@ internal fun rememberSettingsSectionContractBundle(
     onPreloadingEnabledChanged: (Boolean) -> Unit,
     onHomeIconHdrChanged: (Boolean) -> Unit,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
+    onOpenAppLanguageSettings: () -> Unit,
     onTransitionAnimationsChanged: (Boolean) -> Unit,
     onPredictiveBackAnimationsChanged: (Boolean) -> Unit,
     onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
@@ -136,6 +138,7 @@ internal fun rememberSettingsSectionContractBundle(
         preloadingEnabled,
         homeIconHdrEnabled,
         appThemeMode,
+        appLanguageActionAvailable,
         pageUiState.showThemeModePopup,
         pageUiState.themePopupAnchorBounds
     ) {
@@ -143,6 +146,7 @@ internal fun rememberSettingsSectionContractBundle(
             preloadingEnabled = preloadingEnabled,
             homeIconHdrEnabled = homeIconHdrEnabled,
             appThemeMode = appThemeMode,
+            appLanguageActionAvailable = appLanguageActionAvailable,
             showThemeModePopup = pageUiState.showThemeModePopup,
             themePopupAnchorBounds = pageUiState.themePopupAnchorBounds
         )
@@ -150,12 +154,14 @@ internal fun rememberSettingsSectionContractBundle(
     val visualActions = remember(
         onPreloadingEnabledChanged,
         onHomeIconHdrChanged,
-        onAppThemeModeChanged
+        onAppThemeModeChanged,
+        onOpenAppLanguageSettings
     ) {
         SettingsVisualSectionActions(
             onPreloadingEnabledChanged = onPreloadingEnabledChanged,
             onHomeIconHdrChanged = onHomeIconHdrChanged,
             onAppThemeModeChanged = onAppThemeModeChanged,
+            onOpenAppLanguageSettings = onOpenAppLanguageSettings,
             onShowThemeModePopupChange = { pageUiState.showThemeModePopup = it },
             onThemePopupAnchorBoundsChange = { pageUiState.themePopupAnchorBounds = it }
         )

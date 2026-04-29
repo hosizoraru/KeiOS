@@ -64,6 +64,7 @@ import os.kei.ui.page.main.settings.state.rememberSettingsBackgroundController
 import os.kei.ui.page.main.settings.state.rememberSettingsPageUiState
 import os.kei.ui.page.main.settings.state.rememberSettingsSectionContractBundle
 import os.kei.ui.page.main.settings.state.SettingsPageViewModel
+import os.kei.ui.page.main.settings.support.rememberSettingsAppLanguageController
 import os.kei.ui.page.main.settings.support.rememberSettingsBatteryOptimizationController
 import os.kei.ui.page.main.settings.support.rememberSettingsPermissionKeepAliveController
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
@@ -193,6 +194,7 @@ fun SettingsPage(
         nonHomeBackgroundUri = nonHomeBackgroundUri,
         onNonHomeBackgroundUriChanged = onNonHomeBackgroundUriChanged
     )
+    val appLanguageController = rememberSettingsAppLanguageController(context)
     val batteryOptimizationController = rememberSettingsBatteryOptimizationController(context)
     val permissionKeepAliveController = rememberSettingsPermissionKeepAliveController(
         context = context,
@@ -250,6 +252,7 @@ fun SettingsPage(
         preloadingEnabled = preloadingEnabled,
         homeIconHdrEnabled = homeIconHdrEnabled,
         appThemeMode = appThemeMode,
+        appLanguageActionAvailable = appLanguageController.actionAvailable,
         transitionAnimationsEnabled = transitionAnimationsEnabled,
         predictiveBackAnimationsEnabled = predictiveBackAnimationsEnabled,
         liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
@@ -286,6 +289,16 @@ fun SettingsPage(
         onPreloadingEnabledChanged = onPreloadingEnabledChanged,
         onHomeIconHdrChanged = onHomeIconHdrChanged,
         onAppThemeModeChanged = onAppThemeModeChanged,
+        onOpenAppLanguageSettings = {
+            val opened = appLanguageController.openAppLanguageSettings()
+            if (!opened) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_app_language_toast_open_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        },
         onTransitionAnimationsChanged = onTransitionAnimationsChanged,
         onPredictiveBackAnimationsChanged = onPredictiveBackAnimationsChanged,
         onLiquidActionBarLayeredStyleChanged = onLiquidActionBarLayeredStyleChanged,

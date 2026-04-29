@@ -37,6 +37,7 @@ internal data class SettingsVisualSectionState(
     val preloadingEnabled: Boolean,
     val homeIconHdrEnabled: Boolean,
     val appThemeMode: AppThemeMode,
+    val appLanguageActionAvailable: Boolean,
     val showThemeModePopup: Boolean,
     val themePopupAnchorBounds: IntRect?
 )
@@ -45,6 +46,7 @@ internal data class SettingsVisualSectionActions(
     val onPreloadingEnabledChanged: (Boolean) -> Unit,
     val onHomeIconHdrChanged: (Boolean) -> Unit,
     val onAppThemeModeChanged: (AppThemeMode) -> Unit,
+    val onOpenAppLanguageSettings: () -> Unit,
     val onShowThemeModePopupChange: (Boolean) -> Unit,
     val onThemePopupAnchorBoundsChange: (IntRect?) -> Unit
 )

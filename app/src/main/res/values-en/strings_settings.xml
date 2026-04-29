@@ -1,0 +1,20 @@
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_category_access">Access</string>
+    <string name="settings_category_appearance">Appearance</string>
+    <string name="settings_category_notify">Notifications</string>
+    <string name="settings_category_data">Data</string>
+    <string name="settings_group_visual_header">Visual</string>
+    <string name="settings_group_visual_title">Visual &amp; Theme</string>
+    <string name="settings_theme_mode_title">App theme</string>
+    <string name="settings_theme_follow_system">Follow system</string>
+    <string name="settings_theme_light_mode">Light mode</string>
+    <string name="settings_theme_dark_mode">Dark mode</string>
+    <string name="settings_theme_summary_follow_system">Use the current system theme.</string>
+    <string name="settings_theme_summary_light">Always use the light theme.</string>
+    <string name="settings_theme_summary_dark">Always use the dark theme.</string>
+    <string name="settings_app_language_title">App language</string>
+    <string name="settings_app_language_summary">Open the native app language settings for i18n testing without changing the system language.</string>
+    <string name="settings_app_language_scope">Android native per-app language settings; falls back to the app info page when the direct page is unavailable.</string>
+    <string name="settings_app_language_toast_open_failed">Unable to open app language settings. Open this app in system settings and choose Language.</string>
+</resources>

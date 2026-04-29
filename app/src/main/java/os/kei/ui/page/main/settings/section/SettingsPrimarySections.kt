@@ -315,6 +315,22 @@ internal fun SettingsVisualSection(
                 variant = GlassVariant.SheetAction
             )
         }
+        SettingsActionItem(
+            title = stringResource(R.string.settings_app_language_title),
+            summary = stringResource(R.string.settings_app_language_summary),
+            infoKey = stringResource(R.string.common_scope),
+            infoValue = stringResource(R.string.settings_app_language_scope),
+            onClick = if (state.appLanguageActionAvailable) actions.onOpenAppLanguageSettings else null,
+            trailing = {
+                GlassTextButton(
+                    backdrop = null,
+                    variant = GlassVariant.Compact,
+                    text = stringResource(R.string.common_open),
+                    enabled = state.appLanguageActionAvailable,
+                    onClick = actions.onOpenAppLanguageSettings
+                )
+            }
+        )
         SettingsToggleItem(
             title = stringResource(R.string.settings_preloading_title),
             summary = if (state.preloadingEnabled) {
