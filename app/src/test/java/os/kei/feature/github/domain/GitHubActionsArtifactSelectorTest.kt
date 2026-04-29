@@ -35,7 +35,19 @@ class GitHubActionsArtifactSelectorTest {
         assertEquals(GitHubActionsArtifactKind.AndroidPackage, traits.kind)
         assertEquals("arm64-v8a", traits.abi)
         assertTrue(traits.buildTypes.contains("benchmark"))
+        assertEquals("v1.2.2", traits.version)
         assertTrue(traits.androidLike)
+    }
+
+    @Test
+    fun `name inspector extracts common artifact version tokens`() {
+        val traits = GitHubActionsArtifactSelector.inspectName(
+            "KeiOS-market-release-arm64-v8a-1.3.0-rc1.apk"
+        )
+
+        assertEquals("v1.3.0-rc1", traits.version)
+        assertTrue(traits.releaseLike)
+        assertTrue(traits.flavors.contains("market"))
     }
 
     @Test

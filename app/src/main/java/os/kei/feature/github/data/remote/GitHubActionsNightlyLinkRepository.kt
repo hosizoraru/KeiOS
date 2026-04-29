@@ -85,6 +85,7 @@ internal class GitHubActionsNightlyLinkRepository(
         repo: String,
         runId: Long
     ): Result<GitHubActionsWorkflowRun> = runCatching {
+        val publicDetail = fetchPublicRunDetail(owner, repo, runId).getOrNull()
         buildNightlyRun(
             owner = owner,
             repo = repo,
@@ -92,7 +93,8 @@ internal class GitHubActionsNightlyLinkRepository(
             branch = "",
             workflowId = 0L,
             workflowName = "",
-            htmlUrl = buildGitHubRunUrl(owner, repo, runId)
+            htmlUrl = buildGitHubRunUrl(owner, repo, runId),
+            publicDetail = publicDetail
         )
     }
 
@@ -102,12 +104,14 @@ internal class GitHubActionsNightlyLinkRepository(
         runId: Long,
         limit: Int
     ): Result<List<GitHubActionsArtifact>> = runCatching {
+        val publicDetail = fetchPublicRunDetail(owner, repo, runId).getOrNull()
         val html = fetchPublicHtml(buildNightlyRunDashboardUrl(owner, repo, runId)).getOrThrow()
         parseNightlyRunArtifacts(
             html = html,
             owner = owner,
             repo = repo,
-            runId = runId
+            runId = runId,
+            publicDetail = publicDetail
         ).take(limit.coerceIn(1, 100))
     }
 
@@ -118,6 +122,7 @@ internal class GitHubActionsNightlyLinkRepository(
         artifactsLimit: Int,
         includeArtifactsWhenCompleted: Boolean
     ): Result<GitHubActionsRunStatusSnapshot> = runCatching {
+        val publicDetail = fetchPublicRunDetail(owner, repo, runId).getOrNull()
         val artifacts = if (includeArtifactsWhenCompleted) {
             fetchRunArtifacts(owner, repo, runId, artifactsLimit).getOrThrow()
         } else {
@@ -133,7 +138,8 @@ internal class GitHubActionsNightlyLinkRepository(
                 branch = artifacts.firstOrNull()?.workflowRunHeadBranch.orEmpty(),
                 workflowId = 0L,
                 workflowName = "",
-                htmlUrl = buildGitHubRunUrl(owner, repo, runId)
+                htmlUrl = buildGitHubRunUrl(owner, repo, runId),
+                publicDetail = publicDetail
             ),
             artifacts = artifacts
         )
@@ -177,6 +183,9 @@ internal class GitHubActionsNightlyLinkRepository(
         } else {
             null
         }
+        val publicRunDetail = detail?.runId
+            ?.takeIf { it > 0L }
+            ?.let { runId -> fetchPublicRunDetail(owner, repo, runId).getOrNull() }
         val syntheticRunId = stablePositiveId("$owner/$repo/$workflowSlug/$resolvedBranch/latest")
         val runId = detail?.runId?.takeIf { it > 0L } ?: syntheticRunId
         val workflowLongId = stablePositiveId("$owner/$repo/.github/workflows/$workflowFile")
@@ -189,10 +198,15 @@ internal class GitHubActionsNightlyLinkRepository(
             workflowName = workflowNameFromFile(workflowFile),
             htmlUrl = detail?.runHtmlUrl.orEmpty().ifBlank {
                 buildGitHubActionsQueryUrl(owner, repo, resolvedBranch)
-            }
+            },
+            publicDetail = publicRunDetail
         )
+        val publicArtifactsByName = publicRunDetail?.artifacts
+            ?.associateBy { artifact -> artifact.name.normalizedArtifactNameKey() }
+            .orEmpty()
         val artifacts = artifactNames.map { artifactName ->
             val detailForArtifact = if (artifactName == detail?.artifactName) detail else null
+            val publicArtifact = publicArtifactsByName[artifactName.normalizedArtifactNameKey()]
             buildNightlyArtifact(
                 owner = owner,
                 repo = repo,
@@ -202,7 +216,9 @@ internal class GitHubActionsNightlyLinkRepository(
                 runId = runId,
                 artifactId = detailForArtifact?.artifactId ?: stablePositiveId(
                     "$owner/$repo/$runId/$artifactName"
-                )
+                ),
+                publicDetail = publicRunDetail,
+                publicArtifact = publicArtifact
             )
         }
         GitHubActionsWorkflowArtifactsSnapshot(
@@ -283,15 +299,29 @@ internal class GitHubActionsNightlyLinkRepository(
         html: String,
         owner: String,
         repo: String,
-        runId: Long
+        runId: Long,
+        publicDetail: GitHubActionsNightlyRunPublicDetail?
     ): List<GitHubActionsArtifact> {
         val basePath = "/${owner.urlPathEscape()}/${repo.urlPathEscape()}/actions/runs/$runId/"
+        val publicArtifactsByName = publicDetail?.artifacts
+            ?.associateBy { artifact -> artifact.name.normalizedArtifactNameKey() }
+            .orEmpty()
         return parseNightlyArtifactNames(html, basePath).map { artifactName ->
+            val publicArtifact = publicArtifactsByName[artifactName.normalizedArtifactNameKey()]
             GitHubActionsArtifact(
-                id = stablePositiveId("$owner/$repo/$runId/$artifactName"),
+                id = publicArtifact?.id?.takeIf { it > 0L }
+                    ?: stablePositiveId("$owner/$repo/$runId/$artifactName"),
                 name = artifactName,
+                sizeBytes = publicArtifact?.sizeBytes ?: 0L,
+                digest = publicArtifact?.digest.orEmpty(),
                 archiveDownloadUrl = "${nightlyLinkBaseUrl.trimEnd('/')}$basePath${artifactName.urlEncode()}.zip",
-                workflowRunId = runId
+                workflowRunId = runId,
+                workflowRunHeadBranch = publicDetail?.headBranch.orEmpty(),
+                workflowRunHeadSha = publicDetail?.headSha.orEmpty(),
+                createdAtMillis = publicDetail?.createdAtMillis,
+                updatedAtMillis = publicArtifact?.updatedAtMillis
+                    ?: publicDetail?.updatedAtMillis
+                    ?: publicDetail?.createdAtMillis
             )
         }
     }
@@ -361,23 +391,27 @@ internal class GitHubActionsNightlyLinkRepository(
         branch: String,
         workflowId: Long,
         workflowName: String,
-        htmlUrl: String
+        htmlUrl: String,
+        publicDetail: GitHubActionsNightlyRunPublicDetail? = null
     ): GitHubActionsWorkflowRun {
+        val resolvedWorkflowName = publicDetail?.workflowName.orEmpty()
+            .ifBlank { workflowName }
         return GitHubActionsWorkflowRun(
             id = runId,
-            name = workflowName.ifBlank { "nightly.link" },
-            displayTitle = "Latest successful run",
+            name = resolvedWorkflowName.ifBlank { "nightly.link" },
+            displayTitle = publicDetail?.displayTitle.orEmpty().ifBlank { "Latest successful run" },
             workflowId = workflowId,
-            workflowName = workflowName,
-            event = "push",
-            status = "completed",
-            conclusion = "success",
-            headBranch = branch,
+            workflowName = resolvedWorkflowName,
+            event = publicDetail?.event.orEmpty().ifBlank { "push" },
+            status = publicDetail?.status.orEmpty().ifBlank { "completed" },
+            conclusion = publicDetail?.conclusion.orEmpty().ifBlank { "success" },
+            headBranch = publicDetail?.headBranch.orEmpty().ifBlank { branch },
+            headSha = publicDetail?.headSha.orEmpty(),
             htmlUrl = htmlUrl,
             repositoryFullName = "$owner/$repo",
             headRepositoryFullName = "$owner/$repo",
-            createdAtMillis = null,
-            updatedAtMillis = null
+            createdAtMillis = publicDetail?.createdAtMillis,
+            updatedAtMillis = publicDetail?.updatedAtMillis ?: publicDetail?.createdAtMillis
         )
     }
 
@@ -388,16 +422,42 @@ internal class GitHubActionsNightlyLinkRepository(
         branch: String,
         artifactName: String,
         runId: Long,
-        artifactId: Long
+        artifactId: Long,
+        publicDetail: GitHubActionsNightlyRunPublicDetail? = null,
+        publicArtifact: GitHubActionsNightlyArtifactPublicDetail? = null
     ): GitHubActionsArtifact {
         return GitHubActionsArtifact(
-            id = artifactId,
+            id = publicArtifact?.id?.takeIf { it > 0L } ?: artifactId,
             name = artifactName,
+            sizeBytes = publicArtifact?.sizeBytes ?: 0L,
+            digest = publicArtifact?.digest.orEmpty(),
             archiveDownloadUrl = "${nightlyLinkBaseUrl.trimEnd('/')}/${owner.urlEncode()}/${repo.urlEncode()}/" +
                 "workflows/${workflowSlug.urlEncode()}/${branch.urlEncode()}/${artifactName.urlEncode()}.zip",
             workflowRunId = runId,
-            workflowRunHeadBranch = branch
+            workflowRunHeadBranch = publicDetail?.headBranch.orEmpty().ifBlank { branch },
+            workflowRunHeadSha = publicDetail?.headSha.orEmpty(),
+            createdAtMillis = publicDetail?.createdAtMillis,
+            updatedAtMillis = publicArtifact?.updatedAtMillis
+                ?: publicDetail?.updatedAtMillis
+                ?: publicDetail?.createdAtMillis
         )
+    }
+
+    private fun fetchPublicRunDetail(
+        owner: String,
+        repo: String,
+        runId: Long
+    ): Result<GitHubActionsNightlyRunPublicDetail?> = runCatching {
+        if (runId <= 0L) return@runCatching null
+        fetchPublicHtml(buildGitHubRunUrl(owner, repo, runId)).getOrThrow()
+            .let { html ->
+                GitHubActionsNightlyLinkHtmlParser.parsePublicRunDetail(
+                    html = html,
+                    owner = owner,
+                    repo = repo,
+                    runId = runId
+                )
+            }
     }
 
     private fun fetchPublicHtml(
@@ -470,6 +530,10 @@ internal class GitHubActionsNightlyLinkRepository(
     }
 
     private fun String.urlPathEscape(): String = urlEncode()
+
+    private fun String.normalizedArtifactNameKey(): String {
+        return trim().lowercase(Locale.ROOT)
+    }
 
     private fun String.htmlUnescape(): String {
         return replace("&amp;", "&")

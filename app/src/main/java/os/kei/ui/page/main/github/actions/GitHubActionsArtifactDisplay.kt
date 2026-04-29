@@ -51,6 +51,8 @@ private fun artifactDisplayTokens(match: GitHubActionsArtifactMatch): List<Strin
             GitHubActionsArtifactKind.Source -> addAll(listOf("source", "sources"))
             GitHubActionsArtifactKind.Unknown -> Unit
         }
+        add(traits.version)
+        traits.version.removePrefix("v").takeIf { it != traits.version }?.let(::add)
         add(traits.abi)
         when (traits.abi) {
             "arm64-v8a" -> add("arm64")

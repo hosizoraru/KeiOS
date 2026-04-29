@@ -15,6 +15,7 @@ object GitHubActionsArtifactSelector {
         val extension = detectExtension(normalizedName)
         val flavors = detectFlavors(normalizedName)
         val buildTypes = detectBuildTypes(normalizedName)
+        val version = detectVersion(normalizedName)
         val platform = detectPlatform(
             normalizedName = normalizedName,
             extension = extension,
@@ -46,6 +47,7 @@ object GitHubActionsArtifactSelector {
             abi = abi,
             flavors = flavors,
             buildTypes = buildTypes,
+            version = version,
             channel = channel,
             releaseLike = releaseLike,
             debugLike = debugLike,
@@ -184,6 +186,10 @@ object GitHubActionsArtifactSelector {
             reasons += "query"
         }
         if (artifact.sizeBytes > 0L) score += 2
+        if (traits.version.isNotBlank()) {
+            score += 2
+            reasons += "version"
+        }
         val lastDownload = GitHubActionsDownloadHistoryMatcher.latestForArtifact(
             artifact = artifact,
             history = options.downloadHistory
@@ -271,6 +277,24 @@ object GitHubActionsArtifactSelector {
 
     private fun detectBuildTypes(normalizedName: String): List<String> {
         return androidBuildTypeTokens.filter { token -> containsToken(normalizedName, token) }
+    }
+
+    private fun detectVersion(normalizedName: String): String {
+        val semanticVersion = semanticVersionRegex.find(normalizedName)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim('.', '-', '_')
+            .orEmpty()
+        if (semanticVersion.isNotBlank()) {
+            return semanticVersion.let { version ->
+                if (version.startsWith("v", ignoreCase = true)) version else "v$version"
+            }
+        }
+        return namedVersionRegex.find(normalizedName)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.let { versionCode -> "v$versionCode" }
+            .orEmpty()
     }
 
     private fun looksLikeAndroidAppArchive(normalizedName: String): Boolean {
@@ -366,5 +390,11 @@ object GitHubActionsArtifactSelector {
         "nightly",
         "preview",
         "canary"
+    )
+    private val semanticVersionRegex = Regex(
+        """(?:^|[^a-z0-9])(v?\d+\.\d+(?:\.\d+){0,2}(?:[-._]?(?:alpha|beta|rc|preview|dev|canary|nightly|snapshot)[-._]?\d*)?)(?=$|[^a-z0-9])"""
+    )
+    private val namedVersionRegex = Regex(
+        """(?:^|[^a-z0-9])(?:version|ver|versioncode|vc)[-._ ]?(\d{2,})(?=$|[^a-z0-9])"""
     )
 }

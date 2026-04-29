@@ -6,6 +6,7 @@ import org.junit.Test
 import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.feature.github.model.GitHubActionsArtifact
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -336,7 +337,9 @@ class GitHubActionsRepositoryTest {
     @Test
     fun `nightly link strategy reads latest successful artifacts from nightly link`() {
         MockWebServer().use { nightly ->
-            val base = nightly.url("/").toString().trimEnd('/')
+            val githubBaseUrl = nightly.url("/github/").toString()
+            val nightlyBaseUrl = nightly.url("/nightly/").toString()
+            val base = nightlyBaseUrl.trimEnd('/')
             nightly.enqueue(
                 MockResponse()
                     .setResponseCode(200)
@@ -357,10 +360,16 @@ class GitHubActionsRepositoryTest {
                         """.trimIndent()
                     )
             )
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(samplePublicGitHubRunHtml())
+            )
             val repository = GitHubActionsRepository(
                 apiToken = "",
                 actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
-                nightlyLinkBaseUrl = nightly.url("/").toString()
+                githubHtmlBaseUrl = githubBaseUrl,
+                nightlyLinkBaseUrl = nightlyBaseUrl
             )
 
             val snapshot = repository.fetchWorkflowArtifactSnapshot(
@@ -372,16 +381,24 @@ class GitHubActionsRepositoryTest {
 
             assertEquals(1, snapshot.runs.size)
             assertEquals(250L, snapshot.runs.first().run.id)
+            assertEquals("Build v1.2.3 arm64 package", snapshot.runs.first().run.displayTitle)
             assertEquals("master", snapshot.runs.first().run.headBranch)
+            assertEquals("def4567", snapshot.runs.first().run.headSha)
+            assertEquals(Instant.parse("2026-04-29T01:19:28Z").toEpochMilli(), snapshot.runs.first().run.updatedAtMillis)
             assertEquals(listOf("Foss", "Market"), snapshot.artifacts.map { it.name })
             assertEquals(777L, snapshot.artifacts.first().id)
+            assertEquals(3_848_274L, snapshot.artifacts.first().sizeBytes)
+            assertEquals("sha256:demo", snapshot.artifacts.first().digest)
+            assertEquals("def4567", snapshot.artifacts.first().workflowRunHeadSha)
+            assertEquals(Instant.parse("2026-04-29T01:19:28Z").toEpochMilli(), snapshot.artifacts.first().updatedAtMillis)
             assertEquals("$base/demo/app/workflows/android/master/Foss.zip", snapshot.artifacts.first().archiveDownloadUrl)
             assertEquals(
                 listOf(
-                    "/demo/app/workflows/android/master?preview",
-                    "/demo/app/workflows/android/master/Foss"
+                    "/nightly/demo/app/workflows/android/master?preview",
+                    "/nightly/demo/app/workflows/android/master/Foss",
+                    "/github/demo/app/actions/runs/250"
                 ),
-                List(2) { nightly.takeRequest().path }
+                List(3) { nightly.takeRequest().path }
             )
         }
     }
@@ -464,6 +481,56 @@ class GitHubActionsRepositoryTest {
             assertEquals(first.artifacts.map { it.name }, second.artifacts.map { it.name })
             assertEquals(listOf("/demo/app/workflows/android/master?preview"), List(1) { nightly.takeRequest().path })
             assertEquals(1, nightly.requestCount)
+        }
+    }
+
+    @Test
+    fun `nightly link run artifacts reuse public github run metadata`() {
+        MockWebServer().use { nightly ->
+            val githubBaseUrl = nightly.url("/github/").toString()
+            val nightlyBaseUrl = nightly.url("/nightly/").toString()
+            val base = nightlyBaseUrl.trimEnd('/')
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(samplePublicGitHubRunHtml())
+            )
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/actions/runs/250/Foss.zip">Foss.zip</a>
+                            <a href="$base/demo/app/actions/runs/250/Market.zip">Market.zip</a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                githubHtmlBaseUrl = githubBaseUrl,
+                nightlyLinkBaseUrl = nightlyBaseUrl
+            )
+
+            val artifacts = repository.fetchRunArtifacts(
+                owner = "demo",
+                repo = "app",
+                runId = 250
+            ).result.getOrThrow()
+
+            assertEquals(listOf("Foss", "Market"), artifacts.map { it.name })
+            assertEquals(777L, artifacts.first().id)
+            assertEquals(3_848_274L, artifacts.first().sizeBytes)
+            assertEquals("sha256:demo", artifacts.first().digest)
+            assertEquals("master", artifacts.first().workflowRunHeadBranch)
+            assertEquals("def4567", artifacts.first().workflowRunHeadSha)
+            assertEquals(
+                listOf(
+                    "/github/demo/app/actions/runs/250",
+                    "/nightly/demo/app/actions/runs/250"
+                ),
+                List(2) { nightly.takeRequest().path }
+            )
         }
     }
 
@@ -686,6 +753,42 @@ class GitHubActionsRepositoryTest {
                 }
               ]
             }
+        """.trimIndent()
+    }
+
+    private fun samplePublicGitHubRunHtml(): String {
+        return """
+            <html>
+              <head>
+                <title>Build v1.2.3 arm64 package · demo/app@def4567 · GitHub</title>
+              </head>
+              <body>
+                <div role="region" aria-label="Workflow run summary">
+                  <span>Triggered via push
+                    <relative-time datetime="2026-04-29T01:19:28Z">April 29, 2026 01:19</relative-time>
+                  </span>
+                  <a class="branch-name css-truncate-target" title="master" href="/demo/app/tree/refs/heads/master">master</a>
+                  <a href="/demo/app/commit/def4567">def4567</a>
+                  <span>Status</span>
+                  <span>Success</span>
+                  <a href="/demo/app/actions/runs/250/workflow">android.yml</a>
+                </div>
+                <table>
+                  <tbody>
+                    <tr role="row" data-artifact-id="777">
+                      <td><span class="text-bold color-fg-default">Foss</span></td>
+                      <td>3.67 MB</td>
+                      <td><code>sha256:demo</code></td>
+                    </tr>
+                    <tr role="row" data-artifact-id="778">
+                      <td><span class="text-bold color-fg-default">Market</span></td>
+                      <td>4 KB</td>
+                      <td><code>sha256:market</code></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </body>
+            </html>
         """.trimIndent()
     }
 }

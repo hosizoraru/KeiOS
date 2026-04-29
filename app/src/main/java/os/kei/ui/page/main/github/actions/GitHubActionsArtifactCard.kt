@@ -104,6 +104,9 @@ internal fun GitHubActionsArtifactCard(
                 label = artifactKindLabel(artifactMatch.traits.kind),
                 color = kindColor
             )
+            artifactMatch.traits.version.takeIf { it.isNotBlank() }?.let { version ->
+                GitHubActionsInfoPill(label = version, color = GitHubStatusPalette.Update)
+            }
             artifactMatch.traits.abi.takeIf { it.isNotBlank() }?.let { abi ->
                 GitHubActionsInfoPill(label = abi, color = GitHubStatusPalette.Active)
             }
