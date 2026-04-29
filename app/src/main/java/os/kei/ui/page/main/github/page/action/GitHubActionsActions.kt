@@ -18,6 +18,7 @@ import os.kei.feature.github.model.GitHubActionsRunArtifacts
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.feature.github.model.GitHubActionsRunSelectionOptions
 import os.kei.feature.github.model.GitHubActionsWorkflow
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsWorkflowArtifactsSnapshot
 import os.kei.feature.github.model.GitHubActionsWorkflowMatch
 import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
@@ -126,7 +127,7 @@ internal class GitHubActionsActions(
         val runMatch = state.actionsRuns.firstOrNull { it.runArtifacts.run.id == runId } ?: return
         val artifactMatch = runMatch.artifactMatches.firstOrNull { it.artifact.id == artifactId } ?: return
         val artifact = artifactMatch.artifact
-        if (state.lookupConfig.apiToken.trim().isBlank()) {
+        if (state.lookupConfig.actionsRequireApiToken && state.lookupConfig.apiToken.trim().isBlank()) {
             env.toast(R.string.github_actions_toast_token_required)
             return
         }
@@ -192,7 +193,7 @@ internal class GitHubActionsActions(
         val runMatch = state.actionsRuns.firstOrNull { it.runArtifacts.run.id == runId } ?: return
         val artifactMatch = runMatch.artifactMatches.firstOrNull { it.artifact.id == artifactId } ?: return
         val artifact = artifactMatch.artifact
-        if (state.lookupConfig.apiToken.trim().isBlank()) {
+        if (state.lookupConfig.actionsRequireApiToken && state.lookupConfig.apiToken.trim().isBlank()) {
             env.toast(R.string.github_actions_toast_token_required)
             return
         }
@@ -407,11 +408,12 @@ internal class GitHubActionsActions(
             val snapshotTrace = repository.fetchGitHubActionsWorkflowArtifactSnapshot(
                 owner = item.owner,
                 repo = item.repo,
-                workflowId = workflow.id.toString(),
+                workflowId = workflowLookupId(workflow),
                 lookupConfig = state.lookupConfig,
                 runLimit = state.actionsRunLimit.coerceIn(DEFAULT_RUN_LIMIT, MAX_RUN_LIMIT),
                 artifactsPerRun = ARTIFACTS_PER_RUN,
-                artifactRunLimit = INITIAL_ARTIFACT_RUN_LIMIT
+                artifactRunLimit = INITIAL_ARTIFACT_RUN_LIMIT,
+                branch = state.actionsDefaultBranch
             )
             val snapshot = snapshotTrace.result.getOrThrow()
             if (!isCurrentTarget(item) || state.actionsSelectedWorkflowId != workflow.id) return
@@ -635,6 +637,14 @@ internal class GitHubActionsActions(
     private fun selectedWorkflowMatch(): GitHubActionsWorkflowMatch? {
         val workflowId = state.actionsSelectedWorkflowId ?: return null
         return state.actionsWorkflows.firstOrNull { it.workflow.id == workflowId }
+    }
+
+    private fun workflowLookupId(workflow: GitHubActionsWorkflow): String {
+        return if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
+            workflow.path.ifBlank { workflow.displayName }
+        } else {
+            workflow.id.toString()
+        }
     }
 
     private fun isCurrentTarget(item: GitHubTrackedApp): Boolean {

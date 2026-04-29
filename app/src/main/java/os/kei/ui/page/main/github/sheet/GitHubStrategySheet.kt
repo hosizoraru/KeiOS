@@ -15,9 +15,11 @@ import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.feature.github.model.GitHubApiCredentialStatus
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubStrategyBenchmarkReport
+import os.kei.ui.page.main.github.GitHubActionsStrategyGuideCard
 import os.kei.ui.page.main.github.GitHubCredentialStatusCard
 import os.kei.ui.page.main.github.GitHubRecommendedTokenGuideCard
 import os.kei.ui.page.main.github.GitHubStatusPalette
@@ -28,6 +30,7 @@ import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.github.buildGitHubFineGrainedTokenTemplateUrl
 import os.kei.ui.page.main.github.githubFineGrainedPatDocsUrl
+import os.kei.ui.page.main.github.githubActionsStrategyGuides
 import os.kei.ui.page.main.github.githubRecommendedTokenGuide
 import os.kei.ui.page.main.github.githubStrategyGuides
 import os.kei.ui.page.main.widget.glass.GlassIconButton
@@ -52,6 +55,7 @@ internal fun GitHubStrategySheet(
     backdrop: LayerBackdrop,
     lookupConfig: GitHubLookupConfig,
     selectedStrategyInput: GitHubLookupStrategyOption,
+    selectedActionsStrategyInput: GitHubActionsLookupStrategyOption,
     githubApiTokenInput: String,
     showApiTokenPlainText: Boolean,
     credentialCheckRunning: Boolean,
@@ -65,6 +69,7 @@ internal fun GitHubStrategySheet(
     onDismissRequest: () -> Unit,
     onApply: () -> Unit,
     onSelectedStrategyChange: (GitHubLookupStrategyOption) -> Unit,
+    onSelectedActionsStrategyChange: (GitHubActionsLookupStrategyOption) -> Unit,
     onTokenInputChange: (String) -> Unit,
     onToggleTokenVisibility: () -> Unit,
     onRunCredentialCheck: () -> Unit,
@@ -74,6 +79,7 @@ internal fun GitHubStrategySheet(
 ) {
     val context = LocalContext.current
     val guides = remember(context) { githubStrategyGuides(context) }
+    val actionsGuides = remember(context) { githubActionsStrategyGuides(context) }
     val tokenGuide = remember(context) { githubRecommendedTokenGuide(context) }
     SnapshotWindowBottomSheet(
         show = show,
@@ -100,16 +106,17 @@ internal fun GitHubStrategySheet(
     ) {
         val sanitizedTokenInput = githubApiTokenInput.trim()
         val draftChanged = selectedStrategyInput != lookupConfig.selectedStrategy ||
+            selectedActionsStrategyInput != lookupConfig.actionsStrategy ||
             sanitizedTokenInput != lookupConfig.apiToken
+        val tokenUsedByDraft = selectedStrategyInput == GitHubLookupStrategyOption.GitHubApiToken ||
+            selectedActionsStrategyInput == GitHubActionsLookupStrategyOption.GitHubApiToken
         val tokenStatusLabel = when {
-            selectedStrategyInput != GitHubLookupStrategyOption.GitHubApiToken ->
-                context.getString(R.string.common_not_used)
+            !tokenUsedByDraft -> context.getString(R.string.common_not_used)
             sanitizedTokenInput.isBlank() -> context.getString(R.string.common_guest)
             else -> context.getString(R.string.common_filled)
         }
         val tokenStatusColor = when {
-            selectedStrategyInput != GitHubLookupStrategyOption.GitHubApiToken ->
-                MiuixTheme.colorScheme.onBackgroundVariant
+            !tokenUsedByDraft -> MiuixTheme.colorScheme.onBackgroundVariant
             sanitizedTokenInput.isBlank() -> GitHubStatusPalette.PreRelease
             else -> GitHubStatusPalette.Update
         }
@@ -130,6 +137,7 @@ internal fun GitHubStrategySheet(
             SheetSectionTitle(stringResource(R.string.github_strategy_section_draft_summary))
             GitHubStrategyDraftSummaryCard(
                 selectedStrategy = selectedStrategyInput,
+                selectedActionsStrategy = selectedActionsStrategyInput,
                 tokenInput = sanitizedTokenInput,
                 trackedCount = trackedCount,
                 changed = draftChanged
@@ -144,7 +152,16 @@ internal fun GitHubStrategySheet(
                 )
             }
 
-            if (selectedStrategyInput == GitHubLookupStrategyOption.GitHubApiToken) {
+            SheetSectionTitle(stringResource(R.string.github_strategy_section_actions_strategy))
+            actionsGuides.forEach { guide ->
+                GitHubActionsStrategyGuideCard(
+                    guide = guide,
+                    selected = selectedActionsStrategyInput == guide.option,
+                    onSelect = { onSelectedActionsStrategyChange(guide.option) }
+                )
+            }
+
+            if (tokenUsedByDraft) {
                 SheetSectionTitle(stringResource(R.string.github_strategy_section_credential))
                 SheetSectionCard {
                     SheetControlRow(label = stringResource(R.string.github_strategy_label_token_status)) {
@@ -245,7 +262,7 @@ internal fun GitHubStrategySheet(
                     onRunStrategyBenchmark = onRunStrategyBenchmark
                 )
                 SheetDescriptionText(
-                    text = stringResource(R.string.github_strategy_desc_api_recommendation)
+                    text = stringResource(R.string.github_strategy_desc_api_actions_recommendation)
                 )
                 SheetSectionTitle(stringResource(R.string.github_strategy_section_recommended_create))
                 GitHubRecommendedTokenGuideCard(

@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.R
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.ui.page.main.github.GitHubStatusPalette
@@ -34,13 +35,15 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun GitHubActionsSummaryCard(
     state: GitHubPageState,
-    hasToken: Boolean,
+    canResolveArtifacts: Boolean,
     isDark: Boolean
 ) {
     val target = state.actionsTargetItem
-    val accent = if (hasToken) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease
+    val accent = if (canResolveArtifacts) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease
     val badgeLabel = when {
-        hasToken -> stringResource(R.string.github_actions_badge_token_ready)
+        state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink ->
+            stringResource(R.string.github_actions_badge_nightly_link)
+        state.lookupConfig.apiToken.isNotBlank() -> stringResource(R.string.github_actions_badge_token_ready)
         state.actionsAuthMode == GitHubApiAuthMode.Guest -> stringResource(R.string.common_guest)
         else -> stringResource(R.string.github_actions_badge_token_required)
     }

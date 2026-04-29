@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.feature.github.model.GitHubApiCredentialStatus
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubStrategyBenchmarkResult
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -59,20 +60,61 @@ internal fun GitHubStrategyGuideCard(
 }
 
 @Composable
+internal fun GitHubActionsStrategyGuideCard(
+    guide: GitHubActionsStrategyGuide,
+    selected: Boolean,
+    onSelect: () -> Unit
+) {
+    val accent = guide.option.accentColor()
+    SheetChoiceCard(
+        title = guide.option.label,
+        summary = guide.summary,
+        selected = selected,
+        onSelect = onSelect,
+        accentColor = accent,
+        modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+        details = {
+            Text(
+                text = stringResource(R.string.github_strategy_guide_pros, guide.pros.joinToString("；")),
+                color = MiuixTheme.colorScheme.onBackground,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
+            )
+            Text(
+                text = stringResource(R.string.github_strategy_guide_cons, guide.cons.joinToString("；")),
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight
+            )
+            Text(
+                text = stringResource(R.string.github_strategy_guide_requirement, guide.requirement),
+                color = accent,
+                fontWeight = FontWeight.Medium,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight
+            )
+        }
+    )
+}
+
+@Composable
 internal fun GitHubStrategyDraftSummaryCard(
     selectedStrategy: GitHubLookupStrategyOption,
+    selectedActionsStrategy: GitHubActionsLookupStrategyOption,
     tokenInput: String,
     trackedCount: Int,
     changed: Boolean
 ) {
     val accent = selectedStrategy.accentColor()
+    val tokenUsed = selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken ||
+        selectedActionsStrategy == GitHubActionsLookupStrategyOption.GitHubApiToken
     val tokenStatusLabel = when {
-        selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken -> stringResource(R.string.common_not_used)
+        !tokenUsed -> stringResource(R.string.common_not_used)
         tokenInput.isNotBlank() -> stringResource(R.string.common_filled)
         else -> stringResource(R.string.common_guest)
     }
     val tokenStatusColor = when {
-        selectedStrategy != GitHubLookupStrategyOption.GitHubApiToken -> MiuixTheme.colorScheme.onBackgroundVariant
+        !tokenUsed -> MiuixTheme.colorScheme.onBackgroundVariant
         tokenInput.isNotBlank() -> GitHubStatusPalette.Update
         else -> GitHubStatusPalette.PreRelease
     }
@@ -90,9 +132,16 @@ internal fun GitHubStrategyDraftSummaryCard(
         modifier = androidx.compose.ui.Modifier.fillMaxWidth()
     ) {
         GitHubCompactInfoRow(
-            label = stringResource(R.string.github_strategy_label_option),
+            label = stringResource(R.string.github_strategy_label_release_option),
             value = selectedStrategy.label,
             valueColor = accent,
+            emphasized = true,
+            titleMinWidth = 44.dp
+        )
+        GitHubCompactInfoRow(
+            label = stringResource(R.string.github_strategy_label_actions_option),
+            value = selectedActionsStrategy.label,
+            valueColor = selectedActionsStrategy.accentColor(),
             emphasized = true,
             titleMinWidth = 44.dp
         )
@@ -100,7 +149,7 @@ internal fun GitHubStrategyDraftSummaryCard(
             label = stringResource(R.string.github_strategy_label_token),
             value = tokenStatusLabel,
             valueColor = tokenStatusColor,
-            emphasized = selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken,
+            emphasized = tokenUsed,
             titleMinWidth = 44.dp
         )
         GitHubCompactInfoRow(
@@ -259,5 +308,12 @@ internal fun GitHubLookupStrategyOption.accentColor(): Color {
     return when (this) {
         GitHubLookupStrategyOption.AtomFeed -> GitHubStatusPalette.Active
         GitHubLookupStrategyOption.GitHubApiToken -> GitHubStatusPalette.Update
+    }
+}
+
+internal fun GitHubActionsLookupStrategyOption.accentColor(): Color {
+    return when (this) {
+        GitHubActionsLookupStrategyOption.NightlyLink -> GitHubStatusPalette.Active
+        GitHubActionsLookupStrategyOption.GitHubApiToken -> GitHubStatusPalette.Update
     }
 }

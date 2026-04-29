@@ -1,6 +1,7 @@
 package os.kei.feature.github.data.local
 
 import os.kei.feature.github.model.GitHubCheckCacheEntry
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubTrackedApp
@@ -44,6 +45,7 @@ object GitHubTrackStore {
     private const val KEY_LAST_REFRESH_MS = "last_full_refresh_ms"
     private const val KEY_REFRESH_INTERVAL_HOURS = "refresh_interval_hours"
     private const val KEY_LOOKUP_STRATEGY = "lookup_strategy"
+    private const val KEY_ACTIONS_LOOKUP_STRATEGY = "actions_lookup_strategy"
     private const val KEY_GITHUB_API_TOKEN = "github_api_token"
     private const val KEY_CHECK_ALL_TRACKED_PRE_RELEASES = "check_all_tracked_pre_releases"
     private const val KEY_AGGRESSIVE_APK_FILTERING = "github_aggressive_apk_filtering"
@@ -426,6 +428,9 @@ object GitHubTrackStore {
             selectedStrategy = GitHubLookupStrategyOption.fromStorageId(
                 kv().decodeString(KEY_LOOKUP_STRATEGY).orEmpty()
             ),
+            actionsStrategy = GitHubActionsLookupStrategyOption.fromStorageId(
+                kv().decodeString(KEY_ACTIONS_LOOKUP_STRATEGY).orEmpty()
+            ),
             apiToken = kv().decodeString(KEY_GITHUB_API_TOKEN).orEmpty().trim(),
             checkAllTrackedPreReleases = kv().decodeBool(KEY_CHECK_ALL_TRACKED_PRE_RELEASES, false),
             aggressiveApkFiltering = kv().decodeBool(KEY_AGGRESSIVE_APK_FILTERING, false),
@@ -437,6 +442,7 @@ object GitHubTrackStore {
 
     fun saveLookupConfig(config: GitHubLookupConfig) {
         kv().encode(KEY_LOOKUP_STRATEGY, config.selectedStrategy.storageId)
+        kv().encode(KEY_ACTIONS_LOOKUP_STRATEGY, config.actionsStrategy.storageId)
         kv().encode(KEY_GITHUB_API_TOKEN, config.apiToken.trim())
         kv().encode(KEY_CHECK_ALL_TRACKED_PRE_RELEASES, config.checkAllTrackedPreReleases)
         kv().encode(KEY_AGGRESSIVE_APK_FILTERING, config.aggressiveApkFiltering)

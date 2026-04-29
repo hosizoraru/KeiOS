@@ -401,6 +401,7 @@ internal class GitHubRefreshActions(
         val snapshotAssetSourceSignature = state.buildAssetSourceSignature(trackSnapshot.lookupConfig)
         state.lookupConfig = trackSnapshot.lookupConfig
         state.selectedStrategyInput = trackSnapshot.lookupConfig.selectedStrategy
+        state.selectedActionsStrategyInput = trackSnapshot.lookupConfig.actionsStrategy
         state.githubApiTokenInput = trackSnapshot.lookupConfig.apiToken
         state.checkAllTrackedPreReleasesInput = trackSnapshot.lookupConfig.checkAllTrackedPreReleases
         state.aggressiveApkFilteringInput = trackSnapshot.lookupConfig.aggressiveApkFiltering

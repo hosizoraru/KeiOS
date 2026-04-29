@@ -50,6 +50,7 @@ class GitHubActionsArtifactSelectorTest {
 
         assertEquals(listOf("Market", "Foss"), matches.map { it.artifact.name })
         assertEquals(GitHubActionsArtifactPlatform.Android, matches.first().traits.platform)
+        assertEquals(GitHubActionsArtifactKind.Unknown, matches.first().traits.kind)
         assertTrue(matches.first().traits.flavors.contains("market"))
         assertTrue(matches[1].traits.flavors.contains("foss"))
     }

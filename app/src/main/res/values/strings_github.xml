@@ -49,6 +49,7 @@
     <string name="github_actions_label_repo">仓库</string>
     <string name="github_actions_label_default_branch">默认分支</string>
     <string name="github_actions_label_strategy">链路</string>
+    <string name="github_actions_badge_nightly_link">nightly.link</string>
     <string name="github_actions_summary_default_branch">默认 %1$s</string>
     <string name="github_actions_value_count">%1$d 项</string>
     <string name="github_actions_label_runs_with_count">Runs %1$d</string>
@@ -97,6 +98,7 @@
     <string name="github_actions_badge_mapping">Mapping</string>
     <string name="github_actions_badge_report">Report</string>
     <string name="github_actions_badge_source">Source</string>
+    <string name="github_actions_badge_artifact">Artifact</string>
     <string name="github_actions_action_open_run">打开 Run</string>
     <string name="github_actions_action_refresh_run">刷新 Run</string>
     <string name="github_actions_action_load_more_runs">更多 Runs（%1$d）</string>
@@ -155,6 +157,7 @@
     <string name="github_overview_value_count">%1$d 项</string>
     <string name="github_overview_strategy_atom">Atom</string>
     <string name="github_overview_strategy_api">API</string>
+    <string name="github_overview_actions_strategy_nightly">nightly</string>
     <string name="github_overview_api_guest">游客</string>
     <string name="github_refresh_ago_not_refreshed">未刷新</string>
     <string name="github_eta_soon_recover">即将恢复</string>
@@ -215,6 +218,7 @@
     <string name="github_strategy_sheet_cd_save">保存方案</string>
     <string name="github_strategy_section_draft_summary">配置摘要</string>
     <string name="github_strategy_section_strategy">抓取方案</string>
+    <string name="github_strategy_section_actions_strategy">Actions 抓取方案</string>
     <string name="github_strategy_section_credential">凭证设置</string>
     <string name="github_strategy_label_token_status">Token 状态</string>
     <string name="github_strategy_label_availability">可用性</string>
@@ -228,11 +232,12 @@
     <string name="github_strategy_btn_check_running">检测中...</string>
     <string name="github_strategy_btn_check_now">检测当前凭证</string>
     <string name="github_strategy_desc_guest_api">留空时自动走游客 API，适合少量追踪；若项目变多或遇到限流，再补本地 token 即可。token 仅保存在当前设备 MMKV。</string>
-    <string name="github_strategy_desc_pat_scope">当前这套 GitHub API 检查与资源下载只需 Fine-grained PAT 的 `Contents: Read`。它既能读 release 元数据，也能走 assets API 下载 APK；若是 private 仓库，还需 token 本身有该仓库访问权。</string>
+    <string name="github_strategy_desc_pat_scope">GitHub API Token 会被 Release 与 Actions 共用。Release 元数据和 assets 下载需要 `Contents: Read`；Actions workflows、runs、artifacts 和 artifact 下载需要 `Actions: Read`；private 仓库还需 token 本身有该仓库访问权。</string>
     <string name="github_strategy_desc_check_failed">凭证检测失败：%1$s</string>
     <string name="github_strategy_desc_guest_ok">当前游客 API 可用，但额度较低；追踪项目变多后建议补 token。</string>
     <string name="github_strategy_desc_token_ok">当前 token 已被 GitHub API 接受，但这不等于它对所有 private 仓库都有权限。</string>
     <string name="github_strategy_desc_api_recommendation">API 方案直接走 Releases API。首次体验可先用游客模式；长期追踪较多仓库时，补专用 token 会更稳。</string>
+    <string name="github_strategy_desc_api_actions_recommendation">API 方案会复用同一个 GitHub token。Releases 读取需要 Contents: Read；Actions artifact 读取和下载需要 Actions: Read。</string>
     <string name="github_strategy_section_recommended_create">推荐新建</string>
     <string name="github_strategy_btn_open_prefilled_create">打开预填创建页</string>
     <string name="github_strategy_btn_open_docs">查看官方说明</string>
@@ -253,6 +258,8 @@
     <string name="github_strategy_card_title_draft">当前待保存配置</string>
     <string name="github_strategy_badge_same">与当前一致</string>
     <string name="github_strategy_label_option">方案</string>
+    <string name="github_strategy_label_release_option">Release</string>
+    <string name="github_strategy_label_actions_option">Actions</string>
     <string name="github_strategy_label_token">Token</string>
     <string name="github_strategy_label_impact">影响</string>
     <string name="github_strategy_impact_recheck_count">保存后重检 %1$d 项</string>
@@ -384,8 +391,8 @@
     <string name="github_share_import_pending_action_cancel">取消联动</string>
     <string name="github_asset_badge_recommended">推荐本机</string>
     <string name="github_asset_badge_incompatible">可能不兼容</string>
-    <string name="github_token_guide_collapsed">Fine-grained PAT · Contents: Read</string>
-    <string name="github_token_guide_summary">建议为 KeiOS 单独建一个 Fine-grained PAT。当前这套 Releases API 与资源下载只需 `Contents: Read`；公开仓库也能正常追踪。</string>
+    <string name="github_token_guide_collapsed">Fine-grained PAT · Contents/Actions: Read</string>
+    <string name="github_token_guide_summary">建议为 KeiOS 单独建一个 Fine-grained PAT。Release API 需要 `Contents: Read`；Actions artifact API 需要 `Actions: Read`；公开仓库也能正常追踪。</string>
     <string name="github_token_guide_field_type">类型</string>
     <string name="github_token_guide_field_type_value">Fine-grained PAT</string>
     <string name="github_token_guide_field_owner">Owner</string>
@@ -395,7 +402,7 @@
     <string name="github_token_guide_field_limit">上限</string>
     <string name="github_token_guide_field_limit_value">Selected repos 最多 50</string>
     <string name="github_token_guide_field_permission">权限</string>
-    <string name="github_token_guide_field_permission_value">Contents: Read</string>
+    <string name="github_token_guide_field_permission_value">Contents: Read / Actions: Read</string>
     <string name="github_token_guide_field_expire">过期</string>
     <string name="github_token_guide_field_expire_value">90 天</string>
     <string name="github_token_guide_note_1">`Only select repositories` 只限制当前 owner 下额外授权的私有仓库，公开仓库不受影响。</string>
@@ -414,4 +421,16 @@
     <string name="github_strategy_guide_api_con_1">游客额度很低，项目多时更易限流</string>
     <string name="github_strategy_guide_api_con_2">token 失效或权限不足时会访问受限</string>
     <string name="github_strategy_guide_api_requirement">token 选填；留空时自动走游客 API</string>
+    <string name="github_strategy_actions_guide_nightly_summary">混合 GitHub 公开页面与 nightly.link，面向公开仓库的免 token Actions artifact 链路。</string>
+    <string name="github_strategy_actions_guide_nightly_pro_1">无需 Token，首次使用能直接尝试公开仓库</string>
+    <string name="github_strategy_actions_guide_nightly_pro_2">分享出来的是稳定 nightly.link 链接，游客也能打开</string>
+    <string name="github_strategy_actions_guide_nightly_con_1">依赖 GitHub 公开页面与 nightly.link 服务状态</string>
+    <string name="github_strategy_actions_guide_nightly_con_2">主要适合 latest successful run，历史 runs 与运行中状态较有限</string>
+    <string name="github_strategy_actions_guide_nightly_requirement">公开仓库；workflow 需要上传 artifact；nightly.link 能访问该仓库</string>
+    <string name="github_strategy_actions_guide_api_summary">走 GitHub Actions REST API，适合稳定读取 workflows、runs 与 artifacts。</string>
+    <string name="github_strategy_actions_guide_api_pro_1">可读取更多 runs、状态、分支与 artifact 元数据</string>
+    <string name="github_strategy_actions_guide_api_pro_2">支持 private 仓库和更完整的下载记录匹配</string>
+    <string name="github_strategy_actions_guide_api_con_1">需要本地保存 GitHub token</string>
+    <string name="github_strategy_actions_guide_api_con_2">token 失效、权限不足或额度耗尽时会访问受限</string>
+    <string name="github_strategy_actions_guide_api_requirement">Fine-grained PAT 需要 Actions: Read；private 仓库还要授权对应仓库</string>
 </resources>

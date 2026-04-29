@@ -104,6 +104,7 @@ internal class GitHubPageState(
     var refreshProgress by mutableStateOf(0f)
     var lookupConfig by mutableStateOf(GitHubLookupConfig())
     var selectedStrategyInput by mutableStateOf(lookupConfig.selectedStrategy)
+    var selectedActionsStrategyInput by mutableStateOf(lookupConfig.actionsStrategy)
     var githubApiTokenInput by mutableStateOf("")
     var checkAllTrackedPreReleasesInput by mutableStateOf(false)
     var aggressiveApkFilteringInput by mutableStateOf(false)
@@ -197,6 +198,7 @@ internal class GitHubPageState(
         return listOf(
             "asset-v2",
             config.selectedStrategy.storageId,
+            config.actionsStrategy.storageId,
             config.apiToken.isNotBlank().toString(),
             config.aggressiveApkFiltering.toString()
         ).joinToString("|")

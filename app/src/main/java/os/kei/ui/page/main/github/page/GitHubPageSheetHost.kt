@@ -35,6 +35,7 @@ internal fun GitHubPageSheetHost(
         backdrop = backdrops.sheet,
         lookupConfig = state.lookupConfig,
         selectedStrategyInput = state.selectedStrategyInput,
+        selectedActionsStrategyInput = state.selectedActionsStrategyInput,
         githubApiTokenInput = state.githubApiTokenInput,
         showApiTokenPlainText = state.showApiTokenPlainText,
         credentialCheckRunning = state.credentialCheckRunning,
@@ -48,6 +49,7 @@ internal fun GitHubPageSheetHost(
         onDismissRequest = actions::closeStrategySheet,
         onApply = actions::applyLookupConfig,
         onSelectedStrategyChange = { state.selectedStrategyInput = it },
+        onSelectedActionsStrategyChange = { state.selectedActionsStrategyInput = it },
         onTokenInputChange = {
             state.githubApiTokenInput = it
             state.credentialCheckError = null

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.StringRes
 import os.kei.R
 import os.kei.feature.github.data.remote.GitHubVersionUtils
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import kotlin.math.max
@@ -36,6 +37,14 @@ internal data class VersionCheckUi(
 
 internal data class GitHubStrategyGuide(
     val option: GitHubLookupStrategyOption,
+    val summary: String,
+    val pros: List<String>,
+    val cons: List<String>,
+    val requirement: String
+)
+
+internal data class GitHubActionsStrategyGuide(
+    val option: GitHubActionsLookupStrategyOption,
     val summary: String,
     val pros: List<String>,
     val cons: List<String>,
@@ -144,6 +153,15 @@ internal fun GitHubLookupConfig.overviewApiLabel(context: Context): String {
             context.getString(R.string.common_not_used)
         apiToken.isBlank() -> context.getString(R.string.common_guest)
         else -> apiToken.maskedApiPreview(context)
+    }
+}
+
+internal fun GitHubActionsLookupStrategyOption.overviewLabel(context: Context): String {
+    return when (this) {
+        GitHubActionsLookupStrategyOption.NightlyLink ->
+            context.getString(R.string.github_overview_actions_strategy_nightly)
+        GitHubActionsLookupStrategyOption.GitHubApiToken ->
+            context.getString(R.string.github_overview_strategy_api)
     }
 }
 
@@ -289,9 +307,10 @@ internal const val githubFineGrainedPatDocsUrl =
 internal fun buildGitHubFineGrainedTokenTemplateUrl(): String {
     return "https://github.com/settings/personal-access-tokens/new" +
         "?name=KeiOS%20Release%20Read" +
-        "&description=Read-only%20release%20check%20token%20for%20KeiOS" +
+        "&description=Read-only%20GitHub%20release%20and%20actions%20token%20for%20KeiOS" +
         "&expires_in=90" +
-        "&contents=read"
+        "&contents=read" +
+        "&actions=read"
 }
 
 internal fun githubRecommendedTokenGuide(context: Context): GitHubRecommendedTokenGuide {
@@ -361,5 +380,34 @@ internal fun githubStrategyGuides(context: Context): List<GitHubStrategyGuide> =
             context.getString(R.string.github_strategy_guide_api_con_2)
         ),
         requirement = context.getString(R.string.github_strategy_guide_api_requirement)
+    )
+)
+
+internal fun githubActionsStrategyGuides(context: Context): List<GitHubActionsStrategyGuide> = listOf(
+    GitHubActionsStrategyGuide(
+        option = GitHubActionsLookupStrategyOption.NightlyLink,
+        summary = context.getString(R.string.github_strategy_actions_guide_nightly_summary),
+        pros = listOf(
+            context.getString(R.string.github_strategy_actions_guide_nightly_pro_1),
+            context.getString(R.string.github_strategy_actions_guide_nightly_pro_2)
+        ),
+        cons = listOf(
+            context.getString(R.string.github_strategy_actions_guide_nightly_con_1),
+            context.getString(R.string.github_strategy_actions_guide_nightly_con_2)
+        ),
+        requirement = context.getString(R.string.github_strategy_actions_guide_nightly_requirement)
+    ),
+    GitHubActionsStrategyGuide(
+        option = GitHubActionsLookupStrategyOption.GitHubApiToken,
+        summary = context.getString(R.string.github_strategy_actions_guide_api_summary),
+        pros = listOf(
+            context.getString(R.string.github_strategy_actions_guide_api_pro_1),
+            context.getString(R.string.github_strategy_actions_guide_api_pro_2)
+        ),
+        cons = listOf(
+            context.getString(R.string.github_strategy_actions_guide_api_con_1),
+            context.getString(R.string.github_strategy_actions_guide_api_con_2)
+        ),
+        requirement = context.getString(R.string.github_strategy_actions_guide_api_requirement)
     )
 )

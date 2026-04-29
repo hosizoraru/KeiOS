@@ -128,6 +128,9 @@ object GitHubActionsArtifactSelector {
             }
             GitHubActionsArtifactKind.Archive -> {
                 score += 55
+                if (traits.platform == GitHubActionsArtifactPlatform.Android) {
+                    score += 45
+                }
                 reasons += "archive"
             }
             GitHubActionsArtifactKind.Mapping -> score -= 60
@@ -227,7 +230,7 @@ object GitHubActionsArtifactSelector {
         return when {
             extension == "apk" || containsToken(normalizedName, "apk") -> GitHubActionsArtifactKind.AndroidPackage
             extension in setOf("apks", "apkm", "aab") ||
-                platform == GitHubActionsArtifactPlatform.Android -> GitHubActionsArtifactKind.AndroidBundle
+                containsAny(normalizedName, "apks", "apkm", "aab") -> GitHubActionsArtifactKind.AndroidBundle
             extension in setOf("zip", "tar.gz", "tgz", "gz") -> GitHubActionsArtifactKind.Archive
             else -> GitHubActionsArtifactKind.Unknown
         }

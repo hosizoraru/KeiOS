@@ -37,6 +37,7 @@ import os.kei.feature.github.model.GitHubActionsArtifactDownloadResolution
 import os.kei.feature.github.model.GitHubActionsArtifactMatch
 import os.kei.feature.github.model.GitHubActionsArtifactSelectionOptions
 import os.kei.feature.github.model.GitHubActionsDownloadRecord
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsRepositoryInfo
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
 import os.kei.feature.github.model.GitHubActionsRunMatch
@@ -597,7 +598,7 @@ internal class GitHubPageRepository(
                         val recentSnapshot = actionsRepository.fetchWorkflowArtifactSnapshot(
                             owner = owner,
                             repo = repo,
-                            workflowId = workflow.id.toString(),
+                            workflowId = workflowLookupId(workflow, lookupConfig),
                             runLimit = runLimit,
                             artifactsPerRun = artifactsPerRun
                         ).result.getOrElse {
@@ -609,7 +610,7 @@ internal class GitHubPageRepository(
                                 actionsRepository.fetchWorkflowArtifactSnapshot(
                                     owner = owner,
                                     repo = repo,
-                                    workflowId = workflow.id.toString(),
+                                    workflowId = workflowLookupId(workflow, lookupConfig),
                                     runLimit = 1,
                                     artifactsPerRun = artifactsPerRun,
                                     branch = branch,
@@ -950,6 +951,17 @@ internal class GitHubPageRepository(
                     put(item.id, updatedAt)
                 }
             }
+        }
+    }
+
+    private fun workflowLookupId(
+        workflow: GitHubActionsWorkflow,
+        lookupConfig: GitHubLookupConfig
+    ): String {
+        return if (lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
+            workflow.path.ifBlank { workflow.displayName }
+        } else {
+            workflow.id.toString()
         }
     }
 }

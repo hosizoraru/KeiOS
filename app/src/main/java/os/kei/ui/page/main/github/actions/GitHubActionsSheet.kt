@@ -117,12 +117,12 @@ internal fun GitHubActionsSheet(
                 runMatch.runArtifacts.artifacts.isEmpty() &&
                 state.actionsStatusRefreshingRunIds[runId] == true
         } == true
-        val hasToken = state.lookupConfig.apiToken.trim().isNotBlank()
+        val canResolveArtifacts = state.lookupConfig.actionsArtifactDownloadsAvailable
 
         SheetContentColumn(verticalSpacing = 8.dp) {
             GitHubActionsSummaryCard(
                 state = state,
-                hasToken = hasToken,
+                canResolveArtifacts = canResolveArtifacts,
                 isDark = isDark
             )
 
@@ -265,7 +265,7 @@ internal fun GitHubActionsSheet(
                         )
                     }
                     else -> {
-                        if (!hasToken) {
+                        if (!canResolveArtifacts) {
                             GitHubActionsArtifactHintText(
                                 text = stringResource(R.string.github_actions_hint_token_required)
                             )
@@ -275,7 +275,7 @@ internal fun GitHubActionsSheet(
                                 runMatch = selectedRun,
                                 artifactMatch = artifactMatch,
                                 recommended = index == 0,
-                                hasToken = hasToken,
+                                hasToken = canResolveArtifacts,
                                 downloading = state.actionsArtifactDownloadLoadingId == artifactMatch.artifact.id,
                                 sharing = state.actionsArtifactShareLoadingId == artifactMatch.artifact.id,
                                 context = context,
@@ -483,9 +483,10 @@ private fun GitHubActionsArtifactCard(
         shortArtifactDigest(artifact.digest)
     } else {
         formatReleaseUpdatedAtNoYear(artifact.updatedAtMillis)
-            ?: stringResource(R.string.common_unknown)
     }
-    val artifactSizeLabel = formatAssetSize(artifact.sizeBytes, context)
+    val artifactSizeLabel = artifact.sizeBytes.takeIf { it > 0L }
+        ?.let { formatAssetSize(it, context) }
+        ?: stringResource(R.string.common_download)
     val containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.54f)
     val borderColor = if (recommended) {
         accent.copy(alpha = if (isDark) 0.36f else 0.26f)
@@ -582,34 +583,38 @@ private fun GitHubActionsArtifactCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = digestText,
-                modifier = Modifier
-                    .weight(1f)
-                    .then(
-                        if (hasDigest) {
-                            Modifier.clickable(onClickLabel = copyDigestLabel) {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-                                    as? ClipboardManager
-                                clipboard?.setPrimaryClip(
-                                    ClipData.newPlainText("sha256", artifact.digest)
-                                )
-                                Toast.makeText(context, digestCopiedToast, Toast.LENGTH_SHORT).show()
+            if (digestText != null) {
+                Text(
+                    text = digestText,
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (hasDigest) {
+                                Modifier.clickable(onClickLabel = copyDigestLabel) {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                        as? ClipboardManager
+                                    clipboard?.setPrimaryClip(
+                                        ClipData.newPlainText("sha256", artifact.digest)
+                                    )
+                                    Toast.makeText(context, digestCopiedToast, Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Modifier
                             }
-                        } else {
-                            Modifier
-                        }
-                    ),
-                color = if (hasDigest) {
-                    MiuixTheme.colorScheme.primary
-                } else {
-                    MiuixTheme.colorScheme.onBackgroundVariant
-                },
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                        ),
+                    color = if (hasDigest) {
+                        MiuixTheme.colorScheme.primary
+                    } else {
+                        MiuixTheme.colorScheme.onBackgroundVariant
+                    },
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
             GlassTextButton(
                 backdrop = backdrop,
                 variant = GlassVariant.SheetAction,
@@ -840,7 +845,7 @@ private fun artifactKindLabel(kind: GitHubActionsArtifactKind): String {
         GitHubActionsArtifactKind.Mapping -> stringResource(R.string.github_actions_badge_mapping)
         GitHubActionsArtifactKind.Report -> stringResource(R.string.github_actions_badge_report)
         GitHubActionsArtifactKind.Source -> stringResource(R.string.github_actions_badge_source)
-        GitHubActionsArtifactKind.Unknown -> stringResource(R.string.common_unknown)
+        GitHubActionsArtifactKind.Unknown -> stringResource(R.string.github_actions_badge_artifact)
     }
 }
 

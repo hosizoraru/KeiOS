@@ -32,6 +32,7 @@ internal class GitHubConfigActions(
             val config = repository.loadLookupConfig()
             state.lookupConfig = config
             state.selectedStrategyInput = config.selectedStrategy
+            state.selectedActionsStrategyInput = config.actionsStrategy
             state.githubApiTokenInput = config.apiToken
             state.showStrategySheet = true
         }
@@ -84,6 +85,7 @@ internal class GitHubConfigActions(
             val sanitizedToken = state.githubApiTokenInput.trim()
             val newConfig = GitHubLookupConfig(
                 selectedStrategy = state.selectedStrategyInput,
+                actionsStrategy = state.selectedActionsStrategyInput,
                 apiToken = sanitizedToken,
                 checkAllTrackedPreReleases = previousConfig.checkAllTrackedPreReleases,
                 aggressiveApkFiltering = previousConfig.aggressiveApkFiltering,
@@ -96,10 +98,13 @@ internal class GitHubConfigActions(
             closeStrategySheet()
 
             val strategyChanged = previousConfig.selectedStrategy != newConfig.selectedStrategy
-            val activeTokenChanged = newConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken &&
+            val actionsStrategyChanged = previousConfig.actionsStrategy != newConfig.actionsStrategy
+            val activeTokenChanged =
+                (newConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken ||
+                    newConfig.actionsRequireApiToken) &&
                 previousConfig.apiToken != newConfig.apiToken
             when {
-                strategyChanged || activeTokenChanged -> {
+                strategyChanged || actionsStrategyChanged || activeTokenChanged -> {
                     repository.clearReleaseStrategyCaches()
                     repository.clearCheckCache()
                     repository.clearAllAssetCache()

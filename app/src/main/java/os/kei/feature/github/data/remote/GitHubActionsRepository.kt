@@ -7,6 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsArtifactDownloadResolution
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsRepositoryInfo
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
 import os.kei.feature.github.model.GitHubActionsRunStatusSnapshot
@@ -24,9 +25,22 @@ import java.util.concurrent.TimeUnit
 class GitHubActionsRepository(
     private val apiToken: String = "",
     private val client: OkHttpClient = githubClient,
-    private val apiBaseUrl: String = DEFAULT_GITHUB_API_BASE_URL
+    private val apiBaseUrl: String = DEFAULT_GITHUB_API_BASE_URL,
+    private val actionsStrategy: GitHubActionsLookupStrategyOption = GitHubActionsLookupStrategyOption.GitHubApiToken,
+    private val requireApiTokenForApiStrategy: Boolean = false,
+    private val githubHtmlBaseUrl: String = DEFAULT_GITHUB_HTML_BASE_URL,
+    private val nightlyLinkBaseUrl: String = DEFAULT_NIGHTLY_LINK_BASE_URL
 ) {
     private val sanitizedToken: String = apiToken.trim()
+    private val useNightlyLink: Boolean
+        get() = actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink
+    private val nightlyRepository: GitHubActionsNightlyLinkRepository by lazy {
+        GitHubActionsNightlyLinkRepository(
+            client = client,
+            githubHtmlBaseUrl = githubHtmlBaseUrl,
+            nightlyLinkBaseUrl = nightlyLinkBaseUrl
+        )
+    }
 
     val authMode: GitHubApiAuthMode
         get() = if (sanitizedToken.isBlank()) GitHubApiAuthMode.Guest else GitHubApiAuthMode.Token
@@ -36,8 +50,14 @@ class GitHubActionsRepository(
         repo: String
     ): GitHubStrategyLoadTrace<GitHubActionsRepositoryInfo> {
         val startedAt = System.currentTimeMillis()
-        val result = fetchJson(buildRepositoryUrl(owner, repo))
-            .mapCatching { json -> parseRepositoryInfo(json, owner, repo) }
+        val result = if (useNightlyLink) {
+            nightlyRepository.fetchRepositoryInfo(owner, repo)
+        } else {
+            requireActionsApiToken().mapCatching {
+                fetchJson(buildRepositoryUrl(owner, repo)).getOrThrow()
+                    .let { json -> parseRepositoryInfo(json, owner, repo) }
+            }
+        }
         return result.toTrace(startedAt)
     }
 
@@ -46,8 +66,14 @@ class GitHubActionsRepository(
         repo: String
     ): GitHubStrategyLoadTrace<String> {
         val startedAt = System.currentTimeMillis()
-        val result = fetchJson(buildRepositoryUrl(owner, repo))
-            .mapCatching { json -> parseRepositoryInfo(json, owner, repo).defaultBranch }
+        val result = if (useNightlyLink) {
+            nightlyRepository.fetchRepositoryInfo(owner, repo).mapCatching { it.defaultBranch }
+        } else {
+            requireActionsApiToken().mapCatching {
+                fetchJson(buildRepositoryUrl(owner, repo)).getOrThrow()
+                    .let { json -> parseRepositoryInfo(json, owner, repo).defaultBranch }
+            }
+        }
         return result.toTrace(startedAt)
     }
 
@@ -57,8 +83,14 @@ class GitHubActionsRepository(
         limit: Int = DEFAULT_WORKFLOW_LIMIT
     ): GitHubStrategyLoadTrace<List<GitHubActionsWorkflow>> {
         val startedAt = System.currentTimeMillis()
-        val result = fetchJson(buildWorkflowsUrl(owner, repo, limit))
-            .mapCatching(::parseWorkflows)
+        val result = if (useNightlyLink) {
+            nightlyRepository.fetchWorkflows(owner, repo, limit)
+        } else {
+            requireActionsApiToken().mapCatching {
+                fetchJson(buildWorkflowsUrl(owner, repo, limit)).getOrThrow()
+                    .let(::parseWorkflows)
+            }
+        }
         return result.toTrace(startedAt)
     }
 
@@ -76,22 +108,32 @@ class GitHubActionsRepository(
         excludePullRequests: Boolean = false
     ): GitHubStrategyLoadTrace<List<GitHubActionsWorkflowRun>> {
         val startedAt = System.currentTimeMillis()
-        val result = fetchJson(
-            buildWorkflowRunsUrl(
+        val result = if (useNightlyLink) {
+            nightlyRepository.fetchWorkflowRuns(
                 owner = owner,
                 repo = repo,
                 workflowId = workflowId,
-                limit = limit,
-                branch = branch,
-                event = event,
-                status = status,
-                actor = actor,
-                created = created,
-                headSha = headSha,
-                excludePullRequests = excludePullRequests
+                branch = branch
             )
-        )
-            .mapCatching(::parseWorkflowRuns)
+        } else {
+            requireActionsApiToken().mapCatching {
+                fetchJson(
+                    buildWorkflowRunsUrl(
+                        owner = owner,
+                        repo = repo,
+                        workflowId = workflowId,
+                        limit = limit,
+                        branch = branch,
+                        event = event,
+                        status = status,
+                        actor = actor,
+                        created = created,
+                        headSha = headSha,
+                        excludePullRequests = excludePullRequests
+                    )
+                ).getOrThrow().let(::parseWorkflowRuns)
+            }
+        }
         return result.toTrace(startedAt)
     }
 
@@ -101,8 +143,14 @@ class GitHubActionsRepository(
         runId: Long
     ): GitHubStrategyLoadTrace<GitHubActionsWorkflowRun> {
         val startedAt = System.currentTimeMillis()
-        val result = fetchJson(buildWorkflowRunUrl(owner, repo, runId))
-            .mapCatching(::parseWorkflowRun)
+        val result = if (useNightlyLink) {
+            nightlyRepository.fetchWorkflowRun(owner = owner, repo = repo, runId = runId)
+        } else {
+            requireActionsApiToken().mapCatching {
+                fetchJson(buildWorkflowRunUrl(owner, repo, runId)).getOrThrow()
+                    .let(::parseWorkflowRun)
+            }
+        }
         return result.toTrace(startedAt)
     }
 
@@ -113,8 +161,14 @@ class GitHubActionsRepository(
         limit: Int = DEFAULT_ARTIFACT_LIMIT
     ): GitHubStrategyLoadTrace<List<GitHubActionsArtifact>> {
         val startedAt = System.currentTimeMillis()
-        val result = fetchJson(buildRunArtifactsUrl(owner, repo, runId, limit))
-            .mapCatching { json -> parseArtifacts(json, fallbackWorkflowRunId = runId) }
+        val result = if (useNightlyLink) {
+            nightlyRepository.fetchRunArtifacts(owner = owner, repo = repo, runId = runId, limit = limit)
+        } else {
+            requireActionsApiToken().mapCatching {
+                fetchJson(buildRunArtifactsUrl(owner, repo, runId, limit)).getOrThrow()
+                    .let { json -> parseArtifacts(json, fallbackWorkflowRunId = runId) }
+            }
+        }
         return result.toTrace(startedAt)
     }
 
@@ -126,6 +180,19 @@ class GitHubActionsRepository(
         includeArtifactsWhenCompleted: Boolean = true
     ): GitHubStrategyLoadTrace<GitHubActionsRunStatusSnapshot> {
         val startedAt = System.currentTimeMillis()
+        if (useNightlyLink) {
+            val result = nightlyRepository.fetchRunStatusSnapshot(
+                owner = owner,
+                repo = repo,
+                runId = runId,
+                artifactsLimit = artifactsLimit,
+                includeArtifactsWhenCompleted = includeArtifactsWhenCompleted
+            )
+            return result.toTrace(startedAt)
+        }
+        requireActionsApiToken().onFailure { error ->
+            return Result.failure<GitHubActionsRunStatusSnapshot>(error).toTrace(startedAt)
+        }
         val run = fetchWorkflowRun(owner, repo, runId).result.getOrElse { error ->
             return Result.failure<GitHubActionsRunStatusSnapshot>(error).toTrace(startedAt)
         }
@@ -170,6 +237,18 @@ class GitHubActionsRepository(
         excludePullRequests: Boolean = false
     ): GitHubStrategyLoadTrace<GitHubActionsWorkflowArtifactsSnapshot> {
         val startedAt = System.currentTimeMillis()
+        if (useNightlyLink) {
+            return nightlyRepository.fetchWorkflowArtifactSnapshot(
+                owner = owner,
+                repo = repo,
+                workflowId = workflowId,
+                branch = branch,
+                artifactsPerRun = artifactsPerRun
+            ).toTrace(startedAt)
+        }
+        requireActionsApiToken().onFailure { error ->
+            return Result.failure<GitHubActionsWorkflowArtifactsSnapshot>(error).toTrace(startedAt)
+        }
         val runs = fetchWorkflowRuns(
             owner = owner,
             repo = repo,
@@ -251,6 +330,9 @@ class GitHubActionsRepository(
         owner: String = "",
         repo: String = ""
     ): Result<GitHubActionsArtifactDownloadResolution> {
+        if (useNightlyLink) {
+            return nightlyRepository.resolveArtifactDownloadUrl(artifact = artifact, owner = owner, repo = repo)
+        }
         if (sanitizedToken.isBlank()) {
             return Result.failure(IllegalStateException("下载 GitHub Actions artifact 需要填写 token"))
         }
@@ -461,6 +543,14 @@ class GitHubActionsRepository(
         )
     }
 
+    private fun requireActionsApiToken(): Result<Unit> {
+        return if (requireApiTokenForApiStrategy && sanitizedToken.isBlank()) {
+            Result.failure(IllegalStateException("GitHub Actions API Token 需要填写 token"))
+        } else {
+            Result.success(Unit)
+        }
+    }
+
     private fun buildRepositoryUrl(owner: String, repo: String): String {
         return "${apiBaseUrl.trimEnd('/')}/repos/$owner/$repo"
     }
@@ -552,6 +642,8 @@ class GitHubActionsRepository(
         private const val GITHUB_API_VERSION = "2022-11-28"
         private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
         private const val DEFAULT_GITHUB_API_BASE_URL = "https://api.github.com"
+        private const val DEFAULT_GITHUB_HTML_BASE_URL = "https://github.com"
+        private const val DEFAULT_NIGHTLY_LINK_BASE_URL = "https://nightly.link"
 
         private val githubClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
@@ -567,7 +659,11 @@ class GitHubActionsRepository(
         }
 
         fun fromLookupConfig(config: GitHubLookupConfig): GitHubActionsRepository {
-            return GitHubActionsRepository(apiToken = config.apiToken)
+            return GitHubActionsRepository(
+                apiToken = config.apiToken,
+                actionsStrategy = config.actionsStrategy,
+                requireApiTokenForApiStrategy = true
+            )
         }
     }
 }

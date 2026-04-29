@@ -3,6 +3,7 @@ package os.kei.feature.github.data.remote
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.Test
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.feature.github.model.GitHubActionsArtifact
 import kotlin.test.assertEquals
@@ -275,6 +276,113 @@ class GitHubActionsRepositoryTest {
             assertEquals(10L, result.artifactId)
             assertEquals("https://pipelines.actions.githubusercontent.com/demo/artifact.zip", result.downloadUrl)
             assertEquals("Bearer test-token-123", server.takeRequest().getHeader("Authorization"))
+        }
+    }
+
+    @Test
+    fun `nightly link strategy discovers workflow files from public github page`() {
+        MockWebServer().use { github ->
+            github.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="/demo/app/blob/abc/.github/workflows/android.yml">android.yml</a>
+                            <a href="/demo/app/blob/abc/.github/workflows/codeql.yaml">codeql.yaml</a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                githubHtmlBaseUrl = github.url("/").toString()
+            )
+
+            val workflows = repository.fetchWorkflows(owner = "demo", repo = "app").result.getOrThrow()
+
+            assertEquals(listOf("android.yml", "codeql.yaml"), workflows.map { it.path.substringAfterLast('/') })
+            assertEquals("Android", workflows.first().name)
+            assertEquals("/demo/app/tree/HEAD/.github/workflows", github.takeRequest().path)
+            assertEquals(1, github.requestCount)
+        }
+    }
+
+    @Test
+    fun `nightly link strategy reads latest successful artifacts from nightly link`() {
+        MockWebServer().use { nightly ->
+            val base = nightly.url("/").toString().trimEnd('/')
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/workflows/android/master/Foss.zip">Foss.zip</a>
+                            <a href="$base/demo/app/workflows/android/master/Market.zip">Market.zip</a>
+                        """.trimIndent()
+                    )
+            )
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/actions/runs/250/Foss.zip">run link</a>
+                            <a href="https://github.com/demo/app/suites/999/artifacts/777">artifact link</a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/android.yml",
+                branch = "master"
+            ).result.getOrThrow()
+
+            assertEquals(1, snapshot.runs.size)
+            assertEquals(250L, snapshot.runs.first().run.id)
+            assertEquals("master", snapshot.runs.first().run.headBranch)
+            assertEquals(listOf("Foss", "Market"), snapshot.artifacts.map { it.name })
+            assertEquals(777L, snapshot.artifacts.first().id)
+            assertEquals("$base/demo/app/workflows/android/master/Foss.zip", snapshot.artifacts.first().archiveDownloadUrl)
+            assertEquals(
+                listOf(
+                    "/demo/app/workflows/android/master?preview",
+                    "/demo/app/workflows/android/master/Foss"
+                ),
+                List(2) { nightly.takeRequest().path }
+            )
+        }
+    }
+
+    @Test
+    fun `nightly link download resolver returns shareable link without token`() {
+        MockWebServer().use { nightly ->
+            val url = nightly.url("/demo/app/workflows/android/master/Foss.zip").toString()
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val result = repository.resolveArtifactDownloadUrl(
+                artifact = GitHubActionsArtifact(
+                    id = 10L,
+                    name = "Foss",
+                    archiveDownloadUrl = url
+                ),
+                owner = "demo",
+                repo = "app"
+            ).getOrThrow()
+
+            assertEquals(10L, result.artifactId)
+            assertEquals(url, result.downloadUrl)
+            assertEquals(0, nightly.requestCount)
         }
     }
 
