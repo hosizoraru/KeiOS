@@ -160,23 +160,23 @@ internal class GitHubActionsNightlyLinkRepository(
         val workflowSlug = workflowFile
             .removeSuffix(".yaml")
             .removeSuffix(".yml")
-        val html = fetchPublicHtml(
-            buildNightlyWorkflowDashboardUrl(owner, repo, workflowSlug, resolvedBranch)
-        ).getOrThrow()
-        val artifactNames = parseNightlyWorkflowArtifactNames(
-            html = html,
+        val branchSnapshot = fetchNightlyWorkflowArtifactNames(
             owner = owner,
             repo = repo,
+            workflowFile = workflowFile,
             workflowSlug = workflowSlug,
-            branch = resolvedBranch
-        ).take(artifactsPerRun.coerceIn(1, 100))
+            preferredBranch = resolvedBranch,
+            artifactsPerRun = artifactsPerRun
+        )
+        val artifactBranch = branchSnapshot.branch
+        val artifactNames = branchSnapshot.artifactNames
         if (artifactNames.isEmpty() && resolveRunDetail) {
             error(
                 buildNoNightlyArtifactsMessage(
                     owner = owner,
                     repo = repo,
                     workflowFile = workflowFile,
-                    branch = resolvedBranch
+                    branch = artifactBranch
                 )
             )
         }
@@ -186,7 +186,7 @@ internal class GitHubActionsNightlyLinkRepository(
                     owner = owner,
                     repo = repo,
                     workflowSlug = workflowSlug,
-                    branch = resolvedBranch,
+                    branch = artifactBranch,
                     artifactName = artifactName
                 )
             }
@@ -196,18 +196,18 @@ internal class GitHubActionsNightlyLinkRepository(
         val publicRunDetail = detail?.runId
             ?.takeIf { it > 0L }
             ?.let { runId -> fetchPublicRunDetail(owner, repo, runId).getOrNull() }
-        val syntheticRunId = stablePositiveId("$owner/$repo/$workflowSlug/$resolvedBranch/latest")
+        val syntheticRunId = stablePositiveId("$owner/$repo/$workflowSlug/$artifactBranch/latest")
         val runId = detail?.runId?.takeIf { it > 0L } ?: syntheticRunId
         val workflowLongId = stablePositiveId("$owner/$repo/.github/workflows/$workflowFile")
         val run = buildNightlyRun(
             owner = owner,
             repo = repo,
             runId = runId,
-            branch = resolvedBranch,
+            branch = artifactBranch,
             workflowId = workflowLongId,
             workflowName = workflowNameFromFile(workflowFile),
             htmlUrl = detail?.runHtmlUrl.orEmpty().ifBlank {
-                buildGitHubActionsQueryUrl(owner, repo, resolvedBranch)
+                buildGitHubActionsQueryUrl(owner, repo, artifactBranch)
             },
             publicDetail = publicRunDetail
         )
@@ -221,7 +221,7 @@ internal class GitHubActionsNightlyLinkRepository(
                 owner = owner,
                 repo = repo,
                 workflowSlug = workflowSlug,
-                branch = resolvedBranch,
+                branch = artifactBranch,
                 artifactName = artifactName,
                 runId = runId,
                 artifactId = detailForArtifact?.artifactId ?: stablePositiveId(
@@ -272,6 +272,63 @@ internal class GitHubActionsNightlyLinkRepository(
         return parseWorkflowFilesFromGitHubHtml(actionsHtml, owner, repo).also { files ->
             putCachedValue(workflowFilesCache, cacheKey, files)
         }
+    }
+
+    private fun fetchNightlyWorkflowArtifactNames(
+        owner: String,
+        repo: String,
+        workflowFile: String,
+        workflowSlug: String,
+        preferredBranch: String,
+        artifactsPerRun: Int
+    ): NightlyWorkflowArtifactNames {
+        var firstEmptySnapshot: NightlyWorkflowArtifactNames? = null
+        var lastFailure: Throwable? = null
+        nightlyWorkflowBranchCandidates(workflowFile, preferredBranch).forEach { branch ->
+            val html = fetchPublicHtml(
+                buildNightlyWorkflowDashboardUrl(owner, repo, workflowSlug, branch)
+            ).getOrElse { error ->
+                lastFailure = error
+                return@forEach
+            }
+            val artifactNames = parseNightlyWorkflowArtifactNames(
+                html = html,
+                owner = owner,
+                repo = repo,
+                workflowSlug = workflowSlug,
+                branch = branch
+            ).take(artifactsPerRun.coerceIn(1, 100))
+            val snapshot = NightlyWorkflowArtifactNames(
+                branch = branch,
+                artifactNames = artifactNames
+            )
+            if (artifactNames.isNotEmpty()) return snapshot
+            if (firstEmptySnapshot == null) {
+                firstEmptySnapshot = snapshot
+            }
+        }
+        firstEmptySnapshot?.let { return it }
+        throw lastFailure ?: IllegalStateException("nightly.link 没有读取到 workflow artifact")
+    }
+
+    private fun nightlyWorkflowBranchCandidates(
+        workflowFile: String,
+        preferredBranch: String
+    ): List<String> {
+        val fileName = workflowFile.lowercase(Locale.ROOT)
+        val candidates = mutableListOf(preferredBranch.trim().ifBlank { DEFAULT_PUBLIC_BRANCH })
+        if (
+            fileName.contains("dev") ||
+            fileName.contains("preview") ||
+            fileName.contains("nightly") ||
+            fileName.contains("unstable") ||
+            fileName.contains("alpha")
+        ) {
+            candidates += listOf("dev", "develop")
+        }
+        return candidates
+            .filter { branch -> branch.isNotBlank() }
+            .distinctBy { branch -> branch.lowercase(Locale.ROOT) }
     }
 
     private fun parseWorkflowFilesFromGitHubHtml(
@@ -653,6 +710,11 @@ internal class GitHubActionsNightlyLinkRepository(
         val runId: Long,
         val artifactId: Long?,
         val runHtmlUrl: String
+    )
+
+    private data class NightlyWorkflowArtifactNames(
+        val branch: String,
+        val artifactNames: List<String>
     )
 
     private data class CachedValue<T>(

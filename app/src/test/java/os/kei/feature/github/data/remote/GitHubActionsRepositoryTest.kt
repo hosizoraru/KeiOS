@@ -2,6 +2,7 @@ package os.kei.feature.github.data.remote
 
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.OkHttpClient
 import org.junit.Test
 import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubApiAuthMode
@@ -548,6 +549,8 @@ class GitHubActionsRepositoryTest {
             val nightlyBaseUrl = server.url("/nightly/").toString()
             val base = nightlyBaseUrl.trimEnd('/')
             server.enqueue(MockResponse().setResponseCode(404).setBody("not found on main"))
+            server.enqueue(MockResponse().setResponseCode(404).setBody("not found on dev"))
+            server.enqueue(MockResponse().setResponseCode(404).setBody("not found on develop"))
             server.enqueue(
                 MockResponse()
                     .setResponseCode(200)
@@ -699,13 +702,69 @@ class GitHubActionsRepositoryTest {
             assertEquals(
                 listOf(
                     "/nightly/demo/app/workflows/auto-preview-dev/main?preview",
+                    "/nightly/demo/app/workflows/auto-preview-dev/dev?preview",
+                    "/nightly/demo/app/workflows/auto-preview-dev/develop?preview",
                     "/api/repos/demo/app/actions/workflows?per_page=50",
                     "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&branch=main&status=success",
                     "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&status=success",
                     "/api/repos/demo/app/actions/runs/25119889624/artifacts?per_page=100",
                     "/api/repos/demo/app/actions/runs/25115668266/artifacts?per_page=100"
                 ),
-                List(6) { server.takeRequest().path }
+                List(8) { server.takeRequest().path }
+            )
+        }
+    }
+
+    @Test
+    fun `nightly link dev preview workflow falls back from default branch to dev page`() {
+        MockWebServer().use { server ->
+            val nightlyBaseUrl = server.url("/nightly/").toString()
+            val base = nightlyBaseUrl.trimEnd('/')
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(404)
+                    .setBody("No successful runs found for workflow 'auto-preview-dev.yml' and branch 'main'.")
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/workflows/auto-preview-dev/dev/app-offline-Unstable-release.apk.zip">app-offline-Unstable-release.apk.zip</a>
+                            <a href="$base/demo/app/workflows/auto-preview-dev/dev/app-online-Unstable-release.apk.zip">app-online-Unstable-release.apk.zip</a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsNightlyLinkRepository(
+                client = OkHttpClient(),
+                githubHtmlBaseUrl = server.url("/github/").toString(),
+                nightlyLinkBaseUrl = nightlyBaseUrl
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/auto-preview-dev.yml",
+                branch = "main",
+                artifactsPerRun = 10,
+                resolveRunDetail = false
+            ).getOrThrow()
+
+            assertEquals("dev", snapshot.runs.single().run.headBranch)
+            assertEquals(
+                listOf("app-offline-Unstable-release.apk", "app-online-Unstable-release.apk"),
+                snapshot.artifacts.map { it.name }
+            )
+            assertEquals(
+                "$base/demo/app/workflows/auto-preview-dev/dev/app-online-Unstable-release.apk.zip",
+                snapshot.artifacts.last().archiveDownloadUrl
+            )
+            assertEquals(
+                listOf(
+                    "/nightly/demo/app/workflows/auto-preview-dev/main?preview",
+                    "/nightly/demo/app/workflows/auto-preview-dev/dev?preview"
+                ),
+                List(2) { server.takeRequest().path }
             )
         }
     }
