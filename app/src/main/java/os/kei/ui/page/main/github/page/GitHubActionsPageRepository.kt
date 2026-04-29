@@ -33,7 +33,9 @@ import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubStrategyLoadTrace
 
-private const val githubActionsSignalWorkflowBatchSize = 2
+private const val nightlyLinkSignalWorkflowBatchSize = 3
+private const val tokenApiSignalWorkflowBatchSize = 3
+private const val tokenApiSignalBranchProbeLimit = 2
 
 internal class GitHubActionsPageRepository(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -164,7 +166,12 @@ internal class GitHubActionsPageRepository(
             val actionsRepository = GitHubActionsRepository.fromLookupConfig(lookupConfig)
             val signals = mutableMapOf<Long, GitHubActionsWorkflowArtifactSignal>()
             val useNightlyLink = lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink
-            workflows.chunked(githubActionsSignalWorkflowBatchSize).forEach { batch ->
+            val batchSize = if (useNightlyLink) {
+                nightlyLinkSignalWorkflowBatchSize
+            } else {
+                tokenApiSignalWorkflowBatchSize
+            }
+            workflows.chunked(batchSize).forEach { batch ->
                 batch.map { workflow ->
                     async(ioDispatcher) {
                         val workflowId = workflowLookupId(workflow, lookupConfig)
@@ -183,40 +190,27 @@ internal class GitHubActionsPageRepository(
                             return@async null
                         }
                         val recentRuns = recentSnapshot.runs
-                        val recentHasDefaultBranchArtifact = defaultBranch.isNotBlank() &&
-                            recentRuns.any { runArtifacts ->
-                                val run = runArtifacts.run
-                                run.headBranch.equals(defaultBranch, ignoreCase = true) &&
-                                    run.status.equals("completed", ignoreCase = true) &&
-                                    run.conclusion.equals("success", ignoreCase = true) &&
-                                    runArtifacts.artifacts.any { artifact -> !artifact.expired }
-                            }
-                        val defaultBranchRuns = if (useNightlyLink || recentHasDefaultBranchArtifact) {
+                        val branchProbeRuns = if (useNightlyLink) {
                             emptyList()
                         } else {
-                            defaultBranch
-                                .takeIf { it.isNotBlank() }
-                                ?.let { branch ->
-                                    actionsRepository.fetchWorkflowArtifactSnapshot(
-                                        owner = owner,
-                                        repo = repo,
-                                        workflowId = workflowId,
-                                        runLimit = 1,
-                                        artifactsPerRun = artifactsPerRun,
-                                        branch = branch,
-                                        status = "completed",
-                                        excludePullRequests = true,
-                                        resolveNightlyRunDetail = false
-                                    ).result.getOrNull()?.runs
-                                }
-                                .orEmpty()
+                            fetchTokenApiBranchProbeRuns(
+                                actionsRepository = actionsRepository,
+                                owner = owner,
+                                repo = repo,
+                                workflow = workflow,
+                                workflowId = workflowId,
+                                defaultBranch = defaultBranch,
+                                recentRuns = recentRuns,
+                                artifactsPerRun = artifactsPerRun
+                            )
                         }
-                        val mergedRuns = (recentRuns + defaultBranchRuns)
+                        val mergedRuns = (recentRuns + branchProbeRuns)
                             .distinctBy { it.run.id }
                         workflow.id to GitHubActionsWorkflowSelector.buildArtifactSignal(
                             workflow = workflow,
                             runs = mergedRuns,
-                            defaultBranch = defaultBranch
+                            defaultBranch = defaultBranch,
+                            actionsStrategy = lookupConfig.actionsStrategy
                         )
                     }
                 }.awaitAll().filterNotNull().forEach { (workflowId, signal) ->
@@ -229,6 +223,73 @@ internal class GitHubActionsPageRepository(
                 elapsedMs = System.currentTimeMillis() - startedAt,
                 authMode = actionsRepository.authMode
             )
+        }
+    }
+
+    private suspend fun fetchTokenApiBranchProbeRuns(
+        actionsRepository: GitHubActionsRepository,
+        owner: String,
+        repo: String,
+        workflow: GitHubActionsWorkflow,
+        workflowId: String,
+        defaultBranch: String,
+        recentRuns: List<GitHubActionsRunArtifacts>,
+        artifactsPerRun: Int
+    ): List<GitHubActionsRunArtifacts> {
+        val branches = tokenApiSignalProbeBranches(
+            workflow = workflow,
+            defaultBranch = defaultBranch,
+            recentRuns = recentRuns
+        )
+        if (branches.isEmpty()) return emptyList()
+        return coroutineScope {
+            branches.map { branch ->
+                async(ioDispatcher) {
+                    actionsRepository.fetchWorkflowArtifactSnapshot(
+                        owner = owner,
+                        repo = repo,
+                        workflowId = workflowId,
+                        runLimit = 1,
+                        artifactsPerRun = artifactsPerRun,
+                        artifactRunLimit = 1,
+                        branch = branch,
+                        status = "completed",
+                        excludePullRequests = true,
+                        resolveNightlyRunDetail = false
+                    ).result.getOrNull()?.runs.orEmpty()
+                }
+            }.awaitAll().flatten()
+        }
+    }
+
+    private fun tokenApiSignalProbeBranches(
+        workflow: GitHubActionsWorkflow,
+        defaultBranch: String,
+        recentRuns: List<GitHubActionsRunArtifacts>
+    ): List<String> {
+        val traits = GitHubActionsWorkflowSelector.inspectWorkflow(workflow)
+        val candidates = buildList {
+            add(defaultBranch)
+            if (traits.nightlyLike) {
+                add("dev")
+                add("develop")
+            }
+        }
+        return candidates
+            .map { branch -> branch.trim() }
+            .filter { branch -> branch.isNotBlank() }
+            .distinctBy { branch -> branch.lowercase() }
+            .filter { branch -> !recentRuns.hasCompletedArtifactRun(branch) }
+            .take(tokenApiSignalBranchProbeLimit)
+    }
+
+    private fun List<GitHubActionsRunArtifacts>.hasCompletedArtifactRun(branch: String): Boolean {
+        return any { runArtifacts ->
+            val run = runArtifacts.run
+            run.headBranch.equals(branch, ignoreCase = true) &&
+                run.status.equals("completed", ignoreCase = true) &&
+                run.conclusion.equals("success", ignoreCase = true) &&
+                runArtifacts.artifacts.any { artifact -> !artifact.expired }
         }
     }
 

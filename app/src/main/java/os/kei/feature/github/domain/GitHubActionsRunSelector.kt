@@ -1,12 +1,14 @@
 package os.kei.feature.github.domain
 
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsRunBranchTrust
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.feature.github.model.GitHubActionsRunSelectionOptions
 import os.kei.feature.github.model.GitHubActionsRunTraits
 import os.kei.feature.github.model.GitHubActionsWorkflowKind
 import os.kei.feature.github.model.GitHubActionsWorkflowTraits
+import os.kei.feature.github.model.GitHubReleaseChannel
 import java.util.Locale
 
 object GitHubActionsRunSelector {
@@ -219,6 +221,43 @@ object GitHubActionsRunSelector {
             score -= 28
             reasons += "release-publish"
         }
+        when (options.actionsStrategy) {
+            GitHubActionsLookupStrategyOption.NightlyLink -> {
+                if (looksLikeDevelopmentBranch(traits.normalizedBranch)) {
+                    score += 10
+                    reasons += "nightly-branch"
+                }
+                if (artifactMatches.any { it.traits.channel == GitHubReleaseChannel.DEV }) {
+                    score += 8
+                    reasons += "nightly-artifact"
+                }
+                if (
+                    traits.branchTrust == GitHubActionsRunBranchTrust.ReleaseTag ||
+                    traits.branchTrust == GitHubActionsRunBranchTrust.ReleaseBranch ||
+                    traits.normalizedEvent == "release"
+                ) {
+                    score -= 12
+                    reasons += "nightly-release"
+                }
+            }
+            GitHubActionsLookupStrategyOption.GitHubApiToken -> {
+                if (artifactMatches.isNotEmpty()) {
+                    score += 6
+                    reasons += "token-artifacts"
+                }
+                if (traits.safeForRecommendation) {
+                    score += 10
+                    reasons += "token-metadata"
+                }
+                if (
+                    traits.branchTrust == GitHubActionsRunBranchTrust.FeatureBranch &&
+                    traits.normalizedBranch in normalizedPreferredBranches
+                ) {
+                    score += 10
+                    reasons += "token-branch"
+                }
+            }
+        }
 
         return GitHubActionsRunMatch(
             runArtifacts = runArtifacts,
@@ -246,6 +285,16 @@ object GitHubActionsRunSelector {
         return value.trim().lowercase(Locale.ROOT)
     }
 
+    private fun looksLikeDevelopmentBranch(branch: String): Boolean {
+        val normalized = normalize(branch)
+        return normalized in developmentBranches ||
+            normalized.endsWith("-dev") ||
+            normalized.endsWith("/dev") ||
+            normalized.contains("nightly") ||
+            normalized.contains("preview") ||
+            normalized.contains("unstable")
+    }
+
     private val releaseTagRegex = Regex(
         """v?\d+(?:\.\d+){1,3}(?:[-+._][0-9a-z][0-9a-z._-]*)?""",
         RegexOption.IGNORE_CASE
@@ -256,4 +305,16 @@ object GitHubActionsRunSelector {
     private val trustedBranchEvents = setOf("push", "workflow_dispatch", "release", "schedule")
     private val secondaryEvents = setOf("schedule", "repository_dispatch", "workflow_run", "merge_group")
     private val inProgressStatuses = setOf("queued", "requested", "waiting", "pending", "in_progress")
+    private val developmentBranches = setOf(
+        "dev",
+        "develop",
+        "development",
+        "nightly",
+        "preview",
+        "next",
+        "canary",
+        "alpha",
+        "beta",
+        "unstable"
+    )
 }

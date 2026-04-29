@@ -1,6 +1,7 @@
 package os.kei.feature.github.domain
 
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsWorkflow
 import os.kei.feature.github.model.GitHubActionsWorkflowArtifactSignal
 import os.kei.feature.github.model.GitHubActionsWorkflowKind
@@ -56,7 +57,8 @@ object GitHubActionsWorkflowSelector {
     fun buildArtifactSignal(
         workflow: GitHubActionsWorkflow,
         runs: List<GitHubActionsRunArtifacts>,
-        defaultBranch: String = ""
+        defaultBranch: String = "",
+        actionsStrategy: GitHubActionsLookupStrategyOption = GitHubActionsLookupStrategyOption.NightlyLink
     ): GitHubActionsWorkflowArtifactSignal {
         val workflowTraits = inspectWorkflow(workflow)
         val artifacts = runs.flatMap { it.artifacts }
@@ -73,7 +75,10 @@ object GitHubActionsWorkflowSelector {
         val runMatches = GitHubActionsRunSelector.selectRuns(
             runs = runs,
             workflowTraits = workflowTraits,
-            options = GitHubActionsRunSelectionOptions(defaultBranch = defaultBranch)
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = defaultBranch,
+                actionsStrategy = actionsStrategy
+            )
         )
         val recommendedRun = runMatches.firstOrNull { it.traits.safeForRecommendation }
             ?: runMatches.firstOrNull(::actionDownloadRecommendedRun)
@@ -236,6 +241,36 @@ object GitHubActionsWorkflowSelector {
             if (traits.releaseLike && it.nonExpiredArtifactCount == 0) {
                 score -= 18
                 reasons += "publish-only"
+            }
+            when (options.actionsStrategy) {
+                GitHubActionsLookupStrategyOption.NightlyLink -> {
+                    if (traits.nightlyLike) {
+                        score += 10
+                        reasons += "nightly-link"
+                    }
+                    if (it.branchArtifactCounts.keys.any(::looksLikeDevelopmentBranch)) {
+                        score += 10
+                        reasons += "nightly-branch"
+                    }
+                    if (traits.releaseLike && it.releaseTagRunCount > 0) {
+                        score -= 12
+                        reasons += "release-output"
+                    }
+                }
+                GitHubActionsLookupStrategyOption.GitHubApiToken -> {
+                    if (it.nonExpiredArtifactCount > 0) {
+                        score += 8
+                        reasons += "token-artifacts"
+                    }
+                    if (it.trustedRunCount > 0) {
+                        score += 12
+                        reasons += "token-metadata"
+                    }
+                    if (it.branchRunCounts.size > 1 && it.branchArtifactCounts.isNotEmpty()) {
+                        score += 6
+                        reasons += "token-branches"
+                    }
+                }
             }
         }
 

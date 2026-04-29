@@ -236,6 +236,7 @@ data class GitHubActionsWorkflowSelectionOptions(
     val query: String = "",
     val preferredWorkflowIds: Set<Long> = emptySet(),
     val preferredWorkflowPaths: Set<String> = emptySet(),
+    val actionsStrategy: GitHubActionsLookupStrategyOption = GitHubActionsLookupStrategyOption.NightlyLink,
     val includeDisabled: Boolean = false,
     val requireArtifacts: Boolean = false,
     val downloadHistory: List<GitHubActionsDownloadRecord> = emptyList()
@@ -271,6 +272,7 @@ data class GitHubActionsRunSelectionOptions(
     val defaultBranch: String = "",
     val preferredBranches: Set<String> = emptySet(),
     val preferredEvents: Set<String> = setOf("push", "workflow_dispatch", "release"),
+    val actionsStrategy: GitHubActionsLookupStrategyOption = GitHubActionsLookupStrategyOption.NightlyLink,
     val includePullRequests: Boolean = false,
     val includeNonDefaultBranches: Boolean = true,
     val includeUnsuccessful: Boolean = false,

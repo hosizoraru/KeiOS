@@ -9,6 +9,7 @@ import os.kei.feature.github.model.GitHubActionsRunSelectionOptions
 import os.kei.feature.github.model.GitHubActionsWorkflow
 import os.kei.feature.github.model.GitHubActionsWorkflowRun
 import os.kei.feature.github.model.GitHubActionsDownloadRecord
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -327,6 +328,34 @@ class GitHubActionsRunSelectorTest {
 
         assertEquals(4001, matches.single().runArtifacts.run.id)
         assertEquals("KeiOS-debug", matches.single().artifactMatches.single().artifact.name)
+    }
+
+    @Test
+    fun `token strategy exposes metadata reasons for safe default branch run`() {
+        val workflow = workflow("Android CI", ".github/workflows/android.yml")
+        val workflowTraits = GitHubActionsWorkflowSelector.inspectWorkflow(workflow)
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = listOf(
+                runArtifacts(
+                    run = run(
+                        id = 5001,
+                        event = "push",
+                        branch = "main",
+                        title = "Main build"
+                    ),
+                    artifactNames = listOf("app-arm64-v8a-release.apk")
+                )
+            ),
+            workflowTraits = workflowTraits,
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = "main",
+                actionsStrategy = GitHubActionsLookupStrategyOption.GitHubApiToken
+            )
+        )
+
+        assertEquals(5001, matches.single().runArtifacts.run.id)
+        assertTrue(matches.single().reasons.contains("token-metadata"))
+        assertTrue(matches.single().reasons.contains("token-artifacts"))
     }
 
     @Test

@@ -316,15 +316,22 @@ internal class GitHubActionsNightlyLinkRepository(
         preferredBranch: String
     ): List<String> {
         val fileName = workflowFile.lowercase(Locale.ROOT)
-        val candidates = mutableListOf(preferredBranch.trim().ifBlank { DEFAULT_PUBLIC_BRANCH })
-        if (
-            fileName.contains("dev") ||
-            fileName.contains("preview") ||
-            fileName.contains("nightly") ||
-            fileName.contains("unstable") ||
-            fileName.contains("alpha")
-        ) {
-            candidates += listOf("dev", "develop")
+        val preferred = preferredBranch.trim().ifBlank { DEFAULT_PUBLIC_BRANCH }
+        val devBranches = listOf("dev", "develop")
+        val candidates = mutableListOf<String>()
+        if (fileName.contains("dev") || fileName.contains("develop")) {
+            candidates += devBranches
+            candidates += preferred
+        } else {
+            candidates += preferred
+            if (
+                fileName.contains("preview") ||
+                fileName.contains("nightly") ||
+                fileName.contains("unstable") ||
+                fileName.contains("alpha")
+            ) {
+                candidates += devBranches
+            }
         }
         return candidates
             .filter { branch -> branch.isNotBlank() }

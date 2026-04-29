@@ -8,6 +8,7 @@ import os.kei.feature.github.model.GitHubActionsWorkflowKind
 import os.kei.feature.github.model.GitHubActionsWorkflowRun
 import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
 import os.kei.feature.github.model.GitHubActionsDownloadRecord
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -208,6 +209,42 @@ class GitHubActionsWorkflowSelectorTest {
         assertEquals(25115668266, signal.recommendedRunId)
         assertEquals("dev", signal.recommendedRunBranch)
         assertEquals(0, signal.trustedRunCount)
+    }
+
+    @Test
+    fun `token strategy weights verified branch metadata over filename guess`() {
+        val workflows = listOf(
+            workflow(1, "Nightly Dev", ".github/workflows/nightly-dev.yml"),
+            workflow(2, "Android CI", ".github/workflows/android.yml")
+        )
+        val signals = mapOf(
+            2L to GitHubActionsWorkflowSelector.buildArtifactSignal(
+                workflow = workflows[1],
+                defaultBranch = "main",
+                actionsStrategy = GitHubActionsLookupStrategyOption.GitHubApiToken,
+                runs = listOf(
+                    runArtifacts(
+                        workflows[1],
+                        runId = 220,
+                        branch = "main",
+                        event = "push",
+                        artifactNames = listOf("app-arm64-v8a-release.apk")
+                    )
+                )
+            )
+        )
+
+        val matches = GitHubActionsWorkflowSelector.selectWorkflows(
+            workflows = workflows,
+            artifactSignals = signals,
+            options = GitHubActionsWorkflowSelectionOptions(
+                actionsStrategy = GitHubActionsLookupStrategyOption.GitHubApiToken
+            )
+        )
+
+        assertEquals("Android CI", matches.first().workflow.name)
+        assertTrue(matches.first().reasons.contains("token-metadata"))
+        assertTrue(matches.first().reasons.contains("token-artifacts"))
     }
 
     @Test

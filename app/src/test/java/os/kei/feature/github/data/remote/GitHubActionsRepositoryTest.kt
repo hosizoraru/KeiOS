@@ -701,9 +701,9 @@ class GitHubActionsRepositoryTest {
             )
             assertEquals(
                 listOf(
-                    "/nightly/demo/app/workflows/auto-preview-dev/main?preview",
                     "/nightly/demo/app/workflows/auto-preview-dev/dev?preview",
                     "/nightly/demo/app/workflows/auto-preview-dev/develop?preview",
+                    "/nightly/demo/app/workflows/auto-preview-dev/main?preview",
                     "/api/repos/demo/app/actions/workflows?per_page=50",
                     "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&branch=main&status=success",
                     "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&status=success",
@@ -716,15 +716,10 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
-    fun `nightly link dev preview workflow falls back from default branch to dev page`() {
+    fun `nightly link dev preview workflow tries dev page before default branch`() {
         MockWebServer().use { server ->
             val nightlyBaseUrl = server.url("/nightly/").toString()
             val base = nightlyBaseUrl.trimEnd('/')
-            server.enqueue(
-                MockResponse()
-                    .setResponseCode(404)
-                    .setBody("No successful runs found for workflow 'auto-preview-dev.yml' and branch 'main'.")
-            )
             server.enqueue(
                 MockResponse()
                     .setResponseCode(200)
@@ -760,11 +755,8 @@ class GitHubActionsRepositoryTest {
                 snapshot.artifacts.last().archiveDownloadUrl
             )
             assertEquals(
-                listOf(
-                    "/nightly/demo/app/workflows/auto-preview-dev/main?preview",
-                    "/nightly/demo/app/workflows/auto-preview-dev/dev?preview"
-                ),
-                List(2) { server.takeRequest().path }
+                listOf("/nightly/demo/app/workflows/auto-preview-dev/dev?preview"),
+                List(1) { server.takeRequest().path }
             )
         }
     }
@@ -932,6 +924,42 @@ class GitHubActionsRepositoryTest {
                 snapshot.runs.first().run.htmlUrl
             )
             assertEquals(listOf("/demo/app/workflows/android/master?preview"), List(1) { nightly.takeRequest().path })
+            assertEquals(1, nightly.requestCount)
+        }
+    }
+
+    @Test
+    fun `nightly link tries dev branch first for dev workflow file`() {
+        MockWebServer().use { nightly ->
+            val base = nightly.url("/").toString().trimEnd('/')
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/workflows/auto-preview-dev/dev/app-online-Unstable-release.apk.zip">
+                                app-online-Unstable-release.apk.zip
+                            </a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/auto-preview-dev.yml",
+                branch = "main",
+                resolveNightlyRunDetail = false
+            ).result.getOrThrow()
+
+            assertEquals("dev", snapshot.runs.single().run.headBranch)
+            assertEquals(listOf("app-online-Unstable-release.apk"), snapshot.artifacts.map { it.name })
+            assertEquals(listOf("/demo/app/workflows/auto-preview-dev/dev?preview"), List(1) { nightly.takeRequest().path })
             assertEquals(1, nightly.requestCount)
         }
     }

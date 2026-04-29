@@ -243,20 +243,29 @@ internal class GitHubActionsActions(
                 state.actionsSelectedWorkflowId = selectedWorkflow.workflow.id
                 state.actionsWorkflowManuallySelected = false
                 state.actionsRunLimit = DEFAULT_RUN_LIMIT
+                refreshWorkflowSignalsInBackground(
+                    item = item,
+                    workflows = workflows,
+                    candidateWorkflows = signalCandidateWorkflows,
+                    history = history,
+                    lookupConfig = lookupConfig,
+                    defaultBranch = info.defaultBranch
+                )
                 loadWorkflowSnapshot(
                     item = item,
                     workflow = selectedWorkflow.workflow,
                     preferredRunId = null
                 )
+            } else {
+                refreshWorkflowSignalsInBackground(
+                    item = item,
+                    workflows = workflows,
+                    candidateWorkflows = signalCandidateWorkflows,
+                    history = history,
+                    lookupConfig = lookupConfig,
+                    defaultBranch = info.defaultBranch
+                )
             }
-            refreshWorkflowSignalsInBackground(
-                item = item,
-                workflows = workflows,
-                candidateWorkflows = signalCandidateWorkflows,
-                history = history,
-                lookupConfig = lookupConfig,
-                defaultBranch = info.defaultBranch
-            )
         } catch (error: Throwable) {
             if (isCurrentTarget(item)) {
                 state.actionsError = error.message ?: error.javaClass.simpleName
@@ -383,8 +392,9 @@ internal class GitHubActionsActions(
             workflow = workflow,
             snapshot = if (keepCurrentRunsWhileLoading) state.actionsSnapshot else null
         )
+        val branch = branchForSnapshotRequest(workflow)
+        var requestHandled = false
         try {
-            val branch = selectedBranchForRequest()
             val snapshotTrace = actionsRepository.fetchGitHubActionsWorkflowArtifactSnapshot(
                 owner = item.owner,
                 repo = item.repo,
@@ -396,7 +406,8 @@ internal class GitHubActionsActions(
                 branch = branch
             )
             val snapshot = snapshotTrace.result.getOrThrow()
-            if (!isCurrentTarget(item) || state.actionsSelectedWorkflowId != workflow.id) return
+            if (!isCurrentSnapshotRequest(item, workflow, branch)) return
+            requestHandled = true
             val runMatches = selectRunsForSnapshot(
                 workflow = workflow,
                 snapshot = snapshot,
@@ -426,14 +437,15 @@ internal class GitHubActionsActions(
                 )
             }
         } catch (error: Throwable) {
-            if (isCurrentTarget(item) && state.actionsSelectedWorkflowId == workflow.id) {
+            if (isCurrentSnapshotRequest(item, workflow, branch)) {
+                requestHandled = true
                 state.actionsError = error.message ?: error.javaClass.simpleName
                 if (keepCurrentRunsWhileLoading) {
                     scheduleSelectedRunWatch()
                 }
             }
         } finally {
-            if (isCurrentTarget(item) && state.actionsSelectedWorkflowId == workflow.id) {
+            if (requestHandled || isCurrentSnapshotRequest(item, workflow, branch)) {
                 state.actionsRunsLoading = false
             }
         }
@@ -597,6 +609,7 @@ internal class GitHubActionsActions(
             options = GitHubActionsWorkflowSelectionOptions(
                 includeDisabled = false,
                 requireArtifacts = false,
+                actionsStrategy = state.lookupConfig.actionsStrategy,
                 downloadHistory = history
             )
         )
@@ -638,6 +651,7 @@ internal class GitHubActionsActions(
                 includeUnsuccessful = true,
                 requireArtifacts = false,
                 requireAndroidArtifacts = false,
+                actionsStrategy = state.lookupConfig.actionsStrategy,
                 artifactOptions = artifactOptions,
                 downloadHistory = history
             )
@@ -681,6 +695,33 @@ internal class GitHubActionsActions(
 
     private fun selectedBranchForRequest(): String {
         return state.actionsSelectedBranch.trim().ifBlank { state.actionsDefaultBranch.trim() }
+    }
+
+    private fun branchForSnapshotRequest(workflow: GitHubActionsWorkflow): String {
+        val selectedBranch = selectedBranchForRequest()
+        return if (
+            state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.GitHubApiToken &&
+            !state.actionsBranchManuallySelected &&
+            state.actionsWorkflowSignals[workflow.id] == null
+        ) {
+            ""
+        } else {
+            selectedBranch
+        }
+    }
+
+    private fun isCurrentSnapshotRequest(
+        item: GitHubTrackedApp,
+        workflow: GitHubActionsWorkflow,
+        requestedBranch: String
+    ): Boolean {
+        if (!isCurrentTarget(item) || state.actionsSelectedWorkflowId != workflow.id) return false
+        val currentBranch = selectedBranchForRequest()
+        return if (requestedBranch.isBlank()) {
+            !state.actionsBranchManuallySelected
+        } else {
+            currentBranch.equals(requestedBranch, ignoreCase = true)
+        }
     }
 
     private fun preferredBranchesForRunSelection(): Set<String> {
