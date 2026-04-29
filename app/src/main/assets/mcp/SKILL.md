@@ -7,60 +7,67 @@
 - 本机 endpoint: {{LOCAL_ENDPOINT}}
 - 局域网 endpoint: {{LAN_ENDPOINTS}}
 
-## 快速接入
-1. 先读取资源 `{{RESOURCE_CONFIG_URI}}`，拿到默认可导入 JSON（auto）。
-2. 需要指定模式时读取模板 `{{RESOURCE_CONFIG_TEMPLATE_URI}}`，填入 `mode=auto|local|lan`。
-3. Claw 接入可调用 `keios.mcp.claw.skill.guide`，一次获取导入 JSON、Skill 资源 URI 与完整 SKILL.md 内容。
-4. 客户端不支持资源读取时，调用 `keios.mcp.runtime.config` 生成同等配置。
-5. 接入完成后执行 `keios.health.ping` 与 `keios.mcp.runtime.status` 验证连通性。
+## 接入入口
+1. 调用 `keios.health.ping` 验证通道。
+2. 调用 `keios.mcp.runtime.status` 读取运行态、endpoint、在线客户端与 Token 状态。
+3. 调用 `keios.mcp.runtime.config(mode=auto)` 生成客户端导入 JSON。
+4. 读取 `{{RESOURCE_OVERVIEW_URI}}` 获取工具分组摘要。
+5. 针对具体任务读取 `{{RESOURCE_SKILL_URI}}` 或 `keios://skill/tool/{tool}`。
 
-## 初始化顺序
-1. 读取资源 `{{RESOURCE_OVERVIEW_URI}}` 获取入口摘要。
-2. 调用 Prompt `{{PROMPT_BOOTSTRAP}}` 生成当前任务计划。
-3. 按任务读取资源 `{{RESOURCE_SKILL_URI}}` 与工具模板 `keios://skill/tool/{tool}`。
-4. 执行工具前先确认参数范围，再落地调用。
+## 配置导入
+- 默认资源: `{{RESOURCE_CONFIG_URI}}`
+- 模式模板: `{{RESOURCE_CONFIG_TEMPLATE_URI}}`
+- 初始化 Prompt: `{{PROMPT_BOOTSTRAP}}`
+- Claw 一键引导: `keios.mcp.claw.skill.guide(mode=auto)`
+- `local` 适合同机客户端，`lan` 适合跨设备联调，`auto` 同时生成可用入口。
 
-## 工具能力总览
+## 工具能力
 {{TOOL_LIST}}
 
+## 运行与环境
+- `keios.health.ping`: 通道探针，固定返回 `pong`。
+- `keios.app.info`: 应用标签、包名、版本与 Shizuku API。
+- `keios.app.version`: 版本号与 versionCode。
+- `keios.shizuku.status`: Shizuku 当前状态。
+- `keios.mcp.runtime.status`: MCP 运行态、端口、路径、Token 与客户端数量。
+- `keios.mcp.runtime.logs`: MCP 日志，`limit` 范围 1 到 200。
+- `keios.mcp.runtime.config`: 生成 streamable HTTP 客户端配置。
+- `keios.mcp.claw.skill.guide`: 输出 Claw 导入 JSON、资源 URI 与完整 Skill 文本。
+
+## OS 与系统巡检
+- `keios.os.cards.snapshot`: OS 页面可见卡片、展开态、缓存体积与估算值。
+- `keios.os.activity.cards`: 活动 card 列表，支持 `query`、`onlyVisible`、`limit`。
+- `keios.os.shell.cards`: shell card 列表，支持 `query`、`onlyVisible`、`includeOutput`、`limit`。
+- `keios.system.topinfo.query`: 系统 TopInfo 缓存查询，支持 `query` 与 `limit`。
+
+## GitHub 跟踪
+- `keios.github.tracked.snapshot`: 跟踪数量、缓存命中、策略、Token 与刷新间隔。
+- `keios.github.tracked.list`: 跟踪仓库列表，支持 `repoFilter` 与 `limit`。
+- `keios.github.tracked.summary`: 汇总缓存或在线检查结果，`mode=cache|network`。
+- `keios.github.tracked.check`: 在线检查更新，支持 `repoFilter`、`onlyUpdates`、`limit`。
+- `keios.github.tracked.cache.clear`: 清理检查缓存与 Release asset 缓存。
+
+## BA 缓存
+- `keios.ba.snapshot`: AP、咖啡厅、通知阈值、刷新间隔与玩家标识。
+- `keios.ba.calendar.cache`: 活动日历缓存，支持 `serverIndex`、`includeEntries`、`limit`。
+- `keios.ba.pool.cache`: 卡池缓存，支持 `serverIndex`、`includeEntries`、`limit`。
+- `keios.ba.guide.catalog.cache`: 图鉴目录缓存，支持 `tab=all|student|npc`。
+- `keios.ba.guide.cache.overview`: 学生图鉴详情缓存总体体积与最近同步时间。
+- `keios.ba.guide.cache.inspect`: 按 URL 检查学生详情缓存完整度与分区统计。
+- `keios.ba.cache.clear`: 精确清理 BA/GitHub 缓存，支持 `scope` 与 `url`。
+
 ## 推荐任务流
-- 运行排障
-  - `keios.health.ping`
-  - `keios.mcp.runtime.status`
-  - `keios.mcp.runtime.logs`
-  - `keios.shizuku.status`
-- OS 页面巡检
-  - `keios.os.cards.snapshot`
-  - `keios.os.activity.cards`
-  - `keios.os.shell.cards`
-  - `keios.system.topinfo.query`
-- GitHub 跟踪巡检
-  - `keios.github.tracked.snapshot`
-  - `keios.github.tracked.check`
-  - `keios.github.tracked.summary`
-  - `keios.github.tracked.list`
-- BA 缓存巡检
-  - `keios.ba.snapshot`
-  - `keios.ba.calendar.cache`
-  - `keios.ba.pool.cache`
-  - `keios.ba.guide.catalog.cache`
-  - `keios.ba.guide.cache.inspect`
-- 缓存清理
-  - `keios.github.tracked.cache.clear`
-  - `keios.ba.cache.clear`
+1. 运行排障: `keios.health.ping` -> `keios.mcp.runtime.status` -> `keios.mcp.runtime.logs` -> `keios.shizuku.status`
+2. 配置导入: `keios.mcp.runtime.config(mode=auto)` -> 读取 `{{RESOURCE_CONFIG_URI}}` -> `keios.mcp.claw.skill.guide`
+3. OS 巡检: `keios.os.cards.snapshot` -> `keios.os.activity.cards` -> `keios.os.shell.cards` -> `keios.system.topinfo.query`
+4. GitHub 巡检: `keios.github.tracked.snapshot` -> `keios.github.tracked.summary(mode=cache)` -> `keios.github.tracked.check(onlyUpdates=true)`
+5. BA 巡检: `keios.ba.snapshot` -> `keios.ba.calendar.cache` -> `keios.ba.pool.cache` -> `keios.ba.guide.cache.inspect`
+6. 缓存清理: 使用 `scope` 精确清理，再调用对应 snapshot 或 cache 工具确认。
 
-## 参数建议
-- 所有 `limit` 参数建议先用 20~80，确认结构后再放大。
-- `keios.github.tracked.check` 建议先用 `onlyUpdates=true` 快速筛选。
-- `keios.os.shell.cards` 在排障时开启 `includeOutput=true`，常规巡检保持关闭。
-- `keios.ba.cache.clear` 用 `scope` 精确清理，避免全量重建缓存。
-
-## 输出约定
-- 工具输出以 `key=value` 为主，适合检索与日志归档。
-- 列表工具输出含摘要头和条目行，条目行格式固定，便于二次解析。
-- 网络或缓存异常会返回显式错误信息，调用端应保留原文。
-
-## 导入模式建议
-- `auto`: 同时给出 Local/LAN 入口，适合多环境调试。
-- `local`: 只保留 127.0.0.1 入口，适合同机客户端。
-- `lan`: 优先局域网入口，适合跨设备联调。
+## 参数与输出
+- `limit` 先用 20 到 80；大范围审计再提高到工具上限。
+- `repoFilter` 支持 owner/repo、包名、应用名。
+- `serverIndex` 范围 0 到 2；留空时使用当前 BA 设置。
+- `includeOutput=true` 会输出 shell 运行摘要，适合排障。
+- `includeEntries=true` 会展开缓存条目，适合抽样审计。
+- 输出以 `key=value` 和固定列表行为主，调用端保留原始文本用于报告与日志归档。
