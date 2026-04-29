@@ -9,7 +9,10 @@ import os.kei.feature.github.data.local.AppIconCache
 import os.kei.feature.github.data.local.GitHubActionsDownloadHistoryStore
 import os.kei.feature.github.data.local.GitHubReleaseAssetCacheStore
 import os.kei.feature.github.data.local.GitHubTrackSnapshot
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
@@ -67,6 +70,7 @@ import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
 import os.kei.ui.page.main.github.state.toUi
 
 private const val pendingShareImportCardVisibleWindowMs = 90_000L
+private const val githubActionsSignalWorkflowBatchSize = 2
 
 internal data class GitHubTrackEditorDraft(
     val repoUrl: String,
@@ -505,6 +509,7 @@ internal class GitHubPageRepository(
         lookupConfig: GitHubLookupConfig,
         runLimit: Int = 20,
         artifactsPerRun: Int = 100,
+        artifactRunLimit: Int = Int.MAX_VALUE,
         branch: String = "",
         event: String = "",
         status: String = "",
@@ -521,6 +526,7 @@ internal class GitHubPageRepository(
                     workflowId = workflowId,
                     runLimit = runLimit,
                     artifactsPerRun = artifactsPerRun,
+                    artifactRunLimit = artifactRunLimit,
                     branch = branch,
                     event = event,
                     status = status,
@@ -581,42 +587,48 @@ internal class GitHubPageRepository(
         artifactsPerRun: Int = 100,
         defaultBranch: String = ""
     ): GitHubStrategyLoadTrace<Map<Long, GitHubActionsWorkflowArtifactSignal>> {
-        return withContext(ioDispatcher) {
+        return coroutineScope {
             val startedAt = System.currentTimeMillis()
             val actionsRepository = GitHubActionsRepository.fromLookupConfig(lookupConfig)
             val signals = mutableMapOf<Long, GitHubActionsWorkflowArtifactSignal>()
-            workflows.forEach { workflow ->
-                val recentSnapshot = actionsRepository.fetchWorkflowArtifactSnapshot(
-                    owner = owner,
-                    repo = repo,
-                    workflowId = workflow.id.toString(),
-                    runLimit = runLimit,
-                    artifactsPerRun = artifactsPerRun
-                ).result.getOrElse {
-                    return@forEach
-                }
-                val defaultBranchRuns = defaultBranch
-                    .takeIf { it.isNotBlank() }
-                    ?.let { branch ->
-                        actionsRepository.fetchWorkflowArtifactSnapshot(
+            workflows.chunked(githubActionsSignalWorkflowBatchSize).forEach { batch ->
+                batch.map { workflow ->
+                    async(ioDispatcher) {
+                        val recentSnapshot = actionsRepository.fetchWorkflowArtifactSnapshot(
                             owner = owner,
                             repo = repo,
                             workflowId = workflow.id.toString(),
-                            runLimit = 1,
-                            artifactsPerRun = artifactsPerRun,
-                            branch = branch,
-                            status = "completed",
-                            excludePullRequests = true
-                        ).result.getOrNull()?.runs
+                            runLimit = runLimit,
+                            artifactsPerRun = artifactsPerRun
+                        ).result.getOrElse {
+                            return@async null
+                        }
+                        val defaultBranchRuns = defaultBranch
+                            .takeIf { it.isNotBlank() }
+                            ?.let { branch ->
+                                actionsRepository.fetchWorkflowArtifactSnapshot(
+                                    owner = owner,
+                                    repo = repo,
+                                    workflowId = workflow.id.toString(),
+                                    runLimit = 1,
+                                    artifactsPerRun = artifactsPerRun,
+                                    branch = branch,
+                                    status = "completed",
+                                    excludePullRequests = true
+                                ).result.getOrNull()?.runs
+                            }
+                            .orEmpty()
+                        val mergedRuns = (recentSnapshot.runs + defaultBranchRuns)
+                            .distinctBy { it.run.id }
+                        workflow.id to GitHubActionsWorkflowSelector.buildArtifactSignal(
+                            workflow = workflow,
+                            runs = mergedRuns,
+                            defaultBranch = defaultBranch
+                        )
                     }
-                    .orEmpty()
-                val mergedRuns = (recentSnapshot.runs + defaultBranchRuns)
-                    .distinctBy { it.run.id }
-                signals[workflow.id] = GitHubActionsWorkflowSelector.buildArtifactSignal(
-                    workflow = workflow,
-                    runs = mergedRuns,
-                    defaultBranch = defaultBranch
-                )
+                }.awaitAll().filterNotNull().forEach { (workflowId, signal) ->
+                    signals[workflowId] = signal
+                }
             }
             GitHubStrategyLoadTrace(
                 result = Result.success(signals),

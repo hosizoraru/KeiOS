@@ -18,6 +18,7 @@ import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubStrategyLoadTrace
 import java.net.URLEncoder
 import java.time.Instant
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class GitHubActionsRepository(
@@ -159,6 +160,7 @@ class GitHubActionsRepository(
         workflowId: String,
         runLimit: Int = DEFAULT_RUN_LIMIT,
         artifactsPerRun: Int = DEFAULT_ARTIFACT_LIMIT,
+        artifactRunLimit: Int = Int.MAX_VALUE,
         branch: String = "",
         event: String = "",
         status: String = "",
@@ -183,17 +185,29 @@ class GitHubActionsRepository(
         ).result.getOrElse { error ->
             return Result.failure<GitHubActionsWorkflowArtifactsSnapshot>(error).toTrace(startedAt)
         }
-        val runArtifacts = mutableListOf<GitHubActionsRunArtifacts>()
-        runs.forEach { run ->
-            val artifacts = fetchRunArtifacts(
+        val artifactRuns = runs.take(artifactRunLimit.coerceAtLeast(0))
+        val artifactsByRun = runCatching {
+            fetchRunArtifactsForRuns(
                 owner = owner,
                 repo = repo,
-                runId = run.id,
+                runs = artifactRuns,
                 limit = artifactsPerRun
-            ).result.getOrElse { error ->
+            )
+        }.getOrElse { error ->
+            return Result.failure<GitHubActionsWorkflowArtifactsSnapshot>(error).toTrace(startedAt)
+        }
+        val artifactsByRunId = mutableMapOf<Long, List<GitHubActionsArtifact>>()
+        artifactsByRun.forEach { (run, artifactsResult) ->
+            val artifacts = artifactsResult.getOrElse { error ->
                 return Result.failure<GitHubActionsWorkflowArtifactsSnapshot>(error).toTrace(startedAt)
             }
-            runArtifacts += GitHubActionsRunArtifacts(run = run, artifacts = artifacts)
+            artifactsByRunId[run.id] = artifacts
+        }
+        val runArtifacts = runs.map { run ->
+            GitHubActionsRunArtifacts(
+                run = run,
+                artifacts = artifactsByRunId[run.id].orEmpty()
+            )
         }
         return Result.success(
             GitHubActionsWorkflowArtifactsSnapshot(
@@ -203,6 +217,33 @@ class GitHubActionsRepository(
                 runs = runArtifacts
             )
         ).toTrace(startedAt)
+    }
+
+    private fun fetchRunArtifactsForRuns(
+        owner: String,
+        repo: String,
+        runs: List<GitHubActionsWorkflowRun>,
+        limit: Int
+    ): List<Pair<GitHubActionsWorkflowRun, Result<List<GitHubActionsArtifact>>>> {
+        if (runs.isEmpty()) return emptyList()
+        val concurrency = runs.size.coerceAtMost(MAX_ARTIFACT_FETCH_CONCURRENCY)
+        if (concurrency <= 1) {
+            return runs.map { run ->
+                run to fetchRunArtifacts(owner = owner, repo = repo, runId = run.id, limit = limit).result
+            }
+        }
+        val executor = Executors.newFixedThreadPool(concurrency)
+        return try {
+            runs.map { run ->
+                executor.submit<Pair<GitHubActionsWorkflowRun, Result<List<GitHubActionsArtifact>>>> {
+                    run to fetchRunArtifacts(owner = owner, repo = repo, runId = run.id, limit = limit).result
+                }
+            }.map { future ->
+                future.get()
+            }
+        } finally {
+            executor.shutdownNow()
+        }
     }
 
     fun resolveArtifactDownloadUrl(
@@ -507,6 +548,7 @@ class GitHubActionsRepository(
         private const val DEFAULT_WORKFLOW_LIMIT = 50
         private const val DEFAULT_RUN_LIMIT = 20
         private const val DEFAULT_ARTIFACT_LIMIT = 100
+        private const val MAX_ARTIFACT_FETCH_CONCURRENCY = 4
         private const val GITHUB_API_VERSION = "2022-11-28"
         private const val GITHUB_USER_AGENT = "KeiOS-App/1.0 (Android)"
         private const val DEFAULT_GITHUB_API_BASE_URL = "https://api.github.com"

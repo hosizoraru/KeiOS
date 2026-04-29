@@ -57,6 +57,7 @@
     <string name="github_actions_value_run_attempt">第 %1$d 次</string>
     <string name="github_actions_loading_workflows">正在读取 workflows 与最近 runs...</string>
     <string name="github_actions_loading_runs">正在读取 run 与 artifact...</string>
+    <string name="github_actions_loading_artifacts">正在读取该 run 的 artifact...</string>
     <string name="github_actions_empty_workflows">该仓库当前没有可展示的 active workflow</string>
     <string name="github_actions_empty_runs">当前 workflow 没有可展示的 run</string>
     <string name="github_actions_empty_artifacts">当前 run 没有可展示的 artifact</string>

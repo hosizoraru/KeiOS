@@ -112,6 +112,12 @@ internal fun GitHubActionsSheet(
             ?.runArtifacts
             ?.run
             ?.id
+        val selectedRunArtifactsLoading = selectedRun?.let { runMatch ->
+            val runId = runMatch.runArtifacts.run.id
+            runMatch.traits.completed &&
+                runMatch.runArtifacts.artifacts.isEmpty() &&
+                state.actionsStatusRefreshingRunIds[runId] == true
+        } == true
         val hasToken = state.lookupConfig.apiToken.trim().isNotBlank()
 
         SheetContentColumn(verticalSpacing = 8.dp) {
@@ -250,6 +256,11 @@ internal fun GitHubActionsSheet(
                             text = stringResource(R.string.github_actions_hint_run_in_progress),
                             accent = GitHubStatusPalette.Active,
                             isDark = isDark
+                        )
+                    }
+                    selectedRunArtifactsLoading -> {
+                        GitHubActionsLoadingCard(
+                            text = stringResource(R.string.github_actions_loading_artifacts)
                         )
                     }
                     selectedRun.artifactMatches.isEmpty() -> {

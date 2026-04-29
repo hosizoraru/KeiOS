@@ -113,13 +113,47 @@ class GitHubActionsRepositoryTest {
             assertEquals(2, snapshot.runs.size)
             assertEquals(listOf(101L, 100L), snapshot.runs.map { it.run.id })
             assertEquals(4, snapshot.artifacts.size)
+            val requestPaths = List(3) { server.takeRequest().path }
+            assertEquals("/repos/demo/app/actions/workflows/42/runs?per_page=2", requestPaths.first())
             assertEquals(
-                listOf(
-                    "/repos/demo/app/actions/workflows/42/runs?per_page=2",
+                setOf(
                     "/repos/demo/app/actions/runs/101/artifacts?per_page=100",
                     "/repos/demo/app/actions/runs/100/artifacts?per_page=100"
                 ),
-                List(3) { server.takeRequest().path }
+                requestPaths.drop(1).toSet()
+            )
+        }
+    }
+
+    @Test
+    fun `workflow artifact snapshot can preload only recent run artifacts`() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setResponseCode(200).setBody(sampleWorkflowRunsJson()))
+            server.enqueue(MockResponse().setResponseCode(200).setBody(sampleArtifactsJson(runId = 101)))
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                apiBaseUrl = server.url("/").toString()
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = "42",
+                runLimit = 2,
+                artifactRunLimit = 1
+            ).result.getOrThrow()
+
+            assertEquals(2, snapshot.runs.size)
+            assertEquals(listOf(101L, 100L), snapshot.runs.map { it.run.id })
+            assertEquals(2, snapshot.runs.first().artifacts.size)
+            assertTrue(snapshot.runs.last().artifacts.isEmpty())
+            assertEquals(2, snapshot.artifacts.size)
+            assertEquals(
+                listOf(
+                    "/repos/demo/app/actions/workflows/42/runs?per_page=2",
+                    "/repos/demo/app/actions/runs/101/artifacts?per_page=100"
+                ),
+                List(2) { server.takeRequest().path }
             )
         }
     }
