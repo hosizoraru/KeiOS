@@ -99,12 +99,17 @@ internal class GitHubConfigActions(
 
             val strategyChanged = previousConfig.selectedStrategy != newConfig.selectedStrategy
             val actionsStrategyChanged = previousConfig.actionsStrategy != newConfig.actionsStrategy
-            val activeTokenChanged =
-                (newConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken ||
-                    newConfig.actionsRequireApiToken) &&
-                previousConfig.apiToken != newConfig.apiToken
+            val tokenChanged = previousConfig.apiToken != newConfig.apiToken
+            val releaseTokenChanged =
+                newConfig.selectedStrategy == GitHubLookupStrategyOption.GitHubApiToken && tokenChanged
+            val actionsTokenChanged = newConfig.actionsRequireApiToken && tokenChanged
+            val releaseLookupChanged = strategyChanged || releaseTokenChanged
+            val actionsLookupChanged = actionsStrategyChanged || actionsTokenChanged
+            if (actionsLookupChanged) {
+                state.resetActionsSheetState()
+            }
             when {
-                strategyChanged || actionsStrategyChanged || activeTokenChanged -> {
+                releaseLookupChanged -> {
                     repository.clearReleaseStrategyCaches()
                     repository.clearCheckCache()
                     repository.clearAllAssetCache()
@@ -115,19 +120,37 @@ internal class GitHubConfigActions(
                     state.refreshProgress = 0f
                     state.overviewRefreshState = OverviewRefreshState.Idle
                     if (state.trackedItems.isNotEmpty()) {
-                        env.toast(
-                            R.string.github_toast_strategy_switched_recheck,
-                            newConfig.selectedStrategy.label
-                        )
+                        if (strategyChanged) {
+                            env.toast(
+                                R.string.github_toast_strategy_switched_recheck,
+                                newConfig.selectedStrategy.label
+                            )
+                        } else {
+                            env.toast(R.string.github_toast_api_credential_saved_recheck)
+                        }
                         refreshActions.refreshAllTracked(showToast = true)
                     } else {
-                        env.toast(
-                            R.string.github_toast_strategy_switched,
-                            newConfig.selectedStrategy.label
-                        )
+                        if (strategyChanged) {
+                            env.toast(
+                                R.string.github_toast_strategy_switched,
+                                newConfig.selectedStrategy.label
+                            )
+                        } else {
+                            env.toast(R.string.github_toast_api_credential_saved)
+                        }
                     }
                 }
-                previousConfig.apiToken != newConfig.apiToken -> {
+                actionsLookupChanged -> {
+                    if (actionsStrategyChanged) {
+                        env.toast(
+                            R.string.github_toast_actions_strategy_switched,
+                            newConfig.actionsStrategy.label
+                        )
+                    } else {
+                        env.toast(R.string.github_toast_actions_api_credential_saved)
+                    }
+                }
+                tokenChanged -> {
                     env.toast(R.string.github_toast_api_credential_saved)
                 }
                 else -> {

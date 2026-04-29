@@ -18,7 +18,10 @@
     <string name="github_toast_check_completed">检查完成</string>
     <string name="github_toast_strategy_switched_recheck">已切换为 %1$s，正在重新检查</string>
     <string name="github_toast_strategy_switched">已切换为 %1$s</string>
+    <string name="github_toast_actions_strategy_switched">已切换 Actions 为 %1$s</string>
     <string name="github_toast_api_credential_saved">已保存 API 凭证设置</string>
+    <string name="github_toast_api_credential_saved_recheck">已保存 API 凭证设置，正在重新检查</string>
+    <string name="github_toast_actions_api_credential_saved">已保存 Actions API 凭证设置</string>
     <string name="github_toast_strategy_unchanged">抓取方案未变化</string>
     <string name="github_toast_check_logic_updated_recheck">已更新检查逻辑，正在重新检查</string>
     <string name="github_toast_check_logic_saved">已保存检查逻辑</string>
