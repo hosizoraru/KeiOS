@@ -1,4 +1,5 @@
 name: CI / Debug APK
+run-name: Debug APK - ${{ github.ref_name }} - ${{ github.sha }}
 
 on:
   push:
@@ -7,11 +8,19 @@ permissions:
   contents: read
   packages: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build-debug-apk:
     if: contains(join(github.event.commits.*.message, ' '), 'Build-CI')
+    name: Build debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
+      ANDROID_BUILD_TOOLS_VERSION: "37.0.0"
+      EXPECTED_APK_SIGNER_SHA256: "0ef11332dc8107b78535bac6d3507c6c52c2224630c84efd8d44c3d921ff4fd8"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       GITHUB_ACTOR: ${{ github.actor }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -19,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup JDK 21
         uses: actions/setup-java@v5
@@ -36,13 +47,12 @@ jobs:
           accept-android-sdk-licenses: true
 
       - name: Install Android 37 SDK components
-        shell: bash
         run: |
           set -euo pipefail
           SDKMANAGER="$(command -v sdkmanager)"
           echo "Using sdkmanager: ${SDKMANAGER}"
 
-          "${SDKMANAGER}" --channel=3 "build-tools;37.0.0"
+          "${SDKMANAGER}" --channel=3 "build-tools;${ANDROID_BUILD_TOOLS_VERSION}"
           if "${SDKMANAGER}" --channel=3 "platforms;android-37.0"; then
             echo "Installed SDK platform: android-37.0"
           else
@@ -51,7 +61,6 @@ jobs:
           fi
 
       - name: Prepare Gradle credentials for GitHub Packages
-        shell: bash
         run: |
           set -euo pipefail
           mkdir -p "${HOME}/.gradle"
@@ -63,35 +72,47 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
 
+      - name: Compose artifact metadata
+        id: meta
+        uses: ./.github/actions/prepare-android-apk-artifact
+        with:
+          variant: debug
+          metadata-path: app/build/outputs/apk/debug/output-metadata.json
+
       - name: Verify debug APK signing certificate
-        shell: bash
         run: |
           set -euo pipefail
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-          EXPECTED_SHA256="0ef11332dc8107b78535bac6d3507c6c52c2224630c84efd8d44c3d921ff4fd8"
-          ACTUAL_SHA256="$("${ANDROID_HOME}/build-tools/37.0.0/apksigner" verify --print-certs "${APK_PATH}" \
+          APK_PATH="${{ steps.meta.outputs.apk-path }}"
+          ACTUAL_SHA256="$("${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}/apksigner" verify --print-certs "${APK_PATH}" \
             | awk -F': ' '/certificate SHA-256 digest/ {print tolower($NF); exit}')"
           echo "Debug signer SHA-256: ${ACTUAL_SHA256}"
-          test "${ACTUAL_SHA256}" = "${EXPECTED_SHA256}"
-
-      - name: Compose artifact filename
-        id: meta
-        run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
-          BUILD_TIME_UTC="$(date -u +'%Y%m%d-%H%M%S')"
-          APK_FILE_NAME="KeiOS-debug-${BUILD_TIME_UTC}-${SHORT_SHA}.apk"
-          ARTIFACT_NAME="KeiOS-debug-${BUILD_TIME_UTC}-${SHORT_SHA}-run${GITHUB_RUN_NUMBER}"
-          echo "apk_file_name=${APK_FILE_NAME}" >> "${GITHUB_OUTPUT}"
-          echo "artifact_name=${ARTIFACT_NAME}" >> "${GITHUB_OUTPUT}"
+          test "${ACTUAL_SHA256}" = "${EXPECTED_APK_SIGNER_SHA256}"
 
       - name: Prepare artifact
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk "${RUNNER_TEMP}/${{ steps.meta.outputs.apk_file_name }}"
+          set -euo pipefail
+          cp "${{ steps.meta.outputs.apk-path }}" "${RUNNER_TEMP}/${{ steps.meta.outputs.apk-file-name }}"
 
       - name: Upload debug APK
+        id: upload_apk
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.meta.outputs.artifact_name }}
-          path: ${{ runner.temp }}/${{ steps.meta.outputs.apk_file_name }}
+          name: ${{ steps.meta.outputs.artifact-name }}
+          path: ${{ runner.temp }}/${{ steps.meta.outputs.apk-file-name }}
           if-no-files-found: error
+          compression-level: 0
           retention-days: 14
+
+      - name: Write artifact summary
+        run: |
+          {
+            echo "### Debug APK artifact"
+            echo ""
+            echo "- Artifact: \`${{ steps.meta.outputs.artifact-name }}\`"
+            echo "- File: \`${{ steps.meta.outputs.apk-file-name }}\`"
+            echo "- Application ID: \`${{ steps.meta.outputs.application-id }}\`"
+            echo "- Variant: \`${{ steps.meta.outputs.variant-name }}\`"
+            echo "- Version: \`${{ steps.meta.outputs.version-name }}\` (\`${{ steps.meta.outputs.version-code }}\`)"
+            echo "- Commit: \`${{ steps.meta.outputs.commit-sha }}\`"
+            echo "- Digest: \`${{ steps.upload_apk.outputs.artifact-digest }}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"

@@ -1,0 +1,101 @@
+name: Prepare Android APK artifact metadata
+description: Compose normalized Android APK artifact and file names from Gradle output metadata.
+
+inputs:
+  variant:
+    description: Android Gradle variant label used in artifact names.
+    required: true
+  abi:
+    description: ABI label used in artifact names.
+    required: false
+    default: arm64-v8a
+  metadata-path:
+    description: Path to Gradle output-metadata.json for the APK variant.
+    required: true
+
+outputs:
+  application-id:
+    description: Android application ID from output metadata.
+    value: ${{ steps.meta.outputs.application_id }}
+  variant-name:
+    description: Android variant name from output metadata.
+    value: ${{ steps.meta.outputs.variant_name }}
+  version-name:
+    description: Android versionName from output metadata.
+    value: ${{ steps.meta.outputs.version_name }}
+  version-code:
+    description: Android versionCode from output metadata.
+    value: ${{ steps.meta.outputs.version_code }}
+  commit-sha:
+    description: Commit SHA that was checked out for the build.
+    value: ${{ steps.meta.outputs.commit_sha }}
+  artifact-name:
+    description: GitHub Actions artifact name.
+    value: ${{ steps.meta.outputs.artifact_name }}
+  apk-file-name:
+    description: APK file name inside the uploaded artifact.
+    value: ${{ steps.meta.outputs.apk_file_name }}
+  apk-path:
+    description: Path to the built APK.
+    value: ${{ steps.meta.outputs.apk_path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compose metadata
+      id: meta
+      shell: bash
+      env:
+        ARTIFACT_VARIANT: ${{ inputs.variant }}
+        ARTIFACT_ABI: ${{ inputs.abi }}
+        METADATA_PATH: ${{ inputs.metadata-path }}
+      run: |
+        set -euo pipefail
+        test -f "${METADATA_PATH}"
+        export SHORT_SHA
+        export FULL_SHA
+        SHORT_SHA="$(git rev-parse --short=12 HEAD)"
+        FULL_SHA="$(git rev-parse HEAD)"
+        python3 - "${METADATA_PATH}" "${GITHUB_OUTPUT}" <<'PY'
+        import json
+        import os
+        import pathlib
+        import re
+        import sys
+
+        metadata_path = pathlib.Path(sys.argv[1])
+        output_path = pathlib.Path(sys.argv[2])
+        data = json.loads(metadata_path.read_text())
+        element = data["elements"][0]
+
+        def slug(value, fallback):
+            safe = re.sub(r"[^a-z0-9.]+", "-", str(value).lower()).strip("-")
+            return safe or fallback
+
+        variant = slug(os.environ["ARTIFACT_VARIANT"], "variant")
+        abi = slug(os.environ["ARTIFACT_ABI"], "universal")
+        version_name = str(element["versionName"])
+        version_code = str(element["versionCode"])
+        output_file = str(element["outputFile"])
+        safe_version = slug(version_name, "0")
+
+        artifact_base = (
+            f"keios-android-{variant}-apk-{abi}-v{safe_version}-{version_code}-"
+            f"{os.environ['SHORT_SHA']}-run-{os.environ['GITHUB_RUN_NUMBER']}-"
+            f"attempt-{os.environ['GITHUB_RUN_ATTEMPT']}"
+        )
+        apk_path = metadata_path.parent / output_file
+        outputs = {
+            "application_id": str(data.get("applicationId", "")),
+            "variant_name": str(data.get("variantName", variant)),
+            "version_name": version_name,
+            "version_code": version_code,
+            "commit_sha": os.environ["FULL_SHA"],
+            "artifact_name": artifact_base,
+            "apk_file_name": f"{artifact_base}.apk",
+            "apk_path": str(apk_path),
+        }
+        with output_path.open("a", encoding="utf-8") as handle:
+            for key, value in outputs.items():
+                handle.write(f"{key}={value}\n")
+        PY
