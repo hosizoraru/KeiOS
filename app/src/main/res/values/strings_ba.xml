@@ -7,6 +7,10 @@
     <string name="ba_friend_code_clipboard_label">BA Friend Code</string>
     <string name="ba_toast_friend_code_copied">好友码已复制</string>
     <string name="ba_error_open_activity_link">无法打开活动链接</string>
+    <string name="ba_office_name_cn">沙勒办公室</string>
+    <string name="ba_office_name_global">夏萊行政室</string>
+    <string name="ba_office_name_jp">夏莱办公室</string>
+    <string name="ba_office_overview_title">%1$s总览</string>
     <string name="ba_settings_title">BA 配置</string>
     <string name="ba_settings_section_basic">基础设置</string>
     <string name="ba_settings_section_content">显示内容</string>

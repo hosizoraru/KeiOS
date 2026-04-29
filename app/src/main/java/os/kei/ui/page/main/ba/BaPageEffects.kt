@@ -5,12 +5,20 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import os.kei.ui.page.main.ba.support.BA_AP_REGEN_TICK_MS
+import os.kei.ui.page.main.widget.chrome.expandTopAppBarToPageTop
+import os.kei.ui.page.main.widget.chrome.isPageSettledAtTop
+import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
 
 @Composable
 internal fun BaPageCommonEffects(
     listState: LazyListState,
+    scrollBehavior: ScrollBehavior,
     scrollToTopSignal: Int,
     isPageActive: Boolean,
     consumedScrollToTopSignal: Int,
@@ -22,6 +30,8 @@ internal fun BaPageCommonEffects(
     onServerChanged: suspend () -> Unit,
     context: Context,
 ) {
+    val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
+
     DisposableEffect(Unit) {
         onDispose { onDisposeActionBarInteraction() }
     }
@@ -30,9 +40,32 @@ internal fun BaPageCommonEffects(
         if (scrollToTopSignal > consumedScrollToTopSignal) {
             onConsumedScrollToTopSignalChange(scrollToTopSignal)
             listState.animateScrollToItem(0)
+            expandTopAppBarToPageTop(
+                scrollBehavior = scrollBehavior,
+                animationsEnabled = transitionAnimationsEnabled
+            )
         } else {
             onConsumedScrollToTopSignalChange(scrollToTopSignal)
         }
+    }
+
+    LaunchedEffect(listState, scrollBehavior, transitionAnimationsEnabled) {
+        snapshotFlow {
+            isPageSettledAtTop(
+                firstVisibleItemIndex = listState.firstVisibleItemIndex,
+                firstVisibleItemScrollOffset = listState.firstVisibleItemScrollOffset,
+                listScrollInProgress = listState.isScrollInProgress
+            )
+        }
+            .distinctUntilChanged()
+            .collectLatest { settledAtTop ->
+                if (settledAtTop) {
+                    expandTopAppBarToPageTop(
+                        scrollBehavior = scrollBehavior,
+                        animationsEnabled = transitionAnimationsEnabled
+                    )
+                }
+            }
     }
 
     LaunchedEffect(isPageActive) {

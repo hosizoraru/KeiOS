@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.ba
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -13,8 +12,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import os.kei.R
 import os.kei.ui.page.main.host.pager.MainPageRuntime
 import os.kei.ui.page.main.host.pager.rememberMainPageBackdropSet
 import os.kei.ui.page.main.ba.support.BASessionState
@@ -68,7 +69,6 @@ fun BAPage(
         distinctLayers = fullBackdropEffectsEnabled
     )
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = pageBackdropEffectsEnabled)
-    val baSmallTitleMargin = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
     val serverOptions = remember { listOf("国服", "国际服", "日服") }
     val cafeLevelOptions = remember { (1..10).toList() }
 
@@ -89,17 +89,17 @@ fun BAPage(
     val calendarUiState by calendarPoolViewModel.calendarUiState.collectAsState()
     val poolUiState by calendarPoolViewModel.poolUiState.collectAsState()
 
-    val officeSmallTitle = when (ui.serverIndex) {
-        0 -> "沙勒办公室"
-        1 -> "夏萊行政室"
-        else -> "夏莱办公室"
+    val officeName = when (ui.serverIndex) {
+        0 -> stringResource(R.string.ba_office_name_cn)
+        1 -> stringResource(R.string.ba_office_name_global)
+        else -> stringResource(R.string.ba_office_name_jp)
     }
+    val officeOverviewTitle = stringResource(R.string.ba_office_overview_title, officeName)
 
     val settingsSheetState = buildBaSettingsSheetState(ui)
     val pageContentState = buildBaPageContentState(
         isPageActive = runtime.isPageActive,
-        officeSmallTitle = officeSmallTitle,
-        baSmallTitleMargin = baSmallTitleMargin,
+        officeOverviewTitle = officeOverviewTitle,
         office = office,
         ui = ui,
         serverOptions = serverOptions,
@@ -153,6 +153,7 @@ fun BAPage(
 
     BaPageCommonEffects(
         listState = listState,
+        scrollBehavior = scrollBehavior,
         scrollToTopSignal = runtime.scrollToTopSignal,
         isPageActive = runtime.isDataActive,
         consumedScrollToTopSignal = ui.consumedScrollToTopSignal,

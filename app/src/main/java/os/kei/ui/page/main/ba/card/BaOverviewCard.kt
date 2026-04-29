@@ -45,6 +45,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun BaOverviewCard(
     backdrop: Backdrop?,
+    overviewTitle: String,
     idFriendCode: String,
     uiNowMs: Long,
     apSyncMs: Long,
@@ -103,7 +104,7 @@ internal fun BaOverviewCard(
         onLongClick = { onInitStateChange(BAInitState.Empty) },
     ) {
         BaCardHeader(
-            title = "办公室总览",
+            title = overviewTitle,
             trailing = {
                 Text(
                     text = if (isWorkActivated) "已激活" else "默认",

@@ -1,9 +1,8 @@
 package os.kei.ui.page.main.ba
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
@@ -30,13 +29,12 @@ import os.kei.ui.page.main.ba.card.filterVisiblePoolEntries
 import os.kei.ui.page.main.ba.support.BAInitState
 import os.kei.ui.page.main.ba.support.BaCalendarEntry
 import os.kei.ui.page.main.ba.support.BaPoolEntry
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.SmallTitle
 
 internal data class BaPageContentState(
     val isPageActive: Boolean,
-    val officeSmallTitle: String,
-    val baSmallTitleMargin: PaddingValues,
+    val officeOverviewTitle: String,
     val officeState: BaOfficeState,
     val uiNowMs: Long,
     val serverOptions: List<String>,
@@ -143,6 +141,8 @@ internal fun BaPageContent(
             nowMs = calendarPoolNowMs
         )
     }
+    val pageGap = AppChromeTokens.pageSectionGap
+    val pageHorizontalPadding = AppChromeTokens.pageHorizontalPadding
 
     LazyColumn(
         modifier = Modifier
@@ -150,18 +150,17 @@ internal fun BaPageContent(
             .nestedScroll(nestedScrollConnection),
         state = listState,
         contentPadding = PaddingValues(
-            top = innerPadding.calculateTopPadding(),
-            bottom = innerPadding.calculateBottomPadding() + contentBottomPadding + 16.dp,
-            start = 12.dp,
-            end = 12.dp,
+            top = innerPadding.calculateTopPadding() + pageGap,
+            bottom = innerPadding.calculateBottomPadding() + contentBottomPadding + pageGap,
+            start = pageHorizontalPadding,
+            end = pageHorizontalPadding,
         ),
+        verticalArrangement = Arrangement.spacedBy(pageGap),
     ) {
-        item { SmallTitle(state.officeSmallTitle, insideMargin = state.baSmallTitleMargin) }
-        item { Spacer(modifier = Modifier.height(8.dp)) }
-
         item {
             BaOverviewCard(
                 backdrop = backdrop,
+                overviewTitle = state.officeOverviewTitle,
                 idFriendCode = state.officeState.idFriendCode,
                 uiNowMs = state.uiNowMs,
                 apSyncMs = state.officeState.apSyncMs,
@@ -190,8 +189,6 @@ internal fun BaPageContent(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(10.dp)) }
-
         item {
             BaCafeCard(
                 backdrop = backdrop,
@@ -216,8 +213,6 @@ internal fun BaPageContent(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(10.dp)) }
-
         item {
             BaCalendarCard(
                 backdrop = backdrop,
@@ -236,8 +231,6 @@ internal fun BaPageContent(
                 onOpenCalendarLink = actions.onOpenCalendarLink
             )
         }
-
-        item { Spacer(modifier = Modifier.height(10.dp)) }
 
         item {
             BaPoolCard(
@@ -259,8 +252,6 @@ internal fun BaPageContent(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(10.dp)) }
-
         item {
             BaIdCard(
                 backdrop = backdrop,
@@ -272,8 +263,6 @@ internal fun BaPageContent(
                 onSaveIdFriendCode = actions.onSaveIdFriendCode,
             )
         }
-
-        item { Spacer(modifier = Modifier.height(10.dp)) }
 
         item {
             BaDebugCard(

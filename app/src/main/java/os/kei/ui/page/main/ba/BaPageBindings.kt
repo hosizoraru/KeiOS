@@ -1,7 +1,6 @@
 package os.kei.ui.page.main.ba
 
 import android.content.Context
-import androidx.compose.foundation.layout.PaddingValues
 import os.kei.core.background.AppBackgroundScheduler
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.ba.support.BA_AP_LIMIT_MAX
@@ -31,8 +30,7 @@ internal fun buildBaSettingsSheetState(
 
 internal fun buildBaPageContentState(
     isPageActive: Boolean,
-    officeSmallTitle: String,
-    baSmallTitleMargin: PaddingValues,
+    officeOverviewTitle: String,
     office: BaOfficeController,
     ui: BaPageUiController,
     serverOptions: List<String>,
@@ -42,8 +40,7 @@ internal fun buildBaPageContentState(
 ): BaPageContentState {
     return BaPageContentState(
         isPageActive = isPageActive,
-        officeSmallTitle = officeSmallTitle,
-        baSmallTitleMargin = baSmallTitleMargin,
+        officeOverviewTitle = officeOverviewTitle,
         officeState = office.state(),
         uiNowMs = ui.uiNowMs,
         serverOptions = serverOptions,
