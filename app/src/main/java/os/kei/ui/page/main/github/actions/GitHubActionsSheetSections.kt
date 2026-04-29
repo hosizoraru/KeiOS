@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.github.actions
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -39,7 +40,6 @@ internal fun GitHubActionsSummaryCard(
     isDark: Boolean
 ) {
     val target = state.actionsTargetItem
-    val accent = if (canResolveArtifacts) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease
     val badgeLabel = when {
         state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink ->
             stringResource(R.string.github_actions_badge_nightly_link)
@@ -47,13 +47,19 @@ internal fun GitHubActionsSummaryCard(
         state.actionsAuthMode == GitHubApiAuthMode.Guest -> stringResource(R.string.common_guest)
         else -> stringResource(R.string.github_actions_badge_token_required)
     }
+    val badgeColor = when {
+        state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink ->
+            GitHubStatusPalette.Active
+        state.lookupConfig.apiToken.isNotBlank() -> GitHubStatusPalette.Update
+        state.actionsAuthMode == GitHubApiAuthMode.Guest -> GitHubStatusPalette.PreRelease
+        canResolveArtifacts -> GitHubStatusPalette.Update
+        else -> GitHubStatusPalette.PreRelease
+    }
     SheetSurfaceCard(
-        containerColor = GitHubStatusPalette.tonedSurface(accent, isDark).copy(
-            alpha = if (isDark) 0.24f else 0.13f
-        ),
-        borderColor = accent.copy(alpha = if (isDark) 0.32f else 0.22f),
-        verticalSpacing = 6.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+        containerColor = githubActionsNeutralCardColor(isDark, prominent = true),
+        borderColor = githubActionsNeutralBorderColor(isDark, prominent = true),
+        verticalSpacing = 8.dp,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -63,17 +69,17 @@ internal fun GitHubActionsSummaryCard(
             Text(
                 text = target?.appLabel ?: stringResource(R.string.github_actions_sheet_title),
                 modifier = Modifier.weight(1f),
-                color = accent,
+                color = MiuixTheme.colorScheme.onBackground,
                 fontSize = AppTypographyTokens.CardHeader.fontSize,
                 lineHeight = AppTypographyTokens.CardHeader.lineHeight,
                 fontWeight = AppTypographyTokens.CardHeader.fontWeight,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            StatusPill(
+            GitHubActionsInfoPill(
                 label = badgeLabel,
-                color = accent,
-                size = AppStatusPillSize.Compact
+                color = badgeColor,
+                emphasized = true
             )
         }
         if (target != null) {
@@ -85,17 +91,17 @@ internal fun GitHubActionsSummaryCard(
                 Text(
                     text = "${target.owner}/${target.repo}",
                     modifier = Modifier.weight(1f),
-                    color = MiuixTheme.colorScheme.primary,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
                     fontSize = AppTypographyTokens.Supporting.fontSize,
                     lineHeight = AppTypographyTokens.Supporting.lineHeight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 state.actionsDefaultBranch.takeIf { it.isNotBlank() }?.let { branch ->
-                    StatusPill(
+                    GitHubActionsInfoPill(
                         label = stringResource(R.string.github_actions_summary_default_branch, branch),
-                        color = MiuixTheme.colorScheme.primary,
-                        size = AppStatusPillSize.Compact
+                        color = GitHubStatusPalette.Update,
+                        emphasized = true
                     )
                 }
             }
@@ -158,26 +164,19 @@ internal fun GitHubActionsCollapsibleSection(
     summary: String,
     countLabel: String,
     expanded: Boolean,
-    accent: Color,
     isDark: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         SheetSurfaceCard(
-            containerColor = GitHubStatusPalette.tonedSurface(accent, isDark).copy(
-                alpha = if (expanded) {
-                    if (isDark) 0.24f else 0.13f
-                } else {
-                    if (isDark) 0.16f else 0.08f
-                }
-            ),
-            borderColor = accent.copy(alpha = if (expanded) 0.30f else 0.18f),
+            containerColor = githubActionsNeutralCardColor(isDark, prominent = expanded),
+            borderColor = githubActionsNeutralBorderColor(isDark, prominent = expanded),
             verticalSpacing = 0.dp,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
             onClick = { onExpandedChange(!expanded) }
         ) {
             Row(
@@ -207,13 +206,16 @@ internal fun GitHubActionsCollapsibleSection(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                StatusPill(label = countLabel, color = accent)
+                GitHubActionsInfoPill(
+                    label = countLabel,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant
+                )
                 AppCompactIconAction(
                     icon = if (expanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
                     contentDescription = stringResource(
                         if (expanded) R.string.common_collapse else R.string.common_expand
                     ),
-                    tint = accent,
+                    tint = MiuixTheme.colorScheme.onBackgroundVariant,
                     minSize = 40.dp,
                     onClick = { onExpandedChange(!expanded) }
                 )
@@ -231,4 +233,31 @@ internal fun GitHubActionsCollapsibleSection(
             )
         }
     }
+}
+
+@Composable
+internal fun GitHubActionsInfoPill(
+    label: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false
+) {
+    val isDark = isSystemInDarkTheme()
+    StatusPill(
+        label = label,
+        color = color,
+        modifier = modifier,
+        size = AppStatusPillSize.Compact,
+        backgroundAlphaOverride = when {
+            emphasized && isDark -> 0.17f
+            emphasized -> 0.13f
+            isDark -> 0.10f
+            else -> 0.08f
+        },
+        borderAlphaOverride = when {
+            emphasized && isDark -> 0.18f
+            emphasized -> 0.12f
+            else -> 0f
+        }
+    )
 }
