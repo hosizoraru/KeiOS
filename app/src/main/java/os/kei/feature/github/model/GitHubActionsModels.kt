@@ -150,6 +150,7 @@ data class GitHubActionsArtifactNameTraits(
     val platform: GitHubActionsArtifactPlatform = GitHubActionsArtifactPlatform.Unknown,
     val abi: String = "",
     val flavors: List<String> = emptyList(),
+    val buildTypes: List<String> = emptyList(),
     val channel: GitHubReleaseChannel = GitHubReleaseChannel.UNKNOWN,
     val releaseLike: Boolean = false,
     val debugLike: Boolean = false,

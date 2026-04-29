@@ -64,7 +64,6 @@
     <string name="github_actions_error_load_failed">Actions 读取失败：%1$s</string>
     <string name="github_actions_hint_token_required">下载 Actions artifact 需要填写 GitHub token</string>
     <string name="github_actions_hint_run_in_progress">该 run 仍在执行，完成后会自动刷新状态，也可手动刷新</string>
-    <string name="github_actions_hint_zip_download">下载/分享会先用 token 换取临时 zip 链接</string>
     <string name="github_actions_badge_recommended">推荐</string>
     <string name="github_actions_badge_last_downloaded">上次下载</string>
     <string name="github_actions_badge_running">运行中</string>

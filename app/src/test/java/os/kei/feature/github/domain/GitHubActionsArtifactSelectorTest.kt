@@ -20,8 +20,21 @@ class GitHubActionsArtifactSelectorTest {
         assertEquals(GitHubActionsArtifactPlatform.Android, traits.platform)
         assertEquals("apk", traits.extension)
         assertEquals("arm64-v8a", traits.abi)
+        assertTrue(traits.buildTypes.contains("release"))
         assertEquals(GitHubReleaseChannel.STABLE, traits.channel)
         assertTrue(traits.releaseLike)
+        assertTrue(traits.androidLike)
+    }
+
+    @Test
+    fun `name inspector detects common android build types`() {
+        val traits = GitHubActionsArtifactSelector.inspectName(
+            "keios-android-benchmark-apk-arm64-v8a-v1.2.2-run-12-attempt-1"
+        )
+
+        assertEquals(GitHubActionsArtifactKind.AndroidPackage, traits.kind)
+        assertEquals("arm64-v8a", traits.abi)
+        assertTrue(traits.buildTypes.contains("benchmark"))
         assertTrue(traits.androidLike)
     }
 

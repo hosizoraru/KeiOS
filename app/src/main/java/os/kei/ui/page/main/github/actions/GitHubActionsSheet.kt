@@ -49,7 +49,6 @@ import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
-import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
 import os.kei.ui.page.main.widget.sheet.SheetSurfaceCard
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
@@ -174,7 +173,7 @@ internal fun GitHubActionsSheet(
             GitHubActionsCollapsibleSection(
                 title = stringResource(R.string.github_actions_section_runs),
                 summary = runSectionSummary(state, selectedRun),
-                countLabel = stringResource(R.string.github_actions_label_runs_with_count, state.actionsRuns.size),
+                countLabel = stringResource(R.string.github_actions_value_count, state.actionsRuns.size),
                 expanded = state.actionsRunsExpanded,
                 accent = GitHubStatusPalette.Update,
                 isDark = isDark,
@@ -204,7 +203,8 @@ internal fun GitHubActionsSheet(
                                 refreshing = state.actionsStatusRefreshingRunIds[runId] == true,
                                 isDark = isDark,
                                 onClick = { onSelectRun(runId) },
-                                onRefresh = { onRefreshRun(runId) }
+                                onRefresh = { onRefreshRun(runId) },
+                                onOpenRun = if (runId == state.actionsSelectedRunId) onOpenRun else null
                             )
                         }
                         val showLoadMoreButton =
@@ -229,7 +229,7 @@ internal fun GitHubActionsSheet(
                 title = stringResource(R.string.github_actions_section_artifacts),
                 summary = artifactSectionSummary(selectedRun),
                 countLabel = stringResource(
-                    R.string.github_actions_label_artifacts_with_count,
+                    R.string.github_actions_value_count,
                     selectedRun?.artifactMatches?.size ?: 0
                 ),
                 expanded = state.actionsArtifactsExpanded,
@@ -237,12 +237,6 @@ internal fun GitHubActionsSheet(
                 isDark = isDark,
                 onExpandedChange = onArtifactsExpandedChange
             ) {
-                if (selectedRun != null) {
-                    GitHubActionsRunOpenButton(
-                        backdrop = backdrop,
-                        onOpenRun = onOpenRun
-                    )
-                }
                 when {
                     selectedRun == null -> {
                         GitHubActionsNoticeCard(
@@ -271,19 +265,16 @@ internal fun GitHubActionsSheet(
                         )
                     }
                     else -> {
-                        SheetDescriptionText(
-                            text = if (hasToken) {
-                                stringResource(R.string.github_actions_hint_zip_download)
-                            } else {
-                                stringResource(R.string.github_actions_hint_token_required)
-                            },
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        selectedRun.artifactMatches.forEach { artifactMatch ->
+                        if (!hasToken) {
+                            GitHubActionsArtifactHintText(
+                                text = stringResource(R.string.github_actions_hint_token_required)
+                            )
+                        }
+                        selectedRun.artifactMatches.forEachIndexed { index, artifactMatch ->
                             GitHubActionsArtifactCard(
                                 runMatch = selectedRun,
                                 artifactMatch = artifactMatch,
+                                recommended = index == 0,
                                 hasToken = hasToken,
                                 downloading = state.actionsArtifactDownloadLoadingId == artifactMatch.artifact.id,
                                 sharing = state.actionsArtifactShareLoadingId == artifactMatch.artifact.id,
@@ -384,7 +375,8 @@ private fun GitHubActionsRunCard(
     refreshing: Boolean,
     isDark: Boolean,
     onClick: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onOpenRun: (() -> Unit)?
 ) {
     val run = match.runArtifacts.run
     val accent = runAccent(match, trackingPlan)
@@ -434,7 +426,7 @@ private fun GitHubActionsRunCard(
                 )
             }
             StatusPill(
-                label = stringResource(R.string.github_actions_label_artifacts_with_count, match.artifactMatches.size),
+                label = stringResource(R.string.github_actions_value_count, match.artifactMatches.size),
                 color = GitHubStatusPalette.PreRelease
             )
         }
@@ -444,6 +436,15 @@ private fun GitHubActionsRunCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(modifier = Modifier.weight(1f))
+            if (selected && onOpenRun != null && run.htmlUrl.isNotBlank()) {
+                AppCompactIconAction(
+                    icon = appLucideExternalLinkIcon(),
+                    contentDescription = stringResource(R.string.github_actions_action_open_run),
+                    tint = accent,
+                    minSize = 42.dp,
+                    onClick = onOpenRun,
+                )
+            }
             AppCompactIconAction(
                 icon = appLucideRefreshIcon(),
                 contentDescription = stringResource(R.string.github_actions_action_refresh_run),
@@ -460,6 +461,7 @@ private fun GitHubActionsRunCard(
 private fun GitHubActionsArtifactCard(
     runMatch: GitHubActionsRunMatch,
     artifactMatch: GitHubActionsArtifactMatch,
+    recommended: Boolean,
     hasToken: Boolean,
     downloading: Boolean,
     sharing: Boolean,
@@ -470,7 +472,7 @@ private fun GitHubActionsArtifactCard(
     onShare: () -> Unit
 ) {
     val artifact = artifactMatch.artifact
-    val accent = artifactAccent(artifactMatch)
+    val accent = if (recommended) GitHubStatusPalette.Update else artifactAccent(artifactMatch)
     val busy = downloading || sharing
     val canDownload = hasToken && runMatch.traits.completed && !artifact.expired && !busy
     val canShare = hasToken && runMatch.traits.completed && !artifact.expired && !busy
@@ -484,17 +486,50 @@ private fun GitHubActionsArtifactCard(
             ?: stringResource(R.string.common_unknown)
     }
     val artifactSizeLabel = formatAssetSize(artifact.sizeBytes, context)
+    val containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.54f)
+    val borderColor = if (recommended) {
+        accent.copy(alpha = if (isDark) 0.36f else 0.26f)
+    } else {
+        MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.14f)
+    }
     GitHubActionsSelectableCard(
         selected = false,
         accent = accent,
         isDark = isDark,
+        containerColor = containerColor,
+        borderColor = borderColor,
         onClick = null
     ) {
-        GitHubActionsTitleRow(
-            title = artifact.name,
-            accent = MiuixTheme.colorScheme.onBackground,
-            trailing = {}
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(
+                text = artifactDisplayName(artifactMatch),
+                modifier = Modifier.weight(1f),
+                color = MiuixTheme.colorScheme.onBackground,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
+                fontWeight = AppTypographyTokens.BodyEmphasis.fontWeight,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (recommended) {
+                StatusPill(
+                    label = stringResource(R.string.github_actions_badge_recommended),
+                    color = GitHubStatusPalette.Update,
+                    size = AppStatusPillSize.Compact
+                )
+            }
+            if (artifactMatch.lastDownload != null) {
+                StatusPill(
+                    label = stringResource(R.string.github_actions_badge_last_downloaded),
+                    color = GitHubStatusPalette.Active,
+                    size = AppStatusPillSize.Compact
+                )
+            }
+        }
         GitHubActionsPillRow {
             StatusPill(
                 label = artifactKindLabel(artifactMatch.traits.kind),
@@ -506,6 +541,14 @@ private fun GitHubActionsArtifactCard(
             artifactMatch.traits.flavors.forEach { flavor ->
                 StatusPill(label = flavor, color = GitHubStatusPalette.PreRelease)
             }
+            artifactMatch.traits.buildTypes
+                .filterNot { it == "release" || it == "debug" }
+                .forEach { buildType ->
+                    StatusPill(
+                        label = artifactBuildTypeLabel(buildType),
+                        color = GitHubStatusPalette.PreRelease
+                    )
+                }
             if (artifactMatch.traits.releaseLike) {
                 StatusPill(
                     label = stringResource(R.string.github_actions_badge_release),
@@ -528,12 +571,6 @@ private fun GitHubActionsArtifactCard(
                 StatusPill(
                     label = stringResource(R.string.github_actions_badge_expired),
                     color = GitHubStatusPalette.Error
-                )
-            }
-            if (artifactMatch.lastDownload != null) {
-                StatusPill(
-                    label = stringResource(R.string.github_actions_badge_last_downloaded),
-                    color = GitHubStatusPalette.Active
                 )
             }
             assetRelativeTimeLabel(artifact.updatedAtMillis, context)?.let { label ->
@@ -610,26 +647,18 @@ private fun GitHubActionsArtifactCard(
 }
 
 @Composable
-private fun GitHubActionsRunOpenButton(
-    backdrop: LayerBackdrop,
-    onOpenRun: () -> Unit
+private fun GitHubActionsArtifactHintText(
+    text: String
 ) {
-    Row(
+    Text(
+        text = text,
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End
-    ) {
-        GlassTextButton(
-            backdrop = backdrop,
-            variant = GlassVariant.SheetAction,
-            text = stringResource(R.string.github_actions_action_open_run),
-            leadingIcon = appLucideExternalLinkIcon(),
-            textColor = MiuixTheme.colorScheme.primary,
-            iconTint = MiuixTheme.colorScheme.primary,
-            onClick = onOpenRun,
-            textMaxLines = 1,
-            textOverflow = TextOverflow.Ellipsis
-        )
-    }
+        color = MiuixTheme.colorScheme.onBackgroundVariant,
+        fontSize = AppTypographyTokens.Supporting.fontSize,
+        lineHeight = AppTypographyTokens.Supporting.lineHeight,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis
+    )
 }
 
 @Composable
@@ -667,22 +696,24 @@ private fun GitHubActionsSelectableCard(
     selected: Boolean,
     accent: Color,
     isDark: Boolean,
+    containerColor: Color? = null,
+    borderColor: Color? = null,
     onClick: (() -> Unit)?,
     content: @Composable () -> Unit
 ) {
-    val containerColor = if (selected) {
+    val resolvedContainerColor = containerColor ?: if (selected) {
         GitHubStatusPalette.tonedSurface(accent, isDark).copy(alpha = if (isDark) 0.32f else 0.18f)
     } else {
         MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.62f)
     }
-    val borderColor = if (selected) {
+    val resolvedBorderColor = borderColor ?: if (selected) {
         accent.copy(alpha = if (isDark) 0.48f else 0.34f)
     } else {
         MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.14f)
     }
     SheetSurfaceCard(
-        containerColor = containerColor,
-        borderColor = borderColor,
+        containerColor = resolvedContainerColor,
+        borderColor = resolvedBorderColor,
         verticalSpacing = 8.dp,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
         onClick = onClick
@@ -948,5 +979,93 @@ private fun shortArtifactDigest(digest: String): String {
     if (value.length <= 18) return trimmed
     return "$prefix${value.take(8)}...${value.takeLast(4)}"
 }
+
+private fun artifactDisplayName(match: GitHubActionsArtifactMatch): String {
+    val original = match.artifact.name.trim()
+    val traits = match.traits
+    val display = artifactDisplayTokens(match)
+        .sortedByDescending { it.length }
+        .fold(stripArtifactExtension(original, traits.extension)) { current, token ->
+            stripArtifactToken(current, token)
+        }
+        .cleanupArtifactDisplayName()
+        .takeIf { it.isNotBlank() }
+        ?: original
+    if (display.length <= 180) return display
+    return "${display.take(112)}...${display.takeLast(56)}"
+}
+
+private fun artifactDisplayTokens(match: GitHubActionsArtifactMatch): List<String> {
+    val traits = match.traits
+    return buildList {
+        if (traits.extension in artifactDisplayKnownExtensions) {
+            add(traits.extension)
+        }
+        when (traits.kind) {
+            GitHubActionsArtifactKind.AndroidPackage -> add("apk")
+            GitHubActionsArtifactKind.AndroidBundle -> addAll(listOf("aab", "apks", "apkm"))
+            GitHubActionsArtifactKind.Archive -> addAll(listOf("zip", "tar.gz", "tgz"))
+            GitHubActionsArtifactKind.Mapping -> addAll(listOf("mapping", "mappings"))
+            GitHubActionsArtifactKind.Report -> addAll(listOf("report", "reports"))
+            GitHubActionsArtifactKind.Source -> addAll(listOf("source", "sources"))
+            GitHubActionsArtifactKind.Unknown -> Unit
+        }
+        add(traits.abi)
+        when (traits.abi) {
+            "arm64-v8a" -> add("arm64")
+            "armeabi-v7a" -> add("armeabi")
+            "x86_64" -> add("x64")
+        }
+        addAll(traits.flavors)
+        addAll(traits.buildTypes)
+        if (traits.releaseLike) addAll(listOf("release", "prod", "signed"))
+        if (traits.debugLike) addAll(listOf("debug", "dev", "unsigned"))
+        if (traits.universalLike) addAll(listOf("universal", "fat", "all"))
+    }
+        .map { it.trim().trim('.') }
+        .filter { it.isNotBlank() }
+        .distinct()
+}
+
+private fun artifactBuildTypeLabel(buildType: String): String {
+    return when (buildType) {
+        "qa" -> "QA"
+        else -> buildType.replaceFirstChar { char -> char.uppercase() }
+    }
+}
+
+private fun stripArtifactExtension(value: String, extension: String): String {
+    val normalizedExtension = extension.trim().trim('.')
+    if (normalizedExtension !in artifactDisplayKnownExtensions) return value
+    return value.replace(
+        Regex("""(?i)\.${Regex.escape(normalizedExtension)}$"""),
+        ""
+    )
+}
+
+private fun stripArtifactToken(value: String, token: String): String {
+    return value.replace(
+        Regex("""(?i)(^|[\s._-]+)${Regex.escape(token)}(?=$|[\s._-]+)""")
+    ) { matchResult ->
+        matchResult.groups[1]?.value.takeIf { !it.isNullOrBlank() }.orEmpty()
+    }
+}
+
+private fun String.cleanupArtifactDisplayName(): String {
+    return trim()
+        .replace(Regex("""[\s._-]{2,}"""), "-")
+        .trim(' ', '.', '_', '-')
+}
+
+private val artifactDisplayKnownExtensions = setOf(
+    "apk",
+    "aab",
+    "apks",
+    "apkm",
+    "zip",
+    "tar.gz",
+    "tgz",
+    "gz"
+)
 
 private const val ACTIONS_MAX_RUN_LIMIT = 30

@@ -14,6 +14,7 @@ object GitHubActionsArtifactSelector {
         val normalizedName = name.trim().lowercase(Locale.ROOT)
         val extension = detectExtension(normalizedName)
         val flavors = detectFlavors(normalizedName)
+        val buildTypes = detectBuildTypes(normalizedName)
         val platform = detectPlatform(
             normalizedName = normalizedName,
             extension = extension,
@@ -44,6 +45,7 @@ object GitHubActionsArtifactSelector {
             platform = platform,
             abi = abi,
             flavors = flavors,
+            buildTypes = buildTypes,
             channel = channel,
             releaseLike = releaseLike,
             debugLike = debugLike,
@@ -146,6 +148,16 @@ object GitHubActionsArtifactSelector {
             }
             reasons += flavor
         }
+        traits.buildTypes
+            .filterNot { it in setOf("release", "debug") }
+            .forEach { buildType ->
+                score += when (buildType) {
+                    "benchmark" -> 6
+                    "profile" -> 4
+                    else -> 2
+                }
+                reasons += buildType
+            }
         if (traits.debugLike) {
             score -= 8
             reasons += "debug"
@@ -254,6 +266,10 @@ object GitHubActionsArtifactSelector {
         return androidFlavorTokens.filter { token -> containsToken(normalizedName, token) }
     }
 
+    private fun detectBuildTypes(normalizedName: String): List<String> {
+        return androidBuildTypeTokens.filter { token -> containsToken(normalizedName, token) }
+    }
+
     private fun looksLikeAndroidAppArchive(normalizedName: String): Boolean {
         if (!containsToken(normalizedName, "app")) return false
         return containsAny(normalizedName, "release", "debug", "universal") ||
@@ -334,5 +350,18 @@ object GitHubActionsArtifactSelector {
         "full",
         "free",
         "paid"
+    )
+
+    private val androidBuildTypeTokens = listOf(
+        "release",
+        "debug",
+        "benchmark",
+        "profile",
+        "staging",
+        "qa",
+        "internal",
+        "nightly",
+        "preview",
+        "canary"
     )
 }
