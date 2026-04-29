@@ -136,10 +136,12 @@ internal class McpSkillContent(
                 appendLine()
                 appendLine("常用工具分组：")
                 appendLine("- 运行排障：keios.mcp.runtime.status / keios.mcp.runtime.logs / keios.shizuku.status")
+                appendLine("- Home 总览：keios.home.overview.snapshot")
                 appendLine("- OS 页面：keios.os.cards.snapshot / keios.os.activity.cards / keios.os.shell.cards")
                 appendLine("- 系统参数：keios.system.topinfo.query")
-                appendLine("- GitHub 跟踪：keios.github.tracked.snapshot / list / check / summary")
-                appendLine("- BA 缓存：keios.ba.snapshot / keios.ba.calendar.cache / keios.ba.pool.cache / keios.ba.guide.cache.inspect")
+                appendLine("- GitHub 跟踪与分享：keios.github.tracked.snapshot / list / check / share.parse / share.resolve")
+                appendLine("- BA 缓存与媒体：keios.ba.snapshot / keios.ba.guide.cache.inspect / keios.ba.guide.media.list / keios.ba.guide.bgm.favorites")
+                appendLine("- 导入导出：keios.github.tracked.export / keios.github.tracked.import / keios.os.cards.export / keios.os.cards.import")
                 appendLine("- 缓存清理：keios.github.tracked.cache.clear / keios.ba.cache.clear")
                 if (task.isNotBlank()) {
                     appendLine()
@@ -167,7 +169,9 @@ internal class McpSkillContent(
             appendLine("- Read quick overview from $SKILL_OVERVIEW_URI before task execution.")
             appendLine("- Use $BOOTSTRAP_PROMPT when task context is missing.")
             appendLine("- Use keios.mcp.runtime.config or resources $CONFIG_RESOURCE_URI / $CONFIG_TEMPLATE_URI for import JSON.")
+            appendLine("- Home overview can use keios.home.overview.snapshot.")
             appendLine("- OS diagnostics can use keios.os.cards.snapshot / keios.os.activity.cards / keios.os.shell.cards.")
+            appendLine("- GitHub shared-link intake can use keios.github.share.parse / keios.github.share.resolve.")
             appendLine("- Full skill doc resource: $SKILL_RESOURCE_URI")
             appendLine("- Tool help template resource: $SKILL_TOOL_TEMPLATE_URI")
         }.trim()
@@ -241,6 +245,7 @@ internal class McpSkillContent(
             if (state?.lanEndpoints?.isNotEmpty() == true) {
                 appendLine("lanEndpoints=${state.lanEndpoints.joinToString(",")}")
             }
+            appendLine("homeTools=${McpToolCatalog.homeToolNames.joinToString(",")}")
             appendLine("runtimeTools=${McpToolCatalog.runtimeToolNames.joinToString(",")}")
             appendLine("osTools=${McpToolCatalog.osToolNames.joinToString(",")}")
             appendLine("systemTools=${McpToolCatalog.systemToolNames.joinToString(",")}")
@@ -308,6 +313,11 @@ internal class McpSkillContent(
                 appendLine("- mode 建议先用 auto，定向调试再切 local 或 lan。")
             }
 
+            "keios.home.overview.snapshot" -> {
+                appendLine("- 读取 Home 三张总览卡片的数据源。")
+                appendLine("- 适合先判断 MCP、GitHub、BA 是否有关键状态变化。")
+            }
+
             "keios.system.topinfo.query" -> {
                 appendLine("- query 为空时返回热点参数。")
                 appendLine("- 使用 limit 控制输出规模。")
@@ -330,9 +340,31 @@ internal class McpSkillContent(
                 appendLine("- onlyVisible=true 可与 query 组合做精确筛选。")
             }
 
+            "keios.os.cards.export" -> {
+                appendLine("- target=activity 导出活动 card。")
+                appendLine("- target=shell 导出 shell card。")
+                appendLine("- target=all 生成 activity/shell bundle。")
+            }
+
+            "keios.os.cards.import" -> {
+                appendLine("- target 必须是 activity 或 shell。")
+                appendLine("- apply=false 只返回导入预览。")
+                appendLine("- apply=true 合并写入本地 card store。")
+            }
+
             "keios.github.tracked.snapshot", "keios.github.tracked.list", "keios.github.tracked.summary" -> {
                 appendLine("- 先用 snapshot 获取总览，再按 list/summary 下钻。")
                 appendLine("- repoFilter 支持 owner/repo、包名、应用名。")
+            }
+
+            "keios.github.tracked.export" -> {
+                appendLine("- 导出当前 GitHub 跟踪列表 JSON。")
+                appendLine("- repoFilter 可生成子集。")
+            }
+
+            "keios.github.tracked.import" -> {
+                appendLine("- apply=false 返回新增/更新/不变数量。")
+                appendLine("- apply=true 合并跟踪项并清理检查缓存。")
             }
 
             "keios.github.tracked.check" -> {
@@ -345,6 +377,21 @@ internal class McpSkillContent(
                 appendLine("- 会同时清理 release asset 缓存。")
             }
 
+            "keios.github.share.parse" -> {
+                appendLine("- 解析分享文本中的 GitHub 链接。")
+                appendLine("- 支持 repo、releases、latest、tag 和 download asset。")
+            }
+
+            "keios.github.share.resolve" -> {
+                appendLine("- 解析分享链接并在线获取 APK asset 候选。")
+                appendLine("- 使用当前 GitHub 策略配置和 fallback 策略。")
+            }
+
+            "keios.github.share.pending" -> {
+                appendLine("- clear=false 查看安装前跟踪状态。")
+                appendLine("- clear=true 清除待关联安装记录。")
+            }
+
             "keios.ba.snapshot", "keios.ba.calendar.cache", "keios.ba.pool.cache", "keios.ba.guide.catalog.cache", "keios.ba.guide.cache.overview" -> {
                 appendLine("- 先用 ba.snapshot 获取全局状态。")
                 appendLine("- 再按日历/卡池/图鉴缓存工具下钻。")
@@ -354,6 +401,17 @@ internal class McpSkillContent(
                 appendLine("- url 为空时读取当前图鉴 URL。")
                 appendLine("- includeSections=true 输出分区统计。")
                 appendLine("- refreshIntervalHours 可覆盖当前判定窗口。")
+            }
+
+            "keios.ba.guide.media.list" -> {
+                appendLine("- 从学生图鉴详情缓存列出影画鉴赏和语音媒体。")
+                appendLine("- kind 可用 all/gallery/voice/image/video/audio。")
+            }
+
+            "keios.ba.guide.bgm.favorites" -> {
+                appendLine("- action=list 读取 BGM 收藏。")
+                appendLine("- action=export 导出收藏 JSON。")
+                appendLine("- action=import 配合 apply 预览或合并导入。")
             }
 
             "keios.ba.cache.clear" -> {

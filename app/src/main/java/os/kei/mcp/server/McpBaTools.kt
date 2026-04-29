@@ -20,6 +20,7 @@ import os.kei.ui.page.main.ba.support.displayAp
 import os.kei.ui.page.main.ba.support.fractionalApPart
 import os.kei.ui.page.main.ba.support.gameKeeServerId
 import os.kei.ui.page.main.student.BaStudentGuideStore
+import os.kei.ui.page.main.student.GuideBgmFavoriteStore
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogStore
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
 import os.kei.ui.page.main.student.catalog.clearBaGuideCatalogCache
@@ -27,6 +28,8 @@ import os.kei.ui.page.main.student.catalog.isBaGuideCatalogBundleComplete
 import os.kei.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
 import os.kei.ui.page.main.student.catalog.loadCachedBaGuideCatalogBundle
 import os.kei.ui.page.main.student.fetch.normalizeGuideUrl
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -137,6 +140,52 @@ internal class McpBaTools(
                     url = url,
                     includeSections = includeSections,
                     refreshIntervalHours = refreshHours
+                )
+            )
+        }
+
+        server.addTool(
+            name = "keios.ba.guide.media.list",
+            description = "List BA guide gallery and voice media from detail cache. Args: url(optional), kind(all|gallery|voice|image|video|audio), limit(optional).",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("url", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("kind", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("limit", buildJsonObject { put("type", JsonPrimitive("integer")) })
+                }
+            )
+        ) { request ->
+            val url = argString(request.arguments?.get("url")).trim()
+            val kind = argString(request.arguments?.get("kind")).trim()
+            val limit = argInt(request.arguments?.get("limit"), DEFAULT_ENTRY_LIMIT).coerceIn(1, MAX_ENTRY_LIMIT)
+            callText(buildGuideMediaListText(url = url, kind = kind, limit = limit))
+        }
+
+        server.addTool(
+            name = "keios.ba.guide.bgm.favorites",
+            description = "List/export/import BA guide BGM favorites. Args: action(list|export|import), query(optional), limit(optional), json(optional), apply(optional).",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("action", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("query", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("limit", buildJsonObject { put("type", JsonPrimitive("integer")) })
+                    put("json", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("apply", buildJsonObject { put("type", JsonPrimitive("boolean")) })
+                }
+            )
+        ) { request ->
+            val action = argString(request.arguments?.get("action")).trim()
+            val query = argString(request.arguments?.get("query")).trim()
+            val limit = argInt(request.arguments?.get("limit"), DEFAULT_ENTRY_LIMIT).coerceIn(1, MAX_ENTRY_LIMIT)
+            val rawJson = argString(request.arguments?.get("json"))
+            val apply = argBoolean(request.arguments?.get("apply"), false)
+            callText(
+                buildGuideBgmFavoritesText(
+                    action = action,
+                    query = query,
+                    limit = limit,
+                    rawJson = rawJson,
+                    apply = apply
                 )
             )
         }
@@ -431,6 +480,150 @@ internal class McpBaTools(
                 }
             }
         }.trim()
+    }
+
+    private fun buildGuideMediaListText(
+        url: String,
+        kind: String,
+        limit: Int
+    ): String {
+        val target = normalizeGuideUrl(url).ifBlank { BaStudentGuideStore.loadCurrentUrl() }
+        if (target.isBlank()) {
+            return "hasTarget=false\nmessage=No target URL. Pass url argument or open a student guide page first."
+        }
+        val snapshot = BaStudentGuideStore.loadInfoSnapshot(target)
+        val info = snapshot.info ?: return buildString {
+            appendLine("hasTarget=true")
+            appendLine("targetUrl=$target")
+            appendLine("hasCache=${snapshot.hasCache}")
+            appendLine("infoPresent=false")
+        }.trim()
+
+        val normalizedKind = normalizeGuideMediaKind(kind)
+        val galleryRows = info.galleryItems.filter { item ->
+            when (normalizedKind) {
+                "gallery", "all" -> true
+                "image" -> item.mediaType.equals("image", ignoreCase = true)
+                "video" -> item.mediaType.equals("video", ignoreCase = true)
+                else -> false
+            }
+        }
+        val voiceRows = info.voiceEntries.filter { entry ->
+            normalizedKind == "all" || normalizedKind == "voice" || normalizedKind == "audio"
+        }
+
+        var emitted = 0
+        return buildString {
+            appendLine("hasTarget=true")
+            appendLine("targetUrl=$target")
+            appendLine("title=${info.title}")
+            appendLine("galleryCount=${info.galleryItems.size}")
+            appendLine("voiceEntryCount=${info.voiceEntries.size}")
+            appendLine("kind=$normalizedKind")
+            appendLine("limit=$limit")
+            galleryRows.forEachIndexed { index, item ->
+                if (emitted >= limit) return@forEachIndexed
+                appendLine(
+                    "gallery[$index]=title:${item.title} | type:${item.mediaType} | image:${item.imageUrl} | media:${item.mediaUrl} | unlock:${item.memoryUnlockLevel} | note:${item.note}"
+                )
+                emitted += 1
+            }
+            voiceRows.forEachIndexed { index, entry ->
+                if (emitted >= limit) return@forEachIndexed
+                val audioUrls = (entry.audioUrls + entry.audioUrl).map { it.trim() }.filter { it.isNotBlank() }.distinct()
+                appendLine(
+                    "voice[$index]=section:${entry.section} | title:${entry.title} | audioCount:${audioUrls.size} | audio:${audioUrls.firstOrNull().orEmpty()}"
+                )
+                emitted += 1
+            }
+            appendLine("returned=$emitted")
+        }.trim()
+    }
+
+    private fun normalizeGuideMediaKind(kind: String): String {
+        return when (kind.trim().lowercase(Locale.ROOT)) {
+            "gallery", "image", "video", "voice", "audio" -> kind.trim().lowercase(Locale.ROOT)
+            else -> "all"
+        }
+    }
+
+    private fun buildGuideBgmFavoritesText(
+        action: String,
+        query: String,
+        limit: Int,
+        rawJson: String,
+        apply: Boolean
+    ): String {
+        return when (action.trim().lowercase(Locale.ROOT)) {
+            "export" -> GuideBgmFavoriteStore.buildFavoritesExportJson()
+            "import" -> buildGuideBgmFavoritesImportText(rawJson = rawJson, apply = apply)
+            else -> buildGuideBgmFavoritesListText(query = query, limit = limit)
+        }
+    }
+
+    private fun buildGuideBgmFavoritesListText(query: String, limit: Int): String {
+        val favorites = GuideBgmFavoriteStore.favoritesSnapshot()
+        val key = query.trim().lowercase(Locale.ROOT)
+        val filtered = if (key.isBlank()) {
+            favorites
+        } else {
+            favorites.filter { favorite ->
+                favorite.audioUrl.lowercase(Locale.ROOT).contains(key) ||
+                    favorite.title.lowercase(Locale.ROOT).contains(key) ||
+                    favorite.studentTitle.lowercase(Locale.ROOT).contains(key) ||
+                    favorite.sourceUrl.lowercase(Locale.ROOT).contains(key) ||
+                    favorite.note.lowercase(Locale.ROOT).contains(key)
+            }
+        }
+        val rows = filtered.take(limit)
+        return buildString {
+            appendLine("total=${favorites.size}")
+            appendLine("matched=${filtered.size}")
+            appendLine("returned=${rows.size}")
+            appendLine("query=${query.ifBlank { "(none)" }}")
+            rows.forEachIndexed { index, favorite ->
+                appendLine(
+                    "favorite[$index]=title:${favorite.title} | student:${favorite.studentTitle} | audio:${favorite.audioUrl} | source:${favorite.sourceUrl} | favoritedAtMs:${favorite.favoritedAtMs}"
+                )
+            }
+        }.trim()
+    }
+
+    private fun buildGuideBgmFavoritesImportText(rawJson: String, apply: Boolean): String {
+        val importedUrls = parseBgmFavoriteAudioUrls(rawJson)
+        val existingUrls = GuideBgmFavoriteStore.favoritesSnapshot().map { it.audioUrl }.toSet()
+        val addedCount = importedUrls.count { it !in existingUrls }
+        val updatedCount = importedUrls.count { it in existingUrls }
+        val result = if (apply) GuideBgmFavoriteStore.importFavoritesJsonMerged(rawJson) else null
+        return buildString {
+            appendLine("apply=$apply")
+            appendLine("importedCount=${result?.importedCount ?: importedUrls.size}")
+            appendLine("newCount=${result?.addedCount ?: addedCount}")
+            appendLine("updatedCount=${result?.updatedCount ?: updatedCount}")
+            appendLine("applied=${result != null}")
+        }.trim()
+    }
+
+    private fun parseBgmFavoriteAudioUrls(rawJson: String): List<String> {
+        val trimmed = rawJson.trim()
+        if (trimmed.isBlank()) return emptyList()
+        return runCatching {
+            val array = if (trimmed.startsWith("[")) {
+                JSONArray(trimmed)
+            } else {
+                val root = JSONObject(trimmed)
+                root.optJSONArray("favorites")
+                    ?: root.optJSONArray("bgmFavorites")
+                    ?: JSONArray()
+            }
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    val audioUrl = item.optString("audioUrl").trim()
+                    if (audioUrl.isNotBlank()) add(audioUrl)
+                }
+            }.distinct()
+        }.getOrDefault(emptyList())
     }
 
     private fun normalizeCacheClearScope(raw: String): String {

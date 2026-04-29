@@ -16,6 +16,9 @@ import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shell.OsShellCommandCardStore
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCardStore
+import os.kei.ui.page.main.os.transfer.OsCardImportFileKind
+import os.kei.ui.page.main.os.transfer.parseOsCardImportRoot
+import org.json.JSONObject
 import java.util.Locale
 
 internal class McpSystemOsTools(
@@ -99,6 +102,36 @@ internal class McpSystemOsTools(
                     limit = limit
                 )
             )
+        }
+
+        server.addTool(
+            name = "keios.os.cards.export",
+            description = "Export OS activity/shell cards JSON. Args: target(activity|shell|all, default=all).",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("target", buildJsonObject { put("type", JsonPrimitive("string")) })
+                }
+            )
+        ) { request ->
+            val target = argString(request.arguments?.get("target")).trim()
+            callText(buildOsCardsExportText(target))
+        }
+
+        server.addTool(
+            name = "keios.os.cards.import",
+            description = "Preview or apply OS activity/shell cards JSON import. Args: target(activity|shell), json(required), apply(optional, default=false).",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("target", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("json", buildJsonObject { put("type", JsonPrimitive("string")) })
+                    put("apply", buildJsonObject { put("type", JsonPrimitive("boolean")) })
+                }
+            )
+        ) { request ->
+            val target = argString(request.arguments?.get("target")).trim()
+            val rawJson = argString(request.arguments?.get("json"))
+            val apply = argBoolean(request.arguments?.get("apply"), false)
+            callText(buildOsCardsImportText(target = target, rawJson = rawJson, apply = apply))
         }
     }
 
@@ -304,6 +337,158 @@ internal class McpSystemOsTools(
                 }
             }
         }.trim()
+    }
+
+    private fun buildOsCardsExportText(target: String): String {
+        val normalizedTarget = normalizeOsCardTransferTarget(target)
+        val defaults = buildOsGoogleSystemDefaults()
+        return when (normalizedTarget) {
+            "activity" -> OsActivityShortcutCardStore.buildCardsExportJson(
+                cards = loadOsActivityCards(),
+                defaults = defaults
+            )
+            "shell" -> OsShellCommandCardStore.buildCardsExportJson(OsShellCommandCardStore.loadCards())
+            else -> JSONObject().apply {
+                put("schema", "keios.os.cards.bundle.v1")
+                put("exportedAtMillis", System.currentTimeMillis())
+                put(
+                    "activity",
+                    JSONObject(
+                        OsActivityShortcutCardStore.buildCardsExportJson(
+                            cards = loadOsActivityCards(),
+                            defaults = defaults
+                        )
+                    )
+                )
+                put("shell", JSONObject(OsShellCommandCardStore.buildCardsExportJson(OsShellCommandCardStore.loadCards())))
+            }.toString(2)
+        }
+    }
+
+    private fun buildOsCardsImportText(
+        target: String,
+        rawJson: String,
+        apply: Boolean
+    ): String {
+        return when (normalizeOsCardTransferTarget(target)) {
+            "activity" -> buildActivityCardsImportText(rawJson = rawJson, apply = apply)
+            "shell" -> buildShellCardsImportText(rawJson = rawJson, apply = apply)
+            else -> "target=unknown\nmessage=target must be activity or shell"
+        }
+    }
+
+    private fun buildActivityCardsImportText(rawJson: String, apply: Boolean): String {
+        val defaults = buildOsGoogleSystemDefaults()
+        val sampleDefaults = buildOsGoogleSettingsSampleDefaults(defaults)
+        val root = parseOsCardImportRoot(rawJson)
+        val payload = OsActivityShortcutCardStore.parseCardsImport(
+            root = root,
+            defaults = defaults,
+            builtInSampleDefaults = sampleDefaults
+        )
+        val existing = loadOsActivityCards()
+        val result = if (apply && payload.cards.isNotEmpty()) {
+            OsActivityShortcutCardStore.applyImportedCards(
+                payload = payload,
+                existingCards = existing,
+                defaults = defaults,
+                builtInSampleDefaults = sampleDefaults
+            )
+        } else {
+            OsActivityShortcutCardStore.previewImportedCards(
+                payload = payload,
+                existingCards = existing,
+                defaults = defaults,
+                builtInSampleDefaults = sampleDefaults
+            )
+        }
+        return buildOsImportSummaryText(
+            target = "activity",
+            fileKind = payload.fileKind,
+            isLegacyFormat = payload.isLegacyFormat,
+            sourceCount = payload.sourceCount,
+            validCount = payload.cards.size,
+            invalidCount = payload.invalidCount,
+            duplicateCount = payload.duplicateCount,
+            addedCount = result.addedCount,
+            updatedCount = result.updatedCount,
+            unchangedCount = result.unchangedCount,
+            mergedCount = result.cards.size,
+            apply = apply,
+            applied = apply && payload.cards.isNotEmpty()
+        )
+    }
+
+    private fun buildShellCardsImportText(rawJson: String, apply: Boolean): String {
+        val root = parseOsCardImportRoot(rawJson)
+        val payload = OsShellCommandCardStore.parseCardsImport(root)
+        val existing = OsShellCommandCardStore.loadCards()
+        val result = if (apply && payload.cards.isNotEmpty()) {
+            OsShellCommandCardStore.applyImportedCards(
+                payload = payload,
+                existingCards = existing
+            )
+        } else {
+            OsShellCommandCardStore.previewImportedCards(
+                payload = payload,
+                existingCards = existing
+            )
+        }
+        return buildOsImportSummaryText(
+            target = "shell",
+            fileKind = payload.fileKind,
+            isLegacyFormat = payload.isLegacyFormat,
+            sourceCount = payload.sourceCount,
+            validCount = payload.cards.size,
+            invalidCount = payload.invalidCount,
+            duplicateCount = payload.duplicateCount,
+            addedCount = result.addedCount,
+            updatedCount = result.updatedCount,
+            unchangedCount = result.unchangedCount,
+            mergedCount = result.cards.size,
+            apply = apply,
+            applied = apply && payload.cards.isNotEmpty()
+        )
+    }
+
+    private fun buildOsImportSummaryText(
+        target: String,
+        fileKind: OsCardImportFileKind,
+        isLegacyFormat: Boolean,
+        sourceCount: Int,
+        validCount: Int,
+        invalidCount: Int,
+        duplicateCount: Int,
+        addedCount: Int,
+        updatedCount: Int,
+        unchangedCount: Int,
+        mergedCount: Int,
+        apply: Boolean,
+        applied: Boolean
+    ): String {
+        return buildString {
+            appendLine("target=$target")
+            appendLine("fileKind=${fileKind.name}")
+            appendLine("legacyFormat=$isLegacyFormat")
+            appendLine("apply=$apply")
+            appendLine("applied=$applied")
+            appendLine("sourceCount=$sourceCount")
+            appendLine("validCount=$validCount")
+            appendLine("invalidCount=$invalidCount")
+            appendLine("duplicateCount=$duplicateCount")
+            appendLine("newCount=$addedCount")
+            appendLine("updatedCount=$updatedCount")
+            appendLine("unchangedCount=$unchangedCount")
+            appendLine("mergedCount=$mergedCount")
+        }.trim()
+    }
+
+    private fun normalizeOsCardTransferTarget(target: String): String {
+        return when (target.trim().lowercase(Locale.ROOT)) {
+            "activity", "activities", "shortcut", "shortcuts" -> "activity"
+            "shell", "command", "commands" -> "shell"
+            else -> "all"
+        }
     }
 
     private fun decodeRows(raw: String?): List<InfoRow> {
