@@ -517,7 +517,8 @@ internal class GitHubPageRepository(
         actor: String = "",
         created: String = "",
         headSha: String = "",
-        excludePullRequests: Boolean = false
+        excludePullRequests: Boolean = false,
+        resolveNightlyRunDetail: Boolean = true
     ): GitHubStrategyLoadTrace<GitHubActionsWorkflowArtifactsSnapshot> {
         return withContext(ioDispatcher) {
             GitHubActionsRepository.fromLookupConfig(lookupConfig)
@@ -534,7 +535,8 @@ internal class GitHubPageRepository(
                     actor = actor,
                     created = created,
                     headSha = headSha,
-                    excludePullRequests = excludePullRequests
+                    excludePullRequests = excludePullRequests,
+                    resolveNightlyRunDetail = resolveNightlyRunDetail
                 )
         }
     }
@@ -592,33 +594,45 @@ internal class GitHubPageRepository(
             val startedAt = System.currentTimeMillis()
             val actionsRepository = GitHubActionsRepository.fromLookupConfig(lookupConfig)
             val signals = mutableMapOf<Long, GitHubActionsWorkflowArtifactSignal>()
+            val useNightlyLink = lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink
             workflows.chunked(githubActionsSignalWorkflowBatchSize).forEach { batch ->
                 batch.map { workflow ->
                     async(ioDispatcher) {
+                        val workflowId = workflowLookupId(workflow, lookupConfig)
+                        val primaryBranch = if (useNightlyLink) defaultBranch else ""
                         val recentSnapshot = actionsRepository.fetchWorkflowArtifactSnapshot(
                             owner = owner,
                             repo = repo,
-                            workflowId = workflowLookupId(workflow, lookupConfig),
+                            workflowId = workflowId,
                             runLimit = runLimit,
-                            artifactsPerRun = artifactsPerRun
+                            artifactsPerRun = artifactsPerRun,
+                            branch = primaryBranch,
+                            status = if (useNightlyLink) "completed" else "",
+                            excludePullRequests = useNightlyLink,
+                            resolveNightlyRunDetail = false
                         ).result.getOrElse {
                             return@async null
                         }
-                        val defaultBranchRuns = defaultBranch
-                            .takeIf { it.isNotBlank() }
-                            ?.let { branch ->
-                                actionsRepository.fetchWorkflowArtifactSnapshot(
-                                    owner = owner,
-                                    repo = repo,
-                                    workflowId = workflowLookupId(workflow, lookupConfig),
-                                    runLimit = 1,
-                                    artifactsPerRun = artifactsPerRun,
-                                    branch = branch,
-                                    status = "completed",
-                                    excludePullRequests = true
-                                ).result.getOrNull()?.runs
-                            }
-                            .orEmpty()
+                        val defaultBranchRuns = if (useNightlyLink) {
+                            emptyList()
+                        } else {
+                            defaultBranch
+                                .takeIf { it.isNotBlank() }
+                                ?.let { branch ->
+                                    actionsRepository.fetchWorkflowArtifactSnapshot(
+                                        owner = owner,
+                                        repo = repo,
+                                        workflowId = workflowId,
+                                        runLimit = 1,
+                                        artifactsPerRun = artifactsPerRun,
+                                        branch = branch,
+                                        status = "completed",
+                                        excludePullRequests = true,
+                                        resolveNightlyRunDetail = false
+                                    ).result.getOrNull()?.runs
+                                }
+                                .orEmpty()
+                        }
                         val mergedRuns = (recentSnapshot.runs + defaultBranchRuns)
                             .distinctBy { it.run.id }
                         workflow.id to GitHubActionsWorkflowSelector.buildArtifactSignal(

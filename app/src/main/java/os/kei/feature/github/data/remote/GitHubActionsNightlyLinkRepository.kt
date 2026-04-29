@@ -14,6 +14,7 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 internal class GitHubActionsNightlyLinkRepository(
     private val client: OkHttpClient,
@@ -24,6 +25,8 @@ internal class GitHubActionsNightlyLinkRepository(
         owner: String,
         repo: String
     ): Result<GitHubActionsRepositoryInfo> = runCatching {
+        val cacheKey = metadataCacheKey(owner, repo)
+        cachedValue(repositoryInfoCache[cacheKey])?.let { return@runCatching it }
         val html = fetchPublicHtml(buildGitHubRepoUrl(owner, repo)).getOrThrow()
         val defaultBranch = Regex(""""defaultBranch"\s*:\s*"([^"]+)"""")
             .find(html)
@@ -38,7 +41,7 @@ internal class GitHubActionsNightlyLinkRepository(
             repo = repo,
             fullName = "$owner/$repo",
             defaultBranch = defaultBranch
-        )
+        ).also { info -> putCachedValue(repositoryInfoCache, cacheKey, info) }
     }
 
     fun fetchWorkflows(
@@ -72,7 +75,8 @@ internal class GitHubActionsNightlyLinkRepository(
             repo = repo,
             workflowId = workflowId,
             branch = branch,
-            artifactsPerRun = DEFAULT_ARTIFACT_LIMIT
+            artifactsPerRun = DEFAULT_ARTIFACT_LIMIT,
+            resolveRunDetail = false
         ).mapCatching { snapshot -> snapshot.runs.map { it.run } }
     }
 
@@ -140,7 +144,8 @@ internal class GitHubActionsNightlyLinkRepository(
         repo: String,
         workflowId: String,
         branch: String,
-        artifactsPerRun: Int
+        artifactsPerRun: Int,
+        resolveRunDetail: Boolean
     ): Result<GitHubActionsWorkflowArtifactsSnapshot> = runCatching {
         val resolvedBranch = branch.trim().ifBlank {
             fetchRepositoryInfo(owner, repo).getOrThrow().defaultBranch
@@ -159,14 +164,18 @@ internal class GitHubActionsNightlyLinkRepository(
             workflowSlug = workflowSlug,
             branch = resolvedBranch
         ).take(artifactsPerRun.coerceIn(1, 100))
-        val detail = artifactNames.firstOrNull()?.let { artifactName ->
-            fetchArtifactDetail(
-                owner = owner,
-                repo = repo,
-                workflowSlug = workflowSlug,
-                branch = resolvedBranch,
-                artifactName = artifactName
-            )
+        val detail = if (resolveRunDetail) {
+            artifactNames.firstOrNull()?.let { artifactName ->
+                fetchArtifactDetail(
+                    owner = owner,
+                    repo = repo,
+                    workflowSlug = workflowSlug,
+                    branch = resolvedBranch,
+                    artifactName = artifactName
+                )
+            }
+        } else {
+            null
         }
         val syntheticRunId = stablePositiveId("$owner/$repo/$workflowSlug/$resolvedBranch/latest")
         val runId = detail?.runId?.takeIf { it > 0L } ?: syntheticRunId
@@ -224,12 +233,19 @@ internal class GitHubActionsNightlyLinkRepository(
     }
 
     private fun fetchWorkflowFiles(owner: String, repo: String): List<String> {
+        val cacheKey = metadataCacheKey(owner, repo)
+        cachedValue(workflowFilesCache[cacheKey])?.let { return it }
         val workflowsTreeUrl = "${githubHtmlBaseUrl.trimEnd('/')}/$owner/$repo/tree/HEAD/.github/workflows"
         val treeHtml = fetchPublicHtml(workflowsTreeUrl).getOrThrow()
         val fromTree = parseWorkflowFilesFromGitHubHtml(treeHtml, owner, repo)
-        if (fromTree.isNotEmpty()) return fromTree
+        if (fromTree.isNotEmpty()) {
+            putCachedValue(workflowFilesCache, cacheKey, fromTree)
+            return fromTree
+        }
         val actionsHtml = fetchPublicHtml("${githubHtmlBaseUrl.trimEnd('/')}/$owner/$repo/actions").getOrThrow()
-        return parseWorkflowFilesFromGitHubHtml(actionsHtml, owner, repo)
+        return parseWorkflowFilesFromGitHubHtml(actionsHtml, owner, repo).also { files ->
+            putCachedValue(workflowFilesCache, cacheKey, files)
+        }
     }
 
     private fun parseWorkflowFilesFromGitHubHtml(
@@ -390,7 +406,6 @@ internal class GitHubActionsNightlyLinkRepository(
             .get()
             .header("Accept", "text/html,application/xhtml+xml")
             .header("User-Agent", USER_AGENT)
-            .header("Connection", "close")
             .build()
         client.newCall(request).execute().use { response ->
             val bodyText = response.body.string()
@@ -491,6 +506,32 @@ internal class GitHubActionsNightlyLinkRepository(
         return result and Long.MAX_VALUE
     }
 
+    private fun metadataCacheKey(owner: String, repo: String): String {
+        return listOf(
+            githubHtmlBaseUrl.trimEnd('/'),
+            nightlyLinkBaseUrl.trimEnd('/'),
+            owner.lowercase(Locale.ROOT),
+            repo.lowercase(Locale.ROOT)
+        ).joinToString("|")
+    }
+
+    private fun <T> cachedValue(entry: CachedValue<T>?): T? {
+        if (entry == null) return null
+        val ageMillis = System.currentTimeMillis() - entry.fetchedAtMillis
+        return entry.value.takeIf { ageMillis in 0 until PUBLIC_METADATA_CACHE_TTL_MS }
+    }
+
+    private fun <T> putCachedValue(
+        cache: ConcurrentHashMap<String, CachedValue<T>>,
+        key: String,
+        value: T
+    ) {
+        if (cache.size >= PUBLIC_METADATA_CACHE_MAX_ENTRIES) {
+            cache.clear()
+        }
+        cache[key] = CachedValue(value, System.currentTimeMillis())
+    }
+
     private data class NightlyArtifactDetail(
         val artifactName: String,
         val runId: Long,
@@ -498,9 +539,19 @@ internal class GitHubActionsNightlyLinkRepository(
         val runHtmlUrl: String
     )
 
+    private data class CachedValue<T>(
+        val value: T,
+        val fetchedAtMillis: Long
+    )
+
     private companion object {
         const val DEFAULT_ARTIFACT_LIMIT = 100
         const val DEFAULT_PUBLIC_BRANCH = "main"
         const val USER_AGENT = "KeiOS-App/1.0 (Android)"
+        const val PUBLIC_METADATA_CACHE_TTL_MS = 120_000L
+        const val PUBLIC_METADATA_CACHE_MAX_ENTRIES = 64
+
+        val repositoryInfoCache = ConcurrentHashMap<String, CachedValue<GitHubActionsRepositoryInfo>>()
+        val workflowFilesCache = ConcurrentHashMap<String, CachedValue<List<String>>>()
     }
 }

@@ -361,6 +361,46 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `nightly link strategy can skip run detail for background signals`() {
+        MockWebServer().use { nightly ->
+            val base = nightly.url("/").toString().trimEnd('/')
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/workflows/android/master/Foss.zip">Foss.zip</a>
+                            <a href="$base/demo/app/workflows/android/master/Market.zip">Market.zip</a>
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/android.yml",
+                branch = "master",
+                resolveNightlyRunDetail = false
+            ).result.getOrThrow()
+
+            assertEquals(1, snapshot.runs.size)
+            assertEquals("master", snapshot.runs.first().run.headBranch)
+            assertEquals(listOf("Foss", "Market"), snapshot.artifacts.map { it.name })
+            assertEquals(
+                "https://github.com/demo/app/actions?query=event%3Apush%20is%3Asuccess%20branch%3Amaster",
+                snapshot.runs.first().run.htmlUrl
+            )
+            assertEquals(listOf("/demo/app/workflows/android/master?preview"), List(1) { nightly.takeRequest().path })
+            assertEquals(1, nightly.requestCount)
+        }
+    }
+
+    @Test
     fun `nightly link download resolver returns shareable link without token`() {
         MockWebServer().use { nightly ->
             val url = nightly.url("/demo/app/workflows/android/master/Foss.zip").toString()

@@ -234,7 +234,8 @@ class GitHubActionsRepository(
         actor: String = "",
         created: String = "",
         headSha: String = "",
-        excludePullRequests: Boolean = false
+        excludePullRequests: Boolean = false,
+        resolveNightlyRunDetail: Boolean = true
     ): GitHubStrategyLoadTrace<GitHubActionsWorkflowArtifactsSnapshot> {
         val startedAt = System.currentTimeMillis()
         if (useNightlyLink) {
@@ -243,7 +244,8 @@ class GitHubActionsRepository(
                 repo = repo,
                 workflowId = workflowId,
                 branch = branch,
-                artifactsPerRun = artifactsPerRun
+                artifactsPerRun = artifactsPerRun,
+                resolveRunDetail = resolveNightlyRunDetail
             ).toTrace(startedAt)
         }
         requireActionsApiToken().onFailure { error ->
@@ -497,7 +499,6 @@ class GitHubActionsRepository(
             .header("Authorization", "Bearer $sanitizedToken")
             .header("X-GitHub-Api-Version", GITHUB_API_VERSION)
             .header("User-Agent", GITHUB_USER_AGENT)
-            .header("Connection", "close")
             .build()
         val noRedirectClient = client.newBuilder()
             .followRedirects(false)
@@ -521,7 +522,6 @@ class GitHubActionsRepository(
             .header("Accept", "application/vnd.github+json")
             .header("X-GitHub-Api-Version", GITHUB_API_VERSION)
             .header("User-Agent", GITHUB_USER_AGENT)
-            .header("Connection", "close")
         if (sanitizedToken.isNotBlank()) {
             requestBuilder.header("Authorization", "Bearer $sanitizedToken")
         }
