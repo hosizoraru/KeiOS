@@ -71,6 +71,7 @@ import os.kei.ui.page.main.github.stableVersionColor
 import os.kei.ui.page.main.github.statusActionUrl
 import os.kei.ui.page.main.github.statusColor
 import os.kei.ui.page.main.github.statusIcon
+import os.kei.ui.page.main.github.statusMessage
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppInfoListBody
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
@@ -227,7 +228,8 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
                     val iconTint = if (alwaysLatestReleaseDownload) latestReleaseAccent else statusColor
                     AppCompactIconAction(
                         icon = statusIcon,
-                        contentDescription = state.message.ifBlank { stringResource(R.string.github_cd_status) },
+                        contentDescription = state.statusMessage(context)
+                            .ifBlank { stringResource(R.string.github_cd_status) },
                         tint = iconTint,
                         enabled = canLoadApkAssets || statusReleaseUrl.isNotBlank(),
                         onClick = {

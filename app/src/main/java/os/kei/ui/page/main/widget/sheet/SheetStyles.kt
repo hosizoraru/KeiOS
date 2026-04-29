@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import os.kei.R
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppCardBodyColumn
 import os.kei.ui.page.main.widget.core.AppCardHeader
@@ -41,6 +43,10 @@ import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private const val DefaultSelectedLabelSentinel = "\u0000default-selected-label"
+private const val DefaultCollapsedHintSentinel = "\u0000default-collapsed-hint"
+private const val DefaultExpandedHintSentinel = "\u0000default-expanded-hint"
 
 @Composable
 fun SheetContentColumn(
@@ -307,10 +313,14 @@ fun SheetChoiceCard(
     selectedAccentColor: Color = accentColor,
     unselectedTitleColor: Color = MiuixTheme.colorScheme.onBackground,
     summaryColor: Color = MiuixTheme.colorScheme.onBackgroundVariant,
-    selectedLabel: String? = "已选择",
+    selectedLabel: String? = DefaultSelectedLabelSentinel,
     leading: (@Composable () -> Unit)? = null,
     details: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
+    val resolvedSelectedLabel = when (selectedLabel) {
+        DefaultSelectedLabelSentinel -> stringResource(R.string.common_selected)
+        else -> selectedLabel
+    }
     SheetSurfaceCard(
         modifier = modifier,
         containerColor = if (selected) {
@@ -346,9 +356,9 @@ fun SheetChoiceCard(
                         fontSize = AppTypographyTokens.CardHeader.fontSize,
                         lineHeight = AppTypographyTokens.CardHeader.lineHeight
                     )
-                    if (selected && !selectedLabel.isNullOrBlank()) {
+                    if (selected && !resolvedSelectedLabel.isNullOrBlank()) {
                         StatusPill(
-                            label = selectedLabel,
+                            label = resolvedSelectedLabel,
                             color = selectedAccentColor
                         )
                     }
@@ -379,10 +389,18 @@ fun SheetExpandableCard(
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
     badgeLabel: String? = null,
-    collapsedHint: String = "点按展开详细说明",
-    expandedHint: String = "点按收起详细说明",
+    collapsedHint: String? = DefaultCollapsedHintSentinel,
+    expandedHint: String? = DefaultExpandedHintSentinel,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val resolvedCollapsedHint = when (collapsedHint) {
+        DefaultCollapsedHintSentinel -> stringResource(R.string.common_expand_details_hint)
+        else -> collapsedHint
+    }
+    val resolvedExpandedHint = when (expandedHint) {
+        DefaultExpandedHintSentinel -> stringResource(R.string.common_collapse_details_hint)
+        else -> expandedHint
+    }
     SheetSurfaceCard(
         modifier = modifier,
         containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (expanded) 0.78f else 0.68f),
@@ -398,7 +416,7 @@ fun SheetExpandableCard(
             subtitle = if (expanded) expandedSummary else collapsedSummary,
             titleColor = accentColor,
             subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant,
-            supportingText = if (expanded) expandedHint else collapsedHint,
+            supportingText = if (expanded) resolvedExpandedHint else resolvedCollapsedHint,
             supportingColor = accentColor,
             titleAccessory = if (badgeLabel != null) {
                 {
@@ -412,7 +430,7 @@ fun SheetExpandableCard(
             },
             endActions = {
                 StatusPill(
-                    label = if (expanded) "收起" else "展开",
+                    label = stringResource(if (expanded) R.string.common_collapse else R.string.common_expand),
                     color = accentColor
                 )
             },

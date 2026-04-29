@@ -39,7 +39,7 @@ internal fun OsPageOverlayCoordinator(
         sheetBackdrop = sheetBackdrop,
         overlayState = overlayState,
         visibleCardsTitle = textBundle.visibleCardsTitle,
-        visibleCardsHint = "隐藏卡片后会清空对应缓存；重新显示时会立即重新获取并缓存。",
+        visibleCardsHint = stringResource(R.string.os_sheet_visible_cards_desc),
         visibleCards = visibleCards,
         applyCardVisibility = actionState.applyCardVisibility,
         visibleActivitiesTitle = textBundle.visibleActivitiesTitle,

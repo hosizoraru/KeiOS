@@ -47,7 +47,6 @@ import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
-import os.kei.ui.page.main.widget.status.StatusLabelText
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Switch
@@ -122,7 +121,7 @@ internal fun HomePageControlSheet(
                     }
                 ) {
                     StatusPill(
-                        label = StatusLabelText.FixedVisible,
+                        label = androidx.compose.ui.res.stringResource(R.string.common_status_fixed_visible),
                         color = Color(0xFF2563EB)
                     )
                 }

@@ -2,6 +2,7 @@ package os.kei.ui.page.main.os
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import os.kei.R
 import os.kei.ui.page.main.os.shortcut.buildGoogleSystemServiceRows
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
@@ -105,9 +106,14 @@ internal fun OsCardExportAction(
     val isExporting = exportingCard == card
     val enabled = exportingCard == null || isExporting
     val tint = if (enabled) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onBackgroundVariant
+    val cardTitle = card.titleText()
     AppCompactIconAction(
         icon = if (isExporting) appLucideRefreshIcon() else appLucideDownloadIcon(),
-        contentDescription = if (isExporting) "准备导出中" else "导出${card.title}",
+        contentDescription = if (isExporting) {
+            stringResource(R.string.os_cd_export_preparing)
+        } else {
+            stringResource(R.string.os_cd_export_card, cardTitle)
+        },
         tint = tint,
         enabled = enabled && !isExporting,
         onClick = onExportClick

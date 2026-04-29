@@ -1,9 +1,11 @@
 package os.kei.ui.page.main.github
 
+import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import os.kei.feature.github.model.GitHubTrackedReleaseStatus
 import androidx.compose.runtime.Composable
+import os.kei.R
 import os.kei.ui.page.main.os.appLucideAlertIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
@@ -106,6 +108,38 @@ internal fun VersionCheckUi.statusColor(neutralColor: Color): Color {
         isPreRelease -> GitHubStatusPalette.PreRelease
         isLocalAppUninstalled() -> neutralColor
         else -> neutralColor
+    }
+}
+
+internal fun VersionCheckUi.statusMessage(context: Context): String {
+    val rawMessage = message.trim()
+    return when (rawMessage) {
+        GitHubTrackedReleaseStatus.UpdateAvailable.defaultMessage ->
+            context.getString(R.string.github_status_update_available)
+        GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable.defaultMessage ->
+            context.getString(R.string.github_status_prerelease_update_available)
+        GitHubTrackedReleaseStatus.PreReleaseOptional.defaultMessage ->
+            context.getString(R.string.github_status_prerelease_optional)
+        GitHubTrackedReleaseStatus.PreReleaseTracked.defaultMessage ->
+            context.getString(R.string.github_status_prerelease_tracked)
+        GitHubTrackedReleaseStatus.UpToDate.defaultMessage ->
+            context.getString(R.string.github_status_up_to_date)
+        GitHubTrackedReleaseStatus.MatchedRelease.defaultMessage ->
+            context.getString(R.string.github_status_matched_release)
+        GitHubTrackedReleaseStatus.ComparisonUncertain.defaultMessage ->
+            context.getString(R.string.github_status_comparison_uncertain)
+        "该项目暂时可能只有预发行版" ->
+            context.getString(R.string.github_status_only_prereleases_hint)
+        else -> {
+            if (rawMessage.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage)) {
+                rawMessage.replaceFirst(
+                    GitHubTrackedReleaseStatus.Failed.defaultMessage,
+                    context.getString(R.string.github_check_failed_prefix)
+                )
+            } else {
+                rawMessage
+            }
+        }
     }
 }
 

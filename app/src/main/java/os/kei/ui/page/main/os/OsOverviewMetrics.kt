@@ -6,7 +6,6 @@ import os.kei.R
 import os.kei.ui.page.main.os.components.OsOverviewMetric
 import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
-import os.kei.ui.page.main.widget.status.StatusLabelText
 
 internal data class OsActivityOverviewStats(
     val totalCount: Int,
@@ -115,10 +114,10 @@ internal fun buildOsOverviewUiState(
         else -> SystemOverviewState.Idle
     }
     val statusLabel = when (overviewState) {
-        SystemOverviewState.Cached -> StatusLabelText.Cached
-        SystemOverviewState.Refreshing -> StatusLabelText.Syncing
-        SystemOverviewState.Completed -> StatusLabelText.Synced
-        SystemOverviewState.Idle -> StatusLabelText.PendingSync
+        SystemOverviewState.Cached -> context.getString(R.string.common_status_cached)
+        SystemOverviewState.Refreshing -> context.getString(R.string.common_status_syncing)
+        SystemOverviewState.Completed -> context.getString(R.string.common_synced)
+        SystemOverviewState.Idle -> context.getString(R.string.common_status_pending_sync)
     }
     val statusColor = when (overviewState) {
         SystemOverviewState.Cached -> cachedColor

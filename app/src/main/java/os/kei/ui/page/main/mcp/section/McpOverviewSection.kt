@@ -18,7 +18,6 @@ import os.kei.ui.page.main.mcp.model.McpOverviewMetric
 import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.core.AppOverviewInlineMetricTile
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.status.StatusLabelText
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -54,7 +53,9 @@ internal fun McpOverviewCardSection(
                 borderAlphaOverride = if (isDark) 0.35f else 0.42f
             )
             StatusPill(
-                label = if (running) StatusLabelText.Running else StatusLabelText.NotRunning,
+                label = stringResource(
+                    if (running) R.string.common_status_running else R.string.common_status_not_running
+                ),
                 color = overviewAccentColor
             )
         }

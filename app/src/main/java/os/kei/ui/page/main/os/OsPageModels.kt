@@ -1,5 +1,10 @@
 package os.kei.ui.page.main.os
 
+import android.content.Context
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import os.kei.R
 import os.kei.ui.page.main.os.shortcut.ShortcutIntentExtra
 import os.kei.ui.page.main.os.shortcut.normalizeShortcutIntentExtras
 
@@ -8,17 +13,22 @@ internal data class InfoRow(
     val value: String
 )
 
-internal enum class OsSectionCard(val title: String) {
-    TOP_INFO("TopInfo"),
-    SHELL_RUNNER("Shell 控制台"),
-    GOOGLE_SYSTEM_SERVICE("Google系统服务"),
-    SYSTEM("System Table"),
-    SECURE("Secure Table"),
-    GLOBAL("Global Table"),
-    ANDROID("Android Properties"),
-    JAVA("Java Properties"),
-    LINUX("Linux environment")
+internal enum class OsSectionCard(@param:StringRes val titleRes: Int) {
+    TOP_INFO(R.string.os_section_top_info_title),
+    SHELL_RUNNER(R.string.os_shell_card_title),
+    GOOGLE_SYSTEM_SERVICE(R.string.os_section_google_system_service_title),
+    SYSTEM(R.string.os_section_system_title),
+    SECURE(R.string.os_section_secure_title),
+    GLOBAL(R.string.os_section_global_title),
+    ANDROID(R.string.os_section_android_title),
+    JAVA(R.string.os_section_java_title),
+    LINUX(R.string.os_section_linux_title)
 }
+
+internal fun OsSectionCard.title(context: Context): String = context.getString(titleRes)
+
+@Composable
+internal fun OsSectionCard.titleText(): String = stringResource(titleRes)
 
 internal enum class SectionKind {
     SYSTEM,

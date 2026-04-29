@@ -26,7 +26,6 @@ import os.kei.ui.page.main.github.borderColor
 import os.kei.ui.page.main.github.surfaceColor
 import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.status.StatusLabelText
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
@@ -126,10 +125,10 @@ internal fun GitHubOverviewCard(
             )
             StatusPill(
                 label = when (displayRefreshState) {
-                    OverviewRefreshState.Cached -> StatusLabelText.Cached
-                    OverviewRefreshState.Refreshing -> StatusLabelText.Checking
-                    OverviewRefreshState.Completed -> StatusLabelText.Checked
-                    OverviewRefreshState.Idle -> StatusLabelText.PendingCheck
+                    OverviewRefreshState.Cached -> stringResource(R.string.common_status_cached)
+                    OverviewRefreshState.Refreshing -> stringResource(R.string.common_status_checking)
+                    OverviewRefreshState.Completed -> stringResource(R.string.common_status_checked)
+                    OverviewRefreshState.Idle -> stringResource(R.string.common_status_pending_check)
                 },
                 color = displayRefreshState.color(
                     neutralColor = MiuixTheme.colorScheme.onBackgroundVariant

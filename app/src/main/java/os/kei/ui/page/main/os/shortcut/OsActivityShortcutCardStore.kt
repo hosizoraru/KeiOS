@@ -400,6 +400,9 @@ internal object OsActivityShortcutCardStore {
                 }
                 val upgradedConfig = normalizeActivityShortcutConfig(
                     config = card.config.copy(
+                        title = builtInSampleDefaults.title,
+                        subtitle = builtInSampleDefaults.subtitle,
+                        appName = builtInSampleDefaults.appName,
                         packageName = card.config.packageName.trim()
                             .ifBlank { builtInSampleDefaults.packageName },
                         className = upgradedClassName,

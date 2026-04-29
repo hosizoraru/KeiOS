@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_label_ap_island_short">AP Island</string>
+    <string name="shortcut_label_ap_island_long">AP Island notification</string>
+    <string name="shortcut_label_mcp_toggle_short">MCP toggle</string>
+    <string name="shortcut_label_mcp_toggle_long">Toggle MCP service</string>
+    <string name="shortcut_label_github_refresh_short">Refresh GitHub</string>
+    <string name="shortcut_label_github_refresh_long">Refresh tracked items</string>
+</resources>

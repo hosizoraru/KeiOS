@@ -328,7 +328,7 @@ internal suspend fun exportOsSectionCard(
         val payload = buildOsCardJson(
             generatedAt = generatedAt,
             shizukuStatus = shizukuStatus,
-            cardTitle = card.title,
+            cardTitle = card.title(context),
             rows = rows
         )
         val exportStamp = SimpleDateFormat("yyyyMMdd-HHmmss-SSS", Locale.getDefault()).format(Date())

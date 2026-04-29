@@ -33,7 +33,6 @@ import os.kei.ui.page.main.about.ui.AboutCompactInfoRow
 import os.kei.ui.page.main.about.ui.AboutCompactPillRow
 import os.kei.ui.page.main.about.ui.AboutSectionCard
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.status.StatusLabelText
 import java.util.Locale
 
 @Composable
@@ -74,16 +73,16 @@ fun AboutRuntimeStatusCardSection(
             AboutCompactPillRow(
                 title = stringResource(R.string.about_runtime_label_notification_permission),
                 label = if (notificationPermissionGranted) {
-                    StatusLabelText.Authorized
+                    stringResource(R.string.common_status_authorized)
                 } else {
-                    StatusLabelText.Unauthorized
+                    stringResource(R.string.common_status_unauthorized)
                 },
                 titleIcon = appLucideAlertIcon(),
                 color = if (notificationPermissionGranted) readyColor else notReadyColor
             )
             AboutCompactPillRow(
                 title = stringResource(R.string.about_runtime_label_selinux),
-                label = StatusLabelText.selinux(selinuxRaw),
+                label = selinuxLabelText(selinuxRaw),
                 titleIcon = appLucideLockIcon(),
                 color = selinuxStatusColor(selinuxRaw),
                 onClick = onCheckShizuku
@@ -207,9 +206,9 @@ private fun AboutPermissionEntryView(
 ) {
     val statusColor = if (entry.granted) grantedColor else deniedColor
     val statusLabel = if (entry.granted) {
-        StatusLabelText.Authorized
+        stringResource(R.string.common_status_authorized)
     } else {
-        StatusLabelText.Unauthorized
+        stringResource(R.string.common_status_unauthorized)
     }
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -313,6 +312,17 @@ private fun componentExtraIcon(labelRes: Int): ImageVector {
 }
 
 private fun normalizeLower(value: String): String = value.trim().lowercase(Locale.ROOT)
+
+@Composable
+private fun selinuxLabelText(selinuxState: String): String {
+    return when (normalizeLower(selinuxState)) {
+        "enforcing" -> stringResource(R.string.common_status_selinux_enforcing)
+        "permissive" -> stringResource(R.string.common_status_selinux_permissive)
+        "disabled" -> stringResource(R.string.common_status_selinux_disabled)
+        "n/a", "", "unknown" -> stringResource(R.string.common_unknown)
+        else -> selinuxState.ifBlank { stringResource(R.string.common_unknown) }
+    }
+}
 
 private fun selinuxStatusColor(selinuxState: String): Color {
     return when (normalizeLower(selinuxState)) {

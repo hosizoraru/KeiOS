@@ -21,7 +21,6 @@ import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
-import os.kei.ui.page.main.widget.status.StatusLabelText
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -140,6 +139,6 @@ private fun McpNetworkModeOption(
         selected = selected,
         onSelect = onClick,
         accentColor = selectedColor,
-        selectedLabel = StatusLabelText.Activated
+        selectedLabel = stringResource(R.string.common_status_activated)
     )
 }

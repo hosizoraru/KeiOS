@@ -11,6 +11,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.os.OsSectionCard
+import os.kei.ui.page.main.os.titleText
 import os.kei.ui.page.main.os.appLucideAppWindowIcon
 import os.kei.ui.page.main.os.appLucideConfigIcon
 import os.kei.ui.page.main.os.appLucideFilterIcon
@@ -49,7 +50,7 @@ internal fun sectionCardIcon(card: OsSectionCard): ImageVector = when (card) {
 internal fun OsSectionHeaderIcon(card: OsSectionCard, modifier: Modifier = Modifier) {
     Icon(
         imageVector = sectionCardIcon(card),
-        contentDescription = card.title,
+        contentDescription = card.titleText(),
         tint = MiuixTheme.colorScheme.primary,
         modifier = modifier
             .size(22.dp)

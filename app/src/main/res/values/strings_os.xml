@@ -4,6 +4,7 @@
     <string name="os_action_refresh_params">刷新 OS 参数</string>
     <string name="os_search_label">搜索 OS 参数、活动</string>
     <string name="os_sheet_visible_cards_title">参数 card</string>
+    <string name="os_sheet_visible_cards_desc">隐藏卡片后会清空对应缓存；重新显示时会立即重新获取并缓存。</string>
     <string name="os_sheet_visible_activities_title">活动card</string>
     <string name="os_sheet_visible_activities_desc">关闭活动后会隐藏对应快捷方式卡片，重新开启后会立即显示。</string>
     <string name="os_activity_sheet_transfer_title">活动卡片备份</string>
@@ -261,6 +262,8 @@
     <string name="os_google_system_service_value_action_auto_default">（空，自动按目标入口选择默认 Action）</string>
     <string name="os_google_system_service_value_flags_auto_default">（空，自动使用 FLAG_ACTIVITY_NEW_TASK）</string>
     <string name="os_google_system_service_cd_open_activity">打开活动</string>
+    <string name="os_cd_export_preparing">准备导出中</string>
+    <string name="os_cd_export_card">导出%1$s</string>
     <string name="os_google_system_service_toast_saved">活动卡片已保存</string>
     <string name="os_cd_add_activity_card">新增活动卡片</string>
     <string name="os_activity_card_danger_title">危险操作</string>

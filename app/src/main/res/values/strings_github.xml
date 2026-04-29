@@ -199,6 +199,14 @@
     <string name="github_item_label_hint">提示</string>
     <string name="github_item_label_update_assets">更新</string>
     <string name="github_item_cd_more_actions">更多功能</string>
+    <string name="github_status_update_available">发现更新</string>
+    <string name="github_status_prerelease_update_available">预发有更新</string>
+    <string name="github_status_prerelease_optional">预发可选</string>
+    <string name="github_status_prerelease_tracked">预发行</string>
+    <string name="github_status_up_to_date">已是最新</string>
+    <string name="github_status_matched_release">已匹配发行</string>
+    <string name="github_status_comparison_uncertain">版本格式无法精确比较</string>
+    <string name="github_status_only_prereleases_hint">该项目暂时可能只有预发行版</string>
     <string name="github_asset_hint_loading">正在准备可下载文件</string>
     <string name="github_asset_hint_all_loaded">未找到 APK 或已手动全加载</string>
     <string name="github_asset_hint_error">资源读取失败</string>

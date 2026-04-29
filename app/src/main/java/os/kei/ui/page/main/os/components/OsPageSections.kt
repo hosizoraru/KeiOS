@@ -24,6 +24,7 @@ import os.kei.R
 import os.kei.ui.page.main.os.InfoRow
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
 import os.kei.ui.page.main.os.OsSectionCard
+import os.kei.ui.page.main.os.titleText
 import os.kei.ui.page.main.os.shortcut.ShortcutActivityIcon
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.shortcut.normalizeShortcutIntentExtras
@@ -346,13 +347,14 @@ internal fun OsCardVisibilityManagerSheet(
                         .size(18.dp)
                         .defaultMinSize(minHeight = 18.dp)
                     val icon = sectionCardIcon(card)
+                    val title = card.titleText()
                     Icon(
                         imageVector = icon,
-                        contentDescription = card.title,
+                        contentDescription = title,
                         tint = MiuixTheme.colorScheme.onBackground,
                         modifier = iconModifier
                     )
-                    Text(text = card.title, color = MiuixTheme.colorScheme.onBackground)
+                    Text(text = title, color = MiuixTheme.colorScheme.onBackground)
                 }
             }
 
