@@ -28,7 +28,6 @@ import os.kei.feature.github.model.GitHubActionsRunTrackingPlan
 import os.kei.feature.github.model.GitHubActionsRunWatchState
 import os.kei.feature.github.model.GitHubActionsWorkflowKind
 import os.kei.feature.github.model.GitHubActionsWorkflowMatch
-import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.github.asset.assetRelativeTimeLabel
 import os.kei.ui.page.main.github.asset.formatAssetSize
@@ -38,6 +37,7 @@ import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideExternalLinkIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
+import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -46,7 +46,6 @@ import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
-import os.kei.ui.page.main.widget.sheet.SheetSummaryCard
 import os.kei.ui.page.main.widget.sheet.SheetSurfaceCard
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
@@ -70,6 +69,7 @@ internal fun GitHubActionsSheet(
     onArtifactsExpandedChange: (Boolean) -> Unit,
     onRefreshRun: (Long) -> Unit,
     onDownloadArtifact: (Long, Long) -> Unit,
+    onShareArtifact: (Long, Long) -> Unit,
     onOpenRun: () -> Unit
 ) {
     SnapshotWindowBottomSheet(
@@ -268,11 +268,18 @@ internal fun GitHubActionsSheet(
                                 artifactMatch = artifactMatch,
                                 hasToken = hasToken,
                                 downloading = state.actionsArtifactDownloadLoadingId == artifactMatch.artifact.id,
+                                sharing = state.actionsArtifactShareLoadingId == artifactMatch.artifact.id,
                                 context = context,
                                 isDark = isDark,
                                 backdrop = backdrop,
                                 onDownload = {
                                     onDownloadArtifact(
+                                        selectedRun.runArtifacts.run.id,
+                                        artifactMatch.artifact.id
+                                    )
+                                },
+                                onShare = {
+                                    onShareArtifact(
                                         selectedRun.runArtifacts.run.id,
                                         artifactMatch.artifact.id
                                     )
@@ -284,118 +291,6 @@ internal fun GitHubActionsSheet(
             }
         }
     }
-}
-
-@Composable
-private fun GitHubActionsSummaryCard(
-    state: GitHubPageState,
-    hasToken: Boolean,
-    isDark: Boolean
-) {
-    val target = state.actionsTargetItem
-    val accent = if (hasToken) GitHubStatusPalette.Update else GitHubStatusPalette.PreRelease
-    SheetSummaryCard(
-        title = target?.appLabel ?: stringResource(R.string.github_actions_sheet_title),
-        accentColor = accent,
-        badgeLabel = when {
-            hasToken -> stringResource(R.string.github_actions_badge_token_ready)
-            state.actionsAuthMode == GitHubApiAuthMode.Guest -> stringResource(R.string.common_guest)
-            else -> stringResource(R.string.github_actions_badge_token_required)
-        },
-        badgeColor = accent,
-        containerColor = GitHubStatusPalette.tonedSurface(accent, isDark).copy(
-            alpha = if (isDark) 0.26f else 0.15f
-        ),
-        borderColor = accent.copy(alpha = if (isDark) 0.34f else 0.24f)
-    ) {
-        if (target != null) {
-            Text(
-                text = "${target.owner}/${target.repo}",
-                color = MiuixTheme.colorScheme.primary,
-                fontSize = AppTypographyTokens.Body.fontSize,
-                lineHeight = AppTypographyTokens.Body.lineHeight,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        GitHubActionsPillRow {
-            StatusPill(
-                label = stringResource(
-                    R.string.github_actions_summary_default_branch,
-                    state.actionsDefaultBranch.ifBlank { stringResource(R.string.common_unknown) }
-                ),
-                color = MiuixTheme.colorScheme.primary
-            )
-            StatusPill(
-                label = state.actionsAuthMode?.label ?: state.lookupConfig.selectedStrategy.label,
-                color = accent
-            )
-            StatusPill(
-                label = stringResource(R.string.github_actions_value_count, state.actionsWorkflows.size),
-                color = GitHubStatusPalette.Active
-            )
-            StatusPill(
-                label = stringResource(R.string.github_actions_label_runs_with_count, state.actionsRuns.size),
-                color = GitHubStatusPalette.Update
-            )
-            StatusPill(
-                label = stringResource(
-                    R.string.github_actions_label_artifacts_with_count,
-                    state.actionsRuns.sumOf { it.artifactMatches.size }
-                ),
-                color = GitHubStatusPalette.PreRelease
-            )
-        }
-    }
-}
-
-@Composable
-private fun workflowSectionSummary(
-    state: GitHubPageState,
-    selectedWorkflowId: Long?
-): String {
-    if (state.actionsLoading && state.actionsWorkflows.isEmpty()) {
-        return stringResource(R.string.github_actions_loading_workflows)
-    }
-    val selected = selectedWorkflowId?.let { id ->
-        state.actionsWorkflows.firstOrNull { it.workflow.id == id }
-    }
-    return selected?.workflow?.displayName
-        ?: stringResource(R.string.github_actions_empty_workflows)
-}
-
-@Composable
-private fun runSectionSummary(
-    state: GitHubPageState,
-    selectedRun: GitHubActionsRunMatch?
-): String {
-    if (state.actionsRunsLoading && state.actionsRuns.isEmpty()) {
-        return stringResource(R.string.github_actions_loading_runs)
-    }
-    val match = selectedRun ?: return stringResource(R.string.github_actions_empty_runs)
-    val run = match.runArtifacts.run
-    val number = run.runNumber.takeIf { it > 0L }?.let {
-        stringResource(R.string.github_actions_value_run_number, it)
-    }
-    return listOfNotNull(
-        number,
-        run.headBranch.ifBlank { null },
-        run.displayName.takeIf { it.isNotBlank() }
-    ).joinToString(" · ")
-}
-
-@Composable
-private fun artifactSectionSummary(
-    selectedRun: GitHubActionsRunMatch?
-): String {
-    if (selectedRun == null) {
-        return stringResource(R.string.github_actions_empty_artifacts)
-    }
-    if (selectedRun.traits.inProgress) {
-        return stringResource(R.string.github_actions_hint_run_in_progress)
-    }
-    return selectedRun.artifactMatches.firstOrNull()?.artifact?.name
-        ?: stringResource(R.string.github_actions_empty_artifacts)
 }
 
 @Composable
@@ -549,14 +444,18 @@ private fun GitHubActionsArtifactCard(
     artifactMatch: GitHubActionsArtifactMatch,
     hasToken: Boolean,
     downloading: Boolean,
+    sharing: Boolean,
     context: Context,
     isDark: Boolean,
     backdrop: LayerBackdrop,
-    onDownload: () -> Unit
+    onDownload: () -> Unit,
+    onShare: () -> Unit
 ) {
     val artifact = artifactMatch.artifact
     val accent = artifactAccent(artifactMatch)
-    val canDownload = hasToken && runMatch.traits.completed && !artifact.expired && !downloading
+    val busy = downloading || sharing
+    val canDownload = hasToken && runMatch.traits.completed && !artifact.expired && !busy
+    val canShare = hasToken && runMatch.traits.completed && !artifact.expired && !busy
     GitHubActionsSelectableCard(
         selected = false,
         accent = accent,
@@ -653,6 +552,19 @@ private fun GitHubActionsArtifactCard(
                 onClick = onDownload,
                 textMaxLines = 1,
                 textOverflow = TextOverflow.Ellipsis
+            )
+            GlassIconButton(
+                backdrop = backdrop,
+                variant = GlassVariant.SheetAction,
+                icon = appLucideShareIcon(),
+                contentDescription = stringResource(
+                    R.string.github_actions_cd_share_artifact,
+                    artifact.name
+                ),
+                iconTint = if (canShare) accent else MiuixTheme.colorScheme.onBackgroundVariant,
+                width = 54.dp,
+                height = 54.dp,
+                onClick = onShare
             )
         }
     }

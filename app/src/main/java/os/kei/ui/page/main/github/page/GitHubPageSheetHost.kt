@@ -122,6 +122,7 @@ internal fun GitHubPageSheetHost(
         onArtifactsExpandedChange = { state.actionsArtifactsExpanded = it },
         onRefreshRun = actions::refreshActionsRunStatus,
         onDownloadArtifact = actions::downloadActionsArtifact,
+        onShareArtifact = actions::shareActionsArtifact,
         onOpenRun = actions::openSelectedActionsRun
     )
 

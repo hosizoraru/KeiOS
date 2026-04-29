@@ -72,6 +72,7 @@ internal class GitHubPageState(
     var actionsDownloadHistory by mutableStateOf<List<GitHubActionsDownloadRecord>>(emptyList())
     var actionsRunTrackingPlans by mutableStateOf<Map<Long, GitHubActionsRunTrackingPlan>>(emptyMap())
     var actionsArtifactDownloadLoadingId by mutableStateOf<Long?>(null)
+    var actionsArtifactShareLoadingId by mutableStateOf<Long?>(null)
     var actionsRunWatchJob by mutableStateOf<Job?>(null)
     var preferPreReleaseInput by mutableStateOf(false)
     var alwaysShowLatestReleaseDownloadButtonInput by mutableStateOf(false)
@@ -307,6 +308,7 @@ internal class GitHubPageState(
         actionsDownloadHistory = emptyList()
         actionsRunTrackingPlans = emptyMap()
         actionsArtifactDownloadLoadingId = null
+        actionsArtifactShareLoadingId = null
         actionsStatusRefreshingRunIds.clear()
     }
 

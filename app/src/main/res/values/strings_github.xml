@@ -63,7 +63,7 @@
     <string name="github_actions_error_load_failed">Actions 读取失败：%1$s</string>
     <string name="github_actions_hint_token_required">下载 Actions artifact 需要填写 GitHub token</string>
     <string name="github_actions_hint_run_in_progress">该 run 仍在执行，完成后会自动刷新状态，也可手动刷新</string>
-    <string name="github_actions_hint_zip_download">GitHub Actions artifact 会以 zip 包下载</string>
+    <string name="github_actions_hint_zip_download">下载/分享会先用 token 换取临时 zip 链接</string>
     <string name="github_actions_badge_recommended">推荐</string>
     <string name="github_actions_badge_last_downloaded">上次下载</string>
     <string name="github_actions_badge_running">运行中</string>
@@ -100,6 +100,8 @@
     <string name="github_actions_action_open_run">打开 Run</string>
     <string name="github_actions_action_refresh_run">刷新 Run</string>
     <string name="github_actions_action_load_more_runs">更多 Runs（%1$d）</string>
+    <string name="github_actions_cd_share_artifact">分享 %1$s</string>
+    <string name="github_actions_share_artifact_title">分享 Actions artifact 链接</string>
     <string name="github_actions_action_need_token">需要 Token</string>
     <string name="github_actions_action_wait_run">等待完成</string>
     <string name="github_actions_action_expired">已过期</string>
@@ -109,6 +111,8 @@
     <string name="github_actions_toast_wait_run_completed">该 run 完成后才能下载 artifact</string>
     <string name="github_actions_toast_download_started">已开始处理 Actions artifact 下载</string>
     <string name="github_actions_toast_download_failed">Actions artifact 下载失败：%1$s</string>
+    <string name="github_actions_toast_share_started">已发送 Actions artifact 链接</string>
+    <string name="github_actions_toast_share_failed">Actions artifact 分享失败：%1$s</string>
     <string name="github_actions_toast_refresh_run_failed">Run 状态刷新失败：%1$s</string>
     <string name="github_actions_error_download_url_invalid">下载地址无效</string>
     <string name="github_msg_checking">检查中...</string>

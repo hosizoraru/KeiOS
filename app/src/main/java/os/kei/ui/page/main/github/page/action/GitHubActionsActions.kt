@@ -2,6 +2,7 @@ package os.kei.ui.page.main.github.page.action
 
 import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Environment
 import androidx.core.net.toUri
@@ -117,7 +118,12 @@ internal class GitHubActionsActions(
             env.toast(R.string.github_actions_toast_wait_run_completed)
             return
         }
-        if (state.actionsArtifactDownloadLoadingId == artifact.id) return
+        if (
+            state.actionsArtifactDownloadLoadingId == artifact.id ||
+            state.actionsArtifactShareLoadingId == artifact.id
+        ) {
+            return
+        }
         scope.launch {
             state.actionsArtifactDownloadLoadingId = artifact.id
             try {
@@ -157,6 +163,56 @@ internal class GitHubActionsActions(
                 )
             } finally {
                 state.actionsArtifactDownloadLoadingId = null
+            }
+        }
+    }
+
+    fun shareActionsArtifact(runId: Long, artifactId: Long) {
+        val item = state.actionsTargetItem ?: return
+        val runMatch = state.actionsRuns.firstOrNull { it.runArtifacts.run.id == runId } ?: return
+        val artifactMatch = runMatch.artifactMatches.firstOrNull { it.artifact.id == artifactId } ?: return
+        val artifact = artifactMatch.artifact
+        if (state.lookupConfig.apiToken.trim().isBlank()) {
+            env.toast(R.string.github_actions_toast_token_required)
+            return
+        }
+        if (artifact.expired) {
+            env.toast(R.string.github_actions_toast_artifact_expired)
+            return
+        }
+        if (!runMatch.traits.completed) {
+            env.toast(R.string.github_actions_toast_wait_run_completed)
+            return
+        }
+        if (
+            state.actionsArtifactShareLoadingId == artifact.id ||
+            state.actionsArtifactDownloadLoadingId == artifact.id
+        ) {
+            return
+        }
+        scope.launch {
+            state.actionsArtifactShareLoadingId = artifact.id
+            try {
+                val resolution = repository.resolveGitHubActionsArtifactDownloadUrl(
+                    artifact = artifact,
+                    owner = item.owner,
+                    repo = item.repo,
+                    lookupConfig = state.lookupConfig
+                ).getOrThrow()
+                val resolvedUrl = SafeExternalIntents.httpsExternalUrlOrNull(resolution.downloadUrl)
+                    ?: error(context.getString(R.string.github_actions_error_download_url_invalid))
+                if (shareResolvedArtifactDownloadUrl(resolvedUrl, artifact.name)) {
+                    env.toast(R.string.github_actions_toast_share_started)
+                }
+            } catch (error: Throwable) {
+                env.toast(
+                    context.getString(
+                        R.string.github_actions_toast_share_failed,
+                        error.message ?: error.javaClass.simpleName
+                    )
+                )
+            } finally {
+                state.actionsArtifactShareLoadingId = null
             }
         }
     }
@@ -533,6 +589,40 @@ internal class GitHubActionsActions(
             }
         }.getOrElse {
             env.toast(R.string.github_toast_open_downloader_failed)
+            false
+        }
+    }
+
+    private fun shareResolvedArtifactDownloadUrl(url: String, artifactName: String): Boolean {
+        val onlineSharePackage = state.lookupConfig.onlineShareTargetPackage.trim()
+        val intent = SafeExternalIntents.textShareIntent(
+            text = url,
+            subject = artifactName,
+            targetPackage = onlineSharePackage,
+            extras = if (onlineSharePackage.isNotBlank()) {
+                mapOf(
+                    "channel" to "Online",
+                    "extra_channel" to "Online",
+                    "online_channel" to true
+                )
+            } else {
+                emptyMap()
+            }
+        )
+        return runCatching {
+            if (onlineSharePackage.isNotBlank()) {
+                context.startActivity(intent)
+            } else {
+                context.startActivity(
+                    Intent.createChooser(
+                        intent,
+                        context.getString(R.string.github_actions_share_artifact_title)
+                    )
+                )
+            }
+            true
+        }.getOrElse {
+            env.toast(R.string.github_toast_share_link_failed)
             false
         }
     }

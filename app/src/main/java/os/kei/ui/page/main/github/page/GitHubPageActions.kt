@@ -76,6 +76,9 @@ internal class GitHubPageActions(
     fun downloadActionsArtifact(runId: Long, artifactId: Long) =
         actionsActions.downloadActionsArtifact(runId = runId, artifactId = artifactId)
 
+    fun shareActionsArtifact(runId: Long, artifactId: Long) =
+        actionsActions.shareActionsArtifact(runId = runId, artifactId = artifactId)
+
     fun openSelectedActionsRun() = actionsActions.openSelectedActionsRun()
 
     suspend fun reloadApps(forceRefresh: Boolean = false) =
