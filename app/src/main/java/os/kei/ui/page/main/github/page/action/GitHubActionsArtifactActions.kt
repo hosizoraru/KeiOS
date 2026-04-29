@@ -1,12 +1,9 @@
 package os.kei.ui.page.main.github.page.action
 
-import android.app.DownloadManager
-import android.content.Context
 import android.content.Intent
-import android.os.Environment
-import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import os.kei.R
+import os.kei.core.download.AppPrivateDownloadManager
 import os.kei.core.intent.SafeExternalIntents
 import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsWorkflowMatch
@@ -224,21 +221,12 @@ internal class GitHubActionsArtifactActions(
     }
 
     private fun enqueueWithSystemDownloadManager(url: String, fileName: String) {
-        val safeUrl = SafeExternalIntents.httpsExternalUrlOrNull(url)
-            ?: throw IllegalArgumentException("download url must be https")
-        val request = DownloadManager.Request(safeUrl.toUri()).apply {
-            setAllowedNetworkTypes(
-                DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE
-            )
-            setTitle(fileName)
-            setDescription(fileName)
-            setMimeType("application/zip")
-            setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-        }
-        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-            ?: throw IllegalStateException("download manager unavailable")
-        manager.enqueue(request)
+        AppPrivateDownloadManager.enqueueHttpsDownload(
+            context = context,
+            url = url,
+            fileName = fileName,
+            mimeType = "application/zip"
+        )
     }
 
     private fun artifactArchiveFileName(artifact: GitHubActionsArtifact): String {

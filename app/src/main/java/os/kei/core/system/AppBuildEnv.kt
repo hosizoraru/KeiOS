@@ -25,6 +25,7 @@ object AppBuildEnv {
     }
 
     fun uiDumpShellDirectory(): String {
-        return "/sdcard/Android/data/${BuildConfig.APPLICATION_ID}/files/$flavorFolderName/ui"
+        return "${'$'}{EXTERNAL_STORAGE:-/storage/emulated/0}/Android/data/" +
+            "${BuildConfig.APPLICATION_ID}/files/$flavorFolderName/ui"
     }
 }

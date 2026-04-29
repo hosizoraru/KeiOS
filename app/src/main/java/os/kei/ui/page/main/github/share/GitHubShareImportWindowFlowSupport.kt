@@ -1,10 +1,8 @@
 package os.kei.ui.page.main.github.share
 
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Environment
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -15,9 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.net.toUri
 import os.kei.R
 import os.kei.core.background.AppBackgroundScheduler
+import os.kei.core.download.AppPrivateDownloadManager
 import os.kei.core.intent.SafeExternalIntents
 import os.kei.core.system.AppPackageChangedEvent
 import os.kei.core.system.AppPackageChangedEvents
@@ -147,20 +145,11 @@ internal fun enqueueWithSystemDownloadManager(
     url: String,
     fileName: String
 ) {
-    val safeUrl = SafeExternalIntents.httpsExternalUrlOrNull(url)
-        ?: throw IllegalArgumentException("download url must be https")
-    val request = DownloadManager.Request(safeUrl.toUri()).apply {
-        setAllowedNetworkTypes(
-            DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE
-        )
-        setTitle(fileName)
-        setDescription(fileName)
-        setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-    }
-    val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
-        ?: throw IllegalStateException("download manager unavailable")
-    manager.enqueue(request)
+    AppPrivateDownloadManager.enqueueHttpsDownload(
+        context = context,
+        url = url,
+        fileName = fileName
+    )
 }
 
 internal suspend fun attachCandidateToTracked(
