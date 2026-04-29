@@ -135,6 +135,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
     apkAssetExpanded: SnapshotStateMap<String, Boolean>,
     trackedCardExpanded: SnapshotStateMap<String, Boolean>,
     onRefreshTrackedItem: (GitHubTrackedApp) -> Unit,
+    onOpenActionsSheet: (GitHubTrackedApp) -> Unit,
     onOpenTrackSheetForEdit: (GitHubTrackedApp) -> Unit,
     onRequestDeleteTrackedItem: (GitHubTrackedApp) -> Unit,
     onClearApkAssetUiState: (String) -> Unit,
@@ -267,6 +268,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
                             state = state,
                             iconTint = iconTint,
                             onRefreshTrackedItem = onRefreshTrackedItem,
+                            onOpenActionsSheet = onOpenActionsSheet,
                             onRequestDeleteTrackedItem = onRequestDeleteTrackedItem
                         )
                     }
@@ -381,6 +383,7 @@ private fun GitHubTrackedItemMoreActions(
     state: VersionCheckUi,
     iconTint: Color,
     onRefreshTrackedItem: (GitHubTrackedApp) -> Unit,
+    onOpenActionsSheet: (GitHubTrackedApp) -> Unit,
     onRequestDeleteTrackedItem: (GitHubTrackedApp) -> Unit
 ) {
     var menuExpanded by remember(item.id) { mutableStateOf(false) }
@@ -409,16 +412,25 @@ private fun GitHubTrackedItemMoreActions(
                     GitHubTrackedItemMenuAction(
                         text = stringResource(R.string.common_refresh),
                         index = 0,
-                        optionSize = 2,
+                        optionSize = 3,
                         onClick = {
                             menuExpanded = false
                             onRefreshTrackedItem(item)
                         }
                     )
                     GitHubTrackedItemMenuAction(
-                        text = stringResource(R.string.github_track_sheet_btn_delete),
+                        text = stringResource(R.string.github_actions_menu),
                         index = 1,
-                        optionSize = 2,
+                        optionSize = 3,
+                        onClick = {
+                            menuExpanded = false
+                            onOpenActionsSheet(item)
+                        }
+                    )
+                    GitHubTrackedItemMenuAction(
+                        text = stringResource(R.string.github_track_sheet_btn_delete),
+                        index = 2,
+                        optionSize = 3,
                         variant = GlassVariant.SheetDangerAction,
                         onClick = {
                             menuExpanded = false

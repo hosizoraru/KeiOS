@@ -268,6 +268,7 @@ fun GitHubPage(
             onOpenCheckLogicSheet = actions::openCheckLogicSheet,
             onRefreshAllTracked = { actions.refreshAllTracked(showToast = true) },
             onRefreshTrackedItem = { actions.refreshTrackedItem(it, showToastOnError = true) },
+            onOpenActionsSheet = actions::openActionsSheet,
             onOpenTrackSheetForAdd = actions::openTrackSheetForAdd,
             onOpenTrackSheetForEdit = actions::openTrackSheetForEdit,
             onRequestDeleteTrackedItem = actions::requestDeleteTrackedItem,

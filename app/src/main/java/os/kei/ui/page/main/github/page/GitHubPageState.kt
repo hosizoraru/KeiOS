@@ -15,6 +15,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.feature.github.data.remote.GitHubReleaseAssetBundle
+import os.kei.feature.github.model.GitHubActionsDownloadRecord
+import os.kei.feature.github.model.GitHubActionsRunMatch
+import os.kei.feature.github.model.GitHubActionsRunTrackingPlan
+import os.kei.feature.github.model.GitHubActionsWorkflow
+import os.kei.feature.github.model.GitHubActionsWorkflowArtifactSignal
+import os.kei.feature.github.model.GitHubActionsWorkflowArtifactsSnapshot
+import os.kei.feature.github.model.GitHubActionsWorkflowMatch
+import os.kei.feature.github.model.GitHubApiAuthMode
 import os.kei.feature.github.model.GitHubApiCredentialStatus
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubStrategyBenchmarkReport
@@ -41,8 +49,27 @@ internal class GitHubPageState(
     var showAddSheet by mutableStateOf(false)
     var showStrategySheet by mutableStateOf(false)
     var showCheckLogicSheet by mutableStateOf(false)
+    var showActionsSheet by mutableStateOf(false)
     var showDownloaderPopup by mutableStateOf(false)
     var editingTrackedItem by mutableStateOf<GitHubTrackedApp?>(null)
+    var actionsTargetItem by mutableStateOf<GitHubTrackedApp?>(null)
+    var actionsLoading by mutableStateOf(false)
+    var actionsRunsLoading by mutableStateOf(false)
+    var actionsError by mutableStateOf<String?>(null)
+    var actionsAuthMode by mutableStateOf<GitHubApiAuthMode?>(null)
+    var actionsDefaultBranch by mutableStateOf("")
+    var actionsRawWorkflows by mutableStateOf<List<GitHubActionsWorkflow>>(emptyList())
+    var actionsWorkflowSignals by mutableStateOf<Map<Long, GitHubActionsWorkflowArtifactSignal>>(emptyMap())
+    var actionsWorkflows by mutableStateOf<List<GitHubActionsWorkflowMatch>>(emptyList())
+    var actionsSelectedWorkflowId by mutableStateOf<Long?>(null)
+    var actionsSnapshot by mutableStateOf<GitHubActionsWorkflowArtifactsSnapshot?>(null)
+    var actionsRuns by mutableStateOf<List<GitHubActionsRunMatch>>(emptyList())
+    var actionsRunLimit by mutableStateOf(6)
+    var actionsSelectedRunId by mutableStateOf<Long?>(null)
+    var actionsDownloadHistory by mutableStateOf<List<GitHubActionsDownloadRecord>>(emptyList())
+    var actionsRunTrackingPlans by mutableStateOf<Map<Long, GitHubActionsRunTrackingPlan>>(emptyMap())
+    var actionsArtifactDownloadLoadingId by mutableStateOf<Long?>(null)
+    var actionsRunWatchJob by mutableStateOf<Job?>(null)
     var preferPreReleaseInput by mutableStateOf(false)
     var alwaysShowLatestReleaseDownloadButtonInput by mutableStateOf(false)
     var selectedApp by mutableStateOf<InstalledAppItem?>(null)
@@ -106,6 +133,7 @@ internal class GitHubPageState(
     val apkAssetExpanded = mutableStateMapOf<String, Boolean>()
     val apkAssetIncludeAll = mutableStateMapOf<String, Boolean>()
     val itemRefreshLoading = mutableStateMapOf<String, Boolean>()
+    val actionsStatusRefreshingRunIds = mutableStateMapOf<Long, Boolean>()
     val trackedCardExpanded = mutableStateMapOf<String, Boolean>()
     val trackedFirstInstallAtByPackage = mutableStateMapOf<String, Long>()
     val trackedAddedAtById = mutableStateMapOf<String, Long>()
@@ -252,6 +280,34 @@ internal class GitHubPageState(
         showOnlineShareTargetPopup = false
         pendingTrackImportPreview = null
         showCheckLogicSheet = false
+    }
+
+    fun resetActionsSheetState() {
+        actionsRunWatchJob?.cancel()
+        actionsRunWatchJob = null
+        actionsLoading = false
+        actionsRunsLoading = false
+        actionsError = null
+        actionsAuthMode = null
+        actionsDefaultBranch = ""
+        actionsRawWorkflows = emptyList()
+        actionsWorkflowSignals = emptyMap()
+        actionsWorkflows = emptyList()
+        actionsSelectedWorkflowId = null
+        actionsSnapshot = null
+        actionsRuns = emptyList()
+        actionsRunLimit = 6
+        actionsSelectedRunId = null
+        actionsDownloadHistory = emptyList()
+        actionsRunTrackingPlans = emptyMap()
+        actionsArtifactDownloadLoadingId = null
+        actionsStatusRefreshingRunIds.clear()
+    }
+
+    fun dismissActionsSheet() {
+        showActionsSheet = false
+        actionsTargetItem = null
+        resetActionsSheetState()
     }
 
     fun dismissTrackImportPreview() {

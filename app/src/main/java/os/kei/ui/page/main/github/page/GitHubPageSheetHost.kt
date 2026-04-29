@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import os.kei.R
 import os.kei.ui.page.main.github.query.DownloaderOption
 import os.kei.ui.page.main.github.query.OnlineShareTargetOption
+import os.kei.ui.page.main.github.actions.GitHubActionsSheet
 import os.kei.ui.page.main.github.sheet.GitHubCheckLogicSheet
 import os.kei.ui.page.main.github.sheet.GitHubDeleteTrackDialog
 import os.kei.ui.page.main.github.sheet.GitHubStrategySheet
@@ -105,6 +106,20 @@ internal fun GitHubPageSheetHost(
         onOnlineShareTargetPopupAnchorBoundsChange = {
             state.onlineShareTargetPopupAnchorBounds = it
         }
+    )
+
+    GitHubActionsSheet(
+        show = state.showActionsSheet,
+        backdrop = backdrops.sheet,
+        state = state,
+        onDismissRequest = actions::closeActionsSheet,
+        onRefresh = actions::refreshActionsSheet,
+        onSelectWorkflow = actions::selectActionsWorkflow,
+        onSelectRun = actions::selectActionsRun,
+        onLoadMoreRuns = actions::loadMoreActionsRuns,
+        onRefreshRun = actions::refreshActionsRunStatus,
+        onDownloadArtifact = actions::downloadActionsArtifact,
+        onOpenRun = actions::openSelectedActionsRun
     )
 
     GitHubTrackEditSheet(

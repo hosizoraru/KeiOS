@@ -8,6 +8,7 @@ import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.VersionCheckUi
 import os.kei.ui.page.main.github.page.action.GitHubAssetActions
+import os.kei.ui.page.main.github.page.action.GitHubActionsActions
 import os.kei.ui.page.main.github.page.action.GitHubConfigActions
 import os.kei.ui.page.main.github.page.action.GitHubPageActionEnvironment
 import os.kei.ui.page.main.github.page.action.GitHubRefreshActions
@@ -35,6 +36,7 @@ internal class GitHubPageActions(
     )
     private val refreshActions = GitHubRefreshActions(env)
     private val assetActions = GitHubAssetActions(env)
+    private val actionsActions = GitHubActionsActions(env)
     private val configActions = GitHubConfigActions(env, refreshActions)
     private val trackActions = GitHubTrackActions(env, refreshActions)
 
@@ -56,6 +58,25 @@ internal class GitHubPageActions(
     fun openCheckLogicSheet() = configActions.openCheckLogicSheet()
 
     fun closeCheckLogicSheet() = configActions.closeCheckLogicSheet()
+
+    fun openActionsSheet(item: GitHubTrackedApp) = actionsActions.openActionsSheet(item)
+
+    fun closeActionsSheet() = actionsActions.closeActionsSheet()
+
+    fun refreshActionsSheet() = actionsActions.refreshActionsSheet()
+
+    fun selectActionsWorkflow(workflowId: Long) = actionsActions.selectActionsWorkflow(workflowId)
+
+    fun selectActionsRun(runId: Long) = actionsActions.selectActionsRun(runId)
+
+    fun loadMoreActionsRuns() = actionsActions.loadMoreActionsRuns()
+
+    fun refreshActionsRunStatus(runId: Long) = actionsActions.refreshActionsRunStatus(runId)
+
+    fun downloadActionsArtifact(runId: Long, artifactId: Long) =
+        actionsActions.downloadActionsArtifact(runId = runId, artifactId = artifactId)
+
+    fun openSelectedActionsRun() = actionsActions.openSelectedActionsRun()
 
     suspend fun reloadApps(forceRefresh: Boolean = false) =
         refreshActions.reloadApps(forceRefresh = forceRefresh)
