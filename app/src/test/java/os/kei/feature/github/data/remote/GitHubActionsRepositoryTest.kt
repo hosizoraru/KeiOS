@@ -543,6 +543,301 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `nightly link strategy falls back to all branches when default branch has no artifacts`() {
+        MockWebServer().use { server ->
+            val nightlyBaseUrl = server.url("/nightly/").toString()
+            val base = nightlyBaseUrl.trimEnd('/')
+            server.enqueue(MockResponse().setResponseCode(404).setBody("not found on main"))
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "workflows": [
+                                {
+                                  "id": 172991813,
+                                  "name": "Dev Branch Build & Artifact",
+                                  "path": ".github/workflows/auto-preview-dev.yml",
+                                  "state": "active",
+                                  "html_url": "https://github.com/demo/app/blob/main/.github/workflows/auto-preview-dev.yml",
+                                  "badge_url": ""
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody("""{"total_count":0,"workflow_runs":[]}""")
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 2,
+                              "workflow_runs": [
+                                {
+                                  "id": 25119889624,
+                                  "name": "Dev Branch Build & Artifact",
+                                  "display_title": "feat home build",
+                                  "workflow_id": 172991813,
+                                  "workflow_name": "Dev Branch Build & Artifact",
+                                  "event": "push",
+                                  "status": "completed",
+                                  "conclusion": "success",
+                                  "head_branch": "feat/Home",
+                                  "head_sha": "4720c1d",
+                                  "html_url": "https://github.com/demo/app/actions/runs/25119889624",
+                                  "repository": {"full_name":"demo/app"},
+                                  "head_repository": {"full_name":"demo/app", "fork": false},
+                                  "pull_requests": [],
+                                  "created_at": "2026-04-29T16:03:02Z",
+                                  "updated_at": "2026-04-29T16:14:36Z"
+                                },
+                                {
+                                  "id": 25115668266,
+                                  "name": "Dev Branch Build & Artifact",
+                                  "display_title": "dev branch build",
+                                  "workflow_id": 172991813,
+                                  "workflow_name": "Dev Branch Build & Artifact",
+                                  "event": "push",
+                                  "status": "completed",
+                                  "conclusion": "success",
+                                  "head_branch": "dev",
+                                  "head_sha": "7f6c006",
+                                  "html_url": "https://github.com/demo/app/actions/runs/25115668266",
+                                  "repository": {"full_name":"demo/app"},
+                                  "head_repository": {"full_name":"demo/app", "fork": false},
+                                  "pull_requests": [],
+                                  "created_at": "2026-04-29T14:43:44Z",
+                                  "updated_at": "2026-04-29T14:52:04Z"
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "artifacts": [
+                                {
+                                  "id": 6711189065,
+                                  "name": "app-online-Unstable-release.apk",
+                                  "size_in_bytes": 4851435,
+                                  "expired": false,
+                                  "digest": "sha256:feature",
+                                  "archive_download_url": "https://api.github.com/repos/demo/app/actions/artifacts/6711189065/zip",
+                                  "created_at": "2026-04-29T16:13:20Z",
+                                  "updated_at": "2026-04-29T16:13:20Z",
+                                  "workflow_run": {"id": 25119889624, "head_branch": "feat/Home", "head_sha": "4720c1d"}
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "artifacts": [
+                                {
+                                  "id": 6710189065,
+                                  "name": "app-online-Unstable-release.apk",
+                                  "size_in_bytes": 4851435,
+                                  "expired": false,
+                                  "digest": "sha256:dev",
+                                  "archive_download_url": "https://api.github.com/repos/demo/app/actions/artifacts/6710189065/zip",
+                                  "created_at": "2026-04-29T14:51:43Z",
+                                  "updated_at": "2026-04-29T14:51:43Z",
+                                  "workflow_run": {"id": 25115668266, "head_branch": "dev", "head_sha": "7f6c006"}
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                apiBaseUrl = server.url("/api/").toString(),
+                nightlyLinkBaseUrl = nightlyBaseUrl
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/auto-preview-dev.yml",
+                branch = "main",
+                artifactRunLimit = 2,
+                resolveNightlyRunDetail = false
+            ).result.getOrThrow()
+
+            assertEquals(listOf("feat/Home", "dev"), snapshot.runs.map { it.run.headBranch })
+            assertEquals(
+                listOf(6711189065L, 6710189065L),
+                snapshot.artifacts.map { it.id }
+            )
+            assertEquals(
+                "$base/demo/app/actions/runs/25115668266/app-online-Unstable-release.apk.zip",
+                snapshot.runs.last().artifacts.single().archiveDownloadUrl
+            )
+            assertEquals(
+                listOf(
+                    "/nightly/demo/app/workflows/auto-preview-dev/main?preview",
+                    "/api/repos/demo/app/actions/workflows?per_page=50",
+                    "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&branch=main&status=success",
+                    "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&status=success",
+                    "/api/repos/demo/app/actions/runs/25119889624/artifacts?per_page=100",
+                    "/api/repos/demo/app/actions/runs/25115668266/artifacts?per_page=100"
+                ),
+                List(6) { server.takeRequest().path }
+            )
+        }
+    }
+
+    @Test
+    fun `nightly link preview apk artifacts use public api metadata when available`() {
+        MockWebServer().use { server ->
+            val nightlyBaseUrl = server.url("/nightly/").toString()
+            val base = nightlyBaseUrl.trimEnd('/')
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            <a href="$base/demo/app/workflows/auto-preview-dev/dev/app-online-Unstable-release.apk.zip">app-online-Unstable-release.apk.zip</a>
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(MockResponse().setResponseCode(404).setBody("artifact detail not found"))
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "workflows": [
+                                {
+                                  "id": 172991813,
+                                  "name": "Dev Branch Build & Artifact",
+                                  "path": ".github/workflows/auto-preview-dev.yml",
+                                  "state": "active",
+                                  "html_url": "https://github.com/demo/app/blob/main/.github/workflows/auto-preview-dev.yml",
+                                  "badge_url": ""
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "workflow_runs": [
+                                {
+                                  "id": 25115668266,
+                                  "name": "Dev Branch Build & Artifact",
+                                  "display_title": "dev branch build",
+                                  "workflow_id": 172991813,
+                                  "workflow_name": "Dev Branch Build & Artifact",
+                                  "event": "push",
+                                  "status": "completed",
+                                  "conclusion": "success",
+                                  "head_branch": "dev",
+                                  "head_sha": "7f6c006",
+                                  "html_url": "https://github.com/demo/app/actions/runs/25115668266",
+                                  "repository": {"full_name":"demo/app"},
+                                  "head_repository": {"full_name":"demo/app", "fork": false},
+                                  "pull_requests": [],
+                                  "created_at": "2026-04-29T14:43:44Z",
+                                  "updated_at": "2026-04-29T14:52:04Z"
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        """
+                            {
+                              "total_count": 1,
+                              "artifacts": [
+                                {
+                                  "id": 6710189065,
+                                  "name": "app-online-Unstable-release.apk",
+                                  "size_in_bytes": 4851435,
+                                  "expired": false,
+                                  "digest": "sha256:dev",
+                                  "archive_download_url": "https://api.github.com/repos/demo/app/actions/artifacts/6710189065/zip",
+                                  "created_at": "2026-04-29T14:51:43Z",
+                                  "updated_at": "2026-04-29T14:51:43Z",
+                                  "workflow_run": {"id": 25115668266, "head_branch": "dev", "head_sha": "7f6c006"}
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+                    )
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                apiBaseUrl = server.url("/api/").toString(),
+                githubHtmlBaseUrl = server.url("/github/").toString(),
+                nightlyLinkBaseUrl = nightlyBaseUrl
+            )
+
+            val snapshot = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/auto-preview-dev.yml",
+                branch = "dev"
+            ).result.getOrThrow()
+
+            assertEquals(25115668266L, snapshot.runs.single().run.id)
+            assertEquals(6710189065L, snapshot.artifacts.single().id)
+            assertEquals(4_851_435L, snapshot.artifacts.single().sizeBytes)
+            assertEquals("7f6c006", snapshot.artifacts.single().workflowRunHeadSha)
+            assertEquals(
+                "$base/demo/app/actions/runs/25115668266/app-online-Unstable-release.apk.zip",
+                snapshot.artifacts.single().archiveDownloadUrl
+            )
+            assertEquals(
+                listOf(
+                    "/nightly/demo/app/workflows/auto-preview-dev/dev?preview",
+                    "/nightly/demo/app/workflows/auto-preview-dev/dev/app-online-Unstable-release.apk",
+                    "/api/repos/demo/app/actions/workflows?per_page=50",
+                    "/api/repos/demo/app/actions/workflows/172991813/runs?per_page=20&branch=dev&status=success",
+                    "/api/repos/demo/app/actions/runs/25115668266/artifacts?per_page=100"
+                ),
+                List(5) { server.takeRequest().path }
+            )
+        }
+    }
+
+    @Test
     fun `nightly link strategy can skip run detail for background signals`() {
         MockWebServer().use { nightly ->
             val base = nightly.url("/").toString().trimEnd('/')
@@ -747,6 +1042,31 @@ class GitHubActionsRepositoryTest {
 
             assertEquals(10L, result.artifactId)
             assertEquals(url, result.downloadUrl)
+            assertEquals(0, nightly.requestCount)
+        }
+    }
+
+    @Test
+    fun `nightly link raw apk artifact asks for api token instead of returning dead link`() {
+        MockWebServer().use { nightly ->
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val message = repository.resolveArtifactDownloadUrl(
+                artifact = GitHubActionsArtifact(
+                    id = 6710189065,
+                    name = "app-online-Unstable-release.apk",
+                    archiveDownloadUrl = "https://nightly.link/demo/app/actions/runs/25115668266/app-online-Unstable-release.apk.zip"
+                ),
+                owner = "demo",
+                repo = "app"
+            ).exceptionOrNull()?.message.orEmpty()
+
+            assertTrue(message.contains("nightly.link"))
+            assertTrue(message.contains("GitHub API Token"))
             assertEquals(0, nightly.requestCount)
         }
     }

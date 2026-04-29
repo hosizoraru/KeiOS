@@ -436,8 +436,8 @@
     <string name="github_strategy_actions_guide_nightly_pro_1">无需 Token，首次使用能直接尝试公开仓库</string>
     <string name="github_strategy_actions_guide_nightly_pro_2">分享出来的是稳定 nightly.link 链接，游客也能打开</string>
     <string name="github_strategy_actions_guide_nightly_con_1">依赖 GitHub 公开页面与 nightly.link 服务状态</string>
-    <string name="github_strategy_actions_guide_nightly_con_2">主要适合 latest successful run，历史 runs 与运行中状态较有限</string>
-    <string name="github_strategy_actions_guide_nightly_requirement">公开仓库；workflow 需要上传 artifact；nightly.link 能访问该仓库</string>
+    <string name="github_strategy_actions_guide_nightly_con_2">主要适合 latest successful run；原始 APK artifact 需要 token 兜底下载</string>
+    <string name="github_strategy_actions_guide_nightly_requirement">公开仓库；workflow 需要上传 artifact；nightly.link 能访问该仓库；artifact 推荐保持 zip 格式</string>
     <string name="github_strategy_actions_guide_api_summary">走 GitHub Actions REST API，适合稳定读取 workflows、runs 与 artifacts。</string>
     <string name="github_strategy_actions_guide_api_pro_1">可读取更多 runs、状态、分支与 artifact 元数据</string>
     <string name="github_strategy_actions_guide_api_pro_2">支持 private 仓库和更完整的下载记录匹配</string>

@@ -124,6 +124,26 @@ class GitHubActionsWorkflowSelectorTest {
     }
 
     @Test
+    fun `installerx sample starts from dev artifact workflow before signals load`() {
+        val workflows = listOf(
+            workflow(172991813, "Dev Branch Build & Artifact", ".github/workflows/auto-preview-dev.yml"),
+            workflow(168518891, "Automatic Alpha Pre-Release (Latest Only)", ".github/workflows/auto-preview-release.yml"),
+            workflow(209362137, "CodeQL", ".github/workflows/codeql.yml"),
+            workflow(218998575, "Deploy Documentation", ".github/workflows/deploy-docs.yml"),
+            workflow(168538301, "Manual Stable Release", ".github/workflows/manual-stable-release.yml"),
+            workflow(209350691, "PR Build and Test Check", ".github/workflows/pr-check.yml")
+        )
+
+        val matches = GitHubActionsWorkflowSelector.selectWorkflows(
+            workflows = workflows,
+            artifactSignals = emptyMap()
+        )
+
+        assertEquals("Dev Branch Build & Artifact", matches.first().workflow.name)
+        assertTrue(matches.first().reasons.contains("nightly-build"))
+    }
+
+    @Test
     fun `require artifacts removes release workflows that publish elsewhere`() {
         val workflows = listOf(
             workflow(172991813, "Dev Branch Build & Artifact", ".github/workflows/auto-preview-dev.yml"),

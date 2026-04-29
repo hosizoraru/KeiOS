@@ -252,6 +252,44 @@ class GitHubActionsRunSelectorTest {
         assertEquals("KeiOS-debug", matches.single().artifactMatches.single().artifact.name)
     }
 
+    @Test
+    fun `installerx nightly prefers dev branch over newer feature branch when requested`() {
+        val runs = listOf(
+            runArtifacts(
+                run = run(
+                    id = 25119889624,
+                    event = "push",
+                    branch = "feat/Home",
+                    title = "Feature branch build"
+                ),
+                artifactNames = listOf("app-online-Unstable-release.apk")
+            ),
+            runArtifacts(
+                run = run(
+                    id = 25115668266,
+                    event = "push",
+                    branch = "dev",
+                    title = "Dev branch build"
+                ),
+                artifactNames = listOf("app-online-Unstable-release.apk")
+            )
+        )
+
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = runs,
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = "main",
+                preferredBranches = setOf("dev"),
+                artifactOptions = GitHubActionsArtifactSelectionOptions(
+                    fallbackToAllArtifacts = true
+                )
+            )
+        )
+
+        assertEquals(25115668266, matches.first().runArtifacts.run.id)
+        assertTrue(matches.first().reasons.contains("preferred-branch"))
+    }
+
     private fun workflow(
         name: String,
         path: String

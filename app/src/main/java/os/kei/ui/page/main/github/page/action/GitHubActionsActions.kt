@@ -509,6 +509,7 @@ internal class GitHubActionsActions(
             workflow = workflow,
             options = GitHubActionsRunSelectionOptions(
                 defaultBranch = state.actionsDefaultBranch,
+                preferredBranches = preferredBranchesForRunSelection(),
                 includePullRequests = true,
                 includeNonDefaultBranches = true,
                 includeUnsuccessful = true,
@@ -553,6 +554,18 @@ internal class GitHubActionsActions(
         } else {
             workflow.id.toString()
         }
+    }
+
+    private fun preferredBranchesForRunSelection(): Set<String> {
+        val baseBranches = if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
+            listOf(state.actionsDefaultBranch, "dev", "develop")
+        } else {
+            listOf(state.actionsDefaultBranch)
+        }
+        return baseBranches
+            .map { branch -> branch.trim() }
+            .filter { branch -> branch.isNotBlank() }
+            .toSet()
     }
 
     private fun isCurrentTarget(item: GitHubTrackedApp): Boolean {

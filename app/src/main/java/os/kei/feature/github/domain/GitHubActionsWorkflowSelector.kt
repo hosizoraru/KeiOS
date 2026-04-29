@@ -166,6 +166,10 @@ object GitHubActionsWorkflowSelector {
         }
         if (traits.releaseLike) score += 12
         if (traits.nightlyLike) score += 8
+        if (traits.buildLike && traits.nightlyLike) {
+            score += 20
+            reasons += "nightly-build"
+        }
         if (traits.maintenanceLike) score -= 20
         val lastDownload = GitHubActionsDownloadHistoryMatcher.latestForWorkflow(
             workflow = workflow,

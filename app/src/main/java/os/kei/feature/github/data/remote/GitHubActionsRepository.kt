@@ -269,7 +269,11 @@ class GitHubActionsRepository(
                 resolveRunDetail = resolveNightlyRunDetail
             )
             val nightlySnapshot = nightlyResult.getOrNull()
-            if (nightlySnapshot != null && nightlySnapshot.artifacts.isNotEmpty()) {
+            if (
+                nightlySnapshot != null &&
+                nightlySnapshot.artifacts.isNotEmpty() &&
+                !nightlySnapshot.requiresPublicApiMetadataForNightlyDownload()
+            ) {
                 return nightlyResult.toTrace(startedAt)
             }
             val fallbackResult = fetchNightlyCompatibleWorkflowArtifactSnapshotFromPublicApi(
@@ -288,11 +292,40 @@ class GitHubActionsRepository(
                 excludePullRequests = excludePullRequests
             )
             val fallbackSnapshot = fallbackResult.getOrNull()
+            val branchFallbackResult = if (
+                branch.isNotBlank() &&
+                fallbackSnapshot?.artifacts.orEmpty().isEmpty()
+            ) {
+                fetchNightlyCompatibleWorkflowArtifactSnapshotFromPublicApi(
+                    owner = owner,
+                    repo = repo,
+                    workflowId = workflowId,
+                    runLimit = runLimit,
+                    artifactsPerRun = artifactsPerRun,
+                    artifactRunLimit = artifactRunLimit,
+                    branch = "",
+                    event = event,
+                    status = status,
+                    actor = actor,
+                    created = created,
+                    headSha = headSha,
+                    excludePullRequests = excludePullRequests
+                )
+            } else {
+                null
+            }
+            val branchFallbackSnapshot = branchFallbackResult?.getOrNull()
             return when {
                 fallbackSnapshot != null && fallbackSnapshot.artifacts.isNotEmpty() ->
                     fallbackResult.toTrace(startedAt)
+                branchFallbackResult != null &&
+                    branchFallbackSnapshot != null &&
+                    branchFallbackSnapshot.artifacts.isNotEmpty() ->
+                    branchFallbackResult.toTrace(startedAt)
                 nightlyResult.isSuccess -> nightlyResult.toTrace(startedAt)
                 fallbackResult.isSuccess -> fallbackResult.toTrace(startedAt)
+                branchFallbackResult != null && branchFallbackResult.isSuccess ->
+                    branchFallbackResult.toTrace(startedAt)
                 else -> nightlyResult.toTrace(startedAt)
             }
         }
@@ -489,6 +522,7 @@ class GitHubActionsRepository(
                 owner = owner,
                 repo = repo
             )
+            val requiresApiRedirect = artifact.requiresApiBackedNightlyDownload()
             if (
                 !preferApiTokenRedirect ||
                 sanitizedToken.isBlank() ||
@@ -496,6 +530,9 @@ class GitHubActionsRepository(
                 repo.isBlank() ||
                 artifact.id <= 0L
             ) {
+                if (requiresApiRedirect) {
+                    return Result.failure(IllegalStateException(buildNightlyRawArtifactDownloadMessage(artifact.name)))
+                }
                 return nightlyResult
             }
             return resolveArtifactDownloadUrl(buildArtifactDownloadUrl(owner, repo, artifact.id))
@@ -505,7 +542,10 @@ class GitHubActionsRepository(
                         downloadUrl = resolvedUrl
                     )
                 }
-                .recoverCatching { nightlyResult.getOrThrow() }
+                .recoverCatching { error ->
+                    if (requiresApiRedirect) throw error
+                    nightlyResult.getOrThrow()
+                }
         }
         if (sanitizedToken.isBlank()) {
             return Result.failure(IllegalStateException("下载 GitHub Actions artifact 需要填写 token"))
@@ -861,6 +901,34 @@ class GitHubActionsRepository(
         }
     }
 
+    private fun GitHubActionsWorkflowArtifactsSnapshot.requiresPublicApiMetadataForNightlyDownload(): Boolean {
+        return artifacts.any { artifact ->
+            artifact.requiresApiBackedNightlyDownload() &&
+                (
+                    artifact.sizeBytes <= 0L ||
+                        artifact.digest.isBlank() ||
+                        artifact.workflowRunHeadSha.isBlank()
+                    )
+        }
+    }
+
+    private fun GitHubActionsArtifact.requiresApiBackedNightlyDownload(): Boolean {
+        val normalizedName = name.trim().lowercase()
+        if (normalizedName.isBlank()) return false
+        val normalizedNightlyBaseUrl = nightlyLinkBaseUrl.trimEnd('/')
+        val nightlyUrl = archiveDownloadUrl.startsWith(normalizedNightlyBaseUrl, ignoreCase = true) ||
+            archiveDownloadUrl.contains("nightly.link", ignoreCase = true)
+        val rawAndroidArtifact = RAW_ANDROID_ARTIFACT_EXTENSIONS.any { extension ->
+            normalizedName.endsWith(extension)
+        }
+        return nightlyUrl && rawAndroidArtifact
+    }
+
+    private fun buildNightlyRawArtifactDownloadMessage(artifactName: String): String {
+        val name = artifactName.trim().ifBlank { "artifact" }
+        return "nightly.link 当前无法直接下载原始 APK artifact：$name。请填写 GitHub API Token 后下载，或切换 GitHub API Token 链路。"
+    }
+
     private fun String.urlEncode(): String {
         return URLEncoder.encode(this, Charsets.UTF_8.name()).replace("+", "%20")
     }
@@ -885,6 +953,7 @@ class GitHubActionsRepository(
         private const val DEFAULT_GITHUB_API_BASE_URL = "https://api.github.com"
         private const val DEFAULT_GITHUB_HTML_BASE_URL = "https://github.com"
         private const val DEFAULT_NIGHTLY_LINK_BASE_URL = "https://nightly.link"
+        private val RAW_ANDROID_ARTIFACT_EXTENSIONS = setOf(".apk", ".apks", ".aab")
 
         private data class CachedValue<T>(
             val value: T,
