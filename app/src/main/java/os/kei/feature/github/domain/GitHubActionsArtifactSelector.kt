@@ -161,11 +161,22 @@ object GitHubActionsArtifactSelector {
             reasons += "query"
         }
         if (artifact.sizeBytes > 0L) score += 2
+        val lastDownload = GitHubActionsDownloadHistoryMatcher.latestForArtifact(
+            artifact = artifact,
+            history = options.downloadHistory
+        )
+        if (lastDownload != null) {
+            val exactArtifact = artifact.id > 0L && lastDownload.artifactId == artifact.id
+            score += if (exactArtifact) 72 else 42
+            score += GitHubActionsDownloadHistoryMatcher.recencyScore(lastDownload)
+            reasons += "last-downloaded"
+        }
 
         return GitHubActionsArtifactMatch(
             artifact = artifact,
             traits = traits,
             score = score,
+            lastDownload = lastDownload,
             reasons = reasons
         )
     }

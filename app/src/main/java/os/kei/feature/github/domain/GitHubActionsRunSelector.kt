@@ -112,9 +112,10 @@ object GitHubActionsRunSelector {
         if (!options.includeNonDefaultBranches && !traits.defaultBranch && !traits.releaseTag) return null
         if (!options.includeUnsuccessful && traits.completed && !traits.successful) return null
 
+        val downloadHistory = options.downloadHistory + options.artifactOptions.downloadHistory
         val artifactMatches = GitHubActionsArtifactSelector.selectDisplayArtifacts(
             artifacts = runArtifacts.artifacts,
-            options = options.artifactOptions
+            options = options.artifactOptions.copy(downloadHistory = downloadHistory)
         )
         if (options.requireArtifacts && artifactMatches.isEmpty()) return null
         if (options.requireAndroidArtifacts && artifactMatches.none { it.traits.androidLike }) return null
@@ -189,6 +190,15 @@ object GitHubActionsRunSelector {
             score += 24
             reasons += "safe"
         }
+        val lastDownload = GitHubActionsDownloadHistoryMatcher.latestForRun(
+            run = runArtifacts.run,
+            history = downloadHistory
+        )
+        if (lastDownload != null) {
+            score += 68
+            score += GitHubActionsDownloadHistoryMatcher.recencyScore(lastDownload)
+            reasons += "last-downloaded"
+        }
 
         val bestArtifactScore = artifactMatches.maxOfOrNull { it.score } ?: 0
         val androidArtifactCount = artifactMatches.count { it.traits.androidLike }
@@ -203,6 +213,7 @@ object GitHubActionsRunSelector {
             traits = traits,
             artifactMatches = artifactMatches,
             score = score,
+            lastDownload = lastDownload,
             reasons = reasons
         )
     }

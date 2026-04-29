@@ -7,6 +7,7 @@ import os.kei.feature.github.model.GitHubActionsWorkflow
 import os.kei.feature.github.model.GitHubActionsWorkflowKind
 import os.kei.feature.github.model.GitHubActionsWorkflowRun
 import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
+import os.kei.feature.github.model.GitHubActionsDownloadRecord
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -168,6 +169,39 @@ class GitHubActionsWorkflowSelectorTest {
         assertEquals(2, signal.androidArtifactCount)
         assertEquals(0, signal.trustedRunCount)
         assertEquals(null, signal.recommendedRunId)
+    }
+
+    @Test
+    fun `last downloaded workflow gains extra weight`() {
+        val workflows = listOf(
+            workflow(10, "Build", ".github/workflows/build.yml"),
+            workflow(11, "Nightly", ".github/workflows/nightly.yml")
+        )
+        val signals = workflows.associate { item ->
+            item.id to signal(item, artifacts = listOf("app-arm64-v8a-release.apk"))
+        }
+
+        val matches = GitHubActionsWorkflowSelector.selectWorkflows(
+            workflows = workflows,
+            artifactSignals = signals,
+            options = GitHubActionsWorkflowSelectionOptions(
+                downloadHistory = listOf(
+                    GitHubActionsDownloadRecord(
+                        owner = "demo",
+                        repo = "app",
+                        workflowId = 11,
+                        workflowName = "Nightly",
+                        workflowPath = ".github/workflows/nightly.yml",
+                        artifactName = "app-arm64-v8a-release.apk",
+                        downloadedAtMillis = System.currentTimeMillis()
+                    )
+                )
+            )
+        )
+
+        assertEquals("Nightly", matches.first().workflow.name)
+        assertTrue(matches.first().reasons.contains("last-downloaded"))
+        assertEquals(11, matches.first().lastDownload?.workflowId)
     }
 
     @Test

@@ -8,6 +8,7 @@ import os.kei.feature.github.model.GitHubActionsRunBranchTrust
 import os.kei.feature.github.model.GitHubActionsRunSelectionOptions
 import os.kei.feature.github.model.GitHubActionsWorkflow
 import os.kei.feature.github.model.GitHubActionsWorkflowRun
+import os.kei.feature.github.model.GitHubActionsDownloadRecord
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -152,6 +153,78 @@ class GitHubActionsRunSelectorTest {
         assertTrue(matches.single().reasons.contains("release-tag"))
     }
 
+    @Test
+    fun `last downloaded run gains priority and exposes history`() {
+        val runs = listOf(
+            runArtifacts(
+                run = run(
+                    id = 2001,
+                    event = "push",
+                    branch = "main",
+                    title = "New main build"
+                ),
+                artifactNames = listOf("app-arm64-v8a-release.apk")
+            ),
+            runArtifacts(
+                run = run(
+                    id = 2000,
+                    event = "push",
+                    branch = "main",
+                    title = "Previously downloaded"
+                ),
+                artifactNames = listOf("app-universal-release.apk")
+            )
+        )
+
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = runs,
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = "main",
+                downloadHistory = listOf(
+                    GitHubActionsDownloadRecord(
+                        owner = "demo",
+                        repo = "app",
+                        runId = 2000,
+                        artifactName = "app-universal-release.apk",
+                        downloadedAtMillis = System.currentTimeMillis()
+                    )
+                )
+            )
+        )
+
+        assertEquals(2000, matches.first().runArtifacts.run.id)
+        assertTrue(matches.first().reasons.contains("last-downloaded"))
+        assertEquals(2000, matches.first().lastDownload?.runId)
+    }
+
+    @Test
+    fun `in progress run remains visible when artifact requirement is disabled`() {
+        val matches = GitHubActionsRunSelector.selectRuns(
+            runs = listOf(
+                GitHubActionsRunArtifacts(
+                    run = run(
+                        id = 3001,
+                        event = "workflow_dispatch",
+                        branch = "main",
+                        title = "Running build",
+                        status = "in_progress",
+                        conclusion = ""
+                    ),
+                    artifacts = emptyList()
+                )
+            ),
+            options = GitHubActionsRunSelectionOptions(
+                defaultBranch = "main",
+                requireArtifacts = false,
+                requireAndroidArtifacts = false
+            )
+        )
+
+        assertEquals(3001, matches.single().runArtifacts.run.id)
+        assertTrue(matches.single().traits.inProgress)
+        assertTrue(matches.single().reasons.contains("in-progress"))
+    }
+
     private fun workflow(
         name: String,
         path: String
@@ -169,7 +242,9 @@ class GitHubActionsRunSelectorTest {
         event: String,
         branch: String,
         title: String,
-        pullRequestCount: Int = 0
+        pullRequestCount: Int = 0,
+        status: String = "completed",
+        conclusion: String = "success"
     ): GitHubActionsWorkflowRun {
         return GitHubActionsWorkflowRun(
             id = id,
@@ -177,8 +252,8 @@ class GitHubActionsRunSelectorTest {
             workflowName = "Build",
             displayTitle = title,
             event = event,
-            status = "completed",
-            conclusion = "success",
+            status = status,
+            conclusion = conclusion,
             headBranch = branch,
             repositoryFullName = "demo/app",
             headRepositoryFullName = "demo/app",

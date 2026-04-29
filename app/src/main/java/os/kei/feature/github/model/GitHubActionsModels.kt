@@ -43,6 +43,14 @@ enum class GitHubActionsRunBranchTrust {
     Unknown
 }
 
+enum class GitHubActionsRunWatchState {
+    Queued,
+    Running,
+    Completed,
+    Failed,
+    Unknown
+}
+
 data class GitHubActionsRepositoryInfo(
     val owner: String,
     val repo: String,
@@ -127,6 +135,14 @@ data class GitHubActionsWorkflowArtifactsSnapshot(
         get() = runs.flatMap { it.artifacts }
 }
 
+data class GitHubActionsRunStatusSnapshot(
+    val owner: String,
+    val repo: String,
+    val run: GitHubActionsWorkflowRun,
+    val artifacts: List<GitHubActionsArtifact> = emptyList(),
+    val fetchedAtMillis: Long = System.currentTimeMillis()
+)
+
 data class GitHubActionsArtifactNameTraits(
     val normalizedName: String,
     val extension: String = "",
@@ -153,13 +169,15 @@ data class GitHubActionsArtifactSelectionOptions(
     val hideExpired: Boolean = true,
     val hideBuildNoise: Boolean = true,
     val includeNonAndroidArtifacts: Boolean = false,
-    val aggressiveAbiFiltering: Boolean = false
+    val aggressiveAbiFiltering: Boolean = false,
+    val downloadHistory: List<GitHubActionsDownloadRecord> = emptyList()
 )
 
 data class GitHubActionsArtifactMatch(
     val artifact: GitHubActionsArtifact,
     val traits: GitHubActionsArtifactNameTraits,
     val score: Int,
+    val lastDownload: GitHubActionsDownloadRecord? = null,
     val reasons: List<String> = emptyList()
 )
 
@@ -206,7 +224,8 @@ data class GitHubActionsWorkflowSelectionOptions(
     val preferredWorkflowIds: Set<Long> = emptySet(),
     val preferredWorkflowPaths: Set<String> = emptySet(),
     val includeDisabled: Boolean = false,
-    val requireArtifacts: Boolean = false
+    val requireArtifacts: Boolean = false,
+    val downloadHistory: List<GitHubActionsDownloadRecord> = emptyList()
 )
 
 data class GitHubActionsWorkflowMatch(
@@ -214,6 +233,7 @@ data class GitHubActionsWorkflowMatch(
     val traits: GitHubActionsWorkflowTraits,
     val signal: GitHubActionsWorkflowArtifactSignal? = null,
     val score: Int,
+    val lastDownload: GitHubActionsDownloadRecord? = null,
     val reasons: List<String> = emptyList()
 )
 
@@ -243,7 +263,8 @@ data class GitHubActionsRunSelectionOptions(
     val includeUnsuccessful: Boolean = false,
     val requireArtifacts: Boolean = true,
     val requireAndroidArtifacts: Boolean = true,
-    val artifactOptions: GitHubActionsArtifactSelectionOptions = GitHubActionsArtifactSelectionOptions()
+    val artifactOptions: GitHubActionsArtifactSelectionOptions = GitHubActionsArtifactSelectionOptions(),
+    val downloadHistory: List<GitHubActionsDownloadRecord> = emptyList()
 )
 
 data class GitHubActionsRunMatch(
@@ -251,5 +272,41 @@ data class GitHubActionsRunMatch(
     val traits: GitHubActionsRunTraits,
     val artifactMatches: List<GitHubActionsArtifactMatch>,
     val score: Int,
+    val lastDownload: GitHubActionsDownloadRecord? = null,
     val reasons: List<String> = emptyList()
+)
+
+data class GitHubActionsDownloadRecord(
+    val owner: String,
+    val repo: String,
+    val workflowId: Long = 0L,
+    val workflowName: String = "",
+    val workflowPath: String = "",
+    val runId: Long = 0L,
+    val runNumber: Long = 0L,
+    val runAttempt: Int = 0,
+    val runDisplayName: String = "",
+    val headBranch: String = "",
+    val headSha: String = "",
+    val event: String = "",
+    val status: String = "",
+    val conclusion: String = "",
+    val artifactId: Long = 0L,
+    val artifactName: String = "",
+    val artifactDigest: String = "",
+    val artifactSizeBytes: Long = 0L,
+    val sourceTrackId: String = "",
+    val packageName: String = "",
+    val downloadedAtMillis: Long = System.currentTimeMillis()
+)
+
+data class GitHubActionsRunTrackingPlan(
+    val runId: Long,
+    val state: GitHubActionsRunWatchState,
+    val status: String,
+    val conclusion: String,
+    val pollable: Boolean,
+    val nextPollDelayMillis: Long = 0L,
+    val staleAfterMillis: Long = 0L,
+    val reason: String = ""
 )

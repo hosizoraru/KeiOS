@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import os.kei.core.background.AppBackgroundScheduler
 import os.kei.feature.github.data.local.AppIconCache
+import os.kei.feature.github.data.local.GitHubActionsDownloadHistoryStore
 import os.kei.feature.github.data.local.GitHubReleaseAssetCacheStore
 import os.kei.feature.github.data.local.GitHubTrackSnapshot
 import kotlinx.coroutines.CoroutineDispatcher
@@ -23,6 +24,7 @@ import os.kei.feature.github.data.remote.GitHubReleaseAssetRepository
 import os.kei.feature.github.data.remote.GitHubReleaseStrategyRegistry
 import os.kei.feature.github.data.remote.GitHubVersionUtils
 import os.kei.feature.github.domain.GitHubActionsArtifactSelector
+import os.kei.feature.github.domain.GitHubActionsRunTracker
 import os.kei.feature.github.domain.GitHubActionsRunSelector
 import os.kei.feature.github.domain.GitHubActionsWorkflowSelector
 import os.kei.feature.github.domain.GitHubReleaseCheckService
@@ -31,10 +33,14 @@ import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsArtifactDownloadResolution
 import os.kei.feature.github.model.GitHubActionsArtifactMatch
 import os.kei.feature.github.model.GitHubActionsArtifactSelectionOptions
+import os.kei.feature.github.model.GitHubActionsDownloadRecord
 import os.kei.feature.github.model.GitHubActionsRepositoryInfo
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.feature.github.model.GitHubActionsRunSelectionOptions
+import os.kei.feature.github.model.GitHubActionsRunStatusSnapshot
+import os.kei.feature.github.model.GitHubActionsRunTrackingPlan
+import os.kei.feature.github.model.GitHubActionsWorkflowRun
 import os.kei.feature.github.model.GitHubActionsWorkflowArtifactSignal
 import os.kei.feature.github.model.GitHubActionsWorkflow
 import os.kei.feature.github.model.GitHubActionsWorkflowArtifactsSnapshot
@@ -526,6 +532,46 @@ internal class GitHubPageRepository(
         }
     }
 
+    suspend fun fetchGitHubActionsWorkflowRun(
+        owner: String,
+        repo: String,
+        runId: Long,
+        lookupConfig: GitHubLookupConfig
+    ): GitHubStrategyLoadTrace<GitHubActionsWorkflowRun> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .fetchWorkflowRun(owner = owner, repo = repo, runId = runId)
+        }
+    }
+
+    suspend fun fetchGitHubActionsRunStatusSnapshot(
+        owner: String,
+        repo: String,
+        runId: Long,
+        lookupConfig: GitHubLookupConfig,
+        artifactsLimit: Int = 100,
+        includeArtifactsWhenCompleted: Boolean = true
+    ): GitHubStrategyLoadTrace<GitHubActionsRunStatusSnapshot> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .fetchRunStatusSnapshot(
+                    owner = owner,
+                    repo = repo,
+                    runId = runId,
+                    artifactsLimit = artifactsLimit,
+                    includeArtifactsWhenCompleted = includeArtifactsWhenCompleted
+                )
+        }
+    }
+
+    suspend fun buildGitHubActionsRunTrackingPlan(
+        run: GitHubActionsWorkflowRun
+    ): GitHubActionsRunTrackingPlan {
+        return withContext(defaultDispatcher) {
+            GitHubActionsRunTracker.buildTrackingPlan(run)
+        }
+    }
+
     suspend fun fetchGitHubActionsWorkflowArtifactSignals(
         owner: String,
         repo: String,
@@ -578,6 +624,67 @@ internal class GitHubPageRepository(
                 elapsedMs = System.currentTimeMillis() - startedAt,
                 authMode = actionsRepository.authMode
             )
+        }
+    }
+
+    suspend fun loadGitHubActionsDownloadHistory(
+        owner: String = "",
+        repo: String = ""
+    ): List<GitHubActionsDownloadRecord> {
+        return withContext(ioDispatcher) {
+            GitHubActionsDownloadHistoryStore.load(owner = owner, repo = repo)
+        }
+    }
+
+    suspend fun recordGitHubActionsArtifactDownload(
+        record: GitHubActionsDownloadRecord
+    ) {
+        withContext(ioDispatcher) {
+            GitHubActionsDownloadHistoryStore.recordDownload(record)
+        }
+    }
+
+    fun buildGitHubActionsDownloadRecord(
+        owner: String,
+        repo: String,
+        workflow: GitHubActionsWorkflow,
+        run: GitHubActionsWorkflowRun,
+        artifact: GitHubActionsArtifact,
+        sourceTrackId: String = "",
+        packageName: String = "",
+        downloadedAtMillis: Long = System.currentTimeMillis()
+    ): GitHubActionsDownloadRecord {
+        return GitHubActionsDownloadRecord(
+            owner = owner,
+            repo = repo,
+            workflowId = workflow.id,
+            workflowName = workflow.name,
+            workflowPath = workflow.path,
+            runId = run.id,
+            runNumber = run.runNumber,
+            runAttempt = run.runAttempt,
+            runDisplayName = run.displayName,
+            headBranch = run.headBranch,
+            headSha = run.headSha,
+            event = run.event,
+            status = run.status,
+            conclusion = run.conclusion,
+            artifactId = artifact.id,
+            artifactName = artifact.name,
+            artifactDigest = artifact.digest,
+            artifactSizeBytes = artifact.sizeBytes,
+            sourceTrackId = sourceTrackId,
+            packageName = packageName,
+            downloadedAtMillis = downloadedAtMillis
+        )
+    }
+
+    suspend fun clearGitHubActionsDownloadHistory(
+        owner: String = "",
+        repo: String = ""
+    ) {
+        withContext(ioDispatcher) {
+            GitHubActionsDownloadHistoryStore.clear(owner = owner, repo = repo)
         }
     }
 

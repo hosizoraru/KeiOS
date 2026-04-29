@@ -9,6 +9,7 @@ import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsArtifactDownloadResolution
 import os.kei.feature.github.model.GitHubActionsRepositoryInfo
 import os.kei.feature.github.model.GitHubActionsRunArtifacts
+import os.kei.feature.github.model.GitHubActionsRunStatusSnapshot
 import os.kei.feature.github.model.GitHubActionsWorkflow
 import os.kei.feature.github.model.GitHubActionsWorkflowArtifactsSnapshot
 import os.kei.feature.github.model.GitHubActionsWorkflowRun
@@ -93,6 +94,17 @@ class GitHubActionsRepository(
         return result.toTrace(startedAt)
     }
 
+    fun fetchWorkflowRun(
+        owner: String,
+        repo: String,
+        runId: Long
+    ): GitHubStrategyLoadTrace<GitHubActionsWorkflowRun> {
+        val startedAt = System.currentTimeMillis()
+        val result = fetchJson(buildWorkflowRunUrl(owner, repo, runId))
+            .mapCatching(::parseWorkflowRun)
+        return result.toTrace(startedAt)
+    }
+
     fun fetchRunArtifacts(
         owner: String,
         repo: String,
@@ -103,6 +115,42 @@ class GitHubActionsRepository(
         val result = fetchJson(buildRunArtifactsUrl(owner, repo, runId, limit))
             .mapCatching { json -> parseArtifacts(json, fallbackWorkflowRunId = runId) }
         return result.toTrace(startedAt)
+    }
+
+    fun fetchRunStatusSnapshot(
+        owner: String,
+        repo: String,
+        runId: Long,
+        artifactsLimit: Int = DEFAULT_ARTIFACT_LIMIT,
+        includeArtifactsWhenCompleted: Boolean = true
+    ): GitHubStrategyLoadTrace<GitHubActionsRunStatusSnapshot> {
+        val startedAt = System.currentTimeMillis()
+        val run = fetchWorkflowRun(owner, repo, runId).result.getOrElse { error ->
+            return Result.failure<GitHubActionsRunStatusSnapshot>(error).toTrace(startedAt)
+        }
+        val artifacts = if (
+            includeArtifactsWhenCompleted &&
+            run.status.equals("completed", ignoreCase = true)
+        ) {
+            fetchRunArtifacts(
+                owner = owner,
+                repo = repo,
+                runId = runId,
+                limit = artifactsLimit
+            ).result.getOrElse { error ->
+                return Result.failure<GitHubActionsRunStatusSnapshot>(error).toTrace(startedAt)
+            }
+        } else {
+            emptyList()
+        }
+        return Result.success(
+            GitHubActionsRunStatusSnapshot(
+                owner = owner,
+                repo = repo,
+                run = run,
+                artifacts = artifacts
+            )
+        ).toTrace(startedAt)
     }
 
     fun fetchWorkflowArtifactSnapshot(
@@ -231,44 +279,52 @@ class GitHubActionsRepository(
         return buildList {
             for (index in 0 until array.length()) {
                 val run = array.optJSONObject(index) ?: continue
-                val id = run.optLong("id", 0L).takeIf { it > 0L } ?: continue
-                val actor = run.optJSONObject("actor")
-                val triggeringActor = run.optJSONObject("triggering_actor")
-                val repository = run.optJSONObject("repository")
-                val headRepository = run.optJSONObject("head_repository")
-                val pullRequests = run.optJSONArray("pull_requests")
-                add(
-                    GitHubActionsWorkflowRun(
-                        id = id,
-                        name = run.optString("name").trim(),
-                        displayTitle = run.optString("display_title").trim(),
-                        workflowId = run.optLong("workflow_id", 0L),
-                        workflowName = run.optString("workflow_name").trim(),
-                        runNumber = run.optLong("run_number", 0L),
-                        runAttempt = run.optInt("run_attempt", 0),
-                        event = run.optString("event").trim(),
-                        status = run.optString("status").trim(),
-                        conclusion = run.optString("conclusion").trim(),
-                        headBranch = run.optString("head_branch").trim(),
-                        headSha = run.optString("head_sha").trim(),
-                        htmlUrl = run.optString("html_url").trim(),
-                        artifactsUrl = run.optString("artifacts_url").trim(),
-                        actorLogin = actor?.optString("login").orEmpty().trim(),
-                        triggeringActorLogin = triggeringActor?.optString("login").orEmpty().trim(),
-                        repositoryFullName = repository?.optString("full_name").orEmpty().trim(),
-                        headRepositoryFullName = headRepository?.optString("full_name").orEmpty().trim(),
-                        headRepositoryFork = headRepository?.optBoolean("fork", false) ?: false,
-                        pullRequestCount = pullRequests?.length() ?: 0,
-                        checkSuiteId = run.optLong("check_suite_id", 0L),
-                        createdAtMillis = run.optString("created_at").parseIsoInstantOrNull(),
-                        runStartedAtMillis = run.optString("run_started_at").parseIsoInstantOrNull(),
-                        updatedAtMillis = run.optString("updated_at").parseIsoInstantOrNull()
-                    )
-                )
+                parseWorkflowRunObject(run)?.let(::add)
             }
         }.sortedWith(
             compareByDescending<GitHubActionsWorkflowRun> { it.createdAtMillis ?: Long.MIN_VALUE }
                 .thenByDescending { it.id }
+        )
+    }
+
+    internal fun parseWorkflowRun(json: String): GitHubActionsWorkflowRun {
+        val root = JSONObject(json)
+        return parseWorkflowRunObject(root)
+            ?: throw IllegalArgumentException("workflow run payload missing id")
+    }
+
+    private fun parseWorkflowRunObject(run: JSONObject): GitHubActionsWorkflowRun? {
+        val id = run.optLong("id", 0L).takeIf { it > 0L } ?: return null
+        val actor = run.optJSONObject("actor")
+        val triggeringActor = run.optJSONObject("triggering_actor")
+        val repository = run.optJSONObject("repository")
+        val headRepository = run.optJSONObject("head_repository")
+        val pullRequests = run.optJSONArray("pull_requests")
+        return GitHubActionsWorkflowRun(
+            id = id,
+            name = run.optString("name").trim(),
+            displayTitle = run.optString("display_title").trim(),
+            workflowId = run.optLong("workflow_id", 0L),
+            workflowName = run.optString("workflow_name").trim(),
+            runNumber = run.optLong("run_number", 0L),
+            runAttempt = run.optInt("run_attempt", 0),
+            event = run.optString("event").trim(),
+            status = run.optString("status").trim(),
+            conclusion = run.optString("conclusion").trim(),
+            headBranch = run.optString("head_branch").trim(),
+            headSha = run.optString("head_sha").trim(),
+            htmlUrl = run.optString("html_url").trim(),
+            artifactsUrl = run.optString("artifacts_url").trim(),
+            actorLogin = actor?.optString("login").orEmpty().trim(),
+            triggeringActorLogin = triggeringActor?.optString("login").orEmpty().trim(),
+            repositoryFullName = repository?.optString("full_name").orEmpty().trim(),
+            headRepositoryFullName = headRepository?.optString("full_name").orEmpty().trim(),
+            headRepositoryFork = headRepository?.optBoolean("fork", false) ?: false,
+            pullRequestCount = pullRequests?.length() ?: 0,
+            checkSuiteId = run.optLong("check_suite_id", 0L),
+            createdAtMillis = run.optString("created_at").parseIsoInstantOrNull(),
+            runStartedAtMillis = run.optString("run_started_at").parseIsoInstantOrNull(),
+            updatedAtMillis = run.optString("updated_at").parseIsoInstantOrNull()
         )
     }
 
@@ -397,6 +453,10 @@ class GitHubActionsRepository(
             if (excludePullRequests) add("exclude_pull_requests=true")
         }.joinToString("&")
         return "${apiBaseUrl.trimEnd('/')}/repos/$owner/$repo/actions/workflows/$encodedWorkflowId/runs?$query"
+    }
+
+    private fun buildWorkflowRunUrl(owner: String, repo: String, runId: Long): String {
+        return "${apiBaseUrl.trimEnd('/')}/repos/$owner/$repo/actions/runs/$runId"
     }
 
     private fun buildRunArtifactsUrl(owner: String, repo: String, runId: Long, limit: Int): String {

@@ -167,6 +167,15 @@ object GitHubActionsWorkflowSelector {
         if (traits.releaseLike) score += 12
         if (traits.nightlyLike) score += 8
         if (traits.maintenanceLike) score -= 20
+        val lastDownload = GitHubActionsDownloadHistoryMatcher.latestForWorkflow(
+            workflow = workflow,
+            history = options.downloadHistory
+        )
+        if (lastDownload != null) {
+            score += 38
+            score += GitHubActionsDownloadHistoryMatcher.recencyScore(lastDownload)
+            reasons += "last-downloaded"
+        }
 
         signal?.let {
             if (it.recentRunCount > 0) score += 4
@@ -210,6 +219,7 @@ object GitHubActionsWorkflowSelector {
             traits = traits,
             signal = signal,
             score = score,
+            lastDownload = lastDownload,
             reasons = reasons
         )
     }

@@ -125,6 +125,56 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `workflow run status snapshot fetches artifacts after completion`() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setResponseCode(200).setBody(sampleWorkflowRunJson(status = "completed")))
+            server.enqueue(MockResponse().setResponseCode(200).setBody(sampleArtifactsJson(runId = 101)))
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                apiBaseUrl = server.url("/").toString()
+            )
+
+            val snapshot = repository.fetchRunStatusSnapshot(
+                owner = "demo",
+                repo = "app",
+                runId = 101
+            ).result.getOrThrow()
+
+            assertEquals("completed", snapshot.run.status)
+            assertEquals(2, snapshot.artifacts.size)
+            assertEquals(
+                listOf(
+                    "/repos/demo/app/actions/runs/101",
+                    "/repos/demo/app/actions/runs/101/artifacts?per_page=100"
+                ),
+                List(2) { server.takeRequest().path }
+            )
+        }
+    }
+
+    @Test
+    fun `workflow run status snapshot skips artifacts while running`() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setResponseCode(200).setBody(sampleWorkflowRunJson(status = "in_progress")))
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                apiBaseUrl = server.url("/").toString()
+            )
+
+            val snapshot = repository.fetchRunStatusSnapshot(
+                owner = "demo",
+                repo = "app",
+                runId = 101
+            ).result.getOrThrow()
+
+            assertEquals("in_progress", snapshot.run.status)
+            assertTrue(snapshot.artifacts.isEmpty())
+            assertEquals("/repos/demo/app/actions/runs/101", server.takeRequest().path)
+            assertEquals(1, server.requestCount)
+        }
+    }
+
+    @Test
     fun `parsers keep core workflow run and artifact fields`() {
         val repository = GitHubActionsRepository(apiToken = "")
 
@@ -259,6 +309,37 @@ class GitHubActionsRepositoryTest {
               "full_name": "demo/app",
               "default_branch": "main",
               "owner": {"login": "demo"}
+            }
+        """.trimIndent()
+    }
+
+    private fun sampleWorkflowRunJson(status: String): String {
+        val conclusion = if (status == "completed") "success" else ""
+        return """
+            {
+              "id": 101,
+              "name": "Android CI",
+              "display_title": "Build arm64 artifact",
+              "workflow_id": 1,
+              "workflow_name": "Android CI",
+              "run_number": 10,
+              "run_attempt": 1,
+              "event": "push",
+              "status": "$status",
+              "conclusion": "$conclusion",
+              "head_branch": "main",
+              "head_sha": "def456",
+              "html_url": "https://github.com/demo/app/actions/runs/101",
+              "artifacts_url": "https://api.github.com/repos/demo/app/actions/runs/101/artifacts",
+              "check_suite_id": 123456,
+              "actor": {"login":"octocat"},
+              "triggering_actor": {"login":"octocat"},
+              "repository": {"full_name":"demo/app"},
+              "head_repository": {"full_name":"demo/app", "fork": false},
+              "pull_requests": [],
+              "created_at": "2026-04-21T00:00:00Z",
+              "run_started_at": "2026-04-21T00:00:30Z",
+              "updated_at": "2026-04-21T00:03:00Z"
             }
         """.trimIndent()
     }

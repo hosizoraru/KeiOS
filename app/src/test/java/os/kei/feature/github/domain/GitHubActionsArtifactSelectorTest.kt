@@ -5,6 +5,7 @@ import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsArtifactKind
 import os.kei.feature.github.model.GitHubActionsArtifactPlatform
 import os.kei.feature.github.model.GitHubActionsArtifactSelectionOptions
+import os.kei.feature.github.model.GitHubActionsDownloadRecord
 import os.kei.feature.github.model.GitHubReleaseChannel
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -152,13 +153,40 @@ class GitHubActionsArtifactSelectorTest {
         assertEquals(listOf("app-debug.apk"), matches.map { it.artifact.name })
     }
 
+    @Test
+    fun `selector boosts and exposes last downloaded artifact`() {
+        val downloaded = artifact("app-universal-release.apk", id = 20L)
+        val fresh = artifact("app-arm64-v8a-release.apk", id = 21L)
+
+        val matches = GitHubActionsArtifactSelector.selectDisplayArtifacts(
+            artifacts = listOf(fresh, downloaded),
+            options = GitHubActionsArtifactSelectionOptions(
+                preferredAbis = listOf("arm64-v8a"),
+                downloadHistory = listOf(
+                    GitHubActionsDownloadRecord(
+                        owner = "demo",
+                        repo = "app",
+                        artifactId = 20L,
+                        artifactName = "app-universal-release.apk",
+                        downloadedAtMillis = System.currentTimeMillis()
+                    )
+                )
+            )
+        )
+
+        assertEquals("app-universal-release.apk", matches.first().artifact.name)
+        assertTrue(matches.first().reasons.contains("last-downloaded"))
+        assertEquals(20L, matches.first().lastDownload?.artifactId)
+    }
+
     private fun artifact(
         name: String,
         size: Long = 10_000_000L,
-        expired: Boolean = false
+        expired: Boolean = false,
+        id: Long = name.hashCode().toLong()
     ): GitHubActionsArtifact {
         return GitHubActionsArtifact(
-            id = name.hashCode().toLong(),
+            id = id,
             name = name,
             sizeBytes = size,
             expired = expired
