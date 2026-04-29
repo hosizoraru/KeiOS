@@ -170,6 +170,16 @@ internal class GitHubActionsNightlyLinkRepository(
             workflowSlug = workflowSlug,
             branch = resolvedBranch
         ).take(artifactsPerRun.coerceIn(1, 100))
+        if (artifactNames.isEmpty() && resolveRunDetail) {
+            error(
+                buildNoNightlyArtifactsMessage(
+                    owner = owner,
+                    repo = repo,
+                    workflowFile = workflowFile,
+                    branch = resolvedBranch
+                )
+            )
+        }
         val detail = if (resolveRunDetail) {
             artifactNames.firstOrNull()?.let { artifactName ->
                 fetchArtifactDetail(
@@ -478,7 +488,7 @@ internal class GitHubActionsNightlyLinkRepository(
         client.newCall(request).execute().use { response ->
             val bodyText = response.body.string()
             if (!response.isSuccessful) {
-                error("公开页面读取失败 (HTTP ${response.code})")
+                error(buildPublicHtmlErrorMessage(url = url, httpCode = response.code))
             }
             if (cacheTtlMillis > 0L) {
                 putCachedValue(publicHtmlCache, url, bodyText)
@@ -517,6 +527,37 @@ internal class GitHubActionsNightlyLinkRepository(
     private fun buildNightlyArtifactUrl(owner: String, repo: String, artifactId: Long): String {
         return "${nightlyLinkBaseUrl.trimEnd('/')}/${owner.urlEncode()}/${repo.urlEncode()}/" +
             "actions/artifacts/$artifactId.zip"
+    }
+
+    private fun buildNoNightlyArtifactsMessage(
+        owner: String,
+        repo: String,
+        workflowFile: String,
+        branch: String
+    ): String {
+        return "nightly.link 没有读取到 $owner/$repo 的 $workflowFile 在 $branch 分支的可下载 artifact。请确认该 workflow 最近一次成功 run 使用 actions/upload-artifact 上传了 artifact，且 artifact 仍在保留期内；建议切换 GitHub API Token。"
+    }
+
+    private fun buildPublicHtmlErrorMessage(url: String, httpCode: Int): String {
+        val normalizedNightlyBase = nightlyLinkBaseUrl.trimEnd('/')
+        val normalizedGitHubBase = githubHtmlBaseUrl.trimEnd('/')
+        val source = when {
+            url.startsWith(normalizedNightlyBase, ignoreCase = true) -> "nightly.link"
+            url.startsWith(normalizedGitHubBase, ignoreCase = true) -> "GitHub 公开页面"
+            else -> "公开页面"
+        }
+        return when (httpCode) {
+            401, 403 ->
+                "$source 访问被拒绝。私有仓库、受限 Actions、组织权限或全局限流会触发该状态；建议切换 GitHub API Token。"
+            404 ->
+                "$source 没有找到对应 Actions 资源。请确认仓库、workflow 文件、分支、run 与 artifact 均可公开访问，且 artifact 仍在保留期内；建议切换 GitHub API Token。"
+            410 ->
+                "$source 返回 artifact 已过期。请选择更新的 run，或切换 GitHub API Token 读取完整 Actions 数据。"
+            429 ->
+                "$source 当前限流。请稍后重试，或切换 GitHub API Token。"
+            else ->
+                "$source 读取失败 (HTTP $httpCode)。请检查网络与公开访问权限；建议切换 GitHub API Token。"
+        }
     }
 
     private fun String.urlEncode(): String {

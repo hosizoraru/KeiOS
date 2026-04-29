@@ -444,6 +444,58 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `nightly link selected workflow explains empty artifact page`() {
+        MockWebServer().use { nightly ->
+            nightly.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody("<p>Choose one of the artifacts:</p><table></table>")
+            )
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val errorMessage = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/android.yml",
+                branch = "master"
+            ).result.exceptionOrNull()?.message.orEmpty()
+
+            assertTrue(errorMessage.contains("nightly.link 没有读取到 demo/app"))
+            assertTrue(errorMessage.contains("android.yml"))
+            assertTrue(errorMessage.contains("master"))
+            assertTrue(errorMessage.contains("GitHub API Token"))
+            assertEquals("/demo/app/workflows/android/master?preview", nightly.takeRequest().path)
+        }
+    }
+
+    @Test
+    fun `nightly link public page failure recommends token`() {
+        MockWebServer().use { nightly ->
+            nightly.enqueue(MockResponse().setResponseCode(404).setBody("not found"))
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val errorMessage = repository.fetchWorkflowArtifactSnapshot(
+                owner = "demo",
+                repo = "app",
+                workflowId = ".github/workflows/android.yml",
+                branch = "master"
+            ).result.exceptionOrNull()?.message.orEmpty()
+
+            assertTrue(errorMessage.contains("nightly.link"))
+            assertTrue(errorMessage.contains("Actions 资源"))
+            assertTrue(errorMessage.contains("GitHub API Token"))
+        }
+    }
+
+    @Test
     fun `nightly link preview page reuses short cache`() {
         MockWebServer().use { nightly ->
             val base = nightly.url("/").toString().trimEnd('/')

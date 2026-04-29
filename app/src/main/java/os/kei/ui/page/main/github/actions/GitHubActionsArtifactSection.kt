@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import os.kei.R
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.github.page.GitHubPageState
@@ -23,6 +24,12 @@ internal fun GitHubActionsArtifactsSection(
     onShareArtifact: (Long, Long) -> Unit,
     context: Context
 ) {
+    val nightlyLink = state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink
+    val emptyArtifactsText = if (nightlyLink) {
+        stringResource(R.string.github_actions_empty_artifacts_nightly)
+    } else {
+        stringResource(R.string.github_actions_empty_artifacts)
+    }
     GitHubActionsCollapsibleSection(
         title = stringResource(R.string.github_actions_section_artifacts),
         summary = artifactSectionSummary(selectedRun),
@@ -37,7 +44,7 @@ internal fun GitHubActionsArtifactsSection(
         when {
             selectedRun == null -> {
                 GitHubActionsNoticeCard(
-                    text = stringResource(R.string.github_actions_empty_artifacts),
+                    text = emptyArtifactsText,
                     accent = MiuixTheme.colorScheme.onBackgroundVariant,
                     isDark = isDark
                 )
@@ -56,7 +63,7 @@ internal fun GitHubActionsArtifactsSection(
             }
             selectedRun.artifactMatches.isEmpty() -> {
                 GitHubActionsNoticeCard(
-                    text = stringResource(R.string.github_actions_empty_artifacts),
+                    text = emptyArtifactsText,
                     accent = MiuixTheme.colorScheme.onBackgroundVariant,
                     isDark = isDark
                 )

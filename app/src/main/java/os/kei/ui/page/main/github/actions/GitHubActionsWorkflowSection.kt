@@ -3,6 +3,7 @@ package os.kei.ui.page.main.github.actions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import os.kei.R
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.ui.page.main.github.page.GitHubPageState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -31,8 +32,13 @@ internal fun GitHubActionsWorkflowsSection(
                 )
             }
             state.actionsWorkflows.isEmpty() -> {
+                val emptyText = if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
+                    stringResource(R.string.github_actions_empty_workflows_nightly)
+                } else {
+                    stringResource(R.string.github_actions_empty_workflows)
+                }
                 GitHubActionsNoticeCard(
-                    text = stringResource(R.string.github_actions_empty_workflows),
+                    text = emptyText,
                     accent = MiuixTheme.colorScheme.onBackgroundVariant,
                     isDark = isDark
                 )

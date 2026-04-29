@@ -62,7 +62,11 @@
     <string name="github_actions_empty_workflows">该仓库当前没有可展示的 active workflow</string>
     <string name="github_actions_empty_runs">当前 workflow 没有可展示的 run</string>
     <string name="github_actions_empty_artifacts">当前 run 没有可展示的 artifact</string>
+    <string name="github_actions_empty_workflows_nightly">nightly.link 没有从公开 GitHub 页面读取到 workflow。请确认仓库公开且存在 .github/workflows；建议切换 GitHub API Token。</string>
+    <string name="github_actions_empty_runs_nightly">nightly.link 没有读取到可下载 artifact 对应的 run。请确认默认分支有成功 run，或切换 GitHub API Token。</string>
+    <string name="github_actions_empty_artifacts_nightly">nightly.link 没有读取到可下载 artifact。请确认 workflow 使用 actions/upload-artifact 上传产物，且 artifact 仍在保留期内；建议切换 GitHub API Token。</string>
     <string name="github_actions_error_load_failed">Actions 读取失败：%1$s</string>
+    <string name="github_actions_error_load_failed_nightly">Actions 读取失败：%1$s\nnightly.link 依赖公开仓库、成功 run 和未过期 artifact；建议切换 GitHub API Token 获取完整 Actions 数据。</string>
     <string name="github_actions_hint_token_required">下载 Actions artifact 需要填写 GitHub token</string>
     <string name="github_actions_hint_run_in_progress">该 run 仍在执行，完成后会自动刷新状态，也可手动刷新</string>
     <string name="github_actions_badge_recommended">推荐</string>

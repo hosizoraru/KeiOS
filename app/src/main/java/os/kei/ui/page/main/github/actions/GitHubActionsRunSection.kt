@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import os.kei.R
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.feature.github.model.GitHubActionsRunMatch
 import os.kei.ui.page.main.github.page.GitHubPageState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -37,8 +38,13 @@ internal fun GitHubActionsRunsSection(
                 )
             }
             state.actionsRuns.isEmpty() -> {
+                val emptyText = if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
+                    stringResource(R.string.github_actions_empty_runs_nightly)
+                } else {
+                    stringResource(R.string.github_actions_empty_runs)
+                }
                 GitHubActionsNoticeCard(
-                    text = stringResource(R.string.github_actions_empty_runs),
+                    text = emptyText,
                     accent = MiuixTheme.colorScheme.onBackgroundVariant,
                     isDark = isDark
                 )

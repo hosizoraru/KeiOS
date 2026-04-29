@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import os.kei.R
+import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.github.page.GitHubPageState
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -55,8 +56,13 @@ internal fun GitHubActionsSheetContent(
         )
 
         state.actionsError?.takeIf { it.isNotBlank() }?.let { message ->
+            val errorText = if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
+                stringResource(R.string.github_actions_error_load_failed_nightly, message)
+            } else {
+                stringResource(R.string.github_actions_error_load_failed, message)
+            }
             GitHubActionsNoticeCard(
-                text = stringResource(R.string.github_actions_error_load_failed, message),
+                text = errorText,
                 accent = GitHubStatusPalette.Error,
                 isDark = isDark
             )
