@@ -169,18 +169,18 @@ internal fun calculateInviteTicketAvailableMs(lastUsedMs: Long): Long {
     return lastUsedMs + BA_INVITE_COOLDOWN_MS
 }
 
-internal fun formatBaDateTime(epochMillis: Long): String {
-    if (epochMillis <= 0L) return "未同步"
+internal fun formatBaDateTime(epochMillis: Long, fallbackText: String): String {
+    if (epochMillis <= 0L) return fallbackText
     return runCatching {
         SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()).format(Date(epochMillis))
-    }.getOrDefault("未同步")
+    }.getOrDefault(fallbackText)
 }
 
-internal fun formatBaDateTimeNoSeconds(epochMillis: Long): String {
-    if (epochMillis <= 0L) return "未同步"
+internal fun formatBaDateTimeNoSeconds(epochMillis: Long, fallbackText: String): String {
+    if (epochMillis <= 0L) return fallbackText
     return runCatching {
         SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(epochMillis))
-    }.getOrDefault("未同步")
+    }.getOrDefault(fallbackText)
 }
 
 internal fun formatBaRemainingTime(targetMs: Long, nowMs: Long = System.currentTimeMillis()): String {

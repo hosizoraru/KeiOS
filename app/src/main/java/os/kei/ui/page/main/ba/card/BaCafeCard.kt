@@ -68,11 +68,12 @@ internal fun BaCafeCard(
     val invite2Color = accentPink
     val invite1Text = if (invite1Ready) "0s" else formatBaRemainingTime(invite1AvailableAt, uiNowMs)
     val invite2Text = if (invite2Ready) "0s" else formatBaRemainingTime(invite2AvailableAt, uiNowMs)
+    val notSyncedText = stringResource(R.string.ba_state_not_synced)
     val invite1TimeText =
-        formatBaDateTimeNoSeconds(if (invite1Ready) uiNowMs else invite1AvailableAt)
+        formatBaDateTimeNoSeconds(if (invite1Ready) uiNowMs else invite1AvailableAt, notSyncedText)
     val invite2TimeText =
-        formatBaDateTimeNoSeconds(if (invite2Ready) uiNowMs else invite2AvailableAt)
-    val headpatTimeText = if (coffeeHeadpatMs > 0L) formatBaDateTimeNoSeconds(coffeeHeadpatMs) else "-"
+        formatBaDateTimeNoSeconds(if (invite2Ready) uiNowMs else invite2AvailableAt, notSyncedText)
+    val headpatTimeText = if (coffeeHeadpatMs > 0L) formatBaDateTimeNoSeconds(coffeeHeadpatMs, notSyncedText) else "-"
 
     BaGlassCard(
         backdrop = backdrop,

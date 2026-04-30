@@ -36,7 +36,7 @@ object GitHubReleaseCheckService {
                 localVersion = localVersion,
                 localVersionCode = localVersionCode,
                 status = GitHubTrackedReleaseStatus.Failed,
-                message = "检查失败: ${error.message ?: "unknown"}"
+                message = GitHubTrackedReleaseStatus.Failed.failureMessage(error.message ?: "unknown")
             )
         }
 
@@ -52,7 +52,7 @@ object GitHubReleaseCheckService {
                 localVersion = localVersion,
                 localVersionCode = localVersionCode,
                 status = GitHubTrackedReleaseStatus.Failed,
-                message = "检查失败: ${error.message ?: "unknown"}"
+                message = GitHubTrackedReleaseStatus.Failed.failureMessage(error.message ?: "unknown")
             )
         }
 
@@ -128,7 +128,7 @@ object GitHubReleaseCheckService {
         }
         val showPreReleaseInfo = inspectPreRelease && preReleaseInfo.isNotBlank()
         val releaseHint = when {
-            hasOnlyPreReleases && !inspectPreRelease -> "该项目暂时可能只有预发行版"
+            hasOnlyPreReleases && !inspectPreRelease -> GitHubTrackedReleaseStatus.ONLY_PRERELEASES_HINT_MESSAGE
             else -> ""
         }
 
@@ -337,17 +337,14 @@ object GitHubReleaseCheckService {
             hasUpdate = entry.hasUpdate,
             hasPreReleaseUpdate = entry.hasPreReleaseUpdate,
             recommendsPreRelease = entry.recommendsPreRelease ||
-                entry.message == GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable.defaultMessage,
+                GitHubTrackedReleaseStatus.fromMessage(entry.message) ==
+                GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable,
             isPreReleaseInstalled = entry.isPreRelease,
             preReleaseInfo = entry.preReleaseInfo,
             showPreReleaseInfo = entry.showPreReleaseInfo,
             releaseHint = entry.releaseHint,
-            status = GitHubTrackedReleaseStatus.entries.firstOrNull { it.defaultMessage == entry.message }
-                ?: if (entry.message.startsWith("检查失败")) {
-                    GitHubTrackedReleaseStatus.Failed
-                } else {
-                    GitHubTrackedReleaseStatus.ComparisonUncertain
-                },
+            status = GitHubTrackedReleaseStatus.fromMessage(entry.message)
+                ?: GitHubTrackedReleaseStatus.ComparisonUncertain,
             message = entry.message
         )
     }

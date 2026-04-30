@@ -52,7 +52,7 @@ internal fun GitHubCheckCacheEntry.toUi(): VersionCheckUi = VersionCheckUi(
     hasPreReleaseUpdate = hasPreReleaseUpdate,
     recommendsPreRelease = recommendsPreRelease,
     releaseHint = releaseHint,
-    failed = message.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage),
+    failed = GitHubTrackedReleaseStatus.isFailureMessage(message),
     sourceStrategyId = sourceStrategyId
 )
 

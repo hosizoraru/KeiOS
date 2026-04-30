@@ -87,9 +87,10 @@ internal fun BaOverviewCard(
         nowMs = uiNowMs,
     )
     val apNextPointRemain = formatBaRemainingTime(apNextPointAt, uiNowMs)
-    val apSyncTimeText = if (apSyncMs > 0L) formatBaDateTime(apSyncMs) else stringResource(R.string.ba_state_not_synced)
+    val notSyncedText = stringResource(R.string.ba_state_not_synced)
+    val apSyncTimeText = if (apSyncMs > 0L) formatBaDateTime(apSyncMs, notSyncedText) else notSyncedText
     val apFullText = formatBaRemainingTime(apFullAt, uiNowMs)
-    val apFullTimeText = formatBaDateTime(apFullAt)
+    val apFullTimeText = formatBaDateTime(apFullAt, notSyncedText)
     val accentBlue = Color(0xFF3B82F6)
     val accentGreen = Color(0xFF22C55E)
     val accentAmber = Color(0xFFF59E0B)

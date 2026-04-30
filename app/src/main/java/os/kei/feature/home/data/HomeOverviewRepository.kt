@@ -176,7 +176,7 @@ private fun loadHomeGitHubOverview(): HomeGitHubOverview {
         updatableCount = matchedCacheByTrackId.count { it.value?.hasUpdate == true },
         preReleaseUpdateCount = matchedCacheByTrackId.count { it.value?.hasPreReleaseUpdate == true },
         failedCount = matchedCacheByTrackId.count { (_, entry) ->
-            entry?.message?.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage) == true
+            entry?.message?.let(GitHubTrackedReleaseStatus::isFailureMessage) == true
         },
         strategy = snapshot.lookupConfig.selectedStrategy,
         apiTokenConfigured = snapshot.lookupConfig.apiToken.isNotBlank(),

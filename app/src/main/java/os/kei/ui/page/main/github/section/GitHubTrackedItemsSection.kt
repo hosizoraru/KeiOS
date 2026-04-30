@@ -65,6 +65,7 @@ import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.github.formatReleaseValue
+import os.kei.ui.page.main.github.githubReleaseHintMessage
 import os.kei.ui.page.main.github.isLocalAppUninstalled
 import os.kei.ui.page.main.github.preReleaseVersionColor
 import os.kei.ui.page.main.github.stableVersionColor
@@ -348,7 +349,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
                     )
                     if (state.releaseHint.isNotBlank()) {
                         AppSupportingBlock(
-                            text = state.releaseHint,
+                            text = githubReleaseHintMessage(context, state.releaseHint),
                             accentColor = MiuixTheme.colorScheme.onBackgroundVariant
                         )
                     }

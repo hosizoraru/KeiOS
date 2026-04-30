@@ -458,30 +458,28 @@ internal class McpGitHubTools(
 
     private fun String.isGitHubCheckFailureMessage(): Boolean {
         val raw = trim()
-        return raw.contains("failed", ignoreCase = true) ||
+        return GitHubTrackedReleaseStatus.isFailureMessage(raw) ||
+            raw.contains("failed", ignoreCase = true) ||
             raw.contains("\u5931\u8d25", ignoreCase = true)
     }
 
     private fun String.toMcpGitHubMessage(): String {
         val raw = trim()
-        return when (raw) {
-            GitHubTrackedReleaseStatus.UpdateAvailable.defaultMessage -> "Update available"
-            GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable.defaultMessage -> "Pre-release update available"
-            GitHubTrackedReleaseStatus.PreReleaseOptional.defaultMessage -> "Pre-release available"
-            GitHubTrackedReleaseStatus.PreReleaseTracked.defaultMessage -> "Pre-release tracked"
-            GitHubTrackedReleaseStatus.UpToDate.defaultMessage -> "Up to date"
-            GitHubTrackedReleaseStatus.MatchedRelease.defaultMessage -> "Matched release"
-            GitHubTrackedReleaseStatus.ComparisonUncertain.defaultMessage -> "Version comparison uncertain"
-            GitHubTrackedReleaseStatus.Failed.defaultMessage -> "Check failed"
-            "\u8be5\u9879\u76ee\u6682\u65f6\u53ef\u80fd\u53ea\u6709\u9884\u53d1\u884c\u7248" ->
+        val status = GitHubTrackedReleaseStatus.fromMessage(raw)
+        return when {
+            status == GitHubTrackedReleaseStatus.UpdateAvailable -> "Update available"
+            status == GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable -> "Pre-release update available"
+            status == GitHubTrackedReleaseStatus.PreReleaseOptional -> "Pre-release available"
+            status == GitHubTrackedReleaseStatus.PreReleaseTracked -> "Pre-release tracked"
+            status == GitHubTrackedReleaseStatus.UpToDate -> "Up to date"
+            status == GitHubTrackedReleaseStatus.MatchedRelease -> "Matched release"
+            status == GitHubTrackedReleaseStatus.ComparisonUncertain -> "Version comparison uncertain"
+            status == GitHubTrackedReleaseStatus.Failed ->
+                GitHubTrackedReleaseStatus.localizedFailureDetail(raw, "Check failed")
+            GitHubTrackedReleaseStatus.isOnlyPreReleasesHint(raw) ->
                 "This project may currently publish only pre-releases"
             else -> {
-                val legacyPrefix = "\u68c0\u67e5\u5931\u8d25"
-                if (raw.startsWith(legacyPrefix)) {
-                    raw.replaceFirst(legacyPrefix, "Check failed")
-                } else {
-                    raw
-                }
+                raw
             }
         }
     }

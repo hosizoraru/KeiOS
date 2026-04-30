@@ -7,6 +7,8 @@ import kotlinx.serialization.json.buildJsonObject
 import os.kei.feature.github.data.local.GitHubReleaseAssetCacheStore
 import os.kei.feature.github.data.local.GitHubTrackStore
 import os.kei.ui.page.main.ba.support.BASettingsStore
+import os.kei.ui.page.main.ba.support.baCalendarKindLabel
+import os.kei.ui.page.main.ba.support.baPoolTagLabel
 import os.kei.ui.page.main.ba.support.cafeDailyCapacity
 import os.kei.ui.page.main.ba.support.cafeHourlyGain
 import os.kei.ui.page.main.ba.support.cafeStorageCap
@@ -304,8 +306,9 @@ internal class McpBaTools(
             appendLine("entryCount=${entries.size}")
             if (includeEntries && entries.isNotEmpty()) {
                 entries.take(limit).forEachIndexed { index, entry ->
+                    val kindLabel = appContext.baCalendarKindLabel(entry.kindId, entry.kindName)
                     appendLine(
-                        "entry[$index]=id:${entry.id} | kind:${entry.kindName} | running:${entry.isRunning} | title:${entry.title} | beginAtMs:${entry.beginAtMs} | endAtMs:${entry.endAtMs} | link:${entry.linkUrl}"
+                        "entry[$index]=id:${entry.id} | kind:$kindLabel | running:${entry.isRunning} | title:${entry.title} | beginAtMs:${entry.beginAtMs} | endAtMs:${entry.endAtMs} | link:${entry.linkUrl}"
                     )
                 }
             }
@@ -337,8 +340,9 @@ internal class McpBaTools(
             appendLine("entryCount=${entries.size}")
             if (includeEntries && entries.isNotEmpty()) {
                 entries.take(limit).forEachIndexed { index, entry ->
+                    val tagLabel = appContext.baPoolTagLabel(entry.tagId, entry.tagName)
                     appendLine(
-                        "entry[$index]=id:${entry.id} | tag:${entry.tagName} | running:${entry.isRunning} | name:${entry.name} | startAtMs:${entry.startAtMs} | endAtMs:${entry.endAtMs} | link:${entry.linkUrl}"
+                        "entry[$index]=id:${entry.id} | tag:$tagLabel | running:${entry.isRunning} | name:${entry.name} | startAtMs:${entry.startAtMs} | endAtMs:${entry.endAtMs} | link:${entry.linkUrl}"
                     )
                 }
             }

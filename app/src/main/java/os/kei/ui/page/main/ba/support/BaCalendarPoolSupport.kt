@@ -19,15 +19,8 @@ internal const val BA_POOL_ENDPOINT = "/v1/cardPool/query-list"
 internal const val BA_POOL_MAX_ITEMS = 10
 internal const val BA_POOL_CACHE_SCHEMA_VERSION = 5
 
-internal val BA_POOL_TAGS = listOf(
-    5 to "常驻",
-    6 to "限定",
-    7 to "FES限定",
-    8 to "联动",
-    9 to "复刻",
-    92 to "回忆招募"
-)
-internal val BA_POOL_TAG_NAME_MAP = BA_POOL_TAGS.toMap()
+internal val BA_POOL_TAG_IDS = listOf(5, 6, 7, 8, 9, 92)
+internal val BA_POOL_TAG_ID_SET = BA_POOL_TAG_IDS.toSet()
 internal const val BA_POOL_FALLBACK_ACTIVE_TAG_ID = 6
 
 internal fun <T> runWithRetry(attempts: Int = BA_NETWORK_RETRY_ATTEMPTS, block: () -> T): T {
@@ -121,7 +114,7 @@ internal fun decodeBaCalendarEntries(raw: String, nowMs: Long = System.currentTi
             id = obj.optInt("id", 0),
             title = title,
             kindId = obj.optInt("kindId", 31),
-            kindName = obj.optString("kindName").ifBlank { "其他" },
+            kindName = normalizeBaCalendarKindFallback(obj.optString("kindName")),
             beginAtMs = beginAtMs,
             endAtMs = endAtMs,
             linkUrl = normalizeGameKeeLink(obj.optString("linkUrl")),
@@ -172,7 +165,7 @@ internal fun decodeBaPoolEntries(raw: String, nowMs: Long = System.currentTimeMi
             id = obj.optInt("id", 0),
             name = name,
             tagId = obj.optInt("tagId", 0),
-            tagName = obj.optString("tagName").ifBlank { "其他" },
+            tagName = normalizeBaPoolTagFallback(obj.optString("tagName")),
             startAtMs = startAtMs,
             endAtMs = endAtMs,
             linkUrl = normalizeGameKeeLink(obj.optString("linkUrl")),

@@ -203,7 +203,7 @@ class GitHubReleaseCheckServiceTest {
         )
 
         assertFalse(result.hasStableRelease)
-        assertEquals("该项目暂时可能只有预发行版", result.releaseHint)
+        assertEquals(GitHubTrackedReleaseStatus.ONLY_PRERELEASES_HINT_MESSAGE, result.releaseHint)
         assertFalse(result.showPreReleaseInfo)
         assertEquals("0.0.8", result.preRelease?.rawTag)
         assertEquals(null, result.stableRelease)

@@ -26,7 +26,7 @@ internal object GitHubStatusPalette {
 }
 
 internal fun VersionCheckUi.isFailed(): Boolean = failed ||
-    message.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage)
+    GitHubTrackedReleaseStatus.isFailureMessage(message)
 
 internal fun VersionCheckUi.isLocalAppUninstalled(): Boolean {
     val normalizedLocalVersion = localVersion.trim()
@@ -113,33 +113,41 @@ internal fun VersionCheckUi.statusColor(neutralColor: Color): Color {
 
 internal fun VersionCheckUi.statusMessage(context: Context): String {
     val rawMessage = message.trim()
-    return when (rawMessage) {
-        GitHubTrackedReleaseStatus.UpdateAvailable.defaultMessage ->
+    val status = GitHubTrackedReleaseStatus.fromMessage(rawMessage)
+    return when {
+        status == GitHubTrackedReleaseStatus.UpdateAvailable ->
             context.getString(R.string.github_status_update_available)
-        GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable.defaultMessage ->
+        status == GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable ->
             context.getString(R.string.github_status_prerelease_update_available)
-        GitHubTrackedReleaseStatus.PreReleaseOptional.defaultMessage ->
+        status == GitHubTrackedReleaseStatus.PreReleaseOptional ->
             context.getString(R.string.github_status_prerelease_optional)
-        GitHubTrackedReleaseStatus.PreReleaseTracked.defaultMessage ->
+        status == GitHubTrackedReleaseStatus.PreReleaseTracked ->
             context.getString(R.string.github_status_prerelease_tracked)
-        GitHubTrackedReleaseStatus.UpToDate.defaultMessage ->
+        status == GitHubTrackedReleaseStatus.UpToDate ->
             context.getString(R.string.github_status_up_to_date)
-        GitHubTrackedReleaseStatus.MatchedRelease.defaultMessage ->
+        status == GitHubTrackedReleaseStatus.MatchedRelease ->
             context.getString(R.string.github_status_matched_release)
-        GitHubTrackedReleaseStatus.ComparisonUncertain.defaultMessage ->
+        status == GitHubTrackedReleaseStatus.ComparisonUncertain ->
             context.getString(R.string.github_status_comparison_uncertain)
-        "该项目暂时可能只有预发行版" ->
+        GitHubTrackedReleaseStatus.isOnlyPreReleasesHint(rawMessage) ->
             context.getString(R.string.github_status_only_prereleases_hint)
+        status == GitHubTrackedReleaseStatus.Failed ->
+            GitHubTrackedReleaseStatus.localizedFailureDetail(
+                rawMessage,
+                context.getString(R.string.github_check_failed_prefix)
+            )
         else -> {
-            if (rawMessage.startsWith(GitHubTrackedReleaseStatus.Failed.defaultMessage)) {
-                rawMessage.replaceFirst(
-                    GitHubTrackedReleaseStatus.Failed.defaultMessage,
-                    context.getString(R.string.github_check_failed_prefix)
-                )
-            } else {
-                rawMessage
-            }
+            rawMessage
         }
+    }
+}
+
+internal fun githubReleaseHintMessage(context: Context, rawHint: String): String {
+    val hint = rawHint.trim()
+    return if (GitHubTrackedReleaseStatus.isOnlyPreReleasesHint(hint)) {
+        context.getString(R.string.github_status_only_prereleases_hint)
+    } else {
+        hint
     }
 }
 

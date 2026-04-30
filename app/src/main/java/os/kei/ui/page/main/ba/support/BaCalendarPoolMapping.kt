@@ -151,7 +151,7 @@ internal fun fetchBaCalendarEntries(
         val endAtMs = endSec * 1000L
 
         val kindId = item.optInt("activity_kind_id", 31)
-        val kindName = item.optString("activity_kind_name").ifBlank { "其他" }
+        val kindName = normalizeBaCalendarKindFallback(item.optString("activity_kind_name"))
         entries += BaCalendarEntry(
             id = item.optInt("id", 0),
             title = title,
@@ -261,9 +261,8 @@ internal fun normalizeBaPoolEntries(
 
     val activeOrUpcoming = normalized.filter { it.endAtMs > nowMs }
     val activeTagIds = activeOrUpcoming.map { it.tagId }.toSet()
-    val fallbackMissingTags = BA_POOL_TAGS
+    val fallbackMissingTags = BA_POOL_TAG_IDS
         .asSequence()
-        .map { it.first }
         .filter { it !in activeTagIds }
         .mapNotNull { missingTagId ->
             normalized
@@ -343,19 +342,17 @@ internal fun fetchBaPoolEntriesFromAll(
         val isUpcoming = startAtMs > nowMs
 
         val knownTagId = parsePoolTagIds(item.optString("tag_id"))
-            .firstOrNull { it in BA_POOL_TAG_NAME_MAP }
+            .firstOrNull { it in BA_POOL_TAG_ID_SET }
         val normalizedTagId = when {
             knownTagId != null -> knownTagId
             isRunning || isUpcoming -> BA_POOL_FALLBACK_ACTIVE_TAG_ID
             else -> null
         } ?: continue
-        val normalizedTagName = BA_POOL_TAG_NAME_MAP[normalizedTagId] ?: "卡池"
-
         entries += BaPoolEntry(
             id = item.optInt("id", 0),
             name = name,
             tagId = normalizedTagId,
-            tagName = normalizedTagName,
+            tagName = "",
             startAtMs = startAtMs,
             endAtMs = endAtMs,
             linkUrl = normalizeGameKeeLink(item.optString("link_url")),

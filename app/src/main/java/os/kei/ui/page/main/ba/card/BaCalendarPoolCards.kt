@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -22,6 +23,8 @@ import os.kei.ui.page.main.ba.support.BaCalendarEntry
 import os.kei.ui.page.main.ba.support.BaPoolEntry
 import os.kei.ui.page.main.ba.support.GameKeeCoverImage
 import os.kei.ui.page.main.ba.support.activityProgress
+import os.kei.ui.page.main.ba.support.baCalendarKindLabel
+import os.kei.ui.page.main.ba.support.baPoolTagLabel
 import os.kei.ui.page.main.ba.support.formatBaDateTimeNoYearInTimeZone
 import os.kei.ui.page.main.ba.support.formatBaRemainingTime
 import os.kei.ui.page.main.ba.support.poolProgress
@@ -579,29 +582,10 @@ internal fun BaPoolEntryPanel(
 
 @Composable
 private fun baCalendarKindLabel(kindId: Int, fallback: String): String {
-    val fallbackText = fallback.ifBlank { stringResource(R.string.ba_calendar_kind_other) }
-    return when (kindId) {
-        14 -> stringResource(R.string.ba_calendar_kind_event)
-        15 -> stringResource(R.string.ba_calendar_kind_total_grand_assault)
-        16 -> stringResource(R.string.ba_calendar_kind_double_rewards)
-        17 -> stringResource(R.string.ba_calendar_kind_tower)
-        18 -> stringResource(R.string.ba_calendar_kind_guide_mission)
-        19 -> stringResource(R.string.ba_calendar_kind_tactical_test)
-        31 -> stringResource(R.string.ba_calendar_kind_other)
-        else -> fallbackText
-    }
+    return LocalContext.current.baCalendarKindLabel(kindId, fallback)
 }
 
 @Composable
 private fun baPoolTagLabel(tagId: Int, fallback: String): String {
-    val fallbackText = fallback.ifBlank { stringResource(R.string.ba_pool_tag_recruitment) }
-    return when (tagId) {
-        5 -> stringResource(R.string.ba_pool_tag_permanent)
-        6 -> stringResource(R.string.ba_pool_tag_limited)
-        7 -> stringResource(R.string.ba_pool_tag_fes_limited)
-        8 -> stringResource(R.string.ba_pool_tag_collab)
-        9 -> stringResource(R.string.ba_pool_tag_rerun)
-        92 -> stringResource(R.string.ba_pool_tag_recollection)
-        else -> fallbackText
-    }
+    return LocalContext.current.baPoolTagLabel(tagId, fallback)
 }
