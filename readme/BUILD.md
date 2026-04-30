@@ -5,7 +5,7 @@
 ## Install Channels
 
 - Stable installs should use [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
-- The latest public release is [KeiOS v1.3.1](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.1).
+- The latest public release is [KeiOS v1.3.2](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.2).
 - This build guide covers local source builds, debug packages, and contributor workflows.
 - Use the commands in `Common Local Commands` to generate a debug APK for development or preview validation.
 

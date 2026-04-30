@@ -21,7 +21,7 @@ KeiOS 是一个 Android 工具台，聚合系统参数查看、本地 MCP 服务
 ## 当前分发方式
 
 - 稳定版安装包通过 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases) 发布。
-- 当前稳定标签：[v1.3.1](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.1)。
+- 当前稳定标签：[v1.3.2](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.2)。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
 - 运行与构建基线：`targetSdk=37`、Java 21、Kotlin/Gradle 项目工具链。
 - 当前应用语言资源覆盖简体中文、English、日本語。

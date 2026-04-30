@@ -21,7 +21,7 @@ Read the full feature tour:
 ## Current Distribution
 
 - Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
-- Current stable tag: [v1.3.1](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.1).
+- Current stable tag: [v1.3.2](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.2).
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
 - Runtime and build baseline: `targetSdk=37`, Java 21, Kotlin/Gradle project toolchain.
 - App language resources currently cover Simplified Chinese, English, and Japanese.
