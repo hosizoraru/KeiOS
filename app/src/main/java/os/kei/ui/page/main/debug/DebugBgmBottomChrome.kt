@@ -1,5 +1,12 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package os.kei.ui.page.main.debug
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +38,7 @@ import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.component.floatingtabbar.FloatingTabBar
 import os.kei.ui.component.floatingtabbar.FloatingTabBarDefaults
+import os.kei.ui.component.floatingtabbar.FloatingTabBarScrollConnection
 import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideHomeIcon
 import os.kei.ui.page.main.os.appLucideLibraryIcon
@@ -47,30 +55,32 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun DebugBgmFloatingBottomChrome(
     accent: Color,
-    isInline: Boolean,
+    scrollConnection: FloatingTabBarScrollConnection,
     selectedDockKey: String,
     onSelectedDockKeyChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tabs = rememberDebugBgmDockTabs()
     FloatingTabBar(
-        isInline = isInline,
         selectedTabKey = selectedDockKey,
+        scrollConnection = scrollConnection,
         modifier = modifier.fillMaxWidth(),
-        inlineAccessory = { accessoryModifier, _ ->
+        inlineAccessory = { accessoryModifier, animatedVisibilityScope ->
             DebugBgmMiniPlayer(
                 accent = accent,
                 compact = true,
+                animatedVisibilityScope = animatedVisibilityScope,
                 modifier = accessoryModifier.fillMaxSize()
             )
         },
-        expandedAccessory = { accessoryModifier, _ ->
+        expandedAccessory = { accessoryModifier, animatedVisibilityScope ->
             DebugBgmMiniPlayer(
                 accent = accent,
                 compact = false,
+                animatedVisibilityScope = animatedVisibilityScope,
                 modifier = accessoryModifier
                     .fillMaxWidth()
-                    .height(64.dp)
+                    .height(62.dp)
             )
         },
         colors = FloatingTabBarDefaults.colors(
@@ -85,8 +95,8 @@ internal fun DebugBgmFloatingBottomChrome(
         ),
         sizes = FloatingTabBarDefaults.sizes(
             tabBarContentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-            tabInlineContentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
-            tabExpandedContentPadding = PaddingValues(horizontal = 16.dp, vertical = 7.dp),
+            tabInlineContentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
+            tabExpandedContentPadding = PaddingValues(horizontal = 15.dp, vertical = 6.dp),
             componentSpacing = 8.dp,
             tabSpacing = 0.dp
         ),
@@ -167,21 +177,37 @@ private fun DebugBgmDockTabTitle(
 }
 
 @Composable
-private fun DebugBgmMiniPlayer(
+private fun SharedTransitionScope.DebugBgmMiniPlayer(
     accent: Color,
     compact: Boolean,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier
 ) {
+    val artworkSize = if (compact) 32.dp else 40.dp
+    val artworkCornerRadius = if (compact) 8.dp else 10.dp
+    val artworkIconSize = if (compact) 18.dp else 22.dp
+    val contentPadding = PaddingValues(
+        horizontal = if (compact) 10.dp else 14.dp,
+        vertical = if (compact) 5.dp else 7.dp
+    )
+    val titleFontSize = if (compact) 12.sp else AppTypographyTokens.Supporting.fontSize
+    val titleLineHeight = if (compact) 14.sp else AppTypographyTokens.Supporting.lineHeight
+    val playButtonSize = if (compact) 28.dp else 32.dp
+    val playIconSize = if (compact) 22.dp else 23.dp
+
     Row(
-        modifier = modifier
-            .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 6.dp else 8.dp),
+        modifier = modifier.padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(if (compact) 36.dp else 42.dp)
-                .clip(RoundedCornerShape(if (compact) 9.dp else 11.dp))
+                .sharedElement(
+                    sharedContentState = rememberSharedContentState("debug_bgm_artwork"),
+                    animatedVisibilityScope = animatedVisibilityScope
+                )
+                .size(artworkSize)
+                .clip(RoundedCornerShape(artworkCornerRadius))
                 .background(
                     Brush.linearGradient(
                         colors = listOf(Color(0xFFFFC857), accent, Color(0xFFFF4D6D))
@@ -193,7 +219,14 @@ private fun DebugBgmMiniPlayer(
                 imageVector = appLucideMusicIcon(),
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(if (compact) 19.dp else 22.dp)
+                modifier = Modifier
+                    .sharedBounds(
+                        sharedContentState = rememberSharedContentState("debug_bgm_artwork_icon"),
+                        enter = EnterTransition.None,
+                        exit = ExitTransition.None,
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
+                    .size(artworkIconSize)
             )
         }
         Column(
@@ -203,11 +236,17 @@ private fun DebugBgmMiniPlayer(
             Text(
                 text = stringResource(R.string.debug_component_lab_mini_player_title),
                 color = MiuixTheme.colorScheme.onBackground,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                fontSize = titleFontSize,
+                lineHeight = titleLineHeight,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .sharedBounds(
+                        sharedContentState = rememberSharedContentState("debug_bgm_mini_title"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
+                    .skipToLookaheadSize()
             )
             if (!compact) {
                 Text(
@@ -220,19 +259,30 @@ private fun DebugBgmMiniPlayer(
                 )
             }
         }
-        DebugBgmInlineIcon(
-            icon = appLucidePlayIcon(),
-            contentDescription = stringResource(R.string.debug_component_lab_action_play),
-            tint = MiuixTheme.colorScheme.onBackground,
-            size = if (compact) 30.dp else 34.dp,
-            iconSize = 23.dp
-        )
+        Box(
+            modifier = Modifier
+                .size(playButtonSize)
+                .clip(CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = appLucidePlayIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_action_play),
+                tint = MiuixTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .sharedElement(
+                        sharedContentState = rememberSharedContentState("debug_bgm_play_icon"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
+                    .size(playIconSize)
+            )
+        }
         if (!compact) {
             DebugBgmInlineIcon(
                 icon = appLucidePauseIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_pause),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 34.dp,
+                size = 32.dp,
                 iconSize = 22.dp
             )
         }

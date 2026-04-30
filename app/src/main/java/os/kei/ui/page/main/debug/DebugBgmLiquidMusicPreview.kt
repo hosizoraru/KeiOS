@@ -94,7 +94,7 @@ internal fun DebugBgmLiquidMusicPreview(
 ) {
     val isDark = isSystemInDarkTheme()
     val listState = rememberLazyListState()
-    val bottomBarScrollConnection = rememberFloatingTabBarScrollConnection(scrollThreshold = 44.dp)
+    val bottomBarScrollConnection = rememberFloatingTabBarScrollConnection(scrollThreshold = 56.dp)
     val collapseProgress by remember {
         derivedStateOf {
             val indexOffset = listState.firstVisibleItemIndex * 240f
@@ -161,7 +161,7 @@ internal fun DebugBgmLiquidMusicPreview(
         )
         DebugBgmFloatingBottomChrome(
             accent = accent,
-            isInline = bottomBarScrollConnection.isInline,
+            scrollConnection = bottomBarScrollConnection,
             selectedDockKey = selectedDockKey,
             onSelectedDockKeyChange = { selectedDockKey = it },
             modifier = Modifier
