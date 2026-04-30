@@ -5,7 +5,7 @@
 ## 安装方式
 
 - 稳定安装建议直接使用 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases)。
-- 当前公开正式版本为 [KeiOS v1.2.4](https://github.com/hosizoraru/KeiOS/releases/tag/v1.2.4)。
+- 当前公开正式版本为 [KeiOS v1.3.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.3.0)。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出用于开发或预览验证的 Debug APK。
 
