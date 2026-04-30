@@ -566,6 +566,25 @@ class GitHubActionsRepository(
         }
     }
 
+    fun resolveArtifactShareUrl(
+        artifact: GitHubActionsArtifact,
+        owner: String = "",
+        repo: String = ""
+    ): Result<GitHubActionsArtifactDownloadResolution> {
+        if (useNightlyLink) {
+            return nightlyRepository.resolveArtifactDownloadUrl(
+                artifact = artifact,
+                owner = owner,
+                repo = repo
+            )
+        }
+        return resolveArtifactDownloadUrl(
+            artifact = artifact,
+            owner = owner,
+            repo = repo
+        )
+    }
+
     internal fun parseWorkflows(json: String): List<GitHubActionsWorkflow> {
         val root = JSONObject(json)
         val array = root.optJSONArray("workflows") ?: JSONArray()

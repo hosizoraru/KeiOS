@@ -277,7 +277,7 @@ class GitHubActionsRepositoryTest {
         )
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("需要填写 token"))
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("GitHub token"))
     }
 
     @Test
@@ -985,7 +985,7 @@ class GitHubActionsRepositoryTest {
                 branch = "master"
             ).result.exceptionOrNull()?.message.orEmpty()
 
-            assertTrue(errorMessage.contains("nightly.link 没有读取到 demo/app"))
+            assertTrue(errorMessage.contains("nightly.link did not read downloadable artifacts for demo/app"))
             assertTrue(errorMessage.contains("android.yml"))
             assertTrue(errorMessage.contains("master"))
             assertTrue(errorMessage.contains("GitHub API Token"))
@@ -1011,7 +1011,7 @@ class GitHubActionsRepositoryTest {
             ).result.exceptionOrNull()?.message.orEmpty()
 
             assertTrue(errorMessage.contains("nightly.link"))
-            assertTrue(errorMessage.contains("Actions 资源"))
+            assertTrue(errorMessage.contains("Actions resources"))
             assertTrue(errorMessage.contains("GitHub API Token"))
         }
     }
@@ -1159,6 +1159,32 @@ class GitHubActionsRepositoryTest {
     }
 
     @Test
+    fun `nightly link share resolver returns raw apk public link without token`() {
+        MockWebServer().use { nightly ->
+            val publicLink = "https://nightly.link/demo/app/actions/runs/25115668266/app-online-Unstable-release.apk.zip"
+            val repository = GitHubActionsRepository(
+                apiToken = "",
+                actionsStrategy = GitHubActionsLookupStrategyOption.NightlyLink,
+                nightlyLinkBaseUrl = nightly.url("/").toString()
+            )
+
+            val result = repository.resolveArtifactShareUrl(
+                artifact = GitHubActionsArtifact(
+                    id = 6710189065,
+                    name = "app-online-Unstable-release.apk",
+                    archiveDownloadUrl = publicLink
+                ),
+                owner = "demo",
+                repo = "app"
+            ).getOrThrow()
+
+            assertEquals(6710189065L, result.artifactId)
+            assertEquals(publicLink, result.downloadUrl)
+            assertEquals(0, nightly.requestCount)
+        }
+    }
+
+    @Test
     fun `nightly link download resolver uses api artifact redirect when token exists`() {
         MockWebServer().use { server ->
             server.enqueue(
@@ -1213,8 +1239,8 @@ class GitHubActionsRepositoryTest {
                 ?.message
                 .orEmpty()
 
-            assertTrue(message.contains("游客 API 已限流"))
-            assertTrue(message.contains("填写 token"))
+            assertTrue(message.contains("guest API is rate limited"))
+            assertTrue(message.contains("enter a token"))
         }
     }
 

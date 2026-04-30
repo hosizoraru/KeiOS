@@ -412,6 +412,22 @@ internal class GitHubActionsPageRepository(
         }
     }
 
+    suspend fun resolveGitHubActionsArtifactShareUrl(
+        artifact: GitHubActionsArtifact,
+        owner: String,
+        repo: String,
+        lookupConfig: GitHubLookupConfig
+    ): Result<GitHubActionsArtifactDownloadResolution> {
+        return withContext(ioDispatcher) {
+            GitHubActionsRepository.fromLookupConfig(lookupConfig)
+                .resolveArtifactShareUrl(
+                    artifact = artifact,
+                    owner = owner,
+                    repo = repo
+                )
+        }
+    }
+
     private fun workflowLookupId(
         workflow: GitHubActionsWorkflow,
         lookupConfig: GitHubLookupConfig

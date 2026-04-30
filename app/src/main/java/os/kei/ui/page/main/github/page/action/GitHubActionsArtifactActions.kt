@@ -117,7 +117,7 @@ internal class GitHubActionsArtifactActions(
         scope.launch {
             state.actionsArtifactShareLoadingId = artifact.id
             try {
-                val resolution = actionsRepository.resolveGitHubActionsArtifactDownloadUrl(
+                val resolution = actionsRepository.resolveGitHubActionsArtifactShareUrl(
                     artifact = artifact,
                     owner = item.owner,
                     repo = item.repo,
