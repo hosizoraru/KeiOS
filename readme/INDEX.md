@@ -11,8 +11,8 @@
 
 ## Map
 
-- `../README.md`: public project overview and quick feature summary.
-- `CN.md`: Chinese public project overview and quick feature summary.
-- `FEATURES.md` / `FEATURES_CN.md`: fuller feature tour for users and contributors.
-- `BUILD.md` / `BUILD_CN.md`: local build, CI APK, and screenshot-baseline workflow.
+- `../README.md`: public project overview, current release baseline, and quick feature summary.
+- `CN.md`: Chinese public project overview, current release baseline, and quick feature summary.
+- `FEATURES.md` / `FEATURES_CN.md`: fuller feature tour for Home, OS, MCP, GitHub Actions, Blue Archive, Student Guide, settings, and i18n.
+- `BUILD.md` / `BUILD_CN.md`: local build, versioning, CI APK, signing, nightly.link, and screenshot-baseline workflow.
 - `TODO.md` / `TODO_CN.md`: Android 17, OEM beta, and large-screen roadmap items.

@@ -5,7 +5,7 @@
 ## 安装方式
 
 - 稳定安装建议直接使用 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases)。
-- 当前公开正式版本为 [KeiOS v1.1.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.1.0)。
+- 当前公开正式版本为 [KeiOS v1.2.4](https://github.com/hosizoraru/KeiOS/releases/tag/v1.2.4)。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出用于开发或预览验证的 Debug APK。
 
@@ -18,7 +18,13 @@
 - Gradle daemon、Java 编译、Kotlin JVM 目标统一为 Java 21。
 - 跨平台 daemon toolchain 配置已在 `gradle/gradle-daemon-jvm.properties` 中跟踪（JetBrains Java 21）。
 - Android 构建基线：`compileSdk=37`、`targetSdk=37`、`minSdk=35`。
-- 不要把本地 JDK 路径或 Token 写入受版本控制的文件。
+- 本地 JDK 路径与 Token 保留在未跟踪的本机配置文件中。
+
+### 版本号规则
+
+- Release 构建使用当前 HEAD 已合入的最新 semver tag 作为基础版本。
+- Debug / Benchmark 构建使用下一 patch 版本，并追加 commit 数和短 SHA，例如 `1.2.5+12.gabcdef0`。
+- CI APK 文件名包含 variant、ABI、versionName、versionCode、短 SHA、run number 和 attempt number。
 
 ### 必需的本地凭据（依赖解析）
 
@@ -90,6 +96,8 @@ JDK 兜底示例路径：
 - 手动触发：`workflow_dispatch`，可选 `commit`（commit SHA / branch / tag）。
 - 构建产物：自动构建并上传 Debug APK 到 GitHub Actions。
 - 使用场景：开发过程中的快速预览与验证。
+- 签名：仅 Debug / Benchmark artifact 使用 `app/signing/` 内的共享 CI debug keystore。
+- 保留期：14 天。
 - nightly.link：`https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master`
 - APK 文件名格式：`keios-android-debug-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>.apk`。
 - Artifact 名称格式：`keios-android-debug-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>`。
@@ -104,6 +112,8 @@ JDK 兜底示例路径：
 - 构建任务：`./gradlew :app:assembleBenchmark --stacktrace`。
 - 构建产物：自动上传 Benchmark APK 到 GitHub Actions Artifact。
 - 使用场景：稳定版通道之外的基准验证与尝鲜预览。
+- 签名：仅 Debug / Benchmark artifact 使用 `app/signing/` 内的共享 CI debug keystore。
+- 保留期：14 天。
 - nightly.link：`https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master`
 - APK 文件名格式：`keios-android-benchmark-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>.apk`。
 - Artifact 名称格式：`keios-android-benchmark-apk-arm64-v8a-v<versionName>-<versionCode>-<shortSha>-run-<run_number>-attempt-<attempt>`。
