@@ -131,6 +131,7 @@ fun AboutUiFrameworkCardSection(
                 R.string.about_value_glass_material,
                 BuildConfig.BACKDROP_VERSION,
                 BuildConfig.CAPSULE_VERSION,
+                BuildConfig.SHAPES_VERSION,
                 BuildConfig.LIQUID_GLASS_VERSION
             ),
             appLucideMediaIcon()

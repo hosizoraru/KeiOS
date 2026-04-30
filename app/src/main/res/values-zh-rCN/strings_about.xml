@@ -8,7 +8,7 @@
     <string name="about_value_declarative_ui">Jetpack Compose %1$s</string>
     <string name="about_value_navigation">Navigation3 %1$s</string>
     <string name="about_value_ui_state_holder">Lifecycle ViewModel Compose %1$s</string>
-    <string name="about_value_glass_material">Backdrop %1$s · Capsule %2$s · LiquidGlass %3$s</string>
+    <string name="about_value_glass_material">Backdrop %1$s · Capsule %2$s · Shapes %3$s · LiquidGlass %4$s</string>
     <string name="about_value_permission_bridge">Shizuku SDK %1$s · API %2$s</string>
     <string name="about_value_icon_set">Lucide Icons %1$s</string>
 
@@ -33,7 +33,7 @@
     <string name="about_card_project_license_title">项目许可证</string>
     <string name="about_card_project_license_subtitle">KeiOS 项目自身授权与许可证文件入口</string>
     <string name="about_card_license_title">开源依赖与许可证</string>
-    <string name="about_card_license_subtitle">第三方依赖、引用代码与授权入口</string>
+    <string name="about_card_license_subtitle">运行期依赖、内置开源组件、授权与源码入口</string>
 
     <string name="about_label_status">状态</string>
     <string name="about_label_name">名称</string>
@@ -110,20 +110,32 @@
     <string name="about_row_documentfile">DocumentFile</string>
     <string name="about_row_mmkv">MMKV</string>
 
+    <string name="about_license_row_scope">披露范围</string>
+    <string name="about_license_value_scope">运行期依赖与内置开源组件；构建 / 测试工具在构建信息中展示</string>
     <string name="about_license_row_mix">授权分布</string>
-    <string name="about_license_value_mix">Apache-2.0 为主，含 MIT / BSD-3-Clause</string>
+    <string name="about_license_value_mix">Apache-2.0 为主，含 MIT / BSD-3-Clause 组件</string>
     <string name="about_license_row_compliance">履约方式</string>
     <string name="about_license_value_compliance">展示依赖、版本、许可证与源码入口</string>
     <string name="about_license_row_miuix">Miuix UI</string>
     <string name="about_license_value_miuix">v%1$s · Apache-2.0</string>
+    <string name="about_license_row_androidx_runtime">AndroidX 运行时</string>
+    <string name="about_license_value_androidx_runtime">Core KTX %1$s · Activity Compose %2$s · Apache-2.0</string>
+    <string name="about_license_row_material_components">Material Components</string>
+    <string name="about_license_value_material_components">Material %1$s · Apache-2.0</string>
+    <string name="about_license_row_androidx_stack">AndroidX / Compose</string>
+    <string name="about_license_value_androidx_stack">Compose %1$s · Navigation3 %2$s · Navigation Common %3$s · Lifecycle %4$s · DocumentFile %5$s · Metrics %6$s · Apache-2.0</string>
     <string name="about_license_row_lucide">Lucide Icons</string>
     <string name="about_license_value_lucide">v%1$s · MIT</string>
     <string name="about_license_row_blue_archive_logos">Blue Archive Logos</string>
     <string name="about_license_value_blue_archive_logos">MIT · Copyright (c) 2024 Avrona</string>
-    <string name="about_license_row_liquid_glass">AndroidLiquidGlassView</string>
-    <string name="about_license_value_liquid_glass">v%1$s · MIT</string>
-    <string name="about_license_row_installerx">InstallerX-Revived 引用代码</string>
-    <string name="about_license_value_installerx">GPL-3.0-only / Apache-2.0（按 SPDX 文件头）</string>
+    <string name="about_license_row_backdrop">Backdrop</string>
+    <string name="about_license_value_backdrop">v%1$s · Apache-2.0</string>
+    <string name="about_license_row_capsule">Capsule</string>
+    <string name="about_license_value_capsule">v%1$s · Apache-2.0</string>
+    <string name="about_license_row_shapes">Shapes</string>
+    <string name="about_license_value_shapes">v%1$s · Apache-2.0</string>
+    <string name="about_license_row_android_liquid_glass_view">LiquidGlassView</string>
+    <string name="about_license_value_android_liquid_glass_view">v%1$s · MIT</string>
     <string name="about_license_row_shizuku">Shizuku API</string>
     <string name="about_license_value_shizuku">v%1$s · MIT</string>
     <string name="about_license_row_mmkv">MMKV</string>
@@ -135,10 +147,15 @@
     <string name="about_license_row_media_stack">媒体与图像栈</string>
     <string name="about_license_value_media_stack">Media3 %1$s · Coil %2$s · ZoomImage %3$s · uCrop %4$s · Apache-2.0</string>
     <string name="about_license_url_miuix">https://github.com/compose-miuix-ui/miuix/blob/main/LICENSE</string>
+    <string name="about_license_url_androidx_runtime">https://github.com/androidx/androidx/blob/androidx-main/LICENSE.txt</string>
+    <string name="about_license_url_material_components">https://github.com/material-components/material-components-android/blob/master/LICENSE</string>
+    <string name="about_license_url_androidx_stack">https://github.com/androidx/androidx/blob/androidx-main/LICENSE.txt</string>
     <string name="about_license_url_lucide">https://github.com/composablehorizons/composeicons/blob/main/LICENSE</string>
     <string name="about_license_url_blue_archive_logos">https://github.com/Mizera-Mondo/blue-archive-logos/blob/main/LICENSE</string>
-    <string name="about_license_url_liquid_glass">https://github.com/QmDeve/AndroidLiquidGlassView/blob/main/LICENSE</string>
-    <string name="about_license_url_installerx">https://github.com/wxxsfxyzm/InstallerX-Revived/</string>
+    <string name="about_license_url_backdrop">https://github.com/Kyant0/AndroidLiquidGlass</string>
+    <string name="about_license_url_capsule">https://github.com/Kyant0/Capsule</string>
+    <string name="about_license_url_shapes">https://github.com/Kyant0/Shapes</string>
+    <string name="about_license_url_android_liquid_glass_view">https://github.com/QmDeve/AndroidLiquidGlassView/blob/master/LICENSE</string>
     <string name="about_license_url_shizuku">https://github.com/RikkaApps/Shizuku-API/blob/master/LICENSE</string>
     <string name="about_license_url_mmkv">https://github.com/Tencent/MMKV/blob/master/LICENSE.TXT</string>
     <string name="about_license_url_mcp">https://github.com/modelcontextprotocol/kotlin-sdk/blob/main/LICENSE</string>

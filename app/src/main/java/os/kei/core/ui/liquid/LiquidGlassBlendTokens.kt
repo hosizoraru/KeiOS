@@ -1,3 +1,6 @@
+// Copyright 2026, compose-miuix-ui contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package os.kei.core.ui.liquid
 
 import androidx.compose.ui.graphics.Color
@@ -5,10 +8,9 @@ import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurBlendMode
 
 /**
- * Inspired by InstallerX-Revived blend token strategy.
- * This keeps all glass blend presets centralized and reusable.
+ * Centralized glass blend presets shared by liquid surfaces.
  */
-object InstallerXBlendTokens {
+object LiquidGlassBlendTokens {
 
     val BottomBarLight = listOf(
         BlendColorEntry(Color(0x7F040404), BlurBlendMode.Overlay),

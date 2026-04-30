@@ -130,6 +130,34 @@ fun AboutPage(
                 )
             }
             item {
+                AboutProjectLicenseCardSection(
+                    cardColor = palette.projectLicenseCardColor,
+                    accent = palette.accent,
+                    subtitleColor = palette.subtitleColor,
+                    expanded = expansionState.projectLicenseExpanded,
+                    onExpandedChange = { expansionState.projectLicenseExpanded = it },
+                    onOpenLicenseUrl = { url ->
+                        if (!openExternalUrl(context, url)) {
+                            Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+            item {
+                AboutLicenseCardSection(
+                    cardColor = palette.licenseCardColor,
+                    accent = palette.accent,
+                    subtitleColor = palette.subtitleColor,
+                    expanded = expansionState.licenseExpanded,
+                    onExpandedChange = { expansionState.licenseExpanded = it },
+                    onOpenSourceUrl = { url ->
+                        if (!openExternalUrl(context, url)) {
+                            Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+            item {
                 AboutRuntimeStatusCardSection(
                     cardColor = palette.runtimeCardColor,
                     accent = palette.accent,
@@ -203,34 +231,6 @@ fun AboutPage(
                     subtitleColor = palette.subtitleColor,
                     expanded = expansionState.mediaExpanded,
                     onExpandedChange = { expansionState.mediaExpanded = it }
-                )
-            }
-            item {
-                AboutProjectLicenseCardSection(
-                    cardColor = palette.projectLicenseCardColor,
-                    accent = palette.accent,
-                    subtitleColor = palette.subtitleColor,
-                    expanded = expansionState.projectLicenseExpanded,
-                    onExpandedChange = { expansionState.projectLicenseExpanded = it },
-                    onOpenLicenseUrl = { url ->
-                        if (!openExternalUrl(context, url)) {
-                            Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                )
-            }
-            item {
-                AboutLicenseCardSection(
-                    cardColor = palette.licenseCardColor,
-                    accent = palette.accent,
-                    subtitleColor = palette.subtitleColor,
-                    expanded = expansionState.licenseExpanded,
-                    onExpandedChange = { expansionState.licenseExpanded = it },
-                    onOpenSourceUrl = { url ->
-                        if (!openExternalUrl(context, url)) {
-                            Toast.makeText(context, openLinkFailed, Toast.LENGTH_SHORT).show()
-                        }
-                    }
                 )
             }
         }

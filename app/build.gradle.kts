@@ -130,6 +130,9 @@ val miuixVersion =
     providers.gradleProperty("miuix.version").orNull
         ?: readLocalPropertyOrNull("miuix.version")
         ?: "0.9.0-81ad71b1-SNAPSHOT"
+val coreKtxVersion = "1.18.0"
+val activityComposeVersion = "1.13.0"
+val materialVersion = "1.13.0"
 val composeVersion = "1.10.6"
 val navigation3Version = "1.1.0"
 val navigationCommonVersion = "2.9.7"
@@ -192,11 +195,16 @@ android {
         ndk {
             abiFilters += "arm64-v8a"
         }
+        buildConfigField("String", "CORE_KTX_VERSION", "\"$coreKtxVersion\"")
+        buildConfigField("String", "ACTIVITY_COMPOSE_VERSION", "\"$activityComposeVersion\"")
+        buildConfigField("String", "MATERIAL_VERSION", "\"$materialVersion\"")
         buildConfigField("String", "MIUIX_VERSION", "\"$miuixVersion\"")
         buildConfigField("String", "COMPOSE_VERSION", "\"$composeVersion\"")
         buildConfigField("String", "NAVIGATION3_VERSION", "\"$navigation3Version\"")
+        buildConfigField("String", "NAVIGATION_COMMON_VERSION", "\"$navigationCommonVersion\"")
         buildConfigField("String", "BACKDROP_VERSION", "\"$backdropVersion\"")
         buildConfigField("String", "CAPSULE_VERSION", "\"$capsuleVersion\"")
+        buildConfigField("String", "SHAPES_VERSION", "\"$shapesVersion\"")
         buildConfigField("String", "LIQUID_GLASS_VERSION", "\"$liquidGlassVersion\"")
         buildConfigField("String", "MMKV_VERSION", "\"$mmkvVersion\"")
         buildConfigField("String", "MCP_KOTLIN_SDK_VERSION", "\"$mcpKotlinSdkVersion\"")
@@ -325,9 +333,9 @@ configurations.configureEach {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.18.0")
-    implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("com.google.android.material:material:1.13.0")
+    implementation("androidx.core:core-ktx:$coreKtxVersion")
+    implementation("androidx.activity:activity-compose:$activityComposeVersion")
+    implementation("com.google.android.material:material:$materialVersion")
 
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.foundation:foundation:$composeVersion")

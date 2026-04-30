@@ -45,6 +45,36 @@ fun AboutLicenseCardSection(
             icon = appLucideAppWindowIcon()
         ),
         AboutLicenseEntry(
+            titleRes = R.string.about_license_row_androidx_runtime,
+            value = stringResource(
+                R.string.about_license_value_androidx_runtime,
+                BuildConfig.CORE_KTX_VERSION,
+                BuildConfig.ACTIVITY_COMPOSE_VERSION
+            ),
+            sourceUrl = stringResource(R.string.about_license_url_androidx_runtime),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
+            titleRes = R.string.about_license_row_material_components,
+            value = stringResource(R.string.about_license_value_material_components, BuildConfig.MATERIAL_VERSION),
+            sourceUrl = stringResource(R.string.about_license_url_material_components),
+            icon = appLucideLayersIcon()
+        ),
+        AboutLicenseEntry(
+            titleRes = R.string.about_license_row_androidx_stack,
+            value = stringResource(
+                R.string.about_license_value_androidx_stack,
+                BuildConfig.COMPOSE_VERSION,
+                BuildConfig.NAVIGATION3_VERSION,
+                BuildConfig.NAVIGATION_COMMON_VERSION,
+                BuildConfig.LIFECYCLE_VIEWMODEL_COMPOSE_VERSION,
+                BuildConfig.DOCUMENTFILE_VERSION,
+                BuildConfig.METRICS_PERFORMANCE_VERSION
+            ),
+            sourceUrl = stringResource(R.string.about_license_url_androidx_stack),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
             titleRes = R.string.about_license_row_lucide,
             value = stringResource(R.string.about_license_value_lucide, BuildConfig.LUCIDE_ICONS_VERSION),
             sourceUrl = stringResource(R.string.about_license_url_lucide),
@@ -57,12 +87,30 @@ fun AboutLicenseCardSection(
             icon = appLucideLayersIcon()
         ),
         AboutLicenseEntry(
-            titleRes = R.string.about_license_row_liquid_glass,
+            titleRes = R.string.about_license_row_backdrop,
+            value = stringResource(R.string.about_license_value_backdrop, BuildConfig.BACKDROP_VERSION),
+            sourceUrl = stringResource(R.string.about_license_url_backdrop),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
+            titleRes = R.string.about_license_row_capsule,
+            value = stringResource(R.string.about_license_value_capsule, BuildConfig.CAPSULE_VERSION),
+            sourceUrl = stringResource(R.string.about_license_url_capsule),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
+            titleRes = R.string.about_license_row_shapes,
+            value = stringResource(R.string.about_license_value_shapes, BuildConfig.SHAPES_VERSION),
+            sourceUrl = stringResource(R.string.about_license_url_shapes),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
+            titleRes = R.string.about_license_row_android_liquid_glass_view,
             value = stringResource(
-                R.string.about_license_value_liquid_glass,
+                R.string.about_license_value_android_liquid_glass_view,
                 BuildConfig.LIQUID_GLASS_VERSION
             ),
-            sourceUrl = stringResource(R.string.about_license_url_liquid_glass),
+            sourceUrl = stringResource(R.string.about_license_url_android_liquid_glass_view),
             icon = appLucideAppWindowIcon()
         ),
         AboutLicenseEntry(
@@ -120,6 +168,11 @@ fun AboutLicenseCardSection(
         onExpandedChange = onExpandedChange
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            AboutCompactInfoRow(
+                title = stringResource(R.string.about_license_row_scope),
+                value = stringResource(R.string.about_license_value_scope),
+                titleIcon = appLucideInfoIcon()
+            )
             AboutCompactInfoRow(
                 title = stringResource(R.string.about_license_row_mix),
                 value = stringResource(R.string.about_license_value_mix),

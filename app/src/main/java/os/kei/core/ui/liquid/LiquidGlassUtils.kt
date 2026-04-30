@@ -22,9 +22,9 @@ fun rememberBottomBarBlurColors(): BlurColors {
     return remember(isDark) {
         BlurColors(
             blendColors = if (isDark) {
-                InstallerXBlendTokens.BottomBarDark
+                LiquidGlassBlendTokens.BottomBarDark
             } else {
-                InstallerXBlendTokens.BottomBarLight
+                LiquidGlassBlendTokens.BottomBarLight
             }
         )
     }
@@ -36,21 +36,19 @@ fun rememberCardBlurColors(): BlurColors {
     return remember(isDark) {
         BlurColors(
             blendColors = if (isDark) {
-                InstallerXBlendTokens.CardDark
+                LiquidGlassBlendTokens.CardDark
             } else {
-                InstallerXBlendTokens.CardLight
+                LiquidGlassBlendTokens.CardLight
             }
         )
     }
 }
 
 fun isLiquidGlassSupported(): Boolean {
-    // Keep this aligned with InstallerX's stable path:
-    // enable texture blur only when RenderEffect is available.
     return isRenderEffectSupported()
 }
 
-fun Modifier.installerXLiquidGlass(
+fun Modifier.liquidGlassCompatBlend(
     backdrop: LayerBackdrop?,
     blurColors: BlurColors,
     cornerRadiusDp: Int,
