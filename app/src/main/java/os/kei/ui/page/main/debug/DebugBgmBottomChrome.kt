@@ -3,11 +3,16 @@
 package os.kei.ui.page.main.debug
 
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,12 +48,14 @@ import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideHomeIcon
 import os.kei.ui.page.main.os.appLucideLibraryIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
-import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRadioIcon
 import os.kei.ui.page.main.os.appLucideSearchIcon
+import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
+import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -80,7 +87,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 animatedVisibilityScope = animatedVisibilityScope,
                 modifier = accessoryModifier
                     .fillMaxWidth()
-                    .height(58.dp)
+                    .height(64.dp)
             )
         },
         colors = FloatingTabBarDefaults.colors(
@@ -94,9 +101,9 @@ internal fun DebugBgmFloatingBottomChrome(
             accessoryShape = ContinuousCapsule
         ),
         sizes = FloatingTabBarDefaults.sizes(
-            tabBarContentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-            tabInlineContentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
-            tabExpandedContentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
+            tabBarContentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp),
+            tabInlineContentPadding = PaddingValues(12.dp),
+            tabExpandedContentPadding = PaddingValues(horizontal = 20.dp, vertical = 7.dp),
             componentSpacing = 8.dp,
             tabSpacing = 0.dp
         ),
@@ -149,7 +156,7 @@ private fun DebugBgmDockTabIcon(
     label: String,
     selected: Boolean,
     accent: Color,
-    iconSize: Dp = 22.dp
+    iconSize: Dp = 24.dp
 ) {
     Icon(
         imageVector = icon,
@@ -168,8 +175,8 @@ private fun DebugBgmDockTabTitle(
     Text(
         text = label,
         color = DebugBgmDockTint(selected = selected, accent = accent),
-        fontSize = 10.sp,
-        lineHeight = 12.sp,
+        fontSize = 11.sp,
+        lineHeight = 13.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
@@ -194,9 +201,17 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
     val titleLineHeight = if (compact) 14.sp else AppTypographyTokens.Supporting.lineHeight
     val playButtonSize = if (compact) 28.dp else 30.dp
     val playIconSize = if (compact) 22.dp else 23.dp
+    val miniPlayerInteraction = remember { MutableInteractionSource() }
 
     Row(
-        modifier = modifier.padding(contentPadding),
+        modifier = modifier
+            .clip(ContinuousCapsule)
+            .clickable(
+                interactionSource = miniPlayerInteraction,
+                indication = null,
+                onClick = {}
+            )
+            .padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -204,7 +219,8 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
             modifier = Modifier
                 .sharedElement(
                     sharedContentState = rememberSharedContentState("debug_bgm_artwork"),
-                    animatedVisibilityScope = animatedVisibilityScope
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    boundsTransform = DebugBgmMiniPlayerBoundsTransform
                 )
                 .size(artworkSize)
                 .clip(RoundedCornerShape(artworkCornerRadius))
@@ -224,7 +240,8 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                         sharedContentState = rememberSharedContentState("debug_bgm_artwork_icon"),
                         enter = EnterTransition.None,
                         exit = ExitTransition.None,
-                        animatedVisibilityScope = animatedVisibilityScope
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = DebugBgmMiniPlayerBoundsTransform
                     )
                     .size(artworkIconSize)
             )
@@ -244,7 +261,8 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 modifier = Modifier
                     .sharedBounds(
                         sharedContentState = rememberSharedContentState("debug_bgm_mini_title"),
-                        animatedVisibilityScope = animatedVisibilityScope
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = DebugBgmMiniPlayerBoundsTransform
                     )
                     .skipToLookaheadSize()
             )
@@ -256,6 +274,17 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                     lineHeight = 13.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
+                )
+                LinearProgressIndicator(
+                    progress = DebugBgmMiniPlayerProgress,
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .fillMaxWidth(),
+                    height = 3.dp,
+                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                        foregroundColor = accent,
+                        backgroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.22f)
+                    )
                 )
             }
         }
@@ -272,21 +301,31 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 modifier = Modifier
                     .sharedElement(
                         sharedContentState = rememberSharedContentState("debug_bgm_play_icon"),
-                        animatedVisibilityScope = animatedVisibilityScope
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = DebugBgmMiniPlayerBoundsTransform
                     )
                     .size(playIconSize)
             )
         }
         if (!compact) {
             DebugBgmInlineIcon(
-                icon = appLucidePauseIcon(),
-                contentDescription = stringResource(R.string.debug_component_lab_action_pause),
+                icon = appLucideSkipForwardIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_action_next),
                 tint = MiuixTheme.colorScheme.onBackground,
                 size = 30.dp,
                 iconSize = 21.dp
             )
         }
     }
+}
+
+private const val DebugBgmMiniPlayerProgress = 0.42f
+
+private val DebugBgmMiniPlayerBoundsTransform = BoundsTransform { _, _ ->
+    spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium
+    )
 }
 
 @Composable

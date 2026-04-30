@@ -9,24 +9,27 @@
 package os.kei.ui.component.floatingtabbar
 
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,6 +44,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.constraintlayout.compose.atLeast
 
 @Composable
 internal fun SharedTransitionScope.InlineBar(
@@ -90,7 +94,7 @@ internal fun SharedTransitionScope.InlineBar(
                 elevations = elevations,
                 animatedVisibilityScope = animatedVisibilityScope,
                 modifier = Modifier.constrainAs(accessoryRef) {
-                    width = Dimension.fillToConstraints
+                    width = Dimension.fillToConstraints.atLeast(160.dp)
                     height = Dimension.fillToConstraints
                     centerVerticallyTo(parent)
                     when {
@@ -153,6 +157,7 @@ private fun SharedTransitionScope.InlineTab(
             .sharedElement(
                 sharedContentState = rememberSharedContentState("tabGroup"),
                 animatedVisibilityScope = animatedVisibilityScope,
+                boundsTransform = FloatingTabBarBoundsTransform,
                 zIndexInOverlay = 1f
             )
             .shadow(
@@ -181,6 +186,7 @@ private fun SharedTransitionScope.InlineTab(
                     Modifier.sharedElement(
                         sharedContentState = rememberSharedContentState("tab#${inlineTab.key}-icon"),
                         animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = FloatingTabBarBoundsTransform,
                         zIndexInOverlay = 1f
                     )
                 ) {
@@ -212,6 +218,7 @@ private fun SharedTransitionScope.InlineStandaloneTab(
             .sharedElement(
                 sharedContentState = rememberSharedContentState("standaloneTab"),
                 animatedVisibilityScope = animatedVisibilityScope,
+                boundsTransform = FloatingTabBarBoundsTransform,
                 zIndexInOverlay = 1f
             )
             .shadow(
@@ -249,7 +256,8 @@ private fun SharedTransitionScope.InlineAccessory(
                     if (isAccessoryShared) {
                         Modifier.sharedElement(
                             sharedContentState = rememberSharedContentState("accessory"),
-                            animatedVisibilityScope = animatedVisibilityScope
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            boundsTransform = FloatingTabBarBoundsTransform
                         )
                     } else {
                         Modifier.animateEnterExitAccessory(
@@ -334,7 +342,6 @@ internal fun SharedTransitionScope.ExpandedBar(
                         }
                         horizontalBias = 0f
                     }
-                    .wrapContentWidth(align = Alignment.Start)
             )
         }
 
@@ -377,7 +384,8 @@ private fun SharedTransitionScope.ExpandedAccessory(
                 if (isAccessoryShared) {
                     Modifier.sharedElement(
                         sharedContentState = rememberSharedContentState("accessory"),
-                        animatedVisibilityScope = animatedVisibilityScope
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        boundsTransform = FloatingTabBarBoundsTransform
                     )
                 } else {
                     Modifier.animateEnterExitAccessory(
@@ -414,11 +422,12 @@ private fun SharedTransitionScope.ExpandedTabs(
     val inlineTab = scope.getInlineTab(selectedTabKey)
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(sizes.tabSpacing),
+        horizontalArrangement = Arrangement.SpaceEvenly,
         modifier = modifier
             .sharedElement(
                 sharedContentState = rememberSharedContentState("tabGroup"),
                 animatedVisibilityScope = animatedVisibilityScope,
+                boundsTransform = FloatingTabBarBoundsTransform,
                 zIndexInOverlay = 1f
             )
             .shadow(
@@ -432,8 +441,13 @@ private fun SharedTransitionScope.ExpandedTabs(
             .clip(shapes.tabBarShape)
             .then(tabBarContentModifier)
             .padding(sizes.tabBarContentPadding)
-            .wrapContentWidth(align = Alignment.Start, unbounded = true)
-            .animateContentSize()
+            .fillMaxWidth()
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium
+                )
+            )
     ) {
         scope.tabs.forEach { tab ->
             Tab(
@@ -443,6 +457,7 @@ private fun SharedTransitionScope.ExpandedTabs(
                             Modifier.sharedElement(
                                 sharedContentState = rememberSharedContentState("tab#${tab.key}-icon"),
                                 animatedVisibilityScope = animatedVisibilityScope,
+                                boundsTransform = FloatingTabBarBoundsTransform,
                                 zIndexInOverlay = 1f
                             )
                         } else {
@@ -467,6 +482,7 @@ private fun SharedTransitionScope.ExpandedTabs(
                 },
                 isInline = false,
                 modifier = Modifier
+                    .defaultMinSize(minWidth = 68.dp, minHeight = 52.dp)
                     .skipToLookaheadSize()
                     .clip(shapes.tabShape)
                     .clickable(
@@ -499,6 +515,7 @@ private fun SharedTransitionScope.ExpandedStandaloneTab(
             .sharedElement(
                 sharedContentState = rememberSharedContentState("standaloneTab"),
                 animatedVisibilityScope = animatedVisibilityScope,
+                boundsTransform = FloatingTabBarBoundsTransform,
                 zIndexInOverlay = 1f
             )
             .shadow(
@@ -539,6 +556,13 @@ private fun Tab(
     }
 }
 
+private val FloatingTabBarBoundsTransform = BoundsTransform { _, _ ->
+    spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMedium
+    )
+}
+
 /**
  * A custom modifier that provides smooth enter/exit animations without clipping shadows or other content.
  * This is an alternative to animateEnterExit that uses renderInSharedTransitionScopeOverlay to prevent clipping.
@@ -576,6 +600,7 @@ private fun Modifier.animateEnterExitTab(
     with(animatedVisibilityScope) {
         val enterStartFraction = 0.35f
         val enterEndFraction = 0.9f
+        val exitEndFraction = 0.28f
         val durationMs = 210
 
         val animatedAlpha by transition.animateFloat(
@@ -585,6 +610,9 @@ private fun Modifier.animateEnterExitTab(
                     if (targetState == EnterExitState.Visible) {
                         0f atFraction enterStartFraction using FastOutSlowInEasing
                         1f atFraction enterEndFraction
+                    } else {
+                        1f atFraction 0f
+                        0f atFraction exitEndFraction using FastOutSlowInEasing
                     }
                 }
             }
@@ -603,6 +631,9 @@ private fun Modifier.animateEnterExitTab(
                     if (targetState == EnterExitState.Visible) {
                         blurRadius atFraction enterStartFraction using FastOutSlowInEasing
                         0f atFraction enterEndFraction
+                    } else {
+                        0f atFraction 0f
+                        blurRadius atFraction exitEndFraction using FastOutSlowInEasing
                     }
                 }
             }

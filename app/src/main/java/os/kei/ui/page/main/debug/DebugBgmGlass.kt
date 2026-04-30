@@ -113,15 +113,22 @@ internal fun DebugBgmGlassSurface(
             .clip(shape)
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
-                        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (selected) 0.98f else 0.96f),
-                        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (selected) 0.94f else 0.92f)
-                    )
+                    colors = if (selected) {
+                        listOf(
+                            accent.copy(alpha = 0.22f),
+                            MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
+                        )
+                    } else {
+                        listOf(
+                            MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
+                            MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
+                        )
+                    }
                 )
             )
             .border(
                 width = 1.dp,
-                color = if (selected) accent.copy(alpha = 0.30f) else Color.White.copy(alpha = 0.24f),
+                color = if (selected) accent.copy(alpha = 0.46f) else Color.White.copy(alpha = 0.24f),
                 shape = shape
             ),
         contentAlignment = Alignment.Center,

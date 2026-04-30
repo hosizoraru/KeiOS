@@ -100,6 +100,9 @@ internal fun appLucideFullscreenIcon(): ImageVector = osLucideVector(LucideR.dra
 internal fun appLucideShareIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_share_2)
 
 @Composable
+internal fun appLucideSquareArrowUpIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_square_arrow_up)
+
+@Composable
 internal fun appLucideCloseIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_x)
 
 @Composable
@@ -152,6 +155,9 @@ internal fun appLucideExternalLinkIcon(): ImageVector = osLucideVector(LucideR.d
 
 @Composable
 internal fun appLucideBackIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_arrow_left)
+
+@Composable
+internal fun appLucideChevronLeftIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_chevron_left)
 
 @Composable
 internal fun appLucideTimeIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_clock_3)
