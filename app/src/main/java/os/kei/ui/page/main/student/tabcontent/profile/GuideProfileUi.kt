@@ -23,16 +23,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
 import os.kei.ui.page.main.student.extractGuideWebLinks
+import os.kei.ui.page.main.student.guideLocalizedLabel
+import os.kei.ui.page.main.student.guideLocalizedValue
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.rememberGuideTabCopyAction
 import os.kei.ui.page.main.student.stripGuideWebLinks
@@ -46,9 +50,10 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun GuideProfileSectionHeader(
     title: String
 ) {
+    val displayTitle = guideLocalizedLabel(title)
     Row(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = title,
+            text = displayTitle,
             color = MiuixTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
@@ -76,8 +81,8 @@ internal fun GuideProfileInfoItem(
     valueColor: Color? = null,
     preferCapsule: Boolean = true
 ) {
-    val displayKey = key.ifBlank { "信息" }
-    val displayValue = value.ifBlank { "-" }
+    val displayKey = guideLocalizedLabel(key)
+    val displayValue = guideLocalizedValue(value).ifBlank { "-" }
     val rowCopyAction =
         rememberGuideTabCopyAction(buildGuideTabCopyPayload(displayKey, displayValue))
     val showCapsule = preferCapsule && shouldUseProfileValueCapsule(
@@ -213,10 +218,11 @@ internal fun GuideProfileRowsSection(
         val hasImage = row.imageUrl.isNotBlank()
         val value = row.value
             .takeIf { it.isNotBlank() && it != "图片" }
-            ?: if (hasImage) "见下图" else "-"
+            ?: if (hasImage) stringResource(R.string.guide_label_see_image_below) else "-"
+        val displayValue = guideLocalizedValue(value)
         GuideProfileInfoItem(
-            key = row.key.ifBlank { "信息" },
-            value = value,
+            key = row.key,
+            value = displayValue,
             preferCapsule = false
         )
         if (hasImage) {
@@ -239,7 +245,7 @@ internal fun GuideGalleryRelatedLinkRows(
 ) {
     if (rows.isEmpty()) {
         Text(
-            text = "暂无影画相关链接。",
+            text = stringResource(R.string.guide_gallery_no_related_links),
             color = MiuixTheme.colorScheme.onBackgroundVariant
         )
         return
@@ -249,7 +255,7 @@ internal fun GuideGalleryRelatedLinkRows(
         val links = extractGuideWebLinks(row.value)
         if (links.isEmpty()) return@forEachIndexed
         val noteText = stripGuideWebLinks(row.value)
-        val keyText = row.key.ifBlank { "影画链接" }
+        val keyText = guideLocalizedLabel(row.key, R.string.guide_gallery_related_link)
         val rowCopyPayload = buildGuideTabCopyPayload(
             key = keyText,
             value = buildString {
@@ -339,7 +345,7 @@ internal fun GuideGiftPreferenceGrid(
 ) {
     if (items.isEmpty()) {
         Text(
-            text = "暂无礼物偏好条目。",
+            text = stringResource(R.string.guide_profile_no_gifts),
             color = MiuixTheme.colorScheme.onBackgroundVariant
         )
         return
@@ -370,7 +376,12 @@ internal fun GuideGiftPreferenceGrid(
                 Column(
                     modifier = Modifier
                         .width(cardWidth)
-                        .guideTabCopyable(buildGuideTabCopyPayload("礼物", item.label)),
+                        .guideTabCopyable(
+                            buildGuideTabCopyPayload(
+                                stringResource(R.string.guide_profile_gift),
+                                item.label
+                            )
+                        ),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

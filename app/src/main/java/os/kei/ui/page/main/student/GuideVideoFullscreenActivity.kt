@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
@@ -32,6 +33,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import os.kei.R
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.student.section.gallery.BindGuideVideoForegroundPlaybackGuard
 import top.yukonga.miuix.kmp.basic.Text
@@ -166,7 +168,7 @@ private fun GuideVideoFullscreenScreen(
             )
         } else {
             Text(
-                text = "视频地址无效",
+                text = stringResource(R.string.guide_media_video_url_invalid),
                 color = Color(0xFFBFDBFE),
                 modifier = Modifier.align(Alignment.Center)
             )
@@ -174,7 +176,7 @@ private fun GuideVideoFullscreenScreen(
 
         loadError?.takeIf { it.isNotBlank() }?.let { err ->
             Text(
-                text = "视频播放失败：$err",
+                text = stringResource(R.string.guide_gallery_video_failed_with_reason, err),
                 color = Color(0xFFFCA5A5),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

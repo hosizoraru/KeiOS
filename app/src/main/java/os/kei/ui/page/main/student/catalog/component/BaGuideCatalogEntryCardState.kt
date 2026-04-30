@@ -33,9 +33,10 @@ internal fun rememberBaGuideCatalogEntryCardUiState(
     } else {
         stringResource(R.string.ba_catalog_cd_favorite_student)
     }
-    val copyPayload = remember(entry) {
+    val unknownStudent = stringResource(R.string.ba_catalog_bgm_student_unknown)
+    val copyPayload = remember(entry, unknownStudent) {
         buildString {
-            append(entry.name.ifBlank { "未知角色" })
+            append(entry.name.ifBlank { unknownStudent })
             append(" | ID ")
             append(entry.contentId)
             if (entry.aliasDisplay.isNotBlank()) {

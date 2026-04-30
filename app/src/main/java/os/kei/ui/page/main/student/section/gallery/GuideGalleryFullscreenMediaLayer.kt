@@ -13,12 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import os.kei.R
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -54,12 +56,12 @@ internal fun GuideFullscreenImageRetryHint(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "图片加载异常",
+            text = stringResource(R.string.guide_gallery_image_load_error),
             color = Color(0xFFBFDBFE)
         )
         GlassTextButton(
             backdrop = null,
-            text = "重试",
+            text = stringResource(R.string.guide_action_retry),
             leadingIcon = MiuixIcons.Regular.Refresh,
             textColor = Color(0xFF60A5FA),
             variant = GlassVariant.Compact,

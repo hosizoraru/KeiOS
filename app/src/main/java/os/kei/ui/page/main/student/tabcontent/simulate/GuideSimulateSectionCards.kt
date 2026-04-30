@@ -9,11 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.tabcontent.profile.normalizeProfileFieldKey
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -50,6 +53,7 @@ internal fun GuideSimulateSectionCard(
     } else {
         levelCapsule
     }
+    val displayTitle = guideLocalizedLabel(title)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -79,7 +83,11 @@ internal fun GuideSimulateSectionCard(
                 }
             } else {
                 Text(
-                    text = if (title == "爱用品") "此学生暂未佩戴爱用品。" else "暂无${title}数据。",
+                    text = if (title == "爱用品") {
+                        stringResource(R.string.guide_simulate_empty_favorite_item)
+                    } else {
+                        stringResource(R.string.guide_simulate_empty_section_format, displayTitle)
+                    },
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }
@@ -96,6 +104,7 @@ internal fun GuideSimulateEquipmentCard(
 ) {
     val groups = buildSimulateEquipmentGroups(rows)
     val hintCapsule = extractSimulateLevelCapsule(hint)
+    val equipmentLabel = stringResource(R.string.guide_simulate_equipment)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -120,7 +129,7 @@ internal fun GuideSimulateEquipmentCard(
             if (groups.isNotEmpty()) {
                 groups.forEach { group ->
                     val groupCopyPayload = buildGuideTabCopyPayload(
-                        group.slotLabel.ifBlank { "装备" },
+                        group.slotLabel.ifBlank { equipmentLabel },
                         listOf(group.itemName.trim(), group.tierText.trim())
                             .filter { it.isNotBlank() }
                             .joinToString(" · ")
@@ -182,7 +191,7 @@ internal fun GuideSimulateEquipmentCard(
                 }
             } else {
                 Text(
-                    text = "暂无装备数据。",
+                    text = stringResource(R.string.guide_simulate_empty_equipment),
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }
@@ -247,7 +256,7 @@ internal fun GuideSimulateUnlockCard(
                 }
             } else {
                 Text(
-                    text = "暂无能力解放数据。",
+                    text = stringResource(R.string.guide_simulate_empty_ability_release),
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }

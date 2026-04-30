@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -56,6 +57,7 @@ internal fun BaStudentGuideBottomBar(
                 bottomTabs.forEachIndexed { index, tab ->
                     val selected = selectedPage == index
                     val tabColor = liquidGlassBottomBarItemContentColor(index)
+                    val tabLabel = stringResource(tab.labelRes)
                     val tabContent: @Composable ColumnScope.() -> Unit = {
                         val tabIconModifier = Modifier
                             .size(20.dp)
@@ -70,20 +72,20 @@ internal fun BaStudentGuideBottomBar(
                                     tab == GuideBottomTab.Simulate
                             Icon(
                                 painter = painterResource(id = tab.localLogoRes),
-                                contentDescription = tab.label,
+                                contentDescription = tabLabel,
                                 tint = if (useThemeTintForLocalLogo) tabColor else Color.Unspecified,
                                 modifier = tabIconModifier
                             )
                         } else {
                             Icon(
                                 imageVector = tab.icon,
-                                contentDescription = tab.label,
+                                contentDescription = tabLabel,
                                 tint = tabColor,
                                 modifier = tabIconModifier
                             )
                         }
                         Text(
-                            text = tab.label,
+                            text = tabLabel,
                             fontSize = 11.sp,
                             lineHeight = 14.sp,
                             color = tabColor,

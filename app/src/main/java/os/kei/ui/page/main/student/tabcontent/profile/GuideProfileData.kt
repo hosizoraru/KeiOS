@@ -91,5 +91,5 @@ internal fun fallbackProfileLinkTitle(url: String): String {
     if (lastSegment.isNotBlank()) return lastSegment
     val host = uri?.host?.trim().orEmpty()
     if (host.isNotBlank()) return host
-    return "打开链接"
+    return url.trim()
 }

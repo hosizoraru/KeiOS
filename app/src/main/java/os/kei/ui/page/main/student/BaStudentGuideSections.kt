@@ -3,7 +3,9 @@ package os.kei.ui.page.main.student
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.section.buildGuideCopyPayload
 import os.kei.ui.page.main.student.section.rememberGuideCopyAction
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
@@ -42,15 +44,16 @@ fun GuideRowsSection(
     }
     val visibleRows = rows.take(120)
     visibleRows.forEachIndexed { index, row ->
-        val key = row.key.ifBlank { "信息" }
+        val key = guideLocalizedLabel(row.key)
         val hasImage = row.imageUrl.isNotBlank()
         val value = row.value
             .takeIf { it.isNotBlank() && it != "图片" }
-            ?: if (hasImage) "见下图" else "-"
+            ?: if (hasImage) stringResource(R.string.guide_label_see_image_below) else "-"
+        val displayValue = guideLocalizedValue(value)
         MiuixInfoItem(
             key = key,
-            value = value,
-            onLongClick = rememberGuideCopyAction(buildGuideCopyPayload(key, value))
+            value = displayValue,
+            onLongClick = rememberGuideCopyAction(buildGuideCopyPayload(key, displayValue))
         )
         if (hasImage) {
             Spacer(modifier = androidx.compose.ui.Modifier.height(6.dp))

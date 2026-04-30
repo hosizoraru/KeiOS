@@ -15,6 +15,7 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 
 internal fun LazyListScope.renderBaStudentGuideTabContent(
     activeBottomTab: GuideBottomTab,
+    activeBottomTabLabel: String,
     info: BaStudentGuideInfo?,
     error: String?,
     backdrop: LayerBackdrop,
@@ -39,7 +40,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
         )
 
         GuideBottomTab.Skills -> renderGuideSkillsTabContent(
-            tabLabel = activeBottomTab.label,
+            tabLabel = activeBottomTabLabel,
             info = info,
             error = error,
             backdrop = backdrop,
@@ -47,7 +48,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
         )
 
         GuideBottomTab.Profile -> renderGuideProfileTabContent(
-            tabLabel = activeBottomTab.label,
+            tabLabel = activeBottomTabLabel,
             info = info,
             error = error,
             backdrop = backdrop,
@@ -61,7 +62,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
         )
 
         GuideBottomTab.Voice -> renderGuideVoiceTabContent(
-            tabLabel = activeBottomTab.label,
+            tabLabel = activeBottomTabLabel,
             info = info,
             error = error,
             backdrop = backdrop,
@@ -78,7 +79,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
         )
 
         GuideBottomTab.Gallery -> renderGuideGalleryTabContent(
-            tabLabel = activeBottomTab.label,
+            tabLabel = activeBottomTabLabel,
             info = info,
             error = error,
             backdrop = backdrop,
@@ -92,7 +93,7 @@ internal fun LazyListScope.renderBaStudentGuideTabContent(
         )
 
         GuideBottomTab.Simulate -> renderGuideSimulateTabContent(
-            tabLabel = activeBottomTab.label,
+            tabLabel = activeBottomTabLabel,
             info = info,
             error = error,
             backdrop = backdrop,

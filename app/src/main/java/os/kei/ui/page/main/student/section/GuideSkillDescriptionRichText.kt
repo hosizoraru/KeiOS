@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import os.kei.R
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -34,12 +36,14 @@ internal fun GuideSkillDescriptionText(
     modifier: Modifier = Modifier
 ) {
     val textColor = MiuixTheme.colorScheme.onBackground
-    val richText = remember(description, glossaryIcons, descriptionIcons, textColor) {
+    val iconAltText = stringResource(R.string.guide_skill_icon_alt)
+    val richText = remember(description, glossaryIcons, descriptionIcons, textColor, iconAltText) {
         buildSkillDescriptionRichText(
             description = description,
             glossaryIcons = glossaryIcons,
             leadingIcons = descriptionIcons,
-            numberColor = Color(0xFFD84A40)
+            numberColor = Color(0xFFD84A40),
+            iconAltText = iconAltText
         )
     }
     BasicText(
@@ -61,7 +65,8 @@ internal fun buildSkillDescriptionRichText(
     description: String,
     glossaryIcons: Map<String, String>,
     leadingIcons: List<String>,
-    numberColor: Color
+    numberColor: Color,
+    iconAltText: String
 ): SkillDescriptionRichText {
     if (description.isBlank()) {
         return SkillDescriptionRichText(AnnotatedString(""), emptyMap())
@@ -111,7 +116,7 @@ internal fun buildSkillDescriptionRichText(
                         iconHeight = 15.dp
                     )
                 }
-                appendInlineContent(inlineId, "[图标]")
+                appendInlineContent(inlineId, iconAltText)
                 append(" ")
             }
         var index = 0
@@ -155,7 +160,7 @@ internal fun buildSkillDescriptionRichText(
                         iconHeight = 15.dp
                     )
                 }
-                appendInlineContent(inlineId, "[图标]")
+                appendInlineContent(inlineId, iconAltText)
                 append(label)
                 index = start + label.length
             } else {

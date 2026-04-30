@@ -14,8 +14,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.tabcontent.profile.normalizeProfileFieldKey
@@ -38,6 +40,10 @@ internal fun GuideSimulateAbilityCard(
     ) { mutableStateOf("最大培养") }
     val selectedRows = if (selectedAbility == "最大培养") data.maxRows else data.initialRows
     val selectedHint = if (selectedAbility == "最大培养") data.maxHint else data.initialHint
+    val characterStatsLabel = stringResource(R.string.guide_simulate_character_stats)
+    val initialStatsLabel = stringResource(R.string.guide_simulate_initial_stats)
+    val maxStatsLabel = stringResource(R.string.guide_simulate_max_stats)
+    val characterStatsNoteLabel = stringResource(R.string.guide_simulate_character_stats_note)
     val initialValueByKey = remember(data.initialRows) {
         linkedMapOf<String, String>().apply {
             data.initialRows.forEach { row ->
@@ -68,16 +74,16 @@ internal fun GuideSimulateAbilityCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "角色能力",
+                    text = characterStatsLabel,
                     color = MiuixTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.Medium
                 )
-                listOf("初始能力", "最大培养").forEach { option ->
+                listOf("初始能力" to initialStatsLabel, "最大培养" to maxStatsLabel).forEach { (option, optionLabel) ->
                     val selected = selectedAbility == option
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = option,
+                        text = optionLabel,
                         textColor = if (selected) Color(0xFF2563EB) else MiuixTheme.colorScheme.onBackgroundVariant,
                         containerColor = if (selected) Color(0x443B82F6) else null,
                         variant = GlassVariant.Compact,
@@ -91,7 +97,7 @@ internal fun GuideSimulateAbilityCard(
                     color = Color(0xFF60A5FA),
                     style = MiuixTheme.textStyles.body2,
                     modifier = Modifier.guideTabCopyable(
-                        buildGuideTabCopyPayload("角色能力说明", hint)
+                        buildGuideTabCopyPayload(characterStatsNoteLabel, hint)
                     )
                 )
             }
@@ -113,7 +119,7 @@ internal fun GuideSimulateAbilityCard(
                 }
             } else {
                 Text(
-                    text = "暂无能力数据。",
+                    text = stringResource(R.string.guide_simulate_empty_stats),
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }

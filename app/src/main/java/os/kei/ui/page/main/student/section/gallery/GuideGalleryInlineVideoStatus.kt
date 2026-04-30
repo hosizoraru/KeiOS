@@ -9,8 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
@@ -19,7 +21,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun GuideInlineVideoUnavailableHint() {
     Text(
-        text = "视频暂不可用",
+        text = stringResource(R.string.guide_gallery_video_unavailable),
         color = MiuixTheme.colorScheme.onBackgroundVariant
     )
 }
@@ -46,7 +48,7 @@ internal fun GuideInlineVideoStatusHints(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "视频加载中...",
+                text = stringResource(R.string.guide_gallery_video_loading),
                 color = MiuixTheme.colorScheme.onBackgroundVariant
             )
         }
@@ -54,7 +56,7 @@ internal fun GuideInlineVideoStatusHints(
 
     loadError?.takeIf { it.isNotBlank() }?.let { err ->
         Text(
-            text = "视频播放失败：$err",
+            text = stringResource(R.string.guide_gallery_video_failed_with_reason, err),
             color = MiuixTheme.colorScheme.error,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis

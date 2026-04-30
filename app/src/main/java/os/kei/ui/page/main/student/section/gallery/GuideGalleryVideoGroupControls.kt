@@ -8,7 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntRect
+import os.kei.R
 import os.kei.ui.page.main.os.appLucideFullscreenIcon
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
@@ -49,7 +51,9 @@ internal fun GuideGalleryVideoGroupHeaderActions(
         ) {
             AppDropdownAnchorButton(
                 backdrop = backdrop,
-                text = optionLabels.getOrElse(selectedIndex) { "视频 1" },
+                text = optionLabels.getOrElse(selectedIndex) {
+                    stringResource(R.string.guide_gallery_video_format, 1)
+                },
                 textColor = Color(0xFF3B82F6),
                 variant = GlassVariant.Compact,
                 onClick = { showPicker = !showPicker }

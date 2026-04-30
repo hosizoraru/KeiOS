@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.section.GuideSkillCardItem
 import os.kei.ui.page.main.student.section.GuideWeaponCardItem
@@ -114,7 +116,7 @@ internal fun LazyListScope.renderGuideSkillsTabContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "暂未解析到结构化技能卡数据。",
+                        text = stringResource(R.string.guide_skill_cards_empty),
                         color = MiuixTheme.colorScheme.onBackgroundVariant
                     )
                 }

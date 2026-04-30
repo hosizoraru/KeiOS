@@ -20,7 +20,7 @@ internal data class BaStudentGuideTabRenderState(
 )
 
 internal fun buildBaStudentGuidePagerHeaderState(
-    tab: GuideBottomTab,
+    tabLabel: String,
     sourceUrl: String,
     info: BaStudentGuideInfo?,
     error: String?
@@ -31,7 +31,7 @@ internal fun buildBaStudentGuidePagerHeaderState(
         else -> Color(0xFF22C55E)
     }
     return BaStudentGuidePagerHeaderState(
-        title = tab.label,
+        title = tabLabel,
         showSyncIndicator = sourceUrl.isNotBlank(),
         indicatorColor = indicatorColor
     )

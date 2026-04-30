@@ -22,6 +22,7 @@ import os.kei.ui.page.main.student.BaGuideGalleryItem
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 import os.kei.ui.page.main.student.GuideBgmFavoriteStore
 import os.kei.ui.page.main.student.extractGuideWebLinks
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.isInteractiveFurnitureAnimatedGalleryItem
 import os.kei.ui.page.main.student.isInteractiveFurnitureGalleryItem
 import os.kei.ui.page.main.student.isGuideBgmFavoriteCandidateTitle
@@ -93,7 +94,7 @@ fun GuideGalleryCardItem(
         "video" -> ""
         "audio" -> ""
         "live2d" -> "Live2D"
-        "imageset" -> "图集"
+        "imageset" -> stringResource(R.string.guide_gallery_image_set)
         else -> ""
     }
     val displayImageUrl = mediaUrlResolver(preferredImageRaw)
@@ -101,9 +102,17 @@ fun GuideGalleryCardItem(
     val noteText = item.note.trim()
     val noteLinks = remember(noteText) { extractGuideWebLinks(noteText) }
     val notePlainText = remember(noteText) { stripGuideWebLinks(noteText) }
-    val displayTitle = remember(item.title, normalizedMediaType) {
-        normalizeGalleryDisplayTitle(item.title, normalizedMediaType)
+    val fallbackGalleryTitle = stringResource(R.string.guide_gallery_item_fallback)
+    val audioBgmPrefix = stringResource(R.string.ba_catalog_bgm_track_fallback)
+    val displayTitle = remember(item.title, normalizedMediaType, fallbackGalleryTitle, audioBgmPrefix) {
+        normalizeGalleryDisplayTitle(
+            title = item.title,
+            mediaType = normalizedMediaType,
+            fallbackTitle = fallbackGalleryTitle,
+            audioBgmPrefix = audioBgmPrefix
+        )
     }
+    val localizedDisplayTitle = guideLocalizedLabel(displayTitle, R.string.guide_gallery_item_fallback)
     val saveTargetUrl = remember(
         normalizedMediaType,
         displayImageUrl,
@@ -209,7 +218,7 @@ fun GuideGalleryCardItem(
         GuideGalleryCardContent(
             backdrop = backdrop,
             normalizedMediaType = normalizedMediaType,
-            displayTitle = displayTitle,
+            displayTitle = localizedDisplayTitle,
             mediaTypeLabel = mediaTypeLabel,
             showMediaTypeLabel = showMediaTypeLabel,
             audioTargetUrl = audioTargetUrl,

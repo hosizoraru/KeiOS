@@ -11,8 +11,10 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
 import os.kei.ui.page.main.student.isExpressionGalleryItem
@@ -93,7 +95,7 @@ internal fun LazyListScope.renderGuideGalleryStateContent(
         item {
             if (isExpression && state.expressionItems.isNotEmpty()) {
                 GuideGalleryExpressionCardItem(
-                    title = "角色表情",
+                    title = stringResource(R.string.guide_gallery_expression_title),
                     items = state.expressionItems,
                     backdrop = backdrop,
                     onOpenMedia = onOpenExternal,
@@ -318,7 +320,7 @@ private fun GuideGalleryEmptyCard() {
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
             Text(
-                text = "暂未解析到影画鉴赏内容，点击右上角刷新后重试。",
+                text = stringResource(R.string.guide_gallery_empty),
                 color = MiuixTheme.colorScheme.onBackgroundVariant
             )
         }
@@ -345,7 +347,7 @@ private fun GuideGalleryRelatedLinksCard(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             GuideProfileSectionHeader(
-                title = "影画相关链接"
+                title = stringResource(R.string.guide_gallery_related_links)
             )
             GuideGalleryRelatedLinkRows(
                 rows = rows,

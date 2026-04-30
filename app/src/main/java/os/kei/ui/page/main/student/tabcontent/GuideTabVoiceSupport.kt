@@ -177,14 +177,14 @@ internal fun isVoicePlaceholderRow(row: BaGuideRow): Boolean {
 }
 
 internal fun buildGrowthTitleVoiceEntries(rows: List<BaGuideRow>): List<BaGuideVoiceEntry> {
-    return rows.mapIndexedNotNull { index, row ->
+    return rows.mapNotNull { row ->
         val lines = parseGrowthTitleVoiceLines(row.value)
         val jp = lines.getOrNull(0).orEmpty().trim()
         val cn = lines.getOrNull(1).orEmpty().trim()
-        if (jp.isBlank() && cn.isBlank()) return@mapIndexedNotNull null
+        if (jp.isBlank() && cn.isBlank()) return@mapNotNull null
         BaGuideVoiceEntry(
             section = "成长",
-            title = row.key.trim().ifBlank { "成长台词 ${index + 1}" },
+            title = row.key.trim(),
             lines = listOf(jp, cn),
             audioUrl = ""
         )

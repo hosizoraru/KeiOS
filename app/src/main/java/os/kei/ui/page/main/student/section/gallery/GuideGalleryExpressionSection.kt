@@ -172,7 +172,7 @@ fun GuideGalleryExpressionCardItem(
             displayImageUrl.ifBlank { displayMediaUrl }
         }
     }
-    val optionLabels = remember(items) {
+    val optionLabels = remember(context, items) {
         items.mapIndexed { index, item ->
             val normalizedTitle = normalizeGalleryTitle(item.title)
             val rawVariant = when {
@@ -184,11 +184,11 @@ fun GuideGalleryExpressionCardItem(
                 .replace(Regex("""\d+$"""), "")
                 .trim('（', '）', '(', ')', '-', '·', ' ')
             if (variant.isBlank()) {
-                "角色表情${index + 1}"
+                context.getString(R.string.guide_gallery_expression_fallback_format, index + 1)
             } else if (variant == "包") {
-                "表情包${index + 1}"
+                context.getString(R.string.guide_gallery_expression_pack_format, index + 1)
             } else {
-                "表情${index + 1}·$variant"
+                context.getString(R.string.guide_gallery_expression_variant_format, index + 1, variant)
             }
         }
     }
@@ -217,7 +217,7 @@ fun GuideGalleryExpressionCardItem(
     var imageLoading by remember(displayImageUrl) { mutableStateOf(displayImageUrl.isNotBlank()) }
     val packDownloadIcon = appLucidePackageIcon()
     val fullscreenIcon = appLucideFullscreenIcon()
-    val expressionPackTargets = remember(items, optionLabels, mediaUrlResolver) {
+    val expressionPackTargets = remember(context, items, optionLabels, mediaUrlResolver) {
         items.mapIndexedNotNull { index, item ->
             val rawImage = mediaUrlResolver(item.imageUrl)
             val rawMedia = mediaUrlResolver(item.mediaUrl)
@@ -229,7 +229,9 @@ fun GuideGalleryExpressionCardItem(
             if (target.isBlank()) {
                 null
             } else {
-                target to optionLabels.getOrElse(index) { "角色表情${index + 1}" }
+                target to optionLabels.getOrElse(index) {
+                    context.getString(R.string.guide_gallery_expression_fallback_format, index + 1)
+                }
             }
         }.distinctBy { it.first }
     }
@@ -266,7 +268,9 @@ fun GuideGalleryExpressionCardItem(
                 ) {
                     AppDropdownAnchorButton(
                         backdrop = backdrop,
-                        text = optionLabels.getOrElse(selectedIndex) { "角色表情1" },
+                        text = optionLabels.getOrElse(selectedIndex) {
+                            stringResource(R.string.guide_gallery_expression_fallback_format, 1)
+                        },
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
                         onClick = { showPicker = !showPicker }
@@ -479,7 +483,7 @@ fun GuideGalleryExpressionCardItem(
                 } else {
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = "打开",
+                        text = stringResource(R.string.guide_action_open),
                         leadingIcon = MiuixIcons.Regular.Play,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,

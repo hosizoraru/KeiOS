@@ -10,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
 import os.kei.ui.page.main.student.guideTabCopyable
@@ -31,14 +33,16 @@ internal fun GuideSameNameRoleSection(
     backdrop: LayerBackdrop,
     onOpenGuide: (String) -> Unit
 ) {
-    GuideProfileSectionHeader(title = "相关同名角色")
+    val relatedSameNameLabel = stringResource(R.string.guide_profile_related_same_name)
+    val sameNameLabel = stringResource(R.string.guide_profile_same_name)
+    GuideProfileSectionHeader(title = relatedSameNameLabel)
     sameNameRoleHint.takeIf { it.isNotBlank() }?.let { hint ->
         CopyModeSelectionContainer {
             Text(
                 text = hint,
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                 modifier = Modifier.guideTabCopyable(
-                    buildGuideTabCopyPayload("相关同名角色", hint)
+                    buildGuideTabCopyPayload(relatedSameNameLabel, hint)
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -48,7 +52,7 @@ internal fun GuideSameNameRoleSection(
 
     if (sameNameRoleItems.isEmpty()) {
         Text(
-            text = "暂无同名角色条目。",
+            text = stringResource(R.string.guide_profile_same_name_empty),
             color = MiuixTheme.colorScheme.onBackgroundVariant
         )
         return
@@ -59,7 +63,7 @@ internal fun GuideSameNameRoleSection(
             Spacer(modifier = Modifier.height(4.dp))
         }
         val roleCopyPayload = buildString {
-            append(role.name.ifBlank { "同名角色" })
+            append(role.name.ifBlank { sameNameLabel })
             role.linkUrl.trim().takeIf { it.isNotBlank() }?.let { link ->
                 append('\n')
                 append(link)
@@ -71,7 +75,7 @@ internal fun GuideSameNameRoleSection(
                     .fillMaxWidth()
                     .guideTabCopyable(
                         buildGuideTabCopyPayload(
-                            "同名角色",
+                            sameNameLabel,
                             roleCopyPayload
                         )
                     ),
@@ -97,7 +101,7 @@ internal fun GuideSameNameRoleSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = role.name.ifBlank { "同名角色" },
+                            text = role.name.ifBlank { sameNameLabel },
                             color = MiuixTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(1f),
                             maxLines = Int.MAX_VALUE,
@@ -106,7 +110,7 @@ internal fun GuideSameNameRoleSection(
                         if (link.isNotBlank()) {
                             GlassTextButton(
                                 backdrop = backdrop,
-                                text = "图鉴",
+                                text = stringResource(R.string.guide_profile_archive_action),
                                 textColor = Color(0xFF3B82F6),
                                 variant = GlassVariant.Compact,
                                 onClick = { onOpenGuide(link) }
@@ -115,7 +119,7 @@ internal fun GuideSameNameRoleSection(
                     }
                     if (link.isBlank()) {
                         Text(
-                            text = "暂无可跳转链接",
+                            text = stringResource(R.string.guide_profile_link_unavailable),
                             color = MiuixTheme.colorScheme.onBackgroundVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis

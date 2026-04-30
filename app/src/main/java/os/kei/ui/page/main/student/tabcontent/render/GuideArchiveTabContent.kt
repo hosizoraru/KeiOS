@@ -14,7 +14,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.buildCombatMetaItems
@@ -74,7 +76,7 @@ internal fun LazyListScope.renderGuideArchiveTabContent(
                                 )
                             } else {
                                 Text(
-                                    text = "暂无图片",
+                                    text = stringResource(R.string.guide_gallery_no_image),
                                     color = MiuixTheme.colorScheme.onBackgroundVariant
                                 )
                             }

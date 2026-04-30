@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogBundle
@@ -55,7 +56,7 @@ internal fun BaGuideCatalogTabContent(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = tab.label,
+                text = stringResource(tab.labelRes),
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                 fontSize = 13.sp
             )

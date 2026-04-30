@@ -57,11 +57,16 @@ internal fun loadGuideBitmapSource(
     )
 }
 
-internal fun normalizeGalleryDisplayTitle(title: String, mediaType: String): String {
-    val raw = title.trim().ifBlank { "影画条目" }
+internal fun normalizeGalleryDisplayTitle(
+    title: String,
+    mediaType: String,
+    fallbackTitle: String,
+    audioBgmPrefix: String
+): String {
+    val raw = title.trim().ifBlank { fallbackTitle }
     if (mediaType.lowercase() != "audio") return raw
     return if (raw.startsWith("BGM", ignoreCase = true)) {
-        raw.replaceFirst(Regex("^BGM", RegexOption.IGNORE_CASE), "回忆大厅BGM")
+        raw.replaceFirst(Regex("^BGM", RegexOption.IGNORE_CASE), audioBgmPrefix)
     } else {
         raw
     }

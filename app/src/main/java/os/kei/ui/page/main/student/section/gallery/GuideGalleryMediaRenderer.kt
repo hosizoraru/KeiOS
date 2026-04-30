@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -295,7 +296,7 @@ internal fun GuideGalleryCardContent(
                 else -> {
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = "打开",
+                        text = stringResource(R.string.guide_action_open),
                         leadingIcon = MiuixIcons.Regular.Play,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,

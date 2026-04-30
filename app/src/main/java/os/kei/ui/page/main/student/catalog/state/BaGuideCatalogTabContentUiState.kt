@@ -28,7 +28,8 @@ internal fun rememberBaGuideCatalogTabContentUiState(
     error: String?,
     filteredEntriesEmpty: Boolean
 ): BaGuideCatalogTabContentUiState {
-    val tabTitle = stringResource(R.string.ba_catalog_tab_title, tab.label)
+    val tabLabel = stringResource(tab.labelRes)
+    val tabTitle = stringResource(R.string.ba_catalog_tab_title, tabLabel)
     val syncStatusTitle = stringResource(R.string.ba_catalog_sync_status_title)
     val syncStatusBody = stringResource(R.string.ba_catalog_sync_status_body_retry)
     val emptyTitle = stringResource(R.string.ba_catalog_empty_title)
@@ -40,6 +41,7 @@ internal fun rememberBaGuideCatalogTabContentUiState(
     val loadingMoreText = stringResource(R.string.ba_catalog_loading_more)
     return remember(
         tab,
+        tabLabel,
         tabTitle,
         syncStatusTitle,
         syncStatusBody,

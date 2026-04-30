@@ -9,8 +9,10 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.tabcontent.profile.GuideGiftPreferenceGrid
 import os.kei.ui.page.main.student.tabcontent.profile.GuideProfileInfoItem
@@ -83,10 +85,10 @@ internal fun LazyListScope.renderGuideProfileTabContent(
 
     if (headerState.nicknameRows.isNotEmpty()) {
         guideProfileCard {
-            GuideProfileSectionHeader(title = "学生昵称")
+            GuideProfileSectionHeader(title = stringResource(R.string.guide_profile_section_nickname))
             GuideProfileInfoRows(rows = headerState.nicknameRows) { row ->
                 GuideProfileInfoItem(
-                    key = row.key.ifBlank { "信息" },
+                    key = row.key,
                     value = row.value.ifBlank { "-" }
                 )
             }
@@ -96,7 +98,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
 
     if (headerState.studentInfoRows.isNotEmpty()) {
         guideProfileCard {
-            GuideProfileSectionHeader(title = "学生信息")
+            GuideProfileSectionHeader(title = stringResource(R.string.guide_profile_section_info))
             GuideProfileInfoRows(rows = headerState.studentInfoRows) { row ->
                 val normalizedKey = normalizeProfileFieldKey(row.key)
                 if (normalizedKey == profileRoleReferenceFieldKey) {
@@ -125,7 +127,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
                         else -> fallbackProfileLinkTitle(externalLink)
                     }
                     GuideProfileInfoItem(
-                        key = row.key.ifBlank { "信息" },
+                        key = row.key,
                         value = displayValue,
                         onClick = externalLink.takeIf { it.isNotBlank() }?.let { link ->
                             { onOpenExternal(link) }
@@ -139,7 +141,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
                     )
                 } else {
                     GuideProfileInfoItem(
-                        key = row.key.ifBlank { "信息" },
+                        key = row.key,
                         value = row.value.ifBlank { "-" }
                     )
                 }
@@ -150,10 +152,10 @@ internal fun LazyListScope.renderGuideProfileTabContent(
 
     if (headerState.hobbyRows.isNotEmpty()) {
         guideProfileCard {
-            GuideProfileSectionHeader(title = "学生爱好")
+            GuideProfileSectionHeader(title = stringResource(R.string.guide_profile_section_hobbies))
             GuideProfileInfoRows(rows = headerState.hobbyRows) { row ->
                 GuideProfileInfoItem(
-                    key = row.key.ifBlank { "信息" },
+                    key = row.key,
                     value = row.value.ifBlank { "-" },
                     preferCapsule = false
                 )
@@ -164,7 +166,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
 
     if (headerState.giftPreferenceItems.isNotEmpty()) {
         guideProfileCard {
-            GuideProfileSectionHeader(title = "礼物偏好")
+            GuideProfileSectionHeader(title = stringResource(R.string.guide_profile_section_gifts))
             GuideGiftPreferenceGrid(items = headerState.giftPreferenceItems)
         }
         item { Spacer(modifier = Modifier.height(10.dp)) }
@@ -184,7 +186,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
         guideProfileCard {
             GuideProfileRowsSection(
                 rows = headerState.normalProfileRows,
-                emptyText = "暂未解析到学生档案数据。"
+                emptyText = stringResource(R.string.guide_profile_empty)
             )
         }
     } else if (
@@ -195,14 +197,14 @@ internal fun LazyListScope.renderGuideProfileTabContent(
     ) {
         guideProfileCard {
             Text(
-                text = "暂未解析到学生档案数据。",
+                text = stringResource(R.string.guide_profile_empty),
                 color = MiuixTheme.colorScheme.onBackgroundVariant
             )
         }
     }
 
     renderGuideProfileMediaGroup(
-        title = "巧克力",
+        titleRes = R.string.guide_profile_section_chocolate,
         infoRows = headerState.chocolateInfoRows,
         galleryItems = headerState.chocolateGalleryItems,
         backdrop = backdrop,
@@ -215,7 +217,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
     )
 
     renderGuideProfileMediaGroup(
-        title = "互动家具",
+        titleRes = R.string.guide_profile_section_furniture,
         infoRows = headerState.furnitureInfoRows,
         galleryItems = headerState.furnitureGalleryItems,
         backdrop = backdrop,

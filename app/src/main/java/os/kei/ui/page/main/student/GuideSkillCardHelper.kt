@@ -58,8 +58,8 @@ fun BaStudentGuideInfo.skillCardsForDisplay(): List<GuideSkillCardModel> {
         if (!hasHead || !hasDesc) return@mapIndexedNotNull null
         GuideSkillCardModel(
             id = "skill_${index}_${(draft.type + "_" + draft.name).lowercase(Locale.ROOT)}",
-            type = draft.type.ifBlank { "技能" },
-            name = draft.name.ifBlank { "未命名技能" },
+            type = draft.type,
+            name = draft.name,
             iconUrl = draft.iconUrl,
             descriptionByLevel = draft.descriptionByLevel.toMap(),
             descriptionIconsByLevel = draft.descriptionIconsByLevel.mapValues { (_, urls) -> urls.toList() },

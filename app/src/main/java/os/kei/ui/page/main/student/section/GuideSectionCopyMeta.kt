@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.BaGuideMetaItem
 import os.kei.ui.page.main.student.GuideRemoteIcon
+import os.kei.ui.page.main.student.guideLocalizedLabel
+import os.kei.ui.page.main.student.guideLocalizedValue
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import os.kei.ui.page.main.widget.support.buildTextCopyPayload
 import os.kei.ui.page.main.widget.support.copyModeAwareRow
@@ -54,10 +56,12 @@ internal fun buildGuideSkillCopyPayload(
     cost: String,
     desc: String,
     stateTags: List<String>,
-    variantBadge: String?
+    variantBadge: String?,
+    fallbackSkill: String,
+    statusLabel: String
 ): String {
     val headerParts = buildList {
-        add(name.ifBlank { "技能" })
+        add(name.ifBlank { fallbackSkill })
         skillType.trim().takeIf { it.isNotBlank() }?.let(::add)
         variantBadge?.trim()?.takeIf { it.isNotBlank() }?.let(::add)
         level.trim().takeIf { it.isNotBlank() }?.let(::add)
@@ -69,10 +73,11 @@ internal fun buildGuideSkillCopyPayload(
         .distinct()
         .joinToString(" / ")
     return buildString {
-        append(headerParts.joinToString(" · ").ifBlank { "技能" })
+        append(headerParts.joinToString(" · ").ifBlank { fallbackSkill })
         if (stateText.isNotBlank()) {
             append('\n')
-            append("状态：")
+            append(statusLabel)
+            append('：')
             append(stateText)
         }
         if (desc.isNotBlank()) {
@@ -85,17 +90,20 @@ internal fun buildGuideSkillCopyPayload(
 internal fun buildGuideVoiceEntryCopyPayload(
     section: String,
     title: String,
-    voiceLines: List<Pair<String, String>>
+    voiceLines: List<Pair<String, String>>,
+    fallbackSection: String,
+    fallbackTitle: String,
+    fallbackLine: String
 ): String {
     val header = buildString {
-        append(section.trim().ifBlank { "语音" })
+        append(section.trim().ifBlank { fallbackSection })
         append(" · ")
-        append(title.trim().ifBlank { "语音条目" })
+        append(title.trim().ifBlank { fallbackTitle })
     }
     val lines = voiceLines
         .mapNotNull { (label, text) ->
             val lineText = text.trim()
-            if (lineText.isBlank()) null else "${label.trim().ifBlank { "台词" }}：$lineText"
+            if (lineText.isBlank()) null else "${label.trim().ifBlank { fallbackLine }}：$lineText"
         }
     if (lines.isEmpty()) return header
     return buildString {
@@ -108,10 +116,11 @@ internal fun buildGuideVoiceEntryCopyPayload(
 internal fun buildGuideWeaponCopyPayload(
     name: String,
     level: String,
-    desc: String
+    desc: String,
+    fallbackName: String
 ): String {
     return buildString {
-        append(name.trim().ifBlank { "专属武器" })
+        append(name.trim().ifBlank { fallbackName })
         level.trim().takeIf { it.isNotBlank() }?.let {
             append(" · ")
             append(it)
@@ -146,8 +155,9 @@ fun GuideProfileMetaLine(item: BaGuideMetaItem) {
     val isPosition = item.title == "位置"
     val isRarity = item.title == "稀有度"
     val inlineTitleIcon = isRarity || item.title == "学院"
-    val summary = if (isPosition) "" else item.value.ifBlank { "-" }
-    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(item.title, summary))
+    val summary = if (isPosition) "" else guideLocalizedValue(item.value).ifBlank { "-" }
+    val displayTitle = guideLocalizedLabel(item.title)
+    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(displayTitle, summary))
     val iconSlotWidth = 34.dp
     val iconSlotHeight = 24.dp
     val iconWidth = when {
@@ -172,7 +182,7 @@ fun GuideProfileMetaLine(item: BaGuideMetaItem) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .copyModeAwareRow(
-                        copyPayload = buildGuideCopyPayload(item.title, summary),
+                        copyPayload = buildGuideCopyPayload(displayTitle, summary),
                         onLongClick = rowCopyAction
                     ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -185,7 +195,7 @@ fun GuideProfileMetaLine(item: BaGuideMetaItem) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = item.title,
+                            text = displayTitle,
                             color = MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f, fill = false),
                             maxLines = 1,
@@ -207,7 +217,7 @@ fun GuideProfileMetaLine(item: BaGuideMetaItem) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = item.title,
+                            text = displayTitle,
                             color = MiuixTheme.colorScheme.onBackgroundVariant,
                             modifier = Modifier.weight(1f, fill = false),
                             maxLines = 1,
@@ -254,8 +264,9 @@ fun GuideCombatMetaTile(
     item: BaGuideMetaItem,
     modifier: Modifier = Modifier
 ) {
-    val value = item.value.ifBlank { "-" }
-    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(item.title, value))
+    val value = guideLocalizedValue(item.value).ifBlank { "-" }
+    val displayTitle = guideLocalizedLabel(item.title)
+    val rowCopyAction = rememberGuideCopyAction(buildGuideCopyPayload(displayTitle, value))
     val adaptiveWide = item.title.contains("战术") || item.title == "武器类型"
     val iconWidth = if (adaptiveWide) 28.dp else 18.dp
     val iconHeight = if (adaptiveWide) 18.dp else 18.dp
@@ -267,7 +278,7 @@ fun GuideCombatMetaTile(
         modifier = modifier
             .fillMaxWidth()
             .copyModeAwareRow(
-                copyPayload = buildGuideCopyPayload(item.title, value),
+                copyPayload = buildGuideCopyPayload(displayTitle, value),
                 onLongClick = rowCopyAction
             )
             .clip(RoundedCornerShape(12.dp))
@@ -289,7 +300,7 @@ fun GuideCombatMetaTile(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = item.title,
+                    text = displayTitle,
                     color = MiuixTheme.colorScheme.onBackgroundVariant,
                     modifier = Modifier.widthIn(max = titleMaxWidth),
                     maxLines = 2,

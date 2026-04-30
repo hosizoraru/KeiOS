@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
@@ -43,6 +44,7 @@ import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.GuideWeaponCardModel
 import os.kei.ui.page.main.student.GuideWeaponStarEffect
 import os.kei.ui.page.main.student.GuideWeaponStatRow
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.section.gallery.GuideImageFullscreenDialog
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.motion.appMotionFloatState
@@ -65,6 +67,11 @@ fun GuideWeaponCardItem(
     var showLevelPopup by remember(card.name, card.imageUrl) { mutableStateOf(false) }
     var selectedLevel by rememberSaveable(card.name, card.imageUrl) { mutableStateOf(defaultLevel) }
     var showImageFullscreen by remember(card.imageUrl) { mutableStateOf(false) }
+    val uniqueWeaponLabel = stringResource(R.string.guide_weapon_unique)
+    val uniqueWeaponShortLabel = stringResource(R.string.guide_weapon_unique_short)
+    val uniqueWeaponDescriptionEmpty = stringResource(R.string.guide_weapon_description_empty)
+    val uniqueWeaponStatsLabel = stringResource(R.string.guide_weapon_stats)
+    val displayWeaponName = guideLocalizedLabel(card.name.ifBlank { uniqueWeaponLabel })
 
     LaunchedEffect(levelOptions, defaultLevel) {
         if (levelOptions.isEmpty()) {
@@ -80,11 +87,12 @@ fun GuideWeaponCardItem(
         val index = levelOptions.indexOf(selectedLevel).coerceAtLeast(0)
         return row.values.getOrNull(index) ?: row.values.last()
     }
-    val weaponCopyPayload = remember(card.name, selectedLevel, card.description) {
+    val weaponCopyPayload = remember(displayWeaponName, selectedLevel, card.description, uniqueWeaponLabel) {
         buildGuideWeaponCopyPayload(
-            name = card.name,
+            name = displayWeaponName,
             level = selectedLevel,
-            desc = card.description
+            desc = card.description,
+            fallbackName = uniqueWeaponLabel
         )
     }
 
@@ -110,7 +118,7 @@ fun GuideWeaponCardItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = card.name.ifBlank { "专属武器" },
+                        text = displayWeaponName,
                         color = MiuixTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
@@ -118,7 +126,7 @@ fun GuideWeaponCardItem(
                     )
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = "专武",
+                        text = uniqueWeaponShortLabel,
                         enabled = false,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
@@ -127,7 +135,7 @@ fun GuideWeaponCardItem(
                 }
 
                 Text(
-                    text = card.description.ifBlank { "暂无专武描述。" },
+                    text = card.description.ifBlank { uniqueWeaponDescriptionEmpty },
                     color = MiuixTheme.colorScheme.onBackground,
                     maxLines = 6,
                     overflow = TextOverflow.Ellipsis
@@ -154,7 +162,7 @@ fun GuideWeaponCardItem(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "专武数值",
+                                text = uniqueWeaponStatsLabel,
                                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                                 modifier = Modifier.weight(1f)
                             )
@@ -179,6 +187,7 @@ fun GuideWeaponCardItem(
 
                         card.statRows.forEach { stat ->
                             val valueText = levelValue(stat)
+                            val displayStatTitle = guideLocalizedLabel(stat.title)
                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                                 val titleMaxWidth = (maxWidth * 0.34f).coerceIn(64.dp, 128.dp)
                                 val valueCharBudget = ((maxWidth - titleMaxWidth).value / 7f).toInt().coerceAtLeast(10)
@@ -188,12 +197,12 @@ fun GuideWeaponCardItem(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .guideCopyable(buildGuideCopyPayload(stat.title, valueText)),
+                                        .guideCopyable(buildGuideCopyPayload(displayStatTitle, valueText)),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = stat.title,
+                                        text = displayStatTitle,
                                         color = MiuixTheme.colorScheme.onBackgroundVariant,
                                         modifier = Modifier.widthIn(max = titleMaxWidth),
                                         maxLines = 2,
@@ -245,6 +254,11 @@ internal fun GuideWeaponStarEffectItem(
     var showLevelPopup by remember(effect.id) { mutableStateOf(false) }
     val levelOptions = effect.levelOptions
     var selectedLevel by rememberSaveable(effect.id) { mutableStateOf(effect.defaultLevel) }
+    val effectLabel = stringResource(R.string.guide_weapon_effect)
+    val categoryLabel = stringResource(R.string.guide_label_category)
+    val levelLabel = stringResource(R.string.guide_label_level)
+    val displayEffectName = guideLocalizedLabel(effect.name.ifBlank { effectLabel })
+    val displayRoleTag = effect.roleTag.takeIf { it.isNotBlank() }?.let { guideLocalizedLabel(it) }.orEmpty()
 
     LaunchedEffect(effect.id, effect.defaultLevel, levelOptions) {
         if (levelOptions.isEmpty()) {
@@ -260,20 +274,27 @@ internal fun GuideWeaponStarEffectItem(
         effect.name,
         effect.roleTag,
         selectedLevel,
-        desc
+        desc,
+        effectLabel,
+        displayEffectName,
+        displayRoleTag,
+        categoryLabel,
+        levelLabel
     ) {
         buildString {
             append(effect.starLabel.ifBlank { "★" })
             append(" · ")
-            append(effect.name.ifBlank { "效果" })
-            effect.roleTag.trim().takeIf { it.isNotBlank() }?.let {
+            append(displayEffectName)
+            displayRoleTag.trim().takeIf { it.isNotBlank() }?.let {
                 append('\n')
-                append("分类：")
+                append(categoryLabel)
+                append(": ")
                 append(it)
             }
             selectedLevel.trim().takeIf { it.isNotBlank() }?.let {
                 append('\n')
-                append("等级：")
+                append(levelLabel)
+                append(": ")
                 append(it)
             }
             if (desc.isNotBlank()) {
@@ -322,7 +343,7 @@ internal fun GuideWeaponStarEffectItem(
                 if (effect.roleTag.isNotBlank()) {
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = effect.roleTag,
+                        text = displayRoleTag,
                         enabled = false,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
@@ -330,7 +351,7 @@ internal fun GuideWeaponStarEffectItem(
                     )
                 }
                 Text(
-                    text = effect.name.ifBlank { "效果" },
+                    text = displayEffectName,
                     color = MiuixTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
@@ -382,6 +403,10 @@ internal fun GuideWeaponTwoStarEffectItem(
     onDismissPopup: () -> Unit,
     onLevelSelected: (Int) -> Unit
 ) {
+    val passiveUpgradeLabel = stringResource(R.string.guide_weapon_passive_skill_upgrade)
+    val emptyEffectDescription = stringResource(R.string.guide_weapon_effect_empty)
+    val displayEffectName = guideLocalizedLabel(effect.name.ifBlank { passiveUpgradeLabel })
+    val displayRoleTag = effect.roleTag.takeIf { it.isNotBlank() }?.let { guideLocalizedLabel(it) }.orEmpty()
     CopyModeSelectionContainer {
         Column(
             modifier = Modifier
@@ -406,7 +431,7 @@ internal fun GuideWeaponTwoStarEffectItem(
                     )
                 }
                 Text(
-                    text = effect.name.ifBlank { "辅助技能强化" },
+                    text = displayEffectName,
                     color = MiuixTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
@@ -415,7 +440,7 @@ internal fun GuideWeaponTwoStarEffectItem(
                 if (effect.roleTag.isNotBlank()) {
                     GlassTextButton(
                         backdrop = backdrop,
-                        text = effect.roleTag,
+                        text = displayRoleTag,
                         enabled = false,
                         textColor = Color(0xFF3B82F6),
                         variant = GlassVariant.Compact,
@@ -429,7 +454,7 @@ internal fun GuideWeaponTwoStarEffectItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 GuideSkillDescriptionText(
-                    description = desc.ifBlank { "暂无效果描述。" },
+                    description = desc.ifBlank { emptyEffectDescription },
                     glossaryIcons = glossaryIcons,
                     descriptionIcons = effect.descriptionIconsFor(selectedLevel),
                     modifier = Modifier.weight(1f)

@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.ba.support.BASettingsStore
 import os.kei.ui.page.main.student.IMAGE_TAP_DISMISS_GESTURE_COOLDOWN_MS
 import os.kei.ui.page.main.student.IMAGE_TAP_DISMISS_OFFSET_EPSILON_PX
@@ -300,7 +302,7 @@ internal fun GuideVideoFullscreenDialog(
                 )
             } else {
                 Text(
-                    text = "视频地址无效",
+                    text = stringResource(R.string.guide_media_video_url_invalid),
                     color = Color(0xFFBFDBFE),
                     modifier = Modifier.align(Alignment.Center)
                 )
@@ -308,7 +310,7 @@ internal fun GuideVideoFullscreenDialog(
 
             loadError?.takeIf { it.isNotBlank() }?.let { err ->
                 Text(
-                    text = "视频播放失败：$err",
+                    text = stringResource(R.string.guide_gallery_video_failed_with_reason, err),
                     color = Color(0xFFFCA5A5),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)

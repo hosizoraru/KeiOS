@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
+import os.kei.ui.page.main.student.guideLocalizedLabel
+import os.kei.ui.page.main.student.guideLocalizedValue
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.rememberGuideTabCopyAction
 import os.kei.ui.page.main.student.tabcontent.simulate.isSimulateSubHeader
@@ -35,8 +37,9 @@ internal fun GuideSimulateCardTitleRow(
     capsule: String,
     backdrop: LayerBackdrop
 ) {
-    val copyPayload = remember(title, capsule) {
-        buildGuideTabCopyPayload(title, capsule.ifBlank { "-" })
+    val displayTitle = guideLocalizedLabel(title)
+    val copyPayload = remember(displayTitle, capsule) {
+        buildGuideTabCopyPayload(displayTitle, capsule.ifBlank { "-" })
     }
     CopyModeSelectionContainer {
         Row(
@@ -47,7 +50,7 @@ internal fun GuideSimulateCardTitleRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = title,
+                text = displayTitle,
                 color = MiuixTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.weight(1f)
@@ -67,9 +70,10 @@ internal fun GuideSimulateInlineCapsule(
     text: String,
     backdrop: LayerBackdrop
 ) {
+    val displayText = guideLocalizedLabel(text)
     GlassTextButton(
         backdrop = backdrop,
-        text = text,
+        text = displayText,
         enabled = false,
         textColor = Color(0xFF60A5FA),
         variant = GlassVariant.Compact,
@@ -83,17 +87,18 @@ internal fun GuideSimulateRowItem(
     backdrop: LayerBackdrop,
     valueDelta: String = ""
 ) {
-    val key = row.key.trim().ifBlank { "信息" }
-    val value = row.value.trim()
+    val key = row.key.trim()
+    val displayKey = guideLocalizedLabel(key)
+    val value = guideLocalizedValue(row.value.trim())
     val rowCopyAction =
-        rememberGuideTabCopyAction(buildGuideTabCopyPayload(key, value.ifBlank { "-" }))
+        rememberGuideTabCopyAction(buildGuideTabCopyPayload(displayKey, value.ifBlank { "-" }))
     val iconUrl = row.imageUrl.trim().ifBlank { row.imageUrls.firstOrNull().orEmpty() }
     val statGlyph = simulateStatGlyphForKey(key)
     if (isSimulateSubHeader(key)) {
         CopyModeSelectionContainer {
             Row(
                 modifier = Modifier.copyModeAwareRow(
-                    copyPayload = buildGuideTabCopyPayload(key, value.ifBlank { "-" }),
+                    copyPayload = buildGuideTabCopyPayload(displayKey, value.ifBlank { "-" }),
                     onLongClick = rowCopyAction
                 ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -108,7 +113,7 @@ internal fun GuideSimulateRowItem(
                 }
                 GlassTextButton(
                     backdrop = backdrop,
-                    text = key,
+                    text = displayKey,
                     enabled = false,
                     textColor = Color(0xFF3B82F6),
                     variant = GlassVariant.Compact,
@@ -132,7 +137,7 @@ internal fun GuideSimulateRowItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .copyModeAwareRow(
-                    copyPayload = buildGuideTabCopyPayload(key, value.ifBlank { "-" }),
+                    copyPayload = buildGuideTabCopyPayload(displayKey, value.ifBlank { "-" }),
                     onLongClick = rowCopyAction
                 ),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -158,7 +163,7 @@ internal fun GuideSimulateRowItem(
                     )
                 }
                 Text(
-                    text = key,
+                    text = displayKey,
                     color = MiuixTheme.colorScheme.onBackgroundVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

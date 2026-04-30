@@ -124,14 +124,16 @@ internal fun BaStudentGuidePagerPage(
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (tabRenderState.shouldRenderHeavyContent) {
+            val activeBottomTabLabel = stringResource(tabRenderState.activeBottomTab.labelRes)
             val headerState = remember(
                 tabRenderState.activeBottomTab,
+                activeBottomTabLabel,
                 sourceUrl,
                 info,
                 error
             ) {
                 buildBaStudentGuidePagerHeaderState(
-                    tab = tabRenderState.activeBottomTab,
+                    tabLabel = activeBottomTabLabel,
                     sourceUrl = sourceUrl,
                     info = info,
                     error = error
@@ -187,6 +189,7 @@ internal fun BaStudentGuidePagerPage(
                 } else {
                     renderBaStudentGuideTabContent(
                         activeBottomTab = tabRenderState.activeBottomTab,
+                        activeBottomTabLabel = activeBottomTabLabel,
                         info = info,
                         error = error,
                         backdrop = pageBackdrop,

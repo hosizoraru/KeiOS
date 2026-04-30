@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateAbilityCard
 import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateBondCard
@@ -159,7 +161,7 @@ internal fun LazyListScope.renderGuideSimulateTabContent(
                         .padding(horizontal = 14.dp, vertical = 12.dp)
                 ) {
                     Text(
-                        text = "暂未解析到养成模拟数据，点击右上角刷新后重试。",
+                        text = stringResource(R.string.guide_simulate_empty),
                         color = MiuixTheme.colorScheme.onBackgroundVariant
                     )
                 }

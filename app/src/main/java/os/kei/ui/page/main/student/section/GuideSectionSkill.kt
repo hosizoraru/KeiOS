@@ -27,13 +27,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import os.kei.R
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.GuideSkillCardModel
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
@@ -73,14 +76,21 @@ fun GuideSkillCardItem(
     val skillCost = card.costFor(selectedLevel)
     val displayLevel = selectedLevel.ifBlank { card.defaultLevel }
     val parsedSkillType = remember(card.type) { parseGuideSkillTypeMeta(card.type) }
-    val displaySkillType = parsedSkillType.baseType
+    val fallbackSkillLabel = stringResource(R.string.guide_label_skill)
+    val rawDisplaySkillType = parsedSkillType.baseType
+    val displaySkillType = if (rawDisplaySkillType.isBlank()) {
+        fallbackSkillLabel
+    } else {
+        guideLocalizedLabel(rawDisplaySkillType)
+    }
+    val displaySkillName = card.name.ifBlank { stringResource(R.string.guide_skill_unnamed) }
     val skillTypeStateTags = parsedSkillType.stateTags
     val skillTypeVariantBadge = parsedSkillType.variantIndex?.let(::toGuideCircledNumber)
     val hasTypeStateBlock = skillTypeStateTags.isNotEmpty()
     val hasTypeSubRow = skillTypeVariantBadge != null || levelOptions.isNotEmpty()
     val isExSkill = remember(card.type) { card.type.contains("EX", ignoreCase = true) }
-    val hasSkillMetaColumn = remember(displaySkillType, skillCost, levelOptions, skillTypeVariantBadge, skillTypeStateTags) {
-        displaySkillType.isNotBlank() ||
+    val hasSkillMetaColumn = remember(rawDisplaySkillType, skillCost, levelOptions, skillTypeVariantBadge, skillTypeStateTags) {
+        rawDisplaySkillType.isNotBlank() ||
             skillCost.isNotBlank() ||
             levelOptions.isNotEmpty() ||
             skillTypeVariantBadge != null ||
@@ -89,7 +99,7 @@ fun GuideSkillCardItem(
     val metaColumnShouldTopAlign = descriptionLineCount >= 3
     val skillNameTooLong = skillNameLineCount > 1
     val typeAlignToTitleOffset = if (
-        displaySkillType.isNotBlank() &&
+        rawDisplaySkillType.isNotBlank() &&
         !skillNameTooLong &&
         skillTitleRowHeightPx > 0 &&
         typeCapsuleHeightPx > 0
@@ -118,7 +128,7 @@ fun GuideSkillCardItem(
         0.dp
     }
     val occupiedBeforeCostDp = when {
-        displaySkillType.isNotBlank() -> {
+        rawDisplaySkillType.isNotBlank() -> {
             val typeBottomSpacing = when {
                 hasTypeStateBlock && hasTypeSubRow -> 4.dp + stateBlockHeightDp + 4.dp + subRowHeightDp + 4.dp
                 hasTypeStateBlock -> 4.dp + stateBlockHeightDp + 4.dp
@@ -137,23 +147,29 @@ fun GuideSkillCardItem(
     } else {
         0.dp
     }
+    val statusLabel = stringResource(R.string.guide_label_status)
+    val emptySkillDescription = stringResource(R.string.guide_skill_description_empty)
     val skillCopyPayload = remember(
-        card.name,
+        displaySkillName,
         displaySkillType,
         displayLevel,
         skillCost,
         skillDesc,
         skillTypeStateTags,
-        skillTypeVariantBadge
+        skillTypeVariantBadge,
+        fallbackSkillLabel,
+        statusLabel
     ) {
         buildGuideSkillCopyPayload(
-            name = card.name,
+            name = displaySkillName,
             skillType = displaySkillType,
             level = displayLevel,
             cost = skillCost,
             desc = skillDesc,
             stateTags = skillTypeStateTags,
-            variantBadge = skillTypeVariantBadge
+            variantBadge = skillTypeVariantBadge,
+            fallbackSkill = fallbackSkillLabel,
+            statusLabel = statusLabel
         )
     }
 
@@ -194,7 +210,7 @@ fun GuideSkillCardItem(
                             )
                         }
                         Text(
-                            text = card.name,
+                            text = displaySkillName,
                             modifier = Modifier
                                 .weight(1f)
                                 .alignBy { it.measuredHeight / 2 },
@@ -210,7 +226,7 @@ fun GuideSkillCardItem(
                         )
                     }
                     GuideSkillDescriptionText(
-                        description = skillDesc.ifBlank { "暂未解析到技能描述。" },
+                        description = skillDesc.ifBlank { emptySkillDescription },
                         glossaryIcons = card.glossaryIcons,
                         descriptionIcons = card.descriptionIconsFor(selectedLevel),
                         onLineCountChanged = { lineCount ->
@@ -229,7 +245,7 @@ fun GuideSkillCardItem(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        if (displaySkillType.isNotBlank()) {
+                        if (rawDisplaySkillType.isNotBlank()) {
                             if (typeAlignToTitleOffset > 0.dp) {
                                 Spacer(modifier = Modifier.height(typeAlignToTitleOffset))
                             }

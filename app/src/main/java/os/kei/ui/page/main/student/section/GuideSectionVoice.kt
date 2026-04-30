@@ -14,9 +14,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideVoiceEntry
+import os.kei.ui.page.main.student.guideLocalizedLabel
+import os.kei.ui.page.main.student.guideLocalizedVoiceEntryTitle
+import os.kei.ui.page.main.student.guideLocalizedVoiceLanguage
+import os.kei.ui.page.main.student.guideLocalizedVoiceLineLabel
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
@@ -44,9 +50,18 @@ fun GuideVoiceLanguageCard(
         .filter { it.isNotBlank() }
         .distinct()
         .ifEmpty { listOf("日配", "中配") }
-    val voiceHeaderCopyPayload = remember(visibleHeaders, selectedHeader) {
+    val visibleHeaderLabels = visibleHeaders.map { header -> header to guideLocalizedVoiceLanguage(header) }
+    val dubbingLabel = stringResource(R.string.guide_voice_dubbing)
+    val voiceHeaderCopyPayload = remember(visibleHeaderLabels, selectedHeader, dubbingLabel) {
         val current = selectedHeader.trim().ifBlank { visibleHeaders.firstOrNull().orEmpty() }
-        buildGuideCopyPayload("配音", current.ifBlank { visibleHeaders.joinToString(" / ") })
+        val currentDisplay = visibleHeaderLabels
+            .firstOrNull { (raw, _) -> raw.equals(current, ignoreCase = true) }
+            ?.second
+            .orEmpty()
+        buildGuideCopyPayload(
+            dubbingLabel,
+            currentDisplay.ifBlank { visibleHeaderLabels.joinToString(" / ") { it.second } }
+        )
     }
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -66,7 +81,7 @@ fun GuideVoiceLanguageCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "配音",
+                    text = dubbingLabel,
                     color = MiuixTheme.colorScheme.onBackgroundVariant,
                     modifier = Modifier.widthIn(min = 34.dp)
                 )
@@ -75,11 +90,11 @@ fun GuideVoiceLanguageCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    visibleHeaders.forEach { header ->
+                    visibleHeaderLabels.forEach { (header, headerLabel) ->
                         val selected = header.equals(selectedHeader.trim(), ignoreCase = true)
                         GlassTextButton(
                             backdrop = backdrop,
-                            text = header,
+                            text = headerLabel,
                             textColor = if (selected) Color(0xFF2563EB) else MiuixTheme.colorScheme.onBackgroundVariant,
                             containerColor = if (selected) Color(0x443B82F6) else null,
                             variant = GlassVariant.Compact,
@@ -104,11 +119,20 @@ fun GuideVoiceEntryCard(
     modifier: Modifier = Modifier
 ) {
     val voiceLines = buildVoiceLinePairsForCard(entry, languageHeaders)
-    val entryCopyPayload = remember(entry.section, entry.title, voiceLines) {
+    val displaySection = guideLocalizedLabel(entry.section, R.string.guide_voice_dubbing)
+    val displayTitle = guideLocalizedVoiceEntryTitle(entry.title)
+        .ifBlank { stringResource(R.string.guide_voice_entry) }
+    val displayVoiceLines = voiceLines.mapIndexed { index, line ->
+        guideLocalizedVoiceLineLabel(line.first, index) to line.second
+    }
+    val entryCopyPayload = remember(displaySection, displayTitle, displayVoiceLines) {
         buildGuideVoiceEntryCopyPayload(
-            section = entry.section,
-            title = entry.title,
-            voiceLines = voiceLines
+            section = displaySection,
+            title = displayTitle,
+            voiceLines = displayVoiceLines,
+            fallbackSection = displaySection,
+            fallbackTitle = displayTitle,
+            fallbackLine = displayVoiceLines.firstOrNull()?.first.orEmpty()
         )
     }
     val normalizedPlaybackUrl = normalizeGuideMediaSource(playbackUrl)
@@ -136,7 +160,7 @@ fun GuideVoiceEntryCard(
                     if (entry.section.isNotBlank()) {
                         GlassTextButton(
                             backdrop = backdrop,
-                            text = entry.section,
+                            text = displaySection,
                             enabled = false,
                             textColor = Color(0xFF3B82F6),
                             variant = GlassVariant.Compact,
@@ -144,7 +168,7 @@ fun GuideVoiceEntryCard(
                         )
                     }
                     Text(
-                        text = entry.title.ifBlank { "语音条目" },
+                        text = displayTitle,
                         color = MiuixTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )
@@ -176,7 +200,7 @@ fun GuideVoiceEntryCard(
                     }
                 }
 
-                voiceLines.forEach { (label, text) ->
+                displayVoiceLines.forEach { (label, text) ->
                     val lineCopyPayload = remember(label, text) {
                         buildGuideCopyPayload(label, text)
                     }
@@ -252,7 +276,7 @@ internal fun buildVoiceLinePairsForCard(
         explicitPairs
     } else {
         entry.lines.mapIndexed { index, line ->
-            val label = fallbackHeaders.getOrNull(index).orEmpty().ifBlank { "台词${index + 1}" }
+            val label = fallbackHeaders.getOrNull(index).orEmpty()
             label to line
         }
     }
@@ -262,7 +286,7 @@ internal fun buildVoiceLinePairsForCard(
             val text = indexed.value.second.trim()
             if (text.isBlank()) return@mapNotNull null
             val normalizedLabel = canonicalVoiceLineLabelInCard(label).ifBlank {
-                label.ifBlank { "台词${indexed.index + 1}" }
+                label
             }
             Triple(normalizedLabel, text, indexed.index)
         }
@@ -274,5 +298,4 @@ internal fun buildVoiceLinePairsForCard(
             }
         )
         .map { item -> item.first to item.second }
-        .ifEmpty { listOf("台词" to "暂无台词文本") }
 }

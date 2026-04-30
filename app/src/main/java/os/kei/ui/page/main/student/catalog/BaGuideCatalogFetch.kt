@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.student.catalog
 
 import android.content.Context
+import androidx.annotation.StringRes
 import os.kei.R
 import os.kei.feature.ba.data.remote.GameKeeFetchHelper
 import os.kei.ui.page.main.student.BaStudentGuideInfo
@@ -31,10 +32,19 @@ private var cachedCatalogBundle: BaGuideCatalogBundle? = null
 
 internal enum class BaGuideCatalogTab(
     val label: String,
+    @param:StringRes val labelRes: Int,
     val iconRes: Int
 ) {
-    Student(label = "实装学生", iconRes = R.drawable.ba_tab_profile),
-    NpcSatellite(label = "NPC及卫星", iconRes = R.drawable.ba_tab_skill),
+    Student(
+        label = "实装学生",
+        labelRes = R.string.ba_catalog_tab_student,
+        iconRes = R.drawable.ba_tab_profile
+    ),
+    NpcSatellite(
+        label = "NPC及卫星",
+        labelRes = R.string.ba_catalog_tab_npc_satellite,
+        iconRes = R.drawable.ba_tab_skill
+    ),
 }
 
 internal data class BaGuideCatalogEntry(

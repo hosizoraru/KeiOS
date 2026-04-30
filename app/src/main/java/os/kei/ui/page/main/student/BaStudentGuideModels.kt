@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.student
 
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import os.kei.R
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -68,37 +69,54 @@ data class BaGuideMetaItem(
     val extraImageUrl: String = ""
 )
 
-enum class GuideTab(val label: String) {
-    Skills("角色技能"),
-    Profile("学生档案"),
-    Voice("语音台词"),
-    Gallery("影画鉴赏"),
-    Simulate("养成模拟")
+enum class GuideTab(
+    val label: String,
+    @param:StringRes val labelRes: Int
+) {
+    Skills("角色技能", R.string.guide_tab_skills),
+    Profile("学生档案", R.string.guide_tab_profile),
+    Voice("语音台词", R.string.guide_tab_voice),
+    Gallery("影画鉴赏", R.string.guide_tab_gallery),
+    Simulate("养成模拟", R.string.guide_tab_simulate)
 }
 
 enum class GuideBottomTab(
     val label: String,
+    @param:StringRes val labelRes: Int,
     val icon: ImageVector,
     val localLogoRes: Int? = null,
     val guideTab: GuideTab? = null
 ) {
-    Archive("属性概览", MiuixIcons.Regular.ContactsBook),
+    Archive("属性概览", R.string.guide_tab_archive, MiuixIcons.Regular.ContactsBook),
     Skills(
         GuideTab.Skills.label,
+        GuideTab.Skills.labelRes,
         MiuixIcons.Regular.Tasks,
         localLogoRes = R.drawable.ba_tab_skill,
         guideTab = GuideTab.Skills
     ),
     Profile(
         GuideTab.Profile.label,
+        GuideTab.Profile.labelRes,
         MiuixIcons.Regular.ContactsBook,
         localLogoRes = R.drawable.ba_tab_profile,
         guideTab = GuideTab.Profile
     ),
-    Voice(GuideTab.Voice.label, MiuixIcons.Regular.Mic, guideTab = GuideTab.Voice),
-    Gallery(GuideTab.Gallery.label, MiuixIcons.Regular.Album, guideTab = GuideTab.Gallery),
+    Voice(
+        GuideTab.Voice.label,
+        GuideTab.Voice.labelRes,
+        MiuixIcons.Regular.Mic,
+        guideTab = GuideTab.Voice
+    ),
+    Gallery(
+        GuideTab.Gallery.label,
+        GuideTab.Gallery.labelRes,
+        MiuixIcons.Regular.Album,
+        guideTab = GuideTab.Gallery
+    ),
     Simulate(
         GuideTab.Simulate.label,
+        GuideTab.Simulate.labelRes,
         MiuixIcons.Regular.Stopwatch,
         localLogoRes = R.drawable.ba_tab_simulate,
         guideTab = GuideTab.Simulate

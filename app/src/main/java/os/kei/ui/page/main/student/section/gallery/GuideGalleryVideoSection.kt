@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -24,6 +25,7 @@ import os.kei.R
 import os.kei.ui.page.main.student.BaGuideGalleryItem
 import os.kei.ui.page.main.student.GuideVideoControlAction
 import os.kei.ui.page.main.student.GuideVideoFullscreenActivity
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.section.buildGuideCopyPayload
 import os.kei.ui.page.main.student.section.guideCopyable
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
@@ -50,6 +52,11 @@ fun GuideGalleryVideoGroupCardItem(
 ) {
     if (items.isEmpty()) return
     val context = LocalContext.current
+    val displayTitle = if (title.isBlank()) {
+        stringResource(R.string.guide_gallery_video_format, 1)
+    } else {
+        guideLocalizedLabel(title)
+    }
     var selectedIndex by rememberSaveable(title, items.size) { mutableStateOf(0) }
     LaunchedEffect(items.size) {
         if (selectedIndex !in items.indices) selectedIndex = 0
@@ -66,19 +73,23 @@ fun GuideGalleryVideoGroupCardItem(
     var videoInlinePlaying by remember(displayMediaUrl) { mutableStateOf(false) }
     var videoControlRequestId by remember(displayMediaUrl) { mutableIntStateOf(0) }
     val noteText = selectedItem.note.trim()
-    val optionLabels = remember(title, items) {
+    val optionLabels = remember(context, title, items) {
         if (items.size <= 1) {
-            listOf("视频 1")
+            listOf(context.getString(R.string.guide_gallery_video_format, 1))
         } else {
             items.mapIndexed { index, item ->
                 val normalized = item.title.trim()
-                if (normalized.isNotBlank() && normalized != title) normalized else "视频 ${index + 1}"
+                if (normalized.isNotBlank() && normalized != title) {
+                    normalized
+                } else {
+                    context.getString(R.string.guide_gallery_video_format, index + 1)
+                }
             }
         }
     }
 
     AppFeatureCard(
-        title = title,
+        title = displayTitle,
         subtitle = noteText,
         modifier = modifier.fillMaxWidth(),
         containerColor = Color(0x223B82F6),
@@ -132,7 +143,7 @@ fun GuideGalleryVideoGroupCardItem(
     ) {
         if (displayMediaUrl.isBlank()) {
             Text(
-                text = "未找到可播放的视频地址",
+                text = stringResource(R.string.guide_gallery_video_not_found),
                 color = MiuixTheme.colorScheme.onBackgroundVariant
             )
         } else {
@@ -158,8 +169,9 @@ fun GuideGalleryUnlockLevelCardItem(
     modifier: Modifier = Modifier
 ) {
     if (level.isBlank()) return
-    val rowCopyPayload = remember(level) {
-        buildGuideCopyPayload("回忆大厅解锁等级", level)
+    val unlockLevelLabel = stringResource(R.string.guide_gallery_memory_unlock_level)
+    val rowCopyPayload = remember(unlockLevelLabel, level) {
+        buildGuideCopyPayload(unlockLevelLabel, level)
     }
     AppSurfaceCard(
         modifier = modifier.fillMaxWidth(),
@@ -175,7 +187,7 @@ fun GuideGalleryUnlockLevelCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "回忆大厅解锁等级",
+                    text = unlockLevelLabel,
                     color = MiuixTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,

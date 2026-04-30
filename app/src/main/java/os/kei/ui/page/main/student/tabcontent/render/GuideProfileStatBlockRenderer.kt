@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.student.tabcontent.render
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -12,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.BaGuideGalleryItem
 import os.kei.ui.page.main.student.BaGuideRow
@@ -54,7 +56,7 @@ internal fun LazyListScope.guideProfileCard(
 }
 
 internal fun LazyListScope.renderGuideProfileMediaGroup(
-    title: String,
+    @StringRes titleRes: Int,
     infoRows: List<BaGuideRow>,
     galleryItems: List<BaGuideGalleryItem>,
     backdrop: LayerBackdrop,
@@ -67,11 +69,11 @@ internal fun LazyListScope.renderGuideProfileMediaGroup(
 ) {
     if (infoRows.isEmpty() && galleryItems.isEmpty()) return
     guideProfileCard(addTopSpacing = true) {
-        GuideProfileSectionHeader(title = title)
+        GuideProfileSectionHeader(title = stringResource(titleRes))
         GuideProfileInfoRows(rows = infoRows) { row ->
             val value = row.value.ifBlank { "-" }
             GuideProfileInfoItem(
-                key = row.key.ifBlank { "信息" },
+                key = row.key,
                 value = value,
                 preferCapsule = preferCapsule
             )

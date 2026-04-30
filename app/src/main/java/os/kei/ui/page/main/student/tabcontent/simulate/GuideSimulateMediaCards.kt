@@ -11,8 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
@@ -32,6 +34,7 @@ internal fun GuideSimulateBondCard(
 ) {
     val groups = buildSimulateBondGroups(rows)
     val levelCapsule = extractSimulateLevelCapsule(hint)
+    val bondCharacterLabel = stringResource(R.string.guide_simulate_bond_character)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -56,8 +59,8 @@ internal fun GuideSimulateBondCard(
             if (groups.isNotEmpty()) {
                 groups.forEach { group ->
                     val groupCopyPayload = buildGuideTabCopyPayload(
-                        "羁绊角色",
-                        group.roleLabel.ifBlank { "羁绊角色" }
+                        bondCharacterLabel,
+                        group.roleLabel.ifBlank { bondCharacterLabel }
                     )
                     Row(
                         modifier = Modifier
@@ -95,7 +98,7 @@ internal fun GuideSimulateBondCard(
                 }
             } else {
                 Text(
-                    text = "暂无羁绊等级奖励数据。",
+                    text = stringResource(R.string.guide_simulate_empty_bond),
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }
@@ -161,7 +164,7 @@ internal fun GuideSimulateWeaponCard(
                 }
             } else {
                 Text(
-                    text = "暂无专武数据。",
+                    text = stringResource(R.string.guide_simulate_empty_unique_weapon),
                     color = MiuixTheme.colorScheme.onBackgroundVariant
                 )
             }
