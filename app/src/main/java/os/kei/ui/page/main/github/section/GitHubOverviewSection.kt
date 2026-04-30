@@ -173,6 +173,10 @@ internal fun GitHubOverviewCard(
                             isDark = isDark
                         )
                     },
+                    labelMaxLines = 1,
+                    valueMaxLines = 1,
+                    labelWeight = 0.24f,
+                    valueWeight = 0.76f,
                     modifier = Modifier.weight(1f)
                 )
             }
