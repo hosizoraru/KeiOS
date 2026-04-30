@@ -59,6 +59,7 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRadioIcon
 import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
@@ -534,16 +535,18 @@ private fun boundedDp(
 ): Dp = value.value.coerceIn(min.value, max.value).dp
 
 private const val DebugBgmMiniPlayerProgress = 0.42f
-private val DebugBgmExpandedChromeHeight = 146.dp
-private val DebugBgmCompactChromeHeight = 72.dp
-private val DebugBgmExpandedMiniHeight = 64.dp
-private val DebugBgmCompactMiniHeight = 64.dp
-private val DebugBgmCompactMiniY = 4.dp
-private val DebugBgmExpandedDockHeight = 72.dp
-private val DebugBgmExpandedDockY = 74.dp
-private val DebugBgmExpandedSearchSpacing = 10.dp
-private val DebugBgmCompactControlSize = 64.dp
-private val DebugBgmCompactControlInset = 4.dp
+private val DebugBgmChromeControlHeight = AppChromeTokens.floatingBottomBarOuterHeight
+private val DebugBgmChromeStackGap = AppChromeTokens.pageSectionGap
+private val DebugBgmExpandedChromeHeight = DebugBgmChromeControlHeight * 2f + DebugBgmChromeStackGap
+private val DebugBgmCompactChromeHeight = DebugBgmChromeControlHeight
+private val DebugBgmExpandedMiniHeight = DebugBgmChromeControlHeight
+private val DebugBgmCompactMiniHeight = DebugBgmChromeControlHeight
+private val DebugBgmCompactMiniY = 0.dp
+private val DebugBgmExpandedDockHeight = DebugBgmChromeControlHeight
+private val DebugBgmExpandedDockY = DebugBgmChromeControlHeight + DebugBgmChromeStackGap
+private val DebugBgmExpandedSearchSpacing = AppChromeTokens.pageSectionGap
+private val DebugBgmCompactControlSize = DebugBgmChromeControlHeight
+private val DebugBgmCompactControlInset = 0.dp
 
 @Composable
 private fun rememberDebugBgmDockTabs(): List<DebugBgmDockTab> {

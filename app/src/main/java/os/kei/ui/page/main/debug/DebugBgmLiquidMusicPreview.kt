@@ -98,7 +98,7 @@ internal fun DebugBgmMusicPage(onClose: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 4.dp),
         bottomBarModifier = Modifier
             .navigationBarsPadding()
-            .padding(start = 12.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         onClose = onClose
     )
 }
@@ -112,7 +112,7 @@ internal fun DebugBgmLiquidMusicPreview(
     contentTopPadding: Dp = 74.dp,
     contentBottomPadding: Dp = 144.dp,
     topBarModifier: Modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-    bottomBarModifier: Modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+    bottomBarModifier: Modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
     onClose: () -> Unit = {}
 ) {
     val isDark = isSystemInDarkTheme()
