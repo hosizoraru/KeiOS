@@ -276,7 +276,8 @@ class AppDesignSystemScreenshotTest {
                             accent = MiuixTheme.colorScheme.primary,
                             subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant,
                             expanded = true,
-                            onExpandedChange = {}
+                            onExpandedChange = {},
+                            onOpenDebugActivity = {}
                         )
                     }
                 }
@@ -301,7 +302,8 @@ class AppDesignSystemScreenshotTest {
                             accent = MiuixTheme.colorScheme.primary,
                             subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant,
                             expanded = false,
-                            onExpandedChange = {}
+                            onExpandedChange = {},
+                            onOpenDebugActivity = {}
                         )
                     }
                 }
