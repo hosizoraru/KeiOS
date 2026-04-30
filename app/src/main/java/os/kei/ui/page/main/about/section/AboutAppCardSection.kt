@@ -17,6 +17,7 @@ import os.kei.R
 import os.kei.BuildConfig
 import os.kei.ui.page.main.github.AppIcon
 import os.kei.ui.page.main.os.appLucideAlertIcon
+import os.kei.ui.page.main.os.appLucideFlaskIcon
 import os.kei.ui.page.main.os.appLucideFilterIcon
 import os.kei.ui.page.main.os.appLucideInfoIcon
 import os.kei.ui.page.main.os.appLucideLockIcon
@@ -33,6 +34,8 @@ import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -43,7 +46,8 @@ fun AboutAppCardSection(
     accent: Color,
     subtitleColor: Color,
     expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit
+    onExpandedChange: (Boolean) -> Unit,
+    onOpenDebugActivity: () -> Unit
 ) {
     val context = LocalContext.current
     val unknown = stringResource(R.string.common_unknown)
@@ -88,6 +92,15 @@ fun AboutAppCardSection(
                         packageName = packageInfo?.packageName ?: context.packageName,
                         size = AppInteractiveTokens.cardHeaderLeadingSlotSize
                     )
+                },
+                endActions = {
+                    IconButton(onClick = onOpenDebugActivity) {
+                        Icon(
+                            imageVector = appLucideFlaskIcon(),
+                            contentDescription = stringResource(R.string.about_action_open_debug_activity),
+                            tint = accent
+                        )
+                    }
                 },
                 expandable = true,
                 expanded = expanded,

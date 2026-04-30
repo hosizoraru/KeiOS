@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.R
 import os.kei.core.system.ShizukuApiUtils
+import os.kei.ui.page.main.debug.DebugComponentLabActivity
 import os.kei.ui.page.main.about.state.rememberAboutPageColorPalette
 import os.kei.ui.page.main.about.state.rememberAboutPageSectionExpansionState
 import os.kei.ui.page.main.about.section.AboutAppCardSection
@@ -112,7 +113,8 @@ fun AboutPage(
                     accent = palette.accent,
                     subtitleColor = palette.subtitleColor,
                     expanded = expansionState.appExpanded,
-                    onExpandedChange = { expansionState.appExpanded = it }
+                    onExpandedChange = { expansionState.appExpanded = it },
+                    onOpenDebugActivity = { DebugComponentLabActivity.launch(context) }
                 )
             }
             item {

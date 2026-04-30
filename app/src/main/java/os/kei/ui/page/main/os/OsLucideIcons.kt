@@ -49,6 +49,9 @@ internal fun appLucideEditIcon(): ImageVector = osLucideVector(LucideR.drawable.
 internal fun appLucideConfigIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_sliders_horizontal)
 
 @Composable
+internal fun appLucideFlaskIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_flask_conical)
+
+@Composable
 internal fun appLucideSortIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_arrow_up_down)
 
 @Composable
@@ -62,6 +65,9 @@ internal fun appLucideAddIcon(): ImageVector = osLucideVector(LucideR.drawable.l
 
 @Composable
 internal fun appLucideDownloadIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_download)
+
+@Composable
+internal fun appLucideHeartIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_heart)
 
 @Composable
 internal fun appLucideTrashIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_trash_2)
@@ -155,6 +161,27 @@ internal fun appLucideVersionIcon(): ImageVector = osLucideVector(LucideR.drawab
 
 @Composable
 internal fun appLucideMediaIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_image)
+
+@Composable
+internal fun appLucideMusicIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_music)
+
+@Composable
+internal fun appLucideShuffleIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_shuffle)
+
+@Composable
+internal fun appLucideSearchIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_search)
+
+@Composable
+internal fun appLucideHomeIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_house)
+
+@Composable
+internal fun appLucideGridIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_grid_2x2)
+
+@Composable
+internal fun appLucideRadioIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_radio)
+
+@Composable
+internal fun appLucideLibraryIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_library)
 
 @Composable
 internal fun appLucideBranchIcon(): ImageVector = osLucideVector(LucideR.drawable.lucide_ic_git_branch)

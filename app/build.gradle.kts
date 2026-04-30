@@ -140,6 +140,7 @@ val backdropVersion = "1.0.6"
 val capsuleVersion = "2.1.3"
 val shapesVersion = "1.2.0"
 val liquidGlassVersion = "1.0.3"
+val floatingTabBarVersion = "1.0.1"
 val shizukuVersion = "13.1.5"
 val mmkvVersion = "2.4.0"
 val mcpKotlinSdkVersion = "0.11.1"
@@ -354,6 +355,7 @@ dependencies {
     implementation("io.github.kyant0:capsule:$capsuleVersion")
     implementation("io.github.kyant0:shapes:$shapesVersion")
     implementation("com.qmdeve.liquidglass:core:$liquidGlassVersion")
+    implementation("io.github.elyesmansour:floatingTabBar:$floatingTabBarVersion")
 
     implementation("dev.rikka.shizuku:api:$shizukuVersion")
     implementation("dev.rikka.shizuku:provider:$shizukuVersion")
