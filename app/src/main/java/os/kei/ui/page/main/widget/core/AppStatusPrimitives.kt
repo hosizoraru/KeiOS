@@ -91,7 +91,7 @@ fun AppSupportingBlock(
 private fun AppStatusPrimitivePreviewLight() {
     MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
         AppSupportingBlock(
-            text = "统一说明块会复用在设置 sheet、策略说明和诊断提示里。",
+            text = "Shared support blocks can be reused in setting sheets, policy notes, and diagnostics.",
             modifier = Modifier.padding(16.dp)
         )
     }
@@ -102,7 +102,7 @@ private fun AppStatusPrimitivePreviewLight() {
 private fun AppStatusPrimitivePreviewDark() {
     MiuixTheme(controller = ThemeController(ColorSchemeMode.Dark)) {
         AppSupportingBlock(
-            text = "状态胶囊和说明块现在共享同一套节奏。",
+            text = "Status pills and support blocks now share the same visual rhythm.",
             modifier = Modifier.padding(16.dp),
             accentColor = Color(0xFF60A5FA)
         )

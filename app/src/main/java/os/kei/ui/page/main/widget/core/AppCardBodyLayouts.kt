@@ -55,18 +55,18 @@ private fun AppCardBodyColumnPreviewLight() {
     CompositionLocalProvider(LocalTextCopyExpandedOverride provides false) {
         MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
             AppOverviewCard(
-                title = "列表骨架",
-                subtitle = "统一正文排布",
+                title = "List Body",
+                subtitle = "Shared card rhythm",
                 containerColor = Color(0xFFFFFFFF),
                 borderColor = Color(0xFFD7DFEA),
                 headerEndActions = {
-                    StatusPill(label = "3 项", color = Color(0xFF2563EB))
+                    StatusPill(label = "3 items", color = Color(0xFF2563EB))
                 }
             ) {
                 AppInfoListBody {
-                    AppInfoRow(label = "当前策略", value = "统一正文骨架")
-                    AppInfoRow(label = "说明", value = "支持多行 value，key 与 value 的节奏保持一致。")
-                    AppSupportingBlock(text = "设置、GitHub、MCP 这些卡片正文现在可以共用这一层。")
+                    AppInfoRow(label = "Strategy", value = "Shared body layout")
+                    AppInfoRow(label = "Note", value = "Multi-line values keep label and value rhythm aligned.")
+                    AppSupportingBlock(text = "Settings, GitHub, and MCP cards can reuse this body layer.")
                 }
             }
         }

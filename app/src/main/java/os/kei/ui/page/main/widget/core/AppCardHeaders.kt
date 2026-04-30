@@ -165,8 +165,8 @@ private fun AppCardHeaderPreviewLight() {
     MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
         AppCardHeader(
             title = "MCP Logs",
-            subtitle = "8 条日志 · 长按可导出",
-            supportingText = "点击展开查看详细记录",
+            subtitle = "8 logs · long-press to export",
+            supportingText = "Tap to expand detailed records",
             startAction = {
                 Icon(
                     imageVector = MiuixIcons.Regular.Info,
@@ -176,7 +176,7 @@ private fun AppCardHeaderPreviewLight() {
             },
             endActions = {
                 StatusPill(
-                    label = "已激活",
+                    label = "Active",
                     color = Color(0xFF22C55E)
                 )
             },

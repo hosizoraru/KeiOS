@@ -114,7 +114,7 @@ private fun ResolveInfo.toDownloaderOptionOrNull(context: Context): DownloaderOp
     val excludedKeywords = listOf("android", "system ui", "package installer")
     val positiveKeywords = listOf(
         "download", "downloader", "downloadmanager", "manager", "loader",
-        "adm", "idm", "1dm", "aria", "fetch", "torrent", "下载"
+        "adm", "idm", "1dm", "aria", "fetch", "torrent", "\u4e0b\u8f7d"
     )
     val knownDownloaderPackages = listOf(
         "com.dv.adm",
