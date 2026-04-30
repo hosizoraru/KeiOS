@@ -1,11 +1,13 @@
 package os.kei.mcp.server
 
 import android.content.Context
+import android.os.Build
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import os.kei.core.system.ShizukuApiUtils
+import java.util.Locale
 
 class LocalMcpService(
     appContext: Context,
@@ -57,7 +59,7 @@ class LocalMcpService(
     }
 
     fun listLocalTools(): List<McpToolMeta> {
-        return McpToolCatalog.all
+        return McpToolCatalog.forLocale(currentLocale())
     }
 
     private fun createServer(): Server {
@@ -85,5 +87,15 @@ class LocalMcpService(
         skillContent.registerResources(server)
         skillContent.registerPrompt(server)
         return server
+    }
+
+    private fun currentLocale(): Locale {
+        val configuration = environment.appContext.resources.configuration
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            configuration.locales[0] ?: Locale.getDefault()
+        } else {
+            @Suppress("DEPRECATION")
+            configuration.locale ?: Locale.getDefault()
+        }
     }
 }

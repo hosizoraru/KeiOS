@@ -1,5 +1,7 @@
 package os.kei.mcp.server
 
+import java.util.Locale
+
 data class McpToolMeta(
     val name: String,
     val description: String
@@ -55,7 +57,24 @@ internal object McpToolCatalog {
         "keios.ba.cache.clear"
     )
 
-    val all: List<McpToolMeta> = listOf(
+    val all: List<McpToolMeta>
+        get() = englishTools
+
+    fun forLocale(locale: Locale): List<McpToolMeta> {
+        return if (locale.language.equals("zh", ignoreCase = true)) {
+            simplifiedChineseTools
+        } else {
+            englishTools
+        }
+    }
+
+    fun descriptionFor(name: String, locale: Locale): String {
+        return forLocale(locale).firstOrNull { it.name == name }?.description
+            ?: englishTools.firstOrNull { it.name == name }?.description
+            ?: ""
+    }
+
+    private val englishTools: List<McpToolMeta> = listOf(
         McpToolMeta("keios.health.ping", "Health probe; returns pong."),
         McpToolMeta("keios.app.info", "Read app metadata: label, package, version, and Shizuku API level."),
         McpToolMeta("keios.app.version", "Read versionName and versionCode."),
@@ -90,5 +109,42 @@ internal object McpToolCatalog {
         McpToolMeta("keios.ba.guide.media.list", "List gallery and voice media from Student Guide detail cache."),
         McpToolMeta("keios.ba.guide.bgm.favorites", "Read, export, or import Memorial Lobby BGM favorites."),
         McpToolMeta("keios.ba.cache.clear", "Clear Blue Archive and GitHub cache data. Args: scope, url.")
+    )
+
+    private val simplifiedChineseTools: List<McpToolMeta> = listOf(
+        McpToolMeta("keios.health.ping", "健康探针，返回 pong。"),
+        McpToolMeta("keios.app.info", "读取应用元信息：label、package、version 与 Shizuku API。"),
+        McpToolMeta("keios.app.version", "读取 versionName 与 versionCode。"),
+        McpToolMeta("keios.shizuku.status", "读取当前 Shizuku 状态。"),
+        McpToolMeta("keios.mcp.runtime.status", "读取 MCP 运行态：endpoint、客户端数量与错误。"),
+        McpToolMeta("keios.mcp.runtime.logs", "读取 MCP 运行日志。参数：limit=1..200。"),
+        McpToolMeta("keios.mcp.runtime.config", "生成可导入 MCP JSON。参数：mode=auto|local|lan，支持 endpoint/serverName 覆盖。"),
+        McpToolMeta("keios.mcp.claw.skill.guide", "生成 Claw 接入引导：导入 JSON、SKILL.md 与注册步骤。"),
+        McpToolMeta("keios.home.overview.snapshot", "读取 Home 总览卡片快照，覆盖 MCP、GitHub 与 Blue Archive。"),
+        McpToolMeta("keios.system.topinfo.query", "查询系统 TopInfo 缓存值。参数：query、limit。"),
+        McpToolMeta("keios.os.cards.snapshot", "读取 OS 页面卡片总览：可见性、展开态、缓存体积与统计。"),
+        McpToolMeta("keios.os.activity.cards", "读取 Activity card 列表。参数：query、onlyVisible、limit。"),
+        McpToolMeta("keios.os.shell.cards", "读取 shell card 列表。参数：query、onlyVisible、includeOutput、limit。"),
+        McpToolMeta("keios.os.cards.export", "导出 OS Activity 或 shell card JSON。参数：target=activity|shell|all。"),
+        McpToolMeta("keios.os.cards.import", "预览或导入 OS Activity 或 shell card JSON。apply=false 默认预览。"),
+        McpToolMeta("keios.github.tracked.snapshot", "读取 GitHub 跟踪设置与缓存快照。"),
+        McpToolMeta("keios.github.tracked.list", "列出已跟踪仓库。参数：repoFilter、limit。"),
+        McpToolMeta("keios.github.tracked.export", "导出已跟踪 GitHub 仓库 JSON。参数：repoFilter。"),
+        McpToolMeta("keios.github.tracked.import", "预览或导入 GitHub 跟踪仓库。apply=false 默认预览。"),
+        McpToolMeta("keios.github.tracked.check", "在线检查已跟踪仓库更新。参数：repoFilter、onlyUpdates、limit。"),
+        McpToolMeta("keios.github.tracked.summary", "读取跟踪汇总。参数：mode=cache|network、repoFilter。"),
+        McpToolMeta("keios.github.tracked.cache.clear", "清理 GitHub 检查缓存与 release asset 缓存。"),
+        McpToolMeta("keios.github.share.parse", "解析 GitHub 分享文本中的 repo、release、tag 与 APK 链接。"),
+        McpToolMeta("keios.github.share.resolve", "解析 GitHub 分享链接，并列出可安装 APK asset 候选。"),
+        McpToolMeta("keios.github.share.pending", "读取或清除分享安装前跟踪状态。"),
+        McpToolMeta("keios.ba.snapshot", "读取 Blue Archive 快照：AP、咖啡厅、通知阈值与刷新间隔。"),
+        McpToolMeta("keios.ba.calendar.cache", "读取 Blue Archive 活动日历缓存。参数：serverIndex、includeEntries、limit。"),
+        McpToolMeta("keios.ba.pool.cache", "读取 Blue Archive 招募卡池缓存。参数：serverIndex、includeEntries、limit。"),
+        McpToolMeta("keios.ba.guide.catalog.cache", "读取学生图鉴目录缓存。参数：tab、includeEntries、limit。"),
+        McpToolMeta("keios.ba.guide.cache.overview", "读取学生图鉴详情缓存总览。"),
+        McpToolMeta("keios.ba.guide.cache.inspect", "按 URL 检查学生图鉴详情缓存。参数：url、includeSections、refreshIntervalHours。"),
+        McpToolMeta("keios.ba.guide.media.list", "从学生图鉴详情缓存列出影画鉴赏与语音媒体。"),
+        McpToolMeta("keios.ba.guide.bgm.favorites", "读取、导出或导入回忆大厅 BGM 收藏。"),
+        McpToolMeta("keios.ba.cache.clear", "清理 Blue Archive 与 GitHub 缓存数据。参数：scope、url。")
     )
 }
