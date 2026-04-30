@@ -245,7 +245,10 @@ internal fun SettingsPermissionKeepAliveSection(
                 stringResource(R.string.settings_shizuku_permission_summary_restricted)
             },
             infoKey = stringResource(R.string.settings_permissions_info_status),
-            infoValue = state.shizukuStatusText.ifBlank {
+            infoValue = localizedShizukuStatusText(
+                statusText = state.shizukuStatusText,
+                granted = state.shizukuGranted
+            ).ifBlank {
                 if (state.shizukuGranted) {
                     stringResource(R.string.settings_shizuku_permission_status_granted)
                 } else {
@@ -265,6 +268,68 @@ internal fun SettingsPermissionKeepAliveSection(
                 )
             }
         )
+    }
+}
+
+@Composable
+private fun localizedShizukuStatusText(
+    statusText: String,
+    granted: Boolean
+): String {
+    val trimmed = statusText.trim()
+    if (trimmed.isEmpty()) return ""
+    return when {
+        trimmed == "Shizuku service unavailable (start Shizuku app first)" ->
+            stringResource(R.string.settings_shizuku_status_service_unavailable)
+
+        trimmed == "Shizuku service disconnected" ->
+            stringResource(R.string.settings_shizuku_status_service_disconnected)
+
+        trimmed == "Shizuku pre-v11 is unsupported" ->
+            stringResource(R.string.settings_shizuku_status_pre_v11_unsupported)
+
+        trimmed == "Shizuku permission: not granted" ->
+            stringResource(R.string.settings_shizuku_status_permission_not_granted)
+
+        trimmed == "Shizuku permission: denied" ->
+            stringResource(R.string.settings_shizuku_status_permission_denied)
+
+        trimmed == "Shizuku permission denied permanently" ->
+            stringResource(R.string.settings_shizuku_status_permission_denied_permanently)
+
+        trimmed == "Requesting Shizuku permission..." ->
+            stringResource(R.string.settings_shizuku_status_requesting_permission)
+
+        trimmed == "Shizuku process API unavailable" ->
+            stringResource(R.string.settings_shizuku_status_process_api_unavailable)
+
+        trimmed.startsWith("Shizuku command unavailable: unsupported service uid ") ->
+            stringResource(
+                R.string.settings_shizuku_status_unsupported_service_uid,
+                trimmed.substringAfterLast(' ').ifBlank { "unknown" }
+            )
+
+        trimmed.startsWith("Shizuku init failed:") ->
+            stringResource(
+                R.string.settings_shizuku_status_init_failed,
+                trimmed.substringAfter(':').trim().ifBlank { "unknown" }
+            )
+
+        trimmed.startsWith("Shizuku request failed:") ->
+            stringResource(
+                R.string.settings_shizuku_status_request_failed,
+                trimmed.substringAfter(':').trim().ifBlank { "unknown" }
+            )
+
+        trimmed.startsWith("Shizuku permission: granted") ->
+            stringResource(
+                R.string.settings_shizuku_status_permission_granted_identity,
+                trimmed.substringAfter('(', "").substringBefore(')').ifBlank {
+                    if (granted) "shell" else "unknown"
+                }
+            )
+
+        else -> trimmed
     }
 }
 
