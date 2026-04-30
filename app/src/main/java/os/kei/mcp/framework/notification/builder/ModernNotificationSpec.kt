@@ -36,9 +36,9 @@ internal object ModernNotificationSpecResolver {
     private const val PROGRESS_IDLE_COLOR = 0xFF64748B.toInt()
     private const val ICON_DEFAULT = R.drawable.ic_kei_notification_small
     private const val ICON_DEFAULT_OEM = R.drawable.ic_kei_logo_live_update
-    private const val ICON_BA_AP_OEM = R.drawable.ic_ba_ap_notification_small
-    private const val ICON_BA_CAFE_VISIT_OEM = R.drawable.ic_ba_tea_party_notification_small
-    private const val ICON_BA_ARENA_REFRESH_OEM = R.drawable.ic_ba_arena_coin_notification_small
+    private const val ICON_BA_AP = R.drawable.ic_ba_ap_island_notification
+    private const val ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_island
+    private const val ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_island
     private const val CONTENT_ICON_AP = R.drawable.ic_ba_ap_live_update
     private const val CONTENT_ICON_BA_CAFE_VISIT = R.drawable.ic_ba_tea_party_live_update
     private const val CONTENT_ICON_BA_ARENA_REFRESH = R.drawable.ic_ba_arena_coin_live_update
@@ -80,18 +80,24 @@ internal object ModernNotificationSpecResolver {
         kind: ModernNotificationKind,
         preferOemLiveIconLayout: Boolean
     ): Int {
-        return if (preferOemLiveIconLayout) {
-            resolveOemCompactIcon(kind)
-        } else {
-            ICON_DEFAULT
+        return when (kind) {
+            ModernNotificationKind.DEFAULT -> if (preferOemLiveIconLayout) {
+                ICON_DEFAULT_OEM
+            } else {
+                ICON_DEFAULT
+            }
+
+            ModernNotificationKind.BA_AP,
+            ModernNotificationKind.BA_CAFE_VISIT,
+            ModernNotificationKind.BA_ARENA_REFRESH -> resolveSemanticCompactIcon(kind)
         }
     }
 
-    private fun resolveOemCompactIcon(kind: ModernNotificationKind): Int {
+    private fun resolveSemanticCompactIcon(kind: ModernNotificationKind): Int {
         return when (kind) {
-            ModernNotificationKind.BA_AP -> ICON_BA_AP_OEM
-            ModernNotificationKind.BA_CAFE_VISIT -> ICON_BA_CAFE_VISIT_OEM
-            ModernNotificationKind.BA_ARENA_REFRESH -> ICON_BA_ARENA_REFRESH_OEM
+            ModernNotificationKind.BA_AP -> ICON_BA_AP
+            ModernNotificationKind.BA_CAFE_VISIT -> ICON_BA_CAFE_VISIT
+            ModernNotificationKind.BA_ARENA_REFRESH -> ICON_BA_ARENA_REFRESH
             ModernNotificationKind.DEFAULT -> ICON_DEFAULT_OEM
         }
     }
