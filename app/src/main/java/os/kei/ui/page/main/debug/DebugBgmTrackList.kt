@@ -63,8 +63,11 @@ internal fun DebugBgmTrackList(
     isPlaying: Boolean,
     accent: Color,
     isTrackFavorite: (String) -> Boolean,
+    isTrackOfflineSaved: (String) -> Boolean,
     onTrackClick: (String) -> Unit,
     onTrackFavoriteClick: (String) -> Unit,
+    onTrackOfflineClick: (String) -> Unit,
+    onTrackShareClick: (DebugBgmTrack) -> Unit,
 ) {
     if (tracks.isEmpty()) {
         DebugBgmEmptyTrackResult(accent = accent)
@@ -83,9 +86,12 @@ internal fun DebugBgmTrackList(
                 active = active,
                 isPlaying = isPlaying,
                 favorite = isTrackFavorite(track.id),
+                offlineSaved = isTrackOfflineSaved(track.id),
                 accent = accent,
                 onClick = { onTrackClick(track.id) },
-                onFavoriteClick = { onTrackFavoriteClick(track.id) }
+                onFavoriteClick = { onTrackFavoriteClick(track.id) },
+                onOfflineClick = { onTrackOfflineClick(track.id) },
+                onShareClick = { onTrackShareClick(track) }
             )
             if (index < tracks.lastIndex) {
                 Box(
@@ -148,30 +154,28 @@ private fun DebugBgmTrackRow(
     active: Boolean,
     isPlaying: Boolean,
     favorite: Boolean,
+    offlineSaved: Boolean,
     accent: Color,
     onClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    onOfflineClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     var moreExpanded by remember(track.id) { mutableStateOf(false) }
     var moreAnchorBounds by remember(track.id) { mutableStateOf<IntRect?>(null) }
     val rowShape = RoundedCornerShape(14.dp)
-    val statusText = if (active) {
-        stringResource(
-            if (isPlaying) {
-                R.string.debug_component_lab_track_status_now_playing
-            } else {
-                R.string.debug_component_lab_track_status_paused
-            }
-        )
+    val offlineBadgeLabel = stringResource(R.string.debug_component_lab_track_badge_offline)
+    val rowStatusDescription = if (offlineSaved) {
+        "${track.durationLabel}, $offlineBadgeLabel"
     } else {
-        track.subtitle
+        track.durationLabel
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .semantics { contentDescription = "${track.title}, $statusText" }
+            .height(56.dp)
+            .semantics { contentDescription = "${track.title}, $rowStatusDescription" }
             .clip(rowShape)
             .background(
                 color = if (active) accent.copy(alpha = 0.08f) else Color.Transparent,
@@ -201,15 +205,6 @@ private fun DebugBgmTrackRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = statusText,
-                color = if (active) accent else MiuixTheme.colorScheme.onBackgroundVariant,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                fontWeight = if (active) FontWeight.Medium else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
         Text(
             text = track.durationLabel,
@@ -236,6 +231,7 @@ private fun DebugBgmTrackRow(
                 show = moreExpanded,
                 anchorBounds = moreAnchorBounds,
                 favorite = favorite,
+                offlineSaved = offlineSaved,
                 onDismissRequest = { moreExpanded = false },
                 onPlayClick = {
                     moreExpanded = false
@@ -244,6 +240,14 @@ private fun DebugBgmTrackRow(
                 onFavoriteClick = {
                     moreExpanded = false
                     onFavoriteClick()
+                },
+                onOfflineClick = {
+                    moreExpanded = false
+                    onOfflineClick()
+                },
+                onShareClick = {
+                    moreExpanded = false
+                    onShareClick()
                 }
             )
         }
@@ -255,9 +259,12 @@ private fun DebugBgmTrackMorePopup(
     show: Boolean,
     anchorBounds: IntRect?,
     favorite: Boolean,
+    offlineSaved: Boolean,
     onDismissRequest: () -> Unit,
     onPlayClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: () -> Unit,
+    onOfflineClick: () -> Unit,
+    onShareClick: () -> Unit
 ) {
     if (!show) return
     SnapshotWindowListPopup(
@@ -276,17 +283,36 @@ private fun DebugBgmTrackMorePopup(
                 onClick = onPlayClick
             )
             DebugBgmTrackMenuItem(
-                text = stringResource(R.string.debug_component_lab_action_favorite),
+                text = stringResource(
+                    if (favorite) {
+                        R.string.debug_component_lab_action_unfavorite
+                    } else {
+                        R.string.debug_component_lab_action_favorite
+                    }
+                ),
                 selected = favorite,
                 index = 1,
                 optionSize = DebugBgmTrackMenuItemCount,
                 onClick = onFavoriteClick
             )
             DebugBgmTrackMenuItem(
-                text = stringResource(R.string.debug_component_lab_action_share),
+                text = stringResource(
+                    if (offlineSaved) {
+                        R.string.debug_component_lab_action_remove_offline
+                    } else {
+                        R.string.debug_component_lab_action_save_offline
+                    }
+                ),
+                selected = offlineSaved,
                 index = 2,
                 optionSize = DebugBgmTrackMenuItemCount,
-                onClick = onDismissRequest
+                onClick = onOfflineClick
+            )
+            DebugBgmTrackMenuItem(
+                text = stringResource(R.string.debug_component_lab_action_share),
+                index = 3,
+                optionSize = DebugBgmTrackMenuItemCount,
+                onClick = onShareClick
             )
         }
     }
@@ -443,4 +469,4 @@ internal fun DebugBgmSearchPanel(
     }
 }
 
-private const val DebugBgmTrackMenuItemCount = 3
+private const val DebugBgmTrackMenuItemCount = 4

@@ -72,6 +72,9 @@
     <string name="debug_component_lab_action_shuffle">シャッフル</string>
     <string name="debug_component_lab_action_download">オフライン保存</string>
     <string name="debug_component_lab_action_favorite">お気に入り</string>
+    <string name="debug_component_lab_action_unfavorite">お気に入り解除</string>
+    <string name="debug_component_lab_action_save_offline">オフライン保存</string>
+    <string name="debug_component_lab_action_remove_offline">オフライン解除</string>
     <string name="debug_component_lab_action_library">ライブラリに追加</string>
     <string name="debug_component_lab_action_share">共有</string>
     <string name="debug_component_lab_action_more">その他</string>
@@ -90,6 +93,17 @@
     <string name="debug_component_lab_search_empty_subtitle">別の生徒名または BGM キーワードを試してください。</string>
     <string name="debug_component_lab_track_status_now_playing">再生中</string>
     <string name="debug_component_lab_track_status_paused">一時停止中</string>
+    <string name="debug_component_lab_track_badge_offline">オフライン済み</string>
+    <string name="debug_component_lab_share_chooser_title">BGM を共有</string>
+    <string name="debug_component_lab_share_text">%1$s のメモロビ BGM を再生中</string>
+    <string name="debug_component_lab_section_home_title">今日のメモロビ</string>
+    <string name="debug_component_lab_section_home_meta">最近の再生とよく使う生徒を続けます</string>
+    <string name="debug_component_lab_section_discover_title">発見キュー</string>
+    <string name="debug_component_lab_section_discover_meta">新規入口、並び順、推薦テンポを検証します</string>
+    <string name="debug_component_lab_section_radio_title">シャッフルラジオ</string>
+    <string name="debug_component_lab_section_radio_meta">自動再生と単曲リピート状態を模擬します</string>
+    <string name="debug_component_lab_section_footer_current">現在の分区：%1$s</string>
+    <string name="debug_component_lab_section_footer_state">%1$d 曲再生可 · %2$d 曲オフライン</string>
     <string name="debug_component_lab_track_1_title">ホシノ</string>
     <string name="debug_component_lab_track_1_subtitle">お気に入り生徒 BGM</string>
     <string name="debug_component_lab_track_1_duration">03:42</string>

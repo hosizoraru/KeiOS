@@ -1,5 +1,7 @@
 package os.kei.ui.page.main.debug
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.fadeIn
@@ -24,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,7 +62,10 @@ import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
+import os.kei.ui.page.main.os.appLucideSkipBackIcon
+import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.os.appLucideSquareArrowUpIcon
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -102,6 +107,17 @@ internal fun DebugBgmLiquidMusicPreview(
     val bottomBarScrollConnection = rememberDebugBgmBottomChromeScrollState(scrollThreshold = 56.dp)
     val musicState = rememberDebugBgmMusicUiState()
     val currentTrack = musicState.currentTrack
+    val context = LocalContext.current
+    val shareChooserTitle = stringResource(R.string.debug_component_lab_share_chooser_title)
+    val sectionText = rememberDebugBgmDockSectionText(selectedDockKey = musicState.selectedDockKey)
+    val onShareTrack: (DebugBgmTrack) -> Unit = remember(context, shareChooserTitle) {
+        { track ->
+            context.launchDebugBgmTrackShare(
+                chooserTitle = shareChooserTitle,
+                shareText = context.getString(R.string.debug_component_lab_share_text, track.title)
+            )
+        }
+    }
     val albumScrollOffset by remember {
         derivedStateOf {
             val indexOffset = listState.firstVisibleItemIndex * 720f
@@ -168,9 +184,18 @@ internal fun DebugBgmLiquidMusicPreview(
             isTrackFavorite = musicState::isTrackFavorite,
             onRepeatClick = musicState::toggleRepeat,
             onDownloadClick = musicState::toggleCurrentTrackOffline,
+            onPreviousClick = musicState::playPrevious,
             onPlayPauseClick = musicState::togglePlayPause,
+            onNextClick = musicState::playNext,
             onTrackClick = musicState::playTrack,
             onTrackFavoriteClick = musicState::toggleTrackFavorite,
+            onTrackOfflineClick = musicState::toggleTrackOffline,
+            onTrackShareClick = onShareTrack,
+            isTrackOfflineSaved = musicState::isTrackOfflineSaved,
+            sectionTitle = sectionText.heroTitle,
+            sectionMeta = sectionText.heroMeta,
+            sectionFooterTitle = sectionText.footerTitle,
+            offlineTrackCount = musicState.offlineTrackCount,
             listState = listState,
             collapseProgress = collapseProgress,
             bottomBarScrollConnection = bottomBarScrollConnection,
@@ -181,6 +206,9 @@ internal fun DebugBgmLiquidMusicPreview(
             accent = accent,
             titleProgress = topBarTitleProgress,
             onClose = onClose,
+            onShareClick = { onShareTrack(currentTrack) },
+            offlineSaved = musicState.currentTrackOfflineSaved,
+            onDownloadClick = musicState::toggleCurrentTrackOffline,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .then(topBarModifier)
@@ -225,6 +253,7 @@ internal fun DebugBgmLiquidMusicPreview(
             currentTrackTitle = currentTrack.title,
             isPlaying = musicState.isPlaying,
             onPlayPauseClick = musicState::togglePlayPause,
+            onPreviousClick = musicState::playPrevious,
             onNextClick = musicState::playNext,
             searchVisible = musicState.searchVisible,
             selectedDockKey = musicState.selectedDockKey,
@@ -248,9 +277,18 @@ private fun DebugBgmAlbumContent(
     isTrackFavorite: (String) -> Boolean,
     onRepeatClick: () -> Unit,
     onDownloadClick: () -> Unit,
+    onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit,
     onTrackClick: (String) -> Unit,
     onTrackFavoriteClick: (String) -> Unit,
+    onTrackOfflineClick: (String) -> Unit,
+    onTrackShareClick: (DebugBgmTrack) -> Unit,
+    isTrackOfflineSaved: (String) -> Boolean,
+    sectionTitle: String,
+    sectionMeta: String,
+    sectionFooterTitle: String,
+    offlineTrackCount: Int,
     listState: LazyListState,
     collapseProgress: Float,
     bottomBarScrollConnection: NestedScrollConnection,
@@ -272,9 +310,13 @@ private fun DebugBgmAlbumContent(
                 repeatEnabled = repeatEnabled,
                 offlineSaved = offlineSaved,
                 isPlaying = isPlaying,
+                sectionTitle = sectionTitle,
+                sectionMeta = sectionMeta,
                 onRepeatClick = onRepeatClick,
                 onDownloadClick = onDownloadClick,
-                onPlayPauseClick = onPlayPauseClick
+                onPreviousClick = onPreviousClick,
+                onPlayPauseClick = onPlayPauseClick,
+                onNextClick = onNextClick
             )
         }
         item {
@@ -284,12 +326,19 @@ private fun DebugBgmAlbumContent(
                 isPlaying = isPlaying,
                 accent = accent,
                 isTrackFavorite = isTrackFavorite,
+                isTrackOfflineSaved = isTrackOfflineSaved,
                 onTrackClick = onTrackClick,
-                onTrackFavoriteClick = onTrackFavoriteClick
+                onTrackFavoriteClick = onTrackFavoriteClick,
+                onTrackOfflineClick = onTrackOfflineClick,
+                onTrackShareClick = onTrackShareClick
             )
         }
         item {
-            DebugBgmAlbumFooter()
+            DebugBgmAlbumFooter(
+                sectionTitle = sectionFooterTitle,
+                trackCount = tracks.size,
+                offlineTrackCount = offlineTrackCount
+            )
         }
     }
 }
@@ -299,12 +348,15 @@ private fun DebugBgmAlbumTopBar(
     accent: Color,
     titleProgress: Float,
     onClose: () -> Unit,
+    onShareClick: () -> Unit,
+    offlineSaved: Boolean,
+    onDownloadClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp)
+            .height(AppChromeTokens.liquidActionBarOuterHeight)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -315,16 +367,25 @@ private fun DebugBgmAlbumTopBar(
                 icon = appLucideChevronLeftIcon(),
                 contentDescription = stringResource(R.string.common_close),
                 accent = accent,
-                size = 56.dp,
-                iconSize = 30.dp,
+                size = AppChromeTokens.liquidActionBarSingleWidth,
+                iconSize = DebugBgmTopBarBackIconSize,
                 onClick = onClose
             )
-            DebugBgmTopActionCapsule(accent = accent)
+            DebugBgmTopActionCapsule(
+                accent = accent,
+                offlineSaved = offlineSaved,
+                onShareClick = onShareClick,
+                onDownloadClick = onDownloadClick
+            )
         }
         DebugBgmGlassCapsule(
             modifier = Modifier
-                .align(Alignment.Center)
-                .widthIn(max = 184.dp)
+                .align(Alignment.CenterStart)
+                .padding(
+                    start = AppChromeTokens.liquidActionBarSingleWidth + DebugBgmTopBarTitleGap,
+                    end = AppChromeTokens.liquidActionBarMinWidth + DebugBgmTopBarTitleGap
+                )
+                .fillMaxWidth()
                 .graphicsLayer { alpha = titleProgress },
             accent = accent,
             horizontalPadding = 16.dp,
@@ -344,14 +405,19 @@ private fun DebugBgmAlbumTopBar(
 }
 
 @Composable
-private fun DebugBgmTopActionCapsule(accent: Color) {
+private fun DebugBgmTopActionCapsule(
+    accent: Color,
+    offlineSaved: Boolean,
+    onShareClick: () -> Unit,
+    onDownloadClick: () -> Unit
+) {
     DebugBgmGlassCapsule(
         accent = accent,
         modifier = Modifier
-            .width(136.dp)
-            .height(56.dp),
-        horizontalPadding = 8.dp,
-        verticalPadding = 6.dp
+            .width(AppChromeTokens.liquidActionBarMinWidth)
+            .height(AppChromeTokens.liquidActionBarOuterHeight),
+        horizontalPadding = AppChromeTokens.liquidActionBarHorizontalPadding,
+        verticalPadding = AppChromeTokens.liquidActionBarHorizontalPadding
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -362,15 +428,24 @@ private fun DebugBgmTopActionCapsule(accent: Color) {
                 icon = appLucideSquareArrowUpIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_share),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 48.dp,
-                iconSize = 26.dp
+                size = DebugBgmTopBarActionSlotSize,
+                iconSize = DebugBgmTopBarActionIconSize,
+                onClick = onShareClick
+            )
+            DebugBgmInlineIcon(
+                icon = appLucideDownloadIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_action_download),
+                tint = if (offlineSaved) accent else MiuixTheme.colorScheme.onBackground,
+                size = DebugBgmTopBarActionSlotSize,
+                iconSize = DebugBgmTopBarActionIconSize,
+                onClick = onDownloadClick
             )
             DebugBgmInlineIcon(
                 icon = appLucideMoreIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_more),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 48.dp,
-                iconSize = 27.dp
+                size = DebugBgmTopBarActionSlotSize,
+                iconSize = DebugBgmTopBarActionIconSize
             )
         }
     }
@@ -383,9 +458,13 @@ private fun DebugBgmAlbumHero(
     repeatEnabled: Boolean,
     offlineSaved: Boolean,
     isPlaying: Boolean,
+    sectionTitle: String,
+    sectionMeta: String,
     onRepeatClick: () -> Unit,
     onDownloadClick: () -> Unit,
-    onPlayPauseClick: () -> Unit
+    onPreviousClick: () -> Unit,
+    onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -413,7 +492,7 @@ private fun DebugBgmAlbumHero(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = stringResource(R.string.debug_component_lab_album_artist),
+                text = sectionTitle,
                 color = MiuixTheme.colorScheme.onBackground,
                 fontSize = AppTypographyTokens.SectionTitle.fontSize,
                 lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
@@ -422,7 +501,7 @@ private fun DebugBgmAlbumHero(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = stringResource(R.string.debug_component_lab_album_meta),
+                text = sectionMeta,
                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight,
@@ -437,7 +516,9 @@ private fun DebugBgmAlbumHero(
             isPlaying = isPlaying,
             onRepeatClick = onRepeatClick,
             onDownloadClick = onDownloadClick,
-            onPlayPauseClick = onPlayPauseClick
+            onPreviousClick = onPreviousClick,
+            onPlayPauseClick = onPlayPauseClick,
+            onNextClick = onNextClick
         )
     }
 }
@@ -494,11 +575,13 @@ private fun DebugBgmAlbumPrimaryActions(
     isPlaying: Boolean,
     onRepeatClick: () -> Unit,
     onDownloadClick: () -> Unit,
-    onPlayPauseClick: () -> Unit
+    onPreviousClick: () -> Unit,
+    onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         DebugBgmRoundAction(
@@ -508,10 +591,22 @@ private fun DebugBgmAlbumPrimaryActions(
             selected = repeatEnabled,
             onClick = onRepeatClick
         )
+        DebugBgmRoundAction(
+            icon = appLucideSkipBackIcon(),
+            contentDescription = stringResource(R.string.debug_component_lab_action_previous),
+            accent = accent,
+            onClick = onPreviousClick
+        )
         DebugBgmPlayAction(
             accent = accent,
             isPlaying = isPlaying,
             onClick = onPlayPauseClick
+        )
+        DebugBgmRoundAction(
+            icon = appLucideSkipForwardIcon(),
+            contentDescription = stringResource(R.string.debug_component_lab_action_next),
+            accent = accent,
+            onClick = onNextClick
         )
         DebugBgmRoundAction(
             icon = appLucideDownloadIcon(),
@@ -555,7 +650,7 @@ private fun DebugBgmPlayAction(
             .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f))
             .border(1.dp, Color.White.copy(alpha = 0.28f), ContinuousCapsule)
             .clickable(onClick = onClick)
-            .padding(horizontal = 34.dp),
+            .padding(horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -579,7 +674,11 @@ private fun DebugBgmPlayAction(
 }
 
 @Composable
-private fun DebugBgmAlbumFooter() {
+private fun DebugBgmAlbumFooter(
+    sectionTitle: String,
+    trackCount: Int,
+    offlineTrackCount: Int
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -593,7 +692,17 @@ private fun DebugBgmAlbumFooter() {
             lineHeight = AppTypographyTokens.Body.lineHeight
         )
         Text(
-            text = stringResource(R.string.debug_component_lab_album_footer_count),
+            text = stringResource(R.string.debug_component_lab_section_footer_current, sectionTitle),
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
+        )
+        Text(
+            text = stringResource(
+                R.string.debug_component_lab_section_footer_state,
+                trackCount,
+                offlineTrackCount
+            ),
             color = MiuixTheme.colorScheme.onBackgroundVariant,
             fontSize = AppTypographyTokens.Body.fontSize,
             lineHeight = AppTypographyTokens.Body.lineHeight
@@ -601,6 +710,53 @@ private fun DebugBgmAlbumFooter() {
     }
 }
 
+@Composable
+private fun rememberDebugBgmDockSectionText(selectedDockKey: String): DebugBgmDockSectionText {
+    val libraryLabel = stringResource(R.string.debug_component_lab_nav_library)
+    return when (selectedDockKey) {
+        DebugBgmDockKeys.Home -> DebugBgmDockSectionText(
+            heroTitle = stringResource(R.string.debug_component_lab_section_home_title),
+            heroMeta = stringResource(R.string.debug_component_lab_section_home_meta),
+            footerTitle = stringResource(R.string.debug_component_lab_nav_home)
+        )
+        DebugBgmDockKeys.Discover -> DebugBgmDockSectionText(
+            heroTitle = stringResource(R.string.debug_component_lab_section_discover_title),
+            heroMeta = stringResource(R.string.debug_component_lab_section_discover_meta),
+            footerTitle = stringResource(R.string.debug_component_lab_nav_discover)
+        )
+        DebugBgmDockKeys.Radio -> DebugBgmDockSectionText(
+            heroTitle = stringResource(R.string.debug_component_lab_section_radio_title),
+            heroMeta = stringResource(R.string.debug_component_lab_section_radio_meta),
+            footerTitle = stringResource(R.string.debug_component_lab_nav_radio)
+        )
+        else -> DebugBgmDockSectionText(
+            heroTitle = stringResource(R.string.debug_component_lab_album_artist),
+            heroMeta = stringResource(R.string.debug_component_lab_album_meta),
+            footerTitle = libraryLabel
+        )
+    }
+}
+
+private fun Context.launchDebugBgmTrackShare(
+    chooserTitle: String,
+    shareText: String
+) {
+    val shareIntent = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, shareText)
+    startActivity(Intent.createChooser(shareIntent, chooserTitle))
+}
+
+private data class DebugBgmDockSectionText(
+    val heroTitle: String,
+    val heroMeta: String,
+    val footerTitle: String
+)
+
+private val DebugBgmTopBarBackIconSize = 28.dp
+private val DebugBgmTopBarTitleGap = 12.dp
+private val DebugBgmTopBarActionSlotSize = AppChromeTokens.liquidActionBarItemStep
+private val DebugBgmTopBarActionIconSize = 24.dp
 private val DebugBgmSearchPanelHorizontalPadding = 34.dp
 private val DebugBgmSearchPanelCompactBottomPadding = 108.dp
 private val DebugBgmSearchPanelExpandedBottomPadding = 168.dp

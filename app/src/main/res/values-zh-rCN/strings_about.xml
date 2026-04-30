@@ -73,6 +73,9 @@
     <string name="debug_component_lab_action_shuffle">随机播放</string>
     <string name="debug_component_lab_action_download">离线保存</string>
     <string name="debug_component_lab_action_favorite">收藏</string>
+    <string name="debug_component_lab_action_unfavorite">取消收藏</string>
+    <string name="debug_component_lab_action_save_offline">保存离线</string>
+    <string name="debug_component_lab_action_remove_offline">移除离线</string>
     <string name="debug_component_lab_action_library">加入媒体库</string>
     <string name="debug_component_lab_action_share">分享</string>
     <string name="debug_component_lab_action_more">更多</string>
@@ -87,6 +90,17 @@
     <string name="debug_component_lab_nav_lyrics">歌词</string>
     <string name="debug_component_lab_volume">音量</string>
     <string name="debug_component_lab_volume_value">%1$d%%</string>
+    <string name="debug_component_lab_track_badge_offline">已离线</string>
+    <string name="debug_component_lab_share_chooser_title">分享 BGM</string>
+    <string name="debug_component_lab_share_text">正在听 %1$s 的回忆大厅 BGM</string>
+    <string name="debug_component_lab_section_home_title">今日回忆大厅</string>
+    <string name="debug_component_lab_section_home_meta">延续上次播放与常用学生</string>
+    <string name="debug_component_lab_section_discover_title">新发现队列</string>
+    <string name="debug_component_lab_section_discover_meta">验证新歌入口、排序与推荐节奏</string>
+    <string name="debug_component_lab_section_radio_title">随机电台</string>
+    <string name="debug_component_lab_section_radio_meta">模拟自动轮播与单曲循环状态</string>
+    <string name="debug_component_lab_section_footer_current">当前分区：%1$s</string>
+    <string name="debug_component_lab_section_footer_state">%1$d 首可播放 · %2$d 首已离线</string>
     <string name="debug_component_lab_track_1_title">小鸟游星野</string>
     <string name="debug_component_lab_track_1_subtitle">收藏学生 BGM</string>
     <string name="debug_component_lab_track_2_title">早濑优香</string>

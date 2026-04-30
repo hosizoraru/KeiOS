@@ -42,15 +42,30 @@ internal class DebugBgmMusicUiState(
     val currentTrackOfflineSaved: Boolean
         get() = currentTrackId in offlineTrackIds
 
+    val favoriteTrackCount: Int
+        get() = favoriteTrackIds.size
+
+    val offlineTrackCount: Int
+        get() = offlineTrackIds.size
+
     fun togglePlayPause() {
         isPlaying = !isPlaying
     }
 
     fun playNext() {
-        if (tracks.isEmpty()) return
-        val currentIndex = tracks.indexOfFirst { it.id == currentTrackId }.coerceAtLeast(0)
-        currentTrackId = tracks[(currentIndex + 1) % tracks.size].id
-        isPlaying = true
+        moveTrackBy(step = 1)
+    }
+
+    fun playPrevious() {
+        moveTrackBy(step = -1)
+    }
+
+    fun advanceQueueFromPlayback() {
+        if (repeatEnabled) {
+            isPlaying = true
+            return
+        }
+        playNext()
     }
 
     fun playTrack(trackId: String) {
@@ -68,11 +83,17 @@ internal class DebugBgmMusicUiState(
         offlineTrackIds = offlineTrackIds.toggle(currentTrackId)
     }
 
+    fun toggleTrackOffline(trackId: String) {
+        offlineTrackIds = offlineTrackIds.toggle(trackId)
+    }
+
     fun toggleTrackFavorite(trackId: String) {
         favoriteTrackIds = favoriteTrackIds.toggle(trackId)
     }
 
     fun isTrackFavorite(trackId: String): Boolean = trackId in favoriteTrackIds
+
+    fun isTrackOfflineSaved(trackId: String): Boolean = trackId in offlineTrackIds
 
     fun selectDockKey(key: String) {
         selectedDockKey = key
@@ -89,6 +110,14 @@ internal class DebugBgmMusicUiState(
 
     fun updateSearchQuery(query: String) {
         searchQuery = query
+    }
+
+    private fun moveTrackBy(step: Int) {
+        if (tracks.isEmpty()) return
+        val currentIndex = tracks.indexOfFirst { it.id == currentTrackId }.coerceAtLeast(0)
+        val nextIndex = (currentIndex + step).floorMod(tracks.size)
+        currentTrackId = tracks[nextIndex].id
+        isPlaying = true
     }
 }
 
@@ -170,6 +199,12 @@ private fun rememberDebugBgmTracks(): List<DebugBgmTrack> {
 private fun Set<String>.toggle(value: String): Set<String> {
     if (value.isBlank()) return this
     return if (value in this) this - value else this + value
+}
+
+private fun Int.floorMod(modulus: Int): Int {
+    if (modulus <= 0) return 0
+    val remainder = this % modulus
+    return if (remainder >= 0) remainder else remainder + modulus
 }
 
 private fun DebugBgmTrack.matchesSearch(query: String): Boolean {

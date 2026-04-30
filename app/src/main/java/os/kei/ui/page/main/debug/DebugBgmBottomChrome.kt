@@ -58,6 +58,7 @@ import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRadioIcon
 import os.kei.ui.page.main.os.appLucideSearchIcon
+import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -120,6 +121,7 @@ internal fun DebugBgmFloatingBottomChrome(
     currentTrackTitle: String,
     isPlaying: Boolean,
     onPlayPauseClick: () -> Unit,
+    onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     searchVisible: Boolean,
     selectedDockKey: String,
@@ -247,6 +249,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 compact = scrollState.isCompact,
                 expandedAlpha = expandedAlpha,
                 onPlayPauseClick = onPlayPauseClick,
+                onPreviousClick = onPreviousClick,
                 onNextClick = onNextClick,
                 modifier = Modifier.fillMaxSize()
             )
@@ -435,6 +438,7 @@ private fun DebugBgmMiniPlayer(
     compact: Boolean,
     expandedAlpha: Float,
     onPlayPauseClick: () -> Unit,
+    onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -498,6 +502,16 @@ private fun DebugBgmMiniPlayer(
                     )
                 )
             }
+        }
+        if (!compact) {
+            DebugBgmInlineIcon(
+                icon = appLucideSkipBackIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_action_previous),
+                tint = MiuixTheme.colorScheme.onBackground,
+                size = 32.dp,
+                iconSize = 22.dp,
+                onClick = onPreviousClick
+            )
         }
         Box(
             modifier = Modifier

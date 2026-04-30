@@ -73,6 +73,9 @@
     <string name="debug_component_lab_action_shuffle">Shuffle</string>
     <string name="debug_component_lab_action_download">Save offline</string>
     <string name="debug_component_lab_action_favorite">Favorite</string>
+    <string name="debug_component_lab_action_unfavorite">Unfavorite</string>
+    <string name="debug_component_lab_action_save_offline">Save offline</string>
+    <string name="debug_component_lab_action_remove_offline">Remove offline</string>
     <string name="debug_component_lab_action_library">Add to library</string>
     <string name="debug_component_lab_action_share">Share</string>
     <string name="debug_component_lab_action_more">More</string>
@@ -91,6 +94,17 @@
     <string name="debug_component_lab_search_empty_subtitle">Try another student name or BGM keyword.</string>
     <string name="debug_component_lab_track_status_now_playing">Now playing</string>
     <string name="debug_component_lab_track_status_paused">Paused</string>
+    <string name="debug_component_lab_track_badge_offline">Offline</string>
+    <string name="debug_component_lab_share_chooser_title">Share BGM</string>
+    <string name="debug_component_lab_share_text">Listening to %1$s Memorial Lobby BGM</string>
+    <string name="debug_component_lab_section_home_title">Today\'s Memorial Lobby</string>
+    <string name="debug_component_lab_section_home_meta">Resume recent playback and frequent students</string>
+    <string name="debug_component_lab_section_discover_title">Discovery queue</string>
+    <string name="debug_component_lab_section_discover_meta">Validate new entries, ordering, and recommendation rhythm</string>
+    <string name="debug_component_lab_section_radio_title">Shuffle radio</string>
+    <string name="debug_component_lab_section_radio_meta">Simulate autoplay and single-track repeat states</string>
+    <string name="debug_component_lab_section_footer_current">Current section: %1$s</string>
+    <string name="debug_component_lab_section_footer_state">%1$d playable · %2$d offline</string>
     <string name="debug_component_lab_track_1_title">Hoshino</string>
     <string name="debug_component_lab_track_1_subtitle">Favorite student BGM</string>
     <string name="debug_component_lab_track_1_duration">03:42</string>
