@@ -225,6 +225,7 @@ fun LiquidGlassBottomBar(
             visibilityThreshold = 0.001f,
             initialScale = 1f,
             pressedScale = 78f / 56f,
+            gestureKey = safeTabsCount to isLtr,
             canDrag = { offset ->
                 val animation = holder.instance ?: return@DampedDragAnimation true
                 if (tabWidthPx <= 0f || totalWidthPx <= 0f) return@DampedDragAnimation false
@@ -319,7 +320,7 @@ fun LiquidGlassBottomBar(
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
         !reduceEffectsDuringPagerScroll
     ) {
-        remember(animationScope, tabWidthPx) {
+        remember(animationScope, dampedDragAnimation, tabWidthPx, isLtr) {
             InteractiveHighlight(
                 animationScope = animationScope,
                 position = { size, _ ->
