@@ -84,13 +84,14 @@ internal fun DebugBgmInlineIcon(
     tint: Color,
     size: Dp = 36.dp,
     iconSize: Dp = 22.dp,
+    enabled: Boolean = true,
     onClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
