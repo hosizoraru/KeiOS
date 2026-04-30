@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousCapsule
@@ -73,7 +74,13 @@ import os.kei.ui.page.main.os.appLucideRepeatIcon
 import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.os.appLucideSquareArrowUpIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
+import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
+import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
+import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -121,6 +128,11 @@ internal fun DebugBgmLiquidMusicPreview(
     val playNext = {
         currentTrackIndex = (currentTrackIndex + 1) % tracks.size
         isPlaying = true
+    }
+    val playTrack: (Int) -> Unit = { index ->
+        currentTrackIndex = index.coerceIn(0, tracks.lastIndex)
+        isPlaying = true
+        searchVisible = false
     }
     val albumScrollOffset by remember {
         derivedStateOf {
@@ -173,6 +185,7 @@ internal fun DebugBgmLiquidMusicPreview(
             repeatEnabled = repeatEnabled,
             onRepeatClick = { repeatEnabled = !repeatEnabled },
             onPlayPauseClick = togglePlayPause,
+            onTrackClick = playTrack,
             listState = listState,
             collapseProgress = collapseProgress,
             bottomBarScrollConnection = bottomBarScrollConnection,
@@ -228,7 +241,6 @@ internal fun DebugBgmLiquidMusicPreview(
             },
             onSearchClick = {
                 searchVisible = !searchVisible
-                selectedDockKey = if (searchVisible) DebugBgmDockKeys.Search else DebugBgmDockKeys.Library
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -246,6 +258,7 @@ private fun DebugBgmAlbumContent(
     repeatEnabled: Boolean,
     onRepeatClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
+    onTrackClick: (Int) -> Unit,
     listState: LazyListState,
     collapseProgress: Float,
     bottomBarScrollConnection: NestedScrollConnection,
@@ -275,7 +288,8 @@ private fun DebugBgmAlbumContent(
                 tracks = tracks,
                 currentTrackIndex = currentTrackIndex,
                 isPlaying = isPlaying,
-                accent = accent
+                accent = accent,
+                onTrackClick = onTrackClick
             )
         }
         item {
@@ -565,7 +579,8 @@ private fun DebugBgmTrackList(
     tracks: List<DebugBgmTrack>,
     currentTrackIndex: Int,
     isPlaying: Boolean,
-    accent: Color
+    accent: Color,
+    onTrackClick: (Int) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -577,7 +592,8 @@ private fun DebugBgmTrackList(
                 track = track,
                 active = index == currentTrackIndex,
                 isPlaying = isPlaying,
-                accent = accent
+                accent = accent,
+                onClick = { onTrackClick(index) }
             )
             if (index < tracks.lastIndex) {
                 Box(
@@ -598,15 +614,24 @@ private fun DebugBgmTrackRow(
     track: DebugBgmTrack,
     active: Boolean,
     isPlaying: Boolean,
-    accent: Color
+    accent: Color,
+    onClick: () -> Unit
 ) {
+    var moreExpanded by remember(track.title) { mutableStateOf(false) }
+    var moreAnchorBounds by remember(track.title) { mutableStateOf<IntRect?>(null) }
+    val rowShape = RoundedCornerShape(14.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
             .semantics { contentDescription = track.title }
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = {}),
+            .clip(rowShape)
+            .background(
+                color = if (active) accent.copy(alpha = 0.08f) else Color.Transparent,
+                shape = rowShape
+            )
+            .clickable(onClick = onClick)
+            .padding(start = 4.dp, end = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -630,14 +655,84 @@ private fun DebugBgmTrackRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        DebugBgmInlineIcon(
-            icon = appLucideMoreIcon(),
-            contentDescription = stringResource(R.string.debug_component_lab_action_more),
-            tint = MiuixTheme.colorScheme.onBackgroundVariant,
-            size = 32.dp,
-            iconSize = 22.dp
-        )
+        Box(
+            modifier = Modifier.capturePopupAnchor { moreAnchorBounds = it },
+            contentAlignment = Alignment.Center
+        ) {
+            DebugBgmInlineIcon(
+                icon = appLucideMoreIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_action_more),
+                tint = MiuixTheme.colorScheme.onBackgroundVariant,
+                size = 40.dp,
+                iconSize = 22.dp,
+                onClick = { moreExpanded = true }
+            )
+            DebugBgmTrackMorePopup(
+                show = moreExpanded,
+                anchorBounds = moreAnchorBounds,
+                onDismissRequest = { moreExpanded = false },
+                onPlayClick = {
+                    moreExpanded = false
+                    onClick()
+                }
+            )
+        }
     }
+}
+
+@Composable
+private fun DebugBgmTrackMorePopup(
+    show: Boolean,
+    anchorBounds: IntRect?,
+    onDismissRequest: () -> Unit,
+    onPlayClick: () -> Unit
+) {
+    if (!show) return
+    SnapshotWindowListPopup(
+        show = true,
+        alignment = PopupPositionProvider.Align.BottomEnd,
+        anchorBounds = anchorBounds,
+        placement = SnapshotPopupPlacement.ButtonEnd,
+        enableWindowDim = false,
+        onDismissRequest = onDismissRequest
+    ) {
+        LiquidDropdownColumn {
+            DebugBgmTrackMenuItem(
+                text = stringResource(R.string.debug_component_lab_action_play),
+                index = 0,
+                optionSize = DebugBgmTrackMenuItemCount,
+                onClick = onPlayClick
+            )
+            DebugBgmTrackMenuItem(
+                text = stringResource(R.string.debug_component_lab_action_favorite),
+                index = 1,
+                optionSize = DebugBgmTrackMenuItemCount,
+                onClick = onDismissRequest
+            )
+            DebugBgmTrackMenuItem(
+                text = stringResource(R.string.debug_component_lab_action_share),
+                index = 2,
+                optionSize = DebugBgmTrackMenuItemCount,
+                onClick = onDismissRequest
+            )
+        }
+    }
+}
+
+@Composable
+private fun DebugBgmTrackMenuItem(
+    text: String,
+    index: Int,
+    optionSize: Int,
+    onClick: () -> Unit
+) {
+    LiquidDropdownItem(
+        text = text,
+        selected = false,
+        onClick = onClick,
+        index = index,
+        optionSize = optionSize
+    )
 }
 
 @Composable
@@ -813,3 +908,5 @@ private fun rememberDebugBgmTracks(): List<DebugBgmTrack> {
 private data class DebugBgmTrack(
     val title: String
 )
+
+private const val DebugBgmTrackMenuItemCount = 3

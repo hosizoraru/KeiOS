@@ -64,8 +64,7 @@
     <string name="debug_component_lab_time_sample">01:08 / 03:24</string>
     <string name="debug_component_lab_time_elapsed_sample">01:08</string>
     <string name="debug_component_lab_time_remaining_sample">-02:16</string>
-    <string name="debug_component_lab_mini_player_title">Shiroko · Memorial Lobby</string>
-    <string name="debug_component_lab_mini_player_subtitle">Favorite BGM queue</string>
+    <string name="debug_component_lab_mini_player_title">Shiroko</string>
     <string name="debug_component_lab_action_previous">Previous</string>
     <string name="debug_component_lab_action_play">Play</string>
     <string name="debug_component_lab_action_pause">Pause</string>
@@ -88,13 +87,13 @@
     <string name="debug_component_lab_nav_lyrics">Lyrics</string>
     <string name="debug_component_lab_volume">Volume</string>
     <string name="debug_component_lab_volume_value">%1$d%%</string>
-    <string name="debug_component_lab_track_1_title">Hoshino · Memorial Lobby</string>
+    <string name="debug_component_lab_track_1_title">Hoshino</string>
     <string name="debug_component_lab_track_1_subtitle">Favorite student BGM</string>
-    <string name="debug_component_lab_track_2_title">Yuuka · Memorial Lobby</string>
+    <string name="debug_component_lab_track_2_title">Yuuka</string>
     <string name="debug_component_lab_track_2_subtitle">Favorite student BGM</string>
-    <string name="debug_component_lab_track_3_title">Shiroko · Memorial Lobby</string>
+    <string name="debug_component_lab_track_3_title">Shiroko</string>
     <string name="debug_component_lab_track_3_subtitle">Now playing</string>
-    <string name="debug_component_lab_track_4_title">Momoi · Memorial Lobby</string>
+    <string name="debug_component_lab_track_4_title">Momoi</string>
     <string name="debug_component_lab_track_4_subtitle">Favorite student BGM</string>
     <string name="debug_component_lab_row_entry_title">Entry</string>
     <string name="debug_component_lab_row_entry_value">About App card → Component Lab → BGM Activity</string>

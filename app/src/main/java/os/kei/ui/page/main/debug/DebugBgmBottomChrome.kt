@@ -262,6 +262,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 tabs = tabs,
                 selectedDockKey = selectedDockKey,
                 accent = accent,
+                compact = scrollState.isCompact,
                 expandedAlpha = expandedAlpha,
                 compactAlpha = compactAlpha,
                 onSelectedDockKeyChange = onSelectedDockKeyChange
@@ -278,7 +279,7 @@ internal fun DebugBgmFloatingBottomChrome(
             DebugBgmDockTabIcon(
                 icon = appLucideSearchIcon(),
                 label = stringResource(R.string.debug_component_lab_nav_search),
-                selected = searchVisible || selectedDockKey == DebugBgmDockKeys.Search,
+                selected = searchVisible,
                 accent = accent,
                 iconSize = 27.dp
             )
@@ -321,6 +322,7 @@ private fun DebugBgmDockGroupContent(
     tabs: List<DebugBgmDockTab>,
     selectedDockKey: String,
     accent: Color,
+    compact: Boolean,
     expandedAlpha: Float,
     compactAlpha: Float,
     onSelectedDockKeyChange: (String) -> Unit
@@ -353,7 +355,13 @@ private fun DebugBgmDockGroupContent(
                 .fillMaxSize()
                 .graphicsLayer { alpha = compactAlpha }
                 .clip(CircleShape)
-                .clickable { onSelectedDockKeyChange(compactTab.key) },
+                .then(
+                    if (compact) {
+                        Modifier.clickable { onSelectedDockKeyChange(compactTab.key) }
+                    } else {
+                        Modifier
+                    }
+                ),
             contentAlignment = Alignment.Center
         ) {
             DebugBgmDockTabIcon(
@@ -476,15 +484,6 @@ private fun DebugBgmMiniPlayer(
                 overflow = TextOverflow.Ellipsis
             )
             if (!compact) {
-                Text(
-                    text = stringResource(R.string.debug_component_lab_mini_player_subtitle),
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    fontSize = 11.sp,
-                    lineHeight = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.graphicsLayer { alpha = expandedAlpha }
-                )
                 LinearProgressIndicator(
                     progress = DebugBgmMiniPlayerProgress,
                     modifier = Modifier
@@ -538,8 +537,8 @@ private const val DebugBgmMiniPlayerProgress = 0.42f
 private val DebugBgmExpandedChromeHeight = 146.dp
 private val DebugBgmCompactChromeHeight = 72.dp
 private val DebugBgmExpandedMiniHeight = 64.dp
-private val DebugBgmCompactMiniHeight = 60.dp
-private val DebugBgmCompactMiniY = 6.dp
+private val DebugBgmCompactMiniHeight = 64.dp
+private val DebugBgmCompactMiniY = 4.dp
 private val DebugBgmExpandedDockHeight = 72.dp
 private val DebugBgmExpandedDockY = 74.dp
 private val DebugBgmExpandedSearchSpacing = 10.dp
@@ -586,7 +585,6 @@ internal object DebugBgmDockKeys {
     const val Discover = "discover"
     const val Radio = "radio"
     const val Library = "library"
-    const val Search = "search"
 }
 
 private data class DebugBgmDockTab(

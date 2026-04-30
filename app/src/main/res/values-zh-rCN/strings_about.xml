@@ -64,8 +64,7 @@
     <string name="debug_component_lab_time_sample">01:08 / 03:24</string>
     <string name="debug_component_lab_time_elapsed_sample">01:08</string>
     <string name="debug_component_lab_time_remaining_sample">-02:16</string>
-    <string name="debug_component_lab_mini_player_title">砂狼白子 · 回忆大厅</string>
-    <string name="debug_component_lab_mini_player_subtitle">收藏 BGM 队列</string>
+    <string name="debug_component_lab_mini_player_title">砂狼白子</string>
     <string name="debug_component_lab_action_previous">上一首</string>
     <string name="debug_component_lab_action_play">播放</string>
     <string name="debug_component_lab_action_pause">暂停</string>
@@ -88,13 +87,13 @@
     <string name="debug_component_lab_nav_lyrics">歌词</string>
     <string name="debug_component_lab_volume">音量</string>
     <string name="debug_component_lab_volume_value">%1$d%%</string>
-    <string name="debug_component_lab_track_1_title">小鸟游星野 · 回忆大厅</string>
+    <string name="debug_component_lab_track_1_title">小鸟游星野</string>
     <string name="debug_component_lab_track_1_subtitle">收藏学生 BGM</string>
-    <string name="debug_component_lab_track_2_title">早濑优香 · 回忆大厅</string>
+    <string name="debug_component_lab_track_2_title">早濑优香</string>
     <string name="debug_component_lab_track_2_subtitle">收藏学生 BGM</string>
-    <string name="debug_component_lab_track_3_title">砂狼白子 · 回忆大厅</string>
+    <string name="debug_component_lab_track_3_title">砂狼白子</string>
     <string name="debug_component_lab_track_3_subtitle">正在播放</string>
-    <string name="debug_component_lab_track_4_title">才羽桃井 · 回忆大厅</string>
+    <string name="debug_component_lab_track_4_title">才羽桃井</string>
     <string name="debug_component_lab_track_4_subtitle">收藏学生 BGM</string>
     <string name="debug_component_lab_row_entry_title">入口</string>
     <string name="debug_component_lab_row_entry_value">About App card → Component Lab → BGM Activity</string>

@@ -63,8 +63,7 @@
     <string name="debug_component_lab_time_sample">01:08 / 03:24</string>
     <string name="debug_component_lab_time_elapsed_sample">01:08</string>
     <string name="debug_component_lab_time_remaining_sample">-02:16</string>
-    <string name="debug_component_lab_mini_player_title">シロコ · メモリアルロビー</string>
-    <string name="debug_component_lab_mini_player_subtitle">お気に入り BGM キュー</string>
+    <string name="debug_component_lab_mini_player_title">シロコ</string>
     <string name="debug_component_lab_action_previous">前へ</string>
     <string name="debug_component_lab_action_play">再生</string>
     <string name="debug_component_lab_action_pause">一時停止</string>
@@ -87,13 +86,13 @@
     <string name="debug_component_lab_nav_lyrics">歌詞</string>
     <string name="debug_component_lab_volume">音量</string>
     <string name="debug_component_lab_volume_value">%1$d%%</string>
-    <string name="debug_component_lab_track_1_title">ホシノ · メモリアルロビー</string>
+    <string name="debug_component_lab_track_1_title">ホシノ</string>
     <string name="debug_component_lab_track_1_subtitle">お気に入り生徒 BGM</string>
-    <string name="debug_component_lab_track_2_title">ユウカ · メモリアルロビー</string>
+    <string name="debug_component_lab_track_2_title">ユウカ</string>
     <string name="debug_component_lab_track_2_subtitle">お気に入り生徒 BGM</string>
-    <string name="debug_component_lab_track_3_title">シロコ · メモリアルロビー</string>
+    <string name="debug_component_lab_track_3_title">シロコ</string>
     <string name="debug_component_lab_track_3_subtitle">再生中</string>
-    <string name="debug_component_lab_track_4_title">モモイ · メモリアルロビー</string>
+    <string name="debug_component_lab_track_4_title">モモイ</string>
     <string name="debug_component_lab_track_4_subtitle">お気に入り生徒 BGM</string>
     <string name="debug_component_lab_row_entry_title">入口</string>
     <string name="debug_component_lab_row_entry_value">About App card → Component Lab → BGM Activity</string>
