@@ -80,7 +80,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 animatedVisibilityScope = animatedVisibilityScope,
                 modifier = accessoryModifier
                     .fillMaxWidth()
-                    .height(62.dp)
+                    .height(58.dp)
             )
         },
         colors = FloatingTabBarDefaults.colors(
@@ -96,7 +96,7 @@ internal fun DebugBgmFloatingBottomChrome(
         sizes = FloatingTabBarDefaults.sizes(
             tabBarContentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
             tabInlineContentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
-            tabExpandedContentPadding = PaddingValues(horizontal = 15.dp, vertical = 6.dp),
+            tabExpandedContentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
             componentSpacing = 8.dp,
             tabSpacing = 0.dp
         ),
@@ -183,16 +183,16 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
     animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier
 ) {
-    val artworkSize = if (compact) 32.dp else 40.dp
+    val artworkSize = if (compact) 32.dp else 38.dp
     val artworkCornerRadius = if (compact) 8.dp else 10.dp
-    val artworkIconSize = if (compact) 18.dp else 22.dp
+    val artworkIconSize = if (compact) 18.dp else 21.dp
     val contentPadding = PaddingValues(
         horizontal = if (compact) 10.dp else 14.dp,
         vertical = if (compact) 5.dp else 7.dp
     )
     val titleFontSize = if (compact) 12.sp else AppTypographyTokens.Supporting.fontSize
     val titleLineHeight = if (compact) 14.sp else AppTypographyTokens.Supporting.lineHeight
-    val playButtonSize = if (compact) 28.dp else 32.dp
+    val playButtonSize = if (compact) 28.dp else 30.dp
     val playIconSize = if (compact) 22.dp else 23.dp
 
     Row(
@@ -282,8 +282,8 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 icon = appLucidePauseIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_pause),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 32.dp,
-                iconSize = 22.dp
+                size = 30.dp,
+                iconSize = 21.dp
             )
         }
     }

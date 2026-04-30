@@ -574,9 +574,9 @@ private fun Modifier.animateEnterExitTab(
     animatedVisibilityScope: AnimatedVisibilityScope
 ): Modifier = with(sharedTransitionScope) {
     with(animatedVisibilityScope) {
-        val enterStartFraction = 0.5f
-        val enterEndFraction = 0.8f
-        val durationMs = 150
+        val enterStartFraction = 0.35f
+        val enterEndFraction = 0.9f
+        val durationMs = 210
 
         val animatedAlpha by transition.animateFloat(
             transitionSpec = {
@@ -595,7 +595,7 @@ private fun Modifier.animateEnterExitTab(
             }
         }
 
-        val blurRadius = with(LocalDensity.current) { 50.dp.toPx() }
+        val blurRadius = with(LocalDensity.current) { 18.dp.toPx() }
         val animatedBlur by transition.animateFloat(
             transitionSpec = {
                 keyframes {

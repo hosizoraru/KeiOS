@@ -69,7 +69,7 @@ internal fun DebugBgmMusicPage(onClose: () -> Unit) {
         panelShape = RoundedCornerShape(0.dp),
         showBorder = false,
         contentTopPadding = 108.dp,
-        contentBottomPadding = 196.dp,
+        contentBottomPadding = 224.dp,
         topBarModifier = Modifier
             .statusBarsPadding()
             .padding(horizontal = 12.dp, vertical = 12.dp),
@@ -148,7 +148,7 @@ internal fun DebugBgmLiquidMusicPreview(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(224.dp)
+                .height(196.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
