@@ -691,7 +691,7 @@ private fun DebugBgmTrackMorePopup(
     SnapshotWindowListPopup(
         show = true,
         alignment = PopupPositionProvider.Align.BottomEnd,
-        anchorBounds = anchorBounds,
+        anchorBounds = anchorBounds?.asTrackMenuAnchor(),
         placement = SnapshotPopupPlacement.ButtonEnd,
         enableWindowDim = false,
         onDismissRequest = onDismissRequest
@@ -732,6 +732,15 @@ private fun DebugBgmTrackMenuItem(
         onClick = onClick,
         index = index,
         optionSize = optionSize
+    )
+}
+
+private fun IntRect.asTrackMenuAnchor(): IntRect {
+    return IntRect(
+        left = left,
+        top = top,
+        right = right,
+        bottom = Int.MAX_VALUE / 4
     )
 }
 
