@@ -33,6 +33,7 @@ import os.kei.ui.page.main.os.appLucideUndoIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.os.appLucideVolumeOffIcon
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
@@ -181,7 +182,7 @@ internal fun BaGuideBgmFavoriteCard(
         isMeaningfulBgmFavoriteDetail(note, studentTitle) &&
             (detailTitle?.let { !sameBgmFavoriteDetail(note, it) } ?: true)
     }
-    val trackSubtitle = detailTitle ?: detailNote
+    val trackSubtitle = (detailTitle ?: detailNote)?.let { guideLocalizedLabel(it) }
     val cardShape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) accent.copy(alpha = 0.38f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.16f)
     val listActionTint = MiuixTheme.colorScheme.onBackgroundVariant
@@ -368,7 +369,10 @@ internal fun BaGuideBgmUndoBlock(
     val studentName = removedFavorite.studentTitle.ifBlank {
         stringResource(R.string.ba_catalog_bgm_student_unknown)
     }
-    val bgmTitle = removedFavorite.title.ifBlank { removedFavorite.note }
+    val bgmTitle = guideLocalizedLabel(
+        removedFavorite.title.ifBlank { removedFavorite.note },
+        R.string.ba_catalog_bgm_track_fallback
+    )
     val message = stringResource(
         R.string.ba_catalog_bgm_removed_message,
         studentName,

@@ -61,6 +61,7 @@ internal fun guideSourceLabelRes(raw: String): Int? {
         "COST恢复力", "cost恢复力" -> R.string.guide_stat_cost_recovery
         "暴击抵抗值" -> R.string.guide_stat_crit_resist
         "暴伤抵抗率", "暴伤抵抗值", "暴击伤害抵抗率" -> R.string.guide_stat_crit_damage_resist
+        "回忆大厅BGM", "回忆大厅bgm" -> R.string.ba_catalog_bgm_track_fallback
         "回忆大厅解锁等级" -> R.string.guide_gallery_memory_unlock_level
         "立绘" -> R.string.guide_gallery_standing_art
         "回忆大厅" -> R.string.guide_gallery_memorial_lobby
@@ -94,7 +95,9 @@ internal fun guideSourceLabelRes(raw: String): Int? {
         "效果" -> R.string.guide_weapon_effect
         "辅助技能强化" -> R.string.guide_weapon_passive_skill_upgrade
         "角色能力" -> R.string.guide_simulate_character_stats
+        "初始数据" -> R.string.guide_simulate_initial_stats
         "初始能力" -> R.string.guide_simulate_initial_stats
+        "顶级数据" -> R.string.guide_simulate_max_stats
         "最大培养" -> R.string.guide_simulate_max_stats
         "角色能力说明" -> R.string.guide_simulate_character_stats_note
         "装备" -> R.string.guide_simulate_equipment
@@ -112,6 +115,8 @@ internal fun guideLocalizedLabel(
     @StringRes fallbackRes: Int = R.string.guide_label_info
 ): String {
     val clean = raw.trim()
+    val dynamicLabel = guideLocalizedDynamicLabel(clean)
+    if (dynamicLabel != null) return dynamicLabel
     val labelRes = guideSourceLabelRes(clean)
     return when {
         labelRes != null -> stringResource(labelRes)
@@ -121,9 +126,56 @@ internal fun guideLocalizedLabel(
 }
 
 @Composable
+private fun guideLocalizedDynamicLabel(raw: String): String? {
+    val normalized = guideLabelLookupKey(raw)
+    Regex("""^(\d+)号装备$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_simulate_equipment_slot_format, match.groupValues[1])
+    }
+    Regex("""^羁绊角色(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_simulate_bond_character_format, match.groupValues[1])
+    }
+    Regex("""^(\d+)级$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_label_level_format, match.groupValues[1])
+    }
+    Regex("""^T(\d+)效果$""", RegexOption.IGNORE_CASE).matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_simulate_favorite_item_tier_effect_format, match.groupValues[1])
+    }
+    Regex("""^T(\d+)所需升级材料$""", RegexOption.IGNORE_CASE).matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_simulate_favorite_item_tier_materials_format, match.groupValues[1])
+    }
+    Regex("""^T(\d+)技能图标$""", RegexOption.IGNORE_CASE).matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_simulate_favorite_item_tier_icon_format, match.groupValues[1])
+    }
+    Regex("""^立绘(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_standing_art_format, match.groupValues[1])
+    }
+    Regex("""^回忆大厅视频(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_memorial_lobby_video_format, match.groupValues[1])
+    }
+    Regex("""^角色演示(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_character_trailer_format, match.groupValues[1])
+    }
+    Regex("""^官方介绍(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_official_intro_format, match.groupValues[1])
+    }
+    Regex("""^互动家具(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_interactive_furniture_format, match.groupValues[1])
+    }
+    Regex("""^(巧克力图|情人节巧克力)(\d+)$""").matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_chocolate_image_format, match.groupValues[2])
+    }
+    Regex("""^PV(\d+)$""", RegexOption.IGNORE_CASE).matchEntire(normalized)?.let { match ->
+        return stringResource(R.string.guide_gallery_pv_format, match.groupValues[1])
+    }
+    return null
+}
+
+@Composable
 internal fun guideLocalizedValue(raw: String): String {
     return when (raw.trim()) {
         "暂无数据", "原网站暂无该数据" -> stringResource(R.string.guide_value_no_data)
+        "暂无更多参数，可点击来源查看完整图鉴。" -> stringResource(R.string.guide_value_open_source_for_full_guide)
+        "未解析到详细描述，可点击下方来源查看完整图鉴。" -> stringResource(R.string.guide_value_description_not_parsed)
         else -> raw
     }
 }

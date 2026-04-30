@@ -18,6 +18,7 @@ import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
+import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.guideTabCopyable
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Card
@@ -58,9 +59,13 @@ internal fun GuideSimulateBondCard(
 
             if (groups.isNotEmpty()) {
                 groups.forEach { group ->
+                    val displayRoleLabel = guideLocalizedLabel(
+                        group.roleLabel,
+                        R.string.guide_simulate_bond_character
+                    )
                     val groupCopyPayload = buildGuideTabCopyPayload(
                         bondCharacterLabel,
-                        group.roleLabel.ifBlank { bondCharacterLabel }
+                        displayRoleLabel.ifBlank { bondCharacterLabel }
                     )
                     Row(
                         modifier = Modifier
@@ -82,7 +87,7 @@ internal fun GuideSimulateBondCard(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = group.roleLabel,
+                                text = displayRoleLabel,
                                 color = MiuixTheme.colorScheme.onBackgroundVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis

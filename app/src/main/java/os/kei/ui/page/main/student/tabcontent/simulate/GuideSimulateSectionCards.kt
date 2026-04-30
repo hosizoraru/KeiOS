@@ -128,8 +128,12 @@ internal fun GuideSimulateEquipmentCard(
 
             if (groups.isNotEmpty()) {
                 groups.forEach { group ->
+                    val displaySlotLabel = guideLocalizedLabel(
+                        group.slotLabel,
+                        R.string.guide_simulate_equipment
+                    )
                     val groupCopyPayload = buildGuideTabCopyPayload(
-                        group.slotLabel.ifBlank { equipmentLabel },
+                        displaySlotLabel.ifBlank { equipmentLabel },
                         listOf(group.itemName.trim(), group.tierText.trim())
                             .filter { it.isNotBlank() }
                             .joinToString(" · ")

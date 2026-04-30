@@ -38,8 +38,9 @@ internal fun GuideSimulateCardTitleRow(
     backdrop: LayerBackdrop
 ) {
     val displayTitle = guideLocalizedLabel(title)
-    val copyPayload = remember(displayTitle, capsule) {
-        buildGuideTabCopyPayload(displayTitle, capsule.ifBlank { "-" })
+    val displayCapsule = if (capsule.isBlank()) "" else guideLocalizedLabel(capsule)
+    val copyPayload = remember(displayTitle, displayCapsule) {
+        buildGuideTabCopyPayload(displayTitle, displayCapsule.ifBlank { "-" })
     }
     CopyModeSelectionContainer {
         Row(

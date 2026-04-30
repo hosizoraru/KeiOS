@@ -188,7 +188,11 @@ fun GuideGalleryExpressionCardItem(
             } else if (variant == "包") {
                 context.getString(R.string.guide_gallery_expression_pack_format, index + 1)
             } else {
-                context.getString(R.string.guide_gallery_expression_variant_format, index + 1, variant)
+                val displayVariant = when (variant) {
+                    "差分" -> context.getString(R.string.guide_gallery_expression_variant_difference)
+                    else -> variant
+                }
+                context.getString(R.string.guide_gallery_expression_variant_format, index + 1, displayVariant)
             }
         }
     }

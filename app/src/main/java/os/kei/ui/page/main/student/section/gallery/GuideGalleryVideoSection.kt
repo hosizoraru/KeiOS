@@ -73,17 +73,15 @@ fun GuideGalleryVideoGroupCardItem(
     var videoInlinePlaying by remember(displayMediaUrl) { mutableStateOf(false) }
     var videoControlRequestId by remember(displayMediaUrl) { mutableIntStateOf(0) }
     val noteText = selectedItem.note.trim()
-    val optionLabels = remember(context, title, items) {
-        if (items.size <= 1) {
-            listOf(context.getString(R.string.guide_gallery_video_format, 1))
-        } else {
-            items.mapIndexed { index, item ->
-                val normalized = item.title.trim()
-                if (normalized.isNotBlank() && normalized != title) {
-                    normalized
-                } else {
-                    context.getString(R.string.guide_gallery_video_format, index + 1)
-                }
+    val optionLabels = if (items.size <= 1) {
+        listOf(stringResource(R.string.guide_gallery_video_format, 1))
+    } else {
+        items.mapIndexed { index, item ->
+            val normalized = item.title.trim()
+            if (normalized.isNotBlank() && normalized != title) {
+                guideLocalizedLabel(normalized, R.string.guide_gallery_item_fallback)
+            } else {
+                stringResource(R.string.guide_gallery_video_format, index + 1)
             }
         }
     }
