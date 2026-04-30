@@ -351,24 +351,24 @@ class GitHubApiTokenReleaseStrategy(
             ?.let { resetEpochSeconds ->
                 val waitMinutes = ((resetEpochSeconds * 1000L) - System.currentTimeMillis())
                     .coerceAtLeast(0L) / 60_000L
-                if (waitMinutes > 0) "，预计 $waitMinutes 分钟后恢复" else ""
+                if (waitMinutes > 0) ", resets in about $waitMinutes min" else ""
             }
             .orEmpty()
         val looksRateLimited = code == 429 ||
             rateRemaining == "0" ||
             apiMessage.contains("rate limit", ignoreCase = true)
         return when (code) {
-            401 -> "GitHub API token 无效或已过期"
+            401 -> "GitHub API token is invalid or expired"
             403, 429 -> when {
                 looksRateLimited && authMode == GitHubApiAuthMode.Guest ->
-                    "GitHub 游客 API 已限流，请稍后重试或填写 token$rateResetSuffix"
+                    "GitHub guest API is rate limited. Try again later or enter a token$rateResetSuffix"
                 looksRateLimited ->
-                    "GitHub API 已限流$rateResetSuffix"
+                    "GitHub API is rate limited$rateResetSuffix"
                 else ->
-                    "GitHub API 被拒绝访问${apiMessage.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}"
+                    "GitHub API access was denied${apiMessage.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}"
             }
-            404 -> "仓库不存在，或当前 token 无权访问该仓库"
-            else -> "GitHub API 请求失败 (HTTP $code${apiMessage.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""})"
+            404 -> "Repository does not exist, or the current token lacks repository access"
+            else -> "GitHub API request failed (HTTP $code${apiMessage.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""})"
         }
     }
 

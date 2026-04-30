@@ -195,11 +195,11 @@ object GitHubReleaseCheckService {
 
         val fallbackError = fallbackResult.exceptionOrNull()
         val message = buildString {
-            append("主策略失败(")
+            append("Primary strategy failed(")
             append(strategy.id)
             append("): ")
             append(primaryError.message ?: "unknown")
-            append("；备用策略失败(")
+            append("; fallback strategy failed(")
             append(fallbackStrategy.id)
             append("): ")
             append(fallbackError?.message ?: "unknown")

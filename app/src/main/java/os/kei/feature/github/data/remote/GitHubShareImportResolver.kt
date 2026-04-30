@@ -30,7 +30,7 @@ internal object GitHubShareImportResolver {
         lookupConfig: GitHubLookupConfig
     ): Result<GitHubShareImportAssetPlan> = runCatching {
         val parsedLink = GitHubShareIntentParser.parseSharedReleaseLink(sharedText)
-            ?: error("未识别到有效的 GitHub 链接")
+            ?: error("No valid GitHub link was detected")
 
         val attempt = resolveWithFallbackStrategies(
             parsedLink = parsedLink,
@@ -56,7 +56,7 @@ internal object GitHubShareImportResolver {
                 if (fallbackAsset != null) {
                     listOf(fallbackAsset)
                 } else {
-                    error("目标 release 中未找到可用 APK")
+                    error("The target release contains no usable APK")
                 }
             }
         }
@@ -98,11 +98,11 @@ internal object GitHubShareImportResolver {
             val canTryFallback = index < attempts.lastIndex &&
                 shouldTryStrategyFallback(parsedLink = parsedLink, error = error)
             if (!canTryFallback) {
-                throw error ?: IllegalStateException("分享导入解析失败")
+                throw error ?: IllegalStateException("Share import resolution failed")
             }
         }
 
-        throw lastError ?: IllegalStateException("分享导入解析失败")
+        throw lastError ?: IllegalStateException("Share import resolution failed")
     }
 
     private fun resolveOnce(
@@ -176,7 +176,7 @@ internal object GitHubShareImportResolver {
                 val releaseUrl = latest.link.trim().ifBlank {
                     GitHubVersionUtils.buildReleaseTagUrl(parsedLink.owner, parsedLink.repo, tag)
                 }
-                check(tag.isNotBlank()) { "该仓库暂无可用 release" }
+                check(tag.isNotBlank()) { "This repository has no usable release" }
                 ResolvedReleaseTarget(
                     tag = tag,
                     releaseUrl = releaseUrl
@@ -194,7 +194,7 @@ internal object GitHubShareImportResolver {
             GitHubSharedUrlType.ReleaseTag,
             GitHubSharedUrlType.ReleaseDownloadAsset -> {
                 val tag = parsedLink.releaseTag.trim()
-                check(tag.isNotBlank()) { "分享链接缺少 release tag" }
+                check(tag.isNotBlank()) { "The shared link is missing a release tag" }
                 ResolvedReleaseTarget(
                     tag = tag,
                     releaseUrl = GitHubVersionUtils.buildReleaseTagUrl(
@@ -224,12 +224,12 @@ internal object GitHubShareImportResolver {
                 ).loadSnapshot(owner, repo).getOrThrow()
             }
         }
-        check(snapshot.hasStableRelease) { "该仓库暂无稳定版 release" }
+        check(snapshot.hasStableRelease) { "This repository has no stable release" }
         val latestStable = snapshot.latestStable
         val tag = latestStable.rawTag.trim().ifBlank {
             GitHubReleaseAssetRepository.parseReleaseTagFromUrl(latestStable.link)
         }
-        check(tag.isNotBlank()) { "该仓库暂无稳定版 release" }
+        check(tag.isNotBlank()) { "This repository has no stable release" }
         val releaseUrl = latestStable.link.trim().ifBlank {
             GitHubVersionUtils.buildReleaseTagUrl(owner, repo, tag)
         }
@@ -260,7 +260,7 @@ internal object GitHubShareImportResolver {
                 it.updatedAtMillis ?: Long.MIN_VALUE
             }.thenByDescending { it.entryId }
         ) ?: entries.firstOrNull()
-        ?: error("该仓库暂无可用 release")
+        ?: error("This repository has no usable release")
     }
 
     private fun mergeDirectSharedAssetIfNeeded(

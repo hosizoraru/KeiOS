@@ -7,6 +7,7 @@ import os.kei.core.download.AppPrivateDownloadManager
 import os.kei.core.intent.SafeExternalIntents
 import os.kei.feature.github.model.GitHubActionsArtifact
 import os.kei.feature.github.model.GitHubActionsWorkflowMatch
+import os.kei.ui.page.main.github.localizedGitHubActionsErrorMessage
 import os.kei.ui.page.main.github.page.GitHubActionsPageRepository
 
 internal class GitHubActionsArtifactActions(
@@ -78,7 +79,10 @@ internal class GitHubActionsArtifactActions(
                 env.toast(
                     context.getString(
                         R.string.github_actions_toast_download_failed,
-                        error.message ?: error.javaClass.simpleName
+                        localizedGitHubActionsErrorMessage(
+                            context = context,
+                            rawMessage = error.message ?: error.javaClass.simpleName
+                        )
                     )
                 )
             } finally {
@@ -128,7 +132,10 @@ internal class GitHubActionsArtifactActions(
                 env.toast(
                     context.getString(
                         R.string.github_actions_toast_share_failed,
-                        error.message ?: error.javaClass.simpleName
+                        localizedGitHubActionsErrorMessage(
+                            context = context,
+                            rawMessage = error.message ?: error.javaClass.simpleName
+                        )
                     )
                 )
             } finally {

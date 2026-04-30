@@ -490,7 +490,7 @@ class GitHubActionsRepository(
             cacheTtlMillis = ACTIONS_METADATA_CACHE_TTL_MS
         ).getOrThrow().let(::parseWorkflows)
         selectPublicApiWorkflowForNightly(workflows, workflowId)
-            ?: error("GitHub 公开 API 没有找到匹配 workflow：$workflowId")
+            ?: error("GitHub public API found no matching workflow: $workflowId")
     }
 
     private fun selectPublicApiWorkflowForNightly(
@@ -548,11 +548,13 @@ class GitHubActionsRepository(
                 }
         }
         if (sanitizedToken.isBlank()) {
-            return Result.failure(IllegalStateException("下载 GitHub Actions artifact 需要填写 token"))
+            return Result.failure(IllegalStateException("A GitHub token is required to download Actions artifacts"))
         }
         val url = artifact.archiveDownloadUrl.trim().ifBlank {
             if (owner.isBlank() || repo.isBlank()) {
-                return Result.failure(IllegalArgumentException("artifact 缺少下载地址，且未提供仓库信息"))
+                return Result.failure(
+                    IllegalArgumentException("The artifact is missing a download URL and repository information")
+                )
             }
             buildArtifactDownloadUrl(owner, repo, artifact.id)
         }
@@ -715,7 +717,7 @@ class GitHubActionsRepository(
         noRedirectClient.newCall(request).execute().use { response ->
             when {
                 response.isRedirect -> response.header("Location").orEmpty().ifBlank {
-                    error("GitHub Actions artifact 下载未返回跳转地址")
+                    error("GitHub Actions artifact download returned no redirect URL")
                 }
                 response.isSuccessful -> response.request.url.toString()
                 else -> error(buildErrorMessage(response, response.body.string()))
@@ -803,7 +805,7 @@ class GitHubActionsRepository(
 
     private fun requireActionsApiToken(): Result<Unit> {
         return if (requireApiTokenForApiStrategy && sanitizedToken.isBlank()) {
-            Result.failure(IllegalStateException("GitHub Actions API Token 需要填写 token"))
+            Result.failure(IllegalStateException("GitHub Actions API Token mode requires a token"))
         } else {
             Result.success(Unit)
         }
@@ -875,16 +877,16 @@ class GitHubActionsRepository(
             rateRemaining == "0" ||
             apiMessage.contains("rate limit", ignoreCase = true)
         return when (response.code) {
-            401 -> "GitHub Actions token 无效或已过期"
+            401 -> "GitHub Actions token is invalid or expired"
             403, 429 -> when {
                 looksRateLimited && authMode == GitHubApiAuthMode.Guest ->
-                    "GitHub Actions 游客 API 已限流，请稍后重试或填写 token"
-                looksRateLimited -> "GitHub Actions API 已限流"
-                else -> "GitHub Actions API 被拒绝访问${apiMessage.toErrorSuffix()}"
+                    "GitHub Actions guest API is rate limited. Try again later or enter a token."
+                looksRateLimited -> "GitHub Actions API is rate limited"
+                else -> "GitHub Actions API access was denied${apiMessage.toErrorSuffix()}"
             }
-            404 -> "仓库或 GitHub Actions 资源不存在，或当前 token 无权访问"
-            410 -> "GitHub Actions artifact 已过期"
-            else -> "GitHub Actions 请求失败 (HTTP ${response.code}${apiMessage.toErrorSuffix(", ")})"
+            404 -> "The repository or GitHub Actions resource does not exist, or the current token lacks access"
+            410 -> "The GitHub Actions artifact has expired"
+            else -> "GitHub Actions request failed (HTTP ${response.code}${apiMessage.toErrorSuffix(", ")})"
         }
     }
 
@@ -926,7 +928,8 @@ class GitHubActionsRepository(
 
     private fun buildNightlyRawArtifactDownloadMessage(artifactName: String): String {
         val name = artifactName.trim().ifBlank { "artifact" }
-        return "nightly.link 当前无法直接下载原始 APK artifact：$name。请填写 GitHub API Token 后下载，或切换 GitHub API Token 链路。"
+        return "nightly.link cannot directly download raw APK artifact: $name. " +
+            "Enter a GitHub API Token or switch to the GitHub API Token path."
     }
 
     private fun String.urlEncode(): String {

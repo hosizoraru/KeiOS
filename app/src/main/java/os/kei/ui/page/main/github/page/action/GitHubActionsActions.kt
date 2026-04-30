@@ -19,6 +19,7 @@ import os.kei.feature.github.model.GitHubActionsWorkflowMatch
 import os.kei.feature.github.model.GitHubActionsWorkflowSelectionOptions
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.actions.GitHubActionsUiStateStore
+import os.kei.ui.page.main.github.localizedGitHubActionsErrorMessage
 
 internal class GitHubActionsActions(
     private val env: GitHubPageActionEnvironment
@@ -563,7 +564,10 @@ internal class GitHubActionsActions(
                 env.toast(
                     context.getString(
                         R.string.github_actions_toast_refresh_run_failed,
-                        error.message ?: error.javaClass.simpleName
+                        localizedGitHubActionsErrorMessage(
+                            context = context,
+                            rawMessage = error.message ?: error.javaClass.simpleName
+                        )
                     )
                 )
             }

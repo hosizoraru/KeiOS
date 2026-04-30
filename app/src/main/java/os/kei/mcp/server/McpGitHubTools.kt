@@ -12,6 +12,7 @@ import os.kei.feature.github.domain.GitHubReleaseCheckService
 import os.kei.feature.github.data.remote.GitHubShareImportResolver
 import os.kei.feature.github.data.remote.GitHubShareIntentParser
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.feature.github.model.GitHubTrackedReleaseStatus
 import java.util.Locale
 
 internal class McpGitHubTools(
@@ -187,7 +188,7 @@ internal class McpGitHubTools(
         val snapshot = GitHubTrackStore.loadSnapshot()
         val cachedUpdateCount = snapshot.checkCache.values.count { it.hasUpdate == true }
         val cachedFailedCount = snapshot.checkCache.values.count {
-            it.message.contains("失败", ignoreCase = true) || it.message.contains("failed", ignoreCase = true)
+            it.message.isGitHubCheckFailureMessage()
         }
         return buildString {
             appendLine("trackedCount=${snapshot.items.size}")
@@ -323,7 +324,7 @@ internal class McpGitHubTools(
                 .sortedByDescending { it.value.hasUpdate == true }
                 .take(20)
                 .forEach { (id, entry) ->
-                    appendLine("$id=${entry.message}")
+                    appendLine("$id=${entry.message.toMcpGitHubMessage()}")
                 }
         }.trim()
     }
@@ -331,7 +332,9 @@ internal class McpGitHubTools(
     private fun buildGitHubTrackedSummaryFromNetwork(repoFilter: String): String {
         val rows = checkTrackedGitHub(repoFilter)
         val hasUpdate = rows.count { it.hasUpdate }
-        val preRelease = rows.count { it.preReleaseVersion.isNotBlank() || it.status.contains("预", ignoreCase = true) }
+        val preRelease = rows.count {
+            it.preReleaseVersion.isNotBlank() || it.status.contains("pre", ignoreCase = true)
+        }
         return buildString {
             appendLine("mode=network")
             appendLine("matched=${rows.size}")
@@ -357,7 +360,7 @@ internal class McpGitHubTools(
                     }.getOrDefault("unknown"),
                     stableVersion = "unknown",
                     preReleaseVersion = "",
-                    status = "检查失败: ${err.message ?: "unknown"}",
+                    status = "Check failed: ${err.message ?: "unknown"}",
                     hasUpdate = false
                 )
             }
@@ -371,7 +374,7 @@ internal class McpGitHubTools(
             localVersion = check.localVersion,
             stableVersion = check.stableRelease?.displayVersion.orEmpty().ifBlank { "unknown" },
             preReleaseVersion = check.preReleaseInfo,
-            status = check.message,
+            status = check.message.toMcpGitHubMessage(),
             hasUpdate = check.hasUpdate == true
         )
     }
@@ -451,5 +454,35 @@ internal class McpGitHubTools(
                 appendLine("armedAtMillis=${pending.armedAtMillis}")
             }
         }.trim()
+    }
+
+    private fun String.isGitHubCheckFailureMessage(): Boolean {
+        val raw = trim()
+        return raw.contains("failed", ignoreCase = true) ||
+            raw.contains("\u5931\u8d25", ignoreCase = true)
+    }
+
+    private fun String.toMcpGitHubMessage(): String {
+        val raw = trim()
+        return when (raw) {
+            GitHubTrackedReleaseStatus.UpdateAvailable.defaultMessage -> "Update available"
+            GitHubTrackedReleaseStatus.PreReleaseUpdateAvailable.defaultMessage -> "Pre-release update available"
+            GitHubTrackedReleaseStatus.PreReleaseOptional.defaultMessage -> "Pre-release available"
+            GitHubTrackedReleaseStatus.PreReleaseTracked.defaultMessage -> "Pre-release tracked"
+            GitHubTrackedReleaseStatus.UpToDate.defaultMessage -> "Up to date"
+            GitHubTrackedReleaseStatus.MatchedRelease.defaultMessage -> "Matched release"
+            GitHubTrackedReleaseStatus.ComparisonUncertain.defaultMessage -> "Version comparison uncertain"
+            GitHubTrackedReleaseStatus.Failed.defaultMessage -> "Check failed"
+            "\u8be5\u9879\u76ee\u6682\u65f6\u53ef\u80fd\u53ea\u6709\u9884\u53d1\u884c\u7248" ->
+                "This project may currently publish only pre-releases"
+            else -> {
+                val legacyPrefix = "\u68c0\u67e5\u5931\u8d25"
+                if (raw.startsWith(legacyPrefix)) {
+                    raw.replaceFirst(legacyPrefix, "Check failed")
+                } else {
+                    raw
+                }
+            }
+        }
     }
 }

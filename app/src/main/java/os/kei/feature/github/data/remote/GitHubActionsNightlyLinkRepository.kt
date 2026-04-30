@@ -246,7 +246,7 @@ internal class GitHubActionsNightlyLinkRepository(
     ): Result<GitHubActionsArtifactDownloadResolution> {
         val url = artifact.archiveDownloadUrl.trim().ifBlank {
             if (owner.isBlank() || repo.isBlank() || artifact.id <= 0L) {
-                return Result.failure(IllegalArgumentException("artifact 缺少 nightly.link 下载地址"))
+                return Result.failure(IllegalArgumentException("The artifact is missing a nightly.link download URL"))
             }
             buildNightlyArtifactUrl(owner, repo, artifact.id)
         }
@@ -308,7 +308,7 @@ internal class GitHubActionsNightlyLinkRepository(
             }
         }
         firstEmptySnapshot?.let { return it }
-        throw lastFailure ?: IllegalStateException("nightly.link 没有读取到 workflow artifact")
+        throw lastFailure ?: IllegalStateException("nightly.link did not read workflow artifacts")
     }
 
     private fun nightlyWorkflowBranchCandidates(
@@ -599,7 +599,9 @@ internal class GitHubActionsNightlyLinkRepository(
         workflowFile: String,
         branch: String
     ): String {
-        return "nightly.link 没有读取到 $owner/$repo 的 $workflowFile 在 $branch 分支的可下载 artifact。请确认该 workflow 最近一次成功 run 使用 actions/upload-artifact 上传了 artifact，且 artifact 仍在保留期内；建议切换 GitHub API Token。"
+        return "nightly.link did not read downloadable artifacts for $owner/$repo, " +
+            "workflow $workflowFile on branch $branch. Confirm the latest successful workflow run uploaded " +
+            "artifacts with actions/upload-artifact and the artifacts are still retained; GitHub API Token is recommended."
     }
 
     private fun buildPublicHtmlErrorMessage(url: String, httpCode: Int): String {
@@ -607,20 +609,22 @@ internal class GitHubActionsNightlyLinkRepository(
         val normalizedGitHubBase = githubHtmlBaseUrl.trimEnd('/')
         val source = when {
             url.startsWith(normalizedNightlyBase, ignoreCase = true) -> "nightly.link"
-            url.startsWith(normalizedGitHubBase, ignoreCase = true) -> "GitHub 公开页面"
-            else -> "公开页面"
+            url.startsWith(normalizedGitHubBase, ignoreCase = true) -> "GitHub public page"
+            else -> "Public page"
         }
         return when (httpCode) {
             401, 403 ->
-                "$source 访问被拒绝。私有仓库、受限 Actions、组织权限或全局限流会触发该状态；建议切换 GitHub API Token。"
+                "$source access denied. Private repositories, restricted Actions, organization permissions, " +
+                    "or global rate limits can cause this state; GitHub API Token is recommended."
             404 ->
-                "$source 没有找到对应 Actions 资源。请确认仓库、workflow 文件、分支、run 与 artifact 均可公开访问，且 artifact 仍在保留期内；建议切换 GitHub API Token。"
+                "$source could not find matching Actions resources. Confirm the repository, workflow file, " +
+                    "branch, run, and artifact are public and the artifact is still retained; GitHub API Token is recommended."
             410 ->
-                "$source 返回 artifact 已过期。请选择更新的 run，或切换 GitHub API Token 读取完整 Actions 数据。"
+                "$source reported an expired artifact. Select a newer run or switch to GitHub API Token."
             429 ->
-                "$source 当前限流。请稍后重试，或切换 GitHub API Token。"
+                "$source is rate limited. Try again later or switch to GitHub API Token."
             else ->
-                "$source 读取失败 (HTTP $httpCode)。请检查网络与公开访问权限；建议切换 GitHub API Token。"
+                "$source read failed (HTTP $httpCode). Check network and public access; GitHub API Token is recommended."
         }
     }
 

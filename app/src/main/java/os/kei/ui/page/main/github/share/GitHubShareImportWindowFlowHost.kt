@@ -32,6 +32,7 @@ import os.kei.feature.github.domain.GitHubReleaseCheckService
 import os.kei.feature.github.model.GitHubLookupConfig
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.ui.page.main.github.localizedGitHubShareImportErrorMessage
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.github.state.toCacheEntry
 import os.kei.ui.page.main.github.state.toUi
@@ -168,7 +169,7 @@ internal fun GitHubShareImportWindowFlowHost(
             if (!lookupConfig.shareImportLinkageEnabled) return@LaunchedEffect
             try {
                 val parsedIncoming = GitHubShareIntentParser.parseSharedReleaseLink(sharedText)
-                    ?: error("未识别到有效的 GitHub 链接")
+                    ?: error(context.getString(R.string.github_share_import_error_no_valid_link))
                 withContext(Dispatchers.IO) {
                     GitHubTrackStore.savePendingShareImportTrack(null)
                 }
@@ -200,7 +201,10 @@ internal fun GitHubShareImportWindowFlowHost(
                 }
             } catch (error: Throwable) {
                 if (error.shouldSuppressShareImportFailureToast()) return@LaunchedEffect
-                val reason = error.message?.takeIf { it.isNotBlank() } ?: error.javaClass.simpleName
+                val reason = localizedGitHubShareImportErrorMessage(
+                    context = context,
+                    rawMessage = error.message?.takeIf { it.isNotBlank() } ?: error.javaClass.simpleName
+                )
                 toast(context, R.string.github_toast_share_import_failed, reason)
             }
         } finally {

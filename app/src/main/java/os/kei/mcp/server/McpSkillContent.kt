@@ -125,28 +125,28 @@ internal class McpSkillContent(
         ) { request ->
             val task = request.arguments?.get("task").orEmpty().trim()
             val promptText = buildString {
-                appendLine("你当前连接的是 KeiOS 本地 MCP 服务。")
-                appendLine("请按以下顺序初始化：")
+                appendLine("You are connected to the local KeiOS MCP server.")
+                appendLine("Initialize in this order:")
                 appendLine("1) keios.health.ping")
                 appendLine("2) keios.mcp.runtime.status")
                 appendLine("3) keios.mcp.runtime.config(mode=auto)")
-                appendLine("4) 读取资源 $SKILL_OVERVIEW_URI")
-                appendLine("5) 按任务读取资源 $SKILL_RESOURCE_URI 或模板 $SKILL_TOOL_TEMPLATE_URI")
-                appendLine("6) 需要导入配置时读取 $CONFIG_RESOURCE_URI 或模板 $CONFIG_TEMPLATE_URI")
+                appendLine("4) Read resource $SKILL_OVERVIEW_URI")
+                appendLine("5) Read $SKILL_RESOURCE_URI or template $SKILL_TOOL_TEMPLATE_URI for the task")
+                appendLine("6) Read $CONFIG_RESOURCE_URI or template $CONFIG_TEMPLATE_URI when import config is needed")
                 appendLine()
-                appendLine("常用工具分组：")
-                appendLine("- 运行排障：keios.mcp.runtime.status / keios.mcp.runtime.logs / keios.shizuku.status")
-                appendLine("- Home 总览：keios.home.overview.snapshot")
-                appendLine("- OS 页面：keios.os.cards.snapshot / keios.os.activity.cards / keios.os.shell.cards")
-                appendLine("- 系统参数：keios.system.topinfo.query")
-                appendLine("- GitHub 跟踪与分享：keios.github.tracked.snapshot / list / check / share.parse / share.resolve")
-                appendLine("- BA 缓存与媒体：keios.ba.snapshot / keios.ba.guide.cache.inspect / keios.ba.guide.media.list / keios.ba.guide.bgm.favorites")
-                appendLine("- 导入导出：keios.github.tracked.export / keios.github.tracked.import / keios.os.cards.export / keios.os.cards.import")
-                appendLine("- 缓存清理：keios.github.tracked.cache.clear / keios.ba.cache.clear")
+                appendLine("Common tool groups:")
+                appendLine("- Runtime diagnostics: keios.mcp.runtime.status / keios.mcp.runtime.logs / keios.shizuku.status")
+                appendLine("- Home overview: keios.home.overview.snapshot")
+                appendLine("- OS page: keios.os.cards.snapshot / keios.os.activity.cards / keios.os.shell.cards")
+                appendLine("- System values: keios.system.topinfo.query")
+                appendLine("- GitHub tracking and share import: keios.github.tracked.snapshot / list / check / share.parse / share.resolve")
+                appendLine("- Blue Archive cache and media: keios.ba.snapshot / keios.ba.guide.cache.inspect / keios.ba.guide.media.list / keios.ba.guide.bgm.favorites")
+                appendLine("- Import and export: keios.github.tracked.export / keios.github.tracked.import / keios.os.cards.export / keios.os.cards.import")
+                appendLine("- Cache cleanup: keios.github.tracked.cache.clear / keios.ba.cache.clear")
                 if (task.isNotBlank()) {
                     appendLine()
-                    appendLine("当前任务：$task")
-                    appendLine("先给出不超过 4 步的工具调用计划，再执行。")
+                    appendLine("Current task: $task")
+                    appendLine("Give a tool-call plan of up to 4 steps before executing.")
                 }
             }.trim()
 
@@ -281,146 +281,146 @@ internal class McpSkillContent(
     private fun StringBuilder.appendToolUsage(name: String) {
         when (name) {
             "keios.health.ping" -> {
-                appendLine("- 作为第一条调用验证链路连通性。")
-                appendLine("- 返回值固定为 pong。")
+                appendLine("- Use this as the first call to verify connectivity.")
+                appendLine("- The return value is always pong.")
             }
 
             "keios.app.info", "keios.app.version", "keios.shizuku.status" -> {
-                appendLine("- 作为环境确认工具使用。")
-                appendLine("- 输出为 key=value 文本，适合直接记录到报告。")
+                appendLine("- Use this for environment confirmation.")
+                appendLine("- Output is key=value text that can be copied directly into reports.")
             }
 
             "keios.mcp.runtime.status" -> {
-                appendLine("- 先看 running/connectedClients/localEndpoint。")
-                appendLine("- 有异常时继续调用 keios.mcp.runtime.logs。")
+                appendLine("- Check running, connectedClients, and localEndpoint first.")
+                appendLine("- Call keios.mcp.runtime.logs when an error is present.")
             }
 
             "keios.mcp.runtime.logs" -> {
-                appendLine("- 建议先用 limit=30，排障时再扩大。")
-                appendLine("- 日志按时间倒序输出。")
+                appendLine("- Start with limit=30, then increase it for deeper diagnostics.")
+                appendLine("- Logs are returned in reverse chronological order.")
             }
 
             "keios.mcp.runtime.config" -> {
-                appendLine("- 默认使用 mode=auto。")
-                appendLine("- 同机客户端优先 mode=local。")
-                appendLine("- 跨设备调试使用 mode=lan。")
-                appendLine("- 需要临时目标时可传 endpoint 覆盖。")
+                appendLine("- Use mode=auto by default.")
+                appendLine("- Use mode=local for clients on the same device.")
+                appendLine("- Use mode=lan for cross-device debugging.")
+                appendLine("- Pass endpoint to target a temporary endpoint.")
             }
 
             "keios.mcp.claw.skill.guide" -> {
-                appendLine("- 直接生成 Claw 接入完整引导。")
-                appendLine("- 输出包含可导入 JSON、Skill 资源 URI 和完整 SKILL.md 文本。")
-                appendLine("- mode 建议先用 auto，定向调试再切 local 或 lan。")
+                appendLine("- Generates a complete Claw onboarding guide.")
+                appendLine("- Output includes importable JSON, Skill resource URIs, and full SKILL.md text.")
+                appendLine("- Start with mode=auto, then switch to local or lan for targeted debugging.")
             }
 
             "keios.home.overview.snapshot" -> {
-                appendLine("- 读取 Home 三张总览卡片的数据源。")
-                appendLine("- 适合先判断 MCP、GitHub、BA 是否有关键状态变化。")
+                appendLine("- Reads the data source for the three Home overview cards.")
+                appendLine("- Use it to spot key MCP, GitHub, and Blue Archive state changes first.")
             }
 
             "keios.system.topinfo.query" -> {
-                appendLine("- query 为空时返回热点参数。")
-                appendLine("- 使用 limit 控制输出规模。")
+                appendLine("- Leave query empty to return high-signal values.")
+                appendLine("- Use limit to control output size.")
             }
 
             "keios.os.cards.snapshot" -> {
-                appendLine("- 读取 OS 页面整体状态，适合先做一次快照。")
-                appendLine("- 可见卡片、展开态、缓存体积和估算值会一次返回。")
+                appendLine("- Reads the overall OS page state as a first snapshot.")
+                appendLine("- Visibility, expansion state, cache size, and estimates are returned together.")
             }
 
             "keios.os.activity.cards" -> {
-                appendLine("- 用 query 按标题/包名/类名筛选活动 card。")
-                appendLine("- onlyVisible=true 只看当前显示中的活动 card。")
-                appendLine("- limit 控制返回条目数量。")
+                appendLine("- Use query to filter Activity cards by title, package, or class name.")
+                appendLine("- Use onlyVisible=true to inspect currently visible Activity cards.")
+                appendLine("- Use limit to control the number of returned entries.")
             }
 
             "keios.os.shell.cards" -> {
-                appendLine("- 默认返回 shell card 元信息和命令。")
-                appendLine("- includeOutput=true 会追加运行输出摘要。")
-                appendLine("- onlyVisible=true 可与 query 组合做精确筛选。")
+                appendLine("- Returns shell card metadata and commands by default.")
+                appendLine("- includeOutput=true appends a run-output summary.")
+                appendLine("- Combine onlyVisible=true with query for precise filtering.")
             }
 
             "keios.os.cards.export" -> {
-                appendLine("- target=activity 导出活动 card。")
-                appendLine("- target=shell 导出 shell card。")
-                appendLine("- target=all 生成 activity/shell bundle。")
+                appendLine("- target=activity exports Activity cards.")
+                appendLine("- target=shell exports shell cards.")
+                appendLine("- target=all generates an activity/shell bundle.")
             }
 
             "keios.os.cards.import" -> {
-                appendLine("- target 必须是 activity 或 shell。")
-                appendLine("- apply=false 只返回导入预览。")
-                appendLine("- apply=true 合并写入本地 card store。")
+                appendLine("- target must be activity or shell.")
+                appendLine("- apply=false returns an import preview.")
+                appendLine("- apply=true merges data into the local card store.")
             }
 
             "keios.github.tracked.snapshot", "keios.github.tracked.list", "keios.github.tracked.summary" -> {
-                appendLine("- 先用 snapshot 获取总览，再按 list/summary 下钻。")
-                appendLine("- repoFilter 支持 owner/repo、包名、应用名。")
+                appendLine("- Start with snapshot, then drill into list or summary.")
+                appendLine("- repoFilter accepts owner/repo, package name, or app label.")
             }
 
             "keios.github.tracked.export" -> {
-                appendLine("- 导出当前 GitHub 跟踪列表 JSON。")
-                appendLine("- repoFilter 可生成子集。")
+                appendLine("- Exports the current GitHub tracking list as JSON.")
+                appendLine("- Use repoFilter to export a subset.")
             }
 
             "keios.github.tracked.import" -> {
-                appendLine("- apply=false 返回新增/更新/不变数量。")
-                appendLine("- apply=true 合并跟踪项并清理检查缓存。")
+                appendLine("- apply=false returns added, updated, and unchanged counts.")
+                appendLine("- apply=true merges tracking items and clears check cache.")
             }
 
             "keios.github.tracked.check" -> {
-                appendLine("- 先用 onlyUpdates=true 快速筛选。")
-                appendLine("- repoFilter 可按 owner/repo、包名或应用名过滤。")
+                appendLine("- Use onlyUpdates=true for a quick update-focused pass.")
+                appendLine("- repoFilter can filter by owner/repo, package name, or app label.")
             }
 
             "keios.github.tracked.cache.clear" -> {
-                appendLine("- 清理后建议再执行 tracked.check 获取新状态。")
-                appendLine("- 会同时清理 release asset 缓存。")
+                appendLine("- Run tracked.check again after clearing to get fresh state.")
+                appendLine("- Release asset cache is cleared at the same time.")
             }
 
             "keios.github.share.parse" -> {
-                appendLine("- 解析分享文本中的 GitHub 链接。")
-                appendLine("- 支持 repo、releases、latest、tag 和 download asset。")
+                appendLine("- Parses GitHub links from shared text.")
+                appendLine("- Supports repo, releases, latest, tag, and download asset links.")
             }
 
             "keios.github.share.resolve" -> {
-                appendLine("- 解析分享链接并在线获取 APK asset 候选。")
-                appendLine("- 使用当前 GitHub 策略配置和 fallback 策略。")
+                appendLine("- Resolves a shared link and fetches APK asset candidates online.")
+                appendLine("- Uses the current GitHub strategy config and fallback strategy.")
             }
 
             "keios.github.share.pending" -> {
-                appendLine("- clear=false 查看安装前跟踪状态。")
-                appendLine("- clear=true 清除待关联安装记录。")
+                appendLine("- clear=false inspects pre-install tracking state.")
+                appendLine("- clear=true clears the pending install-link record.")
             }
 
             "keios.ba.snapshot", "keios.ba.calendar.cache", "keios.ba.pool.cache", "keios.ba.guide.catalog.cache", "keios.ba.guide.cache.overview" -> {
-                appendLine("- 先用 ba.snapshot 获取全局状态。")
-                appendLine("- 再按日历/卡池/图鉴缓存工具下钻。")
+                appendLine("- Start with ba.snapshot for global state.")
+                appendLine("- Then drill into calendar, recruitment banner, or Student Guide cache tools.")
             }
 
             "keios.ba.guide.cache.inspect" -> {
-                appendLine("- url 为空时读取当前图鉴 URL。")
-                appendLine("- includeSections=true 输出分区统计。")
-                appendLine("- refreshIntervalHours 可覆盖当前判定窗口。")
+                appendLine("- Leave url empty to use the current Student Guide URL.")
+                appendLine("- includeSections=true outputs section statistics.")
+                appendLine("- refreshIntervalHours overrides the current freshness window.")
             }
 
             "keios.ba.guide.media.list" -> {
-                appendLine("- 从学生图鉴详情缓存列出影画鉴赏和语音媒体。")
-                appendLine("- kind 可用 all/gallery/voice/image/video/audio。")
+                appendLine("- Lists gallery and voice media from Student Guide detail cache.")
+                appendLine("- kind accepts all, gallery, voice, image, video, or audio.")
             }
 
             "keios.ba.guide.bgm.favorites" -> {
-                appendLine("- action=list 读取 BGM 收藏。")
-                appendLine("- action=export 导出收藏 JSON。")
-                appendLine("- action=import 配合 apply 预览或合并导入。")
+                appendLine("- action=list reads BGM favorites.")
+                appendLine("- action=export exports favorites as JSON.")
+                appendLine("- action=import combines with apply to preview or merge imports.")
             }
 
             "keios.ba.cache.clear" -> {
-                appendLine("- scope=all 可一次性清理 BA/GitHub 缓存。")
-                appendLine("- scope=ba_guide_url 需要同时传入 url。")
+                appendLine("- scope=all clears Blue Archive and GitHub cache data together.")
+                appendLine("- scope=ba_guide_url also requires url.")
             }
 
             else -> {
-                appendLine("- 直接调用并解析 key=value 输出。")
+                appendLine("- Call directly and parse key=value output.")
             }
         }
     }
@@ -444,20 +444,20 @@ internal class McpSkillContent(
             appendLine("configTool=keios.mcp.runtime.config")
             appendLine("defaultFlow=keios.health.ping->keios.mcp.runtime.status->keios.mcp.runtime.config")
             appendLine()
-            appendLine("## Step 1 · 导入 MCP 配置")
+            appendLine("## Step 1 - Import MCP Config")
             appendLine("```json")
             appendLine(configJson)
             appendLine("```")
             appendLine()
-            appendLine("## Step 2 · 载入 Skill")
-            appendLine("- 读取资源 $SKILL_RESOURCE_URI")
-            appendLine("- 读取摘要 $SKILL_OVERVIEW_URI")
-            appendLine("- 按工具读取模板 $SKILL_TOOL_TEMPLATE_URI")
+            appendLine("## Step 2 - Load Skill")
+            appendLine("- Read resource $SKILL_RESOURCE_URI")
+            appendLine("- Read overview $SKILL_OVERVIEW_URI")
+            appendLine("- Read per-tool help from template $SKILL_TOOL_TEMPLATE_URI")
             appendLine()
-            appendLine("## Step 3 · 在 Claw 注册 Skill")
-            appendLine("- 建议名称：KeiOS MCP Skill")
-            appendLine("- 将下方 SKILL.md 内容保存到 Claw Skill")
-            appendLine("- 初始化后先执行 keios.health.ping 与 keios.mcp.runtime.status")
+            appendLine("## Step 3 - Register Skill in Claw")
+            appendLine("- Suggested name: KeiOS MCP Skill")
+            appendLine("- Save the SKILL.md content below as the Claw Skill")
+            appendLine("- After initialization, call keios.health.ping and keios.mcp.runtime.status first")
             appendLine()
             appendLine("## SKILL.md")
             appendLine("```markdown")

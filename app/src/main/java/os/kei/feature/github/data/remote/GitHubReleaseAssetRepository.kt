@@ -282,7 +282,7 @@ object GitHubReleaseAssetRepository {
             when {
                 response.isSuccessful && redirectedUrl.isNotBlank() -> redirectedUrl
                 response.isRedirect -> response.header("Location").orEmpty().ifBlank {
-                    error("GitHub API 资产下载未返回跳转地址")
+                    error("GitHub API asset download returned no redirect URL")
                 }
                 else -> error(buildApiAssetErrorMessage(response))
             }
@@ -291,10 +291,10 @@ object GitHubReleaseAssetRepository {
 
     private fun buildApiAssetErrorMessage(response: Response): String {
         return when (response.code) {
-            401 -> "GitHub API token 无效或已过期"
-            403, 429 -> "GitHub API 资产下载已限流"
-            404 -> "GitHub API 资产地址已失效"
-            else -> "GitHub API 资产下载失败 (HTTP ${response.code})"
+            401 -> "GitHub API token is invalid or expired"
+            403, 429 -> "GitHub API asset download is rate limited"
+            404 -> "GitHub API asset URL has expired"
+            else -> "GitHub API asset download failed (HTTP ${response.code})"
         }
     }
 
@@ -307,7 +307,7 @@ object GitHubReleaseAssetRepository {
         val encodedTag = URLEncoder.encode(rawTag, Charsets.UTF_8.name()).replace("+", "%20")
         val refUrl = "${DEFAULT_GITHUB_API_BASE_URL.trimEnd('/')}/repos/$owner/$repo/git/ref/tags/$encodedTag"
         val refObject = JSONObject(fetchJson(refUrl, apiToken)).optJSONObject("object")
-            ?: error("Git tag ref 响应缺少 object")
+            ?: error("Git tag ref response is missing object")
         val refType = refObject.optString("type").trim()
         val refSha = refObject.optString("sha").trim()
         val commitSha = when {
@@ -315,7 +315,7 @@ object GitHubReleaseAssetRepository {
             refType.equals("tag", ignoreCase = true) && refSha.isNotBlank() -> {
                 val tagUrl = "${DEFAULT_GITHUB_API_BASE_URL.trimEnd('/')}/repos/$owner/$repo/git/tags/$refSha"
                 val tagObject = JSONObject(fetchJson(tagUrl, apiToken)).optJSONObject("object")
-                    ?: error("Annotated tag 响应缺少 object")
+                    ?: error("Annotated tag response is missing object")
                 if (tagObject.optString("type").trim().equals("commit", ignoreCase = true)) {
                     tagObject.optString("sha").trim()
                 } else {
@@ -369,14 +369,14 @@ object GitHubReleaseAssetRepository {
                         val apiMessage = runCatching { JSONObject(bodyText).optString("message").trim() }.getOrDefault("")
                         error(
                             when (response.code) {
-                                401 -> "GitHub API token 无效或已过期"
+                                401 -> "GitHub API token is invalid or expired"
                                 403, 429 -> if (token.isBlank()) {
-                                    "GitHub 游客 API 已限流，请稍后重试或填写 token"
+                                    "GitHub guest API is rate limited. Try again later or enter a token"
                                 } else {
-                                    "GitHub API 已限流"
+                                    "GitHub API is rate limited"
                                 }
-                                404 -> "未找到该 tag 对应的 release"
-                                else -> "GitHub release 请求失败 (HTTP ${response.code}${apiMessage.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""})"
+                                404 -> "No release was found for this tag"
+                                else -> "GitHub release request failed (HTTP ${response.code}${apiMessage.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""})"
                             }
                         )
                     }
@@ -392,9 +392,9 @@ object GitHubReleaseAssetRepository {
 
         val message = lastError?.message.orEmpty()
         if (message.contains("connection closed", ignoreCase = true)) {
-            error("GitHub 连接被中途关闭，请稍后重试")
+            error("GitHub connection closed unexpectedly. Try again later.")
         }
-        throw lastError ?: IllegalStateException("GitHub release 请求失败")
+        throw lastError ?: IllegalStateException("GitHub release request failed")
     }
 
     private fun fetchReleaseFromHtml(
@@ -443,7 +443,7 @@ object GitHubReleaseAssetRepository {
                 client.newCall(requestBuilder.build()).execute().use { response ->
                     val bodyText = response.body.string()
                     if (!response.isSuccessful) {
-                        error("GitHub release 页面请求失败 (HTTP ${response.code})")
+                        error("GitHub release page request failed (HTTP ${response.code})")
                     }
                     return bodyText
                 }
@@ -454,9 +454,9 @@ object GitHubReleaseAssetRepository {
         }
         val message = lastError?.message.orEmpty()
         if (message.contains("connection closed", ignoreCase = true)) {
-            error("GitHub 页面连接被中途关闭，请稍后重试")
+            error("GitHub page connection closed unexpectedly. Try again later.")
         }
-        throw lastError ?: IllegalStateException("GitHub release 页面请求失败")
+        throw lastError ?: IllegalStateException("GitHub release page request failed")
     }
 
     private fun parseAssetsFromReleaseHtml(
@@ -492,7 +492,7 @@ object GitHubReleaseAssetRepository {
             )
         }
         return unique.values.toList().ifEmpty {
-            error("未在 release 页面中找到可下载资源: $rawTag")
+            error("No downloadable assets found on the release page: $rawTag")
         }
     }
 
@@ -613,7 +613,7 @@ object GitHubReleaseAssetRepository {
             )
         }
         return unique.values.toList().ifEmpty {
-            error("未在 expanded_assets 页面中找到可下载资源: $rawTag")
+            error("No downloadable assets found on the expanded_assets page: $rawTag")
         }
     }
 

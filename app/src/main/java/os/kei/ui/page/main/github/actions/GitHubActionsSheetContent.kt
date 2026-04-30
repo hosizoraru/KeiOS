@@ -9,6 +9,7 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 import os.kei.R
 import os.kei.feature.github.model.GitHubActionsLookupStrategyOption
 import os.kei.ui.page.main.github.GitHubStatusPalette
+import os.kei.ui.page.main.github.localizedGitHubActionsErrorMessage
 import os.kei.ui.page.main.github.page.GitHubPageState
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 
@@ -63,10 +64,11 @@ internal fun GitHubActionsSheetContent(
         )
 
         state.actionsError?.takeIf { it.isNotBlank() }?.let { message ->
+            val localizedMessage = localizedGitHubActionsErrorMessage(context, message)
             val errorText = if (state.lookupConfig.actionsStrategy == GitHubActionsLookupStrategyOption.NightlyLink) {
-                stringResource(R.string.github_actions_error_load_failed_nightly, message)
+                stringResource(R.string.github_actions_error_load_failed_nightly, localizedMessage)
             } else {
-                stringResource(R.string.github_actions_error_load_failed, message)
+                stringResource(R.string.github_actions_error_load_failed, localizedMessage)
             }
             GitHubActionsNoticeCard(
                 text = errorText,
