@@ -88,21 +88,25 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private enum class BaGuideCatalogPageTab(
     val labelRes: Int,
+    val compactLabelRes: Int,
     val iconRes: Int,
     val catalogTab: BaGuideCatalogTab?
 ) {
     Student(
         labelRes = R.string.ba_catalog_tab_student,
+        compactLabelRes = R.string.ba_catalog_tab_student_short,
         iconRes = R.drawable.ba_tab_profile,
         catalogTab = BaGuideCatalogTab.Student
     ),
     NpcSatellite(
         labelRes = R.string.ba_catalog_tab_npc_satellite,
+        compactLabelRes = R.string.ba_catalog_tab_npc_satellite_short,
         iconRes = R.drawable.ba_tab_skill,
         catalogTab = BaGuideCatalogTab.NpcSatellite
     ),
     Bgm(
         labelRes = R.string.ba_catalog_tab_bgm,
+        compactLabelRes = R.string.ba_catalog_tab_bgm,
         iconRes = R.drawable.ba_tab_bgm,
         catalogTab = null
     )
@@ -324,6 +328,7 @@ fun BaGuideCatalogPage(
                                 val selected = pagerState.targetPage == index
                                 val tabColor = liquidGlassBottomBarItemContentColor(index)
                                 val tabLabel = stringResource(id = tab.labelRes)
+                                val compactTabLabel = stringResource(id = tab.compactLabelRes)
                                 val tabContent: @Composable ColumnScope.() -> Unit = {
                                     Icon(
                                         painter = painterResource(id = tab.iconRes),
@@ -337,7 +342,7 @@ fun BaGuideCatalogPage(
                                             }
                                     )
                                     Text(
-                                        text = tabLabel,
+                                        text = compactTabLabel,
                                         fontSize = 11.sp,
                                         lineHeight = 14.sp,
                                         color = tabColor,

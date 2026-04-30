@@ -126,7 +126,9 @@
     <string name="ba_catalog_page_title">图鉴</string>
     <string name="ba_catalog_tab_title">当前分区：%1$s</string>
     <string name="ba_catalog_tab_student">实装学生</string>
+    <string name="ba_catalog_tab_student_short">实装学生</string>
     <string name="ba_catalog_tab_npc_satellite">NPC及卫星</string>
+    <string name="ba_catalog_tab_npc_satellite_short">NPC及卫星</string>
     <string name="ba_catalog_tab_bgm">BGM</string>
     <string name="ba_catalog_action_sort">排序</string>
     <string name="ba_catalog_action_refresh">刷新列表</string>

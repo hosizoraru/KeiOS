@@ -126,7 +126,9 @@
     <string name="ba_catalog_page_title">Archive</string>
     <string name="ba_catalog_tab_title">Current section: %1$s</string>
     <string name="ba_catalog_tab_student">Released Students</string>
+    <string name="ba_catalog_tab_student_short">Students</string>
     <string name="ba_catalog_tab_npc_satellite">NPC &amp; Upcoming</string>
+    <string name="ba_catalog_tab_npc_satellite_short">NPC</string>
     <string name="ba_catalog_tab_bgm">BGM</string>
     <string name="ba_catalog_action_sort">Sort</string>
     <string name="ba_catalog_action_refresh">Refresh list</string>
