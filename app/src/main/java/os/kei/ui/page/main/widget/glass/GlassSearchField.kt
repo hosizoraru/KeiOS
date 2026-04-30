@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
@@ -58,6 +60,7 @@ fun GlassSearchField(
     horizontalPadding: Dp = AppInteractiveTokens.glassSearchFieldHorizontalPadding,
     verticalPadding: Dp = AppInteractiveTokens.glassSearchFieldVerticalPadding,
     keyboardOptions: KeyboardOptions? = null,
+    focusRequester: FocusRequester? = null,
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
@@ -168,7 +171,8 @@ fun GlassSearchField(
             .padding(
                 horizontal = horizontalPadding,
                 vertical = verticalPadding
-            )
+            ),
+        contentAlignment = Alignment.CenterStart
     ) {
         BasicTextField(
             value = value,
@@ -186,7 +190,14 @@ fun GlassSearchField(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight(align = Alignment.CenterVertically),
+                .wrapContentHeight(align = Alignment.CenterVertically)
+                .then(
+                    if (focusRequester != null) {
+                        Modifier.focusRequester(focusRequester)
+                    } else {
+                        Modifier
+                    }
+                ),
             decorationBox = { innerTextField ->
                 Box(
                     modifier = Modifier

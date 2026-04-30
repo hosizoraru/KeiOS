@@ -1,11 +1,7 @@
 package os.kei.ui.page.main.debug
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -20,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,9 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,13 +46,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousCapsule
@@ -71,16 +60,9 @@ import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
-import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.os.appLucideSquareArrowUpIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
-import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
-import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
-import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -118,22 +100,8 @@ internal fun DebugBgmLiquidMusicPreview(
     val isDark = isSystemInDarkTheme()
     val listState = rememberLazyListState()
     val bottomBarScrollConnection = rememberDebugBgmBottomChromeScrollState(scrollThreshold = 56.dp)
-    val tracks = rememberDebugBgmTracks()
-    var currentTrackIndex by remember { mutableStateOf(2) }
-    var isPlaying by remember { mutableStateOf(true) }
-    var repeatEnabled by remember { mutableStateOf(false) }
-    var searchVisible by remember { mutableStateOf(false) }
-    val currentTrack = tracks.getOrElse(currentTrackIndex) { tracks.first() }
-    val togglePlayPause = { isPlaying = !isPlaying }
-    val playNext = {
-        currentTrackIndex = (currentTrackIndex + 1) % tracks.size
-        isPlaying = true
-    }
-    val playTrack: (Int) -> Unit = { index ->
-        currentTrackIndex = index.coerceIn(0, tracks.lastIndex)
-        isPlaying = true
-        searchVisible = false
-    }
+    val musicState = rememberDebugBgmMusicUiState()
+    val currentTrack = musicState.currentTrack
     val albumScrollOffset by remember {
         derivedStateOf {
             val indexOffset = listState.firstVisibleItemIndex * 720f
@@ -150,7 +118,16 @@ internal fun DebugBgmLiquidMusicPreview(
             ((albumScrollOffset - 620f) / 180f).coerceIn(0f, 1f)
         }
     }
-    var selectedDockKey by remember { mutableStateOf(DebugBgmDockKeys.Library) }
+    val displayedTracks = if (musicState.searchVisible) {
+        musicState.visibleTracks
+    } else {
+        musicState.tracks
+    }
+    val searchPanelBottomPadding = if (bottomBarScrollConnection.isCompact) {
+        DebugBgmSearchPanelCompactBottomPadding
+    } else {
+        DebugBgmSearchPanelExpandedBottomPadding
+    }
     val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
     val panelBorder = if (isDark) {
         Color.White.copy(alpha = 0.16f)
@@ -174,18 +151,26 @@ internal fun DebugBgmLiquidMusicPreview(
         panelModifier = panelModifier.border(1.dp, panelBorder, panelShape)
     }
 
+    BackHandler(enabled = musicState.searchVisible) {
+        musicState.closeSearch()
+    }
+
     Box(
         modifier = panelModifier
     ) {
         DebugBgmAlbumContent(
             accent = accent,
-            tracks = tracks,
-            currentTrackIndex = currentTrackIndex,
-            isPlaying = isPlaying,
-            repeatEnabled = repeatEnabled,
-            onRepeatClick = { repeatEnabled = !repeatEnabled },
-            onPlayPauseClick = togglePlayPause,
-            onTrackClick = playTrack,
+            tracks = displayedTracks,
+            currentTrackId = currentTrack.id,
+            isPlaying = musicState.isPlaying,
+            repeatEnabled = musicState.repeatEnabled,
+            offlineSaved = musicState.currentTrackOfflineSaved,
+            isTrackFavorite = musicState::isTrackFavorite,
+            onRepeatClick = musicState::toggleRepeat,
+            onDownloadClick = musicState::toggleCurrentTrackOffline,
+            onPlayPauseClick = musicState::togglePlayPause,
+            onTrackClick = musicState::playTrack,
+            onTrackFavoriteClick = musicState::toggleTrackFavorite,
             listState = listState,
             collapseProgress = collapseProgress,
             bottomBarScrollConnection = bottomBarScrollConnection,
@@ -216,32 +201,35 @@ internal fun DebugBgmLiquidMusicPreview(
                 )
         )
         AnimatedVisibility(
-            visible = searchVisible,
+            visible = musicState.searchVisible,
             enter = fadeIn() + slideInVertically { it / 2 },
             exit = fadeOut() + slideOutVertically { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(start = 36.dp, end = 36.dp, bottom = 178.dp)
+                .padding(
+                    start = DebugBgmSearchPanelHorizontalPadding,
+                    end = DebugBgmSearchPanelHorizontalPadding,
+                    bottom = searchPanelBottomPadding
+                )
         ) {
-            DebugBgmSearchPanel(accent = accent)
+            DebugBgmSearchPanel(
+                query = musicState.searchQuery,
+                onQueryChange = musicState::updateSearchQuery
+            )
         }
         DebugBgmFloatingBottomChrome(
             accent = accent,
             scrollState = bottomBarScrollConnection,
             currentTrackTitle = currentTrack.title,
-            isPlaying = isPlaying,
-            onPlayPauseClick = togglePlayPause,
-            onNextClick = playNext,
-            searchVisible = searchVisible,
-            selectedDockKey = selectedDockKey,
-            onSelectedDockKeyChange = {
-                selectedDockKey = it
-                searchVisible = false
-            },
-            onSearchClick = {
-                searchVisible = !searchVisible
-            },
+            isPlaying = musicState.isPlaying,
+            onPlayPauseClick = musicState::togglePlayPause,
+            onNextClick = musicState::playNext,
+            searchVisible = musicState.searchVisible,
+            selectedDockKey = musicState.selectedDockKey,
+            onSelectedDockKeyChange = musicState::selectDockKey,
+            onSearchClick = musicState::toggleSearch,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .then(bottomBarModifier)
@@ -253,12 +241,16 @@ internal fun DebugBgmLiquidMusicPreview(
 private fun DebugBgmAlbumContent(
     accent: Color,
     tracks: List<DebugBgmTrack>,
-    currentTrackIndex: Int,
+    currentTrackId: String,
     isPlaying: Boolean,
     repeatEnabled: Boolean,
+    offlineSaved: Boolean,
+    isTrackFavorite: (String) -> Boolean,
     onRepeatClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    onTrackClick: (Int) -> Unit,
+    onTrackClick: (String) -> Unit,
+    onTrackFavoriteClick: (String) -> Unit,
     listState: LazyListState,
     collapseProgress: Float,
     bottomBarScrollConnection: NestedScrollConnection,
@@ -278,18 +270,22 @@ private fun DebugBgmAlbumContent(
                 accent = accent,
                 collapseProgress = collapseProgress,
                 repeatEnabled = repeatEnabled,
+                offlineSaved = offlineSaved,
                 isPlaying = isPlaying,
                 onRepeatClick = onRepeatClick,
+                onDownloadClick = onDownloadClick,
                 onPlayPauseClick = onPlayPauseClick
             )
         }
         item {
             DebugBgmTrackList(
                 tracks = tracks,
-                currentTrackIndex = currentTrackIndex,
+                currentTrackId = currentTrackId,
                 isPlaying = isPlaying,
                 accent = accent,
-                onTrackClick = onTrackClick
+                isTrackFavorite = isTrackFavorite,
+                onTrackClick = onTrackClick,
+                onTrackFavoriteClick = onTrackFavoriteClick
             )
         }
         item {
@@ -385,8 +381,10 @@ private fun DebugBgmAlbumHero(
     accent: Color,
     collapseProgress: Float,
     repeatEnabled: Boolean,
+    offlineSaved: Boolean,
     isPlaying: Boolean,
     onRepeatClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onPlayPauseClick: () -> Unit
 ) {
     Column(
@@ -435,8 +433,10 @@ private fun DebugBgmAlbumHero(
         DebugBgmAlbumPrimaryActions(
             accent = accent,
             repeatEnabled = repeatEnabled,
+            offlineSaved = offlineSaved,
             isPlaying = isPlaying,
             onRepeatClick = onRepeatClick,
+            onDownloadClick = onDownloadClick,
             onPlayPauseClick = onPlayPauseClick
         )
     }
@@ -490,8 +490,10 @@ private fun DebugBgmAlbumArtwork(accent: Color) {
 private fun DebugBgmAlbumPrimaryActions(
     accent: Color,
     repeatEnabled: Boolean,
+    offlineSaved: Boolean,
     isPlaying: Boolean,
     onRepeatClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onPlayPauseClick: () -> Unit
 ) {
     Row(
@@ -514,7 +516,9 @@ private fun DebugBgmAlbumPrimaryActions(
         DebugBgmRoundAction(
             icon = appLucideDownloadIcon(),
             contentDescription = stringResource(R.string.debug_component_lab_action_download),
-            accent = accent
+            accent = accent,
+            selected = offlineSaved,
+            onClick = onDownloadClick
         )
     }
 }
@@ -575,267 +579,6 @@ private fun DebugBgmPlayAction(
 }
 
 @Composable
-private fun DebugBgmTrackList(
-    tracks: List<DebugBgmTrack>,
-    currentTrackIndex: Int,
-    isPlaying: Boolean,
-    accent: Color,
-    onTrackClick: (Int) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        tracks.forEachIndexed { index, track ->
-            DebugBgmTrackRow(
-                index = index,
-                track = track,
-                active = index == currentTrackIndex,
-                isPlaying = isPlaying,
-                accent = accent,
-                onClick = { onTrackClick(index) }
-            )
-            if (index < tracks.lastIndex) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 30.dp, end = 32.dp)
-                        .height(1.dp)
-                        .background(MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.16f))
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DebugBgmTrackRow(
-    index: Int,
-    track: DebugBgmTrack,
-    active: Boolean,
-    isPlaying: Boolean,
-    accent: Color,
-    onClick: () -> Unit
-) {
-    var moreExpanded by remember(track.title) { mutableStateOf(false) }
-    var moreAnchorBounds by remember(track.title) { mutableStateOf<IntRect?>(null) }
-    val rowShape = RoundedCornerShape(14.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .semantics { contentDescription = track.title }
-            .clip(rowShape)
-            .background(
-                color = if (active) accent.copy(alpha = 0.08f) else Color.Transparent,
-                shape = rowShape
-            )
-            .clickable(onClick = onClick)
-            .padding(start = 4.dp, end = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        DebugBgmTrackIndex(
-            index = index,
-            active = active,
-            isPlaying = isPlaying,
-            accent = accent
-        )
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = track.title,
-                color = MiuixTheme.colorScheme.onBackground,
-                fontSize = AppTypographyTokens.Body.fontSize,
-                lineHeight = AppTypographyTokens.Body.lineHeight,
-                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Box(
-            modifier = Modifier.capturePopupAnchor { moreAnchorBounds = it },
-            contentAlignment = Alignment.Center
-        ) {
-            DebugBgmInlineIcon(
-                icon = appLucideMoreIcon(),
-                contentDescription = stringResource(R.string.debug_component_lab_action_more),
-                tint = MiuixTheme.colorScheme.onBackgroundVariant,
-                size = 40.dp,
-                iconSize = 22.dp,
-                onClick = { moreExpanded = true }
-            )
-            DebugBgmTrackMorePopup(
-                show = moreExpanded,
-                anchorBounds = moreAnchorBounds,
-                onDismissRequest = { moreExpanded = false },
-                onPlayClick = {
-                    moreExpanded = false
-                    onClick()
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun DebugBgmTrackMorePopup(
-    show: Boolean,
-    anchorBounds: IntRect?,
-    onDismissRequest: () -> Unit,
-    onPlayClick: () -> Unit
-) {
-    if (!show) return
-    SnapshotWindowListPopup(
-        show = true,
-        alignment = PopupPositionProvider.Align.BottomEnd,
-        anchorBounds = anchorBounds?.asTrackMenuAnchor(),
-        placement = SnapshotPopupPlacement.ButtonEnd,
-        enableWindowDim = false,
-        onDismissRequest = onDismissRequest
-    ) {
-        LiquidDropdownColumn {
-            DebugBgmTrackMenuItem(
-                text = stringResource(R.string.debug_component_lab_action_play),
-                index = 0,
-                optionSize = DebugBgmTrackMenuItemCount,
-                onClick = onPlayClick
-            )
-            DebugBgmTrackMenuItem(
-                text = stringResource(R.string.debug_component_lab_action_favorite),
-                index = 1,
-                optionSize = DebugBgmTrackMenuItemCount,
-                onClick = onDismissRequest
-            )
-            DebugBgmTrackMenuItem(
-                text = stringResource(R.string.debug_component_lab_action_share),
-                index = 2,
-                optionSize = DebugBgmTrackMenuItemCount,
-                onClick = onDismissRequest
-            )
-        }
-    }
-}
-
-@Composable
-private fun DebugBgmTrackMenuItem(
-    text: String,
-    index: Int,
-    optionSize: Int,
-    onClick: () -> Unit
-) {
-    LiquidDropdownItem(
-        text = text,
-        selected = false,
-        onClick = onClick,
-        index = index,
-        optionSize = optionSize
-    )
-}
-
-private fun IntRect.asTrackMenuAnchor(): IntRect {
-    return IntRect(
-        left = left,
-        top = top,
-        right = right,
-        bottom = Int.MAX_VALUE / 4
-    )
-}
-
-@Composable
-private fun DebugBgmTrackIndex(
-    index: Int,
-    active: Boolean,
-    isPlaying: Boolean,
-    accent: Color
-) {
-    Box(
-        modifier = Modifier.width(22.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        if (active) {
-            DebugBgmPlayingBars(
-                accent = accent,
-                animated = isPlaying
-            )
-        } else {
-            Text(
-                text = (index + 1).toString(),
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                fontSize = AppTypographyTokens.Body.fontSize,
-                lineHeight = AppTypographyTokens.Body.lineHeight,
-                fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
-        }
-    }
-}
-
-@Composable
-private fun DebugBgmPlayingBars(
-    accent: Color,
-    animated: Boolean
-) {
-    val transition = rememberInfiniteTransition(label = "debug_bgm_playing_bars")
-    val firstHeight by transition.animateFloat(
-        initialValue = 0.42f,
-        targetValue = 0.88f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 520),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "debug_bgm_playing_bar_first"
-    )
-    val secondHeight by transition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 0.48f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 640),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "debug_bgm_playing_bar_second"
-    )
-    val thirdHeight by transition.animateFloat(
-        initialValue = 0.56f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 580),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "debug_bgm_playing_bar_third"
-    )
-
-    Row(
-        modifier = Modifier
-            .width(18.dp)
-            .height(18.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        DebugBgmPlayingBar(accent = accent, heightFraction = if (animated) firstHeight else 0.56f)
-        DebugBgmPlayingBar(accent = accent, heightFraction = if (animated) secondHeight else 0.56f)
-        DebugBgmPlayingBar(accent = accent, heightFraction = if (animated) thirdHeight else 0.56f)
-    }
-}
-
-@Composable
-private fun DebugBgmPlayingBar(
-    accent: Color,
-    heightFraction: Float
-) {
-    Box(
-        modifier = Modifier
-            .width(3.dp)
-            .fillMaxHeight(heightFraction.coerceIn(0.32f, 1f))
-            .clip(ContinuousCapsule)
-            .background(accent)
-    )
-}
-
-@Composable
 private fun DebugBgmAlbumFooter() {
     Column(
         modifier = Modifier
@@ -858,64 +601,6 @@ private fun DebugBgmAlbumFooter() {
     }
 }
 
-@Composable
-private fun DebugBgmSearchPanel(accent: Color) {
-    DebugBgmGlassCapsule(
-        accent = accent,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        horizontalPadding = 18.dp,
-        verticalPadding = 0.dp,
-        onClick = {}
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = appLucideSearchIcon(),
-                contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(22.dp)
-            )
-            Text(
-                text = stringResource(R.string.debug_component_lab_search_placeholder),
-                color = MiuixTheme.colorScheme.onBackgroundVariant,
-                fontSize = AppTypographyTokens.Body.fontSize,
-                lineHeight = AppTypographyTokens.Body.lineHeight,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun rememberDebugBgmTracks(): List<DebugBgmTrack> {
-    val track1Title = stringResource(R.string.debug_component_lab_track_1_title)
-    val track2Title = stringResource(R.string.debug_component_lab_track_2_title)
-    val track3Title = stringResource(R.string.debug_component_lab_track_3_title)
-    val track4Title = stringResource(R.string.debug_component_lab_track_4_title)
-    return remember(
-        track1Title,
-        track2Title,
-        track3Title,
-        track4Title
-    ) {
-        listOf(
-            DebugBgmTrack(track1Title),
-            DebugBgmTrack(track2Title),
-            DebugBgmTrack(track3Title),
-            DebugBgmTrack(track4Title)
-        )
-    }
-}
-
-private data class DebugBgmTrack(
-    val title: String
-)
-
-private const val DebugBgmTrackMenuItemCount = 3
+private val DebugBgmSearchPanelHorizontalPadding = 34.dp
+private val DebugBgmSearchPanelCompactBottomPadding = 108.dp
+private val DebugBgmSearchPanelExpandedBottomPadding = 168.dp
