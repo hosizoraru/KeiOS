@@ -82,6 +82,7 @@
     <string name="debug_component_lab_nav_radio">Radio</string>
     <string name="debug_component_lab_nav_library">Library</string>
     <string name="debug_component_lab_nav_search">Search</string>
+    <string name="debug_component_lab_search_placeholder">Search favorite BGM</string>
     <string name="debug_component_lab_nav_now">Now</string>
     <string name="debug_component_lab_nav_queue">Queue</string>
     <string name="debug_component_lab_nav_lyrics">Lyrics</string>

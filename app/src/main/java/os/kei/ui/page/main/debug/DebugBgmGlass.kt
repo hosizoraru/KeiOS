@@ -29,12 +29,14 @@ internal fun DebugBgmGlassCapsule(
     shape: Shape = ContinuousCapsule,
     horizontalPadding: Dp,
     verticalPadding: Dp,
+    onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     DebugBgmGlassSurface(
         modifier = modifier,
         accent = accent,
-        shape = shape
+        shape = shape,
+        onClick = onClick
     ) {
         Box(
             modifier = Modifier.padding(horizontal = horizontalPadding, vertical = verticalPadding),
@@ -58,11 +60,11 @@ internal fun DebugBgmGlassIcon(
 ) {
     DebugBgmGlassSurface(
         modifier = modifier
-            .size(size)
-            .clickable(onClick = onClick),
+            .size(size),
         accent = accent,
         shape = CircleShape,
-        selected = selected
+        selected = selected,
+        onClick = onClick
     ) {
         Icon(
             imageVector = icon,
@@ -106,6 +108,7 @@ internal fun DebugBgmGlassSurface(
     accent: Color,
     shape: Shape,
     selected: Boolean = false,
+    onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
@@ -130,6 +133,13 @@ internal fun DebugBgmGlassSurface(
                 width = 1.dp,
                 color = if (selected) accent.copy(alpha = 0.46f) else Color.White.copy(alpha = 0.24f),
                 shape = shape
+            )
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
             ),
         contentAlignment = Alignment.Center,
         content = content

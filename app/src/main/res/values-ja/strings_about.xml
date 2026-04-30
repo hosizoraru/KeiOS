@@ -81,6 +81,7 @@
     <string name="debug_component_lab_nav_radio">ラジオ</string>
     <string name="debug_component_lab_nav_library">ライブラリ</string>
     <string name="debug_component_lab_nav_search">検索</string>
+    <string name="debug_component_lab_search_placeholder">お気に入り BGM を検索</string>
     <string name="debug_component_lab_nav_now">再生中</string>
     <string name="debug_component_lab_nav_queue">キュー</string>
     <string name="debug_component_lab_nav_lyrics">歌詞</string>

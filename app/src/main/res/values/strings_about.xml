@@ -82,6 +82,7 @@
     <string name="debug_component_lab_nav_radio">广播</string>
     <string name="debug_component_lab_nav_library">资料库</string>
     <string name="debug_component_lab_nav_search">搜索</string>
+    <string name="debug_component_lab_search_placeholder">搜索收藏 BGM</string>
     <string name="debug_component_lab_nav_now">播放</string>
     <string name="debug_component_lab_nav_queue">队列</string>
     <string name="debug_component_lab_nav_lyrics">歌词</string>

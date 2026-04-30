@@ -48,6 +48,7 @@ import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideHomeIcon
 import os.kei.ui.page.main.os.appLucideLibraryIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
+import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRadioIcon
 import os.kei.ui.page.main.os.appLucideSearchIcon
@@ -63,8 +64,14 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 internal fun DebugBgmFloatingBottomChrome(
     accent: Color,
     scrollConnection: FloatingTabBarScrollConnection,
+    currentTrackTitle: String,
+    isPlaying: Boolean,
+    onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit,
+    searchVisible: Boolean,
     selectedDockKey: String,
     onSelectedDockKeyChange: (String) -> Unit,
+    onSearchClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tabs = rememberDebugBgmDockTabs()
@@ -75,6 +82,10 @@ internal fun DebugBgmFloatingBottomChrome(
         inlineAccessory = { accessoryModifier, animatedVisibilityScope ->
             DebugBgmMiniPlayer(
                 accent = accent,
+                currentTrackTitle = currentTrackTitle,
+                isPlaying = isPlaying,
+                onPlayPauseClick = onPlayPauseClick,
+                onNextClick = onNextClick,
                 compact = true,
                 animatedVisibilityScope = animatedVisibilityScope,
                 modifier = accessoryModifier.fillMaxSize()
@@ -83,6 +94,10 @@ internal fun DebugBgmFloatingBottomChrome(
         expandedAccessory = { accessoryModifier, animatedVisibilityScope ->
             DebugBgmMiniPlayer(
                 accent = accent,
+                currentTrackTitle = currentTrackTitle,
+                isPlaying = isPlaying,
+                onPlayPauseClick = onPlayPauseClick,
+                onNextClick = onNextClick,
                 compact = false,
                 animatedVisibilityScope = animatedVisibilityScope,
                 modifier = accessoryModifier
@@ -140,12 +155,12 @@ internal fun DebugBgmFloatingBottomChrome(
                 DebugBgmDockTabIcon(
                     icon = appLucideSearchIcon(),
                     label = stringResource(R.string.debug_component_lab_nav_search),
-                    selected = selectedDockKey == DebugBgmDockKeys.Search,
+                    selected = searchVisible || selectedDockKey == DebugBgmDockKeys.Search,
                     accent = accent,
                     iconSize = 25.dp
                 )
             },
-            onClick = { onSelectedDockKeyChange(DebugBgmDockKeys.Search) }
+            onClick = onSearchClick
         )
     }
 }
@@ -186,6 +201,10 @@ private fun DebugBgmDockTabTitle(
 @Composable
 private fun SharedTransitionScope.DebugBgmMiniPlayer(
     accent: Color,
+    currentTrackTitle: String,
+    isPlaying: Boolean,
+    onPlayPauseClick: () -> Unit,
+    onNextClick: () -> Unit,
     compact: Boolean,
     animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier
@@ -251,7 +270,7 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             Text(
-                text = stringResource(R.string.debug_component_lab_mini_player_title),
+                text = currentTrackTitle,
                 color = MiuixTheme.colorScheme.onBackground,
                 fontSize = titleFontSize,
                 lineHeight = titleLineHeight,
@@ -291,12 +310,15 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
         Box(
             modifier = Modifier
                 .size(playButtonSize)
-                .clip(CircleShape),
+                .clip(CircleShape)
+                .clickable(onClick = onPlayPauseClick),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = appLucidePlayIcon(),
-                contentDescription = stringResource(R.string.debug_component_lab_action_play),
+                imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
+                contentDescription = stringResource(
+                    if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
+                ),
                 tint = MiuixTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .sharedElement(
@@ -313,7 +335,8 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 contentDescription = stringResource(R.string.debug_component_lab_action_next),
                 tint = MiuixTheme.colorScheme.onBackground,
                 size = 30.dp,
-                iconSize = 21.dp
+                iconSize = 21.dp,
+                onClick = onNextClick
             )
         }
     }

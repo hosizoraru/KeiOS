@@ -1,5 +1,15 @@
 package os.kei.ui.page.main.debug
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,11 +35,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -63,8 +68,10 @@ import os.kei.ui.page.main.os.appLucideChevronLeftIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
+import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
+import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.os.appLucideSquareArrowUpIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import top.yukonga.miuix.kmp.basic.Icon
@@ -105,6 +112,17 @@ internal fun DebugBgmLiquidMusicPreview(
     val isDark = isSystemInDarkTheme()
     val listState = rememberLazyListState()
     val bottomBarScrollConnection = rememberFloatingTabBarScrollConnection(scrollThreshold = 56.dp)
+    val tracks = rememberDebugBgmTracks()
+    var currentTrackIndex by remember { mutableStateOf(2) }
+    var isPlaying by remember { mutableStateOf(true) }
+    var repeatEnabled by remember { mutableStateOf(false) }
+    var searchVisible by remember { mutableStateOf(false) }
+    val currentTrack = tracks.getOrElse(currentTrackIndex) { tracks.first() }
+    val togglePlayPause = { isPlaying = !isPlaying }
+    val playNext = {
+        currentTrackIndex = (currentTrackIndex + 1) % tracks.size
+        isPlaying = true
+    }
     val albumScrollOffset by remember {
         derivedStateOf {
             val indexOffset = listState.firstVisibleItemIndex * 720f
@@ -150,6 +168,12 @@ internal fun DebugBgmLiquidMusicPreview(
     ) {
         DebugBgmAlbumContent(
             accent = accent,
+            tracks = tracks,
+            currentTrackIndex = currentTrackIndex,
+            isPlaying = isPlaying,
+            repeatEnabled = repeatEnabled,
+            onRepeatClick = { repeatEnabled = !repeatEnabled },
+            onPlayPauseClick = togglePlayPause,
             listState = listState,
             collapseProgress = collapseProgress,
             bottomBarScrollConnection = bottomBarScrollConnection,
@@ -179,11 +203,34 @@ internal fun DebugBgmLiquidMusicPreview(
                     )
                 )
         )
+        AnimatedVisibility(
+            visible = searchVisible,
+            enter = fadeIn() + slideInVertically { it / 2 },
+            exit = fadeOut() + slideOutVertically { it / 2 },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = 36.dp, end = 36.dp, bottom = 178.dp)
+        ) {
+            DebugBgmSearchPanel(accent = accent)
+        }
         DebugBgmFloatingBottomChrome(
             accent = accent,
             scrollConnection = bottomBarScrollConnection,
+            currentTrackTitle = currentTrack.title,
+            isPlaying = isPlaying,
+            onPlayPauseClick = togglePlayPause,
+            onNextClick = playNext,
+            searchVisible = searchVisible,
             selectedDockKey = selectedDockKey,
-            onSelectedDockKeyChange = { selectedDockKey = it },
+            onSelectedDockKeyChange = {
+                selectedDockKey = it
+                searchVisible = false
+            },
+            onSearchClick = {
+                searchVisible = !searchVisible
+                selectedDockKey = if (searchVisible) DebugBgmDockKeys.Search else DebugBgmDockKeys.Library
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .then(bottomBarModifier)
@@ -194,13 +241,18 @@ internal fun DebugBgmLiquidMusicPreview(
 @Composable
 private fun DebugBgmAlbumContent(
     accent: Color,
+    tracks: List<DebugBgmTrack>,
+    currentTrackIndex: Int,
+    isPlaying: Boolean,
+    repeatEnabled: Boolean,
+    onRepeatClick: () -> Unit,
+    onPlayPauseClick: () -> Unit,
     listState: LazyListState,
     collapseProgress: Float,
     bottomBarScrollConnection: NestedScrollConnection,
     topPadding: Dp,
     bottomPadding: Dp
 ) {
-    val tracks = rememberDebugBgmTracks()
     LazyColumn(
         state = listState,
         modifier = Modifier
@@ -212,12 +264,18 @@ private fun DebugBgmAlbumContent(
         item {
             DebugBgmAlbumHero(
                 accent = accent,
-                collapseProgress = collapseProgress
+                collapseProgress = collapseProgress,
+                repeatEnabled = repeatEnabled,
+                isPlaying = isPlaying,
+                onRepeatClick = onRepeatClick,
+                onPlayPauseClick = onPlayPauseClick
             )
         }
         item {
             DebugBgmTrackList(
                 tracks = tracks,
+                currentTrackIndex = currentTrackIndex,
+                isPlaying = isPlaying,
                 accent = accent
             )
         }
@@ -237,7 +295,7 @@ private fun DebugBgmAlbumTopBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(54.dp)
+            .height(60.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -248,8 +306,8 @@ private fun DebugBgmAlbumTopBar(
                 icon = appLucideChevronLeftIcon(),
                 contentDescription = stringResource(R.string.common_close),
                 accent = accent,
-                size = 48.dp,
-                iconSize = 28.dp,
+                size = 56.dp,
+                iconSize = 30.dp,
                 onClick = onClose
             )
             DebugBgmTopActionCapsule(accent = accent)
@@ -280,26 +338,30 @@ private fun DebugBgmAlbumTopBar(
 private fun DebugBgmTopActionCapsule(accent: Color) {
     DebugBgmGlassCapsule(
         accent = accent,
-        horizontalPadding = 4.dp,
-        verticalPadding = 4.dp
+        modifier = Modifier
+            .width(136.dp)
+            .height(56.dp),
+        horizontalPadding = 8.dp,
+        verticalPadding = 6.dp
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             DebugBgmInlineIcon(
                 icon = appLucideSquareArrowUpIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_share),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 40.dp,
-                iconSize = 24.dp
+                size = 48.dp,
+                iconSize = 26.dp
             )
             DebugBgmInlineIcon(
                 icon = appLucideMoreIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_more),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 40.dp,
-                iconSize = 25.dp
+                size = 48.dp,
+                iconSize = 27.dp
             )
         }
     }
@@ -308,7 +370,11 @@ private fun DebugBgmTopActionCapsule(accent: Color) {
 @Composable
 private fun DebugBgmAlbumHero(
     accent: Color,
-    collapseProgress: Float
+    collapseProgress: Float,
+    repeatEnabled: Boolean,
+    isPlaying: Boolean,
+    onRepeatClick: () -> Unit,
+    onPlayPauseClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -353,7 +419,13 @@ private fun DebugBgmAlbumHero(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        DebugBgmAlbumPrimaryActions(accent = accent)
+        DebugBgmAlbumPrimaryActions(
+            accent = accent,
+            repeatEnabled = repeatEnabled,
+            isPlaying = isPlaying,
+            onRepeatClick = onRepeatClick,
+            onPlayPauseClick = onPlayPauseClick
+        )
     }
 }
 
@@ -402,8 +474,13 @@ private fun DebugBgmAlbumArtwork(accent: Color) {
 }
 
 @Composable
-private fun DebugBgmAlbumPrimaryActions(accent: Color) {
-    var repeatEnabled by remember { mutableStateOf(false) }
+private fun DebugBgmAlbumPrimaryActions(
+    accent: Color,
+    repeatEnabled: Boolean,
+    isPlaying: Boolean,
+    onRepeatClick: () -> Unit,
+    onPlayPauseClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
@@ -414,9 +491,13 @@ private fun DebugBgmAlbumPrimaryActions(accent: Color) {
             contentDescription = stringResource(R.string.debug_component_lab_action_repeat),
             accent = accent,
             selected = repeatEnabled,
-            onClick = { repeatEnabled = !repeatEnabled }
+            onClick = onRepeatClick
         )
-        DebugBgmPlayAction(accent = accent)
+        DebugBgmPlayAction(
+            accent = accent,
+            isPlaying = isPlaying,
+            onClick = onPlayPauseClick
+        )
         DebugBgmRoundAction(
             icon = appLucideDownloadIcon(),
             contentDescription = stringResource(R.string.debug_component_lab_action_download),
@@ -445,25 +526,31 @@ private fun DebugBgmRoundAction(
 }
 
 @Composable
-private fun DebugBgmPlayAction(accent: Color) {
+private fun DebugBgmPlayAction(
+    accent: Color,
+    isPlaying: Boolean,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .height(52.dp)
             .clip(ContinuousCapsule)
             .background(Color.Black)
-            .clickable(onClick = {})
+            .clickable(onClick = onClick)
             .padding(horizontal = 34.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = appLucidePlayIcon(),
+            imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
             contentDescription = null,
             tint = accent.copy(alpha = 0.96f),
             modifier = Modifier.size(24.dp)
         )
         Text(
-            text = stringResource(R.string.debug_component_lab_action_play),
+            text = stringResource(
+                if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
+            ),
             color = Color.White,
             fontSize = AppTypographyTokens.CardHeader.fontSize,
             lineHeight = AppTypographyTokens.CardHeader.lineHeight,
@@ -476,6 +563,8 @@ private fun DebugBgmPlayAction(accent: Color) {
 @Composable
 private fun DebugBgmTrackList(
     tracks: List<DebugBgmTrack>,
+    currentTrackIndex: Int,
+    isPlaying: Boolean,
     accent: Color
 ) {
     Column(
@@ -486,6 +575,8 @@ private fun DebugBgmTrackList(
             DebugBgmTrackRow(
                 index = index,
                 track = track,
+                active = index == currentTrackIndex,
+                isPlaying = isPlaying,
                 accent = accent
             )
             if (index < tracks.lastIndex) {
@@ -505,21 +596,24 @@ private fun DebugBgmTrackList(
 private fun DebugBgmTrackRow(
     index: Int,
     track: DebugBgmTrack,
+    active: Boolean,
+    isPlaying: Boolean,
     accent: Color
 ) {
-    val playing = index == 2
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
             .semantics { contentDescription = track.title }
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = {}),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         DebugBgmTrackIndex(
             index = index,
-            playing = playing,
+            active = active,
+            isPlaying = isPlaying,
             accent = accent
         )
         Column(
@@ -531,7 +625,7 @@ private fun DebugBgmTrackRow(
                 color = MiuixTheme.colorScheme.onBackground,
                 fontSize = AppTypographyTokens.Body.fontSize,
                 lineHeight = AppTypographyTokens.Body.lineHeight,
-                fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Medium,
+                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -549,15 +643,19 @@ private fun DebugBgmTrackRow(
 @Composable
 private fun DebugBgmTrackIndex(
     index: Int,
-    playing: Boolean,
+    active: Boolean,
+    isPlaying: Boolean,
     accent: Color
 ) {
     Box(
         modifier = Modifier.width(22.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (playing) {
-            DebugBgmPlayingBars(accent = accent)
+        if (active) {
+            DebugBgmPlayingBars(
+                accent = accent,
+                animated = isPlaying
+            )
         } else {
             Text(
                 text = (index + 1).toString(),
@@ -573,7 +671,10 @@ private fun DebugBgmTrackIndex(
 }
 
 @Composable
-private fun DebugBgmPlayingBars(accent: Color) {
+private fun DebugBgmPlayingBars(
+    accent: Color,
+    animated: Boolean
+) {
     val transition = rememberInfiniteTransition(label = "debug_bgm_playing_bars")
     val firstHeight by transition.animateFloat(
         initialValue = 0.42f,
@@ -610,9 +711,9 @@ private fun DebugBgmPlayingBars(accent: Color) {
         horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.Bottom
     ) {
-        DebugBgmPlayingBar(accent = accent, heightFraction = firstHeight)
-        DebugBgmPlayingBar(accent = accent, heightFraction = secondHeight)
-        DebugBgmPlayingBar(accent = accent, heightFraction = thirdHeight)
+        DebugBgmPlayingBar(accent = accent, heightFraction = if (animated) firstHeight else 0.56f)
+        DebugBgmPlayingBar(accent = accent, heightFraction = if (animated) secondHeight else 0.56f)
+        DebugBgmPlayingBar(accent = accent, heightFraction = if (animated) thirdHeight else 0.56f)
     }
 }
 
@@ -633,7 +734,9 @@ private fun DebugBgmPlayingBar(
 @Composable
 private fun DebugBgmAlbumFooter() {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 30.dp, end = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
@@ -648,6 +751,41 @@ private fun DebugBgmAlbumFooter() {
             fontSize = AppTypographyTokens.Body.fontSize,
             lineHeight = AppTypographyTokens.Body.lineHeight
         )
+    }
+}
+
+@Composable
+private fun DebugBgmSearchPanel(accent: Color) {
+    DebugBgmGlassCapsule(
+        accent = accent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp),
+        horizontalPadding = 18.dp,
+        verticalPadding = 0.dp,
+        onClick = {}
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = appLucideSearchIcon(),
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.size(22.dp)
+            )
+            Text(
+                text = stringResource(R.string.debug_component_lab_search_placeholder),
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Body.fontSize,
+                lineHeight = AppTypographyTokens.Body.lineHeight,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
