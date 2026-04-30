@@ -69,7 +69,8 @@ fun AboutLicenseCardSection(
                 BuildConfig.NAVIGATION_COMMON_VERSION,
                 BuildConfig.LIFECYCLE_VIEWMODEL_COMPOSE_VERSION,
                 BuildConfig.DOCUMENTFILE_VERSION,
-                BuildConfig.METRICS_PERFORMANCE_VERSION
+                BuildConfig.METRICS_PERFORMANCE_VERSION,
+                BuildConfig.CONSTRAINT_LAYOUT_COMPOSE_VERSION
             ),
             sourceUrl = stringResource(R.string.about_license_url_androidx_stack),
             icon = appLucideAppWindowIcon()
@@ -111,6 +112,15 @@ fun AboutLicenseCardSection(
                 BuildConfig.LIQUID_GLASS_VERSION
             ),
             sourceUrl = stringResource(R.string.about_license_url_android_liquid_glass_view),
+            icon = appLucideAppWindowIcon()
+        ),
+        AboutLicenseEntry(
+            titleRes = R.string.about_license_row_floating_tab_bar,
+            value = stringResource(
+                R.string.about_license_value_floating_tab_bar,
+                BuildConfig.FLOATING_TAB_BAR_SOURCE_VERSION
+            ),
+            sourceUrl = stringResource(R.string.about_license_url_floating_tab_bar),
             icon = appLucideAppWindowIcon()
         ),
         AboutLicenseEntry(

@@ -134,13 +134,14 @@ val coreKtxVersion = "1.18.0"
 val activityComposeVersion = "1.13.0"
 val materialVersion = "1.13.0"
 val composeVersion = "1.10.6"
+val constraintLayoutComposeVersion = "1.1.1"
 val navigation3Version = "1.1.0"
 val navigationCommonVersion = "2.9.7"
 val backdropVersion = "1.0.6"
 val capsuleVersion = "2.1.3"
 val shapesVersion = "1.2.0"
 val liquidGlassVersion = "1.0.3"
-val floatingTabBarVersion = "1.0.1"
+val floatingTabBarSourceVersion = "1.0.1"
 val shizukuVersion = "13.1.5"
 val mmkvVersion = "2.4.0"
 val mcpKotlinSdkVersion = "0.11.1"
@@ -201,12 +202,14 @@ android {
         buildConfigField("String", "MATERIAL_VERSION", "\"$materialVersion\"")
         buildConfigField("String", "MIUIX_VERSION", "\"$miuixVersion\"")
         buildConfigField("String", "COMPOSE_VERSION", "\"$composeVersion\"")
+        buildConfigField("String", "CONSTRAINT_LAYOUT_COMPOSE_VERSION", "\"$constraintLayoutComposeVersion\"")
         buildConfigField("String", "NAVIGATION3_VERSION", "\"$navigation3Version\"")
         buildConfigField("String", "NAVIGATION_COMMON_VERSION", "\"$navigationCommonVersion\"")
         buildConfigField("String", "BACKDROP_VERSION", "\"$backdropVersion\"")
         buildConfigField("String", "CAPSULE_VERSION", "\"$capsuleVersion\"")
         buildConfigField("String", "SHAPES_VERSION", "\"$shapesVersion\"")
         buildConfigField("String", "LIQUID_GLASS_VERSION", "\"$liquidGlassVersion\"")
+        buildConfigField("String", "FLOATING_TAB_BAR_SOURCE_VERSION", "\"$floatingTabBarSourceVersion\"")
         buildConfigField("String", "MMKV_VERSION", "\"$mmkvVersion\"")
         buildConfigField("String", "MCP_KOTLIN_SDK_VERSION", "\"$mcpKotlinSdkVersion\"")
         buildConfigField("String", "KTOR_VERSION", "\"$ktorVersion\"")
@@ -341,6 +344,7 @@ dependencies {
     implementation("androidx.compose.ui:ui:$composeVersion")
     implementation("androidx.compose.foundation:foundation:$composeVersion")
     implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
+    implementation("androidx.constraintlayout:constraintlayout-compose:$constraintLayoutComposeVersion")
     implementation("androidx.navigation3:navigation3-runtime:$navigation3Version")
     implementation("androidx.navigation:navigation-common-ktx:$navigationCommonVersion")
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
@@ -355,7 +359,6 @@ dependencies {
     implementation("io.github.kyant0:capsule:$capsuleVersion")
     implementation("io.github.kyant0:shapes:$shapesVersion")
     implementation("com.qmdeve.liquidglass:core:$liquidGlassVersion")
-    implementation("io.github.elyesmansour:floatingTabBar:$floatingTabBarVersion")
 
     implementation("dev.rikka.shizuku:api:$shizukuVersion")
     implementation("dev.rikka.shizuku:provider:$shizukuVersion")

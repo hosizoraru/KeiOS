@@ -1,10 +1,10 @@
 package os.kei.ui.page.main.debug
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,10 +24,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
+import os.kei.ui.component.floatingtabbar.FloatingTabBar
+import os.kei.ui.component.floatingtabbar.FloatingTabBarDefaults
 import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideHomeIcon
 import os.kei.ui.page.main.os.appLucideLibraryIcon
@@ -44,149 +47,123 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun DebugBgmFloatingBottomChrome(
     accent: Color,
-    collapseProgress: Float,
+    isInline: Boolean,
     selectedDockKey: String,
     onSelectedDockKeyChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Mirrors floating-tab-bar's layout language while Compose SharedTransition ABI compatibility catches up.
     val tabs = rememberDebugBgmDockTabs()
-    val isInline = collapseProgress >= 0.58f
-    Column(
+    FloatingTabBar(
+        isInline = isInline,
+        selectedTabKey = selectedDockKey,
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (!isInline) {
-            DebugBgmGlassSurface(
-                modifier = Modifier
+        inlineAccessory = { accessoryModifier, _ ->
+            DebugBgmMiniPlayer(
+                accent = accent,
+                compact = true,
+                modifier = accessoryModifier.fillMaxSize()
+            )
+        },
+        expandedAccessory = { accessoryModifier, _ ->
+            DebugBgmMiniPlayer(
+                accent = accent,
+                compact = false,
+                modifier = accessoryModifier
                     .fillMaxWidth()
-                    .height(70.dp),
-                accent = accent,
-                shape = ContinuousCapsule
-            ) {
-                DebugBgmMiniPlayer(
-                    accent = accent,
-                    compact = false,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            DebugBgmGlassSurface(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(if (isInline) 62.dp else 78.dp),
-                accent = accent,
-                shape = ContinuousCapsule
-            ) {
-                if (isInline) {
-                    val selectedTab = tabs.firstOrNull { it.key == selectedDockKey } ?: tabs.last()
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        DebugBgmDockTabButton(
-                            tab = selectedTab,
-                            selected = true,
-                            showLabel = true,
-                            accent = accent,
-                            onClick = { onSelectedDockKeyChange(selectedTab.key) },
-                            modifier = Modifier.weight(0.72f)
-                        )
-                        DebugBgmMiniPlayer(
-                            accent = accent,
-                            compact = true,
-                            modifier = Modifier.weight(1.28f)
-                        )
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        tabs.forEach { tab ->
-                            DebugBgmDockTabButton(
-                                tab = tab,
-                                selected = selectedDockKey == tab.key,
-                                showLabel = true,
-                                accent = accent,
-                                onClick = { onSelectedDockKeyChange(tab.key) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                }
-            }
-            DebugBgmGlassSurface(
-                modifier = Modifier.size(if (isInline) 62.dp else 78.dp),
-                accent = accent,
-                shape = CircleShape,
-                selected = selectedDockKey == DebugBgmDockKeys.Search
-            ) {
-                DebugBgmInlineIcon(
-                    icon = appLucideSearchIcon(),
-                    contentDescription = stringResource(R.string.debug_component_lab_nav_search),
-                    tint = DebugBgmDockTint(
-                        selected = selectedDockKey == DebugBgmDockKeys.Search,
+                    .height(64.dp)
+            )
+        },
+        colors = FloatingTabBarDefaults.colors(
+            backgroundColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
+            accessoryBackgroundColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f)
+        ),
+        shapes = FloatingTabBarDefaults.shapes(
+            tabBarShape = ContinuousCapsule,
+            tabShape = ContinuousCapsule,
+            standaloneTabShape = CircleShape,
+            accessoryShape = ContinuousCapsule
+        ),
+        sizes = FloatingTabBarDefaults.sizes(
+            tabBarContentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+            tabInlineContentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
+            tabExpandedContentPadding = PaddingValues(horizontal = 16.dp, vertical = 7.dp),
+            componentSpacing = 8.dp,
+            tabSpacing = 0.dp
+        ),
+        elevations = FloatingTabBarDefaults.elevations(
+            inlineElevation = 0.dp,
+            expandedElevation = 0.dp
+        ),
+        contentKey = tabs.size
+    ) {
+        tabs.forEach { tab ->
+            tab(
+                key = tab.key,
+                title = {
+                    DebugBgmDockTabTitle(
+                        label = tab.label,
+                        selected = selectedDockKey == tab.key,
                         accent = accent
-                    ),
-                    size = if (isInline) 50.dp else 62.dp,
-                    iconSize = 25.dp,
-                    onClick = { onSelectedDockKeyChange(DebugBgmDockKeys.Search) }
-                )
-            }
+                    )
+                },
+                icon = {
+                    DebugBgmDockTabIcon(
+                        icon = tab.icon,
+                        label = tab.label,
+                        selected = selectedDockKey == tab.key,
+                        accent = accent
+                    )
+                },
+                onClick = { onSelectedDockKeyChange(tab.key) }
+            )
         }
+        standaloneTab(
+            key = DebugBgmDockKeys.Search,
+            icon = {
+                DebugBgmDockTabIcon(
+                    icon = appLucideSearchIcon(),
+                    label = stringResource(R.string.debug_component_lab_nav_search),
+                    selected = selectedDockKey == DebugBgmDockKeys.Search,
+                    accent = accent,
+                    iconSize = 25.dp
+                )
+            },
+            onClick = { onSelectedDockKeyChange(DebugBgmDockKeys.Search) }
+        )
     }
 }
 
 @Composable
-private fun DebugBgmDockTabButton(
-    tab: DebugBgmDockTab,
+private fun DebugBgmDockTabIcon(
+    icon: ImageVector,
+    label: String,
     selected: Boolean,
-    showLabel: Boolean,
     accent: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    iconSize: Dp = 22.dp
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(ContinuousCapsule)
-            .background(if (selected) accent.copy(alpha = 0.12f) else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 5.dp, vertical = 5.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = tab.icon,
-            contentDescription = tab.label,
-            tint = DebugBgmDockTint(selected = selected, accent = accent),
-            modifier = Modifier.size(if (showLabel) 21.dp else 24.dp)
-        )
-        if (showLabel) {
-            Text(
-                text = tab.label,
-                color = DebugBgmDockTint(selected = selected, accent = accent),
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
+    Icon(
+        imageVector = icon,
+        contentDescription = label,
+        tint = DebugBgmDockTint(selected = selected, accent = accent),
+        modifier = Modifier.size(iconSize)
+    )
+}
+
+@Composable
+private fun DebugBgmDockTabTitle(
+    label: String,
+    selected: Boolean,
+    accent: Color
+) {
+    Text(
+        text = label,
+        color = DebugBgmDockTint(selected = selected, accent = accent),
+        fontSize = 10.sp,
+        lineHeight = 12.sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
 }
 
 @Composable
@@ -197,7 +174,6 @@ private fun DebugBgmMiniPlayer(
 ) {
     Row(
         modifier = modifier
-            .height(if (compact) 54.dp else 62.dp)
             .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 6.dp else 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically

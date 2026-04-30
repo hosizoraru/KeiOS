@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
+import os.kei.ui.component.floatingtabbar.rememberFloatingTabBarScrollConnection
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
@@ -91,6 +94,7 @@ internal fun DebugBgmLiquidMusicPreview(
 ) {
     val isDark = isSystemInDarkTheme()
     val listState = rememberLazyListState()
+    val bottomBarScrollConnection = rememberFloatingTabBarScrollConnection(scrollThreshold = 44.dp)
     val collapseProgress by remember {
         derivedStateOf {
             val indexOffset = listState.firstVisibleItemIndex * 240f
@@ -128,6 +132,7 @@ internal fun DebugBgmLiquidMusicPreview(
             accent = accent,
             listState = listState,
             collapseProgress = collapseProgress,
+            bottomBarScrollConnection = bottomBarScrollConnection,
             topPadding = contentTopPadding,
             bottomPadding = contentBottomPadding
         )
@@ -156,7 +161,7 @@ internal fun DebugBgmLiquidMusicPreview(
         )
         DebugBgmFloatingBottomChrome(
             accent = accent,
-            collapseProgress = collapseProgress,
+            isInline = bottomBarScrollConnection.isInline,
             selectedDockKey = selectedDockKey,
             onSelectedDockKeyChange = { selectedDockKey = it },
             modifier = Modifier
@@ -171,13 +176,16 @@ private fun DebugBgmAlbumContent(
     accent: Color,
     listState: LazyListState,
     collapseProgress: Float,
+    bottomBarScrollConnection: NestedScrollConnection,
     topPadding: Dp,
     bottomPadding: Dp
 ) {
     val tracks = rememberDebugBgmTracks()
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(bottomBarScrollConnection),
         contentPadding = PaddingValues(start = 16.dp, top = topPadding, end = 16.dp, bottom = bottomPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
