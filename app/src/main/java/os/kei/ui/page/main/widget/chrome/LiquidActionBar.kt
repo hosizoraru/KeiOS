@@ -237,6 +237,7 @@ fun LiquidActionBar(
             visibilityThreshold = 0.001f,
             initialScale = 1f,
             pressedScale = pressedScale,
+            gestureKey = items.size to isLtr,
             canDrag = { true },
             onDragStarted = {
                 gestureActive = true
@@ -323,6 +324,7 @@ fun LiquidActionBar(
     val interactiveHighlight = if (interactiveHighlightEnabled) {
         remember(
             animationScope,
+            dampedDragAnimation,
             tabWidthPx,
             isInLightTheme,
             layeredStyleEnabled,
