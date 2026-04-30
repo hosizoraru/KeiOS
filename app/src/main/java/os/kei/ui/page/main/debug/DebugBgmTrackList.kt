@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -419,20 +420,27 @@ internal fun DebugBgmSearchPanel(
         focusRequester.requestFocus()
     }
 
-    GlassSearchField(
-        value = query,
-        onValueChange = onQueryChange,
-        label = stringResource(R.string.debug_component_lab_search_placeholder),
-        backdrop = null,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp),
-        textColor = MiuixTheme.colorScheme.onBackground,
-        variant = GlassVariant.SheetInput,
-        horizontalPadding = 18.dp,
-        verticalPadding = 0.dp,
-        focusRequester = focusRequester
-    )
+            .height(54.dp)
+            .clip(ContinuousCapsule)
+            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.98f)),
+        contentAlignment = Alignment.Center
+    ) {
+        GlassSearchField(
+            value = query,
+            onValueChange = onQueryChange,
+            label = stringResource(R.string.debug_component_lab_search_placeholder),
+            backdrop = null,
+            modifier = Modifier.fillMaxSize(),
+            textColor = MiuixTheme.colorScheme.onBackground,
+            variant = GlassVariant.Content,
+            horizontalPadding = 18.dp,
+            verticalPadding = 0.dp,
+            focusRequester = focusRequester
+        )
+    }
 }
 
 private const val DebugBgmTrackMenuItemCount = 3
