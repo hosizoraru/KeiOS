@@ -61,10 +61,10 @@ internal object McpToolCatalog {
         get() = englishTools
 
     fun forLocale(locale: Locale): List<McpToolMeta> {
-        return if (locale.language.equals("zh", ignoreCase = true)) {
-            simplifiedChineseTools
-        } else {
-            englishTools
+        return when {
+            locale.language.equals("zh", ignoreCase = true) -> simplifiedChineseTools
+            locale.language.equals("ja", ignoreCase = true) -> japaneseTools
+            else -> englishTools
         }
     }
 
@@ -146,5 +146,42 @@ internal object McpToolCatalog {
         McpToolMeta("keios.ba.guide.media.list", "从学生图鉴详情缓存列出影画鉴赏与语音媒体。"),
         McpToolMeta("keios.ba.guide.bgm.favorites", "读取、导出或导入回忆大厅 BGM 收藏。"),
         McpToolMeta("keios.ba.cache.clear", "清理 Blue Archive 与 GitHub 缓存数据。参数：scope、url。")
+    )
+
+    private val japaneseTools: List<McpToolMeta> = listOf(
+        McpToolMeta("keios.health.ping", "ヘルスチェック。pong を返します。"),
+        McpToolMeta("keios.app.info", "アプリ情報を読み取ります: ラベル、パッケージ、バージョン、Shizuku API レベル。"),
+        McpToolMeta("keios.app.version", "versionName と versionCode を読み取ります。"),
+        McpToolMeta("keios.shizuku.status", "現在の Shizuku 状態を読み取ります。"),
+        McpToolMeta("keios.mcp.runtime.status", "MCP 実行状態を読み取ります: endpoint、クライアント数、エラー。"),
+        McpToolMeta("keios.mcp.runtime.logs", "MCP 実行ログを読み取ります。引数: limit=1..200。"),
+        McpToolMeta("keios.mcp.runtime.config", "インポート可能な MCP JSON を生成します。引数: mode=auto|local|lan、endpoint/serverName の上書き。"),
+        McpToolMeta("keios.mcp.claw.skill.guide", "Claw 接続ガイドを生成します: インポート JSON、SKILL.md、登録手順。"),
+        McpToolMeta("keios.home.overview.snapshot", "Home の概要カードスナップショットを読み取ります。MCP、GitHub、ブルーアーカイブを含みます。"),
+        McpToolMeta("keios.system.topinfo.query", "キャッシュ済みのシステム TopInfo を検索します。引数: query、limit。"),
+        McpToolMeta("keios.os.cards.snapshot", "OS ページのカード概要を読み取ります: 表示状態、展開状態、キャッシュサイズ、統計。"),
+        McpToolMeta("keios.os.activity.cards", "Activity カードを読み取ります。引数: query、onlyVisible、limit。"),
+        McpToolMeta("keios.os.shell.cards", "Shell カードを読み取ります。引数: query、onlyVisible、includeOutput、limit。"),
+        McpToolMeta("keios.os.cards.export", "OS Activity または Shell カード JSON をエクスポートします。引数: target=activity|shell|all。"),
+        McpToolMeta("keios.os.cards.import", "OS Activity または Shell カード JSON をプレビューまたはインポートします。既定は apply=false のプレビューです。"),
+        McpToolMeta("keios.github.tracked.snapshot", "GitHub 追跡設定とキャッシュのスナップショットを読み取ります。"),
+        McpToolMeta("keios.github.tracked.list", "追跡中リポジトリを一覧します。引数: repoFilter、limit。"),
+        McpToolMeta("keios.github.tracked.export", "追跡中 GitHub リポジトリを JSON でエクスポートします。引数: repoFilter。"),
+        McpToolMeta("keios.github.tracked.import", "GitHub 追跡リポジトリをプレビューまたはインポートします。既定は apply=false のプレビューです。"),
+        McpToolMeta("keios.github.tracked.check", "追跡中リポジトリの更新をオンライン確認します。引数: repoFilter、onlyUpdates、limit。"),
+        McpToolMeta("keios.github.tracked.summary", "追跡サマリーを読み取ります。引数: mode=cache|network、repoFilter。"),
+        McpToolMeta("keios.github.tracked.cache.clear", "GitHub の確認キャッシュとリリースアセットキャッシュを削除します。"),
+        McpToolMeta("keios.github.share.parse", "共有された GitHub テキストから repo、release、tag、APK リンクを解析します。"),
+        McpToolMeta("keios.github.share.resolve", "共有 GitHub リンクを解決し、インストール可能な APK アセット候補を一覧します。"),
+        McpToolMeta("keios.github.share.pending", "インストール前 GitHub 共有追跡の保留状態を読み取り、または削除します。"),
+        McpToolMeta("keios.ba.snapshot", "ブルーアーカイブのスナップショットを読み取ります: AP、カフェ、通知しきい値、更新間隔。"),
+        McpToolMeta("keios.ba.calendar.cache", "ブルーアーカイブのイベントカレンダーキャッシュを読み取ります。引数: serverIndex、includeEntries、limit。"),
+        McpToolMeta("keios.ba.pool.cache", "ブルーアーカイブの募集キャッシュを読み取ります。引数: serverIndex、includeEntries、limit。"),
+        McpToolMeta("keios.ba.guide.catalog.cache", "生徒名簿カタログキャッシュを読み取ります。引数: tab、includeEntries、limit。"),
+        McpToolMeta("keios.ba.guide.cache.overview", "生徒情報詳細キャッシュの概要を読み取ります。"),
+        McpToolMeta("keios.ba.guide.cache.inspect", "URL で生徒情報詳細キャッシュを検査します。引数: url、includeSections、refreshIntervalHours。"),
+        McpToolMeta("keios.ba.guide.media.list", "生徒情報詳細キャッシュからギャラリーとボイスメディアを一覧します。"),
+        McpToolMeta("keios.ba.guide.bgm.favorites", "メモリアルロビー BGM のお気に入りを読み取り、エクスポート、またはインポートします。"),
+        McpToolMeta("keios.ba.cache.clear", "ブルーアーカイブと GitHub のキャッシュデータを削除します。引数: scope、url。")
     )
 }

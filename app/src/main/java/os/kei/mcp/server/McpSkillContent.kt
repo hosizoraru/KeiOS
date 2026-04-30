@@ -54,7 +54,7 @@ internal class McpSkillContent(
         server.addResource(
             uri = SKILL_RESOURCE_URI,
             name = "keios-mcp-skill",
-            description = if (isSimplifiedChinese(locale)) "KeiOS MCP Skill 指南" else "KeiOS MCP skill guide",
+            description = localText(locale, "KeiOS MCP Skill 指南", "KeiOS MCP Skill ガイド", "KeiOS MCP skill guide"),
             mimeType = MIME_MARKDOWN
         ) { _ ->
             callResource(uri = SKILL_RESOURCE_URI, mimeType = MIME_MARKDOWN, text = loadSkillMarkdown())
@@ -63,7 +63,7 @@ internal class McpSkillContent(
         server.addResource(
             uri = SKILL_OVERVIEW_URI,
             name = "keios-mcp-skill-overview",
-            description = if (isSimplifiedChinese(locale)) "MCP Skill 快速总览" else "Quick MCP skill overview",
+            description = localText(locale, "MCP Skill 快速总览", "MCP Skill クイック概要", "Quick MCP skill overview"),
             mimeType = MIME_TEXT
         ) { _ ->
             callResource(uri = SKILL_OVERVIEW_URI, mimeType = MIME_TEXT, text = buildSkillOverview())
@@ -72,7 +72,7 @@ internal class McpSkillContent(
         server.addResourceTemplate(
             uriTemplate = SKILL_TOOL_TEMPLATE_URI,
             name = "keios-mcp-tool-help",
-            description = if (isSimplifiedChinese(locale)) "KeiOS MCP 单工具帮助" else "Tool-level help for KeiOS MCP",
+            description = localText(locale, "KeiOS MCP 单工具帮助", "KeiOS MCP 単体ツールヘルプ", "Tool-level help for KeiOS MCP"),
             mimeType = MIME_MARKDOWN
         ) { _, params ->
             val tool = params["tool"].orEmpty()
@@ -86,11 +86,12 @@ internal class McpSkillContent(
         server.addResource(
             uri = CONFIG_RESOURCE_URI,
             name = "keios-mcp-config-default",
-            description = if (isSimplifiedChinese(locale)) {
-                "默认 MCP 配置包 JSON（auto mode）"
-            } else {
+            description = localText(
+                locale,
+                "默认 MCP 配置包 JSON（auto mode）",
+                "既定 MCP 設定パッケージ JSON（auto mode）",
                 "Default MCP config package JSON (auto mode)"
-            },
+            ),
             mimeType = MIME_JSON
         ) { _ ->
             val state = environment.currentState()
@@ -104,11 +105,12 @@ internal class McpSkillContent(
         server.addResourceTemplate(
             uriTemplate = CONFIG_TEMPLATE_URI,
             name = "keios-mcp-config-template",
-            description = if (isSimplifiedChinese(locale)) {
-                "按 mode 生成 MCP 配置包 JSON（auto/local/lan）"
-            } else {
+            description = localText(
+                locale,
+                "按 mode 生成 MCP 配置包 JSON（auto/local/lan）",
+                "mode 別 MCP 設定パッケージ JSON（auto/local/lan）",
                 "MCP config package JSON by mode (auto/local/lan)"
-            },
+            ),
             mimeType = MIME_JSON
         ) { _, params ->
             val state = environment.currentState()
@@ -125,21 +127,23 @@ internal class McpSkillContent(
         val locale = currentLocale()
         server.addPrompt(
             name = BOOTSTRAP_PROMPT,
-            description = if (isSimplifiedChinese(locale)) {
-                "用于初始化 KeiOS MCP 工具使用方式的启动 Prompt。"
-            } else {
+            description = localText(
+                locale,
+                "用于初始化 KeiOS MCP 工具使用方式的启动 Prompt。",
+                "KeiOS MCP ツール利用を初期化する Bootstrap prompt。",
                 "Bootstrap prompt for using KeiOS MCP tools."
-            },
+            ),
             arguments = listOf(
                 PromptArgument(
                     name = "task",
-                    description = if (isSimplifiedChinese(locale)) {
-                        "当前用户目标，例如检查 BA 缓存或巡检 GitHub 更新"
-                    } else {
+                    description = localText(
+                        locale,
+                        "当前用户目标，例如检查 BA 缓存或巡检 GitHub 更新",
+                        "現在のユーザー目標。例: ブルーアーカイブキャッシュ確認、GitHub 更新確認",
                         "Current user goal such as check BA cache or inspect GitHub updates"
-                    },
+                    ),
                     required = false,
-                    title = if (isSimplifiedChinese(locale)) "任务" else "Task"
+                    title = localText(locale, "任务", "タスク", "Task")
                 )
             )
         ) { request ->
@@ -147,11 +151,7 @@ internal class McpSkillContent(
             val promptText = buildBootstrapPromptText(task = task, locale = currentLocale())
 
             GetPromptResult(
-                description = if (isSimplifiedChinese(currentLocale())) {
-                    "KeiOS MCP 启动 Prompt"
-                } else {
-                    "KeiOS MCP bootstrap prompt"
-                },
+                description = localText(currentLocale(), "KeiOS MCP 启动 Prompt", "KeiOS MCP Bootstrap prompt", "KeiOS MCP bootstrap prompt"),
                 messages = listOf(
                     PromptMessage(
                         role = Role.User,
@@ -176,6 +176,20 @@ internal class McpSkillContent(
                 appendLine("- GitHub 分享导入使用 keios.github.share.parse / keios.github.share.resolve。")
                 appendLine("- 完整 Skill 文档资源：$SKILL_RESOURCE_URI")
                 appendLine("- 单工具帮助模板：$SKILL_TOOL_TEMPLATE_URI")
+            }.trim()
+        }
+        if (isJapanese(locale)) {
+            return buildString {
+                appendLine("KeiOS ローカル MCP サーバー")
+                appendLine("- まず keios.health.ping、次に keios.mcp.runtime.status を呼び出します。")
+                appendLine("- タスク実行前にクイック概要 $SKILL_OVERVIEW_URI を読み取ります。")
+                appendLine("- タスク文脈が不足している場合は $BOOTSTRAP_PROMPT を使います。")
+                appendLine("- keios.mcp.runtime.config またはリソース $CONFIG_RESOURCE_URI / $CONFIG_TEMPLATE_URI でインポート JSON を生成します。")
+                appendLine("- Home 概要は keios.home.overview.snapshot を使います。")
+                appendLine("- OS 確認は keios.os.cards.snapshot / keios.os.activity.cards / keios.os.shell.cards を使います。")
+                appendLine("- GitHub 共有インポートは keios.github.share.parse / keios.github.share.resolve を使います。")
+                appendLine("- 完全な Skill ドキュメント: $SKILL_RESOURCE_URI")
+                appendLine("- 単体ツールヘルプテンプレート: $SKILL_TOOL_TEMPLATE_URI")
             }.trim()
         }
         return buildString {
@@ -217,6 +231,33 @@ internal class McpSkillContent(
                     appendLine()
                     appendLine("当前任务：$task")
                     appendLine("先给出不超过 4 步的工具调用计划，再执行。")
+                }
+            }.trim()
+        }
+        if (isJapanese(locale)) {
+            return buildString {
+                appendLine("KeiOS ローカル MCP サーバーに接続しています。")
+                appendLine("次の順序で初期化します:")
+                appendLine("1) keios.health.ping")
+                appendLine("2) keios.mcp.runtime.status")
+                appendLine("3) keios.mcp.runtime.config(mode=auto)")
+                appendLine("4) リソース $SKILL_OVERVIEW_URI を読み取る")
+                appendLine("5) タスクに合わせて $SKILL_RESOURCE_URI またはテンプレート $SKILL_TOOL_TEMPLATE_URI を読み取る")
+                appendLine("6) 設定インポートが必要な場合は $CONFIG_RESOURCE_URI またはテンプレート $CONFIG_TEMPLATE_URI を読み取る")
+                appendLine()
+                appendLine("よく使うツールグループ:")
+                appendLine("- 実行診断: keios.mcp.runtime.status / keios.mcp.runtime.logs / keios.shizuku.status")
+                appendLine("- Home 概要: keios.home.overview.snapshot")
+                appendLine("- OS ページ: keios.os.cards.snapshot / keios.os.activity.cards / keios.os.shell.cards")
+                appendLine("- システム値: keios.system.topinfo.query")
+                appendLine("- GitHub 追跡と共有インポート: keios.github.tracked.snapshot / list / check / share.parse / share.resolve")
+                appendLine("- ブルーアーカイブキャッシュとメディア: keios.ba.snapshot / keios.ba.guide.cache.inspect / keios.ba.guide.media.list / keios.ba.guide.bgm.favorites")
+                appendLine("- インポートとエクスポート: keios.github.tracked.export / keios.github.tracked.import / keios.os.cards.export / keios.os.cards.import")
+                appendLine("- キャッシュ削除: keios.github.tracked.cache.clear / keios.ba.cache.clear")
+                if (task.isNotBlank()) {
+                    appendLine()
+                    appendLine("現在のタスク: $task")
+                    appendLine("実行前に 4 ステップ以内のツール呼び出し計画を提示してください。")
                 }
             }.trim()
         }
@@ -302,6 +343,22 @@ internal class McpSkillContent(
                 }
             }.trim()
         }
+        if (isJapanese(locale)) {
+            return buildString {
+                appendLine("# KeiOS MCP Skill")
+                appendLine()
+                appendLine("## 最初の手順")
+                appendLine("1. keios.health.ping")
+                appendLine("2. keios.mcp.runtime.status")
+                appendLine("3. keios.mcp.runtime.config")
+                appendLine("4. リソースを読み取る: $CONFIG_RESOURCE_URI")
+                appendLine()
+                appendLine("## ツールグループ")
+                McpToolCatalog.forLocale(locale).forEach { meta ->
+                    appendLine("- ${meta.name}: ${meta.description}")
+                }
+            }.trim()
+        }
         return buildString {
             appendLine("# KeiOS MCP Skill")
             appendLine()
@@ -353,7 +410,7 @@ internal class McpSkillContent(
         val hit = localizedTools.firstOrNull { it.name.lowercase(Locale.ROOT) == normalized }
         if (hit == null) {
             return buildString {
-                appendLine(if (isSimplifiedChinese(locale)) "# 未知工具" else "# Unknown Tool")
+                appendLine(localText(locale, "# 未知工具", "# 不明なツール", "# Unknown Tool"))
                 appendLine("tool=$tool")
                 appendLine("available=${McpToolCatalog.all.joinToString(",") { it.name }}")
             }.trim()
@@ -364,7 +421,7 @@ internal class McpSkillContent(
             appendLine()
             appendLine(hit.description)
             appendLine()
-            appendLine(if (isSimplifiedChinese(locale)) "## 建议用法" else "## Suggested Usage")
+            appendLine(localText(locale, "## 建议用法", "## 推奨用法", "## Suggested Usage"))
             appendToolUsage(hit.name, locale)
         }.trim()
     }
@@ -372,6 +429,10 @@ internal class McpSkillContent(
     private fun StringBuilder.appendToolUsage(name: String, locale: Locale) {
         if (isSimplifiedChinese(locale)) {
             appendChineseToolUsage(name)
+            return
+        }
+        if (isJapanese(locale)) {
+            appendJapaneseToolUsage(name)
             return
         }
         when (name) {
@@ -516,6 +577,153 @@ internal class McpSkillContent(
 
             else -> {
                 appendLine("- Call directly and parse key=value output.")
+            }
+        }
+    }
+
+    private fun StringBuilder.appendJapaneseToolUsage(name: String) {
+        when (name) {
+            "keios.health.ping" -> {
+                appendLine("- 最初の呼び出しとして使い、MCP 接続を確認します。")
+                appendLine("- 戻り値は常に pong です。")
+            }
+
+            "keios.app.info", "keios.app.version", "keios.shizuku.status" -> {
+                appendLine("- 現在のアプリ、バージョン、Shizuku 環境を確認します。")
+                appendLine("- 出力は key=value テキストで、レポートへそのまま貼れます。")
+            }
+
+            "keios.mcp.runtime.status" -> {
+                appendLine("- running、connectedClients、localEndpoint を先に確認します。")
+                appendLine("- エラーがある場合は keios.mcp.runtime.logs を続けて呼び出します。")
+            }
+
+            "keios.mcp.runtime.logs" -> {
+                appendLine("- まず limit=30 で読み、詳しく見る時に増やします。")
+                appendLine("- ログは新しい順で返ります。")
+            }
+
+            "keios.mcp.runtime.config" -> {
+                appendLine("- 既定では mode=auto を使います。")
+                appendLine("- 同一端末クライアントには mode=local を使います。")
+                appendLine("- 別端末デバッグには mode=lan を使います。")
+                appendLine("- 一時的な接続先を使う場合は endpoint を渡します。")
+            }
+
+            "keios.mcp.claw.skill.guide" -> {
+                appendLine("- Claw 接続ガイドをまとめて生成します。")
+                appendLine("- 出力にはインポート可能な JSON、Skill リソース URI、完全な SKILL.md が含まれます。")
+                appendLine("- まず mode=auto を使い、対象を絞る時に local または lan へ切り替えます。")
+            }
+
+            "keios.home.overview.snapshot" -> {
+                appendLine("- Home の 3 枚の概要カードに使うデータソースを読み取ります。")
+                appendLine("- MCP、GitHub、ブルーアーカイブの重要状態を先に確認できます。")
+            }
+
+            "keios.system.topinfo.query" -> {
+                appendLine("- query を空欄にすると高価値なシステム値を返します。")
+                appendLine("- limit で出力量を調整します。")
+            }
+
+            "keios.os.cards.snapshot" -> {
+                appendLine("- OS ページ全体の状態を最初のスナップショットとして読み取ります。")
+                appendLine("- 表示カード、展開状態、キャッシュサイズ、推定値をまとめて返します。")
+            }
+
+            "keios.os.activity.cards" -> {
+                appendLine("- query で Activity カードをタイトル、パッケージ、クラス名から絞り込みます。")
+                appendLine("- onlyVisible=true で現在表示中の Activity カードだけを確認します。")
+                appendLine("- limit で返す件数を調整します。")
+            }
+
+            "keios.os.shell.cards" -> {
+                appendLine("- 既定では Shell カードのメタデータとコマンドを返します。")
+                appendLine("- includeOutput=true で実行出力サマリーを追加します。")
+                appendLine("- onlyVisible=true と query を組み合わせると精密に絞り込めます。")
+            }
+
+            "keios.os.cards.export" -> {
+                appendLine("- target=activity で Activity カードをエクスポートします。")
+                appendLine("- target=shell で Shell カードをエクスポートします。")
+                appendLine("- target=all で Activity/Shell バンドルを生成します。")
+            }
+
+            "keios.os.cards.import" -> {
+                appendLine("- target は activity または shell を使います。")
+                appendLine("- apply=false でインポートプレビューを返します。")
+                appendLine("- apply=true でローカルカードストアへマージします。")
+            }
+
+            "keios.github.tracked.snapshot", "keios.github.tracked.list", "keios.github.tracked.summary" -> {
+                appendLine("- snapshot で全体を見てから list または summary へ掘り下げます。")
+                appendLine("- repoFilter は owner/repo、パッケージ名、アプリラベルに対応します。")
+            }
+
+            "keios.github.tracked.export" -> {
+                appendLine("- 現在の GitHub 追跡リストを JSON でエクスポートします。")
+                appendLine("- repoFilter で一部だけをエクスポートできます。")
+            }
+
+            "keios.github.tracked.import" -> {
+                appendLine("- apply=false で追加、更新、変更なしの件数を返します。")
+                appendLine("- apply=true で追跡項目をマージし、確認キャッシュを削除します。")
+            }
+
+            "keios.github.tracked.check" -> {
+                appendLine("- onlyUpdates=true で更新のある項目を素早く確認します。")
+                appendLine("- repoFilter は owner/repo、パッケージ名、アプリラベルで絞り込めます。")
+            }
+
+            "keios.github.tracked.cache.clear" -> {
+                appendLine("- 削除後に tracked.check を実行し、新しい状態を取得します。")
+                appendLine("- リリースアセットキャッシュも同時に削除されます。")
+            }
+
+            "keios.github.share.parse" -> {
+                appendLine("- 共有テキストから GitHub リンクを解析します。")
+                appendLine("- repo、releases、latest、tag、download asset リンクに対応します。")
+            }
+
+            "keios.github.share.resolve" -> {
+                appendLine("- 共有リンクを解決し、APK アセット候補をオンライン取得します。")
+                appendLine("- 現在の GitHub 方式設定とフォールバック方式を使います。")
+            }
+
+            "keios.github.share.pending" -> {
+                appendLine("- clear=false でインストール前の追跡状態を確認します。")
+                appendLine("- clear=true で保留中のインストール連携記録を削除します。")
+            }
+
+            "keios.ba.snapshot", "keios.ba.calendar.cache", "keios.ba.pool.cache", "keios.ba.guide.catalog.cache", "keios.ba.guide.cache.overview" -> {
+                appendLine("- まず ba.snapshot で全体状態を確認します。")
+                appendLine("- 次にイベントカレンダー、募集、生徒名簿キャッシュへ掘り下げます。")
+            }
+
+            "keios.ba.guide.cache.inspect" -> {
+                appendLine("- url を空欄にすると現在の生徒情報 URL を使います。")
+                appendLine("- includeSections=true でセクション統計を出力します。")
+                appendLine("- refreshIntervalHours で現在の鮮度判定ウィンドウを上書きします。")
+            }
+
+            "keios.ba.guide.media.list" -> {
+                appendLine("- 生徒情報詳細キャッシュからギャラリーとボイスメディアを一覧します。")
+                appendLine("- kind は all、gallery、voice、image、video、audio に対応します。")
+            }
+
+            "keios.ba.guide.bgm.favorites" -> {
+                appendLine("- action=list で BGM お気に入りを読み取ります。")
+                appendLine("- action=export でお気に入りを JSON エクスポートします。")
+                appendLine("- action=import と apply を組み合わせてプレビューまたはマージします。")
+            }
+
+            "keios.ba.cache.clear" -> {
+                appendLine("- scope=all でブルーアーカイブと GitHub のキャッシュをまとめて削除します。")
+                appendLine("- scope=ba_guide_url は url も必要です。")
+            }
+
+            else -> {
+                appendLine("- 直接呼び出し、key=value 出力を解析します。")
             }
         }
     }
@@ -687,27 +895,35 @@ internal class McpSkillContent(
             appendLine("configTool=keios.mcp.runtime.config")
             appendLine("defaultFlow=keios.health.ping->keios.mcp.runtime.status->keios.mcp.runtime.config")
             appendLine()
-            appendLine(if (isSimplifiedChinese(locale)) "## Step 1 - 导入 MCP 配置" else "## Step 1 - Import MCP Config")
+            appendLine(localText(locale, "## Step 1 - 导入 MCP 配置", "## Step 1 - MCP 設定をインポート", "## Step 1 - Import MCP Config"))
             appendLine("```json")
             appendLine(configJson)
             appendLine("```")
             appendLine()
-            appendLine(if (isSimplifiedChinese(locale)) "## Step 2 - 载入 Skill" else "## Step 2 - Load Skill")
+            appendLine(localText(locale, "## Step 2 - 载入 Skill", "## Step 2 - Skill を読み込む", "## Step 2 - Load Skill"))
             if (isSimplifiedChinese(locale)) {
                 appendLine("- 读取资源 $SKILL_RESOURCE_URI")
                 appendLine("- 读取摘要 $SKILL_OVERVIEW_URI")
                 appendLine("- 按工具读取帮助模板 $SKILL_TOOL_TEMPLATE_URI")
+            } else if (isJapanese(locale)) {
+                appendLine("- リソース $SKILL_RESOURCE_URI を読み取る")
+                appendLine("- 概要 $SKILL_OVERVIEW_URI を読み取る")
+                appendLine("- 単体ツールヘルプをテンプレート $SKILL_TOOL_TEMPLATE_URI から読み取る")
             } else {
                 appendLine("- Read resource $SKILL_RESOURCE_URI")
                 appendLine("- Read overview $SKILL_OVERVIEW_URI")
                 appendLine("- Read per-tool help from template $SKILL_TOOL_TEMPLATE_URI")
             }
             appendLine()
-            appendLine(if (isSimplifiedChinese(locale)) "## Step 3 - 在 Claw 注册 Skill" else "## Step 3 - Register Skill in Claw")
+            appendLine(localText(locale, "## Step 3 - 在 Claw 注册 Skill", "## Step 3 - Claw に Skill を登録", "## Step 3 - Register Skill in Claw"))
             if (isSimplifiedChinese(locale)) {
                 appendLine("- 建议名称：KeiOS MCP Skill")
                 appendLine("- 将下方 SKILL.md 内容保存到 Claw Skill")
                 appendLine("- 初始化后先执行 keios.health.ping 与 keios.mcp.runtime.status")
+            } else if (isJapanese(locale)) {
+                appendLine("- 推奨名: KeiOS MCP Skill")
+                appendLine("- 下の SKILL.md 内容を Claw Skill として保存します")
+                appendLine("- 初期化後は keios.health.ping と keios.mcp.runtime.status を先に実行します")
             } else {
                 appendLine("- Suggested name: KeiOS MCP Skill")
                 appendLine("- Save the SKILL.md content below as the Claw Skill")
@@ -722,10 +938,10 @@ internal class McpSkillContent(
     }
 
     private fun localizedSkillAssetPath(locale: Locale): String {
-        return if (isSimplifiedChinese(locale)) {
-            "mcp/SKILL.zh-CN.md"
-        } else {
-            "mcp/SKILL.md"
+        return when {
+            isSimplifiedChinese(locale) -> "mcp/SKILL.zh-CN.md"
+            isJapanese(locale) -> "mcp/SKILL.ja.md"
+            else -> "mcp/SKILL.md"
         }
     }
 
@@ -741,5 +957,17 @@ internal class McpSkillContent(
 
     private fun isSimplifiedChinese(locale: Locale): Boolean {
         return locale.language.equals("zh", ignoreCase = true)
+    }
+
+    private fun isJapanese(locale: Locale): Boolean {
+        return locale.language.equals("ja", ignoreCase = true)
+    }
+
+    private fun localText(locale: Locale, zh: String, ja: String, en: String): String {
+        return when {
+            isSimplifiedChinese(locale) -> zh
+            isJapanese(locale) -> ja
+            else -> en
+        }
     }
 }

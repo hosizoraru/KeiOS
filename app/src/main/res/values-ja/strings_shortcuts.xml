@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_label_ap_island_short">AP アイランド</string>
+    <string name="shortcut_label_ap_island_long">AP Island 通知</string>
+    <string name="shortcut_label_mcp_toggle_short">MCP 切替</string>
+    <string name="shortcut_label_mcp_toggle_long">MCP サービスを切り替え</string>
+    <string name="shortcut_label_github_refresh_short">GitHub 更新</string>
+    <string name="shortcut_label_github_refresh_long">追跡項目を更新</string>
+</resources>
