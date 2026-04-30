@@ -99,7 +99,7 @@
         <activity
             android:name=".ui.page.main.debug.DebugBgmMusicActivity"
             android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
-            android:exported="false"
+            android:exported="${debugBgmActivityExported}"
             android:label="@string/debug_component_lab_bgm_activity_title" />
 
         <activity

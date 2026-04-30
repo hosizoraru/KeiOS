@@ -239,6 +239,7 @@ android {
         buildConfigField("String", "JAVA_VERSION", "\"${projectJavaVersion.majorVersion}\"")
         buildConfigField("String", "JVM_TARGET_VERSION", "\"${projectJvmTarget.target}\"")
         buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "false")
+        manifestPlaceholders["debugBgmActivityExported"] = "false"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -247,6 +248,7 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "true")
+            manifestPlaceholders["debugBgmActivityExported"] = "true"
         }
 
         release {
@@ -265,6 +267,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             isDebuggable = false
             buildConfigField("boolean", "LOG_DEBUG_DEFAULT", "false")
+            manifestPlaceholders["debugBgmActivityExported"] = "true"
             matchingFallbacks += listOf("release")
         }
     }
