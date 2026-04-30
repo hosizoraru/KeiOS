@@ -1,38 +1,47 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
-
 package os.kei.ui.page.main.debug
 
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.BoundsTransform
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,9 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
-import os.kei.ui.component.floatingtabbar.FloatingTabBar
-import os.kei.ui.component.floatingtabbar.FloatingTabBarDefaults
-import os.kei.ui.component.floatingtabbar.FloatingTabBarScrollConnection
 import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideHomeIcon
 import os.kei.ui.page.main.os.appLucideLibraryIcon
@@ -60,10 +66,56 @@ import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+@Stable
+internal class DebugBgmBottomChromeScrollState(
+    private val scrollThresholdPx: Float
+) : NestedScrollConnection {
+    var isCompact by mutableStateOf(false)
+        private set
+
+    private var accumulatedScroll = 0f
+
+    fun expand() {
+        isCompact = false
+        accumulatedScroll = 0f
+    }
+
+    fun compact() {
+        isCompact = true
+        accumulatedScroll = 0f
+    }
+
+    override fun onPreScroll(
+        available: androidx.compose.ui.geometry.Offset,
+        source: NestedScrollSource
+    ): androidx.compose.ui.geometry.Offset {
+        val scrollDelta = available.y
+        if ((accumulatedScroll > 0f && scrollDelta < 0f) || (accumulatedScroll < 0f && scrollDelta > 0f)) {
+            accumulatedScroll = 0f
+        }
+
+        accumulatedScroll += scrollDelta
+        if (accumulatedScroll <= -scrollThresholdPx && !isCompact) {
+            compact()
+        } else if (accumulatedScroll >= scrollThresholdPx && isCompact) {
+            expand()
+        }
+        return androidx.compose.ui.geometry.Offset.Zero
+    }
+}
+
+@Composable
+internal fun rememberDebugBgmBottomChromeScrollState(
+    scrollThreshold: Dp = 56.dp
+): DebugBgmBottomChromeScrollState = with(LocalDensity.current) {
+    val thresholdPx = scrollThreshold.toPx()
+    remember(thresholdPx) { DebugBgmBottomChromeScrollState(thresholdPx) }
+}
+
 @Composable
 internal fun DebugBgmFloatingBottomChrome(
     accent: Color,
-    scrollConnection: FloatingTabBarScrollConnection,
+    scrollState: DebugBgmBottomChromeScrollState,
     currentTrackTitle: String,
     isPlaying: Boolean,
     onPlayPauseClick: () -> Unit,
@@ -75,92 +127,277 @@ internal fun DebugBgmFloatingBottomChrome(
     modifier: Modifier = Modifier
 ) {
     val tabs = rememberDebugBgmDockTabs()
-    FloatingTabBar(
-        selectedTabKey = selectedDockKey,
-        scrollConnection = scrollConnection,
-        modifier = modifier.fillMaxWidth(),
-        inlineAccessory = { accessoryModifier, animatedVisibilityScope ->
-            DebugBgmMiniPlayer(
-                accent = accent,
-                currentTrackTitle = currentTrackTitle,
-                isPlaying = isPlaying,
-                onPlayPauseClick = onPlayPauseClick,
-                onNextClick = onNextClick,
-                compact = true,
-                animatedVisibilityScope = animatedVisibilityScope,
-                modifier = accessoryModifier.fillMaxSize()
-            )
-        },
-        expandedAccessory = { accessoryModifier, animatedVisibilityScope ->
-            DebugBgmMiniPlayer(
-                accent = accent,
-                currentTrackTitle = currentTrackTitle,
-                isPlaying = isPlaying,
-                onPlayPauseClick = onPlayPauseClick,
-                onNextClick = onNextClick,
-                compact = false,
-                animatedVisibilityScope = animatedVisibilityScope,
-                modifier = accessoryModifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-            )
-        },
-        colors = FloatingTabBarDefaults.colors(
-            backgroundColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
-            accessoryBackgroundColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f)
-        ),
-        shapes = FloatingTabBarDefaults.shapes(
-            tabBarShape = ContinuousCapsule,
-            tabShape = ContinuousCapsule,
-            standaloneTabShape = CircleShape,
-            accessoryShape = ContinuousCapsule
-        ),
-        sizes = FloatingTabBarDefaults.sizes(
-            tabBarContentPadding = PaddingValues(horizontal = 8.dp, vertical = 5.dp),
-            tabInlineContentPadding = PaddingValues(12.dp),
-            tabExpandedContentPadding = PaddingValues(horizontal = 20.dp, vertical = 7.dp),
-            componentSpacing = 8.dp,
-            tabSpacing = 0.dp
-        ),
-        elevations = FloatingTabBarDefaults.elevations(
-            inlineElevation = 0.dp,
-            expandedElevation = 0.dp
-        ),
-        contentKey = tabs.size
+    val transition = updateTransition(
+        targetState = scrollState.isCompact,
+        label = "debug_bgm_bottom_chrome"
+    )
+    val animationSpec = spring<Dp>(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMediumLow
+    )
+    val floatAnimationSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessMediumLow
+    )
+    val containerHeight by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_chrome_height"
+    ) { compact ->
+        if (compact) DebugBgmCompactChromeHeight else DebugBgmExpandedChromeHeight
+    }
+    val tabGroupHeight by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_tab_height"
+    ) { compact ->
+        if (compact) DebugBgmCompactControlSize else DebugBgmExpandedDockHeight
+    }
+    val tabGroupY by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_tab_y"
+    ) { compact ->
+        if (compact) DebugBgmCompactControlInset else DebugBgmExpandedDockY
+    }
+    val miniPlayerHeight by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_mini_height"
+    ) { compact ->
+        if (compact) DebugBgmCompactMiniHeight else DebugBgmExpandedMiniHeight
+    }
+    val miniPlayerY by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_mini_y"
+    ) { compact ->
+        if (compact) DebugBgmCompactMiniY else 0.dp
+    }
+    val searchSize by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_search_size"
+    ) { compact ->
+        if (compact) DebugBgmCompactControlSize else DebugBgmExpandedDockHeight
+    }
+    val searchY by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_search_y"
+    ) { compact ->
+        if (compact) DebugBgmCompactControlInset else DebugBgmExpandedDockY
+    }
+    val expandedAlpha by transition.animateFloat(
+        transitionSpec = { floatAnimationSpec },
+        label = "debug_bgm_expanded_alpha"
+    ) { compact ->
+        if (compact) 0f else 1f
+    }
+    val compactAlpha by transition.animateFloat(
+        transitionSpec = { floatAnimationSpec },
+        label = "debug_bgm_compact_alpha"
+    ) { compact ->
+        if (compact) 1f else 0f
+    }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(containerHeight)
     ) {
-        tabs.forEach { tab ->
-            tab(
-                key = tab.key,
-                title = {
-                    DebugBgmDockTabTitle(
-                        label = tab.label,
-                        selected = selectedDockKey == tab.key,
-                        accent = accent
-                    )
-                },
-                icon = {
-                    DebugBgmDockTabIcon(
-                        icon = tab.icon,
-                        label = tab.label,
-                        selected = selectedDockKey == tab.key,
-                        accent = accent
-                    )
-                },
-                onClick = { onSelectedDockKeyChange(tab.key) }
+        val tabGroupExpandedWidth = (maxWidth - DebugBgmExpandedSearchSpacing - DebugBgmExpandedDockHeight)
+            .coerceAtLeast(260.dp)
+        val compactMiniWidth = boundedDp(
+            value = maxWidth - (DebugBgmCompactControlSize * 2f) - 34.dp,
+            min = 190.dp,
+            max = 244.dp
+        )
+        val miniPlayerWidth by transition.animateDp(
+            transitionSpec = { animationSpec },
+            label = "debug_bgm_mini_width"
+        ) { compact ->
+            if (compact) compactMiniWidth else maxWidth
+        }
+        val miniPlayerX by transition.animateDp(
+            transitionSpec = { animationSpec },
+            label = "debug_bgm_mini_x"
+        ) { compact ->
+            if (compact) (maxWidth - compactMiniWidth) / 2f else 0.dp
+        }
+        val tabGroupWidth by transition.animateDp(
+            transitionSpec = { animationSpec },
+            label = "debug_bgm_tab_width"
+        ) { compact ->
+            if (compact) DebugBgmCompactControlSize else tabGroupExpandedWidth
+        }
+        val searchX by transition.animateDp(
+            transitionSpec = { animationSpec },
+            label = "debug_bgm_search_x"
+        ) { compact ->
+            maxWidth - if (compact) DebugBgmCompactControlSize else DebugBgmExpandedDockHeight
+        }
+
+        DebugBgmBottomSurface(
+            modifier = Modifier
+                .offset(x = miniPlayerX, y = miniPlayerY)
+                .width(miniPlayerWidth)
+                .height(miniPlayerHeight),
+            shape = ContinuousCapsule,
+            onClick = {}
+        ) {
+            DebugBgmMiniPlayer(
+                accent = accent,
+                currentTrackTitle = currentTrackTitle,
+                isPlaying = isPlaying,
+                compact = scrollState.isCompact,
+                expandedAlpha = expandedAlpha,
+                onPlayPauseClick = onPlayPauseClick,
+                onNextClick = onNextClick,
+                modifier = Modifier.fillMaxSize()
             )
         }
-        standaloneTab(
-            key = DebugBgmDockKeys.Search,
-            icon = {
-                DebugBgmDockTabIcon(
-                    icon = appLucideSearchIcon(),
-                    label = stringResource(R.string.debug_component_lab_nav_search),
-                    selected = searchVisible || selectedDockKey == DebugBgmDockKeys.Search,
-                    accent = accent,
-                    iconSize = 25.dp
-                )
-            },
+
+        DebugBgmBottomSurface(
+            modifier = Modifier
+                .offset(x = 0.dp, y = tabGroupY)
+                .width(tabGroupWidth)
+                .height(tabGroupHeight),
+            shape = ContinuousCapsule
+        ) {
+            DebugBgmDockGroupContent(
+                tabs = tabs,
+                selectedDockKey = selectedDockKey,
+                accent = accent,
+                expandedAlpha = expandedAlpha,
+                compactAlpha = compactAlpha,
+                onSelectedDockKeyChange = onSelectedDockKeyChange
+            )
+        }
+
+        DebugBgmBottomSurface(
+            modifier = Modifier
+                .offset(x = searchX, y = searchY)
+                .size(searchSize),
+            shape = CircleShape,
             onClick = onSearchClick
+        ) {
+            DebugBgmDockTabIcon(
+                icon = appLucideSearchIcon(),
+                label = stringResource(R.string.debug_component_lab_nav_search),
+                selected = searchVisible || selectedDockKey == DebugBgmDockKeys.Search,
+                accent = accent,
+                iconSize = 27.dp
+            )
+        }
+    }
+}
+
+@Composable
+private fun DebugBgmBottomSurface(
+    modifier: Modifier,
+    shape: Shape,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), shape)
+            .border(1.dp, Color.White.copy(alpha = 0.24f), shape)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun DebugBgmDockGroupContent(
+    tabs: List<DebugBgmDockTab>,
+    selectedDockKey: String,
+    accent: Color,
+    expandedAlpha: Float,
+    compactAlpha: Float,
+    onSelectedDockKeyChange: (String) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = expandedAlpha }
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            tabs.forEach { tab ->
+                DebugBgmExpandedDockTab(
+                    tab = tab,
+                    selected = selectedDockKey == tab.key,
+                    accent = accent,
+                    onClick = { onSelectedDockKeyChange(tab.key) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                )
+            }
+        }
+
+        val compactTab = tabs.firstOrNull { it.key == selectedDockKey } ?: tabs.last()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = compactAlpha }
+                .clip(CircleShape)
+                .clickable { onSelectedDockKeyChange(compactTab.key) },
+            contentAlignment = Alignment.Center
+        ) {
+            DebugBgmDockTabIcon(
+                icon = compactTab.icon,
+                label = compactTab.label,
+                selected = true,
+                accent = accent,
+                iconSize = 27.dp
+            )
+        }
+    }
+}
+
+@Composable
+private fun DebugBgmExpandedDockTab(
+    tab: DebugBgmDockTab,
+    selected: Boolean,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(ContinuousCapsule)
+            .background(if (selected) accent.copy(alpha = 0.10f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        DebugBgmDockTabIcon(
+            icon = tab.icon,
+            label = tab.label,
+            selected = selected,
+            accent = accent
+        )
+        Text(
+            text = tab.label,
+            color = DebugBgmDockTint(selected = selected, accent = accent),
+            fontSize = 11.sp,
+            lineHeight = 13.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -182,65 +419,33 @@ private fun DebugBgmDockTabIcon(
 }
 
 @Composable
-private fun DebugBgmDockTabTitle(
-    label: String,
-    selected: Boolean,
-    accent: Color
-) {
-    Text(
-        text = label,
-        color = DebugBgmDockTint(selected = selected, accent = accent),
-        fontSize = 11.sp,
-        lineHeight = 13.sp,
-        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
-    )
-}
-
-@Composable
-private fun SharedTransitionScope.DebugBgmMiniPlayer(
+private fun DebugBgmMiniPlayer(
     accent: Color,
     currentTrackTitle: String,
     isPlaying: Boolean,
+    compact: Boolean,
+    expandedAlpha: Float,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
-    compact: Boolean,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier
 ) {
-    val artworkSize = if (compact) 32.dp else 38.dp
-    val artworkCornerRadius = if (compact) 8.dp else 10.dp
-    val artworkIconSize = if (compact) 18.dp else 21.dp
+    val artworkSize = if (compact) 38.dp else 42.dp
+    val artworkCornerRadius = if (compact) 10.dp else 11.dp
     val contentPadding = PaddingValues(
         horizontal = if (compact) 10.dp else 14.dp,
-        vertical = if (compact) 5.dp else 7.dp
+        vertical = if (compact) 8.dp else 7.dp
     )
     val titleFontSize = if (compact) 12.sp else AppTypographyTokens.Supporting.fontSize
     val titleLineHeight = if (compact) 14.sp else AppTypographyTokens.Supporting.lineHeight
-    val playButtonSize = if (compact) 28.dp else 30.dp
-    val playIconSize = if (compact) 22.dp else 23.dp
-    val miniPlayerInteraction = remember { MutableInteractionSource() }
+    val playIconSize = if (compact) 27.dp else 25.dp
 
     Row(
-        modifier = modifier
-            .clip(ContinuousCapsule)
-            .clickable(
-                interactionSource = miniPlayerInteraction,
-                indication = null,
-                onClick = {}
-            )
-            .padding(contentPadding),
+        modifier = modifier.padding(contentPadding),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .sharedElement(
-                    sharedContentState = rememberSharedContentState("debug_bgm_artwork"),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    boundsTransform = DebugBgmMiniPlayerBoundsTransform
-                )
                 .size(artworkSize)
                 .clip(RoundedCornerShape(artworkCornerRadius))
                 .background(
@@ -254,20 +459,12 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 imageVector = appLucideMusicIcon(),
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier
-                    .sharedBounds(
-                        sharedContentState = rememberSharedContentState("debug_bgm_artwork_icon"),
-                        enter = EnterTransition.None,
-                        exit = ExitTransition.None,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = DebugBgmMiniPlayerBoundsTransform
-                    )
-                    .size(artworkIconSize)
+                modifier = Modifier.size(if (compact) 21.dp else 23.dp)
             )
         }
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = currentTrackTitle,
@@ -276,14 +473,7 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 lineHeight = titleLineHeight,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .sharedBounds(
-                        sharedContentState = rememberSharedContentState("debug_bgm_mini_title"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = DebugBgmMiniPlayerBoundsTransform
-                    )
-                    .skipToLookaheadSize()
+                overflow = TextOverflow.Ellipsis
             )
             if (!compact) {
                 Text(
@@ -292,13 +482,15 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                     fontSize = 11.sp,
                     lineHeight = 13.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.graphicsLayer { alpha = expandedAlpha }
                 )
                 LinearProgressIndicator(
                     progress = DebugBgmMiniPlayerProgress,
                     modifier = Modifier
                         .padding(top = 5.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .graphicsLayer { alpha = expandedAlpha },
                     height = 3.dp,
                     colors = ProgressIndicatorDefaults.progressIndicatorColors(
                         foregroundColor = accent,
@@ -309,7 +501,7 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
         }
         Box(
             modifier = Modifier
-                .size(playButtonSize)
+                .size(36.dp)
                 .clip(CircleShape)
                 .clickable(onClick = onPlayPauseClick),
             contentAlignment = Alignment.Center
@@ -320,13 +512,7 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                     if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
                 ),
                 tint = MiuixTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .sharedElement(
-                        sharedContentState = rememberSharedContentState("debug_bgm_play_icon"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        boundsTransform = DebugBgmMiniPlayerBoundsTransform
-                    )
-                    .size(playIconSize)
+                modifier = Modifier.size(playIconSize)
             )
         }
         if (!compact) {
@@ -334,22 +520,31 @@ private fun SharedTransitionScope.DebugBgmMiniPlayer(
                 icon = appLucideSkipForwardIcon(),
                 contentDescription = stringResource(R.string.debug_component_lab_action_next),
                 tint = MiuixTheme.colorScheme.onBackground,
-                size = 30.dp,
-                iconSize = 21.dp,
+                size = 32.dp,
+                iconSize = 22.dp,
                 onClick = onNextClick
             )
         }
     }
 }
 
-private const val DebugBgmMiniPlayerProgress = 0.42f
+private fun boundedDp(
+    value: Dp,
+    min: Dp,
+    max: Dp
+): Dp = value.value.coerceIn(min.value, max.value).dp
 
-private val DebugBgmMiniPlayerBoundsTransform = BoundsTransform { _, _ ->
-    spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = Spring.StiffnessMedium
-    )
-}
+private const val DebugBgmMiniPlayerProgress = 0.42f
+private val DebugBgmExpandedChromeHeight = 146.dp
+private val DebugBgmCompactChromeHeight = 72.dp
+private val DebugBgmExpandedMiniHeight = 64.dp
+private val DebugBgmCompactMiniHeight = 60.dp
+private val DebugBgmCompactMiniY = 6.dp
+private val DebugBgmExpandedDockHeight = 72.dp
+private val DebugBgmExpandedDockY = 74.dp
+private val DebugBgmExpandedSearchSpacing = 10.dp
+private val DebugBgmCompactControlSize = 64.dp
+private val DebugBgmCompactControlInset = 4.dp
 
 @Composable
 private fun rememberDebugBgmDockTabs(): List<DebugBgmDockTab> {

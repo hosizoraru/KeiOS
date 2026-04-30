@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
-import os.kei.ui.component.floatingtabbar.rememberFloatingTabBarScrollConnection
 import os.kei.ui.page.main.os.appLucideChevronLeftIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
@@ -111,7 +110,7 @@ internal fun DebugBgmLiquidMusicPreview(
 ) {
     val isDark = isSystemInDarkTheme()
     val listState = rememberLazyListState()
-    val bottomBarScrollConnection = rememberFloatingTabBarScrollConnection(scrollThreshold = 56.dp)
+    val bottomBarScrollConnection = rememberDebugBgmBottomChromeScrollState(scrollThreshold = 56.dp)
     val tracks = rememberDebugBgmTracks()
     var currentTrackIndex by remember { mutableStateOf(2) }
     var isPlaying by remember { mutableStateOf(true) }
@@ -216,7 +215,7 @@ internal fun DebugBgmLiquidMusicPreview(
         }
         DebugBgmFloatingBottomChrome(
             accent = accent,
-            scrollConnection = bottomBarScrollConnection,
+            scrollState = bottomBarScrollConnection,
             currentTrackTitle = currentTrack.title,
             isPlaying = isPlaying,
             onPlayPauseClick = togglePlayPause,
@@ -535,7 +534,8 @@ private fun DebugBgmPlayAction(
         modifier = Modifier
             .height(52.dp)
             .clip(ContinuousCapsule)
-            .background(Color.Black)
+            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f))
+            .border(1.dp, Color.White.copy(alpha = 0.28f), ContinuousCapsule)
             .clickable(onClick = onClick)
             .padding(horizontal = 34.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
@@ -551,7 +551,7 @@ private fun DebugBgmPlayAction(
             text = stringResource(
                 if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
             ),
-            color = Color.White,
+            color = MiuixTheme.colorScheme.onBackground,
             fontSize = AppTypographyTokens.CardHeader.fontSize,
             lineHeight = AppTypographyTokens.CardHeader.lineHeight,
             fontWeight = FontWeight.SemiBold,

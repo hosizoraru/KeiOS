@@ -213,8 +213,6 @@
     <string name="about_license_value_shapes">v%1$s · Apache-2.0</string>
     <string name="about_license_row_android_liquid_glass_view">LiquidGlassView</string>
     <string name="about_license_value_android_liquid_glass_view">v%1$s · MIT</string>
-    <string name="about_license_row_floating_tab_bar">FloatingTabBar</string>
-    <string name="about_license_value_floating_tab_bar">adapted from v%1$s · Apache-2.0</string>
     <string name="about_license_row_shizuku">Shizuku API</string>
     <string name="about_license_value_shizuku">v%1$s · MIT</string>
     <string name="about_license_row_mmkv">MMKV</string>
@@ -235,7 +233,6 @@
     <string name="about_license_url_capsule">https://github.com/Kyant0/Capsule</string>
     <string name="about_license_url_shapes">https://github.com/Kyant0/Shapes</string>
     <string name="about_license_url_android_liquid_glass_view">https://github.com/QmDeve/AndroidLiquidGlassView/blob/master/LICENSE</string>
-    <string name="about_license_url_floating_tab_bar">https://github.com/elyesmansour/compose-floating-tab-bar/blob/main/LICENSE</string>
     <string name="about_license_url_shizuku">https://github.com/RikkaApps/Shizuku-API/blob/master/LICENSE</string>
     <string name="about_license_url_mmkv">https://github.com/Tencent/MMKV/blob/master/LICENSE.TXT</string>
     <string name="about_license_url_mcp">https://github.com/modelcontextprotocol/kotlin-sdk/blob/main/LICENSE</string>

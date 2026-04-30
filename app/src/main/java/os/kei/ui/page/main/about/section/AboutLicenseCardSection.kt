@@ -115,15 +115,6 @@ fun AboutLicenseCardSection(
             icon = appLucideAppWindowIcon()
         ),
         AboutLicenseEntry(
-            titleRes = R.string.about_license_row_floating_tab_bar,
-            value = stringResource(
-                R.string.about_license_value_floating_tab_bar,
-                BuildConfig.FLOATING_TAB_BAR_SOURCE_VERSION
-            ),
-            sourceUrl = stringResource(R.string.about_license_url_floating_tab_bar),
-            icon = appLucideAppWindowIcon()
-        ),
-        AboutLicenseEntry(
             titleRes = R.string.about_license_row_shizuku,
             value = stringResource(R.string.about_license_value_shizuku, BuildConfig.SHIZUKU_VERSION),
             sourceUrl = stringResource(R.string.about_license_url_shizuku),

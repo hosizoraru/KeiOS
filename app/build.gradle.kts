@@ -141,7 +141,6 @@ val backdropVersion = "1.0.6"
 val capsuleVersion = "2.1.3"
 val shapesVersion = "1.2.0"
 val liquidGlassVersion = "1.0.3"
-val floatingTabBarSourceVersion = "1.0.1"
 val shizukuVersion = "13.1.5"
 val mmkvVersion = "2.4.0"
 val mcpKotlinSdkVersion = "0.11.1"
@@ -209,7 +208,6 @@ android {
         buildConfigField("String", "CAPSULE_VERSION", "\"$capsuleVersion\"")
         buildConfigField("String", "SHAPES_VERSION", "\"$shapesVersion\"")
         buildConfigField("String", "LIQUID_GLASS_VERSION", "\"$liquidGlassVersion\"")
-        buildConfigField("String", "FLOATING_TAB_BAR_SOURCE_VERSION", "\"$floatingTabBarSourceVersion\"")
         buildConfigField("String", "MMKV_VERSION", "\"$mmkvVersion\"")
         buildConfigField("String", "MCP_KOTLIN_SDK_VERSION", "\"$mcpKotlinSdkVersion\"")
         buildConfigField("String", "KTOR_VERSION", "\"$ktorVersion\"")
