@@ -47,7 +47,6 @@ internal fun rememberSettingsSectionContractBundle(
     liquidActionBarLayeredStyleEnabled: Boolean,
     liquidBottomBarEnabled: Boolean,
     bottomBarScrollEffectReductionEnabled: Boolean,
-    liquidGlassSwitchEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
     superIslandNotificationEnabled: Boolean,
     superIslandBypassRestrictionEnabled: Boolean,
@@ -75,7 +74,6 @@ internal fun rememberSettingsSectionContractBundle(
     onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
     onLiquidBottomBarChanged: (Boolean) -> Unit,
     onBottomBarScrollEffectReductionChanged: (Boolean) -> Unit,
-    onLiquidGlassSwitchChanged: (Boolean) -> Unit,
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     onSuperIslandNotificationChanged: (Boolean) -> Unit,
     onSuperIslandBypassRestrictionChanged: (Boolean) -> Unit,
@@ -188,14 +186,12 @@ internal fun rememberSettingsSectionContractBundle(
         liquidActionBarLayeredStyleEnabled,
         liquidBottomBarEnabled,
         bottomBarScrollEffectReductionEnabled,
-        liquidGlassSwitchEnabled,
         cardPressFeedbackEnabled
     ) {
         SettingsComponentEffectsSectionState(
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
             liquidBottomBarEnabled = liquidBottomBarEnabled,
             bottomBarFullEffectDuringScrollEnabled = !bottomBarScrollEffectReductionEnabled,
-            liquidGlassSwitchEnabled = liquidGlassSwitchEnabled,
             cardPressFeedbackEnabled = cardPressFeedbackEnabled
         )
     }
@@ -203,7 +199,6 @@ internal fun rememberSettingsSectionContractBundle(
         onLiquidActionBarLayeredStyleChanged,
         onLiquidBottomBarChanged,
         onBottomBarScrollEffectReductionChanged,
-        onLiquidGlassSwitchChanged,
         onCardPressFeedbackChanged
     ) {
         SettingsComponentEffectsSectionActions(
@@ -212,7 +207,6 @@ internal fun rememberSettingsSectionContractBundle(
             onBottomBarFullEffectDuringScrollChanged = { enabled ->
                 onBottomBarScrollEffectReductionChanged(!enabled)
             },
-            onLiquidGlassSwitchChanged = onLiquidGlassSwitchChanged,
             onCardPressFeedbackChanged = onCardPressFeedbackChanged
         )
     }

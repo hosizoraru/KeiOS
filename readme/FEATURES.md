@@ -69,7 +69,7 @@ The student guide expands the BA workflow into catalog and media browsing:
 Settings collect the runtime controls in one place:
 
 - Theme mode, transition animations, predictive back, preloading, app language shortcut, and Home HDR highlight.
-- Liquid-glass ActionBar, liquid bottom bar, bottom-bar full-effect policy during scrolling, glass Switch style, and card press feedback.
+- Liquid-glass ActionBar, liquid bottom bar, bottom-bar full-effect policy during scrolling, and card press feedback.
 - Custom non-Home background image and opacity controls.
 - Notification permission, battery optimization, OEM autostart, app-list access, and Shizuku status.
 - Super Island notification style, HyperOS compatibility bypass, and restore-delay tuning.

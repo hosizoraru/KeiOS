@@ -16,7 +16,6 @@ data class UiPrefsSnapshot(
     val liquidBottomBarEnabled: Boolean,
     val bottomBarScrollEffectReductionEnabled: Boolean,
     val liquidActionBarLayeredStyleEnabled: Boolean,
-    val liquidGlassSwitchEnabled: Boolean,
     val transitionAnimationsEnabled: Boolean,
     val predictiveBackAnimationsEnabled: Boolean,
     val cardPressFeedbackEnabled: Boolean,
@@ -40,7 +39,6 @@ object UiPrefs {
     private const val KEY_LIQUID_BOTTOM_BAR = "liquid_bottom_bar"
     private const val KEY_BOTTOM_BAR_SCROLL_EFFECT_REDUCTION = "bottom_bar_scroll_effect_reduction"
     private const val KEY_LIQUID_ACTION_BAR_LAYERED_STYLE = "liquid_action_bar_layered_style"
-    private const val KEY_LIQUID_GLASS_SWITCH = "liquid_glass_switch"
     private const val KEY_TRANSITION_ANIMATIONS = "transition_animations"
     private const val KEY_PREDICTIVE_BACK_ANIMATIONS = "predictive_back_animations"
     private const val KEY_CARD_PRESS_FEEDBACK = "card_press_feedback"
@@ -97,14 +95,6 @@ object UiPrefs {
 
     fun setLiquidActionBarLayeredStyleEnabled(value: Boolean) {
         kv().encode(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, value)
-    }
-
-    fun isLiquidGlassSwitchEnabled(defaultValue: Boolean = false): Boolean {
-        return kv().decodeBool(KEY_LIQUID_GLASS_SWITCH, defaultValue)
-    }
-
-    fun setLiquidGlassSwitchEnabled(value: Boolean) {
-        kv().encode(KEY_LIQUID_GLASS_SWITCH, value)
     }
 
     fun isTransitionAnimationsEnabled(defaultValue: Boolean = true): Boolean {
@@ -280,7 +270,6 @@ object UiPrefs {
             liquidBottomBarEnabled = true,
             bottomBarScrollEffectReductionEnabled = false,
             liquidActionBarLayeredStyleEnabled = true,
-            liquidGlassSwitchEnabled = false,
             transitionAnimationsEnabled = true,
             predictiveBackAnimationsEnabled = true,
             cardPressFeedbackEnabled = false,
@@ -309,7 +298,6 @@ object UiPrefs {
                 false
             ),
             liquidActionBarLayeredStyleEnabled = store.decodeBool(KEY_LIQUID_ACTION_BAR_LAYERED_STYLE, true),
-            liquidGlassSwitchEnabled = store.decodeBool(KEY_LIQUID_GLASS_SWITCH, false),
             transitionAnimationsEnabled = store.decodeBool(KEY_TRANSITION_ANIMATIONS, true),
             predictiveBackAnimationsEnabled = store.decodeBool(KEY_PREDICTIVE_BACK_ANIMATIONS, true),
             cardPressFeedbackEnabled = store.decodeBool(KEY_CARD_PRESS_FEEDBACK, false),

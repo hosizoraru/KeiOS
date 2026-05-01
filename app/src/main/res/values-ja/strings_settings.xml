@@ -51,10 +51,6 @@
     <string name="settings_bottom_bar_full_effect_summary_enabled">リストやページのスクロール中も Liquid Glass の見た目を維持します。</string>
     <string name="settings_bottom_bar_full_effect_summary_disabled">スクロールやページング中は軽量効果を使用し、弱い端末を優先します。</string>
     <string name="settings_bottom_bar_full_effect_scope">メインページャ、設定、生徒名簿、生徒詳細の下部バーに影響します。</string>
-    <string name="settings_liquid_switch_title">半透明ガラススイッチ</string>
-    <string name="settings_liquid_switch_summary_enabled">設定スイッチを半透明ガラス風にし、挙動はそのまま維持します。</string>
-    <string name="settings_liquid_switch_summary_disabled">設定スイッチを標準 Miuix スタイルにし、軽く馴染みやすい操作感にします。</string>
-    <string name="settings_liquid_switch_scope">設定ページのスイッチ表示とフィードバックに影響します。各設定のロジックはそれぞれの項目が管理します。</string>
     <string name="settings_actionbar_style_header">アクションバー</string>
     <string name="settings_actionbar_style_title">Liquid Glass Plus アクションバー</string>
     <string name="settings_actionbar_style_summary_enabled">レイヤード液体スタイルを使用します: カプセルベース、スライドハイライト、選択状態モーション。</string>

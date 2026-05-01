@@ -45,12 +45,6 @@ internal class MainScreenPrefsViewModel : ViewModel() {
         }
     }
 
-    fun updateLiquidGlassSwitchEnabled(value: Boolean) {
-        launchRepositoryUpdate {
-            setLiquidGlassSwitchEnabled(value)
-        }
-    }
-
     fun updateTransitionAnimationsEnabled(value: Boolean) {
         launchRepositoryUpdate {
             setTransitionAnimationsEnabled(value)

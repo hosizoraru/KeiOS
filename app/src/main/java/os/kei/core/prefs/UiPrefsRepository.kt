@@ -39,12 +39,6 @@ class UiPrefsRepository(
         }
     }
 
-    suspend fun setLiquidGlassSwitchEnabled(value: Boolean) {
-        updateAndPersist({ copy(liquidGlassSwitchEnabled = value) }) {
-            UiPrefs.setLiquidGlassSwitchEnabled(value)
-        }
-    }
-
     suspend fun setTransitionAnimationsEnabled(value: Boolean) {
         updateAndPersist({ copy(transitionAnimationsEnabled = value) }) {
             UiPrefs.setTransitionAnimationsEnabled(value)

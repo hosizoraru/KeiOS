@@ -83,8 +83,6 @@ internal fun MainScreenNavHost(
                 onBottomBarScrollEffectReductionChanged = prefsState::updateBottomBarScrollEffectReductionEnabled,
                 liquidActionBarLayeredStyleEnabled = prefsState.liquidActionBarLayeredStyleEnabled,
                 onLiquidActionBarLayeredStyleChanged = prefsState::updateLiquidActionBarLayeredStyleEnabled,
-                liquidGlassSwitchEnabled = prefsState.liquidGlassSwitchEnabled,
-                onLiquidGlassSwitchChanged = prefsState::updateLiquidGlassSwitchEnabled,
                 transitionAnimationsEnabled = prefsState.transitionAnimationsEnabled,
                 onTransitionAnimationsChanged = prefsState::updateTransitionAnimationsEnabled,
                 predictiveBackAnimationsEnabled = prefsState.predictiveBackAnimationsEnabled,

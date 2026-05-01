@@ -51,10 +51,6 @@
     <string name="settings_bottom_bar_full_effect_summary_enabled">Keep the full Liquid Glass look while lists or pages scroll, for steadier bottom-bar interaction.</string>
     <string name="settings_bottom_bar_full_effect_summary_disabled">Use lightweight bottom-bar effects during scrolling or paging to prioritize weaker devices.</string>
     <string name="settings_bottom_bar_full_effect_scope">Affects the main pager, Settings, Guide catalog, and student-detail bottom bars during scroll.</string>
-    <string name="settings_liquid_switch_title">Translucent glass switch</string>
-    <string name="settings_liquid_switch_summary_enabled">Settings switches use the translucent glass style while preserving current behavior.</string>
-    <string name="settings_liquid_switch_summary_disabled">Settings switches use the default Miuix style for a lighter, familiar interaction.</string>
-    <string name="settings_liquid_switch_scope">Affects the switch component style and visual feedback on Settings pages. Business logic stays owned by each setting.</string>
     <string name="settings_actionbar_style_header">Action bar</string>
     <string name="settings_actionbar_style_title">Liquid Glass Plus action bar</string>
     <string name="settings_actionbar_style_summary_enabled">Use the layered liquid style: capsule base, sliding highlight, and selected-state motion.</string>

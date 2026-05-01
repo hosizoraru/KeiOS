@@ -51,10 +51,6 @@
     <string name="settings_bottom_bar_full_effect_summary_enabled">滑动列表或分页时保持完整液态玻璃表现，底栏出现时交互质感更稳定。</string>
     <string name="settings_bottom_bar_full_effect_summary_disabled">滑动列表或分页时启用轻量底栏特效，优先稳定弱性能设备。</string>
     <string name="settings_bottom_bar_full_effect_scope">影响主分页、设置、图鉴目录与学生详情底栏的滑动时玻璃特效策略。</string>
-    <string name="settings_liquid_switch_title">通透玻璃 Switch</string>
-    <string name="settings_liquid_switch_summary_enabled">设置页开关使用通透玻璃 Switch 样式，保留当前开关行为。</string>
-    <string name="settings_liquid_switch_summary_disabled">设置页开关使用 Miuix 默认 Switch 样式，保持轻量与熟悉交互。</string>
-    <string name="settings_liquid_switch_scope">影响设置页 Switch 组件样式与视觉反馈，业务逻辑保持各开关项原有处理。</string>
     <string name="settings_actionbar_style_header">控件栏</string>
     <string name="settings_actionbar_style_title">液态玻璃Plus 控件栏</string>
     <string name="settings_actionbar_style_summary_enabled">启用多层液态样式：胶囊基底 + 滑动高光 + 选中层动效。</string>

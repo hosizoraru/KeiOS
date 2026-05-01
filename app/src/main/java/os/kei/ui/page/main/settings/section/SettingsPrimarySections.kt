@@ -475,7 +475,6 @@ internal fun SettingsComponentEffectsSection(
     val componentEffectsGroupActive = state.liquidActionBarLayeredStyleEnabled ||
         state.liquidBottomBarEnabled ||
         state.bottomBarFullEffectDuringScrollEnabled ||
-        state.liquidGlassSwitchEnabled ||
         state.cardPressFeedbackEnabled
     SettingsGroupCard(
         header = stringResource(R.string.settings_group_component_effects_header),
@@ -512,18 +511,6 @@ internal fun SettingsComponentEffectsSection(
             onCheckedChange = actions.onBottomBarFullEffectDuringScrollChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_bottom_bar_full_effect_scope)
-        )
-        SettingsToggleItem(
-            title = stringResource(R.string.settings_liquid_switch_title),
-            summary = if (state.liquidGlassSwitchEnabled) {
-                stringResource(R.string.settings_liquid_switch_summary_enabled)
-            } else {
-                stringResource(R.string.settings_liquid_switch_summary_disabled)
-            },
-            checked = state.liquidGlassSwitchEnabled,
-            onCheckedChange = actions.onLiquidGlassSwitchChanged,
-            infoKey = stringResource(R.string.common_scope),
-            infoValue = stringResource(R.string.settings_liquid_switch_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_card_feedback_title),

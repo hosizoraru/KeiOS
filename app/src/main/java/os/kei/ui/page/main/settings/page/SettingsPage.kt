@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -82,8 +80,6 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-internal val LocalSettingsLiquidGlassSwitchEnabled = staticCompositionLocalOf { false }
-
 private fun LazyListState.canMoveForSettingsChrome(deltaY: Float): Boolean {
     return when {
         deltaY < -1f -> canScrollForward
@@ -137,8 +133,6 @@ fun SettingsPage(
     onBottomBarScrollEffectReductionChanged: (Boolean) -> Unit,
     liquidActionBarLayeredStyleEnabled: Boolean,
     onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
-    liquidGlassSwitchEnabled: Boolean,
-    onLiquidGlassSwitchChanged: (Boolean) -> Unit,
     transitionAnimationsEnabled: Boolean,
     onTransitionAnimationsChanged: (Boolean) -> Unit,
     predictiveBackAnimationsEnabled: Boolean,
@@ -258,7 +252,6 @@ fun SettingsPage(
         liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
         liquidBottomBarEnabled = liquidBottomBarEnabled,
         bottomBarScrollEffectReductionEnabled = bottomBarScrollEffectReductionEnabled,
-        liquidGlassSwitchEnabled = liquidGlassSwitchEnabled,
         cardPressFeedbackEnabled = cardPressFeedbackEnabled,
         superIslandNotificationEnabled = superIslandNotificationEnabled,
         superIslandBypassRestrictionEnabled = superIslandBypassRestrictionEnabled,
@@ -304,7 +297,6 @@ fun SettingsPage(
         onLiquidActionBarLayeredStyleChanged = onLiquidActionBarLayeredStyleChanged,
         onLiquidBottomBarChanged = onLiquidBottomBarChanged,
         onBottomBarScrollEffectReductionChanged = onBottomBarScrollEffectReductionChanged,
-        onLiquidGlassSwitchChanged = onLiquidGlassSwitchChanged,
         onCardPressFeedbackChanged = onCardPressFeedbackChanged,
         onSuperIslandNotificationChanged = onSuperIslandNotificationChanged,
         onSuperIslandBypassRestrictionChanged = onSuperIslandBypassRestrictionChanged,
@@ -524,187 +516,183 @@ fun SettingsPage(
             )
         }
     ) { innerPadding ->
-        CompositionLocalProvider(
-            LocalSettingsLiquidGlassSwitchEnabled provides liquidGlassSwitchEnabled
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                key = { index -> categories[index].name },
-                overscrollEffect = null,
-                beyondViewportPageCount = 1,
+        HorizontalPager(
+            state = pagerState,
+            key = { index -> categories[index].name },
+            overscrollEffect = null,
+            beyondViewportPageCount = 1,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { alpha = farJumpAlpha.value }
+                .layerBackdrop(bottomBarBackdrop)
+        ) { pageIndex ->
+            val category = categories[pageIndex]
+            val pageListState = when (category) {
+                SettingsCategory.Access -> accessListState
+                SettingsCategory.Appearance -> appearanceListState
+                SettingsCategory.Notify -> notifyListState
+                SettingsCategory.Data -> dataListState
+            }
+            val pageNestedScrollConnection = remember(pageListState, scrollBehavior) {
+                settingsChromeNestedScrollConnection(
+                    listState = pageListState,
+                    delegate = scrollBehavior.nestedScrollConnection
+                )
+            }
+            AppPageLazyColumn(
+                innerPadding = innerPadding,
+                state = pageListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = farJumpAlpha.value }
-                    .layerBackdrop(bottomBarBackdrop)
-            ) { pageIndex ->
-                val category = categories[pageIndex]
-                val pageListState = when (category) {
-                    SettingsCategory.Access -> accessListState
-                    SettingsCategory.Appearance -> appearanceListState
-                    SettingsCategory.Notify -> notifyListState
-                    SettingsCategory.Data -> dataListState
-                }
-                val pageNestedScrollConnection = remember(pageListState, scrollBehavior) {
-                    settingsChromeNestedScrollConnection(
-                        listState = pageListState,
-                        delegate = scrollBehavior.nestedScrollConnection
-                    )
-                }
-                AppPageLazyColumn(
-                    innerPadding = innerPadding,
-                    state = pageListState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .nestedScroll(pageNestedScrollConnection),
-                    bottomExtra = appPageBottomPaddingWithFloatingOverlay(
-                        AppChromeTokens.floatingBottomBarOuterHeight
-                    ),
-                    sectionSpacing = 12.dp
-                ) {
-                    when (category) {
-                        SettingsCategory.Access -> {
-                            item {
-                                SettingsPermissionKeepAliveSection(
-                                    state = sectionContracts.permissionKeepAliveState,
-                                    actions = sectionContracts.permissionKeepAliveActions,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
+                    .nestedScroll(pageNestedScrollConnection),
+                bottomExtra = appPageBottomPaddingWithFloatingOverlay(
+                    AppChromeTokens.floatingBottomBarOuterHeight
+                ),
+                sectionSpacing = 12.dp
+            ) {
+                when (category) {
+                    SettingsCategory.Access -> {
+                        item {
+                            SettingsPermissionKeepAliveSection(
+                                state = sectionContracts.permissionKeepAliveState,
+                                actions = sectionContracts.permissionKeepAliveActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
                         }
-                        SettingsCategory.Appearance -> {
-                            item {
-                                SettingsVisualSection(
-                                    state = sectionContracts.visualState,
-                                    actions = sectionContracts.visualActions,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
-                            item {
-                                SettingsAnimationSection(
-                                    state = sectionContracts.animationState,
-                                    actions = sectionContracts.animationActions,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
-                            item {
-                                SettingsComponentEffectsSection(
-                                    state = sectionContracts.componentEffectsState,
-                                    actions = sectionContracts.componentEffectsActions,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
-                            item {
-                                SettingsBackgroundSection(
-                                    nonHomeBackgroundEnabled = nonHomeBackgroundEnabled,
-                                    onNonHomeBackgroundEnabledChanged = onNonHomeBackgroundEnabledChanged,
-                                    nonHomeBackgroundUri = nonHomeBackgroundUri,
-                                    nonHomeBackgroundOpacity = nonHomeBackgroundOpacity,
-                                    onNonHomeBackgroundOpacityChanged = onNonHomeBackgroundOpacityChanged,
-                                    backgroundPickerLauncher = backgroundController.backgroundPickerLauncher,
-                                    onClearBackground = backgroundController.clearBackground,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
+                    }
+                    SettingsCategory.Appearance -> {
+                        item {
+                            SettingsVisualSection(
+                                state = sectionContracts.visualState,
+                                actions = sectionContracts.visualActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
                         }
-                        SettingsCategory.Notify -> {
-                            item {
-                                SettingsNotifySection(
-                                    state = sectionContracts.notifyState,
-                                    actions = sectionContracts.notifyActions,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
+                        item {
+                            SettingsAnimationSection(
+                                state = sectionContracts.animationState,
+                                actions = sectionContracts.animationActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
                         }
-                        SettingsCategory.Data -> {
-                            item {
-                                SettingsCopySection(
-                                    state = sectionContracts.copyState,
-                                    actions = sectionContracts.copyActions,
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
-                            item {
-                                SettingsCacheSection(
-                                    cacheDiagnosticsEnabled = cacheDiagnosticsEnabled,
-                                    onCacheDiagnosticsChanged = onCacheDiagnosticsChanged,
-                                    cacheEntries = cacheState.cacheEntries,
-                                    cacheEntriesLoading = cacheState.cacheEntriesLoading,
-                                    clearingAllCaches = cacheState.clearingAllCaches,
-                                    clearingCacheId = cacheState.clearingCacheId,
-                                    onClearAllCaches = {
-                                        scope.launch {
-                                            val result = settingsPageViewModel.clearAllCaches(context)
-                                            if (result.isSuccess) {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.settings_cache_toast_cleared_all),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            } else {
-                                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
-                                                    ?: context.getString(R.string.common_unknown)
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(
-                                                        R.string.settings_cache_toast_clear_all_failed,
-                                                        reason
-                                                    ),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
+                        item {
+                            SettingsComponentEffectsSection(
+                                state = sectionContracts.componentEffectsState,
+                                actions = sectionContracts.componentEffectsActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsBackgroundSection(
+                                nonHomeBackgroundEnabled = nonHomeBackgroundEnabled,
+                                onNonHomeBackgroundEnabledChanged = onNonHomeBackgroundEnabledChanged,
+                                nonHomeBackgroundUri = nonHomeBackgroundUri,
+                                nonHomeBackgroundOpacity = nonHomeBackgroundOpacity,
+                                onNonHomeBackgroundOpacityChanged = onNonHomeBackgroundOpacityChanged,
+                                backgroundPickerLauncher = backgroundController.backgroundPickerLauncher,
+                                onClearBackground = backgroundController.clearBackground,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                    }
+                    SettingsCategory.Notify -> {
+                        item {
+                            SettingsNotifySection(
+                                state = sectionContracts.notifyState,
+                                actions = sectionContracts.notifyActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                    }
+                    SettingsCategory.Data -> {
+                        item {
+                            SettingsCopySection(
+                                state = sectionContracts.copyState,
+                                actions = sectionContracts.copyActions,
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsCacheSection(
+                                cacheDiagnosticsEnabled = cacheDiagnosticsEnabled,
+                                onCacheDiagnosticsChanged = onCacheDiagnosticsChanged,
+                                cacheEntries = cacheState.cacheEntries,
+                                cacheEntriesLoading = cacheState.cacheEntriesLoading,
+                                clearingAllCaches = cacheState.clearingAllCaches,
+                                clearingCacheId = cacheState.clearingCacheId,
+                                onClearAllCaches = {
+                                    scope.launch {
+                                        val result = settingsPageViewModel.clearAllCaches(context)
+                                        if (result.isSuccess) {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.settings_cache_toast_cleared_all),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                                                ?: context.getString(R.string.common_unknown)
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(
+                                                    R.string.settings_cache_toast_clear_all_failed,
+                                                    reason
+                                                ),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
-                                    },
-                                    onClearCache = { cacheId ->
-                                        scope.launch {
-                                            settingsPageViewModel.clearCache(context, cacheId)
+                                    }
+                                },
+                                onClearCache = { cacheId ->
+                                    scope.launch {
+                                        settingsPageViewModel.clearCache(context, cacheId)
+                                    }
+                                },
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
+                        }
+                        item {
+                            SettingsLogSection(
+                                logDebugEnabled = logDebugEnabled,
+                                onLogDebugChanged = onLogDebugChanged,
+                                logStats = logState.logStats,
+                                exportingLogZip = logState.exportingLogZip,
+                                clearingLogs = logState.clearingLogs,
+                                onExportZipClick = settingsPageViewModel::beginLogExport,
+                                onClearLogsClick = {
+                                    scope.launch {
+                                        val result = settingsPageViewModel.clearLogs(context)
+                                        if (result.isSuccess) {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.settings_log_toast_cleared),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            val reason = result.exceptionOrNull()?.javaClass?.simpleName
+                                                ?: context.getString(R.string.common_unknown)
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(
+                                                    R.string.settings_log_toast_clear_failed,
+                                                    reason
+                                                ),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
-                                    },
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
-                            item {
-                                SettingsLogSection(
-                                    logDebugEnabled = logDebugEnabled,
-                                    onLogDebugChanged = onLogDebugChanged,
-                                    logStats = logState.logStats,
-                                    exportingLogZip = logState.exportingLogZip,
-                                    clearingLogs = logState.clearingLogs,
-                                    onExportZipClick = settingsPageViewModel::beginLogExport,
-                                    onClearLogsClick = {
-                                        scope.launch {
-                                            val result = settingsPageViewModel.clearLogs(context)
-                                            if (result.isSuccess) {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.settings_log_toast_cleared),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            } else {
-                                                val reason = result.exceptionOrNull()?.javaClass?.simpleName
-                                                    ?: context.getString(R.string.common_unknown)
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(
-                                                        R.string.settings_log_toast_clear_failed,
-                                                        reason
-                                                    ),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    },
-                                    enabledCardColor = enabledCardColor,
-                                    disabledCardColor = disabledCardColor
-                                )
-                            }
+                                    }
+                                },
+                                enabledCardColor = enabledCardColor,
+                                disabledCardColor = disabledCardColor
+                            )
                         }
                     }
                 }

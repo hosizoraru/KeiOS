@@ -21,7 +21,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.core.prefs.CacheEntrySummary
-import os.kei.ui.page.main.settings.page.LocalSettingsLiquidGlassSwitchEnabled
 import os.kei.ui.page.main.widget.core.AppControlRow
 import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppInfoRow
@@ -29,7 +28,6 @@ import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidGlassSwitch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -111,17 +109,10 @@ internal fun SettingsToggleItem(
         infoValue = infoValue,
         onClick = { onCheckedChange(!checked) },
         trailing = {
-            if (LocalSettingsLiquidGlassSwitchEnabled.current) {
-                LiquidGlassSwitch(
-                    checked = checked,
-                    onCheckedChange = onCheckedChange
-                )
-            } else {
-                Switch(
-                    checked = checked,
-                    onCheckedChange = onCheckedChange
-                )
-            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
         }
     )
 }
