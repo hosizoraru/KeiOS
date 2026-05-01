@@ -35,6 +35,7 @@ import os.kei.ui.page.main.github.query.noOnlineShareTargetOption
 import os.kei.ui.page.main.github.query.systemDefaultDownloaderOption
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassTextButton
@@ -50,7 +51,6 @@ import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -214,7 +214,7 @@ internal fun GitHubTrackEditSheet(
                     label = stringResource(R.string.github_track_sheet_label_prefer_prerelease),
                     summary = stringResource(R.string.github_track_sheet_summary_prefer_prerelease)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = preferPreReleaseInput,
                         onCheckedChange = onPreferPreReleaseInputChange
                     )
@@ -223,7 +223,7 @@ internal fun GitHubTrackEditSheet(
                     label = stringResource(R.string.github_track_sheet_label_always_show_latest_release_download),
                     summary = stringResource(R.string.github_track_sheet_summary_always_show_latest_release_download)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = alwaysShowLatestReleaseDownloadButtonInput,
                         onCheckedChange = onAlwaysShowLatestReleaseDownloadButtonInputChange
                     )

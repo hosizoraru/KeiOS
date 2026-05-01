@@ -26,6 +26,7 @@ import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppInfoRow
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import java.io.File
@@ -34,7 +35,6 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.min
 import kotlin.math.roundToInt
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -109,7 +109,7 @@ internal fun SettingsToggleItem(
         infoValue = infoValue,
         onClick = { onCheckedChange(!checked) },
         trailing = {
-            Switch(
+            AppSwitch(
                 checked = checked,
                 onCheckedChange = onCheckedChange
             )

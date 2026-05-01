@@ -17,7 +17,8 @@ import os.kei.ui.page.main.os.shell.state.normalizeShellRunnerOutputState
 
 internal data class OsShellRunnerChromePrefs(
     val appThemeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM,
-    val liquidActionBarLayeredStyleEnabled: Boolean = true
+    val liquidActionBarLayeredStyleEnabled: Boolean = true,
+    val liquidSwitchEnabled: Boolean = true
 )
 
 internal data class OsShellRunnerPersistentState(
@@ -76,7 +77,8 @@ internal class OsShellRunnerRepository(
         val loaded = withContext(ioDispatcher) {
             OsShellRunnerChromePrefs(
                 appThemeMode = UiPrefs.getAppThemeMode(),
-                liquidActionBarLayeredStyleEnabled = UiPrefs.isLiquidActionBarLayeredStyleEnabled()
+                liquidActionBarLayeredStyleEnabled = UiPrefs.isLiquidActionBarLayeredStyleEnabled(),
+                liquidSwitchEnabled = UiPrefs.isLiquidSwitchEnabled()
             )
         }
         chromePrefs.value = loaded

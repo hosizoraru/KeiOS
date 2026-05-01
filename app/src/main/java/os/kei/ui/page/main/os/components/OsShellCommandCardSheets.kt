@@ -26,6 +26,7 @@ import os.kei.ui.page.main.os.osLucideCardIcon
 import os.kei.ui.page.main.os.osLucideRunIcon
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
@@ -43,7 +44,6 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -183,7 +183,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
                         }
                     }
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = shellRunnerVisible,
                         onCheckedChange = onShellRunnerVisibilityChange
                     )
@@ -200,7 +200,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
                             )
                         }
                     ) {
-                        Switch(
+                        AppSwitch(
                             checked = item.visible,
                             onCheckedChange = { checked ->
                                 onCardVisibilityChange(item.id, checked)

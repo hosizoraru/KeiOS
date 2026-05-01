@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideCloseIcon
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetChoiceCard
@@ -16,7 +17,6 @@ import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
-import top.yukonga.miuix.kmp.basic.Switch
 
 @Composable
 internal fun OsShellSettingsSheet(
@@ -57,7 +57,7 @@ internal fun OsShellSettingsSheet(
                     label = stringResource(R.string.os_shell_settings_persist_input_label),
                     summary = stringResource(R.string.os_shell_settings_persist_input_summary)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = settings.persistInput,
                         onCheckedChange = onPersistInputEnabledChange
                     )
@@ -66,7 +66,7 @@ internal fun OsShellSettingsSheet(
                     label = stringResource(R.string.os_shell_settings_persist_output_label),
                     summary = stringResource(R.string.os_shell_settings_persist_output_summary)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = settings.persistOutput,
                         onCheckedChange = onPersistOutputEnabledChange
                     )
@@ -75,7 +75,7 @@ internal fun OsShellSettingsSheet(
                     label = stringResource(R.string.os_shell_settings_auto_format_output_label),
                     summary = stringResource(R.string.os_shell_settings_auto_format_output_summary)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = settings.autoFormatOutput,
                         onCheckedChange = onAutoFormatOutputChange
                     )
@@ -84,7 +84,7 @@ internal fun OsShellSettingsSheet(
                     label = stringResource(R.string.os_shell_settings_auto_scroll_output_label),
                     summary = stringResource(R.string.os_shell_settings_auto_scroll_output_summary)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = settings.autoScrollOutput,
                         onCheckedChange = onAutoScrollOutputChange
                     )
@@ -93,7 +93,7 @@ internal fun OsShellSettingsSheet(
                     label = stringResource(R.string.os_shell_settings_danger_confirm_label),
                     summary = stringResource(R.string.os_shell_settings_danger_confirm_summary)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = settings.dangerousCommandConfirm,
                         onCheckedChange = onDangerousCommandConfirmChange
                     )
@@ -102,7 +102,7 @@ internal fun OsShellSettingsSheet(
                     label = stringResource(R.string.os_shell_settings_completion_toast_label),
                     summary = stringResource(R.string.os_shell_settings_completion_toast_summary)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = settings.completionToast,
                         onCheckedChange = onCompletionToastChange
                     )

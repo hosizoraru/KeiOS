@@ -56,6 +56,10 @@
     <string name="settings_actionbar_style_summary_enabled">启用多层液态样式：胶囊基底 + 滑动高光 + 选中层动效。</string>
     <string name="settings_actionbar_style_summary_disabled">关闭后仅保留滑动高光：松手触发高光按钮，直接点按立即触发。</string>
     <string name="settings_actionbar_style_scope">Home / OS / MCP / GitHub / BA / 图鉴等页面顶部 ActionBar</string>
+    <string name="settings_liquid_switch_title">液态玻璃switch</string>
+    <string name="settings_liquid_switch_summary_enabled">使用浅蓝色 v2 Liquid Glass 开关，统一开关的液态交互质感。</string>
+    <string name="settings_liquid_switch_summary_disabled">使用 Miuix 默认开关样式，保持系统组件观感。</string>
+    <string name="settings_liquid_switch_scope">影响设置、弹窗与页面配置项里的开关控件。</string>
     <string name="settings_card_feedback_header">卡片反馈</string>
     <string name="settings_card_feedback_title">卡片按压反馈</string>
     <string name="settings_card_feedback_summary_enabled">启用所有支持 PressFeedback 的卡片反馈</string>

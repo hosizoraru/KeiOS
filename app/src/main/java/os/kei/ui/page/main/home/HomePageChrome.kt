@@ -39,6 +39,7 @@ import os.kei.R
 import os.kei.feature.home.model.HomeOverviewCard
 import os.kei.ui.page.main.model.BottomPage
 import os.kei.ui.page.main.os.appLucideCloseIcon
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -49,7 +50,6 @@ import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import androidx.compose.ui.graphics.Shadow as ComposeTextShadow
@@ -137,7 +137,7 @@ internal fun HomePageControlSheet(
                                 )
                             }
                         ) {
-                            Switch(
+                            AppSwitch(
                                 checked = visibleBottomPages.contains(page),
                                 onCheckedChange = { checked ->
                                     onBottomPageVisibilityChange(page, checked)
@@ -149,7 +149,7 @@ internal fun HomePageControlSheet(
             SheetSectionTitle(visibleCardsTitle)
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetControlRow(label = homeCardMcp) {
-                    Switch(
+                    AppSwitch(
                         checked = visibleOverviewCards.contains(HomeOverviewCard.MCP),
                         onCheckedChange = { checked ->
                             onOverviewCardVisibilityChange(HomeOverviewCard.MCP, checked)
@@ -157,7 +157,7 @@ internal fun HomePageControlSheet(
                     )
                 }
                 SheetControlRow(label = homeCardGitHub) {
-                    Switch(
+                    AppSwitch(
                         checked = visibleOverviewCards.contains(HomeOverviewCard.GITHUB),
                         onCheckedChange = { checked ->
                             onOverviewCardVisibilityChange(HomeOverviewCard.GITHUB, checked)
@@ -165,7 +165,7 @@ internal fun HomePageControlSheet(
                     )
                 }
                 SheetControlRow(label = homeCardBa) {
-                    Switch(
+                    AppSwitch(
                         checked = visibleOverviewCards.contains(HomeOverviewCard.BA),
                         onCheckedChange = { checked ->
                             onOverviewCardVisibilityChange(HomeOverviewCard.BA, checked)

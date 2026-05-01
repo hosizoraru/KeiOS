@@ -473,6 +473,7 @@ internal fun SettingsComponentEffectsSection(
     disabledCardColor: Color
 ) {
     val componentEffectsGroupActive = state.liquidActionBarLayeredStyleEnabled ||
+        state.liquidSwitchEnabled ||
         state.liquidBottomBarEnabled ||
         state.bottomBarFullEffectDuringScrollEnabled ||
         state.cardPressFeedbackEnabled
@@ -493,6 +494,18 @@ internal fun SettingsComponentEffectsSection(
             onCheckedChange = actions.onLiquidActionBarLayeredStyleChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_actionbar_style_scope)
+        )
+        SettingsToggleItem(
+            title = stringResource(R.string.settings_liquid_switch_title),
+            summary = if (state.liquidSwitchEnabled) {
+                stringResource(R.string.settings_liquid_switch_summary_enabled)
+            } else {
+                stringResource(R.string.settings_liquid_switch_summary_disabled)
+            },
+            checked = state.liquidSwitchEnabled,
+            onCheckedChange = actions.onLiquidSwitchChanged,
+            infoKey = stringResource(R.string.common_scope),
+            infoValue = stringResource(R.string.settings_liquid_switch_scope)
         )
         SettingsToggleItem(
             title = stringResource(R.string.settings_bottom_bar_title),

@@ -35,6 +35,7 @@ import os.kei.ui.page.main.github.query.noOnlineShareTargetOption
 import os.kei.ui.page.main.github.query.systemDefaultDownloaderOption
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassTextButton
@@ -50,7 +51,6 @@ import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -168,7 +168,7 @@ internal fun GitHubCheckLogicSheet(
                     label = stringResource(R.string.github_check_sheet_label_prerelease_check),
                     summary = stringResource(R.string.github_check_sheet_summary_prerelease_check)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = checkAllTrackedPreReleasesInput,
                         onCheckedChange = onCheckAllTrackedPreReleasesInputChange
                     )
@@ -177,7 +177,7 @@ internal fun GitHubCheckLogicSheet(
                     label = stringResource(R.string.github_check_sheet_label_aggressive_filter),
                     summary = stringResource(R.string.github_check_sheet_summary_aggressive_filter)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = aggressiveApkFilteringInput,
                         onCheckedChange = onAggressiveApkFilteringInputChange
                     )
@@ -206,7 +206,7 @@ internal fun GitHubCheckLogicSheet(
                     label = stringResource(R.string.github_check_sheet_label_share_import_linkage),
                     summary = stringResource(R.string.github_check_sheet_summary_share_import_linkage)
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = shareImportLinkageEnabledInput,
                         onCheckedChange = onShareImportLinkageEnabledInputChange
                     )

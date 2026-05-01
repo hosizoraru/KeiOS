@@ -19,6 +19,7 @@ internal class MainScreenUiPrefsState(
     val liquidBottomBarEnabled: Boolean get() = snapshot.liquidBottomBarEnabled
     val bottomBarScrollEffectReductionEnabled: Boolean get() = snapshot.bottomBarScrollEffectReductionEnabled
     val liquidActionBarLayeredStyleEnabled: Boolean get() = snapshot.liquidActionBarLayeredStyleEnabled
+    val liquidSwitchEnabled: Boolean get() = snapshot.liquidSwitchEnabled
     val transitionAnimationsEnabled: Boolean get() = snapshot.transitionAnimationsEnabled
     val predictiveBackAnimationsEnabled: Boolean get() = snapshot.predictiveBackAnimationsEnabled
     val cardPressFeedbackEnabled: Boolean get() = snapshot.cardPressFeedbackEnabled
@@ -45,6 +46,10 @@ internal class MainScreenUiPrefsState(
 
     fun updateLiquidActionBarLayeredStyleEnabled(value: Boolean) {
         viewModel.updateLiquidActionBarLayeredStyleEnabled(value)
+    }
+
+    fun updateLiquidSwitchEnabled(value: Boolean) {
+        viewModel.updateLiquidSwitchEnabled(value)
     }
 
     fun updateTransitionAnimationsEnabled(value: Boolean) {

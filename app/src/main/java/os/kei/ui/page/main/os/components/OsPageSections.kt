@@ -32,6 +32,7 @@ import os.kei.ui.page.main.os.osLucideEnterIcon
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -44,7 +45,6 @@ import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -368,7 +368,7 @@ internal fun OsCardVisibilityManagerSheet(
                             CardLabel(card = card, modifier = Modifier.defaultMinSize(minHeight = 24.dp))
                         }
                     ) {
-                        Switch(
+                        AppSwitch(
                             checked = isCardVisible(card),
                             onCheckedChange = { checked -> onCardVisibilityChange(card, checked) }
                         )
@@ -462,7 +462,7 @@ internal fun OsActivityVisibilityManagerSheet(
                             }
                         }
                     ) {
-                        Switch(
+                        AppSwitch(
                             checked = item.visible,
                             onCheckedChange = { checked ->
                                 onCardVisibilityChange(item.id, checked)

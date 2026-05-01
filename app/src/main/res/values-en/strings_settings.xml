@@ -56,6 +56,10 @@
     <string name="settings_actionbar_style_summary_enabled">Use the layered liquid style: capsule base, sliding highlight, and selected-state motion.</string>
     <string name="settings_actionbar_style_summary_disabled">Keep the sliding highlight only. Release triggers highlight buttons; direct taps run immediately.</string>
     <string name="settings_actionbar_style_scope">Top ActionBar on Home / OS / MCP / GitHub / BA / Guide pages</string>
+    <string name="settings_liquid_switch_title">Liquid Glass switch</string>
+    <string name="settings_liquid_switch_summary_enabled">Use the light-blue v2 Liquid Glass switch for consistent liquid interaction.</string>
+    <string name="settings_liquid_switch_summary_disabled">Use the default Miuix switch style.</string>
+    <string name="settings_liquid_switch_scope">Affects switches in Settings, sheets, and page configuration controls.</string>
     <string name="settings_card_feedback_header">Card feedback</string>
     <string name="settings_card_feedback_title">Card press feedback</string>
     <string name="settings_card_feedback_summary_enabled">Enable all cards that support PressFeedback.</string>

@@ -65,6 +65,7 @@ internal data class SettingsAnimationSectionActions(
 @Immutable
 internal data class SettingsComponentEffectsSectionState(
     val liquidActionBarLayeredStyleEnabled: Boolean,
+    val liquidSwitchEnabled: Boolean,
     val liquidBottomBarEnabled: Boolean,
     val bottomBarFullEffectDuringScrollEnabled: Boolean,
     val cardPressFeedbackEnabled: Boolean
@@ -72,6 +73,7 @@ internal data class SettingsComponentEffectsSectionState(
 
 internal data class SettingsComponentEffectsSectionActions(
     val onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
+    val onLiquidSwitchChanged: (Boolean) -> Unit,
     val onLiquidBottomBarChanged: (Boolean) -> Unit,
     val onBottomBarFullEffectDuringScrollChanged: (Boolean) -> Unit,
     val onCardPressFeedbackChanged: (Boolean) -> Unit

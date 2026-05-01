@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,6 +57,7 @@ import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
+import os.kei.ui.page.main.widget.glass.LocalLiquidSwitchEnabled
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -472,42 +474,44 @@ fun OsShellRunnerPage(
         onConfirm = { saveCommandToCard() }
     )
 
-    OsShellSettingsSheet(
-        show = showSettingsSheet,
-        onDismissRequest = { showSettingsSheet = false },
-        settings = settings,
-        onPersistInputEnabledChange = shellRunnerViewModel::updatePersistInput,
-        onPersistOutputEnabledChange = shellRunnerViewModel::updatePersistOutput,
-        onTimeoutSecondsChange = shellRunnerViewModel::updateTimeoutSeconds,
-        onAutoFormatOutputChange = shellRunnerViewModel::updateAutoFormatOutput,
-        onAutoScrollOutputChange = shellRunnerViewModel::updateAutoScrollOutput,
-        onOutputLimitCharsChange = { limit ->
-            shellRunnerViewModel.updateOutputLimitChars(
-                limit = limit,
-                commandStoppedText = textBundle.commandStoppedText,
-                outputResultLabel = textBundle.outputResultLabel,
-                outputTimeLabel = textBundle.outputTimeLabel
-            )
-        },
-        onOutputSaveModeChange = { mode ->
-            shellRunnerViewModel.updateOutputSaveMode(
-                mode = mode,
-                commandStoppedText = textBundle.commandStoppedText,
-                outputResultLabel = textBundle.outputResultLabel,
-                outputTimeLabel = textBundle.outputTimeLabel
-            )
-        },
-        onDangerousCommandConfirmChange = shellRunnerViewModel::updateDangerousCommandConfirm,
-        onCompletionToastChange = shellRunnerViewModel::updateCompletionToast,
-        onStartupBehaviorChange = { behavior ->
-            shellRunnerViewModel.updateStartupBehavior(behavior)
-            if (behavior == OsShellRunnerStartupBehavior.FocusInput) {
-                startupFocusRequestToken += 1
-            }
-        },
-        onExitCleanupModeChange = shellRunnerViewModel::updateExitCleanupMode,
-        onCopyModeChange = shellRunnerViewModel::updateCopyMode
-    )
+    CompositionLocalProvider(LocalLiquidSwitchEnabled provides chromePrefs.liquidSwitchEnabled) {
+        OsShellSettingsSheet(
+            show = showSettingsSheet,
+            onDismissRequest = { showSettingsSheet = false },
+            settings = settings,
+            onPersistInputEnabledChange = shellRunnerViewModel::updatePersistInput,
+            onPersistOutputEnabledChange = shellRunnerViewModel::updatePersistOutput,
+            onTimeoutSecondsChange = shellRunnerViewModel::updateTimeoutSeconds,
+            onAutoFormatOutputChange = shellRunnerViewModel::updateAutoFormatOutput,
+            onAutoScrollOutputChange = shellRunnerViewModel::updateAutoScrollOutput,
+            onOutputLimitCharsChange = { limit ->
+                shellRunnerViewModel.updateOutputLimitChars(
+                    limit = limit,
+                    commandStoppedText = textBundle.commandStoppedText,
+                    outputResultLabel = textBundle.outputResultLabel,
+                    outputTimeLabel = textBundle.outputTimeLabel
+                )
+            },
+            onOutputSaveModeChange = { mode ->
+                shellRunnerViewModel.updateOutputSaveMode(
+                    mode = mode,
+                    commandStoppedText = textBundle.commandStoppedText,
+                    outputResultLabel = textBundle.outputResultLabel,
+                    outputTimeLabel = textBundle.outputTimeLabel
+                )
+            },
+            onDangerousCommandConfirmChange = shellRunnerViewModel::updateDangerousCommandConfirm,
+            onCompletionToastChange = shellRunnerViewModel::updateCompletionToast,
+            onStartupBehaviorChange = { behavior ->
+                shellRunnerViewModel.updateStartupBehavior(behavior)
+                if (behavior == OsShellRunnerStartupBehavior.FocusInput) {
+                    startupFocusRequestToken += 1
+                }
+            },
+            onExitCleanupModeChange = shellRunnerViewModel::updateExitCleanupMode,
+            onCopyModeChange = shellRunnerViewModel::updateCopyMode
+        )
+    }
 
     val dangerousCommandPreview = remember(pendingDangerousCommand) {
         pendingDangerousCommand.trim().replace('\n', ' ').take(120)

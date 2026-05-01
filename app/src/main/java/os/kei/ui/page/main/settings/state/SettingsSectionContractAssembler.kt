@@ -45,6 +45,7 @@ internal fun rememberSettingsSectionContractBundle(
     transitionAnimationsEnabled: Boolean,
     predictiveBackAnimationsEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
+    liquidSwitchEnabled: Boolean,
     liquidBottomBarEnabled: Boolean,
     bottomBarScrollEffectReductionEnabled: Boolean,
     cardPressFeedbackEnabled: Boolean,
@@ -72,6 +73,7 @@ internal fun rememberSettingsSectionContractBundle(
     onTransitionAnimationsChanged: (Boolean) -> Unit,
     onPredictiveBackAnimationsChanged: (Boolean) -> Unit,
     onLiquidActionBarLayeredStyleChanged: (Boolean) -> Unit,
+    onLiquidSwitchChanged: (Boolean) -> Unit,
     onLiquidBottomBarChanged: (Boolean) -> Unit,
     onBottomBarScrollEffectReductionChanged: (Boolean) -> Unit,
     onCardPressFeedbackChanged: (Boolean) -> Unit,
@@ -184,12 +186,14 @@ internal fun rememberSettingsSectionContractBundle(
     }
     val componentEffectsState = remember(
         liquidActionBarLayeredStyleEnabled,
+        liquidSwitchEnabled,
         liquidBottomBarEnabled,
         bottomBarScrollEffectReductionEnabled,
         cardPressFeedbackEnabled
     ) {
         SettingsComponentEffectsSectionState(
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
+            liquidSwitchEnabled = liquidSwitchEnabled,
             liquidBottomBarEnabled = liquidBottomBarEnabled,
             bottomBarFullEffectDuringScrollEnabled = !bottomBarScrollEffectReductionEnabled,
             cardPressFeedbackEnabled = cardPressFeedbackEnabled
@@ -197,12 +201,14 @@ internal fun rememberSettingsSectionContractBundle(
     }
     val componentEffectsActions = remember(
         onLiquidActionBarLayeredStyleChanged,
+        onLiquidSwitchChanged,
         onLiquidBottomBarChanged,
         onBottomBarScrollEffectReductionChanged,
         onCardPressFeedbackChanged
     ) {
         SettingsComponentEffectsSectionActions(
             onLiquidActionBarLayeredStyleChanged = onLiquidActionBarLayeredStyleChanged,
+            onLiquidSwitchChanged = onLiquidSwitchChanged,
             onLiquidBottomBarChanged = onLiquidBottomBarChanged,
             onBottomBarFullEffectDuringScrollChanged = { enabled ->
                 onBottomBarScrollEffectReductionChanged(!enabled)

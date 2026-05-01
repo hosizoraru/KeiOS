@@ -56,6 +56,10 @@
     <string name="settings_actionbar_style_summary_enabled">レイヤード液体スタイルを使用します: カプセルベース、スライドハイライト、選択状態モーション。</string>
     <string name="settings_actionbar_style_summary_disabled">スライドハイライトのみを維持します。リリースでハイライトボタンを発火し、直接タップは即時実行します。</string>
     <string name="settings_actionbar_style_scope">Home / OS / MCP / GitHub / BA / 生徒情報ページの上部 ActionBar</string>
+    <string name="settings_liquid_switch_title">Liquid Glass スイッチ</string>
+    <string name="settings_liquid_switch_summary_enabled">ライトブルーの v2 Liquid Glass スイッチで、液体感のある操作感に統一します。</string>
+    <string name="settings_liquid_switch_summary_disabled">Miuix 標準のスイッチスタイルを使用します。</string>
+    <string name="settings_liquid_switch_scope">設定、シート、ページ設定項目のスイッチに影響します。</string>
     <string name="settings_card_feedback_header">カードフィードバック</string>
     <string name="settings_card_feedback_title">カード押下フィードバック</string>
     <string name="settings_card_feedback_summary_enabled">PressFeedback 対応カードをすべて有効にします。</string>

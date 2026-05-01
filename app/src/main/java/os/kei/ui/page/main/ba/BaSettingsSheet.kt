@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import os.kei.R
 import os.kei.ui.page.main.ba.support.BA_AP_MAX
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
@@ -30,7 +31,6 @@ import os.kei.ui.page.main.widget.sheet.SheetFieldBlock
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
@@ -120,7 +120,7 @@ internal fun BaSettingsSheet(
                     color = settingsAccent,
                 )
                 SheetControlRow(label = stringResource(R.string.ba_settings_label_ap_notify)) {
-                    Switch(
+                    AppSwitch(
                         checked = state.apNotifyEnabled,
                         onCheckedChange = onApNotifyEnabledChange,
                     )
@@ -159,7 +159,7 @@ internal fun BaSettingsSheet(
                     label = stringResource(R.string.ba_settings_label_arena_refresh_notify),
                     summary = stringResource(R.string.ba_settings_summary_arena_refresh_notify),
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = state.arenaRefreshNotifyEnabled,
                         onCheckedChange = onArenaRefreshNotifyEnabledChange,
                     )
@@ -168,7 +168,7 @@ internal fun BaSettingsSheet(
                     label = stringResource(R.string.ba_settings_label_cafe_visit_notify),
                     summary = stringResource(R.string.ba_settings_summary_cafe_visit_notify),
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = state.cafeVisitNotifyEnabled,
                         onCheckedChange = onCafeVisitNotifyEnabledChange,
                     )
@@ -187,7 +187,7 @@ internal fun BaSettingsSheet(
                     label = stringResource(R.string.ba_settings_label_media_adaptive_rotation),
                     summary = stringResource(R.string.ba_settings_summary_media_adaptive_rotation),
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = state.mediaAdaptiveRotationEnabled,
                         onCheckedChange = onMediaAdaptiveRotationEnabledChange,
                     )
@@ -196,7 +196,7 @@ internal fun BaSettingsSheet(
                     label = stringResource(R.string.ba_settings_label_media_save_custom),
                     summary = stringResource(R.string.ba_settings_summary_media_save_custom),
                 ) {
-                    Switch(
+                    AppSwitch(
                         checked = state.mediaSaveCustomEnabled,
                         onCheckedChange = onMediaSaveCustomEnabledChange,
                     )
@@ -260,19 +260,19 @@ internal fun BaSettingsSheet(
                 variant = GlassVariant.SheetAction,
             ) {
                 SheetControlRow(label = stringResource(R.string.ba_settings_label_show_ended_activity)) {
-                    Switch(
+                    AppSwitch(
                         checked = state.showEndedActivities,
                         onCheckedChange = onShowEndedActivitiesChange,
                     )
                 }
                 SheetControlRow(label = stringResource(R.string.ba_settings_label_show_ended_pool)) {
-                    Switch(
+                    AppSwitch(
                         checked = state.showEndedPools,
                         onCheckedChange = onShowEndedPoolsChange,
                     )
                 }
                 SheetControlRow(label = stringResource(R.string.ba_settings_label_show_images)) {
-                    Switch(
+                    AppSwitch(
                         checked = state.showCalendarPoolImages,
                         onCheckedChange = onShowCalendarPoolImagesChange,
                     )
