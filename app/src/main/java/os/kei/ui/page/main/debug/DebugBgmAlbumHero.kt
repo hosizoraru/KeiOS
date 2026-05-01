@@ -1,5 +1,16 @@
 package os.kei.ui.page.main.debug
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +40,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kyant.backdrop.Backdrop
@@ -44,6 +57,8 @@ import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.LiquidButton
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
+import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
+import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -64,6 +79,19 @@ internal fun DebugBgmAlbumHero(
     onVolumeSliderInteractionChanged: (Boolean) -> Unit
 ) {
     var volumeControlVisible by rememberSaveable { mutableStateOf(true) }
+    val animationsEnabled = LocalTransitionAnimationsEnabled.current
+    val volumeMotionSpec = tween<Float>(
+        durationMillis = resolvedMotionDuration(DebugBgmVolumeControlMotionMs, animationsEnabled),
+        easing = FastOutSlowInEasing
+    )
+    val volumeSizeMotionSpec = tween<IntSize>(
+        durationMillis = resolvedMotionDuration(DebugBgmVolumeControlMotionMs, animationsEnabled),
+        easing = FastOutSlowInEasing
+    )
+    val volumeOffsetMotionSpec = tween<IntOffset>(
+        durationMillis = resolvedMotionDuration(DebugBgmVolumeControlMotionMs, animationsEnabled),
+        easing = FastOutSlowInEasing
+    )
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -116,7 +144,36 @@ internal fun DebugBgmAlbumHero(
             onPlayPauseClick = onPlayPauseClick,
             onVolumeClick = { volumeControlVisible = !volumeControlVisible }
         )
-        if (volumeControlVisible) {
+        AnimatedVisibility(
+            visible = volumeControlVisible,
+            enter = fadeIn(animationSpec = volumeMotionSpec) +
+                expandVertically(
+                    animationSpec = volumeSizeMotionSpec,
+                    expandFrom = Alignment.Top
+                ) +
+                slideInVertically(
+                    animationSpec = volumeOffsetMotionSpec,
+                    initialOffsetY = { -it / 4 }
+                ) +
+                scaleIn(
+                    animationSpec = volumeMotionSpec,
+                    initialScale = 0.96f
+                ),
+            exit = fadeOut(animationSpec = volumeMotionSpec) +
+                shrinkVertically(
+                    animationSpec = volumeSizeMotionSpec,
+                    shrinkTowards = Alignment.Top
+                ) +
+                slideOutVertically(
+                    animationSpec = volumeOffsetMotionSpec,
+                    targetOffsetY = { -it / 5 }
+                ) +
+                scaleOut(
+                    animationSpec = volumeMotionSpec,
+                    targetScale = 0.97f
+                ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             DebugBgmAlbumVolumeControl(
                 accent = accent,
                 volume = playbackVolume,
@@ -368,3 +425,5 @@ private fun DebugBgmActionButtonSurfaceColor(
     val alpha = if (selected) selectedAlpha else 0.16f
     return MiuixTheme.colorScheme.surfaceContainer.copy(alpha = alpha)
 }
+
+private const val DebugBgmVolumeControlMotionMs = 220

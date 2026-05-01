@@ -235,9 +235,9 @@ internal fun DebugBgmFloatingBottomChrome(
         val tabGroupExpandedWidth = (maxWidth - DebugBgmExpandedSearchSpacing - DebugBgmExpandedDockHeight)
             .coerceAtLeast(260.dp)
         val compactMiniWidth = boundedDp(
-            value = maxWidth - (DebugBgmCompactControlSize * 2f) - 34.dp,
+            value = maxWidth - (DebugBgmCompactControlSize * 2f) - (DebugBgmCompactMiniGap * 2f),
             min = 190.dp,
-            max = 244.dp
+            max = DebugBgmCompactMiniMaxWidth
         )
         val searchFieldWidth = (maxWidth - DebugBgmCompactControlSize - DebugBgmSearchFieldSpacing)
             .coerceAtLeast(196.dp)
@@ -612,6 +612,8 @@ private val DebugBgmExpandedDockHeight = DebugBgmChromeControlHeight
 private val DebugBgmExpandedDockY = DebugBgmChromeControlHeight + DebugBgmChromeStackGap
 private val DebugBgmExpandedSearchSpacing = AppChromeTokens.pageSectionGap
 private val DebugBgmSearchFieldSpacing = 8.dp
+private val DebugBgmCompactMiniGap = DebugBgmSearchFieldSpacing
+private val DebugBgmCompactMiniMaxWidth = 288.dp
 private val DebugBgmCompactControlSize = DebugBgmChromeControlHeight
 private val DebugBgmCompactControlInset = 0.dp
 private const val DebugBgmBottomChromeSizeMotionMs = 360

@@ -5,11 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -31,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -76,6 +79,7 @@ internal fun DebugBgmLiquidMusicPreview(
     var sliderInteractionActive by remember { mutableStateOf(false) }
     val currentTrack = musicState.currentTrack
     val context = LocalContext.current
+    val density = LocalDensity.current
     val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
     var backdropActivationCount by rememberSaveable { mutableIntStateOf(0) }
     DisposableEffect(Unit) {
@@ -150,11 +154,19 @@ internal fun DebugBgmLiquidMusicPreview(
     BackHandler(enabled = musicState.searchVisible) {
         musicState.closeSearch()
     }
-    val bottomChromeInsetsModifier = if (musicState.searchInputActive) {
-        Modifier.imePadding()
+    val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    val imeBottom = with(density) { WindowInsets.ime.getBottom(this).toDp() }
+    val keyboardLift = if (
+        musicState.searchInputActive &&
+        imeBottom > navigationBarBottom + DebugBgmKeyboardLiftThreshold
+    ) {
+        imeBottom - navigationBarBottom
     } else {
-        Modifier.navigationBarsPadding()
+        0.dp
     }
+    val bottomChromeInsetsModifier = Modifier
+        .navigationBarsPadding()
+        .padding(bottom = keyboardLift)
 
     Box(
         modifier = panelModifier
@@ -253,3 +265,5 @@ internal fun DebugBgmLiquidMusicPreview(
         )
     }
 }
+
+private val DebugBgmKeyboardLiftThreshold = 72.dp
