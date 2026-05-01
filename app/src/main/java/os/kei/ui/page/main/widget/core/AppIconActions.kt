@@ -6,8 +6,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -20,19 +20,17 @@ fun AppCompactIconAction(
     tint: Color = MiuixTheme.colorScheme.primary,
     minSize: Dp = 30.dp
 ) {
-    IconButton(
+    GlassIconButton(
+        backdrop = null,
+        icon = icon,
+        contentDescription = contentDescription,
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
-        minWidth = minSize,
-        minHeight = minSize,
-        cornerRadius = minSize,
-        backgroundColor = Color.Transparent
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = tint
-        )
-    }
+        width = minSize,
+        height = minSize,
+        iconTint = tint,
+        containerColor = Color.Transparent,
+        variant = GlassVariant.Compact
+    )
 }

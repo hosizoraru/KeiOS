@@ -70,13 +70,13 @@ import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -496,13 +496,14 @@ fun SettingsPage(
         scrollBehavior = scrollBehavior,
         topBarColor = Color.Transparent,
         navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = appLucideBackIcon(),
-                    contentDescription = null,
-                    tint = MiuixTheme.colorScheme.onSurface
-                )
-            }
+            GlassIconButton(
+                backdrop = null,
+                icon = appLucideBackIcon(),
+                contentDescription = "",
+                onClick = onBack,
+                iconTint = MiuixTheme.colorScheme.onSurface,
+                variant = GlassVariant.Bar
+            )
         },
         bottomBar = {
             SettingsCategoryBottomBar(

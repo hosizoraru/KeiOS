@@ -27,15 +27,14 @@ import os.kei.ui.page.main.os.appLucideVersionIcon
 import os.kei.ui.page.main.about.ui.AboutCompactInfoRow
 import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppInfoListBody
+import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.glass.AppInteractiveTokens
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.about.util.formatTime
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -70,12 +69,10 @@ fun AboutAppCardSection(
         ?: unknown
     val debugEnabled = (((applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
     val testOnlyEnabled = (((applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_TEST_ONLY) != 0)
-    Card(
+    AppSurfaceCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = cardColor,
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        containerColor = cardColor,
+        contentColor = MiuixTheme.colorScheme.onBackground,
         onClick = { onExpandedChange(!expanded) }
     ) {
         Column(
@@ -94,13 +91,15 @@ fun AboutAppCardSection(
                     )
                 },
                 endActions = {
-                    IconButton(onClick = onOpenDebugActivity) {
-                        Icon(
-                            imageVector = appLucideFlaskIcon(),
-                            contentDescription = stringResource(R.string.about_action_open_debug_activity),
-                            tint = accent
-                        )
-                    }
+                    GlassIconButton(
+                        backdrop = null,
+                        icon = appLucideFlaskIcon(),
+                        contentDescription = stringResource(R.string.about_action_open_debug_activity),
+                        onClick = onOpenDebugActivity,
+                        iconTint = accent,
+                        containerColor = Color.Transparent,
+                        variant = GlassVariant.Compact
+                    )
                 },
                 expandable = true,
                 expanded = expanded,

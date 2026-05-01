@@ -36,8 +36,8 @@ import os.kei.ui.page.main.about.util.openExternalUrl
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -86,13 +86,14 @@ fun AboutPage(
         topBarColor = Color.Transparent,
         navigationIcon = {
             if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = appLucideBackIcon(),
-                        contentDescription = null,
-                        tint = MiuixTheme.colorScheme.onSurface
-                    )
-                }
+                GlassIconButton(
+                    backdrop = null,
+                    icon = appLucideBackIcon(),
+                    contentDescription = "",
+                    onClick = onBack,
+                    iconTint = MiuixTheme.colorScheme.onSurface,
+                    variant = GlassVariant.Bar
+                )
             }
         }
     ) { innerPadding ->

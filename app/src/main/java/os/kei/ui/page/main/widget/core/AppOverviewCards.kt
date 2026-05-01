@@ -2,6 +2,8 @@ package os.kei.ui.page.main.widget.core
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
@@ -16,9 +18,11 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,8 +31,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.support.LocalTextCopyExpandedOverride
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -52,49 +54,50 @@ fun AppOverviewCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
-    Card(
+    val interactionSource = remember { MutableInteractionSource() }
+    val clickModifier = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
+            onClick = { onClick?.invoke() },
+            onLongClick = onLongClick
+        )
+    } else {
+        Modifier
+    }
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
             .border(width = 1.dp, color = borderColor, shape = shape)
-            .background(containerColor, shape),
-        colors = CardDefaults.defaultColors(
-            color = containerColor,
-            contentColor = contentColor
-        ),
-        insideMargin = PaddingValues(0.dp),
-        showIndication = false,
-        onClick = onClick,
-        onLongPress = onLongClick
+            .background(containerColor, shape)
+            .then(clickModifier),
+        verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.overviewHeaderBodyGap)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.overviewHeaderBodyGap)
-        ) {
-            AppCardHeader(
-                title = title,
-                subtitle = subtitle,
-                titleColor = titleColor,
-                subtitleColor = subtitleColor,
-                minHeight = 44.dp,
-                contentPadding = PaddingValues(
-                    horizontal = CardLayoutRhythm.overviewHeaderHorizontalPadding,
-                    vertical = CardLayoutRhythm.overviewHeaderVerticalPadding
-                ),
-                titleTypography = AppTypographyTokens.CompactTitle,
-                startAction = startAction,
-                endActions = headerEndActions
-            )
-            AppCardBodyColumn(
-                contentPadding = PaddingValues(
-                    start = CardLayoutRhythm.cardHorizontalPadding,
-                    end = CardLayoutRhythm.cardHorizontalPadding,
-                    bottom = CardLayoutRhythm.overviewBodyBottomPadding
-                ),
-                verticalSpacing = contentVerticalSpacing,
-                content = content
-            )
-        }
+        AppCardHeader(
+            title = title,
+            subtitle = subtitle,
+            titleColor = titleColor,
+            subtitleColor = subtitleColor,
+            minHeight = 44.dp,
+            contentPadding = PaddingValues(
+                horizontal = CardLayoutRhythm.overviewHeaderHorizontalPadding,
+                vertical = CardLayoutRhythm.overviewHeaderVerticalPadding
+            ),
+            titleTypography = AppTypographyTokens.CompactTitle,
+            startAction = startAction,
+            endActions = headerEndActions
+        )
+        AppCardBodyColumn(
+            contentPadding = PaddingValues(
+                start = CardLayoutRhythm.cardHorizontalPadding,
+                end = CardLayoutRhythm.cardHorizontalPadding,
+                bottom = CardLayoutRhythm.overviewBodyBottomPadding
+            ),
+            verticalSpacing = contentVerticalSpacing,
+            content = content
+        )
     }
 }
 

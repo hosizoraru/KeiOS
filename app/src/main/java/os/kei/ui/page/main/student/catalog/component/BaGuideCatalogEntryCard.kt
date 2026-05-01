@@ -1,8 +1,5 @@
 package os.kei.ui.page.main.student.catalog.component
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -19,13 +15,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
+import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
@@ -41,25 +36,12 @@ internal fun BaGuideCatalogEntryCard(
 ) {
     val uiState = rememberBaGuideCatalogEntryCardUiState(entry = entry, isFavorite = isFavorite)
     val copyAction = rememberBaGuideCatalogEntryCopyAction(copyPayload = uiState.copyPayload)
-    val cardShape = RoundedCornerShape(16.dp)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = uiState.borderColor,
-                shape = cardShape
-            )
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onOpenGuide(entry.detailUrl) },
-                onLongClick = copyAction
-            ),
-        cornerRadius = 16.dp,
-        colors = CardDefaults.defaultColors(
-            color = uiState.containerColor
-        )
+    AppSurfaceCard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = uiState.containerColor,
+        borderColor = uiState.borderColor,
+        onClick = { onOpenGuide(entry.detailUrl) },
+        onLongClick = copyAction
     ) {
         Row(
             modifier = Modifier

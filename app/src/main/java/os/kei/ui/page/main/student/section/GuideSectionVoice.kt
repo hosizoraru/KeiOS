@@ -24,12 +24,11 @@ import os.kei.ui.page.main.student.guideLocalizedVoiceEntryTitle
 import os.kei.ui.page.main.student.guideLocalizedVoiceLanguage
 import os.kei.ui.page.main.student.guideLocalizedVoiceLineLabel
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
+import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Pause
@@ -62,12 +61,10 @@ fun GuideVoiceLanguageCard(
             currentDisplay.ifBlank { visibleHeaderLabels.joinToString(" / ") { it.second } }
         )
     }
-    Card(
+    AppSurfaceCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        containerColor = Color(0x223B82F6),
+        contentColor = MiuixTheme.colorScheme.onBackground,
         onClick = {}
     ) {
         CopyModeSelectionContainer {
@@ -135,12 +132,10 @@ fun GuideVoiceEntryCard(
         )
     }
     val normalizedPlaybackUrl = normalizeGuideMediaSource(playbackUrl)
-    Card(
+    AppSurfaceCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        containerColor = Color(0x223B82F6),
+        contentColor = MiuixTheme.colorScheme.onBackground,
         onClick = {}
     ) {
         CopyModeSelectionContainer {

@@ -16,8 +16,8 @@ import os.kei.ui.page.main.mcp.skill.McpSkillPageViewModel
 import os.kei.ui.page.main.mcp.skill.component.McpSkillContentList
 import os.kei.ui.page.main.mcp.skill.state.rememberMcpSkillPageTextBundle
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -58,13 +58,14 @@ fun McpSkillPage(
         scrollBehavior = scrollBehavior,
         topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
         navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = MiuixIcons.Regular.Back,
-                    contentDescription = null,
-                    tint = MiuixTheme.colorScheme.onSurface
-                )
-            }
+            GlassIconButton(
+                backdrop = null,
+                icon = MiuixIcons.Regular.Back,
+                contentDescription = "",
+                onClick = onBack,
+                iconTint = MiuixTheme.colorScheme.onSurface,
+                variant = GlassVariant.Bar
+            )
         }
     ) { innerPadding ->
         McpSkillContentList(

@@ -3,6 +3,8 @@ package os.kei.ui.page.main.widget.core
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,16 +12,16 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -34,26 +36,27 @@ fun AppSurfaceCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shape = RoundedCornerShape(CardLayoutRhythm.cardCornerRadius)
-    Card(
+    val interactionSource = remember { MutableInteractionSource() }
+    val clickModifier = if (onClick != null || onLongClick != null) {
+        Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
+            onClick = { onClick?.invoke() },
+            onLongClick = onLongClick
+        )
+    } else {
+        Modifier
+    }
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
             .border(width = 1.dp, color = borderColor, shape = shape)
-            .background(containerColor, shape),
-        colors = CardDefaults.defaultColors(
-            color = containerColor,
-            contentColor = contentColor
-        ),
-        insideMargin = PaddingValues(0.dp),
-        showIndication = false,
-        onClick = onClick,
-        onLongPress = onLongClick
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            content = content
-        )
-    }
+            .background(containerColor, shape)
+            .then(clickModifier),
+        content = content
+    )
 }
 
 @Composable

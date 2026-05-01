@@ -1,8 +1,11 @@
 package os.kei.ui.page.main.widget.sheet
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -17,10 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -38,8 +43,6 @@ import os.kei.ui.page.main.widget.glass.AppInteractiveTokens
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -146,21 +149,28 @@ fun SheetSurfaceCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(16.dp)
-    Card(
+    val interactionSource = remember { MutableInteractionSource() }
+    val clickModifier = if (onClick != null) {
+        Modifier.combinedClickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
+            onClick = onClick
+        )
+    } else {
+        Modifier
+    }
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
+            .background(containerColor, shape)
             .border(
                 width = 1.dp,
                 color = borderColor,
                 shape = shape
-            ),
-        colors = CardDefaults.defaultColors(
-            color = containerColor,
-            contentColor = contentColor
-        ),
-        showIndication = onClick != null,
-        onClick = onClick ?: {}
+            )
+            .then(clickModifier)
     ) {
         AppCardBodyColumn(
             contentPadding = contentPadding,

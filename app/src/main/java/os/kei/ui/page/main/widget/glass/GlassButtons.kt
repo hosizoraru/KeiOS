@@ -60,7 +60,8 @@ fun GlassIconButton(
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
     iconTint: Color = MiuixTheme.colorScheme.primary,
-    containerColor: Color? = null
+    containerColor: Color? = null,
+    enabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
     val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
@@ -76,7 +77,8 @@ fun GlassIconButton(
         blurRadius = blurRadius,
         variant = variant,
         isDark = isDark,
-        containerColor = containerColor
+        containerColor = containerColor,
+        enabled = enabled
     ) {
         Icon(
             imageVector = icon,
@@ -101,7 +103,8 @@ fun GlassIconButton(
     variant: GlassVariant = GlassVariant.Content,
     iconTint: Color = Color.Unspecified,
     iconModifier: Modifier = Modifier,
-    containerColor: Color? = null
+    containerColor: Color? = null,
+    enabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
     val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
@@ -117,7 +120,8 @@ fun GlassIconButton(
         blurRadius = blurRadius,
         variant = variant,
         isDark = isDark,
-        containerColor = containerColor
+        containerColor = containerColor,
+        enabled = enabled
     ) {
         Icon(
             painter = painter,
@@ -141,6 +145,7 @@ private fun GlassIconButtonContainer(
     variant: GlassVariant,
     isDark: Boolean,
     containerColor: Color?,
+    enabled: Boolean,
     content: @Composable () -> Unit
 ) {
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
@@ -195,6 +200,7 @@ private fun GlassIconButtonContainer(
                     Modifier.combinedClickable(
                         interactionSource = interactionSource,
                         indication = null,
+                        enabled = enabled,
                         onClick = onClick,
                         onLongClick = onLongClick
                     )
@@ -202,6 +208,7 @@ private fun GlassIconButtonContainer(
                     Modifier.clickable(
                         interactionSource = interactionSource,
                         indication = null,
+                        enabled = enabled,
                         onClick = onClick
                     )
                 }
@@ -240,7 +247,10 @@ private fun GlassIconButtonContainer(
                     val fallbackColor = containerOverlay ?: fallbackSurface.copy(alpha = glass.fallbackAlpha)
                     Modifier.background(fallbackColor)
                 }
-            ),
+            )
+            .graphicsLayer {
+                alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
+            },
         contentAlignment = Alignment.Center
     ) {
         if (showBorder) {

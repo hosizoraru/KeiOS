@@ -71,6 +71,8 @@ import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
@@ -80,7 +82,6 @@ import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
@@ -290,13 +291,14 @@ fun BaGuideCatalogPage(
                     scrollBehavior = scrollBehavior,
                     color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = appLucideBackIcon(),
-                                contentDescription = null,
-                                tint = MiuixTheme.colorScheme.onSurface
-                            )
-                        }
+                        GlassIconButton(
+                            backdrop = null,
+                            icon = appLucideBackIcon(),
+                            contentDescription = "",
+                            onClick = onBack,
+                            iconTint = MiuixTheme.colorScheme.onSurface,
+                            variant = GlassVariant.Bar
+                        )
                     },
                     searchBarVisible = enableSearchBar && showSearchBar
                 ) {
