@@ -23,9 +23,7 @@ internal fun DebugBgmAlbumContent(
     playbackVolume: Float,
     isTrackFavorite: (String) -> Boolean,
     onRepeatClick: () -> Unit,
-    onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    onNextClick: () -> Unit,
     onVolumeChange: (Float) -> Unit,
     onVolumeChangeFinished: (Float) -> Unit,
     onTrackClick: (String) -> Unit,
@@ -62,9 +60,7 @@ internal fun DebugBgmAlbumContent(
                 sectionTitle = sectionTitle,
                 sectionMeta = sectionMeta,
                 onRepeatClick = onRepeatClick,
-                onPreviousClick = onPreviousClick,
                 onPlayPauseClick = onPlayPauseClick,
-                onNextClick = onNextClick,
                 onVolumeChange = onVolumeChange,
                 onVolumeChangeFinished = onVolumeChangeFinished
             )

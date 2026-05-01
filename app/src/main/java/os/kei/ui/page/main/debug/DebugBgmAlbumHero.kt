@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,8 +39,6 @@ import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
-import os.kei.ui.page.main.os.appLucideSkipBackIcon
-import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
@@ -54,12 +56,11 @@ internal fun DebugBgmAlbumHero(
     sectionTitle: String,
     sectionMeta: String,
     onRepeatClick: () -> Unit,
-    onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    onNextClick: () -> Unit,
     onVolumeChange: (Float) -> Unit,
     onVolumeChangeFinished: (Float) -> Unit
 ) {
+    var volumeControlVisible by rememberSaveable { mutableStateOf(true) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -107,17 +108,19 @@ internal fun DebugBgmAlbumHero(
             accent = accent,
             repeatEnabled = repeatEnabled,
             isPlaying = isPlaying,
+            volumeControlVisible = volumeControlVisible,
             onRepeatClick = onRepeatClick,
-            onPreviousClick = onPreviousClick,
             onPlayPauseClick = onPlayPauseClick,
-            onNextClick = onNextClick
+            onVolumeClick = { volumeControlVisible = !volumeControlVisible }
         )
-        DebugBgmAlbumVolumeControl(
-            accent = accent,
-            volume = playbackVolume,
-            onVolumeChange = onVolumeChange,
-            onVolumeChangeFinished = onVolumeChangeFinished
-        )
+        if (volumeControlVisible) {
+            DebugBgmAlbumVolumeControl(
+                accent = accent,
+                volume = playbackVolume,
+                onVolumeChange = onVolumeChange,
+                onVolumeChangeFinished = onVolumeChangeFinished
+            )
+        }
     }
 }
 
@@ -170,14 +173,14 @@ private fun DebugBgmAlbumPrimaryActions(
     accent: Color,
     repeatEnabled: Boolean,
     isPlaying: Boolean,
+    volumeControlVisible: Boolean,
     onRepeatClick: () -> Unit,
-    onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    onNextClick: () -> Unit
+    onVolumeClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         DebugBgmRoundAction(
@@ -187,22 +190,17 @@ private fun DebugBgmAlbumPrimaryActions(
             selected = repeatEnabled,
             onClick = onRepeatClick
         )
-        DebugBgmRoundAction(
-            icon = appLucideSkipBackIcon(),
-            contentDescription = stringResource(R.string.debug_component_lab_action_previous),
-            accent = accent,
-            onClick = onPreviousClick
-        )
         DebugBgmPlayAction(
             accent = accent,
             isPlaying = isPlaying,
             onClick = onPlayPauseClick
         )
         DebugBgmRoundAction(
-            icon = appLucideSkipForwardIcon(),
-            contentDescription = stringResource(R.string.debug_component_lab_action_next),
+            icon = appLucideVolume2Icon(),
+            contentDescription = stringResource(R.string.debug_component_lab_liquid_volume_slider_label),
             accent = accent,
-            onClick = onNextClick
+            selected = volumeControlVisible,
+            onClick = onVolumeClick
         )
     }
 }
