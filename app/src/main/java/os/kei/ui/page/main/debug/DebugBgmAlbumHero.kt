@@ -2,7 +2,6 @@ package os.kei.ui.page.main.debug
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
@@ -234,32 +232,41 @@ private fun DebugBgmPlayAction(
     isPlaying: Boolean,
     onClick: () -> Unit
 ) {
-    Row(
+    DebugBgmGlassCapsule(
         modifier = Modifier
             .height(52.dp)
-            .clip(ContinuousCapsule)
-            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f))
-            .border(1.dp, Color.White.copy(alpha = 0.28f), ContinuousCapsule)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 0.dp),
+        accent = accent,
+        horizontalPadding = 24.dp,
+        verticalPadding = 0.dp,
+        selected = isPlaying,
+        onClick = onClick
     ) {
-        Icon(
-            imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
-            contentDescription = null,
-            tint = accent.copy(alpha = 0.96f),
-            modifier = Modifier.size(24.dp)
-        )
-        Text(
-            text = stringResource(
-                if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
-            ),
-            color = MiuixTheme.colorScheme.onBackground,
-            fontSize = AppTypographyTokens.CardHeader.fontSize,
-            lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val contentTint = if (isPlaying) {
+                accent.copy(alpha = 0.98f)
+            } else {
+                MiuixTheme.colorScheme.onBackground
+            }
+            Icon(
+                imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
+                contentDescription = null,
+                tint = contentTint,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = stringResource(
+                    if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
+                ),
+                color = contentTint,
+                fontSize = AppTypographyTokens.CardHeader.fontSize,
+                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+        }
     }
 }

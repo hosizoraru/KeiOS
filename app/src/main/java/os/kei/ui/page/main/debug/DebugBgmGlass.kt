@@ -4,18 +4,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,6 +33,7 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -39,6 +45,7 @@ internal fun DebugBgmGlassCapsule(
     horizontalPadding: Dp,
     verticalPadding: Dp,
     backdrop: Backdrop? = null,
+    selected: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
@@ -46,6 +53,7 @@ internal fun DebugBgmGlassCapsule(
         modifier = modifier,
         accent = accent,
         shape = shape,
+        selected = selected,
         backdrop = backdrop,
         onClick = onClick
     ) {
@@ -70,6 +78,11 @@ internal fun DebugBgmGlassIcon(
     backdrop: Backdrop? = null,
     onClick: () -> Unit = {}
 ) {
+    val contentTint = if (selected) {
+        accent
+    } else {
+        MiuixTheme.colorScheme.onBackground
+    }
     DebugBgmGlassSurface(
         modifier = modifier
             .size(size),
@@ -82,7 +95,7 @@ internal fun DebugBgmGlassIcon(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (selected) accent else MiuixTheme.colorScheme.onBackground,
+            tint = contentTint,
             modifier = Modifier
                 .align(Alignment.Center)
                 .size(iconSize)
@@ -138,15 +151,72 @@ internal fun DebugBgmGlassSurface(
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val pressProgress by appMotionFloatState(
+        targetValue = if (pressed) 1f else 0f,
+        durationMillis = DebugBgmGlassSurfacePressMotionMs,
+        label = "debug_bgm_glass_surface_press"
+    )
+    val isDark = isSystemInDarkTheme()
     val surfaceContainer = MiuixTheme.colorScheme.surfaceContainer
     val glassSurfaceColor = if (selected) {
-        surfaceContainer.copy(alpha = 0.80f)
+        surfaceContainer.copy(alpha = if (isDark) 0.30f else 0.52f)
     } else {
-        surfaceContainer.copy(alpha = 0.72f)
+        surfaceContainer.copy(alpha = if (isDark) 0.24f else 0.40f)
     }
-    val accentOverlay = if (selected) accent.copy(alpha = 0.16f) else Color.Transparent
+    val pressOverlay = Color.White.copy(alpha = (if (isDark) 0.06f else 0.14f) * pressProgress)
+    val accentOverlay = when {
+        selected -> accent.copy(alpha = 0.16f + 0.08f * pressProgress)
+        pressProgress > 0f -> accent.copy(alpha = 0.06f * pressProgress)
+        else -> Color.Transparent
+    }
+    val fallbackTopColor = if (isDark) {
+        Color.White.copy(alpha = if (selected) 0.16f else 0.10f)
+    } else {
+        Color.White.copy(alpha = if (selected) 0.42f else 0.36f)
+    }
+    val fallbackBottomColor = if (isDark) {
+        Color.White.copy(alpha = if (selected) 0.09f else 0.06f)
+    } else {
+        Color.White.copy(alpha = if (selected) 0.25f else 0.22f)
+    }
+    val fallbackAccentAlpha = when {
+        selected -> 0.12f + 0.06f * pressProgress
+        pressProgress > 0f -> 0.07f * pressProgress
+        else -> 0f
+    }
+    val fallbackPressColor = Color.White.copy(alpha = (if (isDark) 0.04f else 0.10f) * pressProgress)
+    val fallbackAccentTopColor = accent.copy(alpha = fallbackAccentAlpha)
+    val fallbackAccentBottomColor = accent.copy(alpha = fallbackAccentAlpha * 0.62f)
+    val fallbackAccentModifier = if (fallbackAccentAlpha > 0f) {
+        Modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    fallbackAccentTopColor,
+                    fallbackAccentBottomColor
+                )
+            )
+        )
+    } else {
+        Modifier
+    }
+    val fallbackPressModifier = if (fallbackPressColor.alpha > 0f) {
+        Modifier.background(fallbackPressColor)
+    } else {
+        Modifier
+    }
+    val borderColor = when {
+        selected -> accent.copy(alpha = 0.46f + 0.08f * pressProgress)
+        isDark -> Color.White.copy(alpha = 0.16f + 0.06f * pressProgress)
+        else -> Color.White.copy(alpha = 0.62f + 0.10f * pressProgress)
+    }
     Box(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = 1f - 0.018f * pressProgress
+                scaleY = 1f - 0.018f * pressProgress
+            }
             .clip(shape)
             .then(
                 if (backdrop != null) {
@@ -169,35 +239,35 @@ internal fun DebugBgmGlassSurface(
                         },
                         onDrawSurface = {
                             drawRect(glassSurfaceColor)
+                            if (pressOverlay.alpha > 0f) drawRect(pressOverlay)
                             if (accentOverlay != Color.Transparent) drawRect(accentOverlay)
                         }
                     )
                 } else {
                     Modifier.background(
                         Brush.verticalGradient(
-                            colors = if (selected) {
-                                listOf(
-                                    accent.copy(alpha = 0.22f),
-                                    MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
-                                )
-                            } else {
-                                listOf(
-                                    MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f),
-                                    MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
-                                )
-                            }
+                            colors = listOf(
+                                fallbackTopColor,
+                                fallbackBottomColor
+                            )
                         )
                     )
+                        .then(fallbackPressModifier)
+                        .then(fallbackAccentModifier)
                 }
             )
             .border(
                 width = 1.dp,
-                color = if (selected) accent.copy(alpha = 0.46f) else Color.White.copy(alpha = 0.24f),
+                color = borderColor,
                 shape = shape
             )
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(onClick = onClick)
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick
+                    )
                 } else {
                     Modifier
                 }
@@ -206,3 +276,5 @@ internal fun DebugBgmGlassSurface(
         content = content
     )
 }
+
+private const val DebugBgmGlassSurfacePressMotionMs = 120
