@@ -226,6 +226,8 @@ private fun LiquidTrackSlider(
     snapThreshold: Float? = null
 ) {
     val trackBackdrop = rememberLayerBackdrop()
+    val onValueChangeState = rememberUpdatedState(onValueChange)
+    val onValueChangeFinishedState = rememberUpdatedState(onValueChangeFinished)
     val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
     DisposableEffect(Unit) {
         onDispose {
@@ -248,8 +250,8 @@ private fun LiquidTrackSlider(
                 if (enabled) {
                     setProgress { target ->
                         val next = target.coerceIn(safeValueRange)
-                        onValueChange(next)
-                        onValueChangeFinished?.invoke(next)
+                        onValueChangeState.value(next)
+                        onValueChangeFinishedState.value?.invoke(next)
                         true
                     }
                 }
@@ -261,7 +263,18 @@ private fun LiquidTrackSlider(
         val animationScope = rememberCoroutineScope()
         var didDrag by remember { mutableStateOf(false) }
         val rangeSpan = safeValueRange.endInclusive - safeValueRange.start
-        val dampedDragAnimation = remember(animationScope, safeValueRange, snapToKeyPoints, keyPoints) {
+        val dampedDragAnimation = remember(
+            animationScope,
+            safeValueRange,
+            visibilityThreshold,
+            enabled,
+            trackWidth,
+            isLtr,
+            style.pressedScale,
+            keyPoints,
+            snapToKeyPoints,
+            snapThreshold
+        ) {
             DampedDragAnimation(
                 animationScope = animationScope,
                 initialValue = value().coerceIn(safeValueRange),
@@ -285,7 +298,7 @@ private fun LiquidTrackSlider(
                             snapThreshold = snapThreshold
                         )
                         snapToValue(target)
-                        onValueChange(target)
+                        onValueChangeState.value(target)
                         onInteractionChangedState.value(true)
                     }
                 },
@@ -299,8 +312,8 @@ private fun LiquidTrackSlider(
                             snapToKeyPoints = snapToKeyPoints,
                             snapThreshold = snapThreshold
                         )
-                        onValueChange(next)
-                        onValueChangeFinished?.invoke(next)
+                        onValueChangeState.value(next)
+                        onValueChangeFinishedState.value?.invoke(next)
                         if (snapToKeyPoints) {
                             animateToValue(next)
                         }
@@ -316,7 +329,7 @@ private fun LiquidTrackSlider(
                     val target = if (isLtr) targetValue + delta else targetValue - delta
                     val boundedTarget = target.coerceIn(safeValueRange)
                     snapToValue(boundedTarget)
-                    onValueChange(boundedTarget)
+                    onValueChangeState.value(boundedTarget)
                 }
             )
         }
@@ -373,8 +386,8 @@ private fun LiquidTrackSlider(
                                 snapThreshold = snapThreshold
                             )
                             dampedDragAnimation.animateToValue(target)
-                            onValueChange(target)
-                            onValueChangeFinished?.invoke(target)
+                            onValueChangeState.value(target)
+                            onValueChangeFinishedState.value?.invoke(target)
                         }
                     }
             )

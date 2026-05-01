@@ -415,6 +415,7 @@ fun LiquidSlider(
         Color(0xFF787880).copy(alpha = 0.36f)
     }
     val trackBackdrop = rememberLayerBackdrop()
+    val onValueChangeState = rememberUpdatedState(onValueChange)
     val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
     DisposableEffect(Unit) {
         onDispose {
@@ -436,7 +437,7 @@ fun LiquidSlider(
                 progressBarRangeInfo = ProgressBarRangeInfo(value(), valueRange, steps = 0)
                 if (enabled) {
                     setProgress { target ->
-                        onValueChange(target.coerceIn(valueRange))
+                        onValueChangeState.value(target.coerceIn(valueRange))
                         true
                     }
                 }
@@ -447,43 +448,53 @@ fun LiquidSlider(
         val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
         val animationScope = rememberCoroutineScope()
         var didDrag by remember { mutableStateOf(false) }
-        val dampedDragAnimation = remember(animationScope) {
+        val rangeSpan = valueRange.endInclusive - valueRange.start
+        val dampedDragAnimation = remember(
+            animationScope,
+            valueRange,
+            visibilityThreshold,
+            enabled,
+            trackWidth,
+            isLtr
+        ) {
             DampedDragAnimation(
                 animationScope = animationScope,
-                initialValue = value(),
+                initialValue = value().coerceIn(valueRange),
                 valueRange = valueRange,
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
+                consumeDragChanges = true,
                 onDragStarted = { position ->
                     if (enabled) {
-                        val delta = (valueRange.endInclusive - valueRange.start) *
-                            (position.x / trackWidth)
+                        val delta = rangeSpan * (position.x / trackWidth)
                         val target = if (isLtr) {
                             valueRange.start + delta
                         } else {
                             valueRange.endInclusive - delta
                         }.coerceIn(valueRange)
                         snapToValue(target)
-                        onValueChange(target)
+                        onValueChangeState.value(target)
                         onInteractionChangedState.value(true)
                     }
                 },
                 onDragStopped = {
                     onInteractionChangedState.value(false)
                     if (enabled && didDrag) {
-                        onValueChange(targetValue)
+                        onValueChangeState.value(targetValue)
                     }
                     didDrag = false
                 },
                 onDrag = { _, dragAmount ->
-                    if (!enabled) return@DampedDragAnimation
+                    if (!enabled || rangeSpan == 0f) return@DampedDragAnimation
                     if (!didDrag) {
                         didDrag = dragAmount.x != 0f
                     }
-                    val delta = (valueRange.endInclusive - valueRange.start) * (dragAmount.x / trackWidth)
+                    val delta = rangeSpan * (dragAmount.x / trackWidth)
                     val target = if (isLtr) targetValue + delta else targetValue - delta
-                    onValueChange(target.coerceIn(valueRange))
+                    val boundedTarget = target.coerceIn(valueRange)
+                    snapToValue(boundedTarget)
+                    onValueChangeState.value(boundedTarget)
                 }
             )
         }
@@ -536,7 +547,7 @@ fun LiquidSlider(
                                 valueRange.endInclusive - delta
                             }.coerceIn(valueRange)
                             dampedDragAnimation.animateToValue(target)
-                            onValueChange(target)
+                            onValueChangeState.value(target)
                         }
                     }
             )
