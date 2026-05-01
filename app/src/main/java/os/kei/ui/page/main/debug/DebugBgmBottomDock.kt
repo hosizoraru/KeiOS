@@ -98,6 +98,7 @@ internal fun DebugBgmDockGroupContent(
     expandedProgress: Float,
     compactProgress: Float,
     backdrop: Backdrop? = null,
+    compactInteractionSource: MutableInteractionSource? = null,
     onSelectedDockKeyChange: (String) -> Unit
 ) {
     val expanded = expandedProgress.coerceIn(0f, 1f)
@@ -106,7 +107,7 @@ internal fun DebugBgmDockGroupContent(
     val compactEnabled = compact > 0.54f
     val safeTabCount = tabs.size.coerceAtLeast(1)
     val selectedIndex = tabs.indexOfFirst { it.key == selectedDockKey }.coerceAtLeast(0)
-    val compactInteractionSource = remember { MutableInteractionSource() }
+    val resolvedCompactInteractionSource = compactInteractionSource ?: remember { MutableInteractionSource() }
     val animationsEnabled = LocalTransitionAnimationsEnabled.current
     val currentExpandedEnabled by rememberUpdatedState(expandedEnabled)
     val currentAnimationsEnabled by rememberUpdatedState(animationsEnabled)
@@ -164,7 +165,7 @@ internal fun DebugBgmDockGroupContent(
                 valueRange = 0f..(safeTabCount - 1).toFloat(),
                 visibilityThreshold = 0.001f,
                 initialScale = 1f,
-                pressedScale = 78f / 56f,
+                pressedScale = DebugBgmDockPressedScale,
                 gestureKey = safeTabCount to isLtr,
                 canDrag = { offset ->
                     if (!currentExpandedEnabled) return@DampedDragAnimation false
@@ -393,7 +394,7 @@ internal fun DebugBgmDockGroupContent(
                 .then(
                     if (compactEnabled) {
                         Modifier.clickable(
-                            interactionSource = compactInteractionSource,
+                            interactionSource = resolvedCompactInteractionSource,
                             indication = null
                         ) {
                             onSelectedDockKeyChange(compactTab.key)
@@ -427,8 +428,14 @@ private fun DebugBgmDockSelectionPill(
     modifier: Modifier = Modifier
 ) {
     val clampedPress = pressProgress.coerceIn(0f, 1f)
-    val clickScale = lerpFloat(1f, 1.045f, itemPressProgress.coerceIn(0f, 1f))
+    val clickScale = lerpFloat(1f, DebugBgmDockClickScale, itemPressProgress.coerceIn(0f, 1f))
     val velocityScale = velocity / 10f
+    val deformationScaleX = dragScaleX * clickScale /
+        (1f - (velocityScale * DebugBgmDockVelocityScaleXFactor)
+            .coerceIn(-DebugBgmDockVelocityScaleClamp, DebugBgmDockVelocityScaleClamp))
+    val deformationScaleY = dragScaleY * clickScale *
+        (1f - (velocityScale * DebugBgmDockVelocityScaleYFactor)
+            .coerceIn(-DebugBgmDockVelocityScaleClamp, DebugBgmDockVelocityScaleClamp))
     val neutralFill = if (isDark) {
         Color.White.copy(alpha = 0.10f)
     } else {
@@ -442,10 +449,8 @@ private fun DebugBgmDockSelectionPill(
     Box(
         modifier = modifier
             .graphicsLayer {
-                if (backdrop == null) {
-                    scaleX = dragScaleX * clickScale / (1f - (velocityScale * 0.75f).coerceIn(-0.2f, 0.2f))
-                    scaleY = dragScaleY * clickScale * (1f - (velocityScale * 0.25f).coerceIn(-0.2f, 0.2f))
-                }
+                scaleX = deformationScaleX
+                scaleY = deformationScaleY
             }
             .then(
                 if (backdrop != null) {
@@ -455,8 +460,8 @@ private fun DebugBgmDockSelectionPill(
                         effects = {
                             if (clampedPress > 0f) {
                                 lens(
-                                    10.dp.toPx() * clampedPress,
-                                    14.dp.toPx() * clampedPress,
+                                    2.dp.toPx() * clampedPress,
+                                    3.dp.toPx() * clampedPress,
                                     true
                                 )
                             }
@@ -469,10 +474,6 @@ private fun DebugBgmDockSelectionPill(
                         },
                         innerShadow = {
                             InnerShadow(radius = 8.dp * clampedPress, alpha = clampedPress)
-                        },
-                        layerBlock = {
-                            scaleX = dragScaleX * clickScale / (1f - (velocityScale * 0.75f).coerceIn(-0.2f, 0.2f))
-                            scaleY = dragScaleY * clickScale * (1f - (velocityScale * 0.25f).coerceIn(-0.2f, 0.2f))
                         },
                         onDrawSurface = {
                             drawRect(neutralFill, alpha = 1f - clampedPress)
@@ -527,7 +528,8 @@ private fun DebugBgmExpandedDockTab(
         animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
         label = "debug_bgm_dock_tab_press_scale"
     )
-    val contentScale = itemScale * lerpFloat(1f, 1.035f, selectionProgress.coerceIn(0f, 1f))
+    val contentScale = itemScale *
+        lerpFloat(1f, DebugBgmDockSelectedContentScale, selectionProgress.coerceIn(0f, 1f))
     LaunchedEffect(pressed, enabled) {
         if (enabled) onPressedChange(pressed)
     }
@@ -652,3 +654,9 @@ internal data class DebugBgmDockTab(
 )
 
 private const val DebugBgmDockSelectionWidthFraction = 1f
+private const val DebugBgmDockPressedScale = 1.06f
+private const val DebugBgmDockClickScale = 1.006f
+private const val DebugBgmDockVelocityScaleXFactor = 0.18f
+private const val DebugBgmDockVelocityScaleYFactor = 0.06f
+private const val DebugBgmDockVelocityScaleClamp = 0.04f
+private const val DebugBgmDockSelectedContentScale = 1.008f

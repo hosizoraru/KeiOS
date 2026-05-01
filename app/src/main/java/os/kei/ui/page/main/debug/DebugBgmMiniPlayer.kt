@@ -2,6 +2,7 @@ package os.kei.ui.page.main.debug
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +51,7 @@ internal fun DebugBgmMiniPlayer(
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    controlInteractionSource: MutableInteractionSource? = null,
     modifier: Modifier = Modifier
 ) {
     val expanded = expandedProgress.coerceIn(0f, 1f)
@@ -129,9 +132,11 @@ internal fun DebugBgmMiniPlayer(
                 size = 32.dp,
                 iconSize = 22.dp,
                 enabled = sideControlsEnabled,
+                interactionSource = controlInteractionSource,
                 onClick = onPreviousClick
             )
         }
+        val playInteractionSource = controlInteractionSource ?: remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -140,7 +145,11 @@ internal fun DebugBgmMiniPlayer(
                     scaleX = playButtonScale
                     scaleY = playButtonScale
                 }
-                .clickable(onClick = onPlayPauseClick),
+                .clickable(
+                    interactionSource = playInteractionSource,
+                    indication = null,
+                    onClick = onPlayPauseClick
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -163,6 +172,7 @@ internal fun DebugBgmMiniPlayer(
                 size = 32.dp,
                 iconSize = 22.dp,
                 enabled = sideControlsEnabled,
+                interactionSource = controlInteractionSource,
                 onClick = onNextClick
             )
         }

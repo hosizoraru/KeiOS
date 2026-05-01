@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,9 +29,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp as lerpFloat
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
@@ -44,6 +48,7 @@ import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -65,6 +70,8 @@ internal fun DebugBgmFloatingBottomChrome(
 ) {
     val tabs = rememberDebugBgmDockTabs()
     val animationsEnabled = LocalTransitionAnimationsEnabled.current
+    val miniPlayerInteractionSource = remember { MutableInteractionSource() }
+    val dockSurfaceInteractionSource = remember { MutableInteractionSource() }
     val transition = updateTransition(
         targetState = scrollState.isCompact,
         label = "debug_bgm_bottom_chrome"
@@ -177,7 +184,9 @@ internal fun DebugBgmFloatingBottomChrome(
                 .width(miniPlayerWidth)
                 .height(miniPlayerHeight),
             shape = ContinuousCapsule,
-            backdrop = backdrop
+            backdrop = backdrop,
+            interactionSource = miniPlayerInteractionSource,
+            consumeTouches = true
         ) {
             DebugBgmMiniPlayer(
                 accent = accent,
@@ -188,6 +197,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 onPlayPauseClick = onPlayPauseClick,
                 onPreviousClick = onPreviousClick,
                 onNextClick = onNextClick,
+                controlInteractionSource = miniPlayerInteractionSource,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -198,7 +208,8 @@ internal fun DebugBgmFloatingBottomChrome(
                 .width(tabGroupWidth)
                 .height(tabGroupHeight),
             shape = ContinuousCapsule,
-            backdrop = backdrop
+            backdrop = backdrop,
+            interactionSource = dockSurfaceInteractionSource
         ) {
             DebugBgmDockGroupContent(
                 tabs = tabs,
@@ -207,6 +218,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 expandedProgress = expandedProgress,
                 compactProgress = compactProgress,
                 backdrop = backdrop,
+                compactInteractionSource = dockSurfaceInteractionSource,
                 onSelectedDockKeyChange = onSelectedDockKeyChange
             )
         }
@@ -236,9 +248,19 @@ private fun DebugBgmBottomSurface(
     shape: Shape,
     backdrop: Backdrop? = null,
     onClick: (() -> Unit)? = null,
+    interactionSource: MutableInteractionSource? = null,
+    clipContent: Boolean = true,
+    consumeTouches: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val pressed by resolvedInteractionSource.collectIsPressedAsState()
+    val pressProgress by appMotionFloatState(
+        targetValue = if (pressed) 1f else 0f,
+        durationMillis = DebugBgmBottomSurfacePressMotionMs,
+        label = "debug_bgm_bottom_surface_press"
+    )
+    val density = LocalDensity.current
     val isDark = isSystemInDarkTheme()
     val surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (isDark) 0.20f else 0.40f)
     val overlayColor = if (isDark) {
@@ -252,7 +274,12 @@ private fun DebugBgmBottomSurface(
         Color.White.copy(alpha = 0.54f)
     }
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .graphicsLayer {
+                translationY = -with(density) { 1.25.dp.toPx() } * pressProgress
+                scaleX = lerpFloat(1f, 1.006f, pressProgress)
+                scaleY = lerpFloat(1f, 0.996f, pressProgress)
+            },
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -267,12 +294,16 @@ private fun DebugBgmBottomSurface(
                                 vibrancy()
                                 blur(UiPerformanceBudget.backdropBlur.toPx())
                                 lens(
-                                    (UiPerformanceBudget.backdropLens * 0.90f).toPx(),
-                                    (UiPerformanceBudget.backdropLens * 0.90f).toPx()
+                                    (UiPerformanceBudget.backdropLens *
+                                        (0.90f + 0.04f * pressProgress)).toPx(),
+                                    (UiPerformanceBudget.backdropLens *
+                                        (0.90f + 0.06f * pressProgress)).toPx()
                                 )
                             },
                             highlight = {
-                                Highlight.Default.copy(alpha = if (isDark) 0.46f else 0.82f)
+                                Highlight.Default.copy(
+                                    alpha = (if (isDark) 0.46f else 0.82f) + 0.04f * pressProgress
+                                )
                             },
                             shadow = {
                                 Shadow.Default.copy(
@@ -310,16 +341,20 @@ private fun DebugBgmBottomSurface(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(shape)
+                .then(if (clipContent) Modifier.clip(shape) else Modifier)
                 .then(
-                    if (onClick != null) {
-                        Modifier.clickable(
-                            interactionSource = interactionSource,
+                    when {
+                        onClick != null -> Modifier.clickable(
+                            interactionSource = resolvedInteractionSource,
                             indication = null,
                             onClick = onClick
                         )
-                    } else {
-                        Modifier
+                        consumeTouches -> Modifier.clickable(
+                            interactionSource = resolvedInteractionSource,
+                            indication = null,
+                            onClick = {}
+                        )
+                        else -> Modifier
                     }
                 ),
             contentAlignment = Alignment.Center
@@ -349,3 +384,4 @@ private val DebugBgmCompactControlSize = DebugBgmChromeControlHeight
 private val DebugBgmCompactControlInset = 0.dp
 private const val DebugBgmBottomChromeSizeMotionMs = 360
 private const val DebugBgmBottomChromeFadeMotionMs = 240
+private const val DebugBgmBottomSurfacePressMotionMs = 120

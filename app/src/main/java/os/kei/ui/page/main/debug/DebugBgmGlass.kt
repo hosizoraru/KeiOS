@@ -3,6 +3,7 @@ package os.kei.ui.page.main.debug
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
@@ -97,13 +98,25 @@ internal fun DebugBgmInlineIcon(
     size: Dp = 36.dp,
     iconSize: Dp = 22.dp,
     enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .clickable(enabled = enabled, onClick = onClick),
+            .then(
+                if (interactionSource != null) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        enabled = enabled,
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier.clickable(enabled = enabled, onClick = onClick)
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
