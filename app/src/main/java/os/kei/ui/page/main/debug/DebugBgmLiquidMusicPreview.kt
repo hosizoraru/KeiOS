@@ -176,7 +176,6 @@ internal fun DebugBgmLiquidMusicPreview(
                 playbackVolume = musicState.playbackVolume,
                 isTrackFavorite = musicState::isTrackFavorite,
                 onRepeatClick = musicState::toggleRepeat,
-                onDownloadClick = musicState::toggleCurrentTrackOffline,
                 onPreviousClick = musicState::playPrevious,
                 onPlayPauseClick = musicState::togglePlayPause,
                 onNextClick = musicState::playNext,

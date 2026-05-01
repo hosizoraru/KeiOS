@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -30,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
-import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
@@ -54,7 +54,6 @@ internal fun DebugBgmAlbumHero(
     sectionTitle: String,
     sectionMeta: String,
     onRepeatClick: () -> Unit,
-    onDownloadClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -109,7 +108,6 @@ internal fun DebugBgmAlbumHero(
             repeatEnabled = repeatEnabled,
             isPlaying = isPlaying,
             onRepeatClick = onRepeatClick,
-            onDownloadClick = onDownloadClick,
             onPreviousClick = onPreviousClick,
             onPlayPauseClick = onPlayPauseClick,
             onNextClick = onNextClick
@@ -173,14 +171,13 @@ private fun DebugBgmAlbumPrimaryActions(
     repeatEnabled: Boolean,
     isPlaying: Boolean,
     onRepeatClick: () -> Unit,
-    onDownloadClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
         DebugBgmRoundAction(
@@ -206,12 +203,6 @@ private fun DebugBgmAlbumPrimaryActions(
             contentDescription = stringResource(R.string.debug_component_lab_action_next),
             accent = accent,
             onClick = onNextClick
-        )
-        DebugBgmRoundAction(
-            icon = appLucideDownloadIcon(),
-            contentDescription = stringResource(R.string.debug_component_lab_action_download),
-            accent = accent,
-            onClick = onDownloadClick
         )
     }
 }
@@ -297,6 +288,7 @@ private fun DebugBgmPlayAction(
     DebugBgmGlassCapsule(
         modifier = Modifier
             .height(52.dp)
+            .widthIn(min = 116.dp)
             .padding(horizontal = 0.dp),
         accent = accent,
         horizontalPadding = 24.dp,
