@@ -26,14 +26,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.shapes.Capsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
@@ -41,6 +42,7 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.LiquidButton
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -180,30 +182,45 @@ private fun DebugBgmAlbumPrimaryActions(
     onPlayPauseClick: () -> Unit,
     onVolumeClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
+    val actionsBackdrop = rememberLayerBackdrop()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
     ) {
-        DebugBgmRoundAction(
-            icon = appLucideRepeatIcon(),
-            contentDescription = stringResource(R.string.debug_component_lab_action_repeat),
-            accent = accent,
-            selected = repeatEnabled,
-            onClick = onRepeatClick
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .layerBackdrop(actionsBackdrop)
         )
-        DebugBgmPlayAction(
-            accent = accent,
-            isPlaying = isPlaying,
-            onClick = onPlayPauseClick
-        )
-        DebugBgmRoundAction(
-            icon = appLucideVolume2Icon(),
-            contentDescription = stringResource(R.string.debug_component_lab_liquid_volume_slider_label),
-            accent = accent,
-            selected = volumeControlVisible,
-            onClick = onVolumeClick
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            DebugBgmRoundAction(
+                icon = appLucideRepeatIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_action_repeat),
+                accent = accent,
+                selected = repeatEnabled,
+                onClick = onRepeatClick,
+                backdrop = actionsBackdrop
+            )
+            DebugBgmPlayAction(
+                accent = accent,
+                isPlaying = isPlaying,
+                onClick = onPlayPauseClick,
+                backdrop = actionsBackdrop
+            )
+            DebugBgmRoundAction(
+                icon = appLucideVolume2Icon(),
+                contentDescription = stringResource(R.string.debug_component_lab_liquid_volume_slider_label),
+                accent = accent,
+                selected = volumeControlVisible,
+                onClick = onVolumeClick,
+                backdrop = actionsBackdrop
+            )
+        }
     }
 }
 
@@ -264,65 +281,72 @@ private fun DebugBgmAlbumVolumeControl(
 
 @Composable
 private fun DebugBgmRoundAction(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
     accent: Color,
     selected: Boolean = false,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    backdrop: Backdrop
 ) {
-    DebugBgmGlassIcon(
-        icon = icon,
-        contentDescription = contentDescription,
-        accent = accent,
-        size = 52.dp,
-        iconSize = 24.dp,
-        selected = selected,
-        onClick = onClick
-    )
+    val contentTint = if (selected) accent else MiuixTheme.colorScheme.onBackground
+    LiquidButton(
+        onClick = onClick,
+        backdrop = backdrop,
+        tint = if (selected) accent.copy(alpha = 0.34f) else accent.copy(alpha = 0.16f),
+        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (selected) 0.34f else 0.22f),
+        shape = CircleShape,
+        height = 52.dp,
+        horizontalPadding = 0.dp,
+        modifier = Modifier.size(52.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = contentTint,
+            modifier = Modifier.size(24.dp)
+        )
+    }
 }
 
 @Composable
 private fun DebugBgmPlayAction(
     accent: Color,
     isPlaying: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    backdrop: Backdrop
 ) {
-    DebugBgmGlassCapsule(
+    val contentTint = if (isPlaying) {
+        accent.copy(alpha = 0.98f)
+    } else {
+        MiuixTheme.colorScheme.onBackground
+    }
+    LiquidButton(
+        onClick = onClick,
+        backdrop = backdrop,
         modifier = Modifier
             .height(52.dp)
-            .widthIn(min = 116.dp)
-            .padding(horizontal = 0.dp),
-        accent = accent,
-        horizontalPadding = 24.dp,
-        verticalPadding = 0.dp,
-        selected = isPlaying,
-        onClick = onClick
+            .widthIn(min = 116.dp),
+        tint = if (isPlaying) accent.copy(alpha = 0.36f) else accent.copy(alpha = 0.18f),
+        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (isPlaying) 0.34f else 0.22f),
+        shape = Capsule(),
+        height = 52.dp,
+        horizontalPadding = 24.dp
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val contentTint = if (isPlaying) {
-                accent.copy(alpha = 0.98f)
-            } else {
-                MiuixTheme.colorScheme.onBackground
-            }
-            Icon(
-                imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
-                contentDescription = null,
-                tint = contentTint,
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = stringResource(
-                    if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
-                ),
-                color = contentTint,
-                fontSize = AppTypographyTokens.CardHeader.fontSize,
-                lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
-        }
+        Icon(
+            imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
+            contentDescription = null,
+            tint = contentTint,
+            modifier = Modifier.size(24.dp)
+        )
+        Text(
+            text = stringResource(
+                if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
+            ),
+            color = contentTint,
+            fontSize = AppTypographyTokens.CardHeader.fontSize,
+            lineHeight = AppTypographyTokens.CardHeader.lineHeight,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1
+        )
     }
 }

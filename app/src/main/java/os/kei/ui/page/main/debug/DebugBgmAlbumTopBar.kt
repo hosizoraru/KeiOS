@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,6 +29,8 @@ import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.LiquidButton
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -52,7 +56,8 @@ internal fun DebugBgmAlbumTopBar(
         ) {
             DebugBgmTopBackAction(
                 accent = accent,
-                onClose = onClose
+                onClose = onClose,
+                backdrop = backdrop
             )
             DebugBgmTopActionCapsule(
                 onShareClick = onShareClick,
@@ -88,20 +93,27 @@ internal fun DebugBgmAlbumTopBar(
 @Composable
 private fun DebugBgmTopBackAction(
     accent: Color,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    backdrop: Backdrop
 ) {
     val closeContentDescription = stringResource(R.string.common_close)
-    DebugBgmGlassIcon(
-        icon = appLucideChevronLeftIcon(),
-        contentDescription = closeContentDescription,
-        accent = accent,
-        size = DebugBgmTopBarVisualSize,
-        iconSize = DebugBgmTopBarBackIconSize,
-        surfaceAlphaScale = DebugBgmTopBarSurfaceAlphaScale,
-        highlightAlphaScale = DebugBgmTopBarHighlightAlphaScale,
-        lensScale = DebugBgmTopBarLensScale,
-        onClick = onClose
-    )
+    LiquidButton(
+        onClick = onClose,
+        backdrop = backdrop,
+        tint = accent.copy(alpha = 0.12f),
+        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.18f),
+        shape = CircleShape,
+        height = DebugBgmTopBarVisualSize,
+        horizontalPadding = 0.dp,
+        modifier = Modifier.size(DebugBgmTopBarVisualSize)
+    ) {
+        Icon(
+            imageVector = appLucideChevronLeftIcon(),
+            contentDescription = closeContentDescription,
+            tint = MiuixTheme.colorScheme.onBackground,
+            modifier = Modifier.size(DebugBgmTopBarBackIconSize)
+        )
+    }
 }
 
 @Composable
@@ -149,7 +161,7 @@ private fun DebugBgmTopActionCapsule(
             .height(DebugBgmTopBarVisualSize),
         backdrop = backdrop,
         items = actionItems,
-        selectedIndex = actionItems.lastIndex
+        selectedIndex = 0
     )
 }
 
@@ -157,6 +169,3 @@ private val DebugBgmTopBarVisualSize = AppChromeTokens.liquidActionBarOuterHeigh
 private val DebugBgmTopActionBarWidth = AppChromeTokens.liquidActionBarMinWidth
 private val DebugBgmTopBarBackIconSize = 27.dp
 private val DebugBgmTopBarTitleGap = 12.dp
-private const val DebugBgmTopBarSurfaceAlphaScale = 0.62f
-private const val DebugBgmTopBarHighlightAlphaScale = 1.18f
-private const val DebugBgmTopBarLensScale = 1.12f
