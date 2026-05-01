@@ -1,7 +1,11 @@
 package os.kei.ui.page.main.debug
 
+import android.os.Build
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,19 +27,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp as lerpColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -45,31 +56,39 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.util.fastCoerceIn
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp as lerpFloat
 import androidx.compose.ui.zIndex
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
+import os.kei.ui.animation.DampedDragAnimation
+import os.kei.ui.animation.InteractiveHighlight
 import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideHomeIcon
 import os.kei.ui.page.main.os.appLucideLibraryIcon
 import os.kei.ui.page.main.os.appLucideRadioIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
-import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
-import os.kei.ui.animation.DampedDragAnimation
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
-import kotlin.math.roundToInt
+import kotlin.math.max
+import kotlin.math.sign
 
 @Composable
 internal fun DebugBgmDockGroupContent(
@@ -85,22 +104,43 @@ internal fun DebugBgmDockGroupContent(
     val compact = compactProgress.coerceIn(0f, 1f)
     val expandedEnabled = expanded > 0.54f
     val compactEnabled = compact > 0.54f
+    val safeTabCount = tabs.size.coerceAtLeast(1)
     val selectedIndex = tabs.indexOfFirst { it.key == selectedDockKey }.coerceAtLeast(0)
     val compactInteractionSource = remember { MutableInteractionSource() }
     val animationsEnabled = LocalTransitionAnimationsEnabled.current
+    val currentExpandedEnabled by rememberUpdatedState(expandedEnabled)
+    val currentAnimationsEnabled by rememberUpdatedState(animationsEnabled)
     val animationScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val isDark = isSystemInDarkTheme()
+    val tabsBackdrop = rememberLayerBackdrop()
+    val combinedBackdrop = if (backdrop != null) rememberCombinedBackdrop(backdrop, tabsBackdrop) else null
+    val offsetAnimation = remember { Animatable(0f) }
+    var tabWidthPx by remember { mutableFloatStateOf(0f) }
+    var totalWidthPx by remember { mutableFloatStateOf(0f) }
+    val panelOffset by remember(density) {
+        derivedStateOf {
+            if (totalWidthPx <= 0f) {
+                0f
+            } else {
+                val fraction = (offsetAnimation.value / totalWidthPx).fastCoerceIn(-1f, 1f)
+                with(density) {
+                    4.dp.toPx() * fraction.sign * EaseOut.transform(abs(fraction))
+                }
+            }
+        }
+    }
+    var currentIndex by remember(safeTabCount) {
+        mutableIntStateOf(selectedIndex.fastCoerceIn(0, safeTabCount - 1))
+    }
     var pressedTabIndex by remember { mutableIntStateOf(-1) }
     val itemPressProgress by animateFloatAsState(
         targetValue = if (pressedTabIndex >= 0) 1f else 0f,
         animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
         label = "debug_bgm_dock_item_press"
     )
-
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val safeTabCount = tabs.size.coerceAtLeast(1)
         val contentHorizontalPadding = AppChromeTokens.floatingBottomBarHorizontalPadding
         val contentVerticalPadding = (AppChromeTokens.floatingBottomBarOuterHeight -
             AppChromeTokens.floatingBottomBarInnerHeight) / 2f
@@ -110,84 +150,153 @@ internal fun DebugBgmDockGroupContent(
             .coerceAtLeast(AppChromeTokens.floatingBottomBarInnerHeight + 12.dp)
             .coerceAtMost(tabSlotWidth)
         val selectedPillInset = (tabSlotWidth - selectedPillWidth) / 2f
-        val tabWidthPx = with(density) { tabSlotWidth.toPx() }.coerceAtLeast(1f)
+        val fallbackTabWidthPx = with(density) { tabSlotWidth.toPx() }.coerceAtLeast(1f)
         val selectedPillHeight = AppChromeTokens.floatingBottomBarInnerHeight.coerceAtMost(maxHeight)
+        class DampedDragAnimationHolder {
+            var instance: DampedDragAnimation? = null
+        }
+
+        val holder = remember { DampedDragAnimationHolder() }
         val dampedDragAnimation = remember(animationScope, safeTabCount, density, isLtr) {
             DampedDragAnimation(
                 animationScope = animationScope,
-                initialValue = selectedIndex.toFloat(),
+                initialValue = currentIndex.toFloat(),
                 valueRange = 0f..(safeTabCount - 1).toFloat(),
                 visibilityThreshold = 0.001f,
                 initialScale = 1f,
-                pressedScale = 1.16f,
+                pressedScale = 78f / 56f,
                 gestureKey = safeTabCount to isLtr,
-                canDrag = { expandedEnabled },
+                canDrag = { offset ->
+                    if (!currentExpandedEnabled) return@DampedDragAnimation false
+                    val animation = holder.instance ?: return@DampedDragAnimation true
+                    val measuredTabWidthPx = tabWidthPx.takeIf { it > 0f } ?: fallbackTabWidthPx
+                    if (measuredTabWidthPx <= 0f || totalWidthPx <= 0f) return@DampedDragAnimation true
+                    val paddingPx = with(density) { contentHorizontalPadding.toPx() }
+                    val indicatorX = animation.value * measuredTabWidthPx
+                    val globalTouchX = if (isLtr) {
+                        paddingPx + indicatorX + offset.x
+                    } else {
+                        totalWidthPx - paddingPx - measuredTabWidthPx - indicatorX + offset.x
+                    }
+                    globalTouchX in 0f..totalWidthPx
+                },
                 onDragStarted = {
-                    pressedTabIndex = selectedIndex
+                    pressedTabIndex = currentIndex
                 },
                 onDragStopped = {
-                    val targetIndex = targetValue.roundToInt().coerceIn(0, safeTabCount - 1)
+                    val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, safeTabCount - 1)
+                    currentIndex = targetIndex
                     pressedTabIndex = -1
-                    tabs.getOrNull(targetIndex)?.key?.let(onSelectedDockKeyChange)
-                    if (animationsEnabled) {
+                    if (currentAnimationsEnabled) {
                         animateToValue(targetIndex.toFloat())
                     } else {
                         snapToValue(targetIndex.toFloat())
                     }
+                    animationScope.launch {
+                        if (currentAnimationsEnabled) {
+                            offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
+                        } else {
+                            offsetAnimation.snapTo(0f)
+                        }
+                    }
                 },
                 onDrag = { _, dragAmount ->
+                    val measuredTabWidthPx = tabWidthPx.takeIf { it > 0f } ?: fallbackTabWidthPx
                     val dragDirection = if (isLtr) 1f else -1f
-                    snapToValue(value + dragAmount.x / tabWidthPx * dragDirection)
+                    snapToValue(
+                        (value + dragAmount.x / measuredTabWidthPx * dragDirection)
+                            .fastCoerceIn(0f, (safeTabCount - 1).toFloat())
+                    )
+                    animationScope.launch {
+                        offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
+                    }
                 }
             )
         }
-        LaunchedEffect(selectedIndex, animationsEnabled, dampedDragAnimation) {
-            val target = selectedIndex.toFloat()
-            if (abs(dampedDragAnimation.targetValue - target) > 0.001f) {
-                if (animationsEnabled) {
-                    dampedDragAnimation.animateToValue(target)
-                } else {
-                    dampedDragAnimation.snapToValue(target)
-                }
+        holder.instance = dampedDragAnimation
+        val pressProgress = dampedDragAnimation.pressProgress
+        val combinedInteractionProgress = max(pressProgress, itemPressProgress)
+        val dockLiftPx = with(density) { 1.25.dp.toPx() } * combinedInteractionProgress
+        val dockScaleX = lerpFloat(1f, 1.006f, combinedInteractionProgress)
+        val dockScaleY = lerpFloat(1f, 0.996f, combinedInteractionProgress)
+        val interactiveHighlight = if (
+            backdrop != null &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        ) {
+            remember(animationScope, dampedDragAnimation, tabWidthPx, isLtr) {
+                InteractiveHighlight(
+                    animationScope = animationScope,
+                    position = { size, _ ->
+                        Offset(
+                            if (isLtr) {
+                                (dampedDragAnimation.value + 0.5f) *
+                                    (tabWidthPx.takeIf { it > 0f } ?: fallbackTabWidthPx) + panelOffset
+                            } else {
+                                size.width - (dampedDragAnimation.value + 0.5f) *
+                                    (tabWidthPx.takeIf { it > 0f } ?: fallbackTabWidthPx) + panelOffset
+                            },
+                            size.height / 2f
+                        )
+                    },
+                    highlightColor = Color.White,
+                    highlightStrength = if (isDark) 0.90f else 0.60f,
+                    highlightRadiusScale = if (isDark) 1.08f else 0.90f
+                )
             }
+        } else {
+            null
+        }
+
+        LaunchedEffect(selectedIndex, safeTabCount) {
+            currentIndex = selectedIndex.fastCoerceIn(0, safeTabCount - 1)
+        }
+        LaunchedEffect(dampedDragAnimation, animationsEnabled) {
+            snapshotFlow { currentIndex }
+                .drop(1)
+                .collectLatest { index ->
+                    if (animationsEnabled) {
+                        dampedDragAnimation.animateToValue(index.toFloat())
+                    } else {
+                        dampedDragAnimation.snapToValue(index.toFloat())
+                    }
+                    tabs.getOrNull(index)?.key?.let(onSelectedDockKeyChange)
+                }
         }
         val selectedPillOffset = contentHorizontalPadding +
             tabSlotWidth * dampedDragAnimation.value + selectedPillInset
-
-        DebugBgmDockSelectionPill(
-            modifier = Modifier
-                .offset(x = selectedPillOffset, y = contentVerticalPadding)
-                .width(selectedPillWidth)
-                .height(selectedPillHeight)
-                .zIndex(0f)
-                .graphicsLayer {
-                    alpha = expanded
-                    scaleX = 0.92f + 0.08f * expanded
-                    scaleY = 0.92f + 0.08f * expanded
-                },
-            backdrop = backdrop,
-            isDark = isDark,
-            pressProgress = maxOf(dampedDragAnimation.pressProgress, itemPressProgress),
-            dragScaleX = dampedDragAnimation.scaleX,
-            dragScaleY = dampedDragAnimation.scaleY,
-            velocity = dampedDragAnimation.velocity
-        )
 
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .zIndex(if (expanded >= compact) 1f else 0f)
+                .onGloballyPositioned { coords ->
+                    val measuredTotalWidthPx = coords.size.width.toFloat()
+                    if (abs(totalWidthPx - measuredTotalWidthPx) > 0.5f) {
+                        totalWidthPx = measuredTotalWidthPx
+                    }
+                    val contentWidthPx = measuredTotalWidthPx - with(density) {
+                        (contentHorizontalPadding * 2f).toPx()
+                    }
+                    val measuredTabWidthPx = (contentWidthPx / safeTabCount).coerceAtLeast(0f)
+                    if (abs(tabWidthPx - measuredTabWidthPx) > 0.5f) {
+                        tabWidthPx = measuredTabWidthPx
+                    }
+                }
                 .graphicsLayer {
                     alpha = expanded
+                    translationX = panelOffset
+                    translationY = -dockLiftPx
                     scaleX = 0.96f + 0.04f * expanded
                     scaleY = 0.96f + 0.04f * expanded
+                    scaleX *= dockScaleX
+                    scaleY *= dockScaleY
                 }
+                .then(interactiveHighlight?.modifier ?: Modifier)
                 .padding(horizontal = contentHorizontalPadding, vertical = contentVerticalPadding),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            tabs.forEach { tab ->
-                val tabIndex = tabs.indexOf(tab).coerceAtLeast(0)
+            tabs.forEachIndexed { tabIndex, tab ->
                 val selectionProgress = (1f - abs(dampedDragAnimation.value - tabIndex))
                     .coerceIn(0f, 1f)
                 DebugBgmExpandedDockTab(
@@ -195,13 +304,9 @@ internal fun DebugBgmDockGroupContent(
                     selected = selectionProgress > 0.52f,
                     selectionProgress = selectionProgress,
                     accent = accent,
+                    activeTint = false,
                     onClick = {
-                        if (animationsEnabled) {
-                            dampedDragAnimation.animateToValue(tabIndex.toFloat())
-                        } else {
-                            dampedDragAnimation.snapToValue(tabIndex.toFloat())
-                        }
-                        onSelectedDockKeyChange(tab.key)
+                        currentIndex = tabIndex
                     },
                     onPressedChange = { pressed ->
                         pressedTabIndex = if (pressed) tabIndex else -1
@@ -214,22 +319,64 @@ internal fun DebugBgmDockGroupContent(
             }
         }
 
-        Box(
+        Row(
             modifier = Modifier
-                .offset(
-                    x = contentHorizontalPadding + tabSlotWidth * dampedDragAnimation.value,
-                    y = contentVerticalPadding
+                .clearAndSetSemantics {}
+                .alpha(0f)
+                .zIndex(if (expanded >= compact) 1.5f else 0f)
+                .then(if (backdrop != null) Modifier.layerBackdrop(tabsBackdrop) else Modifier)
+                .graphicsLayer {
+                    alpha = expanded
+                    translationX = panelOffset
+                    translationY = -dockLiftPx
+                    scaleX = (0.96f + 0.04f * expanded) * dockScaleX
+                    scaleY = (0.96f + 0.04f * expanded) * dockScaleY
+                }
+                .padding(horizontal = contentHorizontalPadding, vertical = contentVerticalPadding),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            tabs.forEachIndexed { tabIndex, tab ->
+                val selectionProgress = (1f - abs(dampedDragAnimation.value - tabIndex))
+                    .coerceIn(0f, 1f)
+                DebugBgmExpandedDockTab(
+                    tab = tab,
+                    selected = selectionProgress > 0.52f,
+                    selectionProgress = selectionProgress,
+                    accent = accent,
+                    activeTint = true,
+                    onClick = {},
+                    onPressedChange = {},
+                    enabled = false,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
-                .width(tabSlotWidth)
+            }
+        }
+
+        DebugBgmDockSelectionPill(
+            modifier = Modifier
+                .offset(x = selectedPillOffset, y = contentVerticalPadding)
+                .width(selectedPillWidth)
                 .height(selectedPillHeight)
                 .zIndex(if (expanded >= compact) 2f else 0f)
-                .then(
-                    if (expandedEnabled) {
-                        dampedDragAnimation.modifier
-                    } else {
-                        Modifier
-                    }
-                )
+                .graphicsLayer {
+                    alpha = expanded
+                    translationX = panelOffset
+                    translationY = -dockLiftPx
+                    scaleX = 0.92f + 0.08f * expanded
+                    scaleY = 0.92f + 0.08f * expanded
+                }
+                .then(interactiveHighlight?.gestureModifier ?: Modifier)
+                .then(if (expandedEnabled) dampedDragAnimation.modifier else Modifier),
+            backdrop = combinedBackdrop ?: backdrop,
+            isDark = isDark,
+            pressProgress = combinedInteractionProgress,
+            itemPressProgress = itemPressProgress,
+            dragScaleX = dampedDragAnimation.scaleX,
+            dragScaleY = dampedDragAnimation.scaleY,
+            velocity = dampedDragAnimation.velocity
         )
 
         val compactTab = tabs.firstOrNull { it.key == selectedDockKey } ?: tabs.last()
@@ -273,13 +420,14 @@ private fun DebugBgmDockSelectionPill(
     backdrop: Backdrop?,
     isDark: Boolean,
     pressProgress: Float,
+    itemPressProgress: Float,
     dragScaleX: Float,
     dragScaleY: Float,
     velocity: Float,
     modifier: Modifier = Modifier
 ) {
     val clampedPress = pressProgress.coerceIn(0f, 1f)
-    val clickScale = lerpFloat(1f, 1.045f, clampedPress)
+    val clickScale = lerpFloat(1f, 1.045f, itemPressProgress.coerceIn(0f, 1f))
     val velocityScale = velocity / 10f
     val neutralFill = if (isDark) {
         Color.White.copy(alpha = 0.10f)
@@ -305,29 +453,29 @@ private fun DebugBgmDockSelectionPill(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
                         effects = {
-                            vibrancy()
-                            blur((UiPerformanceBudget.backdropBlur * 0.52f).toPx())
-                            lens(
-                                (8.dp + 4.dp * clampedPress).toPx(),
-                                (12.dp + 4.dp * clampedPress).toPx(),
-                                true
-                            )
+                            if (clampedPress > 0f) {
+                                lens(
+                                    10.dp.toPx() * clampedPress,
+                                    14.dp.toPx() * clampedPress,
+                                    true
+                                )
+                            }
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = if (isDark) 0.44f + clampedPress * 0.16f else 0.76f)
+                            Highlight.Default.copy(alpha = clampedPress)
                         },
                         shadow = {
-                            Shadow.Default.copy(color = Color.Black.copy(alpha = if (isDark) 0.14f else 0.08f))
+                            Shadow(alpha = clampedPress)
                         },
                         innerShadow = {
-                            InnerShadow(radius = 7.dp + 2.dp * clampedPress, alpha = if (isDark) 0.18f else 0.10f)
+                            InnerShadow(radius = 8.dp * clampedPress, alpha = clampedPress)
                         },
                         layerBlock = {
                             scaleX = dragScaleX * clickScale / (1f - (velocityScale * 0.75f).coerceIn(-0.2f, 0.2f))
                             scaleY = dragScaleY * clickScale * (1f - (velocityScale * 0.25f).coerceIn(-0.2f, 0.2f))
                         },
                         onDrawSurface = {
-                            drawRect(neutralFill)
+                            drawRect(neutralFill, alpha = 1f - clampedPress)
                             drawRect(Color.Black.copy(alpha = 0.03f * clampedPress))
                         }
                     )
@@ -366,6 +514,7 @@ private fun DebugBgmExpandedDockTab(
     selected: Boolean,
     selectionProgress: Float,
     accent: Color,
+    activeTint: Boolean,
     onClick: () -> Unit,
     onPressedChange: (Boolean) -> Unit,
     enabled: Boolean,
@@ -404,19 +553,20 @@ private fun DebugBgmExpandedDockTab(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val tintProgress = if (activeTint) 1f else 0f
         DebugBgmDockTabIcon(
             icon = tab.icon,
             label = tab.label,
             selected = selected,
             accent = accent,
-            selectionProgress = selectionProgress
+            selectionProgress = tintProgress
         )
         Text(
             text = tab.label,
             color = DebugBgmDockTint(
                 selected = selected,
                 accent = accent,
-                selectionProgress = selectionProgress
+                selectionProgress = tintProgress
             ),
             fontSize = 11.sp,
             lineHeight = 13.sp,
@@ -501,4 +651,4 @@ internal data class DebugBgmDockTab(
     val label: String
 )
 
-private const val DebugBgmDockSelectionWidthFraction = 0.84f
+private const val DebugBgmDockSelectionWidthFraction = 1f
