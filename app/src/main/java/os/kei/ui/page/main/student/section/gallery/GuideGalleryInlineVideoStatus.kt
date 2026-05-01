@@ -13,8 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -37,14 +36,12 @@ internal fun GuideInlineVideoStatusHints(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CircularProgressIndicator(
-                progress = 0.35f,
+            LiquidCircularProgressBar(
+                progress = { 0.35f },
                 size = 14.dp,
                 strokeWidth = 2.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = Color(0xFF60A5FA),
-                    backgroundColor = Color(0x3360A5FA)
-                )
+                activeColor = Color(0xFF60A5FA),
+                inactiveColor = Color(0x3360A5FA)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(

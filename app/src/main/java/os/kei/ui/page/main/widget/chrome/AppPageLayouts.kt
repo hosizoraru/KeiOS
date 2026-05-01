@@ -85,12 +85,14 @@ fun AppPageLazyColumn(
     bottomExtra: Dp = AppChromeTokens.pageBottomInsetExtra,
     topExtra: Dp = AppChromeTokens.pageSectionGap,
     sectionSpacing: Dp = AppChromeTokens.pageSectionGapLarge,
+    userScrollEnabled: Boolean = true,
     content: LazyListScope.() -> Unit
 ) {
     LazyColumn(
         modifier = modifier,
         state = state,
         overscrollEffect = null,
+        userScrollEnabled = userScrollEnabled,
         contentPadding = appPageContentPadding(
             innerPadding = innerPadding,
             bottomExtra = bottomExtra,

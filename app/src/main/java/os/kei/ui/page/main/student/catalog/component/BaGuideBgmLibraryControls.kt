@@ -32,11 +32,10 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidLinearProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.util.Locale
@@ -301,14 +300,12 @@ private fun BaGuideBgmLibraryToolsContent(
             )
         }
         if (batchCaching) {
-            LinearProgressIndicator(
-                progress = progress,
+            LiquidLinearProgressBar(
+                progress = { progress.coerceIn(0f, 1f) },
+                activeColor = accent,
+                inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
                 modifier = Modifier.fillMaxWidth(),
-                height = 4.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = accent,
-                    backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
-                )
+                height = 4.dp
             )
         }
     }

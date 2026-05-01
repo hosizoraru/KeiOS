@@ -21,9 +21,8 @@ import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.sheet.SheetSurfaceCard
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -150,14 +149,11 @@ internal fun GitHubActionsLoadingCard(text: String) {
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CircularProgressIndicator(
-                progress = 0f,
+            LiquidCircularProgressBar(
                 size = 18.dp,
                 strokeWidth = 2.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = MiuixTheme.colorScheme.primary,
-                    backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.18f)
-                )
+                activeColor = MiuixTheme.colorScheme.primary,
+                inactiveColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.18f)
             )
             Text(
                 text = text,

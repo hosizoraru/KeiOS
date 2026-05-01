@@ -26,6 +26,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
@@ -42,6 +44,8 @@ import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
+import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
@@ -50,8 +54,6 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -62,29 +64,37 @@ internal fun BaGuideBgmPlaybackSeekBar(
     accent: Color,
     contentDescription: String,
     onSeekChanged: (Float) -> Unit,
-    onSeekFinished: () -> Unit
+    onSeekFinished: () -> Unit,
+    onInteractionChanged: (Boolean) -> Unit = {}
 ) {
-    Slider(
-        value = progress.coerceIn(0f, 1f),
-        onValueChange = { value -> onSeekChanged(value.coerceIn(0f, 1f)) },
+    val sliderBackdrop = rememberLayerBackdrop()
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(28.dp)
-            .semantics { this.contentDescription = contentDescription },
-        enabled = enabled,
-        valueRange = 0f..1f,
-        onValueChangeFinished = onSeekFinished,
-        height = 10.dp,
-        colors = SliderDefaults.sliderColors(
-            foregroundColor = accent,
-            disabledForegroundColor = accent.copy(alpha = 0.28f),
-            backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f),
-            disabledBackgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.24f),
-            thumbColor = MiuixTheme.colorScheme.onPrimary,
-            disabledThumbColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.44f)
-        ),
-        hapticEffect = SliderDefaults.SliderHapticEffect.Edge
-    )
+            .semantics { this.contentDescription = contentDescription }
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .layerBackdrop(sliderBackdrop)
+        )
+        LiquidMusicProgressSlider(
+            value = { progress.coerceIn(0f, 1f) },
+            onValueChange = { value -> onSeekChanged(value.coerceIn(0f, 1f)) },
+            onValueChangeFinished = { onSeekFinished() },
+            onInteractionChanged = onInteractionChanged,
+            valueRange = 0f..1f,
+            visibilityThreshold = 0.001f,
+            backdrop = sliderBackdrop,
+            enabled = enabled,
+            activeColor = accent,
+            inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = 4.dp)
+        )
+    }
 }
 
 @Composable
@@ -92,7 +102,8 @@ internal fun BaGuideBgmVolumeRow(
     volume: Float,
     contentDescription: String,
     valueText: String,
-    onVolumeChanged: (Float) -> Unit
+    onVolumeChanged: (Float) -> Unit,
+    onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val neutralTint = MiuixTheme.colorScheme.onBackgroundVariant
     Row(
@@ -114,6 +125,7 @@ internal fun BaGuideBgmVolumeRow(
             volume = volume,
             contentDescription = contentDescription,
             onVolumeChanged = onVolumeChanged,
+            onInteractionChanged = onInteractionChanged,
             modifier = Modifier.weight(1f)
         )
         Text(
@@ -131,26 +143,35 @@ private fun BaGuideBgmVolumeSlider(
     volume: Float,
     contentDescription: String,
     onVolumeChanged: (Float) -> Unit,
+    onInteractionChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Slider(
-        value = volume.coerceIn(0f, 1f),
-        onValueChange = { value -> onVolumeChanged(value.coerceIn(0f, 1f)) },
+    val sliderBackdrop = rememberLayerBackdrop()
+    val activeColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.78f)
+    Box(
         modifier = modifier
             .height(26.dp)
-            .semantics { this.contentDescription = contentDescription },
-        valueRange = 0f..1f,
-        height = 8.dp,
-        colors = SliderDefaults.sliderColors(
-            foregroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.78f),
-            disabledForegroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.28f),
-            backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
-            disabledBackgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.24f),
-            thumbColor = MiuixTheme.colorScheme.onBackground,
-            disabledThumbColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.44f)
-        ),
-        hapticEffect = SliderDefaults.SliderHapticEffect.Edge
-    )
+            .semantics { this.contentDescription = contentDescription }
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .layerBackdrop(sliderBackdrop)
+        )
+        LiquidVolumeSlider(
+            value = { volume.coerceIn(0f, 1f) },
+            onValueChange = { value -> onVolumeChanged(value.coerceIn(0f, 1f)) },
+            onInteractionChanged = onInteractionChanged,
+            valueRange = 0f..1f,
+            visibilityThreshold = 0.001f,
+            backdrop = sliderBackdrop,
+            activeColor = activeColor,
+            inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.34f),
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = 3.dp)
+        )
+    }
 }
 
 @Composable

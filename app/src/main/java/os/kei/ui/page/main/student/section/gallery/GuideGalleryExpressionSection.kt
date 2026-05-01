@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.student.section.gallery
 
-import android.widget.SeekBar
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
@@ -41,7 +40,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import kotlinx.coroutines.flow.MutableStateFlow
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideFullscreenIcon
 import os.kei.ui.page.main.os.appLucidePackageIcon
@@ -57,24 +59,21 @@ import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
+import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
-import com.kyant.backdrop.Backdrop
-import kotlinx.coroutines.flow.MutableStateFlow
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlin.math.abs
 
 @Composable
 internal fun GuideAudioSeekBar(
@@ -84,45 +83,42 @@ internal fun GuideAudioSeekBar(
     onSeekChanged: (Float) -> Unit,
     onSeekFinished: (Float) -> Unit
 ) {
-    val normalizedProgress = progress.coerceIn(0f, 1f)
-    AndroidView(
+    val sliderBackdrop = rememberLayerBackdrop()
+    var seekInteractionActive by remember { mutableStateOf(false) }
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(26.dp),
-        factory = { ctx ->
-            SeekBar(ctx).apply {
-                max = 1000
-                isEnabled = enabled
-                setPadding(0, 0, 0, 0)
-                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(
-                        seekBar: SeekBar?,
-                        progressValue: Int,
-                        fromUser: Boolean
-                    ) {
-                        if (!fromUser) return
-                        onSeekChanged((progressValue / 1000f).coerceIn(0f, 1f))
-                    }
-
-                    override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                        onSeekStarted()
-                    }
-
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                        val target = ((seekBar?.progress ?: 0) / 1000f).coerceIn(0f, 1f)
-                        onSeekFinished(target)
-                    }
-                })
-            }
-        },
-        update = { seekBar ->
-            seekBar.isEnabled = enabled
-            val targetProgress = (normalizedProgress * 1000f).toInt().coerceIn(0, 1000)
-            if (abs(seekBar.progress - targetProgress) > 2) {
-                seekBar.progress = targetProgress
-            }
-        }
-    )
+            .height(28.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .layerBackdrop(sliderBackdrop)
+        )
+        LiquidMusicProgressSlider(
+            value = { progress.coerceIn(0f, 1f) },
+            onValueChange = { value -> onSeekChanged(value.coerceIn(0f, 1f)) },
+            onValueChangeFinished = { value -> onSeekFinished(value.coerceIn(0f, 1f)) },
+            onInteractionChanged = { active ->
+                if (active && !seekInteractionActive) {
+                    seekInteractionActive = true
+                    onSeekStarted()
+                }
+                if (!active && seekInteractionActive) {
+                    seekInteractionActive = false
+                }
+            },
+            valueRange = 0f..1f,
+            visibilityThreshold = 0.001f,
+            backdrop = sliderBackdrop,
+            enabled = enabled,
+            activeColor = Color(0xFF3B82F6),
+            inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.34f),
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = 4.dp)
+        )
+    }
 }
 
 internal fun formatAudioDuration(durationMs: Long): String {
@@ -389,14 +385,12 @@ fun GuideGalleryExpressionCardItem(
                     val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
                     val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
                     val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
-                    CircularProgressIndicator(
-                        progress = imageProgressValue,
+                    LiquidCircularProgressBar(
+                        progress = { imageProgressValue },
                         size = 18.dp,
                         strokeWidth = 2.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = progressForegroundColor,
-                            backgroundColor = progressBackgroundColor
-                        )
+                        activeColor = progressForegroundColor,
+                        inactiveColor = progressBackgroundColor
                     )
                 }
             }

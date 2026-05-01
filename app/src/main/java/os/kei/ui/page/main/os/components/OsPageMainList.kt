@@ -40,12 +40,11 @@ import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -155,14 +154,12 @@ internal fun OsPageMainList(
                     },
                     headerEndActions = {
                         if (overviewState != SystemOverviewState.Idle) {
-                            CircularProgressIndicator(
-                                progress = indicatorProgress,
+                            LiquidCircularProgressBar(
+                                progress = { indicatorProgress },
                                 size = 16.dp,
                                 strokeWidth = 2.dp,
-                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                    foregroundColor = statusColor,
-                                    backgroundColor = indicatorBg
-                                )
+                                activeColor = statusColor,
+                                inactiveColor = indicatorBg
                             )
                         }
                         StatusPill(

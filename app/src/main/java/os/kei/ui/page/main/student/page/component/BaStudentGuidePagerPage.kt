@@ -35,12 +35,11 @@ import os.kei.ui.page.main.student.page.state.buildBaStudentGuidePagerHeaderStat
 import os.kei.ui.page.main.student.page.state.resolveBaStudentGuideTabRenderState
 import os.kei.ui.page.main.student.tabcontent.renderBaStudentGuideTabContent
 import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.flow.distinctUntilChanged
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -164,14 +163,12 @@ internal fun BaStudentGuidePagerPage(
                             SmallTitle(headerState.title)
                         }
                         if (headerState.showSyncIndicator) {
-                            CircularProgressIndicator(
-                                progress = syncProgress,
+                            LiquidCircularProgressBar(
+                                progress = { syncProgress },
                                 size = 18.dp,
                                 strokeWidth = 2.dp,
-                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                    foregroundColor = headerState.indicatorColor,
-                                    backgroundColor = headerState.indicatorColor.copy(alpha = 0.30f),
-                                ),
+                                activeColor = headerState.indicatorColor,
+                                inactiveColor = headerState.indicatorColor.copy(alpha = 0.30f)
                             )
                         }
                     }

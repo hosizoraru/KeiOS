@@ -23,8 +23,7 @@ import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogTabContentUiState
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.glass.FrostedBlock
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.SmallTitle
 
 @Composable
@@ -69,14 +68,12 @@ internal fun BaGuideCatalogTabListLayout(
                 Box(modifier = Modifier.weight(1f)) {
                     SmallTitle(uiState.tabTitle)
                 }
-                CircularProgressIndicator(
-                    progress = progress,
+                LiquidCircularProgressBar(
+                    progress = { progress },
                     size = 18.dp,
                     strokeWidth = 2.dp,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = progressColor,
-                        backgroundColor = progressColor.copy(alpha = 0.30f),
-                    ),
+                    activeColor = progressColor,
+                    inactiveColor = progressColor.copy(alpha = 0.30f)
                 )
             }
         }

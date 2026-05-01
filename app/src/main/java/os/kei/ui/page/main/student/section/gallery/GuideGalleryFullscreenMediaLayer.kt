@@ -23,8 +23,7 @@ import androidx.media3.ui.PlayerView
 import os.kei.R
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Refresh
@@ -33,14 +32,12 @@ import top.yukonga.miuix.kmp.icon.extended.Refresh
 internal fun GuideFullscreenImageLoadingIndicator(
     modifier: Modifier = Modifier
 ) {
-    CircularProgressIndicator(
-        progress = 0.28f,
+    LiquidCircularProgressBar(
+        progress = { 0.28f },
         size = 24.dp,
         strokeWidth = 2.dp,
-        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-            foregroundColor = Color(0xFF60A5FA),
-            backgroundColor = Color(0x3360A5FA)
-        ),
+        activeColor = Color(0xFF60A5FA),
+        inactiveColor = Color(0x3360A5FA),
         modifier = modifier
     )
 }

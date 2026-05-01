@@ -26,9 +26,8 @@ import os.kei.ui.page.main.github.borderColor
 import os.kei.ui.page.main.github.surfaceColor
 import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -105,14 +104,12 @@ internal fun GitHubOverviewCard(
                     OverviewRefreshState.Cached -> 1f
                     OverviewRefreshState.Idle -> 0f
                 }
-                CircularProgressIndicator(
-                    progress = progressValue,
+                LiquidCircularProgressBar(
+                    progress = { progressValue },
                     size = 18.dp,
                     strokeWidth = 2.dp,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = indicatorColor,
-                        backgroundColor = indicatorBg
-                    )
+                    activeColor = indicatorColor,
+                    inactiveColor = indicatorBg
                 )
             }
             StatusPill(

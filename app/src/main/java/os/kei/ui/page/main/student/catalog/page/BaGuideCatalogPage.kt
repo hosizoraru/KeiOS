@@ -231,6 +231,7 @@ fun BaGuideCatalogPage(
     var activeListCanScrollForward by remember { mutableStateOf(false) }
     var activeListScrollInProgress by remember { mutableStateOf(false) }
     var bgmNowPlayingVisible by remember { mutableStateOf(false) }
+    var bgmSliderInteractionActive by remember { mutableStateOf(false) }
     val chromeActivePageIndex = if (pagerState.isScrollInProgress) {
         pagerState.targetPage
     } else {
@@ -246,6 +247,7 @@ fun BaGuideCatalogPage(
         activeListCanScrollBackward = false
         activeListCanScrollForward = false
         activeListScrollInProgress = false
+        bgmSliderInteractionActive = false
         if (tabs.getOrNull(selectedTabIndex)?.catalogTab == null) {
             filterSortState.showSortPopup = false
         }
@@ -396,6 +398,7 @@ fun BaGuideCatalogPage(
             HorizontalPager(
                 state = pagerState,
                 key = { index -> tabs[index].name },
+                userScrollEnabled = !bgmSliderInteractionActive,
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { alpha = farJumpAlpha.value }
@@ -443,6 +446,9 @@ fun BaGuideCatalogPage(
                         },
                         onListScrollInProgressChange = { scrolling ->
                             activeListScrollInProgress = scrolling
+                        },
+                        onSliderInteractionChanged = { active ->
+                            bgmSliderInteractionActive = active
                         },
                         onNowPlayingVisibilityChange = { visible ->
                             bgmNowPlayingVisible = visible

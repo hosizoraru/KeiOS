@@ -43,8 +43,8 @@ import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.RadioButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -122,7 +122,7 @@ internal fun GitHubShareImportSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                CircularProgressIndicator()
+                LiquidCircularProgressBar(size = 24.dp)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.github_share_import_dialog_summary_parsing),
@@ -389,7 +389,7 @@ internal fun GitHubShareImportAttachConfirmSheet(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator()
+                    LiquidCircularProgressBar(size = 18.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (submittingAndOpen) {

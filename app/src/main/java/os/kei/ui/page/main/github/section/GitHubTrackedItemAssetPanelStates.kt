@@ -15,8 +15,7 @@ import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -48,14 +47,11 @@ internal fun GitHubTrackedItemAssetLoadingCard(
             horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.controlRowGap),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            CircularProgressIndicator(
-                progress = 0f,
+            LiquidCircularProgressBar(
                 size = 18.dp,
                 strokeWidth = 2.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = MiuixTheme.colorScheme.primary,
-                    backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.18f)
-                )
+                activeColor = MiuixTheme.colorScheme.primary,
+                inactiveColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.18f)
             )
             Column(
                 modifier = Modifier.weight(1f),

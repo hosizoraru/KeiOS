@@ -25,12 +25,11 @@ import os.kei.ui.page.main.student.guideLocalizedVoiceLanguage
 import os.kei.ui.page.main.student.guideLocalizedVoiceLineLabel
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Pause
@@ -178,14 +177,12 @@ fun GuideVoiceEntryCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             if (isPlaying) {
-                                CircularProgressIndicator(
-                                    progress = playProgress.coerceIn(0f, 1f),
+                                LiquidCircularProgressBar(
+                                    progress = { playProgress.coerceIn(0f, 1f) },
                                     size = 18.dp,
                                     strokeWidth = 2.dp,
-                                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                        foregroundColor = Color(0xFF3B82F6),
-                                        backgroundColor = Color(0x553B82F6)
-                                    )
+                                    activeColor = Color(0xFF3B82F6),
+                                    inactiveColor = Color(0x553B82F6)
                                 )
                             }
                             GlassTextButton(

@@ -72,10 +72,18 @@ fun LiquidMusicProgressSlider(
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    activeColor: Color = Color.Unspecified,
+    inactiveColor: Color = Color.Unspecified,
     onValueChangeFinished: ((Float) -> Unit)? = null,
     onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
+    val defaultActiveColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF)
+    val defaultInactiveColor = if (isLightTheme) {
+        Color(0xFF1D1D1F).copy(alpha = 0.16f)
+    } else {
+        Color.White.copy(alpha = 0.18f)
+    }
     LiquidTrackSlider(
         value = value,
         onValueChange = onValueChange,
@@ -87,12 +95,8 @@ fun LiquidMusicProgressSlider(
         enabled = enabled,
         onInteractionChanged = onInteractionChanged,
         style = LiquidTrackSliderStyle(
-            activeColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF),
-            inactiveColor = if (isLightTheme) {
-                Color(0xFF1D1D1F).copy(alpha = 0.16f)
-            } else {
-                Color.White.copy(alpha = 0.18f)
-            },
+            activeColor = if (activeColor.isSpecified) activeColor else defaultActiveColor,
+            inactiveColor = if (inactiveColor.isSpecified) inactiveColor else defaultInactiveColor,
             trackHeight = 4.dp,
             thumbWidth = 30.dp,
             thumbHeight = 18.dp,
@@ -110,11 +114,24 @@ fun LiquidVolumeSlider(
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    activeColor: Color = Color.Unspecified,
+    inactiveColor: Color = Color.Unspecified,
     onValueChangeFinished: ((Float) -> Unit)? = null,
     onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
-    val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF)
+    val accentColor = if (activeColor.isSpecified) {
+        activeColor
+    } else if (isLightTheme) {
+        Color(0xFF0088FF)
+    } else {
+        Color(0xFF5DAEFF)
+    }
+    val defaultInactiveColor = if (isLightTheme) {
+        Color(0xFF1D1D1F).copy(alpha = 0.15f)
+    } else {
+        Color.White.copy(alpha = 0.18f)
+    }
     LiquidTrackSlider(
         value = value,
         onValueChange = onValueChange,
@@ -127,11 +144,7 @@ fun LiquidVolumeSlider(
         onInteractionChanged = onInteractionChanged,
         style = LiquidTrackSliderStyle(
             activeColor = accentColor.copy(alpha = 0.92f),
-            inactiveColor = if (isLightTheme) {
-                Color(0xFF1D1D1F).copy(alpha = 0.15f)
-            } else {
-                Color.White.copy(alpha = 0.18f)
-            },
+            inactiveColor = if (inactiveColor.isSpecified) inactiveColor else defaultInactiveColor,
             trackHeight = 6.dp,
             thumbWidth = 40.dp,
             thumbHeight = 24.dp,
@@ -151,11 +164,25 @@ fun LiquidKeyPointSlider(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     snapToKeyPoints: Boolean = false,
+    snapThreshold: Float? = null,
+    activeColor: Color = Color.Unspecified,
+    inactiveColor: Color = Color.Unspecified,
     onValueChangeFinished: ((Float) -> Unit)? = null,
     onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
-    val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF)
+    val accentColor = if (activeColor.isSpecified) {
+        activeColor
+    } else if (isLightTheme) {
+        Color(0xFF0088FF)
+    } else {
+        Color(0xFF5DAEFF)
+    }
+    val defaultInactiveColor = if (isLightTheme) {
+        Color(0xFF1D1D1F).copy(alpha = 0.14f)
+    } else {
+        Color.White.copy(alpha = 0.18f)
+    }
     LiquidTrackSlider(
         value = value,
         onValueChange = onValueChange,
@@ -168,13 +195,10 @@ fun LiquidKeyPointSlider(
         onInteractionChanged = onInteractionChanged,
         keyPoints = keyPoints,
         snapToKeyPoints = snapToKeyPoints,
+        snapThreshold = snapThreshold,
         style = LiquidTrackSliderStyle(
             activeColor = accentColor,
-            inactiveColor = if (isLightTheme) {
-                Color(0xFF1D1D1F).copy(alpha = 0.14f)
-            } else {
-                Color.White.copy(alpha = 0.18f)
-            },
+            inactiveColor = if (inactiveColor.isSpecified) inactiveColor else defaultInactiveColor,
             keyPointColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
             keyPointActiveColor = Color.White.copy(alpha = 0.90f),
             trackHeight = 7.dp,
@@ -198,7 +222,8 @@ private fun LiquidTrackSlider(
     onInteractionChanged: (Boolean) -> Unit,
     style: LiquidTrackSliderStyle,
     keyPoints: List<LiquidSliderKeyPoint> = emptyList(),
-    snapToKeyPoints: Boolean = false
+    snapToKeyPoints: Boolean = false,
+    snapThreshold: Float? = null
 ) {
     val trackBackdrop = rememberLayerBackdrop()
     val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
@@ -257,7 +282,8 @@ private fun LiquidTrackSlider(
                             target = targetValue,
                             valueRange = safeValueRange,
                             keyPoints = keyPoints,
-                            snapToKeyPoints = snapToKeyPoints
+                            snapToKeyPoints = snapToKeyPoints,
+                            snapThreshold = snapThreshold
                         )
                         onValueChange(next)
                         onValueChangeFinished?.invoke(next)
@@ -328,7 +354,8 @@ private fun LiquidTrackSlider(
                                 target = rawTarget,
                                 valueRange = safeValueRange,
                                 keyPoints = keyPoints,
-                                snapToKeyPoints = snapToKeyPoints
+                                snapToKeyPoints = snapToKeyPoints,
+                                snapThreshold = snapThreshold
                             )
                             dampedDragAnimation.animateToValue(target)
                             onValueChange(target)
@@ -434,17 +461,22 @@ private fun resolveSliderTarget(
     target: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     keyPoints: List<LiquidSliderKeyPoint>,
-    snapToKeyPoints: Boolean
+    snapToKeyPoints: Boolean,
+    snapThreshold: Float?
 ): Float {
     val bounded = target.coerceIn(valueRange)
     if (!snapToKeyPoints || keyPoints.isEmpty()) {
         return bounded
     }
-    return keyPoints
+    val closest = keyPoints
         .minByOrNull { keyPoint -> abs(keyPoint.value.coerceIn(valueRange) - bounded) }
         ?.value
         ?.coerceIn(valueRange)
-        ?: bounded
+        ?: return bounded
+    if (snapThreshold != null && abs(closest - bounded) > snapThreshold) {
+        return bounded
+    }
+    return closest
 }
 
 private fun valueProgress(

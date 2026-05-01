@@ -23,8 +23,7 @@ import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -52,15 +51,13 @@ internal fun OsShellRunnerInputCard(
             subtitle = "",
             titleAccessory = {
                 if (runningCommand) {
-                    CircularProgressIndicator(
-                        progress = 0.42f,
+                    LiquidCircularProgressBar(
+                        progress = { 0.42f },
                         size = 14.dp,
                         strokeWidth = 2.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = MiuixTheme.colorScheme.primary,
-                            backgroundColor = MiuixTheme.colorScheme.primary.copy(
-                                alpha = if (isDark) 0.28f else 0.22f
-                            )
+                        activeColor = MiuixTheme.colorScheme.primary,
+                        inactiveColor = MiuixTheme.colorScheme.primary.copy(
+                            alpha = if (isDark) 0.28f else 0.22f
                         )
                     )
                 }

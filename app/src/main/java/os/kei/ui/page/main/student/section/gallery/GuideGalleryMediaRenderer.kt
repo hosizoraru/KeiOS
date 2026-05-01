@@ -26,10 +26,9 @@ import os.kei.ui.page.main.student.section.GuidePressableMediaSurface
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.flow.MutableStateFlow
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Download
@@ -162,14 +161,12 @@ internal fun GuideGalleryCardContent(
                 val imageProgressValue = if (imageLoading) imageProgress.coerceIn(0f, 1f) else 1f
                 val progressForegroundColor = if (imageProgressValue >= 0.999f) Color(0xFF34C759) else Color(0xFF3B82F6)
                 val progressBackgroundColor = if (imageProgressValue >= 0.999f) Color(0x5534C759) else Color(0x553B82F6)
-                CircularProgressIndicator(
-                    progress = imageProgressValue,
+                LiquidCircularProgressBar(
+                    progress = { imageProgressValue },
                     size = 18.dp,
                     strokeWidth = 2.dp,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = progressForegroundColor,
-                        backgroundColor = progressBackgroundColor
-                    )
+                    activeColor = progressForegroundColor,
+                    inactiveColor = progressBackgroundColor
                 )
             }
             if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {

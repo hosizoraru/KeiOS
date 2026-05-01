@@ -31,9 +31,8 @@ import os.kei.ui.page.main.ba.support.poolProgress
 import os.kei.ui.page.main.ba.support.serverRefreshTimeZone
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidLinearProgressBar
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Refresh
@@ -296,14 +295,12 @@ internal fun BaCalendarEntryPanel(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        LinearProgressIndicator(
-            progress = activityProgress(activity, nowMs),
+        LiquidLinearProgressBar(
+            progress = { activityProgress(activity, nowMs) },
             modifier = Modifier.fillMaxWidth(),
             height = 5.dp,
-            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                foregroundColor = if (isRunningNow) accentGreen else accentBlue,
-                backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f),
-            ),
+            activeColor = if (isRunningNow) accentGreen else accentBlue,
+            inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
         )
     }
 }
@@ -568,14 +565,12 @@ internal fun BaPoolEntryPanel(
                 )
             }
         }
-        LinearProgressIndicator(
-            progress = poolProgress(pool, nowMs),
+        LiquidLinearProgressBar(
+            progress = { poolProgress(pool, nowMs) },
             modifier = Modifier.fillMaxWidth(),
             height = 5.dp,
-            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                foregroundColor = if (isRunningNow) accentGreen else accentBlue,
-                backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f),
-            ),
+            activeColor = if (isRunningNow) accentGreen else accentBlue,
+            inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
         )
     }
 }

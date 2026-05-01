@@ -12,8 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -49,14 +48,12 @@ internal fun LazyListScope.renderBaGuideCatalogEntryListAdapter(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                CircularProgressIndicator(
-                    progress = 0.3f,
+                LiquidCircularProgressBar(
+                    progress = { 0.3f },
                     size = 16.dp,
                     strokeWidth = 2.dp,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = accent,
-                        backgroundColor = accent.copy(alpha = 0.30f),
-                    ),
+                    activeColor = accent,
+                    inactiveColor = accent.copy(alpha = 0.30f)
                 )
                 Text(
                     text = loadingMoreText,

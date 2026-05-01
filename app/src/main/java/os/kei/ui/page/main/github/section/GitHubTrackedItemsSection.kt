@@ -94,6 +94,7 @@ import os.kei.ui.page.main.widget.motion.appExpandOut
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.github.asset.apkAssetTarget
 import os.kei.ui.page.main.github.asset.assetAbiLabel
 import os.kei.ui.page.main.github.asset.assetDisplayName
@@ -112,9 +113,7 @@ import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.Text
@@ -255,14 +254,11 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
                                 },
                             contentAlignment = androidx.compose.ui.Alignment.Center
                         ) {
-                            CircularProgressIndicator(
-                                progress = 0f,
+                            LiquidCircularProgressBar(
                                 size = 16.dp,
                                 strokeWidth = 2.dp,
-                                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                    foregroundColor = iconTint,
-                                    backgroundColor = iconTint.copy(alpha = 0.18f)
-                                )
+                                activeColor = iconTint,
+                                inactiveColor = iconTint.copy(alpha = 0.18f)
                             )
                         }
                     } else {
@@ -504,14 +500,11 @@ internal fun GitHubAssetCountBubble(
         contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
         if (loading) {
-            CircularProgressIndicator(
-                progress = 0f,
+            LiquidCircularProgressBar(
                 size = 14.dp,
                 strokeWidth = 2.dp,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = color,
-                    backgroundColor = color.copy(alpha = 0.18f)
-                )
+                activeColor = color,
+                inactiveColor = color.copy(alpha = 0.18f)
             )
         } else {
             Text(

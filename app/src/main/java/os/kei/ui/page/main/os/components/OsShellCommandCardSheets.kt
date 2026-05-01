@@ -31,6 +31,7 @@ import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
@@ -41,9 +42,7 @@ import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -77,14 +76,12 @@ internal fun LazyListScope.addShellCommandCards(
                 },
                 headerActions = {
                     if (cardIsRunning) {
-                        CircularProgressIndicator(
-                            progress = 0.42f,
+                        LiquidCircularProgressBar(
+                            progress = { 0.42f },
                             size = 16.dp,
                             strokeWidth = 2.dp,
-                            colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                                foregroundColor = MiuixTheme.colorScheme.primary,
-                                backgroundColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.24f)
-                            )
+                            activeColor = MiuixTheme.colorScheme.primary,
+                            inactiveColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.24f)
                         )
                     } else {
                         AppCompactIconAction(

@@ -65,6 +65,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     isPageActive: Boolean,
     onScrollBoundsChange: (canScrollBackward: Boolean, canScrollForward: Boolean) -> Unit,
     onListScrollInProgressChange: (Boolean) -> Unit,
+    onSliderInteractionChanged: (Boolean) -> Unit,
     onNowPlayingVisibilityChange: (Boolean) -> Unit,
     onOpenGuide: (String) -> Unit
 ) {
@@ -118,6 +119,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     var importingFavorites by remember { mutableStateOf(false) }
     var nowPlayingVisible by rememberSaveable { mutableStateOf(false) }
     var nowPlayingExpanded by remember { mutableStateOf(false) }
+    var sliderInteractionActive by remember { mutableStateOf(false) }
     var removedFavorite by remember { mutableStateOf<GuideBgmFavoriteItem?>(null) }
     val cacheSuccessText = stringResource(R.string.ba_catalog_bgm_cache_success)
     val cacheFailedText = stringResource(R.string.ba_catalog_bgm_cache_failed)
@@ -130,6 +132,11 @@ internal fun BaGuideBgmFavoritesTabContent(
     fun setNowPlayingVisible(visible: Boolean) {
         nowPlayingVisible = visible
         onNowPlayingVisibilityChange(visible && selectedAudioUrl.isNotBlank())
+    }
+
+    fun setSliderInteractionActive(active: Boolean) {
+        sliderInteractionActive = active
+        onSliderInteractionChanged(active)
     }
 
     fun startFavoritePlayback(
@@ -384,6 +391,9 @@ internal fun BaGuideBgmFavoritesTabContent(
     DisposableEffect(Unit) {
         onDispose { onNowPlayingVisibilityChange(false) }
     }
+    DisposableEffect(Unit) {
+        onDispose { onSliderInteractionChanged(false) }
+    }
     val emptyTitle = stringResource(R.string.ba_catalog_bgm_empty_title)
     val emptySubtitle = if (searchQuery.isBlank()) {
         stringResource(R.string.ba_catalog_bgm_empty_subtitle)
@@ -516,6 +526,7 @@ internal fun BaGuideBgmFavoritesTabContent(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
+            userScrollEnabled = !sliderInteractionActive,
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(nestedScrollConnection),
@@ -722,6 +733,7 @@ internal fun BaGuideBgmFavoritesTabContent(
                             volume = safeVolume
                         )
                     },
+                    onSliderInteractionChanged = ::setSliderInteractionActive,
                     onToggleQueueMode = {
                         val nextMode = if (queueMode == BaGuideBgmQueueMode.Continuous) {
                             BaGuideBgmQueueMode.SingleLoop

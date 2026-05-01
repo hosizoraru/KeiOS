@@ -45,11 +45,10 @@ import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidMusicProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -70,6 +69,7 @@ internal fun BaGuideBgmMiniPlayer(
     onSeekChanged: (Float) -> Unit,
     onSeekFinished: () -> Unit,
     onVolumeChanged: (Float) -> Unit,
+    onSliderInteractionChanged: (Boolean) -> Unit,
     onToggleQueueMode: () -> Unit,
     onOpenGuide: () -> Unit,
     modifier: Modifier = Modifier
@@ -219,14 +219,11 @@ internal fun BaGuideBgmMiniPlayer(
             }
 
             if (!expanded) {
-                LinearProgressIndicator(
-                    progress = runtimeState.progress,
-                    modifier = Modifier.fillMaxWidth(),
-                    height = 3.dp,
-                    colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                        foregroundColor = accent,
-                        backgroundColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
-                    )
+                LiquidMusicProgressBar(
+                    progress = { runtimeState.progress.coerceIn(0f, 1f) },
+                    activeColor = accent,
+                    inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -241,7 +238,8 @@ internal fun BaGuideBgmMiniPlayer(
                         accent = accent,
                         contentDescription = seekDescription,
                         onSeekChanged = onSeekChanged,
-                        onSeekFinished = onSeekFinished
+                        onSeekFinished = onSeekFinished,
+                        onInteractionChanged = onSliderInteractionChanged
                     )
 
                     Row(
@@ -331,7 +329,8 @@ internal fun BaGuideBgmMiniPlayer(
                         volume = runtimeState.volume,
                         contentDescription = volumeDescription,
                         valueText = volumeText,
-                        onVolumeChanged = onVolumeChanged
+                        onVolumeChanged = onVolumeChanged,
+                        onInteractionChanged = onSliderInteractionChanged
                     )
                 }
             }

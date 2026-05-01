@@ -386,6 +386,7 @@ fun SettingsPage(
     val appearanceListState = rememberLazyListState()
     val notifyListState = rememberLazyListState()
     val dataListState = rememberLazyListState()
+    var sliderInteractionActive by remember { mutableStateOf(false) }
     val bottomBarBackdrop = rememberLayerBackdrop()
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     var showBottomBar by remember { mutableStateOf(true) }
@@ -481,6 +482,7 @@ fun SettingsPage(
     }
 
     LaunchedEffect(pagerState.settledPage) {
+        sliderInteractionActive = false
         if (selectedCategoryIndex != pagerState.settledPage) {
             selectedCategoryIndex = pagerState.settledPage
         }
@@ -525,6 +527,7 @@ fun SettingsPage(
             key = { index -> categories[index].name },
             overscrollEffect = null,
             beyondViewportPageCount = 1,
+            userScrollEnabled = !sliderInteractionActive,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }
@@ -552,7 +555,8 @@ fun SettingsPage(
                 bottomExtra = appPageBottomPaddingWithFloatingOverlay(
                     AppChromeTokens.floatingBottomBarOuterHeight
                 ),
-                sectionSpacing = 12.dp
+                sectionSpacing = 12.dp,
+                userScrollEnabled = !sliderInteractionActive
             ) {
                 when (category) {
                     SettingsCategory.Access -> {
@@ -600,7 +604,10 @@ fun SettingsPage(
                                 backgroundPickerLauncher = backgroundController.backgroundPickerLauncher,
                                 onClearBackground = backgroundController.clearBackground,
                                 enabledCardColor = enabledCardColor,
-                                disabledCardColor = disabledCardColor
+                                disabledCardColor = disabledCardColor,
+                                onSliderInteractionChanged = { active ->
+                                    sliderInteractionActive = active
+                                }
                             )
                         }
                     }
@@ -610,7 +617,10 @@ fun SettingsPage(
                                 state = sectionContracts.notifyState,
                                 actions = sectionContracts.notifyActions,
                                 enabledCardColor = enabledCardColor,
-                                disabledCardColor = disabledCardColor
+                                disabledCardColor = disabledCardColor,
+                                onSliderInteractionChanged = { active ->
+                                    sliderInteractionActive = active
+                                }
                             )
                         }
                     }

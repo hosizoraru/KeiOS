@@ -37,10 +37,9 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.LiquidMusicProgressBar
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -141,14 +140,11 @@ internal fun DebugBgmMiniPlayer(
                             .height(18.dp)
                     )
                 } else {
-                    LinearProgressIndicator(
-                        progress = playbackProgress.coerceIn(0f, 1f),
+                    LiquidMusicProgressBar(
+                        progress = { playbackProgress.coerceIn(0f, 1f) },
+                        activeColor = accent,
+                        inactiveColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.20f),
                         modifier = Modifier.fillMaxWidth(),
-                        height = 3.dp,
-                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                            foregroundColor = accent,
-                            backgroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.22f)
-                        )
                     )
                 }
             }

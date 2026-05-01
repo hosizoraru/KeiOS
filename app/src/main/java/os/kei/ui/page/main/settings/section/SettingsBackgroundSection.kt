@@ -23,8 +23,6 @@ import os.kei.ui.page.main.settings.support.formatOpacityPercent
 import os.kei.ui.page.main.widget.core.AppDualActionRow
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -37,7 +35,8 @@ internal fun SettingsBackgroundSection(
     backgroundPickerLauncher: ActivityResultLauncher<Array<String>>,
     onClearBackground: () -> Unit,
     enabledCardColor: Color,
-    disabledCardColor: Color
+    disabledCardColor: Color,
+    onSliderInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val backgroundGroupActive = nonHomeBackgroundEnabled || nonHomeBackgroundUri.isNotBlank()
     SettingsGroupCard(
@@ -91,25 +90,26 @@ internal fun SettingsBackgroundSection(
                 )
             }
         )
+        val opacityTitle = stringResource(R.string.settings_non_home_background_opacity_title)
         SettingsActionItem(
-            title = stringResource(R.string.settings_non_home_background_opacity_title),
+            title = opacityTitle,
             summary = stringResource(
                 R.string.settings_non_home_background_opacity_summary,
                 formatOpacityPercent(nonHomeBackgroundOpacity)
             )
         )
-        Slider(
+        SettingsLiquidKeyPointSlider(
             value = nonHomeBackgroundOpacity.coerceIn(
                 NON_HOME_BACKGROUND_OPACITY_MIN,
                 NON_HOME_BACKGROUND_OPACITY_MAX
             ),
             onValueChange = onNonHomeBackgroundOpacityChanged,
             valueRange = NON_HOME_BACKGROUND_OPACITY_MIN..NON_HOME_BACKGROUND_OPACITY_MAX,
-            showKeyPoints = true,
             keyPoints = NON_HOME_BACKGROUND_OPACITY_KEY_POINTS,
             magnetThreshold = NON_HOME_BACKGROUND_OPACITY_MAGNET_THRESHOLD,
-            hapticEffect = SliderDefaults.SliderHapticEffect.Step,
             enabled = nonHomeBackgroundEnabled,
+            contentDescription = opacityTitle,
+            onInteractionChanged = onSliderInteractionChanged,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 2.dp)

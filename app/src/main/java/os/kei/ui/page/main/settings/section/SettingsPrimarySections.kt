@@ -31,8 +31,6 @@ import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import kotlin.math.roundToInt
-import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.SliderDefaults
 
 @Composable
 internal fun SettingsPermissionKeepAliveSection(
@@ -545,7 +543,8 @@ internal fun SettingsNotifySection(
     state: SettingsNotifySectionState,
     actions: SettingsNotifySectionActions,
     enabledCardColor: Color,
-    disabledCardColor: Color
+    disabledCardColor: Color,
+    onSliderInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val notifyGroupActive = state.superIslandNotificationEnabled ||
         state.superIslandBypassRestrictionEnabled
@@ -579,8 +578,9 @@ internal fun SettingsNotifySection(
             infoKey = stringResource(R.string.common_note),
             infoValue = stringResource(R.string.settings_super_island_bypass_note)
         )
+        val restoreDelayTitle = stringResource(R.string.settings_super_island_restore_delay_title)
         SettingsActionItem(
-            title = stringResource(R.string.settings_super_island_restore_delay_title),
+            title = restoreDelayTitle,
             summary = stringResource(
                 R.string.settings_super_island_restore_delay_summary,
                 formatMilliseconds(state.superIslandRestoreDelayMs)
@@ -588,7 +588,7 @@ internal fun SettingsNotifySection(
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_super_island_restore_delay_scope)
         )
-        Slider(
+        SettingsLiquidKeyPointSlider(
             value = state.superIslandRestoreDelayMs.toFloat().coerceIn(
                 SUPER_ISLAND_RESTORE_DELAY_MIN_MS,
                 SUPER_ISLAND_RESTORE_DELAY_MAX_MS
@@ -597,11 +597,11 @@ internal fun SettingsNotifySection(
                 actions.onSuperIslandRestoreDelayMsChanged(value.roundToInt())
             },
             valueRange = SUPER_ISLAND_RESTORE_DELAY_MIN_MS..SUPER_ISLAND_RESTORE_DELAY_MAX_MS,
-            showKeyPoints = true,
             keyPoints = SUPER_ISLAND_RESTORE_DELAY_KEY_POINTS,
             magnetThreshold = SUPER_ISLAND_RESTORE_DELAY_MAGNET_THRESHOLD,
-            hapticEffect = SliderDefaults.SliderHapticEffect.Step,
             enabled = state.superIslandBypassRestrictionEnabled,
+            contentDescription = restoreDelayTitle,
+            onInteractionChanged = onSliderInteractionChanged,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 2.dp)
