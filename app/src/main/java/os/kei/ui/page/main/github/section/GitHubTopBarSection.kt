@@ -21,8 +21,8 @@ import os.kei.ui.page.main.widget.chrome.AppTopBarSection
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionBarPopupAnchors
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownImpl
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -141,10 +141,10 @@ internal fun GitHubTopBarActions(
                         onDismissRequest = { onShowSortPopupChange(false) },
                         enableWindowDim = false
                     ) {
-                        LiquidDropdownColumn {
+                        LiquidGlassDropdownColumn(backdrop = backdrop) {
                             val modes = GitHubSortMode.entries
                             modes.forEachIndexed { index, mode ->
-                                LiquidDropdownImpl(
+                                LiquidGlassDropdownSingleChoiceItem(
                                     text = stringResource(mode.labelRes),
                                     optionSize = modes.size,
                                     isSelected = sortMode == mode,
@@ -152,7 +152,8 @@ internal fun GitHubTopBarActions(
                                     onSelectedIndexChange = { selectedIndex ->
                                         onSortModeChange(modes[selectedIndex])
                                         onShowSortPopupChange(false)
-                                    }
+                                    },
+                                    leadingIcon = sortIcon
                                 )
                             }
                         }

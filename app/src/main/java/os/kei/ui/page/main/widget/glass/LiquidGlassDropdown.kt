@@ -477,6 +477,34 @@ fun LiquidGlassDropdownImpl(
     accentColor: Color = MiuixTheme.colorScheme.primary,
     variant: GlassVariant = GlassVariant.SheetAction
 ) {
+    LiquidGlassDropdownSingleChoiceItem(
+        text = text,
+        optionSize = optionSize,
+        isSelected = isSelected,
+        index = index,
+        onSelectedIndexChange = onSelectedIndexChange,
+        modifier = modifier,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        accentColor = accentColor,
+        variant = variant
+    )
+}
+
+@Composable
+fun LiquidGlassDropdownSingleChoiceItem(
+    text: String,
+    optionSize: Int,
+    isSelected: Boolean,
+    index: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
+    trailingIcon: ImageVector? = null,
+    accentColor: Color = MiuixTheme.colorScheme.primary,
+    variant: GlassVariant = GlassVariant.SheetAction,
+    enabled: Boolean = true
+) {
     LiquidGlassDropdownItem(
         text = text,
         selected = isSelected,
@@ -488,10 +516,40 @@ fun LiquidGlassDropdownImpl(
         trailingIcon = trailingIcon,
         accentColor = accentColor,
         variant = variant,
+        enabled = enabled,
         highlighted = isSelected,
-        showCheck = true,
-        highlightContent = true
+        showCheck = isSelected,
+        highlightContent = isSelected
     )
+}
+
+@Composable
+fun LiquidGlassDropdownSingleChoiceList(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
+    trailingIcon: ImageVector? = null,
+    accentColor: Color = MiuixTheme.colorScheme.primary,
+    variant: GlassVariant = GlassVariant.SheetAction,
+    enabled: Boolean = true
+) {
+    options.forEachIndexed { index, option ->
+        LiquidGlassDropdownSingleChoiceItem(
+            text = option,
+            optionSize = options.size,
+            isSelected = selectedIndex == index,
+            index = index,
+            onSelectedIndexChange = onSelectedIndexChange,
+            modifier = modifier,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            accentColor = accentColor,
+            variant = variant,
+            enabled = enabled
+        )
+    }
 }
 
 @Composable

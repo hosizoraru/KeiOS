@@ -64,6 +64,10 @@
     <string name="debug_component_lab_liquid_button_rounded">Rounded rectangle</string>
     <string name="debug_component_lab_liquid_button_oval">Oval capsule</string>
     <string name="debug_component_lab_liquid_button_circle">Circle button</string>
+    <string name="debug_component_lab_liquid_dropdown_label">Liquid Dropdown proofs</string>
+    <string name="debug_component_lab_liquid_dropdown_subtitle">Independent backdrop, action menu, and press pill</string>
+    <string name="debug_component_lab_liquid_dropdown_open">Open menu</string>
+    <string name="debug_component_lab_liquid_dropdown_single_choice">Single-choice interval proof</string>
     <string name="debug_component_lab_liquid_backdrop_playground_label">Clear backdrop playground</string>
     <string name="debug_component_lab_liquid_large_clear_card">Large clear liquid card</string>
     <string name="debug_component_lab_liquid_large_clear_card_body">Use the color field to inspect clear refraction, chromatic edges, and highlights</string>

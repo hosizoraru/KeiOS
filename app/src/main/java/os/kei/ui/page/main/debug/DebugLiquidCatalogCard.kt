@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
@@ -33,6 +34,7 @@ import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.os.appLucideShuffleIcon
+import os.kei.ui.page.main.os.appLucideTimeIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -42,6 +44,7 @@ import os.kei.ui.page.main.widget.glass.LiquidBottomTabs
 import os.kei.ui.page.main.widget.glass.LiquidButton
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceList
 import os.kei.ui.page.main.widget.glass.LiquidKeyPointSlider
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import os.kei.ui.page.main.widget.glass.LiquidPrimaryToggle
@@ -288,8 +291,16 @@ internal fun DebugLiquidDropdownCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var anchorBounds by remember { mutableStateOf<IntRect?>(null) }
+    var selectedIntervalIndex by remember { mutableIntStateOf(1) }
     val contentColor = MiuixTheme.colorScheme.onBackground
     val buttonSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.20f)
+    val intervalIcon = appLucideTimeIcon()
+    val intervalOptions = listOf(
+        stringResource(R.string.github_refresh_interval_1h),
+        stringResource(R.string.github_refresh_interval_3h),
+        stringResource(R.string.github_refresh_interval_6h),
+        stringResource(R.string.github_refresh_interval_12h)
+    )
 
     AppFeatureCard(
         title = stringResource(R.string.debug_component_lab_liquid_dropdown_label),
@@ -335,6 +346,26 @@ internal fun DebugLiquidDropdownCard(
                 leadingIcon = appLucideShareIcon(),
                 index = 3,
                 optionSize = 4,
+                accentColor = accent
+            )
+        }
+
+        Text(
+            text = stringResource(R.string.debug_component_lab_liquid_dropdown_single_choice),
+            color = contentColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            fontWeight = FontWeight.Medium
+        )
+        LiquidGlassDropdownColumn(
+            accentColor = accent,
+            backdrop = backdrop
+        ) {
+            LiquidGlassDropdownSingleChoiceList(
+                options = intervalOptions,
+                selectedIndex = selectedIntervalIndex,
+                onSelectedIndexChange = { selectedIntervalIndex = it },
+                leadingIcon = intervalIcon,
                 accentColor = accent
             )
         }

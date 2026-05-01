@@ -17,8 +17,8 @@ import os.kei.ui.page.main.widget.chrome.LiquidActionBarPopupAnchors
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownImpl
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
@@ -112,13 +112,13 @@ internal fun BaTopBarActions(
                     onDismissRequest = { onShowCalendarIntervalPopupChange(false) },
                     enableWindowDim = false,
                 ) {
-                    LiquidDropdownColumn {
+                    LiquidGlassDropdownColumn(backdrop = backdrop) {
                         val options = BaCalendarRefreshIntervalOption.entries
                         val selected = BaCalendarRefreshIntervalOption.fromHours(
                             calendarRefreshIntervalHours,
                         )
                         options.forEachIndexed { index, option ->
-                            LiquidDropdownImpl(
+                            LiquidGlassDropdownSingleChoiceItem(
                                 text = stringResource(option.labelRes),
                                 optionSize = options.size,
                                 isSelected = selected == option,
@@ -127,6 +127,7 @@ internal fun BaTopBarActions(
                                     onCalendarRefreshIntervalSelected(options[selectedIndex].hours)
                                     onShowCalendarIntervalPopupChange(false)
                                 },
+                                leadingIcon = refreshIntervalIcon
                             )
                         }
                     }

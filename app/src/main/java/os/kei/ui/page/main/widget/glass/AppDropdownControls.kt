@@ -104,19 +104,21 @@ fun AppDropdownSelector(
                 onDismissRequest = { onExpandedChange(false) },
                 enableWindowDim = false
             ) {
-                LiquidDropdownColumn {
-                    options.forEachIndexed { index, option ->
-                        LiquidDropdownImpl(
-                            text = option,
-                            optionSize = options.size,
-                            isSelected = selectedIndex == index,
-                            index = index,
-                            onSelectedIndexChange = { selected ->
-                                onSelectedIndexChange(selected)
-                                onExpandedChange(false)
-                            }
-                        )
-                    }
+                val accentColor = dropdownAnchorTint(textColor = textColor, variant = variant)
+                LiquidGlassDropdownColumn(
+                    accentColor = accentColor,
+                    backdrop = backdrop
+                ) {
+                    LiquidGlassDropdownSingleChoiceList(
+                        options = options,
+                        selectedIndex = selectedIndex,
+                        onSelectedIndexChange = { selected ->
+                            onSelectedIndexChange(selected)
+                            onExpandedChange(false)
+                        },
+                        accentColor = accentColor,
+                        variant = variant
+                    )
                 }
             }
         }

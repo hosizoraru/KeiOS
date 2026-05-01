@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.res.stringResource
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogSortMode
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownImpl
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
@@ -27,10 +27,10 @@ internal fun BaGuideCatalogSortActionPopup(
         onDismissRequest = onDismissRequest,
         enableWindowDim = false
     ) {
-        LiquidDropdownColumn {
+        LiquidGlassDropdownColumn {
             val modes = BaGuideCatalogSortMode.entries
             modes.forEachIndexed { index, mode ->
-                LiquidDropdownImpl(
+                LiquidGlassDropdownSingleChoiceItem(
                     text = stringResource(mode.labelRes),
                     optionSize = modes.size,
                     isSelected = sortMode == mode,

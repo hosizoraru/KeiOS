@@ -55,8 +55,8 @@ import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownImpl
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
@@ -288,11 +288,13 @@ fun GuideGalleryExpressionCardItem(
                             onDismissRequest = { showPicker = false },
                             enableWindowDim = false
                         ) {
-                            LiquidDropdownColumn(
-                                modifier = Modifier.heightIn(max = pickerMaxHeight)
+                            LiquidGlassDropdownColumn(
+                                modifier = Modifier.heightIn(max = pickerMaxHeight),
+                                accentColor = Color(0xFF3B82F6),
+                                backdrop = backdrop
                             ) {
                                 optionLabels.forEachIndexed { idx, option ->
-                                    LiquidDropdownImpl(
+                                    LiquidGlassDropdownSingleChoiceItem(
                                         text = option,
                                         optionSize = optionLabels.size,
                                         isSelected = selectedIndex == idx,

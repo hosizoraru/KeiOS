@@ -66,6 +66,7 @@
     <string name="debug_component_lab_liquid_dropdown_label">Liquid Dropdown 試作</string>
     <string name="debug_component_lab_liquid_dropdown_subtitle">独立 backdrop、アクションメニュー、押下カプセル</string>
     <string name="debug_component_lab_liquid_dropdown_open">メニューを開く</string>
+    <string name="debug_component_lab_liquid_dropdown_single_choice">単一選択の間隔試作</string>
     <string name="debug_component_lab_liquid_backdrop_playground_label">透明 backdrop プレイグラウンド</string>
     <string name="debug_component_lab_liquid_large_clear_card">大型透明 Liquid カード</string>
     <string name="debug_component_lab_liquid_large_clear_card_body">色付き背景で透明屈折、色収差、ハイライトを確認できます</string>

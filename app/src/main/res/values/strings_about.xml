@@ -67,6 +67,7 @@
     <string name="debug_component_lab_liquid_dropdown_label">Liquid Dropdown 样张</string>
     <string name="debug_component_lab_liquid_dropdown_subtitle">独立 backdrop、动作菜单与按压胶囊</string>
     <string name="debug_component_lab_liquid_dropdown_open">打开菜单</string>
+    <string name="debug_component_lab_liquid_dropdown_single_choice">单选间隔样张</string>
     <string name="debug_component_lab_liquid_backdrop_playground_label">透明 backdrop 演示面板</string>
     <string name="debug_component_lab_liquid_large_clear_card">大透明液态 Card</string>
     <string name="debug_component_lab_liquid_large_clear_card_body">使用彩色底纹观察纯透明折射、色散与高光</string>
