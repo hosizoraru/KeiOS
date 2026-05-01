@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,8 +22,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -42,7 +45,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
@@ -80,17 +82,21 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
+import com.kyant.capsule.ContinuousCapsule
 import com.kyant.shapes.Capsule
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import os.kei.ui.animation.DampedDragAnimation
 import os.kei.ui.animation.InteractiveHighlight
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sign
 import kotlin.math.tanh
@@ -531,21 +537,62 @@ fun LiquidSlider(
 }
 
 private val LocalLiquidBottomTabScale = staticCompositionLocalOf { { 1f } }
+private val LocalLiquidBottomTabSelectionProgress = staticCompositionLocalOf<(Int) -> Float> { { 0f } }
+private val LocalLiquidBottomTabContentColor = staticCompositionLocalOf<(Int) -> Color> { { Color.Unspecified } }
 private val LocalLiquidBottomTabInteractive = staticCompositionLocalOf { true }
+private val LocalLiquidBottomTabPressHandler = staticCompositionLocalOf<(Int, Boolean) -> Unit> { { _, _ -> } }
+
+@Composable
+fun liquidBottomTabSelectionProgress(tabIndex: Int): Float {
+    return LocalLiquidBottomTabSelectionProgress.current(tabIndex)
+}
+
+@Composable
+fun liquidBottomTabContentColor(tabIndex: Int): Color {
+    return LocalLiquidBottomTabContentColor.current(tabIndex)
+}
 
 @Composable
 fun RowScope.LiquidBottomTab(
     onClick: () -> Unit,
+    tabIndex: Int,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scale = LocalLiquidBottomTabScale.current
+    val selectionProgress = liquidBottomTabSelectionProgress(tabIndex)
     val interactive = LocalLiquidBottomTabInteractive.current
+    val onItemPressed = LocalLiquidBottomTabPressHandler.current
     val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val targetScale = when {
+        interactive && pressed && enabled -> lerp(0.92f, 0.96f, selectionProgress)
+        selectionProgress > 0f -> lerp(1f, scale(), selectionProgress)
+        else -> 1f
+    }
+    val animatedScale by appMotionFloatState(
+        targetValue = targetScale,
+        durationMillis = 160,
+        label = "liquid_bottom_tab_scale"
+    )
+
+    LaunchedEffect(interactive, pressed, tabIndex) {
+        if (interactive) {
+            onItemPressed(tabIndex, pressed)
+        }
+    }
+    DisposableEffect(interactive, tabIndex) {
+        onDispose {
+            if (interactive) {
+                onItemPressed(tabIndex, false)
+            }
+        }
+    }
+
     Column(
         modifier = modifier
-            .clip(Capsule())
+            .clip(ContinuousCapsule)
             .then(
                 if (interactive) {
                     Modifier.clickable(
@@ -562,9 +609,8 @@ fun RowScope.LiquidBottomTab(
             .fillMaxHeight()
             .weight(1f)
             .graphicsLayer {
-                val resolvedScale = scale()
-                scaleX = resolvedScale
-                scaleY = resolvedScale
+                scaleX = animatedScale
+                scaleY = animatedScale
             },
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -591,7 +637,18 @@ fun LiquidBottomTabs(
     val safeTabsCount = tabsCount.coerceAtLeast(1)
     val isLightTheme = !isSystemInDarkTheme()
     val tabsBackdrop = rememberLayerBackdrop()
+    val combinedBackdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop)
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
+    val horizontalPadding = AppChromeTokens.floatingBottomBarHorizontalPadding
+    val outerHeight = AppChromeTokens.floatingBottomBarOuterHeight
+    val innerHeight = AppChromeTokens.floatingBottomBarInnerHeight
+    val effectBlur = UiPerformanceBudget.backdropBlur
+    val effectLens = UiPerformanceBudget.backdropLens
+    val inactiveContentColor = if (isLightTheme) {
+        MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.88f)
+    } else {
+        MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f)
+    }
 
     BoxWithConstraints(
         modifier = modifier,
@@ -599,7 +656,7 @@ fun LiquidBottomTabs(
     ) {
         val density = LocalDensity.current
         val tabWidth = with(density) {
-            (constraints.maxWidth.toFloat() - 8.dp.toPx()) / safeTabsCount
+            (constraints.maxWidth.toFloat() - (horizontalPadding * 2).toPx()) / safeTabsCount
         }.coerceAtLeast(1f)
         val offsetAnimation = remember { Animatable(0f) }
         val panelOffset by remember(density) {
@@ -616,6 +673,7 @@ fun LiquidBottomTabs(
         var currentIndex by remember(safeTabsCount) {
             mutableIntStateOf(selectedTabIndex().fastCoerceIn(0, safeTabsCount - 1))
         }
+        var pressedTabIndex by remember(safeTabsCount) { mutableIntStateOf(-1) }
         val dampedDragAnimation = remember(animationScope, safeTabsCount, isLtr) {
             DampedDragAnimation(
                 animationScope = animationScope,
@@ -643,7 +701,7 @@ fun LiquidBottomTabs(
                 },
                 onDrag = { _, dragAmount ->
                     val delta = dragAmount.x / tabWidth * if (isLtr) 1f else -1f
-                    snapToValue((targetValue + delta).fastCoerceIn(0f, (safeTabsCount - 1).toFloat()))
+                    snapToValue((value + delta).fastCoerceIn(0f, (safeTabsCount - 1).toFloat()))
                     animationScope.launch {
                         offsetAnimation.snapTo(offsetAnimation.value + dragAmount.x)
                     }
@@ -682,36 +740,71 @@ fun LiquidBottomTabs(
                 highlightRadiusScale = if (isLightTheme) 0.92f else 1.08f
             )
         }
-        val pressProgress = if (isInteractive) dampedDragAnimation.pressProgress else 0f
-
-        Row(
-            Modifier
-                .graphicsLayer { translationX = panelOffset }
-                .drawBackdrop(
-                    backdrop = backdrop,
-                    shape = { Capsule() },
-                    effects = {
-                        vibrancy()
-                        blur(8.dp.toPx())
-                        lens(24.dp.toPx(), 24.dp.toPx())
-                    },
-                    layerBlock = {
-                        val scale = lerp(1f, 1f + 16.dp.toPx() / size.width, pressProgress)
-                        scaleX = scale
-                        scaleY = scale
-                    },
-                    onDrawSurface = { drawRect(containerColor) }
-                )
-                .then(if (isInteractive) interactiveHighlight.modifier else Modifier)
-                .height(64.dp)
-                .fillMaxWidth()
-                .padding(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content
+        val dragPressProgress = if (isInteractive) dampedDragAnimation.pressProgress else 0f
+        val itemPressProgress by appMotionFloatState(
+            targetValue = if (isInteractive && pressedTabIndex >= 0) 1f else 0f,
+            durationMillis = 120,
+            label = "liquid_bottom_tabs_item_press"
         )
+        val pressProgress = max(dragPressProgress, itemPressProgress)
+        val selectionProgressProvider: (Int) -> Float = remember(dampedDragAnimation) {
+            { tabIndex ->
+                (1f - abs(dampedDragAnimation.value - tabIndex)).fastCoerceIn(0f, 1f)
+            }
+        }
+        val tactileLiftPx = with(density) { 1.25.dp.toPx() } * pressProgress
+        val tactileScaleX = lerp(1f, 1.006f, pressProgress)
+        val tactileScaleY = lerp(1f, 0.996f, pressProgress)
 
         CompositionLocalProvider(
             LocalLiquidBottomTabScale provides { lerp(1f, 1.2f, pressProgress) },
+            LocalLiquidBottomTabSelectionProgress provides selectionProgressProvider,
+            LocalLiquidBottomTabContentColor provides { inactiveContentColor },
+            LocalLiquidBottomTabInteractive provides true,
+            LocalLiquidBottomTabPressHandler provides { index, isPressed ->
+                when {
+                    isPressed -> pressedTabIndex = index
+                    pressedTabIndex == index -> pressedTabIndex = -1
+                }
+            }
+        ) {
+            Row(
+                Modifier
+                    .graphicsLayer {
+                        translationX = panelOffset
+                        translationY = -tactileLiftPx
+                        scaleX = tactileScaleX
+                        scaleY = tactileScaleY
+                    }
+                    .drawBackdrop(
+                        backdrop = backdrop,
+                        shape = { ContinuousCapsule },
+                        effects = {
+                            vibrancy()
+                            blur(effectBlur.toPx())
+                            lens(effectLens.toPx(), effectLens.toPx())
+                        },
+                        highlight = { Highlight.Default },
+                        shadow = {
+                            Shadow.Default.copy(
+                                color = Color.Black.copy(if (isLightTheme) 0.10f else 0.20f)
+                            )
+                        },
+                        onDrawSurface = { drawRect(containerColor) }
+                    )
+                    .then(if (isInteractive) interactiveHighlight.modifier else Modifier)
+                    .height(outerHeight)
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalPadding),
+                verticalAlignment = Alignment.CenterVertically,
+                content = content
+            )
+        }
+
+        CompositionLocalProvider(
+            LocalLiquidBottomTabScale provides { lerp(1f, 1.2f, pressProgress) },
+            LocalLiquidBottomTabSelectionProgress provides selectionProgressProvider,
+            LocalLiquidBottomTabContentColor provides { accentColor },
             LocalLiquidBottomTabInteractive provides false
         ) {
             Row(
@@ -721,23 +814,25 @@ fun LiquidBottomTabs(
                     .layerBackdrop(tabsBackdrop)
                     .graphicsLayer {
                         translationX = panelOffset
-                        colorFilter = ColorFilter.tint(accentColor)
+                        translationY = -tactileLiftPx
+                        scaleX = tactileScaleX
+                        scaleY = tactileScaleY
                     }
                     .drawBackdrop(
                         backdrop = backdrop,
-                        shape = { Capsule() },
+                        shape = { ContinuousCapsule },
                         effects = {
                             vibrancy()
-                            blur(8.dp.toPx())
-                            lens(24.dp.toPx() * pressProgress, 24.dp.toPx() * pressProgress)
+                            blur(effectBlur.toPx())
+                            lens(effectLens.toPx() * pressProgress, effectLens.toPx() * pressProgress)
                         },
                         highlight = { Highlight.Default.copy(alpha = pressProgress) },
                         onDrawSurface = { drawRect(containerColor) }
                     )
                     .then(if (isInteractive) interactiveHighlight.modifier else Modifier)
-                    .height(56.dp)
+                    .height(innerHeight)
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = horizontalPadding),
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
             )
@@ -745,24 +840,27 @@ fun LiquidBottomTabs(
 
         Box(
             Modifier
-                .padding(horizontal = 4.dp)
+                .padding(horizontal = horizontalPadding)
                 .graphicsLayer {
                     translationX = if (isLtr) {
                         dampedDragAnimation.value * tabWidth + panelOffset
                     } else {
                         size.width - (dampedDragAnimation.value + 1f) * tabWidth + panelOffset
                     }
+                    translationY = -tactileLiftPx
+                    scaleX = tactileScaleX
+                    scaleY = tactileScaleY
                 }
                 .then(if (isInteractive) interactiveHighlight.gestureModifier else Modifier)
                 .then(if (isInteractive) dampedDragAnimation.modifier else Modifier)
                 .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
-                    shape = { Capsule() },
+                    backdrop = combinedBackdrop,
+                    shape = { ContinuousCapsule },
                     effects = {
                         lens(
                             10.dp.toPx() * pressProgress,
                             14.dp.toPx() * pressProgress,
-                            chromaticAberration = true
+                            depthEffect = true
                         )
                     },
                     highlight = { Highlight.Default.copy(alpha = pressProgress) },
@@ -771,8 +869,9 @@ fun LiquidBottomTabs(
                         InnerShadow(radius = 8.dp * pressProgress, alpha = pressProgress)
                     },
                     layerBlock = {
-                        scaleX = dampedDragAnimation.scaleX
-                        scaleY = dampedDragAnimation.scaleY
+                        val clickScale = lerp(1f, 1.045f, itemPressProgress)
+                        scaleX = dampedDragAnimation.scaleX * clickScale
+                        scaleY = dampedDragAnimation.scaleY * clickScale
                         val velocity = dampedDragAnimation.velocity / 10f
                         scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
                         scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
@@ -785,8 +884,9 @@ fun LiquidBottomTabs(
                         drawRect(Color.Black.copy(alpha = 0.03f * pressProgress))
                     }
                 )
-                .height(56.dp)
-                .fillMaxWidth(1f / safeTabsCount)
+                .clearAndSetSemantics {}
+                .height(innerHeight)
+                .width(with(density) { tabWidth.toDp() })
         )
     }
 }

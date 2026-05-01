@@ -56,6 +56,8 @@
     <string name="debug_component_lab_liquid_button_shuffle">Shuffle proof</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26-style toggle</string>
     <string name="debug_component_lab_liquid_slider_label">Liquid progress and volume handle</string>
+    <string name="debug_component_lab_liquid_music_slider_label">Music progress</string>
+    <string name="debug_component_lab_liquid_key_points_slider_label">Key point progress</string>
     <string name="debug_component_lab_now_playing_title">After School Queue</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>

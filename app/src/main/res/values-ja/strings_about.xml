@@ -55,6 +55,8 @@
     <string name="debug_component_lab_liquid_button_shuffle">シャッフル試作</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26 風トグル</string>
     <string name="debug_component_lab_liquid_slider_label">液体風進捗と音量ハンドル</string>
+    <string name="debug_component_lab_liquid_music_slider_label">音楽進捗</string>
+    <string name="debug_component_lab_liquid_key_points_slider_label">キーポイント進捗</string>
     <string name="debug_component_lab_now_playing_title">放課後プレイキュー</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>

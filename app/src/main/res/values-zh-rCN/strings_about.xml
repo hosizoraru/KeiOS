@@ -56,6 +56,8 @@
     <string name="debug_component_lab_liquid_button_shuffle">随机样张</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26 风格开关</string>
     <string name="debug_component_lab_liquid_slider_label">液态进度条与音量手柄</string>
+    <string name="debug_component_lab_liquid_music_slider_label">Music 进度条</string>
+    <string name="debug_component_lab_liquid_key_points_slider_label">关键点进度条</string>
     <string name="debug_component_lab_now_playing_title">放课后播放队列</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>

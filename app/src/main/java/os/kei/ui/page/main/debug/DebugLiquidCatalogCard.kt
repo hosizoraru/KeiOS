@@ -27,11 +27,16 @@ import os.kei.ui.page.main.os.appLucideShuffleIcon
 import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.glass.LiquidBottomTab
 import os.kei.ui.page.main.widget.glass.LiquidBottomTabs
 import os.kei.ui.page.main.widget.glass.LiquidButton
+import os.kei.ui.page.main.widget.glass.LiquidKeyPointSlider
+import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import os.kei.ui.page.main.widget.glass.LiquidSlider
+import os.kei.ui.page.main.widget.glass.LiquidSliderKeyPoint
 import os.kei.ui.page.main.widget.glass.LiquidToggle
+import os.kei.ui.page.main.widget.glass.liquidBottomTabContentColor
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -43,8 +48,18 @@ internal fun DebugLiquidCatalogCard(
 ) {
     var toggleSelected by remember { mutableStateOf(true) }
     var sliderValue by remember { mutableFloatStateOf(0.62f) }
+    var musicProgress by remember { mutableFloatStateOf(0.38f) }
+    var keyPointProgress by remember { mutableFloatStateOf(0.46f) }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = rememberDebugBgmDockTabs()
+    val keyPoints = remember {
+        listOf(
+            LiquidSliderKeyPoint(0.18f),
+            LiquidSliderKeyPoint(0.42f),
+            LiquidSliderKeyPoint(0.68f),
+            LiquidSliderKeyPoint(0.88f)
+        )
+    }
     val contentColor = MiuixTheme.colorScheme.onBackground
     val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
     val buttonSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.22f)
@@ -148,6 +163,72 @@ internal fun DebugLiquidCatalogCard(
                 .height(32.dp)
         )
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.debug_component_lab_liquid_music_slider_label),
+                color = contentColor,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                maxLines = 1
+            )
+            Text(
+                text = "1:42 / 4:28",
+                color = secondaryColor,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                maxLines = 1
+            )
+        }
+        LiquidMusicProgressSlider(
+            value = { musicProgress },
+            onValueChange = { musicProgress = it.coerceIn(0f, 1f) },
+            onValueChangeFinished = { musicProgress = it.coerceIn(0f, 1f) },
+            valueRange = 0f..1f,
+            visibilityThreshold = 0.001f,
+            backdrop = backdrop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(28.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.debug_component_lab_liquid_key_points_slider_label),
+                color = contentColor,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                maxLines = 1
+            )
+            Text(
+                text = "${(keyPointProgress * 100).toInt()}%",
+                color = secondaryColor,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                maxLines = 1
+            )
+        }
+        LiquidKeyPointSlider(
+            value = { keyPointProgress },
+            onValueChange = { keyPointProgress = it.coerceIn(0f, 1f) },
+            onValueChangeFinished = { keyPointProgress = it.coerceIn(0f, 1f) },
+            valueRange = 0f..1f,
+            visibilityThreshold = 0.001f,
+            backdrop = backdrop,
+            keyPoints = keyPoints,
+            snapToKeyPoints = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(32.dp)
+        )
+
         LiquidBottomTabs(
             selectedTabIndex = { selectedTabIndex },
             onTabSelected = { selectedTabIndex = it },
@@ -156,13 +237,14 @@ internal fun DebugLiquidCatalogCard(
             accentColor = accent,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(AppChromeTokens.floatingBottomBarOuterHeight)
         ) {
             tabs.forEachIndexed { index, tab ->
-                val selected = selectedTabIndex == index
-                val tint = if (selected) accent else secondaryColor
+                val sampledTint = liquidBottomTabContentColor(index)
+                val tint = if (sampledTint == Color.Unspecified) secondaryColor else sampledTint
                 LiquidBottomTab(
-                    onClick = { selectedTabIndex = index }
+                    onClick = { selectedTabIndex = index },
+                    tabIndex = index
                 ) {
                     Icon(
                         imageVector = tab.icon,
