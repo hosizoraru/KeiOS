@@ -167,7 +167,8 @@ private fun GlassIconButtonContainer(
         containerColor = containerColor,
         isDark = isDark
     )
-    val showBorder = glass.showBorder
+    val transparentContainer = containerColor?.alpha == 0f
+    val showBorder = glass.showBorder && !transparentContainer
     val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val pressedOverlayColor = appControlPressedOverlayColor(
         isDark = isDark,
@@ -244,7 +245,11 @@ private fun GlassIconButtonContainer(
                         }
                     )
                 } else {
-                    val fallbackColor = containerOverlay ?: fallbackSurface.copy(alpha = glass.fallbackAlpha)
+                    val fallbackColor = when {
+                        transparentContainer -> Color.Transparent
+                        containerOverlay != null -> containerOverlay
+                        else -> fallbackSurface.copy(alpha = glass.fallbackAlpha)
+                    }
                     Modifier.background(fallbackColor)
                 }
             )
@@ -322,6 +327,7 @@ fun GlassTextButton(
         containerColor = containerColor,
         isDark = isDark
     )
+    val transparentContainer = containerColor?.alpha == 0f
     val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val pressedOverlayColor = appControlPressedOverlayColor(
         isDark = isDark,
@@ -422,7 +428,11 @@ fun GlassTextButton(
                         }
                     )
                 } else {
-                    val fallbackColor = containerOverlay ?: fallbackSurface.copy(alpha = glass.fallbackAlpha)
+                    val fallbackColor = when {
+                        transparentContainer -> Color.Transparent
+                        containerOverlay != null -> containerOverlay
+                        else -> fallbackSurface.copy(alpha = glass.fallbackAlpha)
+                    }
                     Modifier.background(fallbackColor)
                 }
             )
