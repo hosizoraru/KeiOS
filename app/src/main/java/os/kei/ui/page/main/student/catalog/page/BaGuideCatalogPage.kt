@@ -56,6 +56,7 @@ import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
 import os.kei.ui.page.main.student.catalog.component.BaGuideBgmFavoritesTabContent
 import os.kei.ui.page.main.student.catalog.component.BaGuideCatalogSortActionPopup
 import os.kei.ui.page.main.student.catalog.component.BaGuideCatalogTabContent
+import os.kei.ui.page.main.student.catalog.component.BaGuideStudentBgmTabContent
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogViewModel
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogFilterSortState
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabSelectCoordinator
@@ -90,7 +91,8 @@ private enum class BaGuideCatalogPageTab(
     val labelRes: Int,
     val compactLabelRes: Int,
     val iconRes: Int,
-    val catalogTab: BaGuideCatalogTab?
+    val catalogTab: BaGuideCatalogTab?,
+    val specialTab: BaGuideCatalogSpecialTab? = null
 ) {
     Student(
         labelRes = R.string.ba_catalog_tab_student,
@@ -104,12 +106,25 @@ private enum class BaGuideCatalogPageTab(
         iconRes = R.drawable.ba_tab_skill,
         catalogTab = BaGuideCatalogTab.NpcSatellite
     ),
+    StudentBgm(
+        labelRes = R.string.ba_catalog_tab_student_bgm,
+        compactLabelRes = R.string.ba_catalog_tab_student_bgm_short,
+        iconRes = R.drawable.ba_tab_student_bgm,
+        catalogTab = null,
+        specialTab = BaGuideCatalogSpecialTab.StudentBgm
+    ),
     Bgm(
         labelRes = R.string.ba_catalog_tab_bgm,
         compactLabelRes = R.string.ba_catalog_tab_bgm,
         iconRes = R.drawable.ba_tab_bgm,
-        catalogTab = null
+        catalogTab = null,
+        specialTab = BaGuideCatalogSpecialTab.FavoriteBgm
     )
+}
+
+private enum class BaGuideCatalogSpecialTab {
+    StudentBgm,
+    FavoriteBgm
 }
 
 @Composable
@@ -238,7 +253,7 @@ fun BaGuideCatalogPage(
         selectedTabIndex
     }.coerceIn(0, tabs.lastIndex)
     val suppressBottomBarForBgmNowPlaying =
-        tabs.getOrNull(chromeActivePageIndex) == BaGuideCatalogPageTab.Bgm && bgmNowPlayingVisible
+        tabs.getOrNull(chromeActivePageIndex)?.specialTab != null && bgmNowPlayingVisible
     val currentShowBottomBar = rememberUpdatedState(showBottomBar)
     val currentShowSearchBar = rememberUpdatedState(showSearchBar)
     val currentActiveListCanScrollBackward = rememberUpdatedState(activeListCanScrollBackward)
@@ -433,7 +448,30 @@ fun BaGuideCatalogPage(
                         },
                         onOpenGuide = onOpenGuide
                     )
-                } else if (renderHeavyContent) {
+                } else if (renderHeavyContent && pageTab.specialTab == BaGuideCatalogSpecialTab.StudentBgm) {
+                    BaGuideStudentBgmTabContent(
+                        catalog = catalog,
+                        searchQuery = filterSortState.searchQuery,
+                        innerPadding = innerPadding,
+                        nestedScrollConnection = scrollBehavior.nestedScrollConnection,
+                        accent = accent,
+                        isPageActive = pageIndex == pagerState.currentPage,
+                        onScrollBoundsChange = { canScrollBackward, canScrollForward ->
+                            activeListCanScrollBackward = canScrollBackward
+                            activeListCanScrollForward = canScrollForward
+                        },
+                        onListScrollInProgressChange = { scrolling ->
+                            activeListScrollInProgress = scrolling
+                        },
+                        onSliderInteractionChanged = { active ->
+                            bgmSliderInteractionActive = active
+                        },
+                        onNowPlayingVisibilityChange = { visible ->
+                            bgmNowPlayingVisible = visible
+                        },
+                        onOpenGuide = onOpenGuide
+                    )
+                } else if (renderHeavyContent && pageTab.specialTab == BaGuideCatalogSpecialTab.FavoriteBgm) {
                     BaGuideBgmFavoritesTabContent(
                         searchQuery = filterSortState.searchQuery,
                         innerPadding = innerPadding,
