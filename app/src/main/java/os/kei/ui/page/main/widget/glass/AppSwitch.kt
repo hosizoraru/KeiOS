@@ -3,11 +3,17 @@ package os.kei.ui.page.main.widget.glass
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -25,19 +31,27 @@ fun AppSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    val switchModifier = modifier
+        .size(width = 64.dp, height = 40.dp)
+        .switchScrollLock(enabled)
+
     if (!LocalLiquidSwitchEnabled.current) {
-        MiuixSwitch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = modifier,
-            enabled = enabled
-        )
+        Box(
+            modifier = switchModifier,
+            contentAlignment = Alignment.Center
+        ) {
+            MiuixSwitch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled
+            )
+        }
         return
     }
 
     val switchBackdrop = rememberLayerBackdrop()
     Box(
-        modifier = modifier.size(width = 64.dp, height = 40.dp),
+        modifier = switchModifier,
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -50,11 +64,29 @@ fun AppSwitch(
             onSelect = onCheckedChange,
             backdrop = switchBackdrop,
             enabled = enabled,
+            modifier = Modifier.fillMaxSize(),
             checkedColor = if (androidx.compose.foundation.isSystemInDarkTheme()) {
                 AppLiquidSwitchDarkBlue
             } else {
                 AppLiquidSwitchLightBlue
             }
         )
+    }
+}
+
+private fun Modifier.switchScrollLock(enabled: Boolean): Modifier {
+    if (!enabled) return this
+    return pointerInput(Unit) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            do {
+                val event = awaitPointerEvent(pass = PointerEventPass.Main)
+                event.changes.forEach { change ->
+                    if (change.pressed && change.positionChange() != Offset.Zero) {
+                        change.consume()
+                    }
+                }
+            } while (event.changes.any { it.pressed })
+        }
     }
 }

@@ -55,6 +55,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -218,11 +219,13 @@ fun LiquidToggle(
     }
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val touchSlop = LocalViewConfiguration.current.touchSlop
     val dragWidth = with(density) { 20.dp.toPx() }
     val animationScope = rememberCoroutineScope()
     var didDrag by remember { mutableStateOf(false) }
+    var dragDistancePx by remember { mutableFloatStateOf(0f) }
     var fraction by remember { mutableFloatStateOf(if (selected()) 1f else 0f) }
-    val dampedDragAnimation = remember(animationScope) {
+    val dampedDragAnimation = remember(animationScope, dragWidth, isLtr, touchSlop) {
         DampedDragAnimation(
             animationScope = animationScope,
             initialValue = fraction,
@@ -230,7 +233,10 @@ fun LiquidToggle(
             visibilityThreshold = 0.001f,
             initialScale = 1f,
             pressedScale = 1.5f,
-            onDragStarted = {},
+            consumeDragChanges = true,
+            onDragStarted = {
+                dragDistancePx = 0f
+            },
             onDragStopped = {
                 if (!enabled) return@DampedDragAnimation
                 fraction = if (didDrag) {
@@ -240,11 +246,16 @@ fun LiquidToggle(
                 }
                 onSelect(fraction == 1f)
                 didDrag = false
+                dragDistancePx = 0f
             },
             onDrag = { _, dragAmount ->
                 if (!enabled) return@DampedDragAnimation
+                dragDistancePx += dragAmount.getDistance()
                 if (!didDrag) {
-                    didDrag = dragAmount.x != 0f
+                    didDrag = dragDistancePx > touchSlop
+                }
+                if (!didDrag) {
+                    return@DampedDragAnimation
                 }
                 val delta = dragAmount.x / dragWidth
                 fraction = if (isLtr) {
@@ -281,6 +292,7 @@ fun LiquidToggle(
 
     Box(
         modifier = modifier
+            .then(if (enabled) dampedDragAnimation.modifier else Modifier)
             .graphicsLayer {
                 alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
             }
@@ -317,7 +329,6 @@ fun LiquidToggle(
                     }
                 }
                 .semantics { role = Role.Switch }
-                .then(if (enabled) dampedDragAnimation.modifier else Modifier)
                 .drawBackdrop(
                     backdrop = combinedBackdrop,
                     shape = { Capsule() },
