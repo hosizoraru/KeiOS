@@ -100,6 +100,43 @@ fun LiquidMusicProgressSlider(
 }
 
 @Composable
+fun LiquidVolumeSlider(
+    value: () -> Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    visibilityThreshold: Float,
+    backdrop: Backdrop,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onValueChangeFinished: ((Float) -> Unit)? = null
+) {
+    val isLightTheme = !isSystemInDarkTheme()
+    val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF)
+    LiquidTrackSlider(
+        value = value,
+        onValueChange = onValueChange,
+        onValueChangeFinished = onValueChangeFinished,
+        valueRange = valueRange,
+        visibilityThreshold = visibilityThreshold,
+        backdrop = backdrop,
+        modifier = modifier,
+        enabled = enabled,
+        style = LiquidTrackSliderStyle(
+            activeColor = accentColor.copy(alpha = 0.92f),
+            inactiveColor = if (isLightTheme) {
+                Color(0xFF1D1D1F).copy(alpha = 0.15f)
+            } else {
+                Color.White.copy(alpha = 0.18f)
+            },
+            trackHeight = 6.dp,
+            thumbWidth = 40.dp,
+            thumbHeight = 24.dp,
+            pressedScale = 1.5f
+        )
+    )
+}
+
+@Composable
 fun LiquidKeyPointSlider(
     value: () -> Float,
     onValueChange: (Float) -> Unit,
@@ -234,31 +271,6 @@ private fun LiquidTrackSlider(
                 Modifier
                     .clip(ContinuousCapsule)
                     .background(style.inactiveColor)
-                    .then(
-                        if (enabled) {
-                            Modifier.pointerInput(safeValueRange, isLtr, trackWidth, keyPoints, snapToKeyPoints) {
-                                detectTapGestures { position ->
-                                    val rawTarget = sliderValueAt(
-                                        offset = position,
-                                        widthPx = trackWidth.toFloat(),
-                                        valueRange = safeValueRange,
-                                        isLtr = isLtr
-                                    )
-                                    val target = resolveSliderTarget(
-                                        target = rawTarget,
-                                        valueRange = safeValueRange,
-                                        keyPoints = keyPoints,
-                                        snapToKeyPoints = snapToKeyPoints
-                                    )
-                                    dampedDragAnimation.animateToValue(target)
-                                    onValueChange(target)
-                                    onValueChangeFinished?.invoke(target)
-                                }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
                     .height(style.trackHeight)
                     .fillMaxWidth()
             )
@@ -274,6 +286,32 @@ private fun LiquidTrackSlider(
                             .coerceIn(0, constraints.maxWidth)
                         layout(width, placeable.height) {
                             placeable.place(0, 0)
+                        }
+                    }
+            )
+        }
+        if (enabled) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(maxHeight)
+                    .pointerInput(safeValueRange, isLtr, trackWidth, keyPoints, snapToKeyPoints) {
+                        detectTapGestures { position ->
+                            val rawTarget = sliderValueAt(
+                                offset = position,
+                                widthPx = trackWidth.toFloat(),
+                                valueRange = safeValueRange,
+                                isLtr = isLtr
+                            )
+                            val target = resolveSliderTarget(
+                                target = rawTarget,
+                                valueRange = safeValueRange,
+                                keyPoints = keyPoints,
+                                snapToKeyPoints = snapToKeyPoints
+                            )
+                            dampedDragAnimation.animateToValue(target)
+                            onValueChange(target)
+                            onValueChangeFinished?.invoke(target)
                         }
                     }
             )

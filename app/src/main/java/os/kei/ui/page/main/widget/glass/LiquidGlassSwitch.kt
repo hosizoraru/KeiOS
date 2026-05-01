@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -50,15 +51,22 @@ fun LiquidGlassSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    backdrop: Backdrop? = null
+    backdrop: Backdrop? = null,
+    checkedColor: Color = Color.Unspecified
 ) {
+    val resolvedCheckedColor = if (checkedColor.isSpecified) {
+        checkedColor
+    } else {
+        MiuixTheme.colorScheme.primary
+    }
     if (backdrop != null) {
         LiquidToggle(
             selected = { checked },
             onSelect = onCheckedChange,
             backdrop = backdrop,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
+            checkedColor = resolvedCheckedColor
         )
         return
     }
@@ -66,7 +74,7 @@ fun LiquidGlassSwitch(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val isDark = isSystemInDarkTheme()
-    val primary = MiuixTheme.colorScheme.primary
+    val primary = resolvedCheckedColor
 
     val checkedProgress by animateFloatAsState(
         targetValue = if (checked) 1f else 0f,

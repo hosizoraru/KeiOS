@@ -21,6 +21,8 @@ internal class DebugBgmMusicUiState(
         private set
     var repeatEnabled by mutableStateOf(false)
         private set
+    var playbackProgress by mutableStateOf(0.42f)
+        private set
     var searchVisible by mutableStateOf(false)
         private set
     var searchQuery by mutableStateOf("")
@@ -63,6 +65,7 @@ internal class DebugBgmMusicUiState(
     fun advanceQueueFromPlayback() {
         if (repeatEnabled) {
             isPlaying = true
+            playbackProgress = 0f
             return
         }
         playNext()
@@ -72,7 +75,12 @@ internal class DebugBgmMusicUiState(
         if (tracks.none { it.id == trackId }) return
         currentTrackId = trackId
         isPlaying = true
+        playbackProgress = 0f
         closeSearch()
+    }
+
+    fun seekPlayback(progress: Float) {
+        playbackProgress = progress.coerceIn(0f, 1f)
     }
 
     fun toggleRepeat() {
@@ -117,6 +125,7 @@ internal class DebugBgmMusicUiState(
         val currentIndex = tracks.indexOfFirst { it.id == currentTrackId }.coerceAtLeast(0)
         val nextIndex = (currentIndex + step).floorMod(tracks.size)
         currentTrackId = tracks[nextIndex].id
+        playbackProgress = 0f
         isPlaying = true
     }
 }

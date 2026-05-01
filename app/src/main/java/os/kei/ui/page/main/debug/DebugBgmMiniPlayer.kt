@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kyant.backdrop.Backdrop
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
@@ -35,6 +37,7 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
 import top.yukonga.miuix.kmp.basic.ProgressIndicatorDefaults
@@ -46,12 +49,16 @@ internal fun DebugBgmMiniPlayer(
     accent: Color,
     currentTrackTitle: String,
     isPlaying: Boolean,
+    playbackProgress: Float,
+    onPlaybackProgressChange: (Float) -> Unit,
+    onPlaybackProgressChangeFinished: (Float) -> Unit,
     expandedProgress: Float,
     compactProgress: Float,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     controlInteractionSource: MutableInteractionSource? = null,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
 ) {
     val expanded = expandedProgress.coerceIn(0f, 1f)
@@ -67,7 +74,7 @@ internal fun DebugBgmMiniPlayer(
     val playIconSize = debugBgmLerpDp(27.dp, 25.dp, expanded)
     val itemGap = debugBgmLerpDp(8.dp, 10.dp, expanded)
     val progressTopPadding = debugBgmLerpDp(0.dp, 5.dp, expanded)
-    val progressHeight = debugBgmLerpDp(0.dp, 3.dp, expanded)
+    val progressHostHeight = debugBgmLerpDp(0.dp, 20.dp, expanded)
     val sideControlSlotWidth = debugBgmLerpDp(0.dp, 32.dp, expanded)
     val sideControlsEnabled = expanded > 0.56f
     val playButtonScale = 1f - compact * 0.02f
@@ -108,18 +115,40 @@ internal fun DebugBgmMiniPlayer(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            LinearProgressIndicator(
-                progress = DebugBgmMiniPlayerProgress,
+            Box(
                 modifier = Modifier
                     .padding(top = progressTopPadding)
                     .fillMaxWidth()
+                    .height(progressHostHeight)
+                    .clipToBounds()
                     .graphicsLayer { alpha = expanded },
-                height = progressHeight,
-                colors = ProgressIndicatorDefaults.progressIndicatorColors(
-                    foregroundColor = accent,
-                    backgroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.22f)
-                )
-            )
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (backdrop != null) {
+                    LiquidMusicProgressSlider(
+                        value = { playbackProgress.coerceIn(0f, 1f) },
+                        onValueChange = onPlaybackProgressChange,
+                        onValueChangeFinished = onPlaybackProgressChangeFinished,
+                        valueRange = 0f..1f,
+                        visibilityThreshold = 0.001f,
+                        backdrop = backdrop,
+                        enabled = sideControlsEnabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(18.dp)
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        progress = playbackProgress.coerceIn(0f, 1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 3.dp,
+                        colors = ProgressIndicatorDefaults.progressIndicatorColors(
+                            foregroundColor = accent,
+                            backgroundColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.22f)
+                        )
+                    )
+                }
+            }
         }
         DebugBgmMiniPlayerSideControl(
             width = sideControlSlotWidth,
@@ -209,5 +238,3 @@ private fun debugBgmLerpSp(
     end: Float,
     fraction: Float
 ) = (start + (end - start) * fraction.coerceIn(0f, 1f)).sp
-
-private const val DebugBgmMiniPlayerProgress = 0.42f

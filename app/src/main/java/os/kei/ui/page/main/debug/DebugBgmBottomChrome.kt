@@ -58,6 +58,9 @@ internal fun DebugBgmFloatingBottomChrome(
     scrollState: DebugBgmBottomChromeScrollState,
     currentTrackTitle: String,
     isPlaying: Boolean,
+    playbackProgress: Float,
+    onPlaybackProgressChange: (Float) -> Unit,
+    onPlaybackProgressChangeFinished: (Float) -> Unit,
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
@@ -192,12 +195,16 @@ internal fun DebugBgmFloatingBottomChrome(
                 accent = accent,
                 currentTrackTitle = currentTrackTitle,
                 isPlaying = isPlaying,
+                playbackProgress = playbackProgress,
+                onPlaybackProgressChange = onPlaybackProgressChange,
+                onPlaybackProgressChangeFinished = onPlaybackProgressChangeFinished,
                 expandedProgress = expandedProgress,
                 compactProgress = compactProgress,
                 onPlayPauseClick = onPlayPauseClick,
                 onPreviousClick = onPreviousClick,
                 onNextClick = onNextClick,
                 controlInteractionSource = miniPlayerInteractionSource,
+                backdrop = backdrop,
                 modifier = Modifier.fillMaxSize()
             )
         }

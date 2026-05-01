@@ -197,10 +197,17 @@ fun LiquidToggle(
     onSelect: (Boolean) -> Unit,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    checkedColor: Color = Color.Unspecified
 ) {
     val isLightTheme = !isSystemInDarkTheme()
-    val accentColor = if (isLightTheme) Color(0xFF34C759) else Color(0xFF30D158)
+    val accentColor = if (checkedColor.isSpecified) {
+        checkedColor
+    } else if (isLightTheme) {
+        Color(0xFF34C759)
+    } else {
+        Color(0xFF30D158)
+    }
     val trackColor = if (isLightTheme) {
         Color(0xFF787878).copy(alpha = 0.20f)
     } else {
@@ -352,6 +359,24 @@ fun LiquidToggle(
                 .size(40.dp, 24.dp)
         )
     }
+}
+
+@Composable
+fun LiquidPrimaryToggle(
+    selected: () -> Boolean,
+    onSelect: (Boolean) -> Unit,
+    backdrop: Backdrop,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    LiquidToggle(
+        selected = selected,
+        onSelect = onSelect,
+        backdrop = backdrop,
+        modifier = modifier,
+        enabled = enabled,
+        checkedColor = MiuixTheme.colorScheme.primary
+    )
 }
 
 @Composable

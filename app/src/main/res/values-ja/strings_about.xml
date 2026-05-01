@@ -53,8 +53,12 @@
     <string name="debug_component_lab_liquid_catalog_subtitle">Kyant0 Backdrop v2 によるボタン、トグル、スライダー、下部タブ</string>
     <string name="debug_component_lab_liquid_button_primary">再生試作</string>
     <string name="debug_component_lab_liquid_button_shuffle">シャッフル試作</string>
+    <string name="debug_component_lab_liquid_button_compact">お気に入り試作</string>
+    <string name="debug_component_lab_liquid_button_disabled">無効試作</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26 風トグル</string>
+    <string name="debug_component_lab_liquid_toggle_primary_label">Primary 色トグル</string>
     <string name="debug_component_lab_liquid_slider_label">液体風進捗と音量ハンドル</string>
+    <string name="debug_component_lab_liquid_volume_slider_label">音量スライダー</string>
     <string name="debug_component_lab_liquid_music_slider_label">音楽進捗</string>
     <string name="debug_component_lab_liquid_key_points_slider_label">キーポイント進捗</string>
     <string name="debug_component_lab_now_playing_title">放課後プレイキュー</string>
