@@ -285,7 +285,7 @@ internal fun DebugLiquidButtonsCard(
 }
 
 @Composable
-internal fun DebugLiquidDropdownCard(
+internal fun DebugLiquidGlassDropdownCard(
     accent: Color,
     backdrop: Backdrop
 ) {

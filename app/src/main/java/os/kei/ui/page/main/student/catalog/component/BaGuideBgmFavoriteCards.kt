@@ -40,8 +40,8 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
@@ -305,7 +305,7 @@ internal fun BaGuideBgmFavoriteCard(
                         enableWindowDim = false,
                         onDismissRequest = { actionExpanded = false }
                     ) {
-                        LiquidDropdownColumn {
+                        LiquidGlassDropdownColumn {
                             BaGuideBgmFavoriteActionItem(
                                 text = openGalleryContentDescription,
                                 index = 0,
@@ -350,9 +350,8 @@ private fun BaGuideBgmFavoriteActionItem(
     onClick: () -> Unit,
     variant: GlassVariant = GlassVariant.SheetAction
 ) {
-    LiquidDropdownItem(
+    LiquidGlassDropdownActionItem(
         text = text,
-        selected = false,
         onClick = onClick,
         index = index,
         optionSize = optionSize,

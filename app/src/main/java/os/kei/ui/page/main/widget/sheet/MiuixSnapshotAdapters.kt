@@ -45,7 +45,6 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.PopupPositionProvider as ComposePopupPositionProvider
 import os.kei.ui.page.main.widget.dialog.AppWindowDialogHost
-import os.kei.ui.page.main.widget.glass.AppInteractiveTokens
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
@@ -78,7 +77,7 @@ fun SnapshotWindowListPopup(
     onDismissFinished: (() -> Unit)? = null,
     maxHeight: Dp? = null,
     minWidth: Dp = 0.dp,
-    maxWidth: Dp? = AppInteractiveTokens.liquidDropdownMaxWidth,
+    maxWidth: Dp? = 280.dp,
     matchAnchorWidth: Boolean = false,
     content: @Composable () -> Unit,
 ) {

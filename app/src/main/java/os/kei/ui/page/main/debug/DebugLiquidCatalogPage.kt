@@ -81,7 +81,7 @@ internal fun DebugLiquidCatalogPage(
                     )
                 }
                 item {
-                    DebugLiquidDropdownCard(
+                    DebugLiquidGlassDropdownCard(
                         accent = accent,
                         backdrop = pageBackdrop
                     )

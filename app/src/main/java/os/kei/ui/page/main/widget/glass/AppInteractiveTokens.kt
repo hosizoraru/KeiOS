@@ -26,15 +26,6 @@ object AppInteractiveTokens {
 
     val controlContentGap: Dp = 8.dp
 
-    val liquidDropdownMinWidth: Dp = 88.dp
-    val liquidDropdownMaxWidth: Dp = 248.dp
-    val liquidDropdownMaxHeight: Dp = 312.dp
-    val liquidDropdownMaxVisibleItemsForWidth: Int = 8
-    val liquidDropdownRowMinHeight: Dp = 34.dp
-    val liquidDropdownRowHorizontalPadding: Dp = 10.dp
-    val liquidDropdownRowVerticalPadding: Dp = 5.dp
-    val liquidDropdownRowGap: Dp = 6.dp
-    val liquidDropdownCheckSize: Dp = 18.dp
     val popupAnimationOffset: Dp = 10.dp
 
     const val pressedScale: Float = 0.985f

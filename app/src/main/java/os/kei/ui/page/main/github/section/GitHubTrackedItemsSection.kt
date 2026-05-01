@@ -84,8 +84,8 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.status.StatusPill
@@ -411,7 +411,7 @@ private fun GitHubTrackedItemMoreActions(
                 enableWindowDim = false,
                 onDismissRequest = { menuExpanded = false }
             ) {
-                LiquidDropdownColumn {
+                LiquidGlassDropdownColumn {
                     GitHubTrackedItemMenuAction(
                         text = stringResource(R.string.common_refresh),
                         index = 0,
@@ -454,9 +454,8 @@ private fun GitHubTrackedItemMenuAction(
     onClick: () -> Unit,
     variant: GlassVariant = GlassVariant.SheetAction
 ) {
-    LiquidDropdownItem(
+    LiquidGlassDropdownActionItem(
         text = text,
-        selected = false,
         onClick = onClick,
         index = index,
         optionSize = optionSize,
