@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -32,7 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -78,6 +79,9 @@ internal fun DebugBgmLiquidMusicPreview(
     var sliderInteractionActive by remember { mutableStateOf(false) }
     val currentTrack = musicState.currentTrack
     val context = LocalContext.current
+    val density = LocalDensity.current
+    var currentPanelHeightPx by remember { mutableIntStateOf(0) }
+    var largestPanelHeightPx by remember { mutableIntStateOf(0) }
     val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
     var backdropActivationCount by rememberSaveable { mutableIntStateOf(0) }
     DisposableEffect(Unit) {
@@ -152,15 +156,38 @@ internal fun DebugBgmLiquidMusicPreview(
     BackHandler(enabled = musicState.searchVisible) {
         musicState.closeSearch()
     }
-    val bottomChromeInsets = if (musicState.searchInputActive) {
-        WindowInsets.ime
+    val navigationBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    val imeBottom = with(density) { WindowInsets.ime.getBottom(this).toDp() }
+    val imeVisible = imeBottom > navigationBottom + DebugBgmImeVisibleThreshold
+    val panelResizeDeltaPx = if (imeVisible && largestPanelHeightPx > 0 && currentPanelHeightPx > 0) {
+        (largestPanelHeightPx - currentPanelHeightPx).coerceAtLeast(0)
     } else {
-        WindowInsets.navigationBars
+        0
     }
-    val bottomChromeInsetsModifier = Modifier.windowInsetsPadding(bottomChromeInsets)
+    val panelResizeDelta = with(density) { panelResizeDeltaPx.toDp() }
+    val consumedKeyboardInset = if (panelResizeDelta > DebugBgmImeResizeThreshold) {
+        panelResizeDelta
+    } else {
+        0.dp
+    }
+    val keyboardAvoidanceBottom = if (imeVisible) {
+        maxOf(imeBottom - consumedKeyboardInset, navigationBottom)
+    } else {
+        navigationBottom
+    }
+    val bottomChromeTargetPadding = if (musicState.searchInputActive) {
+        keyboardAvoidanceBottom
+    } else {
+        navigationBottom
+    }
+    val bottomChromeInsetsModifier = Modifier.padding(bottom = bottomChromeTargetPadding)
 
     Box(
         modifier = panelModifier
+            .onSizeChanged { size ->
+                currentPanelHeightPx = size.height
+                largestPanelHeightPx = maxOf(largestPanelHeightPx, size.height)
+            }
     ) {
         Box(
             modifier = Modifier
@@ -256,3 +283,6 @@ internal fun DebugBgmLiquidMusicPreview(
         )
     }
 }
+
+private val DebugBgmImeVisibleThreshold = 24.dp
+private val DebugBgmImeResizeThreshold = 48.dp
