@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -71,19 +72,17 @@ internal fun DebugBgmAlbumTopBar(
                 backdrop = backdrop
             )
         }
-        DebugBgmGlassCapsule(
+        Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(
-                    start = AppChromeTokens.liquidActionBarSingleWidth + DebugBgmTopBarTitleGap,
-                    end = AppChromeTokens.liquidActionBarMinWidth + DebugBgmTopBarTitleGap
+                    start = DebugBgmTopBarVisualSize + DebugBgmTopBarTitleGap,
+                    end = DebugBgmTopActionCapsuleWidth + DebugBgmTopBarTitleGap
                 )
                 .fillMaxWidth()
+                .height(DebugBgmTopBarVisualSize)
                 .graphicsLayer { alpha = titleProgress },
-            accent = accent,
-            horizontalPadding = 16.dp,
-            verticalPadding = 8.dp,
-            backdrop = backdrop
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = stringResource(R.string.debug_component_lab_album_title),
@@ -109,9 +108,12 @@ private fun DebugBgmTopBackAction(
         icon = appLucideChevronLeftIcon(),
         contentDescription = closeContentDescription,
         accent = accent,
-        size = AppChromeTokens.liquidActionBarSingleWidth,
+        size = DebugBgmTopBarVisualSize,
         iconSize = DebugBgmTopBarBackIconSize,
         backdrop = backdrop,
+        surfaceAlphaScale = DebugBgmTopBarSurfaceAlphaScale,
+        highlightAlphaScale = DebugBgmTopBarHighlightAlphaScale,
+        lensScale = DebugBgmTopBarLensScale,
         onClick = onClose
     )
 }
@@ -130,11 +132,14 @@ private fun DebugBgmTopActionCapsule(
     DebugBgmGlassCapsule(
         accent = accent,
         modifier = Modifier
-            .width(AppChromeTokens.liquidActionBarMinWidth)
-            .height(AppChromeTokens.liquidActionBarOuterHeight),
-        horizontalPadding = AppChromeTokens.liquidActionBarHorizontalPadding,
-        verticalPadding = AppChromeTokens.liquidActionBarHorizontalPadding,
-        backdrop = backdrop
+            .width(DebugBgmTopActionCapsuleWidth)
+            .height(DebugBgmTopBarVisualSize),
+        horizontalPadding = 4.dp,
+        verticalPadding = 2.dp,
+        backdrop = backdrop,
+        surfaceAlphaScale = DebugBgmTopBarSurfaceAlphaScale,
+        highlightAlphaScale = DebugBgmTopBarHighlightAlphaScale,
+        lensScale = DebugBgmTopBarLensScale
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -180,8 +185,7 @@ private fun DebugBgmTopActionButton(
     val iconTint = lerp(baseTint, accent, pressProgress * 0.72f)
     Box(
         modifier = Modifier
-            .width(DebugBgmTopBarActionSlotSize)
-            .height(AppChromeTokens.liquidActionBarInnerHeight)
+            .size(DebugBgmTopBarActionSlotSize)
             .graphicsLayer {
                 scaleX = 1f + 0.035f * pressProgress
                 scaleY = 1f - 0.045f * pressProgress
@@ -206,6 +210,7 @@ private fun DebugBgmTopActionButton(
             contentDescription = contentDescription,
             tint = iconTint,
             modifier = Modifier
+                .size(DebugBgmTopActionIconSize)
                 .graphicsLayer {
                     scaleX = 1f + 0.035f * pressProgress
                     scaleY = 1f + 0.035f * pressProgress
@@ -214,7 +219,13 @@ private fun DebugBgmTopActionButton(
     }
 }
 
-private val DebugBgmTopBarBackIconSize = 28.dp
+private val DebugBgmTopBarVisualSize = 48.dp
+private val DebugBgmTopActionCapsuleWidth = 150.dp
+private val DebugBgmTopBarBackIconSize = 27.dp
 private val DebugBgmTopBarTitleGap = 12.dp
-private val DebugBgmTopBarActionSlotSize = AppChromeTokens.liquidActionBarItemStep
+private val DebugBgmTopBarActionSlotSize = 44.dp
+private val DebugBgmTopActionIconSize = 21.dp
+private const val DebugBgmTopBarSurfaceAlphaScale = 0.62f
+private const val DebugBgmTopBarHighlightAlphaScale = 1.18f
+private const val DebugBgmTopBarLensScale = 1.12f
 private const val DebugBgmTopActionPressMotionMs = 130

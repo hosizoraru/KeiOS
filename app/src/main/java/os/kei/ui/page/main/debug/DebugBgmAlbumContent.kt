@@ -26,6 +26,7 @@ internal fun DebugBgmAlbumContent(
     onPlayPauseClick: () -> Unit,
     onVolumeChange: (Float) -> Unit,
     onVolumeChangeFinished: (Float) -> Unit,
+    onSliderInteractionChanged: (Boolean) -> Unit,
     onTrackClick: (String) -> Unit,
     onTrackFavoriteClick: (String) -> Unit,
     onTrackOfflineClick: (String) -> Unit,
@@ -38,6 +39,7 @@ internal fun DebugBgmAlbumContent(
     listState: LazyListState,
     collapseProgress: Float,
     bottomBarScrollConnection: NestedScrollConnection,
+    userScrollEnabled: Boolean,
     topPadding: Dp,
     bottomPadding: Dp,
     modifier: Modifier = Modifier
@@ -47,6 +49,7 @@ internal fun DebugBgmAlbumContent(
         modifier = modifier
             .fillMaxSize()
             .nestedScroll(bottomBarScrollConnection),
+        userScrollEnabled = userScrollEnabled,
         contentPadding = PaddingValues(start = 16.dp, top = topPadding, end = 16.dp, bottom = bottomPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -62,7 +65,8 @@ internal fun DebugBgmAlbumContent(
                 onRepeatClick = onRepeatClick,
                 onPlayPauseClick = onPlayPauseClick,
                 onVolumeChange = onVolumeChange,
-                onVolumeChangeFinished = onVolumeChangeFinished
+                onVolumeChangeFinished = onVolumeChangeFinished,
+                onVolumeSliderInteractionChanged = onSliderInteractionChanged
             )
         }
         item {

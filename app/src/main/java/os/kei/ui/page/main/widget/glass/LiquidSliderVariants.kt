@@ -1,6 +1,8 @@
 package os.kei.ui.page.main.widget.glass
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -10,11 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -27,6 +31,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -72,7 +77,8 @@ fun LiquidMusicProgressSlider(
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onValueChangeFinished: ((Float) -> Unit)? = null
+    onValueChangeFinished: ((Float) -> Unit)? = null,
+    onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
     LiquidTrackSlider(
@@ -84,6 +90,7 @@ fun LiquidMusicProgressSlider(
         backdrop = backdrop,
         modifier = modifier,
         enabled = enabled,
+        onInteractionChanged = onInteractionChanged,
         style = LiquidTrackSliderStyle(
             activeColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF),
             inactiveColor = if (isLightTheme) {
@@ -108,7 +115,8 @@ fun LiquidVolumeSlider(
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onValueChangeFinished: ((Float) -> Unit)? = null
+    onValueChangeFinished: ((Float) -> Unit)? = null,
+    onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
     val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF)
@@ -121,6 +129,7 @@ fun LiquidVolumeSlider(
         backdrop = backdrop,
         modifier = modifier,
         enabled = enabled,
+        onInteractionChanged = onInteractionChanged,
         style = LiquidTrackSliderStyle(
             activeColor = accentColor.copy(alpha = 0.92f),
             inactiveColor = if (isLightTheme) {
@@ -147,7 +156,8 @@ fun LiquidKeyPointSlider(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     snapToKeyPoints: Boolean = false,
-    onValueChangeFinished: ((Float) -> Unit)? = null
+    onValueChangeFinished: ((Float) -> Unit)? = null,
+    onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
     val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF5DAEFF)
@@ -160,6 +170,7 @@ fun LiquidKeyPointSlider(
         backdrop = backdrop,
         modifier = modifier,
         enabled = enabled,
+        onInteractionChanged = onInteractionChanged,
         keyPoints = keyPoints,
         snapToKeyPoints = snapToKeyPoints,
         style = LiquidTrackSliderStyle(
@@ -189,15 +200,26 @@ private fun LiquidTrackSlider(
     backdrop: Backdrop,
     modifier: Modifier,
     enabled: Boolean,
+    onInteractionChanged: (Boolean) -> Unit,
     style: LiquidTrackSliderStyle,
     keyPoints: List<LiquidSliderKeyPoint> = emptyList(),
     snapToKeyPoints: Boolean = false
 ) {
     val trackBackdrop = rememberLayerBackdrop()
+    val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
+    DisposableEffect(Unit) {
+        onDispose {
+            onInteractionChangedState.value(false)
+        }
+    }
     val safeValueRange = valueRange
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
+            .sliderInteractionLock(
+                enabled = enabled,
+                onInteractionChanged = onInteractionChangedState.value
+            )
             .graphicsLayer {
                 alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
             }
@@ -227,8 +249,14 @@ private fun LiquidTrackSlider(
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = style.pressedScale,
-                onDragStarted = {},
+                consumeDragChanges = true,
+                onDragStarted = {
+                    if (enabled) {
+                        onInteractionChangedState.value(true)
+                    }
+                },
                 onDragStopped = {
+                    onInteractionChangedState.value(false)
                     if (enabled && didDrag) {
                         val next = resolveSliderTarget(
                             target = targetValue,
@@ -433,6 +461,26 @@ private fun valueProgress(
     val span = valueRange.endInclusive - valueRange.start
     if (span == 0f) return 0f
     return ((value - valueRange.start) / span).fastCoerceIn(0f, 1f)
+}
+
+private fun Modifier.sliderInteractionLock(
+    enabled: Boolean,
+    onInteractionChanged: (Boolean) -> Unit
+): Modifier {
+    if (!enabled) return this
+    return pointerInput(onInteractionChanged) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            onInteractionChanged(true)
+            try {
+                do {
+                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                } while (event.changes.any { it.pressed })
+            } finally {
+                onInteractionChanged(false)
+            }
+        }
+    }
 }
 
 @Composable

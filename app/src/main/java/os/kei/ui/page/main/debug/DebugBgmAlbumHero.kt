@@ -58,7 +58,8 @@ internal fun DebugBgmAlbumHero(
     onRepeatClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onVolumeChange: (Float) -> Unit,
-    onVolumeChangeFinished: (Float) -> Unit
+    onVolumeChangeFinished: (Float) -> Unit,
+    onVolumeSliderInteractionChanged: (Boolean) -> Unit
 ) {
     var volumeControlVisible by rememberSaveable { mutableStateOf(true) }
     Column(
@@ -118,7 +119,8 @@ internal fun DebugBgmAlbumHero(
                 accent = accent,
                 volume = playbackVolume,
                 onVolumeChange = onVolumeChange,
-                onVolumeChangeFinished = onVolumeChangeFinished
+                onVolumeChangeFinished = onVolumeChangeFinished,
+                onInteractionChanged = onVolumeSliderInteractionChanged
             )
         }
     }
@@ -210,7 +212,8 @@ private fun DebugBgmAlbumVolumeControl(
     accent: Color,
     volume: Float,
     onVolumeChange: (Float) -> Unit,
-    onVolumeChangeFinished: (Float) -> Unit
+    onVolumeChangeFinished: (Float) -> Unit,
+    onInteractionChanged: (Boolean) -> Unit
 ) {
     val volumeBackdrop = rememberLayerBackdrop()
     Box(
@@ -240,6 +243,7 @@ private fun DebugBgmAlbumVolumeControl(
                 value = { volume.coerceIn(0f, 1f) },
                 onValueChange = onVolumeChange,
                 onValueChangeFinished = onVolumeChangeFinished,
+                onInteractionChanged = onInteractionChanged,
                 valueRange = 0f..1f,
                 visibilityThreshold = 0.001f,
                 backdrop = volumeBackdrop,

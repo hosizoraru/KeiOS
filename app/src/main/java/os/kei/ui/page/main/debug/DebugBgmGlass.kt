@@ -46,6 +46,9 @@ internal fun DebugBgmGlassCapsule(
     verticalPadding: Dp,
     backdrop: Backdrop? = null,
     selected: Boolean = false,
+    surfaceAlphaScale: Float = 1f,
+    highlightAlphaScale: Float = 1f,
+    lensScale: Float = 1f,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
@@ -55,6 +58,9 @@ internal fun DebugBgmGlassCapsule(
         shape = shape,
         selected = selected,
         backdrop = backdrop,
+        surfaceAlphaScale = surfaceAlphaScale,
+        highlightAlphaScale = highlightAlphaScale,
+        lensScale = lensScale,
         onClick = onClick
     ) {
         Box(
@@ -76,6 +82,9 @@ internal fun DebugBgmGlassIcon(
     iconSize: Dp = 24.dp,
     selected: Boolean = false,
     backdrop: Backdrop? = null,
+    surfaceAlphaScale: Float = 1f,
+    highlightAlphaScale: Float = 1f,
+    lensScale: Float = 1f,
     onClick: () -> Unit = {}
 ) {
     val contentTint = if (selected) {
@@ -90,6 +99,9 @@ internal fun DebugBgmGlassIcon(
         shape = CircleShape,
         selected = selected,
         backdrop = backdrop,
+        surfaceAlphaScale = surfaceAlphaScale,
+        highlightAlphaScale = highlightAlphaScale,
+        lensScale = lensScale,
         onClick = onClick
     ) {
         Icon(
@@ -148,6 +160,9 @@ internal fun DebugBgmGlassSurface(
     shape: Shape,
     selected: Boolean = false,
     backdrop: Backdrop? = null,
+    surfaceAlphaScale: Float = 1f,
+    highlightAlphaScale: Float = 1f,
+    lensScale: Float = 1f,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -161,11 +176,14 @@ internal fun DebugBgmGlassSurface(
     val isDark = isSystemInDarkTheme()
     val hasBackdrop = backdrop != null
     val surfaceContainer = MiuixTheme.colorScheme.surfaceContainer
+    val surfaceAlphaMultiplier = surfaceAlphaScale.coerceIn(0f, 2f)
+    val highlightAlphaMultiplier = highlightAlphaScale.coerceIn(0f, 2f)
+    val lensMultiplier = lensScale.coerceIn(0.4f, 1.8f)
     val glassSurfaceColor = if (selected) {
         surfaceContainer.copy(alpha = if (isDark) 0.26f else 0.34f)
     } else {
         surfaceContainer.copy(alpha = if (isDark) 0.20f else 0.26f)
-    }
+    }.let { it.copy(alpha = (it.alpha * surfaceAlphaMultiplier).coerceIn(0f, 1f)) }
     val pressOverlay = Color.White.copy(alpha = (if (isDark) 0.06f else 0.14f) * pressProgress)
     val accentOverlay = when {
         selected -> accent.copy(alpha = 0.16f + 0.08f * pressProgress)
@@ -228,14 +246,18 @@ internal fun DebugBgmGlassSurface(
                         shape = { shape },
                         effects = {
                             vibrancy()
-                            blur((UiPerformanceBudget.backdropBlur * 0.82f).toPx())
+                            blur((UiPerformanceBudget.backdropBlur * 0.82f * lensMultiplier).toPx())
                             lens(
-                                (UiPerformanceBudget.backdropLens * 0.78f).toPx(),
-                                (UiPerformanceBudget.backdropLens * 0.78f).toPx()
+                                (UiPerformanceBudget.backdropLens * 0.78f * lensMultiplier).toPx(),
+                                (UiPerformanceBudget.backdropLens * 0.78f * lensMultiplier).toPx(),
+                                depthEffect = true
                             )
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = if (selected) 0.78f else 0.58f)
+                            Highlight.Default.copy(
+                                alpha = ((if (selected) 0.78f else 0.58f) * highlightAlphaMultiplier)
+                                    .coerceIn(0f, 1f)
+                            )
                         },
                         shadow = {
                             Shadow.Default.copy(color = Color.Black.copy(alpha = if (isDark) 0.16f else 0.08f))

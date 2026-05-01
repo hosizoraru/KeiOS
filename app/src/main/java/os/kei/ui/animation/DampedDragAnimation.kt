@@ -27,6 +27,7 @@ class DampedDragAnimation(
     val pressedScale: Float,
     val gestureKey: Any? = Unit,
     val canDrag: (Offset) -> Boolean = { true },
+    val consumeDragChanges: Boolean = false,
     val onDragStarted: DampedDragAnimation.(position: Offset) -> Unit,
     val onDragStopped: DampedDragAnimation.() -> Unit,
     val onDrag: DampedDragAnimation.(size: IntSize, dragAmount: Offset) -> Unit,
@@ -77,6 +78,9 @@ class DampedDragAnimation(
             val previousPosition = change.previousPosition
             if (canDrag(position) && canDrag(previousPosition)) {
                 onDrag(size, dragAmount)
+                if (consumeDragChanges) {
+                    change.consume()
+                }
             }
         }
     }

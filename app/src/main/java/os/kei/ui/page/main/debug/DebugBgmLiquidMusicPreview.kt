@@ -24,6 +24,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -77,6 +78,7 @@ internal fun DebugBgmLiquidMusicPreview(
     val listState = rememberLazyListState()
     val bottomBarScrollConnection = rememberDebugBgmBottomChromeScrollState(scrollThreshold = 56.dp)
     val musicState = rememberDebugBgmMusicUiState()
+    var sliderInteractionActive by remember { mutableStateOf(false) }
     val currentTrack = musicState.currentTrack
     val context = LocalContext.current
     val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
@@ -179,6 +181,7 @@ internal fun DebugBgmLiquidMusicPreview(
                 onPlayPauseClick = musicState::togglePlayPause,
                 onVolumeChange = musicState::changeVolume,
                 onVolumeChangeFinished = musicState::changeVolume,
+                onSliderInteractionChanged = { sliderInteractionActive = it },
                 onTrackClick = musicState::playTrack,
                 onTrackFavoriteClick = musicState::toggleTrackFavorite,
                 onTrackOfflineClick = musicState::toggleTrackOffline,
@@ -191,6 +194,7 @@ internal fun DebugBgmLiquidMusicPreview(
                 listState = listState,
                 collapseProgress = collapseProgress,
                 bottomBarScrollConnection = bottomBarScrollConnection,
+                userScrollEnabled = !sliderInteractionActive,
                 topPadding = contentTopPadding,
                 bottomPadding = contentBottomPadding,
                 modifier = Modifier.layerBackdrop(pageChromeBackdrop)
@@ -250,6 +254,7 @@ internal fun DebugBgmLiquidMusicPreview(
             playbackProgress = musicState.playbackProgress,
             onPlaybackProgressChange = musicState::seekPlayback,
             onPlaybackProgressChangeFinished = musicState::seekPlayback,
+            onPlaybackSliderInteractionChanged = { sliderInteractionActive = it },
             onPlayPauseClick = musicState::togglePlayPause,
             onPreviousClick = musicState::playPrevious,
             onNextClick = musicState::playNext,

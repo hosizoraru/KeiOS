@@ -30,10 +30,10 @@ import os.kei.ui.page.main.os.appLucideHeartIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideShuffleIcon
+import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.glass.LiquidBottomTab
 import os.kei.ui.page.main.widget.glass.LiquidBottomTabs
 import os.kei.ui.page.main.widget.glass.LiquidButton
@@ -56,10 +56,15 @@ internal fun DebugLiquidCatalogCard(
 ) {
     var toggleSelected by remember { mutableStateOf(true) }
     var primaryToggleSelected by remember { mutableStateOf(true) }
+    var chromaticAberrationEnabled by remember { mutableStateOf(true) }
     var sliderValue by remember { mutableFloatStateOf(0.62f) }
     var volumeValue by remember { mutableFloatStateOf(0.74f) }
     var musicProgress by remember { mutableFloatStateOf(0.38f) }
     var keyPointProgress by remember { mutableFloatStateOf(0.46f) }
+    var cornerDemoValue by remember { mutableFloatStateOf(0.58f) }
+    var blurDemoValue by remember { mutableFloatStateOf(0.16f) }
+    var refractionHeightDemoValue by remember { mutableFloatStateOf(0.42f) }
+    var refractionDemoValue by remember { mutableFloatStateOf(0.24f) }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = rememberDebugBgmDockTabs()
     val keyPoints = remember {
@@ -91,7 +96,7 @@ internal fun DebugLiquidCatalogCard(
             LiquidButton(
                 onClick = {},
                 backdrop = backdrop,
-                tint = accent.copy(alpha = 0.18f),
+                tint = accent.copy(alpha = 0.42f),
                 surfaceColor = buttonSurface,
                 modifier = Modifier.weight(1f)
             ) {
@@ -113,7 +118,7 @@ internal fun DebugLiquidCatalogCard(
             LiquidButton(
                 onClick = {},
                 backdrop = backdrop,
-                tint = accent.copy(alpha = 0.12f),
+                tint = accent.copy(alpha = 0.34f),
                 surfaceColor = buttonSurface,
                 modifier = Modifier.weight(1f)
             ) {
@@ -141,7 +146,7 @@ internal fun DebugLiquidCatalogCard(
             LiquidButton(
                 onClick = {},
                 backdrop = backdrop,
-                tint = accent.copy(alpha = 0.10f),
+                tint = accent.copy(alpha = 0.28f),
                 surfaceColor = buttonSurface,
                 height = 42.dp,
                 horizontalPadding = 12.dp,
@@ -202,7 +207,7 @@ internal fun DebugLiquidCatalogCard(
             LiquidButton(
                 onClick = {},
                 backdrop = backdrop,
-                tint = Color(0xFFFF5C8A).copy(alpha = 0.16f),
+                tint = Color(0xFFFF5C8A).copy(alpha = 0.40f),
                 surfaceColor = buttonSurface,
                 shape = RoundedCornerShape(14.dp),
                 height = 46.dp,
@@ -227,7 +232,7 @@ internal fun DebugLiquidCatalogCard(
             LiquidButton(
                 onClick = {},
                 backdrop = backdrop,
-                tint = Color(0xFFFFC857).copy(alpha = 0.20f),
+                tint = Color(0xFFFFC857).copy(alpha = 0.44f),
                 surfaceColor = buttonSurface,
                 height = 46.dp,
                 horizontalPadding = 12.dp,
@@ -251,7 +256,7 @@ internal fun DebugLiquidCatalogCard(
             LiquidButton(
                 onClick = {},
                 backdrop = backdrop,
-                tint = Color(0xFF7C5CFF).copy(alpha = 0.16f),
+                tint = Color(0xFF7C5CFF).copy(alpha = 0.42f),
                 surfaceColor = buttonSurface,
                 shape = CircleShape,
                 height = 46.dp,
@@ -266,6 +271,48 @@ internal fun DebugLiquidCatalogCard(
                 )
             }
         }
+
+        DebugLiquidBackdropPlaygroundSample(
+            accent = accent,
+            contentColor = contentColor,
+            secondaryColor = secondaryColor
+        )
+
+        DebugLiquidTransparentButtonSamples(
+            backdrop = backdrop,
+            contentColor = contentColor
+        )
+
+        DebugLiquidSurfaceFamilySamples(
+            backdrop = backdrop,
+            accent = accent,
+            contentColor = contentColor,
+            secondaryColor = secondaryColor
+        )
+
+        DebugLiquidClusterCardSample(
+            backdrop = backdrop,
+            accent = accent,
+            contentColor = contentColor,
+            secondaryColor = secondaryColor
+        )
+
+        DebugLiquidParameterPanelSample(
+            backdrop = backdrop,
+            accent = accent,
+            contentColor = contentColor,
+            secondaryColor = secondaryColor,
+            cornerDemoValue = cornerDemoValue,
+            onCornerDemoValueChange = { cornerDemoValue = it.coerceIn(0f, 1f) },
+            blurDemoValue = blurDemoValue,
+            onBlurDemoValueChange = { blurDemoValue = it.coerceIn(0f, 1f) },
+            refractionHeightValue = refractionHeightDemoValue,
+            onRefractionHeightValueChange = { refractionHeightDemoValue = it.coerceIn(0f, 1f) },
+            refractionDemoValue = refractionDemoValue,
+            onRefractionDemoValueChange = { refractionDemoValue = it.coerceIn(0f, 1f) },
+            chromaticAberrationEnabled = chromaticAberrationEnabled,
+            onChromaticAberrationChange = { chromaticAberrationEnabled = it }
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -323,102 +370,17 @@ internal fun DebugLiquidCatalogCard(
                 .height(32.dp)
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.debug_component_lab_liquid_volume_slider_label),
-                color = contentColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1
-            )
-            Text(
-                text = stringResource(R.string.debug_component_lab_volume_value, (volumeValue * 100).toInt()),
-                color = secondaryColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1
-            )
-        }
-        LiquidVolumeSlider(
-            value = { volumeValue },
-            onValueChange = { volumeValue = it.coerceIn(0f, 1f) },
-            onValueChangeFinished = { volumeValue = it.coerceIn(0f, 1f) },
-            valueRange = 0f..1f,
-            visibilityThreshold = 0.001f,
-            backdrop = backdrop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.debug_component_lab_liquid_music_slider_label),
-                color = contentColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1
-            )
-            Text(
-                text = stringResource(R.string.debug_component_lab_time_sample),
-                color = secondaryColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1
-            )
-        }
-        LiquidMusicProgressSlider(
-            value = { musicProgress },
-            onValueChange = { musicProgress = it.coerceIn(0f, 1f) },
-            onValueChangeFinished = { musicProgress = it.coerceIn(0f, 1f) },
-            valueRange = 0f..1f,
-            visibilityThreshold = 0.001f,
-            backdrop = backdrop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(28.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.debug_component_lab_liquid_key_points_slider_label),
-                color = contentColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1
-            )
-            Text(
-                text = stringResource(R.string.debug_component_lab_volume_value, (keyPointProgress * 100).toInt()),
-                color = secondaryColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1
-            )
-        }
-        LiquidKeyPointSlider(
-            value = { keyPointProgress },
-            onValueChange = { keyPointProgress = it.coerceIn(0f, 1f) },
-            onValueChangeFinished = { keyPointProgress = it.coerceIn(0f, 1f) },
-            valueRange = 0f..1f,
-            visibilityThreshold = 0.001f,
-            backdrop = backdrop,
+        DebugLiquidSliderSamples(
+            volumeValue = volumeValue,
+            onVolumeValueChange = { volumeValue = it.coerceIn(0f, 1f) },
+            musicProgress = musicProgress,
+            onMusicProgressChange = { musicProgress = it.coerceIn(0f, 1f) },
+            keyPointProgress = keyPointProgress,
+            onKeyPointProgressChange = { keyPointProgress = it.coerceIn(0f, 1f) },
             keyPoints = keyPoints,
-            snapToKeyPoints = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
+            backdrop = backdrop,
+            contentColor = contentColor,
+            secondaryColor = secondaryColor
         )
 
         LiquidBottomTabs(
@@ -456,4 +418,116 @@ internal fun DebugLiquidCatalogCard(
             }
         }
     }
+}
+
+@Composable
+private fun DebugLiquidSliderSamples(
+    volumeValue: Float,
+    onVolumeValueChange: (Float) -> Unit,
+    musicProgress: Float,
+    onMusicProgressChange: (Float) -> Unit,
+    keyPointProgress: Float,
+    onKeyPointProgressChange: (Float) -> Unit,
+    keyPoints: List<LiquidSliderKeyPoint>,
+    backdrop: Backdrop,
+    contentColor: Color,
+    secondaryColor: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.debug_component_lab_liquid_volume_slider_label),
+            color = contentColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+        Text(
+            text = stringResource(R.string.debug_component_lab_volume_value, (volumeValue * 100).toInt()),
+            color = secondaryColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+    }
+    LiquidVolumeSlider(
+        value = { volumeValue },
+        onValueChange = onVolumeValueChange,
+        onValueChangeFinished = onVolumeValueChange,
+        valueRange = 0f..1f,
+        visibilityThreshold = 0.001f,
+        backdrop = backdrop,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(32.dp)
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.debug_component_lab_liquid_music_slider_label),
+            color = contentColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+        Text(
+            text = stringResource(R.string.debug_component_lab_time_sample),
+            color = secondaryColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+    }
+    LiquidMusicProgressSlider(
+        value = { musicProgress },
+        onValueChange = onMusicProgressChange,
+        onValueChangeFinished = onMusicProgressChange,
+        valueRange = 0f..1f,
+        visibilityThreshold = 0.001f,
+        backdrop = backdrop,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.debug_component_lab_liquid_key_points_slider_label),
+            color = contentColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+        Text(
+            text = stringResource(R.string.debug_component_lab_volume_value, (keyPointProgress * 100).toInt()),
+            color = secondaryColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+    }
+    LiquidKeyPointSlider(
+        value = { keyPointProgress },
+        onValueChange = onKeyPointProgressChange,
+        onValueChangeFinished = onKeyPointProgressChange,
+        valueRange = 0f..1f,
+        visibilityThreshold = 0.001f,
+        backdrop = backdrop,
+        keyPoints = keyPoints,
+        snapToKeyPoints = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(32.dp)
+    )
 }
