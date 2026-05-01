@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -56,7 +57,6 @@ internal fun DebugBgmMusicPage(onClose: () -> Unit) {
             .statusBarsPadding()
             .padding(horizontal = 12.dp, vertical = 4.dp),
         bottomBarModifier = Modifier
-            .navigationBarsPadding()
             .padding(horizontal = 12.dp, vertical = 12.dp),
         onClose = onClose
     )
@@ -130,11 +130,6 @@ internal fun DebugBgmLiquidMusicPreview(
     } else {
         musicState.tracks
     }
-    val searchPanelBottomPadding = if (bottomBarScrollConnection.isCompact) {
-        DebugBgmSearchPanelCompactBottomPadding
-    } else {
-        DebugBgmSearchPanelExpandedBottomPadding
-    }
     val panelBorder = if (isDark) {
         Color.White.copy(alpha = 0.16f)
     } else {
@@ -159,6 +154,11 @@ internal fun DebugBgmLiquidMusicPreview(
 
     BackHandler(enabled = musicState.searchVisible) {
         musicState.closeSearch()
+    }
+    val bottomChromeInsetsModifier = if (musicState.searchInputActive) {
+        Modifier.imePadding()
+    } else {
+        Modifier.navigationBarsPadding()
     }
 
     Box(
@@ -225,26 +225,6 @@ internal fun DebugBgmLiquidMusicPreview(
                         )
                     )
             )
-            AnimatedVisibility(
-                visible = musicState.searchVisible,
-                enter = fadeIn() + slideInVertically { it / 2 },
-                exit = fadeOut() + slideOutVertically { it / 2 },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(
-                        start = DebugBgmSearchPanelHorizontalPadding,
-                        end = DebugBgmSearchPanelHorizontalPadding,
-                        bottom = searchPanelBottomPadding
-                    )
-            ) {
-                DebugBgmSearchPanel(
-                    query = musicState.searchQuery,
-                    onQueryChange = musicState::updateSearchQuery,
-                    backdrop = pageChromeBackdrop
-                )
-            }
         }
         DebugBgmFloatingBottomChrome(
             accent = accent,
@@ -259,17 +239,18 @@ internal fun DebugBgmLiquidMusicPreview(
             onPreviousClick = musicState::playPrevious,
             onNextClick = musicState::playNext,
             searchVisible = musicState.searchVisible,
+            searchInputActive = musicState.searchInputActive,
+            searchQuery = musicState.searchQuery,
+            onSearchQueryChange = musicState::updateSearchQuery,
+            onSearchInputActiveChange = musicState::updateSearchInputActive,
             selectedDockKey = musicState.selectedDockKey,
             onSelectedDockKeyChange = musicState::selectDockKey,
-            onSearchClick = musicState::toggleSearch,
+            onSearchClick = musicState::openSearch,
             backdrop = bottomChromeBackdrop,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .then(bottomChromeInsetsModifier)
                 .then(bottomBarModifier)
         )
     }
 }
-
-private val DebugBgmSearchPanelHorizontalPadding = 34.dp
-private val DebugBgmSearchPanelCompactBottomPadding = 108.dp
-private val DebugBgmSearchPanelExpandedBottomPadding = 168.dp

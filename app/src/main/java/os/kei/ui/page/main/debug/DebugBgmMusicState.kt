@@ -27,6 +27,8 @@ internal class DebugBgmMusicUiState(
         private set
     var searchVisible by mutableStateOf(false)
         private set
+    var searchInputActive by mutableStateOf(false)
+        private set
     var searchQuery by mutableStateOf("")
         private set
     var selectedDockKey by mutableStateOf(DebugBgmDockKeys.Library)
@@ -111,15 +113,31 @@ internal class DebugBgmMusicUiState(
 
     fun selectDockKey(key: String) {
         selectedDockKey = key
-        searchVisible = false
+        closeSearch()
     }
 
     fun toggleSearch() {
-        searchVisible = !searchVisible
+        if (searchVisible) {
+            closeSearch()
+        } else {
+            openSearch()
+        }
+    }
+
+    fun openSearch() {
+        searchVisible = true
     }
 
     fun closeSearch() {
         searchVisible = false
+        searchInputActive = false
+    }
+
+    fun updateSearchInputActive(active: Boolean) {
+        searchInputActive = active
+        if (active) {
+            searchVisible = true
+        }
     }
 
     fun updateSearchQuery(query: String) {
