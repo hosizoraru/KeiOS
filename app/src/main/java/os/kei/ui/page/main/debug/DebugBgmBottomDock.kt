@@ -460,8 +460,8 @@ private fun DebugBgmDockSelectionPill(
                         effects = {
                             if (clampedPress > 0f) {
                                 lens(
-                                    2.dp.toPx() * clampedPress,
-                                    3.dp.toPx() * clampedPress,
+                                    5.dp.toPx() * clampedPress,
+                                    7.dp.toPx() * clampedPress,
                                     true
                                 )
                             }
@@ -654,9 +654,9 @@ internal data class DebugBgmDockTab(
 )
 
 private const val DebugBgmDockSelectionWidthFraction = 1f
-private const val DebugBgmDockPressedScale = 1.06f
-private const val DebugBgmDockClickScale = 1.006f
-private const val DebugBgmDockVelocityScaleXFactor = 0.18f
-private const val DebugBgmDockVelocityScaleYFactor = 0.06f
-private const val DebugBgmDockVelocityScaleClamp = 0.04f
-private const val DebugBgmDockSelectedContentScale = 1.008f
+private const val DebugBgmDockPressedScale = 1.14f
+private const val DebugBgmDockClickScale = 1.016f
+private const val DebugBgmDockVelocityScaleXFactor = 0.30f
+private const val DebugBgmDockVelocityScaleYFactor = 0.10f
+private const val DebugBgmDockVelocityScaleClamp = 0.07f
+private const val DebugBgmDockSelectedContentScale = 1.024f

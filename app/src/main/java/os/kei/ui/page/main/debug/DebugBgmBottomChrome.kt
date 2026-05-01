@@ -277,8 +277,8 @@ private fun DebugBgmBottomSurface(
         modifier = modifier
             .graphicsLayer {
                 translationY = -with(density) { 1.25.dp.toPx() } * pressProgress
-                scaleX = lerpFloat(1f, 1.006f, pressProgress)
-                scaleY = lerpFloat(1f, 0.996f, pressProgress)
+                scaleX = lerpFloat(1f, 1.010f, pressProgress)
+                scaleY = lerpFloat(1f, 0.992f, pressProgress)
             },
         contentAlignment = Alignment.Center
     ) {
@@ -295,14 +295,14 @@ private fun DebugBgmBottomSurface(
                                 blur(UiPerformanceBudget.backdropBlur.toPx())
                                 lens(
                                     (UiPerformanceBudget.backdropLens *
-                                        (0.90f + 0.04f * pressProgress)).toPx(),
+                                        (0.90f + 0.08f * pressProgress)).toPx(),
                                     (UiPerformanceBudget.backdropLens *
-                                        (0.90f + 0.06f * pressProgress)).toPx()
+                                        (0.90f + 0.10f * pressProgress)).toPx()
                                 )
                             },
                             highlight = {
                                 Highlight.Default.copy(
-                                    alpha = (if (isDark) 0.46f else 0.82f) + 0.04f * pressProgress
+                                    alpha = (if (isDark) 0.46f else 0.82f) + 0.06f * pressProgress
                                 )
                             },
                             shadow = {
