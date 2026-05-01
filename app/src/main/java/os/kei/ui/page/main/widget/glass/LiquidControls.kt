@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -59,7 +60,6 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -225,6 +225,7 @@ fun LiquidToggle(
     var didDrag by remember { mutableStateOf(false) }
     var dragDistancePx by remember { mutableFloatStateOf(0f) }
     var fraction by remember { mutableFloatStateOf(if (selected()) 1f else 0f) }
+    val toggleInteractionSource = remember { MutableInteractionSource() }
     val dampedDragAnimation = remember(animationScope, dragWidth, isLtr, touchSlop) {
         DampedDragAnimation(
             animationScope = animationScope,
@@ -239,12 +240,12 @@ fun LiquidToggle(
             },
             onDragStopped = {
                 if (!enabled) return@DampedDragAnimation
-                fraction = if (didDrag) {
-                    if (targetValue >= 0.5f) 1f else 0f
+                if (didDrag) {
+                    fraction = if (targetValue >= 0.5f) 1f else 0f
+                    onSelect(fraction == 1f)
                 } else {
-                    if (selected()) 0f else 1f
+                    fraction = if (selected()) 1f else 0f
                 }
-                onSelect(fraction == 1f)
                 didDrag = false
                 dragDistancePx = 0f
             },
@@ -293,18 +294,20 @@ fun LiquidToggle(
     Box(
         modifier = modifier
             .then(if (enabled) dampedDragAnimation.modifier else Modifier)
+            .toggleable(
+                value = externalSelected,
+                enabled = enabled,
+                role = Role.Switch,
+                interactionSource = toggleInteractionSource,
+                indication = null,
+                onValueChange = onSelect
+            )
             .graphicsLayer {
                 alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
             }
             .semantics {
                 role = Role.Switch
                 toggleableState = ToggleableState(externalSelected)
-                if (enabled) {
-                    onClick {
-                        onSelect(!selected())
-                        true
-                    }
-                }
             },
         contentAlignment = Alignment.CenterStart
     ) {
@@ -452,8 +455,17 @@ fun LiquidSlider(
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
-                onDragStarted = {
+                onDragStarted = { position ->
                     if (enabled) {
+                        val delta = (valueRange.endInclusive - valueRange.start) *
+                            (position.x / trackWidth)
+                        val target = if (isLtr) {
+                            valueRange.start + delta
+                        } else {
+                            valueRange.endInclusive - delta
+                        }.coerceIn(valueRange)
+                        snapToValue(target)
+                        onValueChange(target)
                         onInteractionChangedState.value(true)
                     }
                 },
@@ -489,25 +501,6 @@ fun LiquidSlider(
                 Modifier
                     .clip(Capsule())
                     .background(trackColor)
-                    .then(
-                        if (enabled) {
-                            Modifier.pointerInput(valueRange, isLtr, trackWidth) {
-                                detectTapGestures { position ->
-                                    val delta = (valueRange.endInclusive - valueRange.start) *
-                                        (position.x / trackWidth)
-                                    val target = if (isLtr) {
-                                        valueRange.start + delta
-                                    } else {
-                                        valueRange.endInclusive - delta
-                                    }.coerceIn(valueRange)
-                                    dampedDragAnimation.animateToValue(target)
-                                    onValueChange(target)
-                                }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
                     .height(6.dp)
                     .fillMaxWidth()
             )
@@ -527,6 +520,27 @@ fun LiquidSlider(
                     }
             )
         }
+        if (enabled) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(maxHeight)
+                    .then(dampedDragAnimation.modifier)
+                    .pointerInput(valueRange, isLtr, trackWidth) {
+                        detectTapGestures { position ->
+                            val delta = (valueRange.endInclusive - valueRange.start) *
+                                (position.x / trackWidth)
+                            val target = if (isLtr) {
+                                valueRange.start + delta
+                            } else {
+                                valueRange.endInclusive - delta
+                            }.coerceIn(valueRange)
+                            dampedDragAnimation.animateToValue(target)
+                            onValueChange(target)
+                        }
+                    }
+            )
+        }
 
         Box(
             Modifier
@@ -536,7 +550,6 @@ fun LiquidSlider(
                         ).fastCoerceIn(-size.width / 4f, trackWidth - size.width * 3f / 4f) *
                         if (isLtr) 1f else -1f
                 }
-                .then(if (enabled) dampedDragAnimation.modifier else Modifier)
                 .drawBackdrop(
                     backdrop = rememberCombinedBackdrop(
                         backdrop,

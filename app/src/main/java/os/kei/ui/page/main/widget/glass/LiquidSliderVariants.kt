@@ -270,8 +270,22 @@ private fun LiquidTrackSlider(
                 initialScale = 1f,
                 pressedScale = style.pressedScale,
                 consumeDragChanges = true,
-                onDragStarted = {
+                onDragStarted = { position ->
                     if (enabled) {
+                        val target = resolveSliderTarget(
+                            target = sliderValueAt(
+                                offset = position,
+                                widthPx = trackWidth.toFloat(),
+                                valueRange = safeValueRange,
+                                isLtr = isLtr
+                            ),
+                            valueRange = safeValueRange,
+                            keyPoints = keyPoints,
+                            snapToKeyPoints = snapToKeyPoints,
+                            snapThreshold = snapThreshold
+                        )
+                        snapToValue(target)
+                        onValueChange(target)
                         onInteractionChangedState.value(true)
                     }
                 },
@@ -342,7 +356,8 @@ private fun LiquidTrackSlider(
                 Modifier
                     .fillMaxWidth()
                     .height(maxHeight)
-                    .pointerInput(safeValueRange, isLtr, trackWidth, keyPoints, snapToKeyPoints) {
+                    .then(dampedDragAnimation.modifier)
+                    .pointerInput(safeValueRange, isLtr, trackWidth, keyPoints, snapToKeyPoints, snapThreshold) {
                         detectTapGestures { position ->
                             val rawTarget = sliderValueAt(
                                 offset = position,
@@ -390,7 +405,6 @@ private fun LiquidTrackSlider(
                         ).fastCoerceIn(-size.width / 4f, trackWidth - size.width * 3f / 4f) *
                         if (isLtr) 1f else -1f
                 }
-                .then(if (enabled) dampedDragAnimation.modifier else Modifier)
                 .drawBackdrop(
                     backdrop = rememberCombinedBackdrop(
                         backdrop,
