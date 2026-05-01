@@ -288,12 +288,16 @@ private fun DebugBgmRoundAction(
     onClick: () -> Unit = {},
     backdrop: Backdrop
 ) {
-    val contentTint = if (selected) accent else MiuixTheme.colorScheme.onBackground
+    val contentTint = if (selected) {
+        accent.copy(alpha = 0.98f)
+    } else {
+        MiuixTheme.colorScheme.onBackground
+    }
     LiquidButton(
         onClick = onClick,
         backdrop = backdrop,
-        tint = if (selected) accent.copy(alpha = 0.34f) else accent.copy(alpha = 0.16f),
-        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (selected) 0.34f else 0.22f),
+        tint = Color.Unspecified,
+        surfaceColor = DebugBgmRoundActionButtonSurfaceColor(),
         shape = CircleShape,
         height = 52.dp,
         horizontalPadding = 0.dp,
@@ -306,6 +310,11 @@ private fun DebugBgmRoundAction(
             modifier = Modifier.size(24.dp)
         )
     }
+}
+
+@Composable
+private fun DebugBgmRoundActionButtonSurfaceColor(): Color {
+    return MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.16f)
 }
 
 @Composable
@@ -326,8 +335,8 @@ private fun DebugBgmPlayAction(
         modifier = Modifier
             .height(52.dp)
             .widthIn(min = 116.dp),
-        tint = if (isPlaying) accent.copy(alpha = 0.36f) else accent.copy(alpha = 0.18f),
-        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (isPlaying) 0.34f else 0.22f),
+        tint = Color.Unspecified,
+        surfaceColor = DebugBgmActionButtonSurfaceColor(selected = isPlaying, selectedAlpha = 0.24f),
         shape = Capsule(),
         height = 52.dp,
         horizontalPadding = 24.dp
@@ -349,4 +358,13 @@ private fun DebugBgmPlayAction(
             maxLines = 1
         )
     }
+}
+
+@Composable
+private fun DebugBgmActionButtonSurfaceColor(
+    selected: Boolean,
+    selectedAlpha: Float = 0.28f
+): Color {
+    val alpha = if (selected) selectedAlpha else 0.16f
+    return MiuixTheme.colorScheme.surfaceContainer.copy(alpha = alpha)
 }
