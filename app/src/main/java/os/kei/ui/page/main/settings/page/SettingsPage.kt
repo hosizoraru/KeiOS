@@ -66,12 +66,11 @@ import os.kei.ui.page.main.settings.support.rememberSettingsAppLanguageControlle
 import os.kei.ui.page.main.settings.support.rememberSettingsBatteryOptimizationController
 import os.kei.ui.page.main.settings.support.rememberSettingsPermissionKeepAliveController
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
-import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import kotlinx.coroutines.Job
@@ -387,6 +386,7 @@ fun SettingsPage(
     val notifyListState = rememberLazyListState()
     val dataListState = rememberLazyListState()
     var sliderInteractionActive by remember { mutableStateOf(false) }
+    val topBarBackdrop = rememberLayerBackdrop()
     val bottomBarBackdrop = rememberLayerBackdrop()
     val navigationBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     var showBottomBar by remember { mutableStateOf(true) }
@@ -496,13 +496,11 @@ fun SettingsPage(
         scrollBehavior = scrollBehavior,
         topBarColor = Color.Transparent,
         navigationIcon = {
-            GlassIconButton(
-                backdrop = null,
+            AppLiquidNavigationButton(
                 icon = appLucideBackIcon(),
-                contentDescription = "",
+                contentDescription = settingsTitle,
                 onClick = onBack,
-                iconTint = MiuixTheme.colorScheme.onSurface,
-                variant = GlassVariant.Bar
+                backdrop = topBarBackdrop
             )
         },
         bottomBar = {
@@ -532,6 +530,7 @@ fun SettingsPage(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { alpha = farJumpAlpha.value }
+                .layerBackdrop(topBarBackdrop)
                 .layerBackdrop(bottomBarBackdrop)
         ) { pageIndex ->
             val category = categories[pageIndex]

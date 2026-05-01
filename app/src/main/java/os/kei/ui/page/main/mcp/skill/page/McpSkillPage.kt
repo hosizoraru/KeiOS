@@ -8,6 +8,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.core.ui.effect.getMiuixAppBarColor
 import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
 import os.kei.mcp.server.McpServerManager
@@ -15,9 +17,8 @@ import os.kei.ui.page.main.mcp.skill.McpSkillPageContentRequest
 import os.kei.ui.page.main.mcp.skill.McpSkillPageViewModel
 import os.kei.ui.page.main.mcp.skill.component.McpSkillContentList
 import os.kei.ui.page.main.mcp.skill.state.rememberMcpSkillPageTextBundle
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -36,6 +37,7 @@ fun McpSkillPage(
     val accentColor = MiuixTheme.colorScheme.primary
     val codeColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.10f)
     val topBarMaterialBackdrop = rememberMiuixBlurBackdrop(enableBlur = true)
+    val topBarBackdrop = rememberLayerBackdrop()
     val viewModel: McpSkillPageViewModel = viewModel()
     val contentRequest = McpSkillPageContentRequest(
         emptyMarkdown = textBundle.emptyMarkdown,
@@ -58,13 +60,11 @@ fun McpSkillPage(
         scrollBehavior = scrollBehavior,
         topBarColor = topBarMaterialBackdrop.getMiuixAppBarColor(),
         navigationIcon = {
-            GlassIconButton(
-                backdrop = null,
+            AppLiquidNavigationButton(
                 icon = MiuixIcons.Regular.Back,
-                contentDescription = "",
+                contentDescription = textBundle.pageTitle,
                 onClick = onBack,
-                iconTint = MiuixTheme.colorScheme.onSurface,
-                variant = GlassVariant.Bar
+                backdrop = topBarBackdrop
             )
         }
     ) { innerPadding ->
@@ -83,7 +83,9 @@ fun McpSkillPage(
             subtitleColor = subtitleColor,
             accentColor = accentColor,
             codeColor = codeColor,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .layerBackdrop(topBarBackdrop)
         )
     }
 }

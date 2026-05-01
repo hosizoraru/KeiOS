@@ -62,6 +62,7 @@ import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabSelect
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTopBarActionItems
 import os.kei.ui.page.main.student.catalog.state.rememberCatalogSyncProgress
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.AppTopBarSearchField
 import os.kei.ui.page.main.widget.chrome.AppTopBarSection
@@ -71,8 +72,6 @@ import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBar
 import os.kei.ui.page.main.widget.chrome.LiquidGlassBottomBarItem
 import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.chrome.liquidGlassBottomBarItemContentColor
-import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
@@ -291,13 +290,11 @@ fun BaGuideCatalogPage(
                     scrollBehavior = scrollBehavior,
                     color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     navigationIcon = {
-                        GlassIconButton(
-                            backdrop = null,
+                        AppLiquidNavigationButton(
                             icon = appLucideBackIcon(),
-                            contentDescription = "",
+                            contentDescription = pageTitle,
                             onClick = onBack,
-                            iconTint = MiuixTheme.colorScheme.onSurface,
-                            variant = GlassVariant.Bar
+                            backdrop = topBarBackdrop
                         )
                     },
                     searchBarVisible = enableSearchBar && showSearchBar
@@ -404,6 +401,7 @@ fun BaGuideCatalogPage(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { alpha = farJumpAlpha.value }
+                    .layerBackdrop(topBarBackdrop)
                     .layerBackdrop(bottomBarBackdrop),
                 beyondViewportPageCount = preloadPolicy.catalogPagerBeyondViewportPageCount
             ) { pageIndex ->

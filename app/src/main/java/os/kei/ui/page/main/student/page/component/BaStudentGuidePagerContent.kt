@@ -28,6 +28,7 @@ internal fun BaStudentGuidePagerContent(
     innerPadding: PaddingValues,
     farJumpAlpha: Float,
     navBackdrop: LayerBackdrop,
+    topBarBackdrop: LayerBackdrop,
     galleryCacheRevision: Int,
     selectedVoiceLanguage: String,
     playingVoiceUrl: String,
@@ -52,6 +53,7 @@ internal fun BaStudentGuidePagerContent(
         modifier = Modifier
             .fillMaxSize()
             .graphicsLayer { alpha = farJumpAlpha }
+            .layerBackdrop(topBarBackdrop)
             .layerBackdrop(navBackdrop)
     ) { pageIndex ->
         BaStudentGuidePagerPage(

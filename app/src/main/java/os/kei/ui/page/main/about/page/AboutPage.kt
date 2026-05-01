@@ -16,6 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.core.system.ShizukuApiUtils
 import os.kei.ui.page.main.debug.DebugComponentLabActivity
@@ -34,12 +36,10 @@ import os.kei.ui.page.main.about.section.AboutRuntimeStatusCardSection
 import os.kei.ui.page.main.about.section.AboutUiFrameworkCardSection
 import os.kei.ui.page.main.about.util.openExternalUrl
 import os.kei.ui.page.main.os.appLucideBackIcon
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun AboutPage(
@@ -61,6 +61,7 @@ fun AboutPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val expansionState = rememberAboutPageSectionExpansionState()
+    val topBarBackdrop = rememberLayerBackdrop()
 
     LaunchedEffect(scrollToTopSignal) {
         if (scrollToTopSignal > 0) listState.animateScrollToItem(0)
@@ -86,13 +87,11 @@ fun AboutPage(
         topBarColor = Color.Transparent,
         navigationIcon = {
             if (onBack != null) {
-                GlassIconButton(
-                    backdrop = null,
+                AppLiquidNavigationButton(
                     icon = appLucideBackIcon(),
-                    contentDescription = "",
+                    contentDescription = stringResource(R.string.common_close),
                     onClick = onBack,
-                    iconTint = MiuixTheme.colorScheme.onSurface,
-                    variant = GlassVariant.Bar
+                    backdrop = topBarBackdrop
                 )
             }
         }
@@ -102,7 +101,8 @@ fun AboutPage(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .layerBackdrop(topBarBackdrop),
             bottomExtra = contentBottomPadding,
             sectionSpacing = 14.dp
         ) {

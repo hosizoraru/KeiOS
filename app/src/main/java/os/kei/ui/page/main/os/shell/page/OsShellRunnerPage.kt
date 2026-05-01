@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -53,11 +52,13 @@ import os.kei.ui.page.main.os.shell.state.BindOsShellRunnerAutoScrollEffect
 import os.kei.ui.page.main.os.shell.state.BindOsShellRunnerPersistEffects
 import os.kei.ui.page.main.os.shell.state.rememberOsShellRunnerTextBundle
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.glass.LocalLiquidSwitchEnabled
+import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -65,7 +66,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -394,11 +394,12 @@ fun OsShellRunnerPage(
         largeTitle = textBundle.shellPageTitle,
         scrollBehavior = scrollBehavior,
         navigationIcon = {
-            Icon(
-                imageVector = appLucideBackIcon(),
+            AppLiquidNavigationButton(
+                icon = appLucideBackIcon(),
                 contentDescription = stringResource(R.string.common_close),
-                tint = MiuixTheme.colorScheme.primary,
-                modifier = Modifier.clickable { requestClose() }
+                onClick = { requestClose() },
+                backdrop = topBarBackdrop,
+                layeredStyleEnabled = liquidActionBarLayeredStyleEnabled
             )
         },
         actions = {
@@ -414,7 +415,8 @@ fun OsShellRunnerPage(
             state = pageListState,
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .layerBackdrop(topBarBackdrop),
             topExtra = 0.dp,
             sectionSpacing = AppChromeTokens.pageSectionGap
         ) {

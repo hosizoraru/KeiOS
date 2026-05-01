@@ -69,8 +69,7 @@ import os.kei.core.ui.effect.rememberMiuixBlurBackdrop
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
-import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
@@ -341,13 +340,11 @@ fun BaStudentGuidePage(
                     color = topBarMaterialBackdrop.getMiuixAppBarColor(),
                     titleColor = MiuixTheme.colorScheme.onSurface.copy(alpha = topBarTitleAlpha),
                     navigationIcon = {
-                        GlassIconButton(
-                            backdrop = null,
+                        AppLiquidNavigationButton(
                             icon = appLucideBackIcon(),
-                            contentDescription = "",
+                            contentDescription = pageTitle,
                             onClick = onBack,
-                            iconTint = MiuixTheme.colorScheme.onSurface,
-                            variant = GlassVariant.Bar
+                            backdrop = topBarBackdrop
                         )
                     }
                 )
@@ -383,6 +380,7 @@ fun BaStudentGuidePage(
                 innerPadding = innerPadding,
                 farJumpAlpha = farJumpAlpha.value,
                 navBackdrop = navBackdrop,
+                topBarBackdrop = topBarBackdrop,
                 galleryCacheRevision = galleryCacheRevision,
                 selectedVoiceLanguage = selectedVoiceLanguage,
                 playingVoiceUrl = playingVoiceUrl,
