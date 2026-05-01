@@ -50,6 +50,12 @@
     <string name="debug_component_lab_bgm_subtitle">Component preview for the future standalone playback page</string>
     <string name="debug_component_lab_bgm_entry_note">The Music component now lives in its own Activity. This page keeps the entry point and migration notes so risky component experiments stay isolated from the lab index.</string>
     <string name="debug_component_lab_action_open_bgm_activity">Open BGM Music Activity</string>
+    <string name="debug_component_lab_liquid_catalog_title">Liquid component proofs</string>
+    <string name="debug_component_lab_liquid_catalog_subtitle">Buttons, toggles, sliders, and bottom tabs powered by Kyant0 Backdrop v2</string>
+    <string name="debug_component_lab_liquid_button_primary">Play proof</string>
+    <string name="debug_component_lab_liquid_button_shuffle">Shuffle proof</string>
+    <string name="debug_component_lab_liquid_toggle_label">iOS26-style toggle</string>
+    <string name="debug_component_lab_liquid_slider_label">Liquid progress and volume handle</string>
     <string name="debug_component_lab_now_playing_title">After School Queue</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>

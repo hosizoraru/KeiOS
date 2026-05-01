@@ -3,6 +3,7 @@ package os.kei.ui.page.main.debug
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -33,6 +35,8 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppSupportingBlock
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.status.StatusPill
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -46,6 +50,7 @@ internal fun DebugComponentLabPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val accent = MiuixTheme.colorScheme.primary
+    val pageBackdrop = rememberLayerBackdrop()
 
     AppPageScaffold(
         title = stringResource(R.string.debug_component_lab_title),
@@ -62,26 +67,48 @@ internal fun DebugComponentLabPage(
             }
         }
     ) { innerPadding ->
-        AppPageLazyColumn(
-            innerPadding = innerPadding,
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            bottomExtra = 40.dp,
-            sectionSpacing = 14.dp
-        ) {
-            item {
-                DebugLabIntroCard(accent = accent)
-            }
-            item {
-                DebugBgmPreviewCard(
-                    accent = accent,
-                    onOpenBgmMusic = onOpenBgmMusic
-                )
-            }
-            item {
-                DebugIterationQueueCard(accent = accent)
+        Box(Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MiuixTheme.colorScheme.background,
+                                accent.copy(alpha = if (isSystemInDarkTheme()) 0.12f else 0.08f),
+                                MiuixTheme.colorScheme.background
+                            )
+                        )
+                    )
+                    .layerBackdrop(pageBackdrop)
+            )
+            AppPageLazyColumn(
+                innerPadding = innerPadding,
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                bottomExtra = 40.dp,
+                sectionSpacing = 14.dp
+            ) {
+                item {
+                    DebugLabIntroCard(accent = accent)
+                }
+                item {
+                    DebugLiquidCatalogCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
+                    DebugBgmPreviewCard(
+                        accent = accent,
+                        onOpenBgmMusic = onOpenBgmMusic
+                    )
+                }
+                item {
+                    DebugIterationQueueCard(accent = accent)
+                }
             }
         }
     }

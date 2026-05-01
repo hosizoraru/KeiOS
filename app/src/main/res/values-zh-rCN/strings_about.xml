@@ -50,6 +50,12 @@
     <string name="debug_component_lab_bgm_subtitle">未来独立播放页的组件预览</string>
     <string name="debug_component_lab_bgm_entry_note">Music 组件已拆到独立 Activity。这里保留入口与迁移说明，降低实验组件崩溃时对实验室索引页的影响。</string>
     <string name="debug_component_lab_action_open_bgm_activity">打开 BGM Music Activity</string>
+    <string name="debug_component_lab_liquid_catalog_title">Liquid 组件样张</string>
+    <string name="debug_component_lab_liquid_catalog_subtitle">Kyant0 Backdrop v2 驱动的按钮、开关、进度条与底栏</string>
+    <string name="debug_component_lab_liquid_button_primary">播放样张</string>
+    <string name="debug_component_lab_liquid_button_shuffle">随机样张</string>
+    <string name="debug_component_lab_liquid_toggle_label">iOS26 风格开关</string>
+    <string name="debug_component_lab_liquid_slider_label">液态进度条与音量手柄</string>
     <string name="debug_component_lab_now_playing_title">放课后播放队列</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>

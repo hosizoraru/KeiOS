@@ -40,6 +40,7 @@ class InteractiveHighlight(
     private var startPosition = Offset.Zero
     private var pendingDragPosition: Offset? = null
     private var dragPositionSyncJob: Job? = null
+    val pressProgress: Float get() = pressProgressAnimation.value
     val offset: Offset get() = positionAnimation.value - startPosition
 
     @Language("AGSL")

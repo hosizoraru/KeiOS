@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import com.kyant.backdrop.Backdrop
 import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -48,8 +49,20 @@ fun LiquidGlassSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    backdrop: Backdrop? = null
 ) {
+    if (backdrop != null) {
+        LiquidToggle(
+            selected = { checked },
+            onSelect = onCheckedChange,
+            backdrop = backdrop,
+            modifier = modifier,
+            enabled = enabled
+        )
+        return
+    }
+
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val isDark = isSystemInDarkTheme()

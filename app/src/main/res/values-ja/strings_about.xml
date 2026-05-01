@@ -49,6 +49,12 @@
     <string name="debug_component_lab_bgm_subtitle">将来の独立再生ページ向けコンポーネントプレビュー</string>
     <string name="debug_component_lab_bgm_entry_note">Music コンポーネントを独立 Activity に分離しました。このページは入口と移行メモを保持し、実験中コンポーネントのクラッシュ影響をラボ索引から分離します。</string>
     <string name="debug_component_lab_action_open_bgm_activity">BGM Music Activity を開く</string>
+    <string name="debug_component_lab_liquid_catalog_title">Liquid コンポーネント試作</string>
+    <string name="debug_component_lab_liquid_catalog_subtitle">Kyant0 Backdrop v2 によるボタン、トグル、スライダー、下部タブ</string>
+    <string name="debug_component_lab_liquid_button_primary">再生試作</string>
+    <string name="debug_component_lab_liquid_button_shuffle">シャッフル試作</string>
+    <string name="debug_component_lab_liquid_toggle_label">iOS26 風トグル</string>
+    <string name="debug_component_lab_liquid_slider_label">液体風進捗と音量ハンドル</string>
     <string name="debug_component_lab_now_playing_title">放課後プレイキュー</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>
