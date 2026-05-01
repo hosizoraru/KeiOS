@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -44,11 +45,15 @@ import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
+import os.kei.ui.page.main.os.appLucideDownloadIcon
+import os.kei.ui.page.main.os.appLucideHeartIcon
+import os.kei.ui.page.main.os.appLucidePlayIcon
+import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
@@ -276,9 +281,10 @@ private fun DebugBgmTrackMorePopup(
         enableWindowDim = false,
         onDismissRequest = onDismissRequest
     ) {
-        LiquidDropdownColumn {
+        LiquidGlassDropdownColumn {
             DebugBgmTrackMenuItem(
                 text = stringResource(R.string.debug_component_lab_action_play),
+                leadingIcon = appLucidePlayIcon(),
                 index = 0,
                 optionSize = DebugBgmTrackMenuItemCount,
                 onClick = onPlayClick
@@ -291,7 +297,7 @@ private fun DebugBgmTrackMorePopup(
                         R.string.debug_component_lab_action_favorite
                     }
                 ),
-                selected = favorite,
+                leadingIcon = appLucideHeartIcon(),
                 index = 1,
                 optionSize = DebugBgmTrackMenuItemCount,
                 onClick = onFavoriteClick
@@ -304,13 +310,14 @@ private fun DebugBgmTrackMorePopup(
                         R.string.debug_component_lab_action_save_offline
                     }
                 ),
-                selected = offlineSaved,
+                leadingIcon = appLucideDownloadIcon(),
                 index = 2,
                 optionSize = DebugBgmTrackMenuItemCount,
                 onClick = onOfflineClick
             )
             DebugBgmTrackMenuItem(
                 text = stringResource(R.string.debug_component_lab_action_share),
+                leadingIcon = appLucideShareIcon(),
                 index = 3,
                 optionSize = DebugBgmTrackMenuItemCount,
                 onClick = onShareClick
@@ -324,13 +331,13 @@ private fun DebugBgmTrackMenuItem(
     text: String,
     index: Int,
     optionSize: Int,
-    selected: Boolean = false,
+    leadingIcon: ImageVector? = null,
     onClick: () -> Unit
 ) {
-    LiquidDropdownItem(
+    LiquidGlassDropdownActionItem(
         text = text,
-        selected = selected,
         onClick = onClick,
+        leadingIcon = leadingIcon,
         index = index,
         optionSize = optionSize
     )

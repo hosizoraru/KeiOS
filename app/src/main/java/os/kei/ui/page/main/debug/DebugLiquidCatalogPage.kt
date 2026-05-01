@@ -81,6 +81,12 @@ internal fun DebugLiquidCatalogPage(
                     )
                 }
                 item {
+                    DebugLiquidDropdownCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
                     DebugLiquidBackdropCard(accent = accent)
                 }
                 item {

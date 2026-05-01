@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import os.kei.R
@@ -30,6 +31,7 @@ import os.kei.ui.page.main.os.appLucideHeartIcon
 import os.kei.ui.page.main.os.appLucideLayersIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
+import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.os.appLucideShuffleIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppFeatureCard
@@ -38,6 +40,8 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.LiquidBottomTab
 import os.kei.ui.page.main.widget.glass.LiquidBottomTabs
 import os.kei.ui.page.main.widget.glass.LiquidButton
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidKeyPointSlider
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import os.kei.ui.page.main.widget.glass.LiquidPrimaryToggle
@@ -46,7 +50,11 @@ import os.kei.ui.page.main.widget.glass.LiquidSliderKeyPoint
 import os.kei.ui.page.main.widget.glass.LiquidToggle
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.glass.liquidBottomTabContentColor
+import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
+import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
+import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -268,6 +276,135 @@ internal fun DebugLiquidButtonsCard(
                     tint = contentColor,
                     modifier = Modifier.size(19.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun DebugLiquidDropdownCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var anchorBounds by remember { mutableStateOf<IntRect?>(null) }
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    val buttonSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.20f)
+
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_dropdown_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_dropdown_subtitle),
+        sectionIcon = appLucideMoreIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
+        LiquidGlassDropdownColumn(
+            accentColor = accent,
+            backdrop = backdrop
+        ) {
+            LiquidGlassDropdownActionItem(
+                text = stringResource(R.string.debug_component_lab_action_play),
+                highlighted = true,
+                onClick = {},
+                leadingIcon = appLucidePlayIcon(),
+                index = 0,
+                optionSize = 4,
+                accentColor = accent
+            )
+            LiquidGlassDropdownActionItem(
+                text = stringResource(R.string.debug_component_lab_action_favorite),
+                onClick = {},
+                leadingIcon = appLucideHeartIcon(),
+                index = 1,
+                optionSize = 4,
+                accentColor = accent
+            )
+            LiquidGlassDropdownActionItem(
+                text = stringResource(R.string.debug_component_lab_action_download),
+                onClick = {},
+                leadingIcon = appLucideDownloadIcon(),
+                index = 2,
+                optionSize = 4,
+                accentColor = accent
+            )
+            LiquidGlassDropdownActionItem(
+                text = stringResource(R.string.debug_component_lab_action_share),
+                onClick = {},
+                leadingIcon = appLucideShareIcon(),
+                index = 3,
+                optionSize = 4,
+                accentColor = accent
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LiquidButton(
+                onClick = { expanded = true },
+                backdrop = backdrop,
+                tint = Color.Unspecified,
+                surfaceColor = buttonSurface,
+                height = 44.dp,
+                horizontalPadding = 14.dp,
+                modifier = Modifier.capturePopupAnchor { anchorBounds = it }
+            ) {
+                Icon(
+                    imageVector = appLucideMoreIcon(),
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = stringResource(R.string.debug_component_lab_liquid_dropdown_open),
+                    color = contentColor,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        if (expanded) {
+            SnapshotWindowListPopup(
+                show = true,
+                alignment = PopupPositionProvider.Align.BottomEnd,
+                anchorBounds = anchorBounds,
+                placement = SnapshotPopupPlacement.ButtonEnd,
+                enableWindowDim = false,
+                onDismissRequest = { expanded = false }
+            ) {
+                LiquidGlassDropdownColumn(accentColor = accent) {
+                    LiquidGlassDropdownActionItem(
+                        text = stringResource(R.string.debug_component_lab_action_shuffle),
+                        onClick = { expanded = false },
+                        leadingIcon = appLucideShuffleIcon(),
+                        index = 0,
+                        optionSize = 3,
+                        accentColor = accent
+                    )
+                    LiquidGlassDropdownActionItem(
+                        text = stringResource(R.string.debug_component_lab_action_favorite),
+                        onClick = { expanded = false },
+                        leadingIcon = appLucideHeartIcon(),
+                        index = 1,
+                        optionSize = 3,
+                        accentColor = accent
+                    )
+                    LiquidGlassDropdownActionItem(
+                        text = stringResource(R.string.debug_component_lab_action_share),
+                        onClick = { expanded = false },
+                        leadingIcon = appLucideShareIcon(),
+                        index = 2,
+                        optionSize = 3,
+                        accentColor = accent
+                    )
+                }
             }
         }
     }

@@ -55,7 +55,7 @@
     <string name="debug_component_lab_action_open_liquid_activity">打开 Liquid 组件样张</string>
     <string name="debug_component_lab_liquid_entry_note">Liquid 组件样张已拆到独立 Activity。入口页保留快速跳转，BGM Music Activity 可以更快到达。</string>
     <string name="debug_component_lab_liquid_row_entry_value">独立 Activity</string>
-    <string name="debug_component_lab_liquid_row_components_value">Button / Toggle / Slider / Bottom tabs / Backdrop</string>
+    <string name="debug_component_lab_liquid_row_components_value">Button / Dropdown / Toggle / Slider / Bottom tabs / Backdrop</string>
     <string name="debug_component_lab_liquid_button_primary">播放样张</string>
     <string name="debug_component_lab_liquid_button_shuffle">随机样张</string>
     <string name="debug_component_lab_liquid_button_compact">收藏样张</string>
@@ -64,6 +64,9 @@
     <string name="debug_component_lab_liquid_button_rounded">圆角矩形</string>
     <string name="debug_component_lab_liquid_button_oval">椭圆胶囊</string>
     <string name="debug_component_lab_liquid_button_circle">圆形按钮</string>
+    <string name="debug_component_lab_liquid_dropdown_label">Liquid Dropdown 样张</string>
+    <string name="debug_component_lab_liquid_dropdown_subtitle">独立 backdrop、动作菜单与按压胶囊</string>
+    <string name="debug_component_lab_liquid_dropdown_open">打开菜单</string>
     <string name="debug_component_lab_liquid_backdrop_playground_label">透明 backdrop 演示面板</string>
     <string name="debug_component_lab_liquid_large_clear_card">大透明液态 Card</string>
     <string name="debug_component_lab_liquid_large_clear_card_body">使用彩色底纹观察纯透明折射、色散与高光</string>

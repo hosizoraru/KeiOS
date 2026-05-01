@@ -54,7 +54,7 @@
     <string name="debug_component_lab_action_open_liquid_activity">Liquid コンポーネント試作を開く</string>
     <string name="debug_component_lab_liquid_entry_note">Liquid コンポーネント試作を独立 Activity に分離しました。索引ページから素早く開け、BGM Music Activity にも到達しやすくなります。</string>
     <string name="debug_component_lab_liquid_row_entry_value">独立 Activity</string>
-    <string name="debug_component_lab_liquid_row_components_value">Button / Toggle / Slider / Bottom tabs / Backdrop</string>
+    <string name="debug_component_lab_liquid_row_components_value">Button / Dropdown / Toggle / Slider / Bottom tabs / Backdrop</string>
     <string name="debug_component_lab_liquid_button_primary">再生試作</string>
     <string name="debug_component_lab_liquid_button_shuffle">シャッフル試作</string>
     <string name="debug_component_lab_liquid_button_compact">お気に入り試作</string>
@@ -63,6 +63,9 @@
     <string name="debug_component_lab_liquid_button_rounded">角丸矩形</string>
     <string name="debug_component_lab_liquid_button_oval">楕円カプセル</string>
     <string name="debug_component_lab_liquid_button_circle">円形ボタン</string>
+    <string name="debug_component_lab_liquid_dropdown_label">Liquid Dropdown 試作</string>
+    <string name="debug_component_lab_liquid_dropdown_subtitle">独立 backdrop、アクションメニュー、押下カプセル</string>
+    <string name="debug_component_lab_liquid_dropdown_open">メニューを開く</string>
     <string name="debug_component_lab_liquid_backdrop_playground_label">透明 backdrop プレイグラウンド</string>
     <string name="debug_component_lab_liquid_large_clear_card">大型透明 Liquid カード</string>
     <string name="debug_component_lab_liquid_large_clear_card_body">色付き背景で透明屈折、色収差、ハイライトを確認できます</string>
