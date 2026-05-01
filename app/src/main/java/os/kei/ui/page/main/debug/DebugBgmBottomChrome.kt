@@ -209,7 +209,8 @@ internal fun DebugBgmFloatingBottomChrome(
                 .height(tabGroupHeight),
             shape = ContinuousCapsule,
             backdrop = backdrop,
-            interactionSource = dockSurfaceInteractionSource
+            interactionSource = dockSurfaceInteractionSource,
+            clipContent = false
         ) {
             DebugBgmDockGroupContent(
                 tabs = tabs,

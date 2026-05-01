@@ -220,6 +220,11 @@ internal fun DebugBgmDockGroupContent(
         val dockLiftPx = with(density) { 1.25.dp.toPx() } * combinedInteractionProgress
         val dockScaleX = lerpFloat(1f, 1.006f, combinedInteractionProgress)
         val dockScaleY = lerpFloat(1f, 0.996f, combinedInteractionProgress)
+        val selectedContentScale = lerpFloat(
+            1f,
+            DebugBgmDockSelectedContentPressedScale,
+            combinedInteractionProgress
+        )
         val interactiveHighlight = if (
             backdrop != null &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -287,13 +292,12 @@ internal fun DebugBgmDockGroupContent(
                     alpha = expanded
                     translationX = panelOffset
                     translationY = -dockLiftPx
-                    scaleX = 0.96f + 0.04f * expanded
-                    scaleY = 0.96f + 0.04f * expanded
-                    scaleX *= dockScaleX
-                    scaleY *= dockScaleY
+                    scaleX = (0.96f + 0.04f * expanded) * dockScaleX
+                    scaleY = (0.96f + 0.04f * expanded) * dockScaleY
                 }
+                .clip(ContinuousCapsule)
                 .then(interactiveHighlight?.modifier ?: Modifier)
-                .padding(horizontal = contentHorizontalPadding, vertical = contentVerticalPadding),
+                .padding(horizontal = contentHorizontalPadding),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -304,6 +308,7 @@ internal fun DebugBgmDockGroupContent(
                     tab = tab,
                     selected = selectionProgress > 0.52f,
                     selectionProgress = selectionProgress,
+                    selectedContentScale = selectedContentScale,
                     accent = accent,
                     activeTint = false,
                     onClick = {
@@ -323,8 +328,12 @@ internal fun DebugBgmDockGroupContent(
         Row(
             modifier = Modifier
                 .clearAndSetSemantics {}
+                .offset(y = contentVerticalPadding)
+                .width(maxWidth)
+                .height(selectedPillHeight)
                 .alpha(0f)
                 .zIndex(if (expanded >= compact) 1.5f else 0f)
+                .clip(ContinuousCapsule)
                 .then(if (backdrop != null) Modifier.layerBackdrop(tabsBackdrop) else Modifier)
                 .graphicsLayer {
                     alpha = expanded
@@ -333,7 +342,7 @@ internal fun DebugBgmDockGroupContent(
                     scaleX = (0.96f + 0.04f * expanded) * dockScaleX
                     scaleY = (0.96f + 0.04f * expanded) * dockScaleY
                 }
-                .padding(horizontal = contentHorizontalPadding, vertical = contentVerticalPadding),
+                .padding(horizontal = contentHorizontalPadding),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -344,6 +353,7 @@ internal fun DebugBgmDockGroupContent(
                     tab = tab,
                     selected = selectionProgress > 0.52f,
                     selectionProgress = selectionProgress,
+                    selectedContentScale = selectedContentScale,
                     accent = accent,
                     activeTint = true,
                     onClick = {},
@@ -366,8 +376,8 @@ internal fun DebugBgmDockGroupContent(
                     alpha = expanded
                     translationX = panelOffset
                     translationY = -dockLiftPx
-                    scaleX = 0.92f + 0.08f * expanded
-                    scaleY = 0.92f + 0.08f * expanded
+                    scaleX = (0.96f + 0.04f * expanded) * dockScaleX
+                    scaleY = (0.96f + 0.04f * expanded) * dockScaleY
                 }
                 .then(interactiveHighlight?.gestureModifier ?: Modifier)
                 .then(if (expandedEnabled) dampedDragAnimation.modifier else Modifier),
@@ -448,10 +458,6 @@ private fun DebugBgmDockSelectionPill(
     }
     Box(
         modifier = modifier
-            .graphicsLayer {
-                scaleX = deformationScaleX
-                scaleY = deformationScaleY
-            }
             .then(
                 if (backdrop != null) {
                     Modifier.drawBackdrop(
@@ -474,6 +480,10 @@ private fun DebugBgmDockSelectionPill(
                         },
                         innerShadow = {
                             InnerShadow(radius = 8.dp * clampedPress, alpha = clampedPress)
+                        },
+                        layerBlock = {
+                            scaleX = deformationScaleX
+                            scaleY = deformationScaleY
                         },
                         onDrawSurface = {
                             drawRect(neutralFill, alpha = 1f - clampedPress)
@@ -514,6 +524,7 @@ private fun DebugBgmExpandedDockTab(
     tab: DebugBgmDockTab,
     selected: Boolean,
     selectionProgress: Float,
+    selectedContentScale: Float,
     accent: Color,
     activeTint: Boolean,
     onClick: () -> Unit,
@@ -523,17 +534,22 @@ private fun DebugBgmExpandedDockTab(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val normalizedSelectionProgress = selectionProgress.coerceIn(0f, 1f)
     val itemScale by animateFloatAsState(
-        targetValue = if (pressed && enabled) 0.94f else 1f,
+        targetValue = when {
+            pressed && enabled -> lerpFloat(0.92f, 0.96f, normalizedSelectionProgress)
+            normalizedSelectionProgress > 0f -> {
+                lerpFloat(1f, selectedContentScale, normalizedSelectionProgress)
+            }
+            else -> 1f
+        },
         animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
         label = "debug_bgm_dock_tab_press_scale"
     )
-    val contentScale = itemScale *
-        lerpFloat(1f, DebugBgmDockSelectedContentScale, selectionProgress.coerceIn(0f, 1f))
     LaunchedEffect(pressed, enabled) {
         if (enabled) onPressedChange(pressed)
     }
-    Column(
+    Box(
         modifier = modifier
             .clip(ContinuousCapsule)
             .then(
@@ -546,36 +562,39 @@ private fun DebugBgmExpandedDockTab(
                 } else {
                     Modifier
                 }
-            )
-            .graphicsLayer {
-                scaleX = contentScale
-                scaleY = contentScale
-            }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        val tintProgress = if (activeTint) 1f else 0f
-        DebugBgmDockTabIcon(
-            icon = tab.icon,
-            label = tab.label,
-            selected = selected,
-            accent = accent,
-            selectionProgress = tintProgress
-        )
-        Text(
-            text = tab.label,
-            color = DebugBgmDockTint(
+        Column(
+            modifier = Modifier.graphicsLayer {
+                scaleX = itemScale
+                scaleY = itemScale
+            },
+            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val tintProgress = if (activeTint) 1f else 0f
+            DebugBgmDockTabIcon(
+                icon = tab.icon,
+                label = tab.label,
                 selected = selected,
                 accent = accent,
                 selectionProgress = tintProgress
-            ),
-            fontSize = 11.sp,
-            lineHeight = 13.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+            )
+            Text(
+                text = tab.label,
+                color = DebugBgmDockTint(
+                    selected = selected,
+                    accent = accent,
+                    selectionProgress = tintProgress
+                ),
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -654,9 +673,9 @@ internal data class DebugBgmDockTab(
 )
 
 private const val DebugBgmDockSelectionWidthFraction = 1f
-private const val DebugBgmDockPressedScale = 1.14f
-private const val DebugBgmDockClickScale = 1.016f
-private const val DebugBgmDockVelocityScaleXFactor = 0.30f
-private const val DebugBgmDockVelocityScaleYFactor = 0.10f
-private const val DebugBgmDockVelocityScaleClamp = 0.07f
-private const val DebugBgmDockSelectedContentScale = 1.024f
+private const val DebugBgmDockPressedScale = 68f / 54f
+private const val DebugBgmDockClickScale = 1.032f
+private const val DebugBgmDockVelocityScaleXFactor = 0.48f
+private const val DebugBgmDockVelocityScaleYFactor = 0.16f
+private const val DebugBgmDockVelocityScaleClamp = 0.12f
+private const val DebugBgmDockSelectedContentPressedScale = 1.12f
