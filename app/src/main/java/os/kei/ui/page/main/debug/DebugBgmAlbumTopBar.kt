@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideChevronLeftIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
@@ -35,6 +36,7 @@ internal fun DebugBgmAlbumTopBar(
     onShareClick: () -> Unit,
     offlineSaved: Boolean,
     onDownloadClick: () -> Unit,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -53,13 +55,15 @@ internal fun DebugBgmAlbumTopBar(
                 accent = accent,
                 size = AppChromeTokens.liquidActionBarSingleWidth,
                 iconSize = DebugBgmTopBarBackIconSize,
+                backdrop = backdrop,
                 onClick = onClose
             )
             DebugBgmTopActionCapsule(
                 accent = accent,
                 offlineSaved = offlineSaved,
                 onShareClick = onShareClick,
-                onDownloadClick = onDownloadClick
+                onDownloadClick = onDownloadClick,
+                backdrop = backdrop
             )
         }
         DebugBgmGlassCapsule(
@@ -73,7 +77,8 @@ internal fun DebugBgmAlbumTopBar(
                 .graphicsLayer { alpha = titleProgress },
             accent = accent,
             horizontalPadding = 16.dp,
-            verticalPadding = 8.dp
+            verticalPadding = 8.dp,
+            backdrop = backdrop
         ) {
             Text(
                 text = stringResource(R.string.debug_component_lab_album_title),
@@ -93,7 +98,8 @@ private fun DebugBgmTopActionCapsule(
     accent: Color,
     offlineSaved: Boolean,
     onShareClick: () -> Unit,
-    onDownloadClick: () -> Unit
+    onDownloadClick: () -> Unit,
+    backdrop: Backdrop? = null
 ) {
     DebugBgmGlassCapsule(
         accent = accent,
@@ -101,7 +107,8 @@ private fun DebugBgmTopActionCapsule(
             .width(AppChromeTokens.liquidActionBarMinWidth)
             .height(AppChromeTokens.liquidActionBarOuterHeight),
         horizontalPadding = AppChromeTokens.liquidActionBarHorizontalPadding,
-        verticalPadding = AppChromeTokens.liquidActionBarHorizontalPadding
+        verticalPadding = AppChromeTokens.liquidActionBarHorizontalPadding,
+        backdrop = backdrop
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -19,9 +19,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -72,6 +79,24 @@ internal fun DebugBgmLiquidMusicPreview(
     val musicState = rememberDebugBgmMusicUiState()
     val currentTrack = musicState.currentTrack
     val context = LocalContext.current
+    val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
+    var backdropActivationCount by rememberSaveable { mutableIntStateOf(0) }
+    DisposableEffect(Unit) {
+        backdropActivationCount++
+        onDispose { }
+    }
+    val pageChromeBackdrop = key("debug-bgm-page-chrome-$backdropActivationCount-$isDark") {
+        rememberLayerBackdrop {
+            drawRect(panelBackground)
+            drawContent()
+        }
+    }
+    val bottomChromeBackdrop = key("debug-bgm-bottom-chrome-$backdropActivationCount-$isDark") {
+        rememberLayerBackdrop {
+            drawRect(panelBackground)
+            drawContent()
+        }
+    }
     val shareChooserTitle = stringResource(R.string.debug_component_lab_share_chooser_title)
     val sectionText = rememberDebugBgmDockSectionText(selectedDockKey = musicState.selectedDockKey)
     val onShareTrack: (DebugBgmTrack) -> Unit = remember(context, shareChooserTitle) {
@@ -108,7 +133,6 @@ internal fun DebugBgmLiquidMusicPreview(
     } else {
         DebugBgmSearchPanelExpandedBottomPadding
     }
-    val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
     val panelBorder = if (isDark) {
         Color.White.copy(alpha = 0.16f)
     } else {
@@ -138,78 +162,87 @@ internal fun DebugBgmLiquidMusicPreview(
     Box(
         modifier = panelModifier
     ) {
-        DebugBgmAlbumContent(
-            accent = accent,
-            tracks = displayedTracks,
-            currentTrackId = currentTrack.id,
-            isPlaying = musicState.isPlaying,
-            repeatEnabled = musicState.repeatEnabled,
-            offlineSaved = musicState.currentTrackOfflineSaved,
-            isTrackFavorite = musicState::isTrackFavorite,
-            onRepeatClick = musicState::toggleRepeat,
-            onDownloadClick = musicState::toggleCurrentTrackOffline,
-            onPreviousClick = musicState::playPrevious,
-            onPlayPauseClick = musicState::togglePlayPause,
-            onNextClick = musicState::playNext,
-            onTrackClick = musicState::playTrack,
-            onTrackFavoriteClick = musicState::toggleTrackFavorite,
-            onTrackOfflineClick = musicState::toggleTrackOffline,
-            onTrackShareClick = onShareTrack,
-            isTrackOfflineSaved = musicState::isTrackOfflineSaved,
-            sectionTitle = sectionText.heroTitle,
-            sectionMeta = sectionText.heroMeta,
-            sectionFooterTitle = sectionText.footerTitle,
-            offlineTrackCount = musicState.offlineTrackCount,
-            listState = listState,
-            collapseProgress = collapseProgress,
-            bottomBarScrollConnection = bottomBarScrollConnection,
-            topPadding = contentTopPadding,
-            bottomPadding = contentBottomPadding
-        )
-        DebugBgmAlbumTopBar(
-            accent = accent,
-            titleProgress = topBarTitleProgress,
-            onClose = onClose,
-            onShareClick = { onShareTrack(currentTrack) },
-            offlineSaved = musicState.currentTrackOfflineSaved,
-            onDownloadClick = musicState::toggleCurrentTrackOffline,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .then(topBarModifier)
-        )
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(196.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            panelBackground.copy(alpha = if (isDark) 0.86f else 0.88f),
-                            panelBackground.copy(alpha = if (isDark) 0.96f else 0.98f)
+                .fillMaxSize()
+                .layerBackdrop(bottomChromeBackdrop)
+        ) {
+            DebugBgmAlbumContent(
+                accent = accent,
+                tracks = displayedTracks,
+                currentTrackId = currentTrack.id,
+                isPlaying = musicState.isPlaying,
+                repeatEnabled = musicState.repeatEnabled,
+                offlineSaved = musicState.currentTrackOfflineSaved,
+                isTrackFavorite = musicState::isTrackFavorite,
+                onRepeatClick = musicState::toggleRepeat,
+                onDownloadClick = musicState::toggleCurrentTrackOffline,
+                onPreviousClick = musicState::playPrevious,
+                onPlayPauseClick = musicState::togglePlayPause,
+                onNextClick = musicState::playNext,
+                onTrackClick = musicState::playTrack,
+                onTrackFavoriteClick = musicState::toggleTrackFavorite,
+                onTrackOfflineClick = musicState::toggleTrackOffline,
+                onTrackShareClick = onShareTrack,
+                isTrackOfflineSaved = musicState::isTrackOfflineSaved,
+                sectionTitle = sectionText.heroTitle,
+                sectionMeta = sectionText.heroMeta,
+                sectionFooterTitle = sectionText.footerTitle,
+                offlineTrackCount = musicState.offlineTrackCount,
+                listState = listState,
+                collapseProgress = collapseProgress,
+                bottomBarScrollConnection = bottomBarScrollConnection,
+                topPadding = contentTopPadding,
+                bottomPadding = contentBottomPadding,
+                modifier = Modifier.layerBackdrop(pageChromeBackdrop)
+            )
+            DebugBgmAlbumTopBar(
+                accent = accent,
+                titleProgress = topBarTitleProgress,
+                onClose = onClose,
+                onShareClick = { onShareTrack(currentTrack) },
+                offlineSaved = musicState.currentTrackOfflineSaved,
+                onDownloadClick = musicState::toggleCurrentTrackOffline,
+                backdrop = pageChromeBackdrop,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .then(topBarModifier)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(196.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                panelBackground.copy(alpha = if (isDark) 0.86f else 0.88f),
+                                panelBackground.copy(alpha = if (isDark) 0.96f else 0.98f)
+                            )
                         )
                     )
-                )
-        )
-        AnimatedVisibility(
-            visible = musicState.searchVisible,
-            enter = fadeIn() + slideInVertically { it / 2 },
-            exit = fadeOut() + slideOutVertically { it / 2 },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(
-                    start = DebugBgmSearchPanelHorizontalPadding,
-                    end = DebugBgmSearchPanelHorizontalPadding,
-                    bottom = searchPanelBottomPadding
-                )
-        ) {
-            DebugBgmSearchPanel(
-                query = musicState.searchQuery,
-                onQueryChange = musicState::updateSearchQuery
             )
+            AnimatedVisibility(
+                visible = musicState.searchVisible,
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(
+                        start = DebugBgmSearchPanelHorizontalPadding,
+                        end = DebugBgmSearchPanelHorizontalPadding,
+                        bottom = searchPanelBottomPadding
+                    )
+            ) {
+                DebugBgmSearchPanel(
+                    query = musicState.searchQuery,
+                    onQueryChange = musicState::updateSearchQuery,
+                    backdrop = pageChromeBackdrop
+                )
+            }
         }
         DebugBgmFloatingBottomChrome(
             accent = accent,
@@ -223,6 +256,7 @@ internal fun DebugBgmLiquidMusicPreview(
             selectedDockKey = musicState.selectedDockKey,
             onSelectedDockKeyChange = musicState::selectDockKey,
             onSearchClick = musicState::toggleSearch,
+            backdrop = bottomChromeBackdrop,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .then(bottomBarModifier)

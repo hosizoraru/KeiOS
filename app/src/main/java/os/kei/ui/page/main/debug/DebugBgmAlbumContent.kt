@@ -40,11 +40,12 @@ internal fun DebugBgmAlbumContent(
     collapseProgress: Float,
     bottomBarScrollConnection: NestedScrollConnection,
     topPadding: Dp,
-    bottomPadding: Dp
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier
 ) {
     LazyColumn(
         state = listState,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .nestedScroll(bottomBarScrollConnection),
         contentPadding = PaddingValues(start = 16.dp, top = topPadding, end = 16.dp, bottom = bottomPadding),

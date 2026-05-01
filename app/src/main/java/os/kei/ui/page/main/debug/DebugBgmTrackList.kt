@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideMoreIcon
@@ -438,7 +439,8 @@ private fun DebugBgmPlayingBar(
 @Composable
 internal fun DebugBgmSearchPanel(
     query: String,
-    onQueryChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    backdrop: Backdrop? = null
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -449,16 +451,14 @@ internal fun DebugBgmSearchPanel(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp)
-            .clip(ContinuousCapsule)
-            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.98f)),
+            .height(54.dp),
         contentAlignment = Alignment.Center
     ) {
         GlassSearchField(
             value = query,
             onValueChange = onQueryChange,
             label = stringResource(R.string.debug_component_lab_search_placeholder),
-            backdrop = null,
+            backdrop = backdrop,
             modifier = Modifier.fillMaxSize(),
             textColor = MiuixTheme.colorScheme.onBackground,
             variant = GlassVariant.Content,

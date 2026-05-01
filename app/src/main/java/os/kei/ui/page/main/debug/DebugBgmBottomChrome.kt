@@ -8,6 +8,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,15 +25,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -50,6 +60,7 @@ internal fun DebugBgmFloatingBottomChrome(
     selectedDockKey: String,
     onSelectedDockKeyChange: (String) -> Unit,
     onSearchClick: () -> Unit,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
 ) {
     val tabs = rememberDebugBgmDockTabs()
@@ -166,7 +177,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 .width(miniPlayerWidth)
                 .height(miniPlayerHeight),
             shape = ContinuousCapsule,
-            onClick = {}
+            backdrop = backdrop
         ) {
             DebugBgmMiniPlayer(
                 accent = accent,
@@ -186,7 +197,8 @@ internal fun DebugBgmFloatingBottomChrome(
                 .offset(x = 0.dp, y = tabGroupY)
                 .width(tabGroupWidth)
                 .height(tabGroupHeight),
-            shape = ContinuousCapsule
+            shape = ContinuousCapsule,
+            backdrop = backdrop
         ) {
             DebugBgmDockGroupContent(
                 tabs = tabs,
@@ -194,6 +206,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 accent = accent,
                 expandedProgress = expandedProgress,
                 compactProgress = compactProgress,
+                backdrop = backdrop,
                 onSelectedDockKeyChange = onSelectedDockKeyChange
             )
         }
@@ -203,6 +216,7 @@ internal fun DebugBgmFloatingBottomChrome(
                 .offset(x = searchX, y = searchY)
                 .size(searchSize),
             shape = CircleShape,
+            backdrop = backdrop,
             onClick = onSearchClick
         ) {
             DebugBgmDockTabIcon(
@@ -220,29 +234,98 @@ internal fun DebugBgmFloatingBottomChrome(
 private fun DebugBgmBottomSurface(
     modifier: Modifier,
     shape: Shape,
+    backdrop: Backdrop? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val isDark = isSystemInDarkTheme()
+    val surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (isDark) 0.20f else 0.40f)
+    val overlayColor = if (isDark) {
+        Color.White.copy(alpha = 0.04f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+    val borderColor = if (isDark) {
+        Color.White.copy(alpha = 0.18f)
+    } else {
+        Color.White.copy(alpha = 0.54f)
+    }
     Box(
-        modifier = modifier
-            .clip(shape)
-            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), shape)
-            .border(1.dp, Color.White.copy(alpha = 0.24f), shape)
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onClick
-                    )
-                } else {
-                    Modifier
-                }
-            ),
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        content()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (backdrop != null) {
+                        Modifier.drawBackdrop(
+                            backdrop = backdrop,
+                            shape = { shape },
+                            effects = {
+                                vibrancy()
+                                blur(UiPerformanceBudget.backdropBlur.toPx())
+                                lens(
+                                    (UiPerformanceBudget.backdropLens * 0.90f).toPx(),
+                                    (UiPerformanceBudget.backdropLens * 0.90f).toPx()
+                                )
+                            },
+                            highlight = {
+                                Highlight.Default.copy(alpha = if (isDark) 0.46f else 0.82f)
+                            },
+                            shadow = {
+                                Shadow.Default.copy(
+                                    color = Color.Black.copy(alpha = if (isDark) 0.20f else 0.10f)
+                                )
+                            },
+                            onDrawSurface = { drawRect(surfaceColor) }
+                        )
+                    } else {
+                        Modifier
+                            .clip(shape)
+                            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), shape)
+                    }
+                )
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            overlayColor,
+                            overlayColor.copy(alpha = overlayColor.alpha * 0.52f)
+                        )
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .border(1.dp, borderColor, shape)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onClick
+                        )
+                    } else {
+                        Modifier
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            content()
+        }
     }
 }
 
