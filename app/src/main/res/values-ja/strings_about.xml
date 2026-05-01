@@ -51,6 +51,10 @@
     <string name="debug_component_lab_action_open_bgm_activity">BGM Music Activity を開く</string>
     <string name="debug_component_lab_liquid_catalog_title">Liquid コンポーネント試作</string>
     <string name="debug_component_lab_liquid_catalog_subtitle">Kyant0 Backdrop v2 によるボタン、トグル、スライダー、下部タブ</string>
+    <string name="debug_component_lab_action_open_liquid_activity">Liquid コンポーネント試作を開く</string>
+    <string name="debug_component_lab_liquid_entry_note">Liquid コンポーネント試作を独立 Activity に分離しました。索引ページから素早く開け、BGM Music Activity にも到達しやすくなります。</string>
+    <string name="debug_component_lab_liquid_row_entry_value">独立 Activity</string>
+    <string name="debug_component_lab_liquid_row_components_value">Button / Toggle / Slider / Bottom tabs / Backdrop</string>
     <string name="debug_component_lab_liquid_button_primary">再生試作</string>
     <string name="debug_component_lab_liquid_button_shuffle">シャッフル試作</string>
     <string name="debug_component_lab_liquid_button_compact">お気に入り試作</string>

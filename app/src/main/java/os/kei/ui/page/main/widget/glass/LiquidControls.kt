@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -389,7 +390,8 @@ fun LiquidSlider(
     visibilityThreshold: Float,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    onInteractionChanged: (Boolean) -> Unit = {}
 ) {
     val isLightTheme = !isSystemInDarkTheme()
     val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF0091FF)
@@ -399,10 +401,20 @@ fun LiquidSlider(
         Color(0xFF787880).copy(alpha = 0.36f)
     }
     val trackBackdrop = rememberLayerBackdrop()
+    val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
+    DisposableEffect(Unit) {
+        onDispose {
+            onInteractionChangedState.value(false)
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
+            .liquidSliderInteractionLock(
+                enabled = enabled,
+                onInteractionChanged = onInteractionChangedState.value
+            )
             .graphicsLayer {
                 alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
             }
@@ -429,8 +441,13 @@ fun LiquidSlider(
                 visibilityThreshold = visibilityThreshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
-                onDragStarted = {},
+                onDragStarted = {
+                    if (enabled) {
+                        onInteractionChangedState.value(true)
+                    }
+                },
                 onDragStopped = {
+                    onInteractionChangedState.value(false)
                     if (enabled && didDrag) {
                         onValueChange(targetValue)
                     }

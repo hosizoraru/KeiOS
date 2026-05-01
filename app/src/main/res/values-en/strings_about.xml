@@ -52,6 +52,10 @@
     <string name="debug_component_lab_action_open_bgm_activity">Open BGM Music Activity</string>
     <string name="debug_component_lab_liquid_catalog_title">Liquid component proofs</string>
     <string name="debug_component_lab_liquid_catalog_subtitle">Buttons, toggles, sliders, and bottom tabs powered by Kyant0 Backdrop v2</string>
+    <string name="debug_component_lab_action_open_liquid_activity">Open Liquid component proofs</string>
+    <string name="debug_component_lab_liquid_entry_note">Liquid component proofs now live in their own Activity. The index keeps a fast jump so BGM Music Activity is easier to reach.</string>
+    <string name="debug_component_lab_liquid_row_entry_value">Standalone Activity</string>
+    <string name="debug_component_lab_liquid_row_components_value">Button / Toggle / Slider / Bottom tabs / Backdrop</string>
     <string name="debug_component_lab_liquid_button_primary">Play proof</string>
     <string name="debug_component_lab_liquid_button_shuffle">Shuffle proof</string>
     <string name="debug_component_lab_liquid_button_compact">Favorite proof</string>

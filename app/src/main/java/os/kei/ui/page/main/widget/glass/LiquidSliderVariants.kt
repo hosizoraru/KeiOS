@@ -1,8 +1,6 @@
 package os.kei.ui.page.main.widget.glass
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -31,7 +29,6 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -216,7 +213,7 @@ private fun LiquidTrackSlider(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .sliderInteractionLock(
+            .liquidSliderInteractionLock(
                 enabled = enabled,
                 onInteractionChanged = onInteractionChangedState.value
             )
@@ -461,26 +458,6 @@ private fun valueProgress(
     val span = valueRange.endInclusive - valueRange.start
     if (span == 0f) return 0f
     return ((value - valueRange.start) / span).fastCoerceIn(0f, 1f)
-}
-
-private fun Modifier.sliderInteractionLock(
-    enabled: Boolean,
-    onInteractionChanged: (Boolean) -> Unit
-): Modifier {
-    if (!enabled) return this
-    return pointerInput(onInteractionChanged) {
-        awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-            onInteractionChanged(true)
-            try {
-                do {
-                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                } while (event.changes.any { it.pressed })
-            } finally {
-                onInteractionChanged(false)
-            }
-        }
-    }
 }
 
 @Composable

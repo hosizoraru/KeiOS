@@ -1,7 +1,6 @@
 package os.kei.ui.page.main.debug
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
@@ -35,8 +34,6 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppSupportingBlock
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.status.StatusPill
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -45,12 +42,12 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun DebugComponentLabPage(
     onClose: () -> Unit,
+    onOpenLiquidCatalog: () -> Unit,
     onOpenBgmMusic: () -> Unit
 ) {
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val accent = MiuixTheme.colorScheme.primary
-    val pageBackdrop = rememberLayerBackdrop()
 
     AppPageScaffold(
         title = stringResource(R.string.debug_component_lab_title),
@@ -80,7 +77,6 @@ internal fun DebugComponentLabPage(
                             )
                         )
                     )
-                    .layerBackdrop(pageBackdrop)
             )
             AppPageLazyColumn(
                 innerPadding = innerPadding,
@@ -95,9 +91,9 @@ internal fun DebugComponentLabPage(
                     DebugLabIntroCard(accent = accent)
                 }
                 item {
-                    DebugLiquidCatalogCard(
+                    DebugLiquidPreviewCard(
                         accent = accent,
-                        backdrop = pageBackdrop
+                        onOpenLiquidCatalog = onOpenLiquidCatalog
                     )
                 }
                 item {
@@ -110,6 +106,54 @@ internal fun DebugComponentLabPage(
                     DebugIterationQueueCard(accent = accent)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DebugLiquidPreviewCard(
+    accent: Color,
+    onOpenLiquidCatalog: () -> Unit
+) {
+    val openLabel = stringResource(R.string.debug_component_lab_action_open_liquid_activity)
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_catalog_title),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_catalog_subtitle),
+        sectionIcon = appLucideLayersIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.70f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap,
+        onClick = onOpenLiquidCatalog,
+        headerEndActions = {
+            IconButton(onClick = onOpenLiquidCatalog) {
+                Icon(
+                    imageVector = appLucideExternalLinkIcon(),
+                    contentDescription = openLabel,
+                    tint = accent
+                )
+            }
+        }
+    ) {
+        AppSupportingBlock(
+            text = stringResource(R.string.debug_component_lab_liquid_entry_note),
+            accentColor = accent
+        )
+        AppInfoListBody {
+            AppInfoRow(
+                label = stringResource(R.string.debug_component_lab_row_entry_title),
+                value = stringResource(R.string.debug_component_lab_liquid_row_entry_value),
+                labelMaxLines = 1,
+                valueMaxLines = 1,
+                valueOverflow = TextOverflow.Ellipsis
+            )
+            AppInfoRow(
+                label = stringResource(R.string.debug_component_lab_row_components_title),
+                value = stringResource(R.string.debug_component_lab_liquid_row_components_value),
+                labelMaxLines = 1,
+                valueMaxLines = 2,
+                valueOverflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

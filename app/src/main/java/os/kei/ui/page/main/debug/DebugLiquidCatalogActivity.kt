@@ -6,25 +6,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 
-class DebugComponentLabActivity : ComponentActivity() {
+class DebugLiquidCatalogActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
             DebugActivityTheme {
-                DebugComponentLabPage(
-                    onClose = { finish() },
-                    onOpenLiquidCatalog = { DebugLiquidCatalogActivity.launch(this) },
-                    onOpenBgmMusic = { DebugBgmMusicActivity.launch(this) }
-                )
+                DebugLiquidCatalogPage(onClose = { finish() })
             }
         }
     }
 
     companion object {
         fun launch(context: Context) {
-            context.launchDebugActivity(DebugComponentLabActivity::class.java)
+            context.launchDebugActivity(DebugLiquidCatalogActivity::class.java)
         }
     }
 }

@@ -97,6 +97,12 @@
             android:label="@string/debug_component_lab_title" />
 
         <activity
+            android:name=".ui.page.main.debug.DebugLiquidCatalogActivity"
+            android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+            android:exported="false"
+            android:label="@string/debug_component_lab_liquid_catalog_title" />
+
+        <activity
             android:name=".ui.page.main.debug.DebugBgmMusicActivity"
             android:configChanges="keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
             android:exported="${debugBgmActivityExported}"

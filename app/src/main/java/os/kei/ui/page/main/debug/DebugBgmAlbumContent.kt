@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -44,11 +47,30 @@ internal fun DebugBgmAlbumContent(
     bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
+    val sliderLockedScrollConnection = remember(userScrollEnabled, bottomBarScrollConnection) {
+        if (userScrollEnabled) {
+            bottomBarScrollConnection
+        } else {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    return available
+                }
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource
+                ): Offset {
+                    return available
+                }
+            }
+        }
+    }
     LazyColumn(
         state = listState,
         modifier = modifier
             .fillMaxSize()
-            .nestedScroll(bottomBarScrollConnection),
+            .nestedScroll(sliderLockedScrollConnection),
         userScrollEnabled = userScrollEnabled,
         contentPadding = PaddingValues(start = 16.dp, top = topPadding, end = 16.dp, bottom = bottomPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp)

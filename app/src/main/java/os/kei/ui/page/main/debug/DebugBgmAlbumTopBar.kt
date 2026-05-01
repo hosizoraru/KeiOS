@@ -1,9 +1,5 @@
 package os.kei.ui.page.main.debug
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -11,32 +7,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideChevronLeftIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideSquareArrowUpIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.chrome.LiquidActionBar
+import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.motion.appMotionFloatState
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -47,7 +37,7 @@ internal fun DebugBgmAlbumTopBar(
     onClose: () -> Unit,
     onShareClick: () -> Unit,
     onDownloadClick: () -> Unit,
-    backdrop: Backdrop? = null,
+    backdrop: Backdrop,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -62,11 +52,9 @@ internal fun DebugBgmAlbumTopBar(
         ) {
             DebugBgmTopBackAction(
                 accent = accent,
-                onClose = onClose,
-                backdrop = backdrop
+                onClose = onClose
             )
             DebugBgmTopActionCapsule(
-                accent = accent,
                 onShareClick = onShareClick,
                 onDownloadClick = onDownloadClick,
                 backdrop = backdrop
@@ -77,7 +65,7 @@ internal fun DebugBgmAlbumTopBar(
                 .align(Alignment.CenterStart)
                 .padding(
                     start = DebugBgmTopBarVisualSize + DebugBgmTopBarTitleGap,
-                    end = DebugBgmTopActionCapsuleWidth + DebugBgmTopBarTitleGap
+                    end = DebugBgmTopActionBarWidth + DebugBgmTopBarTitleGap
                 )
                 .fillMaxWidth()
                 .height(DebugBgmTopBarVisualSize)
@@ -100,8 +88,7 @@ internal fun DebugBgmAlbumTopBar(
 @Composable
 private fun DebugBgmTopBackAction(
     accent: Color,
-    onClose: () -> Unit,
-    backdrop: Backdrop? = null
+    onClose: () -> Unit
 ) {
     val closeContentDescription = stringResource(R.string.common_close)
     DebugBgmGlassIcon(
@@ -110,7 +97,6 @@ private fun DebugBgmTopBackAction(
         accent = accent,
         size = DebugBgmTopBarVisualSize,
         iconSize = DebugBgmTopBarBackIconSize,
-        backdrop = backdrop,
         surfaceAlphaScale = DebugBgmTopBarSurfaceAlphaScale,
         highlightAlphaScale = DebugBgmTopBarHighlightAlphaScale,
         lensScale = DebugBgmTopBarLensScale,
@@ -120,112 +106,57 @@ private fun DebugBgmTopBackAction(
 
 @Composable
 private fun DebugBgmTopActionCapsule(
-    accent: Color,
     onShareClick: () -> Unit,
     onDownloadClick: () -> Unit,
-    backdrop: Backdrop? = null
+    backdrop: Backdrop
 ) {
     val shareContentDescription = stringResource(R.string.debug_component_lab_action_share)
     val downloadContentDescription = stringResource(R.string.debug_component_lab_action_download)
     val moreContentDescription = stringResource(R.string.debug_component_lab_action_more)
-
-    DebugBgmGlassCapsule(
-        accent = accent,
-        modifier = Modifier
-            .width(DebugBgmTopActionCapsuleWidth)
-            .height(DebugBgmTopBarVisualSize),
-        horizontalPadding = 4.dp,
-        verticalPadding = 2.dp,
-        backdrop = backdrop,
-        surfaceAlphaScale = DebugBgmTopBarSurfaceAlphaScale,
-        highlightAlphaScale = DebugBgmTopBarHighlightAlphaScale,
-        lensScale = DebugBgmTopBarLensScale
+    val shareIcon = appLucideSquareArrowUpIcon()
+    val downloadIcon = appLucideDownloadIcon()
+    val moreIcon = appLucideMoreIcon()
+    val actionItems = remember(
+        shareContentDescription,
+        downloadContentDescription,
+        moreContentDescription,
+        shareIcon,
+        downloadIcon,
+        moreIcon,
+        onShareClick,
+        onDownloadClick
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            DebugBgmTopActionButton(
-                icon = appLucideSquareArrowUpIcon(),
+        listOf(
+            LiquidActionItem(
+                icon = shareIcon,
                 contentDescription = shareContentDescription,
-                accent = accent,
                 onClick = onShareClick
-            )
-            DebugBgmTopActionButton(
-                icon = appLucideDownloadIcon(),
-                contentDescription = downloadContentDescription,
-                accent = accent,
-                onClick = onDownloadClick
-            )
-            DebugBgmTopActionButton(
-                icon = appLucideMoreIcon(),
-                contentDescription = moreContentDescription,
-                accent = accent
-            )
-        }
-    }
-}
-
-@Composable
-private fun DebugBgmTopActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    accent: Color,
-    onClick: () -> Unit = {}
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val pressProgress by appMotionFloatState(
-        targetValue = if (pressed) 1f else 0f,
-        durationMillis = DebugBgmTopActionPressMotionMs,
-        label = "debug_bgm_top_action_press"
-    )
-    val baseTint = MiuixTheme.colorScheme.onBackground
-    val iconTint = lerp(baseTint, accent, pressProgress * 0.72f)
-    Box(
-        modifier = Modifier
-            .size(DebugBgmTopBarActionSlotSize)
-            .graphicsLayer {
-                scaleX = 1f + 0.035f * pressProgress
-                scaleY = 1f - 0.045f * pressProgress
-            }
-            .clip(ContinuousCapsule)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
             ),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer { alpha = pressProgress * 0.22f }
-                .clip(ContinuousCapsule)
-                .background(accent)
-        )
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = iconTint,
-            modifier = Modifier
-                .size(DebugBgmTopActionIconSize)
-                .graphicsLayer {
-                    scaleX = 1f + 0.035f * pressProgress
-                    scaleY = 1f + 0.035f * pressProgress
-                }
+            LiquidActionItem(
+                icon = downloadIcon,
+                contentDescription = downloadContentDescription,
+                onClick = onDownloadClick
+            ),
+            LiquidActionItem(
+                icon = moreIcon,
+                contentDescription = moreContentDescription,
+                onClick = {}
+            )
         )
     }
+    LiquidActionBar(
+        modifier = Modifier
+            .height(DebugBgmTopBarVisualSize),
+        backdrop = backdrop,
+        items = actionItems,
+        selectedIndex = actionItems.lastIndex
+    )
 }
 
-private val DebugBgmTopBarVisualSize = 48.dp
-private val DebugBgmTopActionCapsuleWidth = 150.dp
+private val DebugBgmTopBarVisualSize = AppChromeTokens.liquidActionBarOuterHeight
+private val DebugBgmTopActionBarWidth = AppChromeTokens.liquidActionBarMinWidth
 private val DebugBgmTopBarBackIconSize = 27.dp
 private val DebugBgmTopBarTitleGap = 12.dp
-private val DebugBgmTopBarActionSlotSize = 44.dp
-private val DebugBgmTopActionIconSize = 21.dp
 private const val DebugBgmTopBarSurfaceAlphaScale = 0.62f
 private const val DebugBgmTopBarHighlightAlphaScale = 1.18f
 private const val DebugBgmTopBarLensScale = 1.12f
-private const val DebugBgmTopActionPressMotionMs = 130
