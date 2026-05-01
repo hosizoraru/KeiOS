@@ -135,6 +135,7 @@ internal fun DebugBgmMiniPlayer(
                         enabled = sideControlsEnabled,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
                             .height(18.dp)
                     )
                 } else {

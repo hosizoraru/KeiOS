@@ -56,6 +56,10 @@
     <string name="debug_component_lab_liquid_button_shuffle">随机样张</string>
     <string name="debug_component_lab_liquid_button_compact">收藏样张</string>
     <string name="debug_component_lab_liquid_button_disabled">禁用样张</string>
+    <string name="debug_component_lab_liquid_button_shapes_label">按钮形态与色彩</string>
+    <string name="debug_component_lab_liquid_button_rounded">圆角矩形</string>
+    <string name="debug_component_lab_liquid_button_oval">椭圆胶囊</string>
+    <string name="debug_component_lab_liquid_button_circle">圆形按钮</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26 风格开关</string>
     <string name="debug_component_lab_liquid_toggle_primary_label">Primary 色开关</string>
     <string name="debug_component_lab_liquid_slider_label">液态进度条与音量手柄</string>

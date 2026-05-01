@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
@@ -35,7 +37,9 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
+import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -46,13 +50,16 @@ internal fun DebugBgmAlbumHero(
     collapseProgress: Float,
     repeatEnabled: Boolean,
     isPlaying: Boolean,
+    playbackVolume: Float,
     sectionTitle: String,
     sectionMeta: String,
     onRepeatClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    onNextClick: () -> Unit
+    onNextClick: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onVolumeChangeFinished: (Float) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -106,6 +113,12 @@ internal fun DebugBgmAlbumHero(
             onPreviousClick = onPreviousClick,
             onPlayPauseClick = onPlayPauseClick,
             onNextClick = onNextClick
+        )
+        DebugBgmAlbumVolumeControl(
+            accent = accent,
+            volume = playbackVolume,
+            onVolumeChange = onVolumeChange,
+            onVolumeChangeFinished = onVolumeChangeFinished
         )
     }
 }
@@ -200,6 +213,59 @@ private fun DebugBgmAlbumPrimaryActions(
             accent = accent,
             onClick = onDownloadClick
         )
+    }
+}
+
+@Composable
+private fun DebugBgmAlbumVolumeControl(
+    accent: Color,
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+    onVolumeChangeFinished: (Float) -> Unit
+) {
+    val volumeBackdrop = rememberLayerBackdrop()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(34.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .layerBackdrop(volumeBackdrop)
+        )
+        Row(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = appLucideVolume2Icon(),
+                contentDescription = stringResource(R.string.debug_component_lab_liquid_volume_slider_label),
+                tint = accent.copy(alpha = 0.95f),
+                modifier = Modifier.size(22.dp)
+            )
+            LiquidVolumeSlider(
+                value = { volume.coerceIn(0f, 1f) },
+                onValueChange = onVolumeChange,
+                onValueChangeFinished = onVolumeChangeFinished,
+                valueRange = 0f..1f,
+                visibilityThreshold = 0.001f,
+                backdrop = volumeBackdrop,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(30.dp)
+            )
+            Text(
+                text = stringResource(R.string.debug_component_lab_volume_value, (volume * 100).toInt()),
+                color = MiuixTheme.colorScheme.onBackgroundVariant,
+                fontSize = AppTypographyTokens.Supporting.fontSize,
+                lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                maxLines = 1
+            )
+        }
     }
 }
 

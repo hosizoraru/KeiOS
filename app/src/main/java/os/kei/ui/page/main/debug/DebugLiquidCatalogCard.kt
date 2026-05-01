@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -21,9 +23,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import os.kei.R
+import os.kei.ui.page.main.os.appLucideConfigIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideFlaskIcon
 import os.kei.ui.page.main.os.appLucideHeartIcon
+import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideShuffleIcon
 import os.kei.ui.page.main.widget.core.AppFeatureCard
@@ -183,6 +187,85 @@ internal fun DebugLiquidCatalogCard(
                 )
             }
         }
+        Text(
+            text = stringResource(R.string.debug_component_lab_liquid_button_shapes_label),
+            color = contentColor,
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            maxLines = 1
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LiquidButton(
+                onClick = {},
+                backdrop = backdrop,
+                tint = Color(0xFFFF5C8A).copy(alpha = 0.16f),
+                surfaceColor = buttonSurface,
+                shape = RoundedCornerShape(14.dp),
+                height = 46.dp,
+                horizontalPadding = 12.dp,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = appLucideConfigIcon(),
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(17.dp)
+                )
+                Text(
+                    text = stringResource(R.string.debug_component_lab_liquid_button_rounded),
+                    color = contentColor,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            LiquidButton(
+                onClick = {},
+                backdrop = backdrop,
+                tint = Color(0xFFFFC857).copy(alpha = 0.20f),
+                surfaceColor = buttonSurface,
+                height = 46.dp,
+                horizontalPadding = 12.dp,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = appLucideShuffleIcon(),
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(17.dp)
+                )
+                Text(
+                    text = stringResource(R.string.debug_component_lab_liquid_button_oval),
+                    color = contentColor,
+                    fontSize = AppTypographyTokens.Supporting.fontSize,
+                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            LiquidButton(
+                onClick = {},
+                backdrop = backdrop,
+                tint = Color(0xFF7C5CFF).copy(alpha = 0.16f),
+                surfaceColor = buttonSurface,
+                shape = CircleShape,
+                height = 46.dp,
+                horizontalPadding = 0.dp,
+                modifier = Modifier.size(46.dp)
+            ) {
+                Icon(
+                    imageVector = appLucideMoreIcon(),
+                    contentDescription = stringResource(R.string.debug_component_lab_liquid_button_circle),
+                    tint = contentColor,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -253,7 +336,7 @@ internal fun DebugLiquidCatalogCard(
                 maxLines = 1
             )
             Text(
-                text = "${(volumeValue * 100).toInt()}%",
+                text = stringResource(R.string.debug_component_lab_volume_value, (volumeValue * 100).toInt()),
                 color = secondaryColor,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight,
@@ -285,7 +368,7 @@ internal fun DebugLiquidCatalogCard(
                 maxLines = 1
             )
             Text(
-                text = "1:42 / 4:28",
+                text = stringResource(R.string.debug_component_lab_time_sample),
                 color = secondaryColor,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight,
@@ -317,7 +400,7 @@ internal fun DebugLiquidCatalogCard(
                 maxLines = 1
             )
             Text(
-                text = "${(keyPointProgress * 100).toInt()}%",
+                text = stringResource(R.string.debug_component_lab_volume_value, (keyPointProgress * 100).toInt()),
                 color = secondaryColor,
                 fontSize = AppTypographyTokens.Supporting.fontSize,
                 lineHeight = AppTypographyTokens.Supporting.lineHeight,

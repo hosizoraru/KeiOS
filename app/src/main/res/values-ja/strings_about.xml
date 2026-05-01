@@ -55,6 +55,10 @@
     <string name="debug_component_lab_liquid_button_shuffle">シャッフル試作</string>
     <string name="debug_component_lab_liquid_button_compact">お気に入り試作</string>
     <string name="debug_component_lab_liquid_button_disabled">無効試作</string>
+    <string name="debug_component_lab_liquid_button_shapes_label">ボタン形状と色</string>
+    <string name="debug_component_lab_liquid_button_rounded">角丸矩形</string>
+    <string name="debug_component_lab_liquid_button_oval">楕円カプセル</string>
+    <string name="debug_component_lab_liquid_button_circle">円形ボタン</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26 風トグル</string>
     <string name="debug_component_lab_liquid_toggle_primary_label">Primary 色トグル</string>
     <string name="debug_component_lab_liquid_slider_label">液体風進捗と音量ハンドル</string>

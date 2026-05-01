@@ -346,6 +346,18 @@ private fun DebugBgmBottomSurface(
                 .clip(shape)
                 .border(1.dp, borderColor, shape)
         )
+        if (consumeTouches && onClick == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(shape)
+                    .clickable(
+                        interactionSource = resolvedInteractionSource,
+                        indication = null,
+                        onClick = {}
+                    )
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -356,11 +368,6 @@ private fun DebugBgmBottomSurface(
                             interactionSource = resolvedInteractionSource,
                             indication = null,
                             onClick = onClick
-                        )
-                        consumeTouches -> Modifier.clickable(
-                            interactionSource = resolvedInteractionSource,
-                            indication = null,
-                            onClick = {}
                         )
                         else -> Modifier
                     }

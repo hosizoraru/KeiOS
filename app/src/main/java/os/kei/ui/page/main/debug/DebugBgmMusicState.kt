@@ -23,6 +23,8 @@ internal class DebugBgmMusicUiState(
         private set
     var playbackProgress by mutableStateOf(0.42f)
         private set
+    var playbackVolume by mutableStateOf(0.74f)
+        private set
     var searchVisible by mutableStateOf(false)
         private set
     var searchQuery by mutableStateOf("")
@@ -81,6 +83,10 @@ internal class DebugBgmMusicUiState(
 
     fun seekPlayback(progress: Float) {
         playbackProgress = progress.coerceIn(0f, 1f)
+    }
+
+    fun changeVolume(volume: Float) {
+        playbackVolume = volume.coerceIn(0f, 1f)
     }
 
     fun toggleRepeat() {

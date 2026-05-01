@@ -56,6 +56,10 @@
     <string name="debug_component_lab_liquid_button_shuffle">Shuffle proof</string>
     <string name="debug_component_lab_liquid_button_compact">Favorite proof</string>
     <string name="debug_component_lab_liquid_button_disabled">Disabled proof</string>
+    <string name="debug_component_lab_liquid_button_shapes_label">Button shapes and colors</string>
+    <string name="debug_component_lab_liquid_button_rounded">Rounded rectangle</string>
+    <string name="debug_component_lab_liquid_button_oval">Oval capsule</string>
+    <string name="debug_component_lab_liquid_button_circle">Circle button</string>
     <string name="debug_component_lab_liquid_toggle_label">iOS26-style toggle</string>
     <string name="debug_component_lab_liquid_toggle_primary_label">Primary-color toggle</string>
     <string name="debug_component_lab_liquid_slider_label">Liquid progress and volume handle</string>

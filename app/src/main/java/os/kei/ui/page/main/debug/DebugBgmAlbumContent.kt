@@ -20,12 +20,15 @@ internal fun DebugBgmAlbumContent(
     currentTrackId: String,
     isPlaying: Boolean,
     repeatEnabled: Boolean,
+    playbackVolume: Float,
     isTrackFavorite: (String) -> Boolean,
     onRepeatClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onVolumeChangeFinished: (Float) -> Unit,
     onTrackClick: (String) -> Unit,
     onTrackFavoriteClick: (String) -> Unit,
     onTrackOfflineClick: (String) -> Unit,
@@ -56,13 +59,16 @@ internal fun DebugBgmAlbumContent(
                 collapseProgress = collapseProgress,
                 repeatEnabled = repeatEnabled,
                 isPlaying = isPlaying,
+                playbackVolume = playbackVolume,
                 sectionTitle = sectionTitle,
                 sectionMeta = sectionMeta,
                 onRepeatClick = onRepeatClick,
                 onDownloadClick = onDownloadClick,
                 onPreviousClick = onPreviousClick,
                 onPlayPauseClick = onPlayPauseClick,
-                onNextClick = onNextClick
+                onNextClick = onNextClick,
+                onVolumeChange = onVolumeChange,
+                onVolumeChangeFinished = onVolumeChangeFinished
             )
         }
         item {
