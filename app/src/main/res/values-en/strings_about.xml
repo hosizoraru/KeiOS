@@ -92,6 +92,7 @@
     <string name="debug_component_lab_liquid_volume_slider_label">Volume slider</string>
     <string name="debug_component_lab_liquid_music_slider_label">Music progress</string>
     <string name="debug_component_lab_liquid_key_points_slider_label">Key point progress</string>
+    <string name="debug_component_lab_liquid_bottom_tabs_label">Liquid bottom tabs</string>
     <string name="debug_component_lab_now_playing_title">After School Queue</string>
     <string name="debug_component_lab_now_playing_subtitle">Component Lab Draft</string>
     <string name="debug_component_lab_music_top_label">BGM Preview</string>

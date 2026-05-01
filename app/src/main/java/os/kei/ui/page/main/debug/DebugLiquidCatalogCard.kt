@@ -27,6 +27,7 @@ import os.kei.ui.page.main.os.appLucideConfigIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideFlaskIcon
 import os.kei.ui.page.main.os.appLucideHeartIcon
+import os.kei.ui.page.main.os.appLucideLayersIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideShuffleIcon
@@ -50,39 +51,37 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-internal fun DebugLiquidCatalogCard(
-    accent: Color,
-    backdrop: Backdrop
-) {
-    var toggleSelected by remember { mutableStateOf(true) }
-    var primaryToggleSelected by remember { mutableStateOf(true) }
-    var chromaticAberrationEnabled by remember { mutableStateOf(true) }
-    var sliderValue by remember { mutableFloatStateOf(0.62f) }
-    var volumeValue by remember { mutableFloatStateOf(0.74f) }
-    var musicProgress by remember { mutableFloatStateOf(0.38f) }
-    var keyPointProgress by remember { mutableFloatStateOf(0.46f) }
-    var cornerDemoValue by remember { mutableFloatStateOf(0.58f) }
-    var blurDemoValue by remember { mutableFloatStateOf(0.16f) }
-    var refractionHeightDemoValue by remember { mutableFloatStateOf(0.42f) }
-    var refractionDemoValue by remember { mutableFloatStateOf(0.24f) }
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = rememberDebugBgmDockTabs()
-    val keyPoints = remember {
-        listOf(
-            LiquidSliderKeyPoint(0.18f),
-            LiquidSliderKeyPoint(0.42f),
-            LiquidSliderKeyPoint(0.68f),
-            LiquidSliderKeyPoint(0.88f)
-        )
-    }
+internal fun DebugLiquidCatalogIntroCard(accent: Color) {
     val contentColor = MiuixTheme.colorScheme.onBackground
-    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
-    val buttonSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.22f)
-
     AppFeatureCard(
         title = stringResource(R.string.debug_component_lab_liquid_catalog_title),
         subtitle = stringResource(R.string.debug_component_lab_liquid_catalog_subtitle),
         sectionIcon = appLucideFlaskIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f)
+    ) {
+        Text(
+            text = stringResource(R.string.debug_component_lab_liquid_entry_note),
+            color = contentColor,
+            fontSize = AppTypographyTokens.Body.fontSize,
+            lineHeight = AppTypographyTokens.Body.lineHeight
+        )
+    }
+}
+
+@Composable
+internal fun DebugLiquidButtonsCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    val buttonSurface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.22f)
+
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_button_shapes_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_catalog_subtitle),
+        sectionIcon = appLucideConfigIcon(),
         titleColor = accent,
         containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
         borderColor = accent.copy(alpha = 0.20f),
@@ -271,18 +270,68 @@ internal fun DebugLiquidCatalogCard(
                 )
             }
         }
+    }
+}
 
+@Composable
+internal fun DebugLiquidBackdropCard(accent: Color) {
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_backdrop_playground_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_large_clear_card_body),
+        sectionIcon = appLucideFlaskIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
         DebugLiquidBackdropPlaygroundSample(
             accent = accent,
             contentColor = contentColor,
             secondaryColor = secondaryColor
         )
+    }
+}
 
+@Composable
+internal fun DebugLiquidTransparentButtonsCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_clear_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_clear_capsule),
+        sectionIcon = appLucidePlayIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
         DebugLiquidTransparentButtonSamples(
             backdrop = backdrop,
             contentColor = contentColor
         )
+    }
+}
 
+@Composable
+internal fun DebugLiquidSurfaceCardsCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_surface_family_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_cluster_card_body),
+        sectionIcon = appLucideLayersIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
         DebugLiquidSurfaceFamilySamples(
             backdrop = backdrop,
             accent = accent,
@@ -296,7 +345,30 @@ internal fun DebugLiquidCatalogCard(
             contentColor = contentColor,
             secondaryColor = secondaryColor
         )
+    }
+}
 
+@Composable
+internal fun DebugLiquidParameterCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    var chromaticAberrationEnabled by remember { mutableStateOf(true) }
+    var cornerDemoValue by remember { mutableFloatStateOf(0.58f) }
+    var blurDemoValue by remember { mutableFloatStateOf(0.16f) }
+    var refractionHeightDemoValue by remember { mutableFloatStateOf(0.42f) }
+    var refractionDemoValue by remember { mutableFloatStateOf(0.24f) }
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_parameter_panel_title),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_parameter_preview_body),
+        sectionIcon = appLucideConfigIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
         DebugLiquidParameterPanelSample(
             backdrop = backdrop,
             accent = accent,
@@ -313,6 +385,39 @@ internal fun DebugLiquidCatalogCard(
             chromaticAberrationEnabled = chromaticAberrationEnabled,
             onChromaticAberrationChange = { chromaticAberrationEnabled = it }
         )
+    }
+}
+
+@Composable
+internal fun DebugLiquidControlsCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    var toggleSelected by remember { mutableStateOf(true) }
+    var primaryToggleSelected by remember { mutableStateOf(true) }
+    var sliderValue by remember { mutableFloatStateOf(0.62f) }
+    var volumeValue by remember { mutableFloatStateOf(0.74f) }
+    var musicProgress by remember { mutableFloatStateOf(0.38f) }
+    var keyPointProgress by remember { mutableFloatStateOf(0.46f) }
+    val keyPoints = remember {
+        listOf(
+            LiquidSliderKeyPoint(0.18f),
+            LiquidSliderKeyPoint(0.42f),
+            LiquidSliderKeyPoint(0.68f),
+            LiquidSliderKeyPoint(0.88f)
+        )
+    }
+    val contentColor = MiuixTheme.colorScheme.onBackground
+    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_slider_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_key_points_slider_label),
+        sectionIcon = appLucideConfigIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -382,7 +487,26 @@ internal fun DebugLiquidCatalogCard(
             contentColor = contentColor,
             secondaryColor = secondaryColor
         )
+    }
+}
 
+@Composable
+internal fun DebugLiquidBottomTabsCard(
+    accent: Color,
+    backdrop: Backdrop
+) {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = rememberDebugBgmDockTabs()
+    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
+    AppFeatureCard(
+        title = stringResource(R.string.debug_component_lab_liquid_bottom_tabs_label),
+        subtitle = stringResource(R.string.debug_component_lab_liquid_catalog_subtitle),
+        sectionIcon = appLucideLayersIcon(),
+        titleColor = accent,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+        borderColor = accent.copy(alpha = 0.20f),
+        contentVerticalSpacing = CardLayoutRhythm.sectionGap
+    ) {
         LiquidBottomTabs(
             selectedTabIndex = { selectedTabIndex },
             onTabSelected = { selectedTabIndex = it },

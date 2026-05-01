@@ -72,7 +72,43 @@ internal fun DebugLiquidCatalogPage(
                 sectionSpacing = 14.dp
             ) {
                 item {
-                    DebugLiquidCatalogCard(
+                    DebugLiquidCatalogIntroCard(accent = accent)
+                }
+                item {
+                    DebugLiquidButtonsCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
+                    DebugLiquidBackdropCard(accent = accent)
+                }
+                item {
+                    DebugLiquidTransparentButtonsCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
+                    DebugLiquidSurfaceCardsCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
+                    DebugLiquidParameterCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
+                    DebugLiquidControlsCard(
+                        accent = accent,
+                        backdrop = pageBackdrop
+                    )
+                }
+                item {
+                    DebugLiquidBottomTabsCard(
                         accent = accent,
                         backdrop = pageBackdrop
                     )
