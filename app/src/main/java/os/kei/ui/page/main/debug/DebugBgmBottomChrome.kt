@@ -90,6 +90,7 @@ internal fun DebugBgmFloatingBottomChrome(
     onSearchInputActiveChange: (Boolean) -> Unit,
     selectedDockKey: String,
     onSelectedDockKeyChange: (String) -> Unit,
+    onCompactDockClick: () -> Unit,
     onSearchClick: () -> Unit,
     backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
@@ -339,7 +340,8 @@ internal fun DebugBgmFloatingBottomChrome(
                 compactProgress = dockCompactProgress,
                 backdrop = backdrop,
                 compactInteractionSource = dockSurfaceInteractionSource,
-                onSelectedDockKeyChange = onSelectedDockKeyChange
+                onSelectedDockKeyChange = onSelectedDockKeyChange,
+                onCompactDockClick = onCompactDockClick
             )
         }
 

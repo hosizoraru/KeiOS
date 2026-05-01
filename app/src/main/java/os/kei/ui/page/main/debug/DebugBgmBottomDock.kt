@@ -99,7 +99,8 @@ internal fun DebugBgmDockGroupContent(
     compactProgress: Float,
     backdrop: Backdrop? = null,
     compactInteractionSource: MutableInteractionSource? = null,
-    onSelectedDockKeyChange: (String) -> Unit
+    onSelectedDockKeyChange: (String) -> Unit,
+    onCompactDockClick: () -> Unit
 ) {
     val expanded = expandedProgress.coerceIn(0f, 1f)
     val compact = compactProgress.coerceIn(0f, 1f)
@@ -406,9 +407,7 @@ internal fun DebugBgmDockGroupContent(
                         Modifier.clickable(
                             interactionSource = resolvedCompactInteractionSource,
                             indication = null
-                        ) {
-                            onSelectedDockKeyChange(compactTab.key)
-                        }
+                        ) { onCompactDockClick() }
                     } else {
                         Modifier
                     }
