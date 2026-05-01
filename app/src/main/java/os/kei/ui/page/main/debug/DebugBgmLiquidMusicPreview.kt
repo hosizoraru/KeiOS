@@ -154,19 +154,10 @@ internal fun DebugBgmLiquidMusicPreview(
     BackHandler(enabled = musicState.searchVisible) {
         musicState.closeSearch()
     }
-    val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
     val imeBottom = with(density) { WindowInsets.ime.getBottom(this).toDp() }
-    val keyboardLift = if (
-        musicState.searchInputActive &&
-        imeBottom > navigationBarBottom + DebugBgmKeyboardLiftThreshold
-    ) {
-        imeBottom - navigationBarBottom
-    } else {
-        0.dp
-    }
+    // 只用 imeBottom 作为底部 chrome 的定位依据，不再叠加 navigationBarsPadding
     val bottomChromeInsetsModifier = Modifier
-        .navigationBarsPadding()
-        .padding(bottom = keyboardLift)
+        .padding(bottom = imeBottom)
 
     Box(
         modifier = panelModifier
@@ -258,6 +249,8 @@ internal fun DebugBgmLiquidMusicPreview(
             },
             onSearchClick = musicState::openSearch,
             backdrop = bottomChromeBackdrop,
+            keyboardHeight = 0.dp, // 不再用 keyboardLift
+            imeBottom = imeBottom, // 只用 imeBottom
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .then(bottomChromeInsetsModifier)
@@ -266,4 +259,4 @@ internal fun DebugBgmLiquidMusicPreview(
     }
 }
 
-private val DebugBgmKeyboardLiftThreshold = 72.dp
+private val DebugBgmKeyboardLiftThreshold = 32.dp
