@@ -45,7 +45,6 @@ internal fun DebugBgmAlbumHero(
     accent: Color,
     collapseProgress: Float,
     repeatEnabled: Boolean,
-    offlineSaved: Boolean,
     isPlaying: Boolean,
     sectionTitle: String,
     sectionMeta: String,
@@ -101,7 +100,6 @@ internal fun DebugBgmAlbumHero(
         DebugBgmAlbumPrimaryActions(
             accent = accent,
             repeatEnabled = repeatEnabled,
-            offlineSaved = offlineSaved,
             isPlaying = isPlaying,
             onRepeatClick = onRepeatClick,
             onDownloadClick = onDownloadClick,
@@ -160,7 +158,6 @@ private fun DebugBgmAlbumArtwork(accent: Color) {
 private fun DebugBgmAlbumPrimaryActions(
     accent: Color,
     repeatEnabled: Boolean,
-    offlineSaved: Boolean,
     isPlaying: Boolean,
     onRepeatClick: () -> Unit,
     onDownloadClick: () -> Unit,
@@ -201,7 +198,6 @@ private fun DebugBgmAlbumPrimaryActions(
             icon = appLucideDownloadIcon(),
             contentDescription = stringResource(R.string.debug_component_lab_action_download),
             accent = accent,
-            selected = offlineSaved,
             onClick = onDownloadClick
         )
     }

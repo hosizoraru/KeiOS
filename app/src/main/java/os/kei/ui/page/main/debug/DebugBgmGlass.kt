@@ -159,11 +159,12 @@ internal fun DebugBgmGlassSurface(
         label = "debug_bgm_glass_surface_press"
     )
     val isDark = isSystemInDarkTheme()
+    val hasBackdrop = backdrop != null
     val surfaceContainer = MiuixTheme.colorScheme.surfaceContainer
     val glassSurfaceColor = if (selected) {
-        surfaceContainer.copy(alpha = if (isDark) 0.30f else 0.52f)
+        surfaceContainer.copy(alpha = if (isDark) 0.26f else 0.34f)
     } else {
-        surfaceContainer.copy(alpha = if (isDark) 0.24f else 0.40f)
+        surfaceContainer.copy(alpha = if (isDark) 0.20f else 0.26f)
     }
     val pressOverlay = Color.White.copy(alpha = (if (isDark) 0.06f else 0.14f) * pressProgress)
     val accentOverlay = when {
@@ -208,6 +209,8 @@ internal fun DebugBgmGlassSurface(
     }
     val borderColor = when {
         selected -> accent.copy(alpha = 0.46f + 0.08f * pressProgress)
+        hasBackdrop && isDark -> Color.White.copy(alpha = 0.13f + 0.05f * pressProgress)
+        hasBackdrop -> Color.White.copy(alpha = 0.38f + 0.08f * pressProgress)
         isDark -> Color.White.copy(alpha = 0.16f + 0.06f * pressProgress)
         else -> Color.White.copy(alpha = 0.62f + 0.10f * pressProgress)
     }
@@ -232,10 +235,10 @@ internal fun DebugBgmGlassSurface(
                             )
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = if (selected) 0.82f else 0.64f)
+                            Highlight.Default.copy(alpha = if (selected) 0.78f else 0.58f)
                         },
                         shadow = {
-                            Shadow.Default.copy(color = Color.Black.copy(alpha = 0.10f))
+                            Shadow.Default.copy(color = Color.Black.copy(alpha = if (isDark) 0.16f else 0.08f))
                         },
                         onDrawSurface = {
                             drawRect(glassSurfaceColor)

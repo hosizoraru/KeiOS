@@ -173,7 +173,6 @@ internal fun DebugBgmLiquidMusicPreview(
                 currentTrackId = currentTrack.id,
                 isPlaying = musicState.isPlaying,
                 repeatEnabled = musicState.repeatEnabled,
-                offlineSaved = musicState.currentTrackOfflineSaved,
                 isTrackFavorite = musicState::isTrackFavorite,
                 onRepeatClick = musicState::toggleRepeat,
                 onDownloadClick = musicState::toggleCurrentTrackOffline,
@@ -201,7 +200,6 @@ internal fun DebugBgmLiquidMusicPreview(
                 titleProgress = topBarTitleProgress,
                 onClose = onClose,
                 onShareClick = { onShareTrack(currentTrack) },
-                offlineSaved = musicState.currentTrackOfflineSaved,
                 onDownloadClick = musicState::toggleCurrentTrackOffline,
                 backdrop = pageChromeBackdrop,
                 modifier = Modifier
