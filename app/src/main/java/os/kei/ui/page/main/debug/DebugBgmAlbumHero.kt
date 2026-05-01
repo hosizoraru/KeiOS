@@ -1,10 +1,10 @@
 package os.kei.ui.page.main.debug
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,10 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,10 +74,53 @@ internal fun DebugBgmAlbumHero(
 ) {
     var volumeControlVisible by rememberSaveable { mutableStateOf(true) }
     val animationsEnabled = LocalTransitionAnimationsEnabled.current
-    val volumeMotionSpec = tween<Float>(
-        durationMillis = resolvedMotionDuration(180, animationsEnabled),
-        easing = FastOutSlowInEasing
+    val density = LocalDensity.current
+    val volumeTransition = updateTransition(
+        targetState = volumeControlVisible,
+        label = "debug_bgm_volume_control"
     )
+    val volumeMotionDuration = resolvedMotionDuration(DebugBgmVolumeControlMotionMs, animationsEnabled)
+    val volumeHeight by volumeTransition.animateDp(
+        transitionSpec = {
+            tween(durationMillis = volumeMotionDuration, easing = FastOutSlowInEasing)
+        },
+        label = "debug_bgm_volume_height"
+    ) { visible ->
+        if (visible) DebugBgmVolumeControlHeight else 0.dp
+    }
+    val volumeAlpha by volumeTransition.animateFloat(
+        transitionSpec = {
+            tween(durationMillis = volumeMotionDuration, easing = FastOutSlowInEasing)
+        },
+        label = "debug_bgm_volume_alpha"
+    ) { visible ->
+        if (visible) 1f else 0f
+    }
+    val volumeOffsetY by volumeTransition.animateDp(
+        transitionSpec = {
+            tween(durationMillis = volumeMotionDuration, easing = FastOutSlowInEasing)
+        },
+        label = "debug_bgm_volume_offset"
+    ) { visible ->
+        if (visible) 0.dp else (-6).dp
+    }
+    val volumeScale by volumeTransition.animateFloat(
+        transitionSpec = {
+            tween(durationMillis = volumeMotionDuration, easing = FastOutSlowInEasing)
+        },
+        label = "debug_bgm_volume_scale"
+    ) { visible ->
+        if (visible) 1f else 0.98f
+    }
+    val volumeSpacing by volumeTransition.animateDp(
+        transitionSpec = {
+            tween(durationMillis = volumeMotionDuration, easing = FastOutSlowInEasing)
+        },
+        label = "debug_bgm_volume_spacing"
+    ) { visible ->
+        if (visible) 12.dp else 0.dp
+    }
+    val volumeOffsetPx = with(density) { volumeOffsetY.toPx() }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -119,28 +164,43 @@ internal fun DebugBgmAlbumHero(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        DebugBgmAlbumPrimaryActions(
-            accent = accent,
-            repeatEnabled = repeatEnabled,
-            isPlaying = isPlaying,
-            volumeControlVisible = volumeControlVisible,
-            onRepeatClick = onRepeatClick,
-            onPlayPauseClick = onPlayPauseClick,
-            onVolumeClick = { volumeControlVisible = !volumeControlVisible }
-        )
-        AnimatedVisibility(
-            visible = volumeControlVisible,
-            enter = fadeIn(animationSpec = volumeMotionSpec),
-            exit = fadeOut(animationSpec = volumeMotionSpec),
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(volumeSpacing)
         ) {
-            DebugBgmAlbumVolumeControl(
+            DebugBgmAlbumPrimaryActions(
                 accent = accent,
-                volume = playbackVolume,
-                onVolumeChange = onVolumeChange,
-                onVolumeChangeFinished = onVolumeChangeFinished,
-                onInteractionChanged = onVolumeSliderInteractionChanged
+                repeatEnabled = repeatEnabled,
+                isPlaying = isPlaying,
+                volumeControlVisible = volumeControlVisible,
+                onRepeatClick = onRepeatClick,
+                onPlayPauseClick = onPlayPauseClick,
+                onVolumeClick = { volumeControlVisible = !volumeControlVisible }
             )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(volumeHeight)
+                    .clipToBounds()
+            ) {
+                DebugBgmAlbumVolumeControl(
+                    accent = accent,
+                    volume = playbackVolume,
+                    onVolumeChange = onVolumeChange,
+                    onVolumeChangeFinished = onVolumeChangeFinished,
+                    onInteractionChanged = onVolumeSliderInteractionChanged,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = volumeAlpha
+                            translationY = volumeOffsetPx
+                            scaleX = volumeScale
+                            scaleY = volumeScale
+                        }
+                )
+            }
         }
     }
 }
@@ -247,13 +307,14 @@ private fun DebugBgmAlbumVolumeControl(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
     onVolumeChangeFinished: (Float) -> Unit,
-    onInteractionChanged: (Boolean) -> Unit
+    onInteractionChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val volumeBackdrop = rememberLayerBackdrop()
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(34.dp)
+            .height(DebugBgmVolumeControlHeight)
     ) {
         Box(
             modifier = Modifier
@@ -385,3 +446,6 @@ private fun DebugBgmActionButtonSurfaceColor(
     val alpha = if (selected) selectedAlpha else 0.16f
     return MiuixTheme.colorScheme.surfaceContainer.copy(alpha = alpha)
 }
+
+private val DebugBgmVolumeControlHeight = 34.dp
+private const val DebugBgmVolumeControlMotionMs = 220

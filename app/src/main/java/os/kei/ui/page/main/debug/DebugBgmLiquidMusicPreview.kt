@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -33,7 +33,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -79,7 +78,6 @@ internal fun DebugBgmLiquidMusicPreview(
     var sliderInteractionActive by remember { mutableStateOf(false) }
     val currentTrack = musicState.currentTrack
     val context = LocalContext.current
-    val density = LocalDensity.current
     val panelBackground = if (isDark) Color(0xFF10141B) else Color(0xFFDCE9FF)
     var backdropActivationCount by rememberSaveable { mutableIntStateOf(0) }
     DisposableEffect(Unit) {
@@ -154,10 +152,12 @@ internal fun DebugBgmLiquidMusicPreview(
     BackHandler(enabled = musicState.searchVisible) {
         musicState.closeSearch()
     }
-    val imeBottom = with(density) { WindowInsets.ime.getBottom(this).toDp() }
-    // 只用 imeBottom 作为底部 chrome 的定位依据，不再叠加 navigationBarsPadding
-    val bottomChromeInsetsModifier = Modifier
-        .padding(bottom = imeBottom)
+    val bottomChromeInsets = if (musicState.searchInputActive) {
+        WindowInsets.ime
+    } else {
+        WindowInsets.navigationBars
+    }
+    val bottomChromeInsetsModifier = Modifier.windowInsetsPadding(bottomChromeInsets)
 
     Box(
         modifier = panelModifier
@@ -249,8 +249,6 @@ internal fun DebugBgmLiquidMusicPreview(
             },
             onSearchClick = musicState::openSearch,
             backdrop = bottomChromeBackdrop,
-            keyboardHeight = 0.dp, // 不再用 keyboardLift
-            imeBottom = imeBottom, // 只用 imeBottom
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .then(bottomChromeInsetsModifier)
@@ -258,5 +256,3 @@ internal fun DebugBgmLiquidMusicPreview(
         )
     }
 }
-
-private val DebugBgmKeyboardLiftThreshold = 32.dp

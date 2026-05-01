@@ -93,8 +93,6 @@ internal fun DebugBgmFloatingBottomChrome(
     onCompactDockClick: () -> Unit,
     onSearchClick: () -> Unit,
     backdrop: Backdrop? = null,
-    keyboardHeight: Dp = 0.dp,
-    imeBottom: Dp = 0.dp, // 新增参数，表示键盘底部 Y 坐标
     modifier: Modifier = Modifier
 ) {
     val tabs = rememberDebugBgmDockTabs()
@@ -137,8 +135,17 @@ internal fun DebugBgmFloatingBottomChrome(
     ) {
         DebugBgmExpandedDockHeight
     }
-    // 需要在BoxWithConstraints中获取maxHeight后再计算tabGroupY
-    val tabGroupYState = remember { androidx.compose.runtime.mutableStateOf(0.dp) }
+    val tabGroupY by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_tab_y"
+    ) { mode ->
+        when (mode) {
+            DebugBgmBottomChromeMode.Expanded,
+            DebugBgmBottomChromeMode.SearchExpanded -> DebugBgmExpandedDockY
+            DebugBgmBottomChromeMode.Compact,
+            DebugBgmBottomChromeMode.SearchInput -> DebugBgmCompactControlInset
+        }
+    }
     val miniPlayerHeight by transition.animateDp(
         transitionSpec = { animationSpec },
         label = "debug_bgm_mini_height"
@@ -161,8 +168,17 @@ internal fun DebugBgmFloatingBottomChrome(
     ) {
         DebugBgmExpandedDockHeight
     }
-    // 需要在BoxWithConstraints中获取maxHeight后再计算searchY
-    val searchYState = remember { androidx.compose.runtime.mutableStateOf(0.dp) }
+    val searchY by transition.animateDp(
+        transitionSpec = { animationSpec },
+        label = "debug_bgm_search_y"
+    ) { mode ->
+        when (mode) {
+            DebugBgmBottomChromeMode.Expanded,
+            DebugBgmBottomChromeMode.SearchExpanded -> DebugBgmExpandedDockY
+            DebugBgmBottomChromeMode.Compact,
+            DebugBgmBottomChromeMode.SearchInput -> DebugBgmCompactControlInset
+        }
+    }
     val dockExpandedAlpha by transition.animateFloat(
         transitionSpec = { floatAnimationSpec },
         label = "debug_bgm_expanded_alpha"
@@ -216,35 +232,6 @@ internal fun DebugBgmFloatingBottomChrome(
             .fillMaxWidth()
             .height(containerHeight)
     ) {
-        // 计算搜索栏和dock的Y坐标，确保在键盘弹出时贴合键盘顶部
-        val mode = searchMode
-        val baseTabGroupY = when (mode) {
-            DebugBgmBottomChromeMode.Expanded,
-            DebugBgmBottomChromeMode.SearchExpanded -> DebugBgmExpandedDockY
-            DebugBgmBottomChromeMode.Compact,
-            DebugBgmBottomChromeMode.SearchInput -> DebugBgmCompactControlInset
-        }
-        val baseSearchY = when (mode) {
-            DebugBgmBottomChromeMode.Expanded,
-            DebugBgmBottomChromeMode.SearchExpanded -> DebugBgmExpandedDockY
-            DebugBgmBottomChromeMode.Compact,
-            DebugBgmBottomChromeMode.SearchInput -> DebugBgmCompactControlInset
-        }
-        // 优先用 imeBottom 精准定位搜索栏
-        if (imeBottom > 0.dp && mode.isSearchMode) {
-            searchYState.value = (imeBottom - searchSize - 8.dp).coerceAtLeast(8.dp)
-        } else if (keyboardHeight > 0.dp && mode.isSearchMode) {
-            // fallback: 兼容旧逻辑
-            searchYState.value = (maxHeight - keyboardHeight - searchSize - 8.dp).coerceAtLeast(8.dp)
-        } else {
-            searchYState.value = baseSearchY
-        }
-        // dock区域避免被键盘遮挡
-        if (keyboardHeight > 0.dp) {
-            tabGroupYState.value = (baseTabGroupY - keyboardHeight).coerceAtLeast(0.dp)
-        } else {
-            tabGroupYState.value = baseTabGroupY
-        }
         val tabGroupExpandedWidth = (maxWidth - DebugBgmExpandedSearchSpacing - DebugBgmExpandedDockHeight)
             .coerceAtLeast(260.dp)
         val compactMiniWidth = boundedDp(
@@ -337,7 +324,7 @@ internal fun DebugBgmFloatingBottomChrome(
 
         DebugBgmBottomSurface(
             modifier = Modifier
-                .offset(x = 0.dp, y = tabGroupYState.value)
+                .offset(x = 0.dp, y = tabGroupY)
                 .width(tabGroupWidth)
                 .height(tabGroupHeight),
             shape = ContinuousCapsule,
@@ -360,7 +347,7 @@ internal fun DebugBgmFloatingBottomChrome(
 
         DebugBgmBottomSurface(
             modifier = Modifier
-                .offset(x = searchX, y = searchYState.value)
+                .offset(x = searchX, y = searchY)
                 .width(searchWidth)
                 .height(searchSize),
             shape = if (searchFieldVisible) ContinuousCapsule else CircleShape,

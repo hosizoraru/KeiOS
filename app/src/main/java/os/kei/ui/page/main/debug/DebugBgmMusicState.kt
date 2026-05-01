@@ -7,8 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import os.kei.R
 
@@ -166,24 +166,15 @@ internal fun rememberDebugBgmMusicUiState(): DebugBgmMusicUiState {
     val tracks = rememberDebugBgmTracks()
     val state = remember(tracks) { DebugBgmMusicUiState(tracks) }
 
-    // 模拟播放进度更新
     LaunchedEffect(state.isPlaying) {
         if (state.isPlaying) {
-            var lastFrameTime = 0L
             while (isActive) {
-                val currentTime = withFrameNanos { it }
-                if (lastFrameTime != 0L) {
-                    val deltaTime = (currentTime - lastFrameTime) / 1_000_000_000f // 转换为秒
-                    // 假设歌曲时长为180秒，进度每秒增加 1/180
-                    val progressIncrement = deltaTime / 180f
-                    state.updatePlaybackProgress(state.playbackProgress + progressIncrement)
-
-                    // 如果播放完毕，自动播放下一首或重复
-                    if (state.playbackProgress >= 1f) {
-                        state.advanceQueueFromPlayback()
-                    }
+                delay(DebugBgmPlaybackTickMs)
+                val progressIncrement = DebugBgmPlaybackTickMs / 1000f / DebugBgmPlaybackDemoDurationSeconds
+                state.updatePlaybackProgress(state.playbackProgress + progressIncrement)
+                if (state.playbackProgress >= 1f) {
+                    state.advanceQueueFromPlayback()
                 }
-                lastFrameTime = currentTime
             }
         }
     }
@@ -285,6 +276,8 @@ private fun DebugBgmTrack.matchesSearch(query: String): Boolean {
 }
 
 private val DebugBgmSearchTokenSplitRegex = Regex("""\s+""")
+private const val DebugBgmPlaybackTickMs = 250L
+private const val DebugBgmPlaybackDemoDurationSeconds = 60f
 
 internal data class DebugBgmTrack(
     val id: String,

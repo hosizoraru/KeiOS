@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,7 +52,6 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
-import kotlinx.coroutines.flow.collectLatest
 import os.kei.ui.animation.DampedDragAnimation
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
@@ -282,13 +280,11 @@ private fun LiquidTrackSlider(
                 }
             )
         }
-        LaunchedEffect(dampedDragAnimation) {
-            snapshotFlow { value().coerceIn(safeValueRange) }
-                .collectLatest { nextValue ->
-                    if (dampedDragAnimation.targetValue != nextValue) {
-                        dampedDragAnimation.updateValue(nextValue)
-                    }
-                }
+        val currentValue = value().coerceIn(safeValueRange)
+        LaunchedEffect(dampedDragAnimation, currentValue) {
+            if (abs(dampedDragAnimation.targetValue - currentValue) > visibilityThreshold) {
+                dampedDragAnimation.updateValue(currentValue)
+            }
         }
 
         Box(Modifier.layerBackdrop(trackBackdrop)) {
