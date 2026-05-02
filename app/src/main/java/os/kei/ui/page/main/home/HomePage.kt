@@ -62,6 +62,7 @@ fun HomePage(
     homeGitHubOverview: HomeGitHubOverview = HomeGitHubOverview(),
     homeBaOverview: HomeBaOverview = HomeBaOverview(),
     homeIconHdrEnabled: Boolean,
+    homeDynamicFullEffectEnabled: Boolean = false,
     runtime: MainPageRuntime = MainPageRuntime(),
     liquidActionBarLayeredStyleEnabled: Boolean = true,
     visibleBottomPages: Set<BottomPage>,
@@ -79,12 +80,16 @@ fun HomePage(
     val blurEnabled = isRenderEffectSupported()
     val shaderSupported = isRuntimeShaderSupported()
     val effectBackgroundEnabled = shaderSupported && runtime.isPageActive
+    val homeDynamicActive = runtime.isDataActive ||
+        (homeDynamicFullEffectEnabled && runtime.isPageActive)
     val dynamicBackgroundEnabled = shaderSupported &&
-            runtime.isDataActive &&
-            !runtime.isPagerScrollInProgress
+        homeDynamicActive &&
+        (homeDynamicFullEffectEnabled || !runtime.isPagerScrollInProgress)
     val fullBackdropEffectsEnabled = runtime.isPageActive &&
-            !runtime.isPagerScrollInProgress &&
-            !lazyListState.isScrollInProgress
+        (
+            homeDynamicFullEffectEnabled ||
+                (!runtime.isPagerScrollInProgress && !lazyListState.isScrollInProgress)
+            )
     val surfaceColor = MiuixTheme.colorScheme.surface
     val actionBarBackdrop = rememberActionBarBackdrop {
         drawRect(surfaceColor)
@@ -332,7 +337,8 @@ fun HomePage(
             LiquidActionBar(
                 backdrop = actionBarBackdrop,
                 layeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
-                reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
+                reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress &&
+                    !homeDynamicFullEffectEnabled,
                 items = homeActionItems,
                 selectedIndex = actionBarSelectedIndex,
                 onInteractionChanged = onActionBarInteractingChanged

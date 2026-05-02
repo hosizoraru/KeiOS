@@ -69,6 +69,12 @@ class UiPrefsRepository(
         }
     }
 
+    suspend fun setHomeDynamicFullEffectEnabled(value: Boolean) {
+        updateAndPersist({ copy(homeDynamicFullEffectEnabled = value) }) {
+            UiPrefs.setHomeDynamicFullEffectEnabled(value)
+        }
+    }
+
     suspend fun setPreloadingEnabled(value: Boolean) {
         updateAndPersist({ copy(preloadingEnabled = value) }) {
             UiPrefs.setPreloadingEnabled(value)

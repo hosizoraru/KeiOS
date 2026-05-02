@@ -74,6 +74,10 @@
     <string name="settings_home_shine_summary_enabled">启用主页 Kei 图标与 KeiOS 标题联动高光（亮屏时更明显）</string>
     <string name="settings_home_shine_summary_disabled">默认关闭。开启会激发 HDR 高光，谨慎打开。</string>
     <string name="settings_home_shine_scope">影响主页 Kei 图标与 KeiOS 标题的联动高光效果；开启会激发 HDR，谨慎打开。</string>
+    <string name="settings_home_dynamic_full_effect_title">主页动态背景完整版</string>
+    <string name="settings_home_dynamic_full_effect_summary_enabled">主页上下滑动、左右切页与点击交互时保持完整动态背景与玻璃强度。</string>
+    <string name="settings_home_dynamic_full_effect_summary_disabled">主页滑动时使用常规动态背景策略，优先控制瞬时渲染负载。</string>
+    <string name="settings_home_dynamic_full_effect_scope">影响 Home 页动态背景、首页卡片玻璃与 Home 顶部 ActionBar 的滑动时特效策略。</string>
     <string name="settings_non_home_background_title">非 Home 页面背景图</string>
     <string name="settings_non_home_background_summary_enabled">非 Home 页面会显示自定义背景图，当前保留原有布局与层级。</string>
     <string name="settings_non_home_background_summary_disabled">关闭后非 Home 页面使用默认纯色背景。</string>

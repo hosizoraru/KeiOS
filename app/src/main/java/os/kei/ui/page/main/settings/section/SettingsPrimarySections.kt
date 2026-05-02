@@ -333,7 +333,9 @@ internal fun SettingsVisualSection(
     enabledCardColor: Color,
     disabledCardColor: Color
 ) {
-    val visualGroupActive = state.preloadingEnabled || state.homeIconHdrEnabled
+    val visualGroupActive = state.preloadingEnabled ||
+        state.homeIconHdrEnabled ||
+        state.homeDynamicFullEffectEnabled
     val themeModeOptions = listOf(
         AppThemeMode.FOLLOW_SYSTEM to stringResource(R.string.settings_theme_follow_system),
         AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light_mode),
@@ -410,6 +412,18 @@ internal fun SettingsVisualSection(
             onCheckedChange = actions.onHomeIconHdrChanged,
             infoKey = stringResource(R.string.common_scope),
             infoValue = stringResource(R.string.settings_home_shine_scope)
+        )
+        SettingsToggleItem(
+            title = stringResource(R.string.settings_home_dynamic_full_effect_title),
+            summary = if (state.homeDynamicFullEffectEnabled) {
+                stringResource(R.string.settings_home_dynamic_full_effect_summary_enabled)
+            } else {
+                stringResource(R.string.settings_home_dynamic_full_effect_summary_disabled)
+            },
+            checked = state.homeDynamicFullEffectEnabled,
+            onCheckedChange = actions.onHomeDynamicFullEffectChanged,
+            infoKey = stringResource(R.string.common_scope),
+            infoValue = stringResource(R.string.settings_home_dynamic_full_effect_scope)
         )
     }
 }

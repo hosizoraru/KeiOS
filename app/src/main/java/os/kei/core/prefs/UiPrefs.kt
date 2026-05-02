@@ -21,6 +21,7 @@ data class UiPrefsSnapshot(
     val predictiveBackAnimationsEnabled: Boolean,
     val cardPressFeedbackEnabled: Boolean,
     val homeIconHdrEnabled: Boolean,
+    val homeDynamicFullEffectEnabled: Boolean,
     val preloadingEnabled: Boolean,
     val nonHomeBackgroundEnabled: Boolean,
     val nonHomeBackgroundUri: String,
@@ -45,6 +46,7 @@ object UiPrefs {
     private const val KEY_PREDICTIVE_BACK_ANIMATIONS = "predictive_back_animations"
     private const val KEY_CARD_PRESS_FEEDBACK = "card_press_feedback"
     private const val KEY_HOME_ICON_HDR = "home_icon_hdr"
+    private const val KEY_HOME_DYNAMIC_FULL_EFFECT = "home_dynamic_full_effect"
     private const val KEY_PRELOADING_ENABLED = "preloading_enabled"
     private const val KEY_NON_HOME_BACKGROUND_ENABLED = "non_home_background_enabled"
     private const val KEY_NON_HOME_BACKGROUND_URI = "non_home_background_uri"
@@ -137,6 +139,14 @@ object UiPrefs {
 
     fun setHomeIconHdrEnabled(value: Boolean) {
         kv().encode(KEY_HOME_ICON_HDR, value)
+    }
+
+    fun isHomeDynamicFullEffectEnabled(defaultValue: Boolean = false): Boolean {
+        return kv().decodeBool(KEY_HOME_DYNAMIC_FULL_EFFECT, defaultValue)
+    }
+
+    fun setHomeDynamicFullEffectEnabled(value: Boolean) {
+        kv().encode(KEY_HOME_DYNAMIC_FULL_EFFECT, value)
     }
 
     fun isPreloadingEnabled(defaultValue: Boolean = true): Boolean {
@@ -285,6 +295,7 @@ object UiPrefs {
             predictiveBackAnimationsEnabled = true,
             cardPressFeedbackEnabled = false,
             homeIconHdrEnabled = false,
+            homeDynamicFullEffectEnabled = false,
             preloadingEnabled = true,
             nonHomeBackgroundEnabled = false,
             nonHomeBackgroundUri = "",
@@ -314,6 +325,7 @@ object UiPrefs {
             predictiveBackAnimationsEnabled = store.decodeBool(KEY_PREDICTIVE_BACK_ANIMATIONS, true),
             cardPressFeedbackEnabled = store.decodeBool(KEY_CARD_PRESS_FEEDBACK, false),
             homeIconHdrEnabled = store.decodeBool(KEY_HOME_ICON_HDR, false),
+            homeDynamicFullEffectEnabled = store.decodeBool(KEY_HOME_DYNAMIC_FULL_EFFECT, false),
             preloadingEnabled = store.decodeBool(KEY_PRELOADING_ENABLED, true),
             nonHomeBackgroundEnabled = store.decodeBool(KEY_NON_HOME_BACKGROUND_ENABLED, false),
             nonHomeBackgroundUri = store.decodeString(KEY_NON_HOME_BACKGROUND_URI, "").orEmpty().trim(),

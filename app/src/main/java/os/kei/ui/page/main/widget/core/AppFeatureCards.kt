@@ -1,7 +1,6 @@
 package os.kei.ui.page.main.widget.core
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -64,11 +63,6 @@ fun AppSurfaceCard(
         Modifier
     }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val borderAlpha by appMotionFloatState(
-        targetValue = if (showIndication && clickable && isPressed) 0f else 1f,
-        durationMillis = 120,
-        label = "app_surface_card_border_alpha"
-    )
     val pressedScale by appMotionFloatState(
         targetValue = if (showIndication && clickable && !useLiquidClick && isPressed) {
             0.992f
@@ -101,11 +95,6 @@ fun AppSurfaceCard(
             backdrop = cardBackdrop,
             modifier = Modifier
                 .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = borderColor.copy(alpha = borderColor.alpha * borderAlpha),
-                    shape = shape
-                )
                 .then(clickModifier),
             shape = RoundedRectangle(CardLayoutRhythm.cardCornerRadius),
             isInteractive = showIndication && clickable,

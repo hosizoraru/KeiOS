@@ -40,6 +40,7 @@ internal fun rememberSettingsSectionContractBundle(
     notificationSettingsActionAvailable: Boolean,
     preloadingEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
+    homeDynamicFullEffectEnabled: Boolean,
     appThemeMode: AppThemeMode,
     appLanguageActionAvailable: Boolean,
     transitionAnimationsEnabled: Boolean,
@@ -68,6 +69,7 @@ internal fun rememberSettingsSectionContractBundle(
     onOpenNotificationSettings: () -> Unit,
     onPreloadingEnabledChanged: (Boolean) -> Unit,
     onHomeIconHdrChanged: (Boolean) -> Unit,
+    onHomeDynamicFullEffectChanged: (Boolean) -> Unit,
     onAppThemeModeChanged: (AppThemeMode) -> Unit,
     onOpenAppLanguageSettings: () -> Unit,
     onTransitionAnimationsChanged: (Boolean) -> Unit,
@@ -137,6 +139,7 @@ internal fun rememberSettingsSectionContractBundle(
     val visualState = remember(
         preloadingEnabled,
         homeIconHdrEnabled,
+        homeDynamicFullEffectEnabled,
         appThemeMode,
         appLanguageActionAvailable,
         pageUiState.showThemeModePopup,
@@ -145,6 +148,7 @@ internal fun rememberSettingsSectionContractBundle(
         SettingsVisualSectionState(
             preloadingEnabled = preloadingEnabled,
             homeIconHdrEnabled = homeIconHdrEnabled,
+            homeDynamicFullEffectEnabled = homeDynamicFullEffectEnabled,
             appThemeMode = appThemeMode,
             appLanguageActionAvailable = appLanguageActionAvailable,
             showThemeModePopup = pageUiState.showThemeModePopup,
@@ -154,12 +158,14 @@ internal fun rememberSettingsSectionContractBundle(
     val visualActions = remember(
         onPreloadingEnabledChanged,
         onHomeIconHdrChanged,
+        onHomeDynamicFullEffectChanged,
         onAppThemeModeChanged,
         onOpenAppLanguageSettings
     ) {
         SettingsVisualSectionActions(
             onPreloadingEnabledChanged = onPreloadingEnabledChanged,
             onHomeIconHdrChanged = onHomeIconHdrChanged,
+            onHomeDynamicFullEffectChanged = onHomeDynamicFullEffectChanged,
             onAppThemeModeChanged = onAppThemeModeChanged,
             onOpenAppLanguageSettings = onOpenAppLanguageSettings,
             onShowThemeModePopupChange = { pageUiState.showThemeModePopup = it },

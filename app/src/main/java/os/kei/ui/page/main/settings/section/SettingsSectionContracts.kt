@@ -36,6 +36,7 @@ internal data class SettingsPermissionKeepAliveSectionActions(
 internal data class SettingsVisualSectionState(
     val preloadingEnabled: Boolean,
     val homeIconHdrEnabled: Boolean,
+    val homeDynamicFullEffectEnabled: Boolean,
     val appThemeMode: AppThemeMode,
     val appLanguageActionAvailable: Boolean,
     val showThemeModePopup: Boolean,
@@ -45,6 +46,7 @@ internal data class SettingsVisualSectionState(
 internal data class SettingsVisualSectionActions(
     val onPreloadingEnabledChanged: (Boolean) -> Unit,
     val onHomeIconHdrChanged: (Boolean) -> Unit,
+    val onHomeDynamicFullEffectChanged: (Boolean) -> Unit,
     val onAppThemeModeChanged: (AppThemeMode) -> Unit,
     val onOpenAppLanguageSettings: () -> Unit,
     val onShowThemeModePopupChange: (Boolean) -> Unit,

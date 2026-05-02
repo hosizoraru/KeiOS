@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -71,7 +72,8 @@ fun StatusPill(
             color = textColor,
             fontSize = metrics.typography.fontSize,
             lineHeight = metrics.typography.lineHeight,
-            fontWeight = metrics.typography.fontWeight
+            fontWeight = metrics.typography.fontWeight,
+            textAlign = TextAlign.Center
         )
     }
     Box {
@@ -91,7 +93,8 @@ fun StatusPill(
                 surfaceColor = color.copy(alpha = backgroundAlpha),
                 blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Compact),
                 lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Compact),
-                shadow = false
+                shadow = false,
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier.padding(resolvedPadding),

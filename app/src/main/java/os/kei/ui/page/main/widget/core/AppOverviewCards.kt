@@ -82,11 +82,6 @@ fun AppOverviewCard(
         Modifier
     }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val borderAlpha by appMotionFloatState(
-        targetValue = if (showIndication && clickable && isPressed) 0f else 1f,
-        durationMillis = 120,
-        label = "app_overview_card_border_alpha"
-    )
     val pressedScale by appMotionFloatState(
         targetValue = if (showIndication && clickable && isPressed) 0.992f else 1f,
         durationMillis = 120,
@@ -116,11 +111,6 @@ fun AppOverviewCard(
             backdrop = cardBackdrop,
             modifier = Modifier
                 .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = borderColor.copy(alpha = borderColor.alpha * borderAlpha),
-                    shape = shape
-                )
                 .then(clickModifier),
             shape = RoundedRectangle(CardLayoutRhythm.cardCornerRadius),
             isInteractive = showIndication && clickable,

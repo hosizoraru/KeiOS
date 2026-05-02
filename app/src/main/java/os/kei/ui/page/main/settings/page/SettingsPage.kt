@@ -142,6 +142,8 @@ fun SettingsPage(
     onCardPressFeedbackChanged: (Boolean) -> Unit,
     homeIconHdrEnabled: Boolean,
     onHomeIconHdrChanged: (Boolean) -> Unit,
+    homeDynamicFullEffectEnabled: Boolean,
+    onHomeDynamicFullEffectChanged: (Boolean) -> Unit,
     preloadingEnabled: Boolean,
     onPreloadingEnabledChanged: (Boolean) -> Unit,
     nonHomeBackgroundEnabled: Boolean,
@@ -246,6 +248,7 @@ fun SettingsPage(
         notificationSettingsActionAvailable = permissionKeepAliveController.notificationSettingsActionAvailable,
         preloadingEnabled = preloadingEnabled,
         homeIconHdrEnabled = homeIconHdrEnabled,
+        homeDynamicFullEffectEnabled = homeDynamicFullEffectEnabled,
         appThemeMode = appThemeMode,
         appLanguageActionAvailable = appLanguageController.actionAvailable,
         transitionAnimationsEnabled = transitionAnimationsEnabled,
@@ -283,6 +286,7 @@ fun SettingsPage(
         },
         onPreloadingEnabledChanged = onPreloadingEnabledChanged,
         onHomeIconHdrChanged = onHomeIconHdrChanged,
+        onHomeDynamicFullEffectChanged = onHomeDynamicFullEffectChanged,
         onAppThemeModeChanged = onAppThemeModeChanged,
         onOpenAppLanguageSettings = {
             val opened = appLanguageController.openAppLanguageSettings()

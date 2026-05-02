@@ -75,6 +75,12 @@ internal class MainScreenPrefsViewModel : ViewModel() {
         }
     }
 
+    fun updateHomeDynamicFullEffectEnabled(value: Boolean) {
+        launchRepositoryUpdate {
+            setHomeDynamicFullEffectEnabled(value)
+        }
+    }
+
     fun updatePreloadingEnabled(value: Boolean) {
         launchRepositoryUpdate {
             setPreloadingEnabled(value)

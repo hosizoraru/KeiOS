@@ -24,6 +24,7 @@ internal class MainScreenUiPrefsState(
     val predictiveBackAnimationsEnabled: Boolean get() = snapshot.predictiveBackAnimationsEnabled
     val cardPressFeedbackEnabled: Boolean get() = snapshot.cardPressFeedbackEnabled
     val homeIconHdrEnabled: Boolean get() = snapshot.homeIconHdrEnabled
+    val homeDynamicFullEffectEnabled: Boolean get() = snapshot.homeDynamicFullEffectEnabled
     val preloadingEnabled: Boolean get() = snapshot.preloadingEnabled
     val nonHomeBackgroundEnabled: Boolean get() = snapshot.nonHomeBackgroundEnabled
     val nonHomeBackgroundUri: String get() = snapshot.nonHomeBackgroundUri
@@ -66,6 +67,10 @@ internal class MainScreenUiPrefsState(
 
     fun updateHomeIconHdrEnabled(value: Boolean) {
         viewModel.updateHomeIconHdrEnabled(value)
+    }
+
+    fun updateHomeDynamicFullEffectEnabled(value: Boolean) {
+        viewModel.updateHomeDynamicFullEffectEnabled(value)
     }
 
     fun updatePreloadingEnabled(value: Boolean) {

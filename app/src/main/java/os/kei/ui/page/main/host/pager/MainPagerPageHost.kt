@@ -35,6 +35,7 @@ internal fun MainPagerPageHost(
     cardPressFeedbackEnabled: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
     homeIconHdrEnabled: Boolean,
+    homeDynamicFullEffectEnabled: Boolean,
     preloadingEnabled: Boolean,
     mcpServerManager: McpServerManager,
     homeMcpOverview: HomeMcpOverview,
@@ -72,7 +73,8 @@ internal fun MainPagerPageHost(
         }
     )
     val reducedGlassProgress = rememberGlassReductionProgress(
-        reduceEffectsDuringMotion = runtime.isPagerScrollInProgress,
+        reduceEffectsDuringMotion = runtime.isPagerScrollInProgress &&
+            !(pageType == BottomPage.Home && homeDynamicFullEffectEnabled),
         label = "mainPagerGlassEffectProgress"
     )
     CompositionLocalProvider(
@@ -87,6 +89,7 @@ internal fun MainPagerPageHost(
                         homeGitHubOverview = homeGitHubOverview,
                         homeBaOverview = homeBaOverview,
                         homeIconHdrEnabled = homeIconHdrEnabled,
+                        homeDynamicFullEffectEnabled = homeDynamicFullEffectEnabled,
                         runtime = runtime,
                         liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
                         visibleBottomPages = visibleBottomPages,

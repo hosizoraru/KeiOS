@@ -74,6 +74,10 @@
     <string name="settings_home_shine_summary_enabled">Enable linked highlight effects for the Kei icon and KeiOS title. The effect is brighter with the screen on.</string>
     <string name="settings_home_shine_summary_disabled">Disabled by default. Enabling this can trigger HDR highlight output.</string>
     <string name="settings_home_shine_scope">Affects the linked highlight on the Home Kei icon and KeiOS title. Enabling this can trigger HDR.</string>
+    <string name="settings_home_dynamic_full_effect_title">Full Home dynamic background</string>
+    <string name="settings_home_dynamic_full_effect_summary_enabled">Keep full dynamic background and glass strength while scrolling Home, paging, and tapping.</string>
+    <string name="settings_home_dynamic_full_effect_summary_disabled">Use the regular Home dynamic strategy during motion to control burst rendering cost.</string>
+    <string name="settings_home_dynamic_full_effect_scope">Affects the Home dynamic background, Home overview-card glass, and Home top ActionBar effects during motion.</string>
     <string name="settings_non_home_background_title">Non-Home background image</string>
     <string name="settings_non_home_background_summary_enabled">Non-Home pages show a custom background image while keeping the current layout and layering.</string>
     <string name="settings_non_home_background_summary_disabled">Non-Home pages use the default solid background.</string>

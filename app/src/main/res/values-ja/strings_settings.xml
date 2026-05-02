@@ -74,6 +74,10 @@
     <string name="settings_home_shine_summary_enabled">Kei アイコンと KeiOS タイトルの連動ハイライトを有効にします。画面点灯中はより明るく表示されます。</string>
     <string name="settings_home_shine_summary_disabled">既定では無効です。有効化すると HDR ハイライト出力を引き起こす場合があります。</string>
     <string name="settings_home_shine_scope">Home の Kei アイコンと KeiOS タイトルの連動ハイライトに影響します。有効化すると HDR が発生する場合があります。</string>
+    <string name="settings_home_dynamic_full_effect_title">Home 動的背景フル効果</string>
+    <string name="settings_home_dynamic_full_effect_summary_enabled">Home の上下スクロール、左右ページング、タップ中も動的背景とガラス効果を維持します。</string>
+    <string name="settings_home_dynamic_full_effect_summary_disabled">移動中は通常の Home 動的背景戦略を使い、瞬間的な描画負荷を抑えます。</string>
+    <string name="settings_home_dynamic_full_effect_scope">Home の動的背景、概要カードのガラス、上部 ActionBar の移動中効果に影響します。</string>
     <string name="settings_non_home_background_title">Home 以外の背景画像</string>
     <string name="settings_non_home_background_summary_enabled">Home 以外のページで、現在のレイアウトとレイヤーを維持しつつカスタム背景画像を表示します。</string>
     <string name="settings_non_home_background_summary_disabled">Home 以外のページは既定の単色背景を使用します。</string>

@@ -65,8 +65,9 @@ fun LiquidSurface(
     depthEffect: Boolean = true,
     shadow: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
+    contentAlignment: Alignment = Alignment.TopStart,
     onClick: (() -> Unit)? = null,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit = {}
 ) {
     val animationScope = rememberCoroutineScope()
     val interactiveHighlight = remember(animationScope) {
@@ -159,6 +160,7 @@ fun LiquidSurface(
             .graphicsLayer {
                 alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
             },
+        contentAlignment = contentAlignment,
         content = content
     )
 }
