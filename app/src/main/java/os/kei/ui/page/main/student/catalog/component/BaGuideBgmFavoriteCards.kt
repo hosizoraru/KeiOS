@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.student.catalog.component
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -203,8 +201,6 @@ internal fun BaGuideBgmFavoriteCard(
             (detailTitle?.let { !sameBgmFavoriteDetail(note, it) } ?: true)
     }
     val trackSubtitle = (detailTitle ?: detailNote)?.let { guideLocalizedLabel(it) }
-    val cardShape = RoundedCornerShape(16.dp)
-    val borderColor = if (selected) accent.copy(alpha = 0.38f) else MiuixTheme.colorScheme.outline.copy(alpha = 0.16f)
     val listActionTint = MiuixTheme.colorScheme.onBackgroundVariant
     val listActionContainer = MiuixTheme.colorScheme.surfaceContainer
     var actionExpanded by remember { mutableStateOf(false) }
@@ -212,11 +208,6 @@ internal fun BaGuideBgmFavoriteCard(
     GuideLiquidCard(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = borderColor,
-                shape = cardShape
-            )
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -224,7 +215,8 @@ internal fun BaGuideBgmFavoriteCard(
                 onLongClick = onRemove
         ),
         cornerRadius = 14.dp,
-        surfaceColor = if (selected) accent.copy(alpha = 0.11f) else MiuixTheme.colorScheme.surface.copy(alpha = 0.58f),
+        surfaceColor = if (selected) accent.copy(alpha = 0.14f) else MiuixTheme.colorScheme.surface.copy(alpha = 0.58f),
+        tint = accent.copy(alpha = if (selected) 0.10f else 0.03f),
         isInteractive = false
     ) {
         Row(

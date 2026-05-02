@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.student.catalog.component
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -105,7 +103,6 @@ internal fun BaGuideBgmMiniPlayer(
             R.string.ba_catalog_bgm_action_play
         }
     )
-    val shape = RoundedCornerShape(18.dp)
     val neutralControlTint = MiuixTheme.colorScheme.onBackgroundVariant
     val neutralControlContainer = MiuixTheme.colorScheme.surfaceContainer
     val primaryControlTint = MiuixTheme.colorScheme.onBackground
@@ -131,14 +128,10 @@ internal fun BaGuideBgmMiniPlayer(
                     },
                     onDragCancel = { dragOffsetY = 0f }
                 )
-            }
-            .border(
-                width = 1.dp,
-                color = accent.copy(alpha = 0.35f),
-                shape = shape
-            ),
+            },
         cornerRadius = 18.dp,
-        surfaceColor = MiuixTheme.colorScheme.surface.copy(alpha = 0.94f),
+        surfaceColor = MiuixTheme.colorScheme.surface.copy(alpha = if (expanded) 0.96f else 0.90f),
+        tint = accent.copy(alpha = if (expanded) 0.08f else 0.05f),
         isInteractive = false
     ) {
         Column(

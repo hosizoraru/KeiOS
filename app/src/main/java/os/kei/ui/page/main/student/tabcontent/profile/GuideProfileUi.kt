@@ -241,7 +241,6 @@ private fun GuideProfileLiquidSurfaceBox(
     modifier: Modifier,
     shape: Shape,
     surfaceColor: Color,
-    borderColor: Color,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     contentAlignment: Alignment = Alignment.TopStart,
     content: @Composable BoxScope.() -> Unit
@@ -260,8 +259,7 @@ private fun GuideProfileLiquidSurfaceBox(
                 backdrop = activeBackdrop,
                 modifier = Modifier
                     .matchParentSize()
-                    .clip(shape)
-                    .border(width = 0.8.dp, color = borderColor, shape = shape),
+                    .clip(shape),
                 shape = shape,
                 isInteractive = false,
                 surfaceColor = surfaceColor,
@@ -275,7 +273,6 @@ private fun GuideProfileLiquidSurfaceBox(
                     .matchParentSize()
                     .clip(shape)
                     .background(surfaceColor)
-                    .border(width = 0.8.dp, color = borderColor, shape = shape)
             )
         }
         Box(
@@ -493,8 +490,7 @@ internal fun GuideGiftPreferenceGrid(
                             .width(cardWidth)
                             .height(giftBoxHeight),
                         shape = RoundedCornerShape(12.dp),
-                        surfaceColor = Color(0x163B82F6),
-                        borderColor = Color(0x243B82F6)
+                        surfaceColor = Color(0x203B82F6)
                     ) {
                         GuideRemoteIcon(
                             imageUrl = item.giftImageUrl,
@@ -511,7 +507,6 @@ internal fun GuideGiftPreferenceGrid(
                                     .padding(bottom = 3.dp, end = 3.dp),
                                 shape = ContinuousCapsule,
                                 surfaceColor = if (isDark) Color(0x663B82F6) else Color(0xCCEFF6FF),
-                                borderColor = if (isDark) Color(0x553B82F6) else Color(0x553BA8FF),
                                 contentPadding = PaddingValues(horizontal = 3.dp, vertical = 3.dp)
                             ) {
                                 GuideRemoteIcon(

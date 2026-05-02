@@ -1,8 +1,8 @@
 package os.kei.ui.page.main.widget.core
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +14,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
+import os.kei.ui.page.main.widget.glass.LiquidSurface
+import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
+import os.kei.ui.page.main.widget.glass.resolvedGlassBlurDp
+import os.kei.ui.page.main.widget.glass.resolvedGlassLensDp
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -70,20 +78,44 @@ fun AppSupportingBlock(
     } else {
         MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.76f)
     }
-    val borderColor = accentColor.copy(alpha = if (isDark) 0.18f else 0.14f)
-    top.yukonga.miuix.kmp.basic.Text(
-        text = text,
-        color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
-        fontSize = AppTypographyTokens.Supporting.fontSize,
-        lineHeight = AppTypographyTokens.Supporting.lineHeight,
-        modifier = modifier
-            .clip(shape)
-            .background(backgroundColor)
-            .border(width = 1.dp, color = borderColor, shape = shape)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        maxLines = maxLines,
-        overflow = overflow
-    )
+    val localBackdrop = rememberLayerBackdrop()
+    val textContent: @Composable () -> Unit = {
+        top.yukonga.miuix.kmp.basic.Text(
+            text = text,
+            color = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.92f),
+            fontSize = AppTypographyTokens.Supporting.fontSize,
+            lineHeight = AppTypographyTokens.Supporting.lineHeight,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            maxLines = maxLines,
+            overflow = overflow
+        )
+    }
+
+    Box(modifier = modifier.clip(shape)) {
+        if (LocalLiquidControlsEnabled.current) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .layerBackdrop(localBackdrop)
+            )
+            LiquidSurface(
+                backdrop = localBackdrop,
+                shape = shape,
+                isInteractive = false,
+                surfaceColor = backgroundColor,
+                tint = accentColor.copy(alpha = if (isDark) 0.03f else 0.02f),
+                blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Content),
+                lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Content),
+                shadow = false
+            ) {
+                textContent()
+            }
+        } else {
+            Box(modifier = Modifier.background(backgroundColor)) {
+                textContent()
+            }
+        }
+    }
 }
 
 @Preview(name = "Status Primitive Light", showBackground = true, backgroundColor = 0xFFF3F4F6)

@@ -1,8 +1,6 @@
 package os.kei.ui.page.main.student.section
 
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -41,7 +37,11 @@ import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.shapes.RoundedRectangle
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
+import os.kei.ui.page.main.widget.glass.LiquidSurface
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -337,21 +337,35 @@ internal fun GuideSkillVariantBadge(
     label: String,
     modifier: Modifier = Modifier
 ) {
+    val badgeBackdrop = rememberLayerBackdrop()
     Box(
-        modifier = modifier
-            .size(26.dp)
-            .clip(CircleShape)
-            .background(Color(0x223B82F6))
-            .border(width = 1.dp, color = Color(0x663B82F6), shape = CircleShape),
+        modifier = modifier.size(26.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            color = Color(0xFF3B82F6),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .layerBackdrop(badgeBackdrop)
         )
+        LiquidSurface(
+            backdrop = badgeBackdrop,
+            modifier = Modifier.matchParentSize(),
+            shape = RoundedRectangle(999.dp),
+            isInteractive = false,
+            surfaceColor = Color(0x223B82F6),
+            blurRadius = 2.dp,
+            lensRadius = 10.dp,
+            shadow = false,
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                color = Color(0xFF3B82F6),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+        }
     }
 }
 
