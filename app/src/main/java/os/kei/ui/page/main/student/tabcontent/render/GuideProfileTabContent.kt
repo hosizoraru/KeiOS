@@ -25,7 +25,7 @@ import os.kei.ui.page.main.student.tabcontent.profile.normalizeProfileFieldKey
 import os.kei.ui.page.main.student.tabcontent.profile.profileLinkTitleCache
 import os.kei.ui.page.main.student.tabcontent.profile.profileRoleReferenceFieldKey
 import os.kei.ui.page.main.student.tabcontent.profile.resolveProfileLinkTitle
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,7 +48,7 @@ internal fun LazyListScope.renderGuideProfileTabContent(
     val guide = info
     if (guide == null) {
         item {
-            FrostedBlock(
+            LiquidInfoBlock(
                 backdrop = backdrop,
                 title = tabLabel,
                 subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",

@@ -46,7 +46,7 @@ import os.kei.ui.page.main.student.GuideBgmFavoriteStore
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.state.GuideDetailTabRequestStore
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import kotlinx.coroutines.Dispatchers
@@ -595,7 +595,7 @@ internal fun BaGuideBgmFavoritesTabContent(
 
             if (displayedFavorites.isEmpty()) {
                 item {
-                    FrostedBlock(
+                    LiquidInfoBlock(
                         backdrop = null,
                         title = emptyTitle,
                         subtitle = emptySubtitle,

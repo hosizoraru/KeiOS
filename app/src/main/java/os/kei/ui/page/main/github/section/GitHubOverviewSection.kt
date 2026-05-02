@@ -121,7 +121,8 @@ internal fun GitHubOverviewCard(
                     neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
                 ),
                 backgroundAlphaOverride = if (isDark) 0.18f else 0.24f,
-                borderAlphaOverride = if (isDark) 0.35f else 0.42f
+                borderAlphaOverride = if (isDark) 0.35f else 0.42f,
+                backdrop = backdrop
             )
             StatusPill(
                 label = when (displayRefreshState) {
@@ -132,7 +133,8 @@ internal fun GitHubOverviewCard(
                 },
                 color = displayRefreshState.color(
                     neutralColor = MiuixTheme.colorScheme.onBackgroundVariant
-                )
+                ),
+                backdrop = backdrop
             )
         }
     ) {

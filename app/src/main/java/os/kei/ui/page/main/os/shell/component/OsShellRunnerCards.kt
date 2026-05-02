@@ -18,7 +18,7 @@ import os.kei.ui.page.main.os.osLucideSaveIcon
 import os.kei.ui.page.main.os.osLucideStopIcon
 import os.kei.ui.page.main.os.shell.ShellCommandInputField
 import os.kei.ui.page.main.os.shell.ShellOutputDisplayEntry
-import os.kei.ui.page.main.os.shell.ShellOutputGlassPanel
+import os.kei.ui.page.main.os.shell.ShellOutputLiquidPanel
 import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
@@ -157,7 +157,7 @@ internal fun OsShellRunnerOutputCard(
                 )
             }
         )
-        ShellOutputGlassPanel(
+        ShellOutputLiquidPanel(
             text = outputText,
             hint = outputHint,
             entries = outputEntries,

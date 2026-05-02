@@ -31,7 +31,7 @@ import os.kei.ui.page.main.student.tabcontent.resolveVoicePlaybackUrl
 import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.section.GuideVoiceEntryCard
 import os.kei.ui.page.main.student.section.GuideVoiceLanguageCard
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Text
@@ -56,7 +56,7 @@ internal fun LazyListScope.renderGuideVoiceTabContent(
     val guide = info
     if (guide == null) {
         item {
-            FrostedBlock(
+            LiquidInfoBlock(
                 backdrop = backdrop,
                 title = tabLabel,
                 subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",

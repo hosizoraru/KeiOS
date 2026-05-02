@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.ui.graphics.Color
 import os.kei.ui.page.main.student.BaStudentGuideInfo
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
 
 internal fun LazyListScope.renderGuideGalleryTabContent(
@@ -23,7 +23,7 @@ internal fun LazyListScope.renderGuideGalleryTabContent(
     val guide = info
     if (guide == null) {
         item {
-            FrostedBlock(
+            LiquidInfoBlock(
                 backdrop = backdrop,
                 title = tabLabel,
                 subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",

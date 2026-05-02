@@ -51,7 +51,7 @@ internal fun ShellCommandInputField(
     val promptStyle = textStyle.copy(color = MiuixTheme.colorScheme.primary)
     val placeholderStyle = textStyle.copy(color = MiuixTheme.colorScheme.onBackgroundVariant)
 
-    ShellGlassPanelSurface(
+    ShellLiquidPanelSurface(
         modifier = modifier
             .fillMaxWidth(),
         minHeight = minHeight

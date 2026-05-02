@@ -20,7 +20,7 @@ import com.kyant.shapes.RoundedRectangle
 import os.kei.ui.page.main.widget.glass.LiquidSurface
 
 @Composable
-internal fun ShellGlassPanelSurface(
+internal fun ShellLiquidPanelSurface(
     modifier: Modifier = Modifier,
     minHeight: Dp,
     contentPaddingHorizontal: Dp = 14.dp,

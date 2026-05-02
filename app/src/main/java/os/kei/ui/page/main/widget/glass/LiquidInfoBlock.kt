@@ -21,7 +21,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun FrostedBlock(
+fun LiquidInfoBlock(
     backdrop: Backdrop?,
     title: String,
     subtitle: String,

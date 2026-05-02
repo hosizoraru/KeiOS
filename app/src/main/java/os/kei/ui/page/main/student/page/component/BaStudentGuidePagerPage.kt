@@ -34,7 +34,7 @@ import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.state.buildBaStudentGuidePagerHeaderState
 import os.kei.ui.page.main.student.page.state.resolveBaStudentGuideTabRenderState
 import os.kei.ui.page.main.student.tabcontent.renderBaStudentGuideTabContent
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
@@ -177,7 +177,7 @@ internal fun BaStudentGuidePagerPage(
                 item { Spacer(modifier = Modifier.height(12.dp)) }
                 if (sourceUrl.isBlank()) {
                     item {
-                        FrostedBlock(
+                        LiquidInfoBlock(
                             backdrop = pageBackdrop,
                             title = stringResource(R.string.guide_empty_student_title),
                             subtitle = stringResource(R.string.guide_empty_student_subtitle),

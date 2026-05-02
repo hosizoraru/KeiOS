@@ -28,7 +28,7 @@ internal data class ShellOutputDisplayEntry(
 )
 
 @Composable
-internal fun ShellOutputGlassPanel(
+internal fun ShellOutputLiquidPanel(
     text: String,
     hint: String,
     entries: List<ShellOutputDisplayEntry>,
@@ -52,7 +52,7 @@ internal fun ShellOutputGlassPanel(
         Color(0xFFDC2626)
     }
 
-    ShellGlassPanelSurface(
+    ShellLiquidPanelSurface(
         modifier = modifier,
         minHeight = 160.dp
     ) {

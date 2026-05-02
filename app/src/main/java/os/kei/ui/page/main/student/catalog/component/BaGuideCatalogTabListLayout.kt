@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogTabContentUiState
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.SmallTitle
 
@@ -79,7 +79,7 @@ internal fun BaGuideCatalogTabListLayout(
         }
         if (uiState.showError) {
             item {
-                FrostedBlock(
+                LiquidInfoBlock(
                     backdrop = null,
                     title = uiState.syncStatusTitle,
                     subtitle = uiState.errorText,
@@ -90,7 +90,7 @@ internal fun BaGuideCatalogTabListLayout(
         }
         if (uiState.showEmpty) {
             item {
-                FrostedBlock(
+                LiquidInfoBlock(
                     backdrop = null,
                     title = uiState.emptyTitle,
                     subtitle = uiState.emptySubtitle,

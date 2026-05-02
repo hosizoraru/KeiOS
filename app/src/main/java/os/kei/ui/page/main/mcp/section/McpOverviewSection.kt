@@ -53,13 +53,15 @@ internal fun McpOverviewCardSection(
                 label = runtimeText,
                 color = overviewAccentColor,
                 backgroundAlphaOverride = if (isDark) 0.18f else 0.24f,
-                borderAlphaOverride = if (isDark) 0.35f else 0.42f
+                borderAlphaOverride = if (isDark) 0.35f else 0.42f,
+                backdrop = backdrop
             )
             StatusPill(
                 label = stringResource(
                     if (running) R.string.common_status_running else R.string.common_status_not_running
                 ),
-                color = overviewAccentColor
+                color = overviewAccentColor,
+                backdrop = backdrop
             )
         }
     ) {

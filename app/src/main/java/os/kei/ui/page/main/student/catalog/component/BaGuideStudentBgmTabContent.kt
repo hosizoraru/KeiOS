@@ -54,7 +54,7 @@ import os.kei.ui.page.main.student.catalog.filterByQuery
 import os.kei.ui.page.main.student.fetch.normalizeGuideUrl
 import os.kei.ui.page.main.student.page.state.GuideDetailTabRequestStore
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import kotlin.math.max
@@ -497,7 +497,7 @@ internal fun BaGuideStudentBgmTabContent(
 
             if (filteredEntries.isEmpty()) {
                 item(key = "student-bgm-empty") {
-                    FrostedBlock(
+                    LiquidInfoBlock(
                         backdrop = null,
                         title = stringResource(R.string.ba_catalog_empty_title),
                         subtitle = stringResource(R.string.ba_catalog_empty_subtitle_search),

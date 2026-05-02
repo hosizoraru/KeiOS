@@ -167,7 +167,8 @@ internal fun OsPageMainList(
                             color = statusColor,
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 5.dp),
                             backgroundAlphaOverride = if (isDark) 0.24f else 0.34f,
-                            borderAlphaOverride = if (isDark) 0.42f else 0.52f
+                            borderAlphaOverride = if (isDark) 0.42f else 0.52f,
+                            backdrop = contentBackdrop
                         )
                     }
                 ) {

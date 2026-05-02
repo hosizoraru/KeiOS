@@ -23,7 +23,7 @@ import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateUnlockCard
 import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateWeaponCard
 import os.kei.ui.page.main.student.tabcontent.simulate.buildGuideSimulateData
 import os.kei.ui.page.main.student.simulateRowsForDisplay
-import os.kei.ui.page.main.widget.glass.FrostedBlock
+import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -38,7 +38,7 @@ internal fun LazyListScope.renderGuideSimulateTabContent(
     val guide = info
     if (guide == null) {
         item {
-            FrostedBlock(
+            LiquidInfoBlock(
                 backdrop = backdrop,
                 title = tabLabel,
                 subtitle = info?.subtitle?.ifBlank { "GameKee" } ?: "GameKee",
