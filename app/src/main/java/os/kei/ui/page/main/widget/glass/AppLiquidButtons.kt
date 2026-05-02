@@ -182,7 +182,9 @@ private fun AppLiquidIconButtonContainer(
     )
     val transparentContainer = containerColor?.alpha == 0f
     val showBorder = glass.showBorder && !transparentContainer
-    val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
+    val containerOverlay = resolvedContainerColor
+        ?.takeUnless { transparentContainer }
+        ?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val pressedOverlayColor = appControlPressedOverlayColor(
         isDark = isDark,
         variant = variant,
@@ -381,7 +383,9 @@ fun AppLiquidTextButton(
         isDark = isDark
     )
     val transparentContainer = containerColor?.alpha == 0f
-    val containerOverlay = resolvedContainerColor?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
+    val containerOverlay = resolvedContainerColor
+        ?.takeUnless { transparentContainer }
+        ?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
     val pressedOverlayColor = appControlPressedOverlayColor(
         isDark = isDark,
         variant = variant,
