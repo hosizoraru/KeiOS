@@ -40,6 +40,7 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.AppSwitch
+import os.kei.ui.page.main.widget.glass.AppLiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
@@ -339,7 +340,7 @@ internal fun DebugLiquidGlassDropdownCard(
                 enableWindowDim = false,
                 onDismissRequest = { expanded = false }
             ) {
-                LiquidGlassDropdownColumn(accentColor = accent) {
+                AppLiquidGlassDropdownColumn(accentColor = accent) {
                     LiquidGlassDropdownActionItem(
                         text = stringResource(R.string.debug_component_lab_action_shuffle),
                         onClick = { expanded = false },

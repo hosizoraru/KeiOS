@@ -13,9 +13,9 @@ import androidx.compose.ui.unit.IntRect
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideFullscreenIcon
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
+import os.kei.ui.page.main.widget.glass.AppLiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
@@ -67,7 +67,7 @@ internal fun GuideGalleryVideoGroupHeaderActions(
                     onDismissRequest = { showPicker = false },
                     enableWindowDim = false
                 ) {
-                    LiquidGlassDropdownColumn(
+                    AppLiquidGlassDropdownColumn(
                         accentColor = Color(0xFF3B82F6),
                         backdrop = backdrop
                     ) {

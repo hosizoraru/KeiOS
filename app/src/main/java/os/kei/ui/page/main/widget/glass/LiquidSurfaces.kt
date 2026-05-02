@@ -1,21 +1,31 @@
 package os.kei.ui.page.main.widget.glass
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,6 +42,8 @@ import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import com.kyant.shapes.RoundedRectangle
 import os.kei.ui.animation.InteractiveHighlight
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -148,6 +160,136 @@ fun LiquidSurface(
             },
         content = content
     )
+}
+
+@Composable
+fun AppLiquidFloatingSurface(
+    modifier: Modifier,
+    shape: Shape = ContinuousCapsule,
+    backdrop: Backdrop? = null,
+    onClick: (() -> Unit)? = null,
+    interactionSource: MutableInteractionSource? = null,
+    clipContent: Boolean = true,
+    consumeTouches: Boolean = false,
+    pressDurationMillis: Int = 130,
+    pressLabel: String = "app_liquid_floating_surface_press",
+    content: @Composable BoxScope.() -> Unit
+) {
+    val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val pressed by resolvedInteractionSource.collectIsPressedAsState()
+    val pressProgress by appMotionFloatState(
+        targetValue = if (pressed) 1f else 0f,
+        durationMillis = pressDurationMillis,
+        label = pressLabel
+    )
+    val density = LocalDensity.current
+    val isDark = isSystemInDarkTheme()
+    val surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (isDark) 0.20f else 0.40f)
+    val overlayColor = if (isDark) {
+        Color.White.copy(alpha = 0.04f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+    val borderColor = if (isDark) {
+        Color.White.copy(alpha = 0.18f)
+    } else {
+        Color.White.copy(alpha = 0.54f)
+    }
+
+    Box(
+        modifier = modifier.graphicsLayer {
+            translationY = -with(density) { 1.25.dp.toPx() } * pressProgress
+            scaleX = lerp(1f, 1.010f, pressProgress)
+            scaleY = lerp(1f, 0.992f, pressProgress)
+        },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (backdrop != null) {
+                        Modifier.drawBackdrop(
+                            backdrop = backdrop,
+                            shape = { shape },
+                            effects = {
+                                vibrancy()
+                                blur(UiPerformanceBudget.backdropBlur.toPx())
+                                lens(
+                                    (UiPerformanceBudget.backdropLens *
+                                        (0.90f + 0.08f * pressProgress)).toPx(),
+                                    (UiPerformanceBudget.backdropLens *
+                                        (0.90f + 0.10f * pressProgress)).toPx()
+                                )
+                            },
+                            highlight = {
+                                Highlight.Default.copy(
+                                    alpha = (if (isDark) 0.46f else 0.82f) + 0.06f * pressProgress
+                                )
+                            },
+                            shadow = {
+                                Shadow.Default.copy(
+                                    color = Color.Black.copy(alpha = if (isDark) 0.20f else 0.10f)
+                                )
+                            },
+                            onDrawSurface = { drawRect(surfaceColor) }
+                        )
+                    } else {
+                        Modifier
+                            .clip(shape)
+                            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), shape)
+                    }
+                )
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            overlayColor,
+                            overlayColor.copy(alpha = overlayColor.alpha * 0.52f)
+                        )
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .border(1.dp, borderColor, shape)
+        )
+        if (consumeTouches && onClick == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(shape)
+                    .clickable(
+                        interactionSource = resolvedInteractionSource,
+                        indication = null,
+                        onClick = {}
+                    )
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (clipContent) Modifier.clip(shape) else Modifier)
+                .then(
+                    when {
+                        onClick != null -> Modifier.clickable(
+                            interactionSource = resolvedInteractionSource,
+                            indication = null,
+                            onClick = onClick
+                        )
+                        else -> Modifier
+                    }
+                ),
+            contentAlignment = Alignment.Center,
+            content = content
+        )
+    }
 }
 
 @Composable

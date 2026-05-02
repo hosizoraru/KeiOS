@@ -56,9 +56,9 @@ import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.normalizeGalleryTitle
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
+import os.kei.ui.page.main.widget.glass.AppLiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
@@ -280,7 +280,7 @@ fun GuideGalleryExpressionCardItem(
                             onDismissRequest = { showPicker = false },
                             enableWindowDim = false
                         ) {
-                            LiquidGlassDropdownColumn(
+                            AppLiquidGlassDropdownColumn(
                                 modifier = Modifier.heightIn(max = pickerMaxHeight),
                                 accentColor = Color(0xFF3B82F6),
                                 backdrop = backdrop

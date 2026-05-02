@@ -124,17 +124,15 @@ fun AppDropdownSelector(
                 enableWindowDim = false
             ) {
                 val accentColor = dropdownAnchorTint(textColor = textColor, variant = variant)
-                LiquidGlassDropdownColumn(
+                AppLiquidGlassDropdownColumn(
                     accentColor = accentColor,
                     backdrop = backdrop
                 ) {
-                    LiquidGlassDropdownSingleChoiceList(
+                    DropdownSelectorChoiceList(
                         options = options,
                         selectedIndex = selectedIndex,
-                        onSelectedIndexChange = { selected ->
-                            onSelectedIndexChange(selected)
-                            onExpandedChange(false)
-                        },
+                        onSelectedIndexChange = onSelectedIndexChange,
+                        onExpandedChange = onExpandedChange,
                         accentColor = accentColor,
                         variant = variant
                     )
@@ -142,4 +140,25 @@ fun AppDropdownSelector(
             }
         }
     }
+}
+
+@Composable
+private fun DropdownSelectorChoiceList(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+    onExpandedChange: (Boolean) -> Unit,
+    accentColor: Color,
+    variant: GlassVariant
+) {
+    LiquidGlassDropdownSingleChoiceList(
+        options = options,
+        selectedIndex = selectedIndex,
+        onSelectedIndexChange = { selected ->
+            onSelectedIndexChange(selected)
+            onExpandedChange(false)
+        },
+        accentColor = accentColor,
+        variant = variant
+    )
 }

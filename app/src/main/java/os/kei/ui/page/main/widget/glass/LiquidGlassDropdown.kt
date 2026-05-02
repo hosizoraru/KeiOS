@@ -42,6 +42,7 @@ import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
@@ -522,6 +523,63 @@ fun LiquidGlassDropdownSingleChoiceList(
             accentColor = accentColor,
             variant = variant,
             enabled = enabled
+        )
+    }
+}
+
+@Composable
+fun AppStandaloneLiquidGlassDropdownColumn(
+    modifier: Modifier = Modifier,
+    minWidth: Dp = LiquidGlassDropdownMinWidth,
+    maxWidth: Dp = LiquidGlassDropdownMaxWidth,
+    maxHeight: Dp = LiquidGlassDropdownMaxHeight,
+    accentColor: Color = MiuixTheme.colorScheme.primary,
+    content: @Composable () -> Unit
+) {
+    val localBackdrop = rememberLayerBackdrop()
+    AppStandaloneBackdropHost(
+        backdrop = localBackdrop,
+        modifier = modifier
+    ) {
+        LiquidGlassDropdownColumn(
+            minWidth = minWidth,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight,
+            accentColor = accentColor,
+            backdrop = localBackdrop,
+            content = content
+        )
+    }
+}
+
+@Composable
+fun AppLiquidGlassDropdownColumn(
+    modifier: Modifier = Modifier,
+    minWidth: Dp = LiquidGlassDropdownMinWidth,
+    maxWidth: Dp = LiquidGlassDropdownMaxWidth,
+    maxHeight: Dp = LiquidGlassDropdownMaxHeight,
+    accentColor: Color = MiuixTheme.colorScheme.primary,
+    backdrop: Backdrop? = null,
+    content: @Composable () -> Unit
+) {
+    if (backdrop != null) {
+        LiquidGlassDropdownColumn(
+            modifier = modifier,
+            minWidth = minWidth,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight,
+            accentColor = accentColor,
+            backdrop = backdrop,
+            content = content
+        )
+    } else {
+        AppStandaloneLiquidGlassDropdownColumn(
+            modifier = modifier,
+            minWidth = minWidth,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight,
+            accentColor = accentColor,
+            content = content
         )
     }
 }

@@ -5,12 +5,8 @@ import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -37,12 +33,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.PlatformTextStyle
@@ -51,22 +44,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp as lerpFloat
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
-import com.kyant.backdrop.highlight.Highlight
-import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
+import os.kei.ui.page.main.widget.glass.AppLiquidFloatingSurface
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
-import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -291,7 +276,7 @@ internal fun DebugBgmFloatingBottomChrome(
         }
 
         if (miniPlayerHeight > 1.dp && miniPlayerWidth > 1.dp) {
-            DebugBgmBottomSurface(
+            AppLiquidFloatingSurface(
                 modifier = Modifier
                     .offset(x = miniPlayerX, y = miniPlayerY)
                     .width(miniPlayerWidth)
@@ -300,7 +285,9 @@ internal fun DebugBgmFloatingBottomChrome(
                 shape = ContinuousCapsule,
                 backdrop = backdrop,
                 interactionSource = miniPlayerInteractionSource,
-                consumeTouches = true
+                consumeTouches = true,
+                pressDurationMillis = DebugBgmBottomPressMotionMs,
+                pressLabel = "debug_bgm_bottom_surface_press"
             ) {
                 DebugBgmMiniPlayer(
                     accent = accent,
@@ -322,7 +309,7 @@ internal fun DebugBgmFloatingBottomChrome(
             }
         }
 
-        DebugBgmBottomSurface(
+        AppLiquidFloatingSurface(
             modifier = Modifier
                 .offset(x = 0.dp, y = tabGroupY)
                 .width(tabGroupWidth)
@@ -330,7 +317,9 @@ internal fun DebugBgmFloatingBottomChrome(
             shape = ContinuousCapsule,
             backdrop = backdrop,
             interactionSource = dockSurfaceInteractionSource,
-            clipContent = false
+            clipContent = false,
+            pressDurationMillis = DebugBgmBottomPressMotionMs,
+            pressLabel = "debug_bgm_bottom_surface_press"
         ) {
             DebugBgmDockGroupContent(
                 tabs = tabs,
@@ -345,14 +334,16 @@ internal fun DebugBgmFloatingBottomChrome(
             )
         }
 
-        DebugBgmBottomSurface(
+        AppLiquidFloatingSurface(
             modifier = Modifier
                 .offset(x = searchX, y = searchY)
                 .width(searchWidth)
                 .height(searchSize),
             shape = if (searchFieldVisible) ContinuousCapsule else CircleShape,
             backdrop = backdrop,
-            onClick = if (searchFieldVisible) null else onSearchClick
+            onClick = if (searchFieldVisible) null else onSearchClick,
+            pressDurationMillis = DebugBgmBottomPressMotionMs,
+            pressLabel = "debug_bgm_bottom_surface_press"
         ) {
             if (searchFieldVisible) {
                 DebugBgmBottomSearchField(
@@ -372,135 +363,6 @@ internal fun DebugBgmFloatingBottomChrome(
                     iconSize = 27.dp
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun DebugBgmBottomSurface(
-    modifier: Modifier,
-    shape: Shape,
-    backdrop: Backdrop? = null,
-    onClick: (() -> Unit)? = null,
-    interactionSource: MutableInteractionSource? = null,
-    clipContent: Boolean = true,
-    consumeTouches: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
-    val pressed by resolvedInteractionSource.collectIsPressedAsState()
-    val pressProgress by appMotionFloatState(
-        targetValue = if (pressed) 1f else 0f,
-        durationMillis = DebugBgmBottomSurfacePressMotionMs,
-        label = "debug_bgm_bottom_surface_press"
-    )
-    val density = LocalDensity.current
-    val isDark = isSystemInDarkTheme()
-    val surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = if (isDark) 0.20f else 0.40f)
-    val overlayColor = if (isDark) {
-        Color.White.copy(alpha = 0.04f)
-    } else {
-        Color.White.copy(alpha = 0.08f)
-    }
-    val borderColor = if (isDark) {
-        Color.White.copy(alpha = 0.18f)
-    } else {
-        Color.White.copy(alpha = 0.54f)
-    }
-    Box(
-        modifier = modifier
-            .graphicsLayer {
-                translationY = -with(density) { 1.25.dp.toPx() } * pressProgress
-                scaleX = lerpFloat(1f, 1.010f, pressProgress)
-                scaleY = lerpFloat(1f, 0.992f, pressProgress)
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(
-                    if (backdrop != null) {
-                        Modifier.drawBackdrop(
-                            backdrop = backdrop,
-                            shape = { shape },
-                            effects = {
-                                vibrancy()
-                                blur(UiPerformanceBudget.backdropBlur.toPx())
-                                lens(
-                                    (UiPerformanceBudget.backdropLens *
-                                        (0.90f + 0.08f * pressProgress)).toPx(),
-                                    (UiPerformanceBudget.backdropLens *
-                                        (0.90f + 0.10f * pressProgress)).toPx()
-                                )
-                            },
-                            highlight = {
-                                Highlight.Default.copy(
-                                    alpha = (if (isDark) 0.46f else 0.82f) + 0.06f * pressProgress
-                                )
-                            },
-                            shadow = {
-                                Shadow.Default.copy(
-                                    color = Color.Black.copy(alpha = if (isDark) 0.20f else 0.10f)
-                                )
-                            },
-                            onDrawSurface = { drawRect(surfaceColor) }
-                        )
-                    } else {
-                        Modifier
-                            .clip(shape)
-                            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.96f), shape)
-                    }
-                )
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            overlayColor,
-                            overlayColor.copy(alpha = overlayColor.alpha * 0.52f)
-                        )
-                    )
-                )
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape)
-                .border(1.dp, borderColor, shape)
-        )
-        if (consumeTouches && onClick == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(shape)
-                    .clickable(
-                        interactionSource = resolvedInteractionSource,
-                        indication = null,
-                        onClick = {}
-                    )
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(if (clipContent) Modifier.clip(shape) else Modifier)
-                .then(
-                    when {
-                        onClick != null -> Modifier.clickable(
-                            interactionSource = resolvedInteractionSource,
-                            indication = null,
-                            onClick = onClick
-                        )
-                        else -> Modifier
-                    }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            content()
         }
     }
 }
@@ -618,4 +480,4 @@ private val DebugBgmCompactControlSize = DebugBgmChromeControlHeight
 private val DebugBgmCompactControlInset = 0.dp
 private const val DebugBgmBottomChromeSizeMotionMs = 360
 private const val DebugBgmBottomChromeFadeMotionMs = 240
-private const val DebugBgmBottomSurfacePressMotionMs = 120
+private const val DebugBgmBottomPressMotionMs = 120
