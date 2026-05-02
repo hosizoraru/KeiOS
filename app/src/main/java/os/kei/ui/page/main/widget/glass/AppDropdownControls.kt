@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.widget.glass
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,11 +98,13 @@ fun AppDropdownSelector(
     minHeight: Dp = AppInteractiveTokens.compactAppLiquidTextButtonMinHeight,
     horizontalPadding: Dp = 10.dp,
     verticalPadding: Dp = 6.dp,
+    anchorAlignment: Alignment = Alignment.CenterStart,
     alignment: PopupPositionProvider.Align = PopupPositionProvider.Align.BottomEnd,
     placement: SnapshotPopupPlacement = SnapshotPopupPlacement.ButtonEnd
 ) {
     androidx.compose.foundation.layout.Box(
-        modifier = modifier.capturePopupAnchor { onAnchorBoundsChange(it) }
+        modifier = modifier.capturePopupAnchor { onAnchorBoundsChange(it) },
+        contentAlignment = anchorAlignment
     ) {
         AppDropdownAnchorButton(
             text = selectedText,
