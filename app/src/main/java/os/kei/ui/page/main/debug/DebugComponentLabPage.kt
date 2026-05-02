@@ -17,12 +17,16 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideBackIcon
 import os.kei.ui.page.main.os.appLucideExternalLinkIcon
 import os.kei.ui.page.main.os.appLucideFlaskIcon
 import os.kei.ui.page.main.os.appLucideLayersIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.core.AppFeatureCard
@@ -33,9 +37,10 @@ import os.kei.ui.page.main.widget.core.AppOverviewMetricTile
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppSupportingBlock
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -48,6 +53,7 @@ internal fun DebugComponentLabPage(
     val listState = rememberLazyListState()
     val scrollBehavior = MiuixScrollBehavior()
     val accent = MiuixTheme.colorScheme.primary
+    val pageBackdrop = rememberLayerBackdrop()
 
     AppPageScaffold(
         title = stringResource(R.string.debug_component_lab_title),
@@ -55,13 +61,12 @@ internal fun DebugComponentLabPage(
         scrollBehavior = scrollBehavior,
         topBarColor = Color.Transparent,
         navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = appLucideBackIcon(),
-                    contentDescription = stringResource(R.string.common_close),
-                    tint = MiuixTheme.colorScheme.onSurface
-                )
-            }
+            AppLiquidNavigationButton(
+                icon = appLucideBackIcon(),
+                contentDescription = stringResource(R.string.common_close),
+                onClick = onClose,
+                backdrop = pageBackdrop
+            )
         }
     ) { innerPadding ->
         Box(Modifier.fillMaxSize()) {
@@ -77,6 +82,7 @@ internal fun DebugComponentLabPage(
                             )
                         )
                     )
+                    .layerBackdrop(pageBackdrop)
             )
             AppPageLazyColumn(
                 innerPadding = innerPadding,
@@ -93,12 +99,14 @@ internal fun DebugComponentLabPage(
                 item {
                     DebugLiquidPreviewCard(
                         accent = accent,
+                        backdrop = pageBackdrop,
                         onOpenLiquidCatalog = onOpenLiquidCatalog
                     )
                 }
                 item {
                     DebugBgmPreviewCard(
                         accent = accent,
+                        backdrop = pageBackdrop,
                         onOpenBgmMusic = onOpenBgmMusic
                     )
                 }
@@ -113,6 +121,7 @@ internal fun DebugComponentLabPage(
 @Composable
 private fun DebugLiquidPreviewCard(
     accent: Color,
+    backdrop: Backdrop,
     onOpenLiquidCatalog: () -> Unit
 ) {
     val openLabel = stringResource(R.string.debug_component_lab_action_open_liquid_activity)
@@ -126,13 +135,16 @@ private fun DebugLiquidPreviewCard(
         contentVerticalSpacing = CardLayoutRhythm.sectionGap,
         onClick = onOpenLiquidCatalog,
         headerEndActions = {
-            IconButton(onClick = onOpenLiquidCatalog) {
-                Icon(
-                    imageVector = appLucideExternalLinkIcon(),
-                    contentDescription = openLabel,
-                    tint = accent
-                )
-            }
+            AppLiquidIconButton(
+                backdrop = backdrop,
+                icon = appLucideExternalLinkIcon(),
+                contentDescription = openLabel,
+                onClick = onOpenLiquidCatalog,
+                width = 40.dp,
+                height = 40.dp,
+                variant = GlassVariant.Compact,
+                iconTint = accent
+            )
         }
     ) {
         AppSupportingBlock(
@@ -208,6 +220,7 @@ private fun DebugLabIntroCard(accent: Color) {
 @Composable
 private fun DebugBgmPreviewCard(
     accent: Color,
+    backdrop: Backdrop,
     onOpenBgmMusic: () -> Unit
 ) {
     val openLabel = stringResource(R.string.debug_component_lab_action_open_bgm_activity)
@@ -221,13 +234,16 @@ private fun DebugBgmPreviewCard(
         contentVerticalSpacing = CardLayoutRhythm.sectionGap,
         onClick = onOpenBgmMusic,
         headerEndActions = {
-            IconButton(onClick = onOpenBgmMusic) {
-                Icon(
-                    imageVector = appLucideExternalLinkIcon(),
-                    contentDescription = openLabel,
-                    tint = accent
-                )
-            }
+            AppLiquidIconButton(
+                backdrop = backdrop,
+                icon = appLucideExternalLinkIcon(),
+                contentDescription = openLabel,
+                onClick = onOpenBgmMusic,
+                width = 40.dp,
+                height = 40.dp,
+                variant = GlassVariant.Compact,
+                iconTint = accent
+            )
         }
     ) {
         AppSupportingBlock(

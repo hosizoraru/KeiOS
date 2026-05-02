@@ -16,10 +16,9 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideBackIcon
+import os.kei.ui.page.main.widget.chrome.AppLiquidNavigationButton
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -38,13 +37,12 @@ internal fun DebugLiquidCatalogPage(
         scrollBehavior = scrollBehavior,
         topBarColor = Color.Transparent,
         navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = appLucideBackIcon(),
-                    contentDescription = stringResource(R.string.common_close),
-                    tint = MiuixTheme.colorScheme.onSurface
-                )
-            }
+            AppLiquidNavigationButton(
+                icon = appLucideBackIcon(),
+                contentDescription = stringResource(R.string.common_close),
+                onClick = onClose,
+                backdrop = pageBackdrop
+            )
         }
     ) { innerPadding ->
         Box(Modifier.fillMaxSize()) {
