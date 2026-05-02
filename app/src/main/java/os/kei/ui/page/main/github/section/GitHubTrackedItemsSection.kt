@@ -43,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.feature.github.data.remote.GitHubReleaseAssetBundle
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
@@ -87,6 +89,9 @@ import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.AppLiquidAccordionCard
+import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
+import os.kei.ui.page.main.widget.glass.LiquidSurface
+import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.motion.appExpandIn
@@ -95,6 +100,8 @@ import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
+import os.kei.ui.page.main.widget.glass.resolvedGlassBlurDp
+import os.kei.ui.page.main.widget.glass.resolvedGlassLensDp
 import os.kei.ui.page.main.github.asset.apkAssetTarget
 import os.kei.ui.page.main.github.asset.assetAbiLabel
 import os.kei.ui.page.main.github.asset.assetDisplayName
@@ -487,18 +494,24 @@ internal fun GitHubAssetCountBubble(
     loading: Boolean = false
 ) {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    Box(
-        modifier = modifier
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(color.copy(alpha = if (isDark) 0.18f else 0.12f))
-            .border(
-                width = 0.8.dp,
-                color = color.copy(alpha = if (isDark) 0.34f else 0.24f),
-                shape = CircleShape
-            ),
-        contentAlignment = androidx.compose.ui.Alignment.Center
-    ) {
+    val localBackdrop = rememberLayerBackdrop()
+    val activeBackdrop = localBackdrop.takeIf { LocalLiquidControlsEnabled.current }
+    val shape = CircleShape
+    val bubbleModifier = Modifier
+        .clip(shape)
+        .then(
+            if (activeBackdrop == null) {
+                Modifier.background(color.copy(alpha = if (isDark) 0.18f else 0.12f))
+            } else {
+                Modifier
+            }
+        )
+        .border(
+            width = 0.8.dp,
+            color = color.copy(alpha = if (isDark) 0.34f else 0.24f),
+            shape = shape
+        )
+    val content: @Composable () -> Unit = {
         if (loading) {
             LiquidCircularProgressBar(
                 size = 14.dp,
@@ -515,6 +528,46 @@ internal fun GitHubAssetCountBubble(
                 fontWeight = AppTypographyTokens.Caption.fontWeight,
                 maxLines = 1
             )
+        }
+    }
+    Box(
+        modifier = modifier.size(28.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (activeBackdrop != null) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .layerBackdrop(localBackdrop)
+            )
+            LiquidSurface(
+                backdrop = activeBackdrop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(bubbleModifier),
+                shape = shape,
+                isInteractive = false,
+                surfaceColor = color.copy(alpha = if (isDark) 0.18f else 0.12f),
+                blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Compact),
+                lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Compact),
+                shadow = false
+            ) {
+                Box(
+                    modifier = Modifier.matchParentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(bubbleModifier),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
         }
     }
 }

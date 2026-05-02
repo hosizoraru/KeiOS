@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteIcon
@@ -40,6 +42,12 @@ import os.kei.ui.page.main.student.guideLocalizedValue
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.rememberGuideTabCopyAction
 import os.kei.ui.page.main.student.stripGuideWebLinks
+import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
+import os.kei.ui.page.main.widget.glass.LiquidSurface
+import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
+import os.kei.ui.page.main.widget.glass.resolvedGlassBlurDp
+import os.kei.ui.page.main.widget.glass.resolvedGlassLensDp
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import os.kei.ui.page.main.widget.support.copyModeAwareRow
 import com.kyant.capsule.ContinuousCapsule
@@ -153,6 +161,9 @@ internal fun GuideProfileValueCapsule(
     onLongClick: (() -> Unit)? = null
 ) {
     val isDark = isSystemInDarkTheme()
+    val localBackdrop = rememberLayerBackdrop()
+    val activeBackdrop = localBackdrop.takeIf { LocalLiquidControlsEnabled.current }
+    val shape = ContinuousCapsule
     val clickModifier = if (onClick != null || onLongClick != null) {
         Modifier.copyModeAwareRow(
             copyPayload = buildGuideTabCopyPayload("", label),
@@ -162,19 +173,22 @@ internal fun GuideProfileValueCapsule(
     } else {
         Modifier
     }
-    Box(
-        modifier = Modifier
-            .clip(ContinuousCapsule)
-            .then(clickModifier)
-            .background(tint.copy(alpha = if (isDark) 0.20f else 0.16f))
-            .border(
-                width = 0.8.dp,
-                color = tint.copy(alpha = if (isDark) 0.42f else 0.46f),
-                shape = ContinuousCapsule
-            )
-            .padding(horizontal = 9.dp, vertical = 3.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    val capsuleModifier = Modifier
+        .clip(shape)
+        .then(
+            if (activeBackdrop == null) {
+                Modifier.background(tint.copy(alpha = if (isDark) 0.20f else 0.16f))
+            } else {
+                Modifier
+            }
+        )
+        .border(
+            width = 0.8.dp,
+            color = tint.copy(alpha = if (isDark) 0.42f else 0.46f),
+            shape = shape
+        )
+        .then(clickModifier)
+    val content: @Composable () -> Unit = {
         Text(
             text = label,
             color = if (isDark) tint else tint.copy(alpha = 0.92f),
@@ -182,6 +196,40 @@ internal fun GuideProfileValueCapsule(
             overflow = TextOverflow.Clip,
             textAlign = TextAlign.Center
         )
+    }
+    Box {
+        if (activeBackdrop != null) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .layerBackdrop(localBackdrop)
+            )
+            LiquidSurface(
+                backdrop = activeBackdrop,
+                modifier = capsuleModifier,
+                shape = shape,
+                isInteractive = false,
+                surfaceColor = tint.copy(alpha = if (isDark) 0.20f else 0.16f),
+                blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Compact),
+                lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Compact),
+                shadow = false
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
+            }
+        } else {
+            Box(
+                modifier = capsuleModifier
+                    .padding(horizontal = 9.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
+        }
     }
 }
 
