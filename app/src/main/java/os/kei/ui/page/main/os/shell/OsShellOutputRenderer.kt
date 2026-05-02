@@ -1,22 +1,16 @@
 package os.kei.ui.page.main.os.shell
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.shape.CornerBasedShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,22 +36,6 @@ internal fun ShellOutputGlassPanel(
     modifier: Modifier = Modifier
 ) {
     val isDark = isSystemInDarkTheme()
-    val shape: CornerBasedShape = RoundedCornerShape(18.dp)
-    val borderColor = if (isDark) {
-        Color(0xFF9CCBFF).copy(alpha = 0.24f)
-    } else {
-        Color(0xFFC4DCF9).copy(alpha = 0.90f)
-    }
-    val baseColor = if (isDark) {
-        Color(0xFF121A24).copy(alpha = 0.40f)
-    } else {
-        Color.White.copy(alpha = 0.66f)
-    }
-    val overlayColor = if (isDark) {
-        Color(0xFF82B6F5).copy(alpha = 0.07f)
-    } else {
-        Color(0xFFE4F1FF).copy(alpha = 0.22f)
-    }
     val commandColor = if (isDark) {
         Color(0xFF7AB8FF)
     } else {
@@ -74,13 +52,9 @@ internal fun ShellOutputGlassPanel(
         Color(0xFFDC2626)
     }
 
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .background(baseColor, shape)
-            .background(overlayColor, shape)
-            .border(width = 1.dp, color = borderColor, shape = shape)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ShellGlassPanelSurface(
+        modifier = modifier,
+        minHeight = 160.dp
     ) {
         if (text.isBlank()) {
             Text(

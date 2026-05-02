@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,16 +13,19 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -48,9 +52,23 @@ fun AppSurfaceCard(
     } else {
         Modifier
     }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressedScale by appMotionFloatState(
+        targetValue = if (showIndication && (onClick != null || onLongClick != null) && isPressed) {
+            0.992f
+        } else {
+            1f
+        },
+        durationMillis = 120,
+        label = "app_surface_card_press_scale"
+    )
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = pressedScale
+                scaleY = pressedScale
+            }
             .clip(shape)
             .border(width = 1.dp, color = borderColor, shape = shape)
             .background(containerColor, shape)
