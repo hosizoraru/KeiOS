@@ -57,6 +57,8 @@ import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
+import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
 import os.kei.ui.page.main.widget.glass.LocalLiquidSwitchEnabled
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -65,9 +67,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 
@@ -561,18 +561,17 @@ private fun OsShellDangerousCommandConfirmDialog(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            TextButton(
+            LiquidDialogActionButton(
                 modifier = Modifier.weight(1f),
                 text = stringResource(R.string.common_cancel),
                 onClick = onDismissRequest
             )
-            TextButton(
+            LiquidDialogActionButton(
                 modifier = Modifier.weight(1f),
                 text = confirmText,
-                colors = ButtonDefaults.textButtonColors(
-                    color = MiuixTheme.colorScheme.error,
-                    textColor = MiuixTheme.colorScheme.onError
-                ),
+                containerColor = MiuixTheme.colorScheme.error,
+                textColor = MiuixTheme.colorScheme.onError,
+                variant = GlassVariant.SheetDangerAction,
                 onClick = onConfirm
             )
         }

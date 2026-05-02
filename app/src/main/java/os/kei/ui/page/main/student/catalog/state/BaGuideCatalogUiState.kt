@@ -12,7 +12,7 @@ import os.kei.R
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 
-internal enum class BaGuideCatalogSortMode(@StringRes val labelRes: Int) {
+internal enum class BaGuideCatalogSortMode(@get:StringRes val labelRes: Int) {
     Default(R.string.ba_catalog_sort_default),
     ReleaseDateDesc(R.string.ba_catalog_sort_release_date_desc),
     ReleaseDateAsc(R.string.ba_catalog_sort_release_date_asc),

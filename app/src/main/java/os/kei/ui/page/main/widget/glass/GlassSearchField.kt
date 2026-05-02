@@ -13,13 +13,19 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.PlatformTextStyle
@@ -31,12 +37,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -64,6 +72,12 @@ fun GlassSearchField(
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
+    var focused by remember { mutableStateOf(false) }
+    val focusProgress by appMotionFloatState(
+        targetValue = if (focused) 1f else 0f,
+        durationMillis = 140,
+        label = "glass_search_field_focus"
+    )
     val placeholderColor = if (variant == GlassVariant.SheetInput) {
         textColor.copy(alpha = if (isDark) 0.72f else 0.62f)
     } else {
@@ -101,7 +115,9 @@ fun GlassSearchField(
     } else {
         Modifier.border(
             width = glass.borderWidth,
-            color = glass.borderColor,
+            color = glass.borderColor.copy(
+                alpha = (glass.borderColor.alpha + 0.14f * focusProgress).coerceAtMost(1f)
+            ),
             shape = ContinuousCapsule
         )
     }
@@ -126,20 +142,35 @@ fun GlassSearchField(
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
+                        layerBlock = {
+                            val focusScale = 1f + 2.dp.toPx() / size.height.coerceAtLeast(1f) * focusProgress
+                            scaleX = focusScale
+                            scaleY = focusScale
+                        },
                         effects = {
                             vibrancy()
                             blur(glass.blur.toPx())
                             lens(
-                                glass.lensStart.toPx(),
-                                glass.lensEnd.toPx()
+                                glass.lensStart.toPx() + 4.dp.toPx() * focusProgress,
+                                glass.lensEnd.toPx() + 6.dp.toPx() * focusProgress,
+                                chromaticAberration = focusProgress > 0.01f,
+                                depthEffect = focusProgress > 0.01f
                             )
                         },
                         highlight = {
-                            Highlight.Default.copy(alpha = glass.highlightAlpha)
+                            Highlight.Default.copy(
+                                alpha = (glass.highlightAlpha + 0.10f * focusProgress).coerceAtMost(1f)
+                            )
                         },
                         shadow = {
                             Shadow.Default.copy(
-                                color = Color.Black.copy(alpha = glass.shadowAlpha)
+                                color = Color.Black.copy(alpha = glass.shadowAlpha + 0.04f * focusProgress)
+                            )
+                        },
+                        innerShadow = {
+                            InnerShadow(
+                                radius = 6.dp * focusProgress,
+                                alpha = 0.22f * focusProgress
                             )
                         },
                         onDrawSurface = {
@@ -148,6 +179,9 @@ fun GlassSearchField(
                             } else {
                                 drawRect(glass.baseColor)
                                 if (glass.overlayColor != Color.Transparent) drawRect(glass.overlayColor)
+                                if (focusProgress > 0f) {
+                                    drawRect(textColor.copy(alpha = 0.04f * focusProgress))
+                                }
                             }
                         }
                     )
@@ -167,6 +201,11 @@ fun GlassSearchField(
                         )
                 }
             )
+            .graphicsLayer {
+                shadowElevation = 2.dp.toPx() * focusProgress
+                ambientShadowColor = Color.Black.copy(alpha = 0.06f * focusProgress)
+                spotShadowColor = Color.Black.copy(alpha = 0.08f * focusProgress)
+            }
             .then(borderModifier)
             .padding(
                 horizontal = horizontalPadding,
@@ -191,6 +230,7 @@ fun GlassSearchField(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight(align = Alignment.CenterVertically)
+                .onFocusChanged { focused = it.isFocused || it.hasFocus }
                 .then(
                     if (focusRequester != null) {
                         Modifier.focusRequester(focusRequester)

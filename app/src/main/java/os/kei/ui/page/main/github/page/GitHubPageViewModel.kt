@@ -5,7 +5,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.core.ui.snapshot.AppSnapshotFlowManager
 import os.kei.ui.page.main.github.actions.GitHubActionsUiStateStore
 import os.kei.ui.page.main.github.query.DownloaderOption
 import os.kei.ui.page.main.github.query.OnlineShareTargetOption
@@ -51,6 +51,7 @@ internal class GitHubPageViewModel : ViewModel() {
     private var pendingShareImportClockJob: Job? = null
     private var onlineShareTargetsJob: Job? = null
     private var downloaderOptionsJob: Job? = null
+    private val snapshotFlowManager = AppSnapshotFlowManager()
     private val pendingShareImportNowMillis = MutableStateFlow(System.currentTimeMillis())
 
     private val _contentDerivedState = MutableStateFlow(GitHubPageContentDerivedState())
@@ -86,7 +87,7 @@ internal class GitHubPageViewModel : ViewModel() {
         val appContext = context.applicationContext
         if (onlineShareTargetsJob?.isActive != true) {
             onlineShareTargetsJob = viewModelScope.launch {
-                snapshotFlow {
+                snapshotFlowManager.snapshotFlow {
                     GitHubOnlineShareTargetInput(
                         shouldResolve = state.showCheckLogicSheet ||
                             state.lookupConfig.onlineShareTargetPackage.isNotBlank() ||
@@ -103,7 +104,7 @@ internal class GitHubPageViewModel : ViewModel() {
         }
         if (downloaderOptionsJob?.isActive != true) {
             downloaderOptionsJob = viewModelScope.launch {
-                snapshotFlow { state.showCheckLogicSheet }
+                snapshotFlowManager.snapshotFlow { state.showCheckLogicSheet }
                     .collectLatest { showCheckLogicSheet ->
                         _checkLogicDownloaderOptions.value = if (showCheckLogicSheet) {
                             repository.queryDownloaders(appContext)
@@ -199,7 +200,7 @@ internal class GitHubPageViewModel : ViewModel() {
         contentStateJob?.cancel()
         pendingShareImportClockJob?.cancel()
         pendingShareImportClockJob = viewModelScope.launch {
-            snapshotFlow { state.pendingShareImportTrack?.armedAtMillis }
+            snapshotFlowManager.snapshotFlow { state.pendingShareImportTrack?.armedAtMillis }
                 .collectLatest { armedAtMillis ->
                     pendingShareImportNowMillis.value = System.currentTimeMillis()
                     if (armedAtMillis == null) return@collectLatest
@@ -211,7 +212,7 @@ internal class GitHubPageViewModel : ViewModel() {
         }
         contentStateJob = viewModelScope.launch {
             combine(
-                snapshotFlow {
+                snapshotFlowManager.snapshotFlow {
                     GitHubPageContentInput(
                         trackedItems = state.trackedItems.toList(),
                         trackedSearch = state.trackedSearch,
@@ -231,5 +232,14 @@ internal class GitHubPageViewModel : ViewModel() {
                 _contentDerivedState.value = repository.buildContentState(input)
             }
         }
+    }
+
+    override fun onCleared() {
+        contentStateJob?.cancel()
+        pendingShareImportClockJob?.cancel()
+        onlineShareTargetsJob?.cancel()
+        downloaderOptionsJob?.cancel()
+        snapshotFlowManager.dispose()
+        super.onCleared()
     }
 }

@@ -65,7 +65,7 @@ internal data class GitHubRecommendedTokenGuide(
 )
 
 internal enum class GitHubSortMode(
-    @StringRes val labelRes: Int
+    @get:StringRes val labelRes: Int
 ) {
     UpdateFirst(R.string.github_sort_update_first),
     NameAsc(R.string.github_sort_name_asc),
@@ -81,7 +81,7 @@ internal enum class OverviewRefreshState {
 
 internal enum class RefreshIntervalOption(
     val hours: Int,
-    @StringRes val labelRes: Int
+    @get:StringRes val labelRes: Int
 ) {
     Hour1(1, R.string.github_refresh_interval_1h),
     Hour3(3, R.string.github_refresh_interval_3h),

@@ -45,7 +45,6 @@ import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidMusicProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -219,11 +218,14 @@ internal fun BaGuideBgmMiniPlayer(
             }
 
             if (!expanded) {
-                LiquidMusicProgressBar(
-                    progress = { runtimeState.progress.coerceIn(0f, 1f) },
-                    activeColor = accent,
-                    inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
-                    modifier = Modifier.fillMaxWidth()
+                BaGuideBgmPlaybackSeekBar(
+                    progress = runtimeState.progress,
+                    enabled = runtimeState.durationMs > 0L,
+                    accent = accent,
+                    contentDescription = seekDescription,
+                    onSeekChanged = onSeekChanged,
+                    onSeekFinished = onSeekFinished,
+                    onInteractionChanged = onSliderInteractionChanged
                 )
             }
 

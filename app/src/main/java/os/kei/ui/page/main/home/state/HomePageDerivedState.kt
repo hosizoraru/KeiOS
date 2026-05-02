@@ -22,11 +22,11 @@ import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.host.pager.MainPageRuntime
 import os.kei.ui.page.main.home.HomeCardStatItem
 import os.kei.ui.page.main.home.HomeHeaderStatusPillState
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
 import kotlinx.coroutines.flow.onEach
-import androidx.compose.runtime.snapshotFlow
 
 private const val HOME_HEADER_SINK_PER_HIDDEN_CARD_DP = 22
 private val HOME_HERO_AVOIDANCE_SCROLL_DISTANCE_DP = 128.dp
@@ -121,9 +121,12 @@ internal fun rememberHomePageHeroMotionState(
     var titleProgress by remember { mutableFloatStateOf(0f) }
     var summaryProgress by remember { mutableFloatStateOf(0f) }
     var avoidanceProgress by remember { mutableFloatStateOf(0f) }
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
 
-    LaunchedEffect(lazyListState) {
-        snapshotFlow { lazyListState.firstVisibleItemIndex to lazyListState.firstVisibleItemScrollOffset }
+    LaunchedEffect(lazyListState, snapshotFlowManager) {
+        snapshotFlowManager.snapshotFlow {
+            lazyListState.firstVisibleItemIndex to lazyListState.firstVisibleItemScrollOffset
+        }
             .onEach { (index, offset) ->
                 if (index > 0) {
                     if (avoidanceProgress != 1f) avoidanceProgress = 1f

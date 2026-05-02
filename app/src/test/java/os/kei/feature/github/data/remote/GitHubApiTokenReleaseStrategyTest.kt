@@ -171,8 +171,8 @@ class GitHubApiTokenReleaseStrategyTest {
                 ?.message
                 .orEmpty()
 
-            assertTrue(errorMessage.contains("游客 API 已限流"))
-            assertTrue(errorMessage.contains("填写 token"))
+            assertTrue(errorMessage.contains("GitHub guest API is rate limited"))
+            assertTrue(errorMessage.contains("enter a token"))
         }
     }
 
@@ -777,7 +777,7 @@ class GitHubApiTokenReleaseStrategyTest {
             val error = tokenStrategy.checkCredentialTrace().result.exceptionOrNull()
 
             assertNotNull(error)
-            assertTrue(error.message.orEmpty().contains("token 无效"))
+            assertTrue(error.message.orEmpty().contains("token is invalid"))
         }
     }
 

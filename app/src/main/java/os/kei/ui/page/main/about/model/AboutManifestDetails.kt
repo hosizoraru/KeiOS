@@ -9,9 +9,9 @@ import androidx.annotation.StringRes
 import os.kei.R
 
 private data class AboutExplainRes(
-    @StringRes val titleRes: Int,
-    @StringRes val purposeRes: Int,
-    @StringRes val usedInRes: Int
+    @get:StringRes val titleRes: Int,
+    @get:StringRes val purposeRes: Int,
+    @get:StringRes val usedInRes: Int
 )
 
 data class AboutPermissionEntry(
@@ -22,14 +22,14 @@ data class AboutPermissionEntry(
     val usedIn: String
 )
 
-enum class AboutComponentType(@StringRes val titleRes: Int) {
+enum class AboutComponentType(@get:StringRes val titleRes: Int) {
     Service(R.string.about_component_type_service),
     Receiver(R.string.about_component_type_receiver),
     Provider(R.string.about_component_type_provider)
 }
 
 data class AboutComponentExtraEntry(
-    @StringRes val labelRes: Int,
+    @get:StringRes val labelRes: Int,
     val value: String
 )
 

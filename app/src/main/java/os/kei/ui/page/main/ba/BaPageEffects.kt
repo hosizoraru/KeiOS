@@ -5,7 +5,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.ba.support.BA_AP_REGEN_TICK_MS
 import os.kei.ui.page.main.widget.chrome.expandTopAppBarToPageTop
 import os.kei.ui.page.main.widget.chrome.isPageSettledAtTop
@@ -31,6 +31,7 @@ internal fun BaPageCommonEffects(
     context: Context,
 ) {
     val transitionAnimationsEnabled = LocalTransitionAnimationsEnabled.current
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
 
     DisposableEffect(Unit) {
         onDispose { onDisposeActionBarInteraction() }
@@ -49,8 +50,8 @@ internal fun BaPageCommonEffects(
         }
     }
 
-    LaunchedEffect(listState, scrollBehavior, transitionAnimationsEnabled) {
-        snapshotFlow {
+    LaunchedEffect(listState, scrollBehavior, transitionAnimationsEnabled, snapshotFlowManager) {
+        snapshotFlowManager.snapshotFlow {
             isPageSettledAtTop(
                 firstVisibleItemIndex = listState.firstVisibleItemIndex,
                 firstVisibleItemScrollOffset = listState.firstVisibleItemScrollOffset,

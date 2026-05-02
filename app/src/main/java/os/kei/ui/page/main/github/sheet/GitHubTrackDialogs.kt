@@ -39,6 +39,7 @@ import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
@@ -48,8 +49,6 @@ import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 
@@ -80,22 +79,21 @@ internal fun GitHubDeleteTrackDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel
                 )
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = if (deleteInProgress) {
                         stringResource(R.string.github_delete_dialog_deleting)
                     } else {
                         stringResource(R.string.common_delete)
                     },
-                    colors = ButtonDefaults.textButtonColors(
-                        color = MiuixTheme.colorScheme.error,
-                        textColor = MiuixTheme.colorScheme.onError
-                    ),
+                    containerColor = MiuixTheme.colorScheme.error,
+                    textColor = MiuixTheme.colorScheme.onError,
+                    variant = GlassVariant.SheetDangerAction,
                     onClick = onConfirmDelete
                 )
             }
@@ -203,27 +201,20 @@ internal fun GitHubTrackImportDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel,
                     enabled = !importInProgress
                 )
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = when {
                         importInProgress -> stringResource(R.string.github_check_sheet_action_importing)
                         preview.canImport -> stringResource(R.string.github_import_dialog_action_confirm)
                         else -> stringResource(R.string.common_close)
                     },
-                    colors = if (preview.canImport) {
-                        ButtonDefaults.textButtonColors(
-                            color = GitHubStatusPalette.Active,
-                            textColor = MiuixTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        ButtonDefaults.textButtonColors()
-                    },
+                    containerColor = if (preview.canImport) GitHubStatusPalette.Active else null,
                     onClick = if (preview.canImport) onConfirmImport else onDismissRequest,
                     enabled = !importInProgress
                 )

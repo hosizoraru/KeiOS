@@ -6,17 +6,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -26,11 +30,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.shapes.Capsule
 import os.kei.R
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppCardBodyColumn
@@ -40,11 +50,14 @@ import os.kei.ui.page.main.widget.core.AppSupportingBlock
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.AppInteractiveTokens
+import os.kei.ui.page.main.widget.glass.LiquidSurface
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.RadioButton
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.basic.Check
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val DefaultSelectedLabelSentinel = "\u0000default-selected-label"
@@ -381,10 +394,84 @@ fun SheetChoiceCard(
                 )
                 details?.invoke(this)
             }
-            RadioButton(
+            SheetLiquidChoiceIndicator(
                 selected = selected,
-                onClick = onSelect
+                onSelect = onSelect,
+                accentColor = selectedAccentColor
             )
+        }
+    }
+}
+
+@Composable
+fun SheetLiquidChoiceIndicator(
+    selected: Boolean,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
+    accentColor: Color = MiuixTheme.colorScheme.primary,
+    enabled: Boolean = true
+) {
+    val isDark = isSystemInDarkTheme()
+    val indicatorBackdrop = rememberLayerBackdrop()
+    val shape = Capsule()
+    val surfaceColor = when {
+        selected && isDark -> accentColor.copy(alpha = 0.18f)
+        selected -> accentColor.copy(alpha = 0.14f)
+        isDark -> MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.26f)
+        else -> MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.44f)
+    }
+    val idleDotColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = if (isDark) 0.62f else 0.48f)
+
+    Box(
+        modifier = modifier.size(width = 44.dp, height = 30.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .layerBackdrop(indicatorBackdrop)
+        )
+        LiquidSurface(
+            backdrop = indicatorBackdrop,
+            modifier = Modifier
+                .fillMaxSize()
+                .semantics {
+                    role = Role.RadioButton
+                    this.selected = selected
+                },
+            shape = shape,
+            enabled = enabled,
+            tint = Color.Unspecified,
+            surfaceColor = surfaceColor,
+            blurRadius = if (selected) 6.dp else 4.dp,
+            lensRadius = if (selected) 16.dp else 12.dp,
+            chromaticAberration = selected,
+            depthEffect = selected,
+            shadow = selected,
+            onClick = onSelect
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 9.dp, vertical = 5.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (selected) {
+                    Icon(
+                        imageVector = MiuixIcons.Basic.Check,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(17.dp)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(Capsule())
+                            .background(idleDotColor)
+                    )
+                }
+            }
         }
     }
 }

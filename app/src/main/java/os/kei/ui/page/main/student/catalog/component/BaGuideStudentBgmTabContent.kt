@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,6 +42,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import os.kei.R
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 import os.kei.ui.page.main.student.GuideBgmFavoritePlaybackStore
 import os.kei.ui.page.main.student.GuideBgmFavoriteStore
@@ -114,13 +114,14 @@ internal fun BaGuideStudentBgmTabContent(
         allStudentEntries.filterByQuery(searchQuery)
     }
     val listState = rememberLazyListState()
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
     var visibleCount by rememberSaveable(searchQuery) { mutableIntStateOf(0) }
     LaunchedEffect(filteredEntries.size) {
         visibleCount = minOf(filteredEntries.size, STUDENT_BGM_BATCH_SIZE)
     }
-    LaunchedEffect(isPageActive, listState, filteredEntries.size) {
+    LaunchedEffect(isPageActive, listState, filteredEntries.size, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow {
+        snapshotFlowManager.snapshotFlow {
             val layoutInfo = listState.layoutInfo
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             lastVisible to layoutInfo.totalItemsCount
@@ -378,17 +379,17 @@ internal fun BaGuideStudentBgmTabContent(
     LaunchedEffect(showNowPlaying) {
         onNowPlayingVisibilityChange(showNowPlaying)
     }
-    LaunchedEffect(listState, isPageActive) {
+    LaunchedEffect(listState, isPageActive, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow { listState.canScrollBackward to listState.canScrollForward }
+        snapshotFlowManager.snapshotFlow { listState.canScrollBackward to listState.canScrollForward }
             .distinctUntilChanged()
             .collect { (canScrollBackward, canScrollForward) ->
                 onScrollBoundsChange(canScrollBackward, canScrollForward)
             }
     }
-    LaunchedEffect(listState, isPageActive) {
+    LaunchedEffect(listState, isPageActive, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow { listState.isScrollInProgress }
+        snapshotFlowManager.snapshotFlow { listState.isScrollInProgress }
             .distinctUntilChanged()
             .collect { scrolling ->
                 onListScrollInProgressChange(scrolling)

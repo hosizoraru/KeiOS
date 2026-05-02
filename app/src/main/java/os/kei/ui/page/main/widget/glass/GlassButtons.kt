@@ -19,10 +19,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
@@ -31,6 +33,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceAtMost
+import androidx.compose.ui.util.lerp
+import os.kei.ui.animation.InteractiveHighlight
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import com.kyant.backdrop.Backdrop
@@ -44,7 +49,12 @@ import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sin
+import kotlin.math.tanh
 
 @Composable
 fun GlassIconButton(
@@ -175,6 +185,10 @@ private fun GlassIconButtonContainer(
         variant = variant,
         accentColor = resolvedContainerColor ?: Color.Unspecified
     )
+    val animationScope = rememberCoroutineScope()
+    val interactiveHighlight = remember(animationScope) {
+        InteractiveHighlight(animationScope = animationScope)
+    }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by appMotionFloatState(
@@ -219,6 +233,11 @@ private fun GlassIconButtonContainer(
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
+                        layerBlock = if (enabled) {
+                            { applyLiquidButtonLayer(interactiveHighlight) }
+                        } else {
+                            null
+                        },
                         effects = {
                             vibrancy()
                             blur(glass.blur.toPx())
@@ -251,6 +270,15 @@ private fun GlassIconButtonContainer(
                         else -> fallbackSurface.copy(alpha = glass.fallbackAlpha)
                     }
                     Modifier.background(fallbackColor)
+                }
+            )
+            .then(
+                if (enabled) {
+                    Modifier
+                        .then(interactiveHighlight.modifier)
+                        .then(interactiveHighlight.gestureModifier)
+                } else {
+                    Modifier
                 }
             )
             .graphicsLayer {
@@ -334,6 +362,11 @@ fun GlassTextButton(
         variant = variant,
         accentColor = resolvedContainerColor ?: textColor
     )
+    val liquidInteractionEnabled = enabled && (pressScaleEnabled || pressOverlayEnabled)
+    val animationScope = rememberCoroutineScope()
+    val interactiveHighlight = remember(animationScope) {
+        InteractiveHighlight(animationScope = animationScope)
+    }
     val borderModifier = if (glass.showBorder) {
         Modifier.border(
             width = glass.borderWidth,
@@ -402,6 +435,11 @@ fun GlassTextButton(
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
                         shape = { ContinuousCapsule },
+                        layerBlock = if (liquidInteractionEnabled) {
+                            { applyLiquidButtonLayer(interactiveHighlight) }
+                        } else {
+                            null
+                        },
                         effects = {
                             vibrancy()
                             blur(glass.blur.toPx())
@@ -434,6 +472,15 @@ fun GlassTextButton(
                         else -> fallbackSurface.copy(alpha = glass.fallbackAlpha)
                     }
                     Modifier.background(fallbackColor)
+                }
+            )
+            .then(
+                if (liquidInteractionEnabled) {
+                    Modifier
+                        .then(interactiveHighlight.modifier)
+                        .then(interactiveHighlight.gestureModifier)
+                } else {
+                    Modifier
                 }
             )
             .then(borderModifier),
@@ -517,6 +564,34 @@ private fun resolveDarkCapsuleHighlightAlpha(
         GlassVariant.Content -> 0.44f
     }
     return min(defaultAlpha, maxAlpha)
+}
+
+private fun GraphicsLayerScope.applyLiquidButtonLayer(
+    interactiveHighlight: InteractiveHighlight
+) {
+    val progress = interactiveHighlight.pressProgress
+    if (progress <= 0f) {
+        translationX = 0f
+        translationY = 0f
+        scaleX = 1f
+        scaleY = 1f
+        return
+    }
+
+    val liquidScale = lerp(1f, 1f + 3.dp.toPx() / size.height.coerceAtLeast(1f), progress)
+    val maxOffset = size.minDimension.coerceAtLeast(1f)
+    val offset = interactiveHighlight.offset
+    val offsetAngle = atan2(offset.y, offset.x)
+    val maxDragScale = 3.dp.toPx() / size.height.coerceAtLeast(1f)
+
+    translationX = maxOffset * tanh(0.045f * offset.x / maxOffset)
+    translationY = maxOffset * tanh(0.045f * offset.y / maxOffset)
+    scaleX = liquidScale +
+        maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension.coerceAtLeast(1f)) *
+        (size.width / size.height.coerceAtLeast(1f)).fastCoerceAtMost(1f)
+    scaleY = liquidScale +
+        maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension.coerceAtLeast(1f)) *
+        (size.height / size.width.coerceAtLeast(1f)).fastCoerceAtMost(1f)
 }
 
 private fun sanitizeCapsuleContainerColor(

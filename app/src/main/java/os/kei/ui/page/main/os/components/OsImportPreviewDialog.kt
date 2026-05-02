@@ -17,9 +17,8 @@ import os.kei.ui.page.main.os.state.OsCardImportTarget
 import os.kei.ui.page.main.os.transfer.OsCardImportFileKind
 import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
+import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 
@@ -109,27 +108,20 @@ internal fun OsImportPreviewDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel,
                     enabled = !importInProgress
                 )
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = when {
                         importInProgress -> stringResource(R.string.os_import_dialog_action_importing)
                         preview.canImport -> stringResource(R.string.os_import_dialog_action_confirm)
                         else -> stringResource(R.string.common_close)
                     },
-                    colors = if (preview.canImport) {
-                        ButtonDefaults.textButtonColors(
-                            color = PreviewValidColor,
-                            textColor = MiuixTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        ButtonDefaults.textButtonColors()
-                    },
+                    containerColor = if (preview.canImport) PreviewValidColor else null,
                     onClick = if (preview.canImport) onConfirmImport else onDismissRequest,
                     enabled = !importInProgress
                 )

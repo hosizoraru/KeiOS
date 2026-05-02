@@ -32,7 +32,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +52,7 @@ import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.lerp
 import os.kei.ui.animation.DampedDragAnimation
 import os.kei.ui.animation.InteractiveHighlight
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.widget.glass.UiPerformanceBudget
 import os.kei.ui.page.main.widget.glass.rememberGlassReductionProgress
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
@@ -274,8 +274,9 @@ fun LiquidGlassBottomBar(
         currentIndex = selectedIndex.fastCoerceIn(0, safeTabsCount - 1)
     }
 
-    LaunchedEffect(dampedDragAnimation) {
-        snapshotFlow { currentIndex }
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(dampedDragAnimation, snapshotFlowManager) {
+        snapshotFlowManager.snapshotFlow { currentIndex }
             .drop(1)
             .collectLatest { index ->
                 if (transitionAnimationsEnabled) {

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +18,7 @@ import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogFilterSortState
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabContentUiState
 import os.kei.ui.page.main.student.catalog.state.rememberBaGuideCatalogTabListState
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -80,17 +80,20 @@ internal fun BaGuideCatalogTabContent(
         error = error,
         filteredEntriesEmpty = tabListState.filteredEntries.isEmpty()
     )
-    LaunchedEffect(tabListState.listState, isPageActive) {
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(tabListState.listState, isPageActive, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow { tabListState.listState.canScrollBackward to tabListState.listState.canScrollForward }
+        snapshotFlowManager.snapshotFlow {
+            tabListState.listState.canScrollBackward to tabListState.listState.canScrollForward
+        }
             .distinctUntilChanged()
             .collect { (canScrollBackward, canScrollForward) ->
                 onScrollBoundsChange(canScrollBackward, canScrollForward)
             }
     }
-    LaunchedEffect(tabListState.listState, isPageActive) {
+    LaunchedEffect(tabListState.listState, isPageActive, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow { tabListState.listState.isScrollInProgress }
+        snapshotFlowManager.snapshotFlow { tabListState.listState.isScrollInProgress }
             .distinctUntilChanged()
             .collect { scrolling ->
                 onListScrollInProgressChange(scrolling)

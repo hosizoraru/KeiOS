@@ -37,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,6 +89,7 @@ import com.kyant.shapes.Capsule
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.animation.DampedDragAnimation
 import os.kei.ui.animation.InteractiveHighlight
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
@@ -267,8 +267,9 @@ fun LiquidToggle(
             }
         )
     }
-    LaunchedEffect(dampedDragAnimation) {
-        snapshotFlow { fraction }
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(dampedDragAnimation, snapshotFlowManager) {
+        snapshotFlowManager.snapshotFlow { fraction }
             .collectLatest { value -> dampedDragAnimation.updateValue(value) }
     }
     val externalSelected = selected()
@@ -498,8 +499,9 @@ fun LiquidSlider(
                 }
             )
         }
-        LaunchedEffect(dampedDragAnimation) {
-            snapshotFlow { value() }
+        val snapshotFlowManager = rememberAppSnapshotFlowManager()
+        LaunchedEffect(dampedDragAnimation, snapshotFlowManager) {
+            snapshotFlowManager.snapshotFlow { value() }
                 .collectLatest { nextValue ->
                     if (dampedDragAnimation.targetValue != nextValue) {
                         dampedDragAnimation.updateValue(nextValue)
@@ -796,8 +798,9 @@ fun LiquidBottomTabs(
                 dampedDragAnimation.snapToValue(selectedIndex.toFloat())
             }
         }
-        LaunchedEffect(dampedDragAnimation) {
-            snapshotFlow { currentIndex }
+        val snapshotFlowManager = rememberAppSnapshotFlowManager()
+        LaunchedEffect(dampedDragAnimation, snapshotFlowManager) {
+            snapshotFlowManager.snapshotFlow { currentIndex }
                 .drop(1)
                 .collectLatest { index -> onTabSelected(index) }
         }

@@ -41,13 +41,12 @@ import os.kei.ui.page.main.widget.sheet.SheetControlRow
 import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
+import os.kei.ui.page.main.widget.sheet.SheetLiquidChoiceIndicator
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.RadioButton
+import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.layout.BottomSheetDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -239,9 +238,10 @@ internal fun GitHubShareImportSheet(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                             }
-                            RadioButton(
+                            SheetLiquidChoiceIndicator(
                                 selected = selected,
-                                onClick = { selectedIndex = index }
+                                onSelect = { selectedIndex = index },
+                                accentColor = GitHubStatusPalette.Active
                             )
                         }
                     }
@@ -251,18 +251,15 @@ internal fun GitHubShareImportSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel
                 )
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.github_share_import_dialog_action_confirm),
-                    colors = ButtonDefaults.textButtonColors(
-                        color = GitHubStatusPalette.Active,
-                        textColor = MiuixTheme.colorScheme.onPrimary
-                    ),
+                    containerColor = GitHubStatusPalette.Active,
                     onClick = {
                         selectedAsset?.let(onConfirmImport)
                     },
@@ -320,18 +317,15 @@ internal fun GitHubShareImportPendingSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_close),
                     onClick = onClose
                 )
-                TextButton(
+                LiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.github_share_import_pending_action_cancel),
-                    colors = ButtonDefaults.textButtonColors(
-                        color = GitHubStatusPalette.PreRelease,
-                        textColor = MiuixTheme.colorScheme.onPrimary
-                    ),
+                    containerColor = GitHubStatusPalette.PreRelease,
                     onClick = onCancel
                 )
             }
@@ -406,13 +400,10 @@ internal fun GitHubShareImportAttachConfirmSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextButton(
+                    LiquidDialogActionButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.common_close),
-                        colors = ButtonDefaults.textButtonColors(
-                            color = GitHubStatusPalette.Active,
-                            textColor = MiuixTheme.colorScheme.onPrimary
-                        ),
+                        containerColor = GitHubStatusPalette.Active,
                         onClick = onCancel,
                         enabled = !submitting
                     )
@@ -422,29 +413,26 @@ internal fun GitHubShareImportAttachConfirmSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextButton(
+                    LiquidDialogActionButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.common_cancel),
                         onClick = onCancel,
                         enabled = !submitting
                     )
-                    TextButton(
+                    LiquidDialogActionButton(
                         modifier = Modifier.weight(1f),
                         text = if (submitting && !submittingAndOpen) {
                             stringResource(R.string.common_processing)
                         } else {
                             stringResource(R.string.github_share_import_attach_dialog_action_confirm)
                         },
-                        colors = ButtonDefaults.textButtonColors(
-                            color = GitHubStatusPalette.Active,
-                            textColor = MiuixTheme.colorScheme.onPrimary
-                        ),
+                        containerColor = GitHubStatusPalette.Active,
                         onClick = onConfirm,
                         enabled = !submitting
                     )
                 }
                 if (onConfirmAndOpenGitHub != null) {
-                    TextButton(
+                    LiquidDialogActionButton(
                         modifier = Modifier.fillMaxWidth(),
                         text = if (submitting && submittingAndOpen) {
                             stringResource(R.string.common_processing)
@@ -453,10 +441,7 @@ internal fun GitHubShareImportAttachConfirmSheet(
                                 R.string.github_share_import_attach_dialog_action_confirm_and_open_github
                             )
                         },
-                        colors = ButtonDefaults.textButtonColors(
-                            color = GitHubStatusPalette.Update,
-                            textColor = MiuixTheme.colorScheme.onPrimary
-                        ),
+                        containerColor = GitHubStatusPalette.Update,
                         onClick = onConfirmAndOpenGitHub,
                         enabled = !submitting
                     )

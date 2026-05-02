@@ -32,7 +32,7 @@ import os.kei.ui.page.main.about.ui.AboutCompactInfoRow
 import os.kei.ui.page.main.about.ui.AboutSectionCard
 
 private data class AboutInfoRow(
-    @StringRes val titleRes: Int,
+    @get:StringRes val titleRes: Int,
     val value: String,
     val icon: ImageVector
 )

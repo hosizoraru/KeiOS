@@ -18,7 +18,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import os.kei.R
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.state.buildBaStudentGuidePagerHeaderState
@@ -112,9 +112,10 @@ internal fun BaStudentGuidePagerPage(
         }
     }
     val isActivePage = pageIndex == pagerState.currentPage
-    LaunchedEffect(pageListState, isActivePage) {
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(pageListState, isActivePage, snapshotFlowManager) {
         if (!isActivePage) return@LaunchedEffect
-        snapshotFlow { pageListState.isScrollInProgress }
+        snapshotFlowManager.snapshotFlow { pageListState.isScrollInProgress }
             .distinctUntilChanged()
             .collect { scrolling ->
                 onListScrollInProgressChange(scrolling)

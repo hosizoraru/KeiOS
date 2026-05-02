@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.widget.support
 
+import android.content.ClipData
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -10,13 +11,15 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.composed
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.toClipEntry
+import kotlinx.coroutines.launch
 import os.kei.R
 import os.kei.core.prefs.UiPrefs
 
@@ -39,13 +42,16 @@ internal fun rememberTextCopyExpandedEnabled(): Boolean {
 @Composable
 internal fun rememberLightTextCopyAction(copyPayload: String): (() -> Unit)? {
     if (copyPayload.isBlank()) return null
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val copiedToast = stringResource(R.string.guide_toast_item_copied)
-    return remember(clipboard, context, copiedToast, copyPayload) {
+    return remember(clipboard, context, scope, copiedToast, copyPayload) {
         {
-            clipboard.setText(AnnotatedString(copyPayload))
-            Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
+            scope.launch {
+                clipboard.setClipEntry(ClipData.newPlainText("plain text", copyPayload).toClipEntry())
+                Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

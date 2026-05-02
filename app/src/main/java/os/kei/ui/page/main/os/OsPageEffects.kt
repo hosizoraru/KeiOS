@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import kotlin.collections.plus
 
 @Composable
@@ -34,9 +34,10 @@ internal fun BindOsExpandedStatePersistence(
     snapshotProvider: () -> OsUiSnapshot
 ) {
     val currentSnapshotProvider = rememberUpdatedState(snapshotProvider)
-    LaunchedEffect(ready) {
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(ready, snapshotFlowManager) {
         if (!ready) return@LaunchedEffect
-        snapshotFlow {
+        snapshotFlowManager.snapshotFlow {
             currentSnapshotProvider.value()
         }
             .debounce(200)

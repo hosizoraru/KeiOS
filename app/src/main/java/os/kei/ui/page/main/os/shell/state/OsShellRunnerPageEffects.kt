@@ -4,10 +4,10 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 
 private const val shellPersistDebounceMs = 220L
 
@@ -25,17 +25,18 @@ internal fun BindOsShellRunnerPersistEffects(
     val currentOutputText = rememberUpdatedState(outputText)
     val currentPersistInput = rememberUpdatedState(onPersistInput)
     val currentPersistOutput = rememberUpdatedState(onPersistOutput)
-    LaunchedEffect(persistInputEnabled) {
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(persistInputEnabled, snapshotFlowManager) {
         if (!persistInputEnabled) return@LaunchedEffect
-        snapshotFlow { currentCommandInput.value }
+        snapshotFlowManager.snapshotFlow { currentCommandInput.value }
             .debounce(shellPersistDebounceMs)
             .collectLatest { input ->
                 currentPersistInput.value(input)
             }
     }
-    LaunchedEffect(persistOutputEnabled) {
+    LaunchedEffect(persistOutputEnabled, snapshotFlowManager) {
         if (!persistOutputEnabled) return@LaunchedEffect
-        snapshotFlow { currentOutputText.value }
+        snapshotFlowManager.snapshotFlow { currentOutputText.value }
             .debounce(shellPersistDebounceMs)
             .collectLatest { output ->
                 currentPersistOutput.value(output)

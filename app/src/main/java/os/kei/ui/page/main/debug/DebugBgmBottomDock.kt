@@ -36,7 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -72,6 +71,7 @@ import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import os.kei.R
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.animation.DampedDragAnimation
 import os.kei.ui.animation.InteractiveHighlight
 import os.kei.ui.page.main.os.appLucideGridIcon
@@ -257,8 +257,9 @@ internal fun DebugBgmDockGroupContent(
         LaunchedEffect(selectedIndex, safeTabCount) {
             currentIndex = selectedIndex.fastCoerceIn(0, safeTabCount - 1)
         }
-        LaunchedEffect(dampedDragAnimation, animationsEnabled) {
-            snapshotFlow { currentIndex }
+        val snapshotFlowManager = rememberAppSnapshotFlowManager()
+        LaunchedEffect(dampedDragAnimation, animationsEnabled, snapshotFlowManager) {
+            snapshotFlowManager.snapshotFlow { currentIndex }
                 .drop(1)
                 .collectLatest { index ->
                     if (animationsEnabled) {

@@ -10,7 +10,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogBundle
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogTab
@@ -48,13 +48,14 @@ internal fun rememberBaGuideCatalogTabListState(
     }
 
     val listState = rememberLazyListState()
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
     var visibleCount by rememberSaveable(tab, searchQuery) { mutableIntStateOf(0) }
     LaunchedEffect(filteredEntries.size) {
         visibleCount = minOf(filteredEntries.size, CATALOG_BATCH_SIZE)
     }
-    LaunchedEffect(isPageActive, listState, filteredEntries.size, loading) {
+    LaunchedEffect(isPageActive, listState, filteredEntries.size, loading, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow {
+        snapshotFlowManager.snapshotFlow {
             val layoutInfo = listState.layoutInfo
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             lastVisible to layoutInfo.totalItemsCount

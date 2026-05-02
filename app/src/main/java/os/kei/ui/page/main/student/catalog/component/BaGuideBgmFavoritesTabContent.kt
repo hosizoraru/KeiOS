@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import os.kei.R
+import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
 import os.kei.ui.page.main.student.GuideBgmFavoritePlaybackStore
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
@@ -372,17 +372,18 @@ internal fun BaGuideBgmFavoritesTabContent(
     }
 
     val listState = rememberLazyListState()
-    LaunchedEffect(listState, isPageActive) {
+    val snapshotFlowManager = rememberAppSnapshotFlowManager()
+    LaunchedEffect(listState, isPageActive, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow { listState.canScrollBackward to listState.canScrollForward }
+        snapshotFlowManager.snapshotFlow { listState.canScrollBackward to listState.canScrollForward }
             .distinctUntilChanged()
             .collect { (canScrollBackward, canScrollForward) ->
                 onScrollBoundsChange(canScrollBackward, canScrollForward)
             }
     }
-    LaunchedEffect(listState, isPageActive) {
+    LaunchedEffect(listState, isPageActive, snapshotFlowManager) {
         if (!isPageActive) return@LaunchedEffect
-        snapshotFlow { listState.isScrollInProgress }
+        snapshotFlowManager.snapshotFlow { listState.isScrollInProgress }
             .distinctUntilChanged()
             .collect { scrolling ->
                 onListScrollInProgressChange(scrolling)

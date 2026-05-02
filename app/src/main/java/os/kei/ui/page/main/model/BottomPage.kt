@@ -7,7 +7,7 @@ import os.kei.R
 enum class BottomPage(
     val label: String,
     val icon: ImageVector? = null,
-    @DrawableRes val iconRes: Int? = null,
+    @get:DrawableRes val iconRes: Int? = null,
     val keepOriginalColors: Boolean = false,
     val iconScale: Float = 1f,
 ) {

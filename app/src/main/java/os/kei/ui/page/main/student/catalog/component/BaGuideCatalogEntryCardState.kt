@@ -1,15 +1,17 @@
 package os.kei.ui.page.main.student.catalog.component
 
+import android.content.ClipData
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.toClipEntry
+import kotlinx.coroutines.launch
 import os.kei.R
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -86,12 +88,15 @@ internal fun rememberBaGuideCatalogEntryCopyAction(
     copyPayload: String
 ): () -> Unit {
     val context = LocalContext.current
-    val clipboard: ClipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val copiedToast = stringResource(R.string.guide_toast_item_copied)
-    return remember(context, clipboard, copiedToast, copyPayload) {
+    return remember(context, clipboard, scope, copiedToast, copyPayload) {
         {
-            clipboard.setText(AnnotatedString(copyPayload))
-            Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
+            scope.launch {
+                clipboard.setClipEntry(ClipData.newPlainText("plain text", copyPayload).toClipEntry())
+                Toast.makeText(context, copiedToast, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
