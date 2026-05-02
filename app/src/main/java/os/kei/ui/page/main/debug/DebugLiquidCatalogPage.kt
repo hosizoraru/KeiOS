@@ -113,12 +113,6 @@ internal fun DebugLiquidCatalogPage(
                         backdrop = pageBackdrop
                     )
                 }
-                item {
-                    DebugLiquidBottomTabsCard(
-                        accent = accent,
-                        backdrop = pageBackdrop
-                    )
-                }
             }
         }
     }

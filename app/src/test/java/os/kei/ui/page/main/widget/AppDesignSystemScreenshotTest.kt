@@ -27,8 +27,8 @@ import os.kei.ui.page.main.widget.core.AppInfoRow
 import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.core.AppSupportingBlock
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceList
@@ -361,20 +361,20 @@ class AppDesignSystemScreenshotTest {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.sectionGap)
                             ) {
-                                GlassTextButton(
+                                AppLiquidTextButton(
                                     backdrop = null,
                                     text = "立即刷新",
                                     leadingIcon = MiuixIcons.Regular.Refresh,
                                     onClick = {},
                                     variant = GlassVariant.SheetAction
                                 )
-                                GlassTextButton(
+                                AppLiquidTextButton(
                                     backdrop = null,
                                     text = "已读",
                                     onClick = {},
                                     variant = GlassVariant.Compact
                                 )
-                                GlassIconButton(
+                                AppLiquidIconButton(
                                     backdrop = null,
                                     icon = MiuixIcons.Regular.Refresh,
                                     contentDescription = "刷新",

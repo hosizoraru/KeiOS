@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.sp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.shapes.Capsule
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePauseIcon
@@ -49,7 +48,9 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.AppLiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
@@ -371,23 +372,19 @@ private fun DebugBgmRoundAction(
     } else {
         MiuixTheme.colorScheme.onBackground
     }
-    AppLiquidButton(
-        onClick = onClick,
+    AppLiquidIconButton(
         backdrop = backdrop,
-        tint = Color.Unspecified,
-        surfaceColor = DebugBgmRoundActionButtonSurfaceColor(),
-        shape = CircleShape,
+        icon = icon,
+        contentDescription = contentDescription,
+        onClick = onClick,
+        modifier = Modifier.size(52.dp),
+        width = 52.dp,
         height = 52.dp,
-        horizontalPadding = 0.dp,
-        modifier = Modifier.size(52.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = contentTint,
-            modifier = Modifier.size(24.dp)
-        )
-    }
+        shape = CircleShape,
+        iconTint = contentTint,
+        containerColor = DebugBgmRoundActionButtonSurfaceColor(),
+        variant = GlassVariant.Floating
+    )
 }
 
 @Composable
@@ -407,35 +404,25 @@ private fun DebugBgmPlayAction(
     } else {
         MiuixTheme.colorScheme.onBackground
     }
-    AppLiquidButton(
-        onClick = onClick,
+    AppLiquidTextButton(
         backdrop = backdrop,
+        text = stringResource(
+            if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
+        ),
+        onClick = onClick,
         modifier = Modifier
             .height(52.dp)
             .widthIn(min = 116.dp),
-        tint = Color.Unspecified,
-        surfaceColor = DebugBgmActionButtonSurfaceColor(selected = isPlaying, selectedAlpha = 0.24f),
-        shape = Capsule(),
-        height = 52.dp,
-        horizontalPadding = 24.dp
-    ) {
-        Icon(
-            imageVector = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
-            contentDescription = null,
-            tint = contentTint,
-            modifier = Modifier.size(24.dp)
-        )
-        Text(
-            text = stringResource(
-                if (isPlaying) R.string.debug_component_lab_action_pause else R.string.debug_component_lab_action_play
-            ),
-            color = contentTint,
-            fontSize = AppTypographyTokens.CardHeader.fontSize,
-            lineHeight = AppTypographyTokens.CardHeader.lineHeight,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
-        )
-    }
+        textColor = contentTint,
+        containerColor = DebugBgmActionButtonSurfaceColor(selected = isPlaying, selectedAlpha = 0.24f),
+        leadingIcon = if (isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
+        iconTint = contentTint,
+        variant = GlassVariant.SheetPrimaryAction,
+        minHeight = 52.dp,
+        horizontalPadding = 24.dp,
+        textMaxLines = 1,
+        textOverflow = TextOverflow.Ellipsis
+    )
 }
 
 @Composable

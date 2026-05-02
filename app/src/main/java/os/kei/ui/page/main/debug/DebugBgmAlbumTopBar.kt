@@ -29,7 +29,8 @@ import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.AppLiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -55,7 +56,6 @@ internal fun DebugBgmAlbumTopBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             DebugBgmTopBackAction(
-                accent = accent,
                 onClose = onClose,
                 backdrop = backdrop
             )
@@ -92,28 +92,23 @@ internal fun DebugBgmAlbumTopBar(
 
 @Composable
 private fun DebugBgmTopBackAction(
-    accent: Color,
     onClose: () -> Unit,
     backdrop: Backdrop
 ) {
     val closeContentDescription = stringResource(R.string.common_close)
-    AppLiquidButton(
-        onClick = onClose,
+    AppLiquidIconButton(
         backdrop = backdrop,
-        tint = accent.copy(alpha = 0.12f),
-        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.18f),
-        shape = CircleShape,
+        icon = appLucideChevronLeftIcon(),
+        contentDescription = closeContentDescription,
+        onClick = onClose,
+        modifier = Modifier.size(DebugBgmTopBarVisualSize),
+        width = DebugBgmTopBarVisualSize,
         height = DebugBgmTopBarVisualSize,
-        horizontalPadding = 0.dp,
-        modifier = Modifier.size(DebugBgmTopBarVisualSize)
-    ) {
-        Icon(
-            imageVector = appLucideChevronLeftIcon(),
-            contentDescription = closeContentDescription,
-            tint = MiuixTheme.colorScheme.onBackground,
-            modifier = Modifier.size(DebugBgmTopBarBackIconSize)
-        )
-    }
+        shape = CircleShape,
+        iconTint = MiuixTheme.colorScheme.onBackground,
+        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.18f),
+        variant = GlassVariant.Floating
+    )
 }
 
 @Composable
@@ -167,5 +162,4 @@ private fun DebugBgmTopActionCapsule(
 
 private val DebugBgmTopBarVisualSize = AppChromeTokens.liquidActionBarOuterHeight
 private val DebugBgmTopActionBarWidth = AppChromeTokens.liquidActionBarMinWidth
-private val DebugBgmTopBarBackIconSize = 27.dp
 private val DebugBgmTopBarTitleGap = 12.dp

@@ -38,10 +38,11 @@ import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.AppLiquidButton
-import os.kei.ui.page.main.widget.glass.AppLiquidPrimaryToggle
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppSwitch
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidRoundedCard
-import os.kei.ui.page.main.widget.glass.LiquidSlider
+import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.glass.LiquidSurface
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -213,28 +214,20 @@ internal fun DebugLiquidTransparentButtonSamples(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppLiquidButton(
-            onClick = {},
+        AppLiquidTextButton(
             backdrop = backdrop,
-            height = 46.dp,
+            text = stringResource(R.string.debug_component_lab_liquid_clear_capsule),
+            onClick = {},
+            modifier = Modifier.weight(1f),
+            textColor = contentColor,
+            leadingIcon = appLucidePlayIcon(),
+            iconTint = contentColor,
+            variant = GlassVariant.SheetAction,
+            minHeight = 46.dp,
             horizontalPadding = 12.dp,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(
-                imageVector = appLucidePlayIcon(),
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(17.dp)
-            )
-            Text(
-                text = stringResource(R.string.debug_component_lab_liquid_clear_capsule),
-                color = contentColor,
-                fontSize = AppTypographyTokens.Supporting.fontSize,
-                lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+            textMaxLines = 1,
+            textOverflow = TextOverflow.Ellipsis
+        )
         LiquidSurface(
             backdrop = backdrop,
             shape = RoundedCornerShape(14.dp),
@@ -641,10 +634,9 @@ internal fun DebugLiquidParameterPanelSample(
                         lineHeight = AppTypographyTokens.Supporting.lineHeight,
                         maxLines = 1
                     )
-                    AppLiquidPrimaryToggle(
-                        selected = { chromaticAberrationEnabled },
-                        onSelect = onChromaticAberrationChange,
-                        backdrop = panelBackdrop
+                    AppSwitch(
+                        checked = chromaticAberrationEnabled,
+                        onCheckedChange = onChromaticAberrationChange
                     )
                 }
             }
@@ -671,9 +663,10 @@ private fun DebugLiquidParameterSlider(
             lineHeight = AppTypographyTokens.Supporting.lineHeight,
             maxLines = 1
         )
-        LiquidSlider(
+        LiquidVolumeSlider(
             value = { value.coerceIn(0f, 1f) },
             onValueChange = onValueChange,
+            onValueChangeFinished = onValueChange,
             valueRange = 0f..1f,
             visibilityThreshold = 0.001f,
             backdrop = backdrop,

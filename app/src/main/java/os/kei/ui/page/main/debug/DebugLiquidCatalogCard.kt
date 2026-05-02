@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,24 +34,20 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.os.appLucideShuffleIcon
 import os.kei.ui.page.main.os.appLucideTimeIcon
-import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.LiquidBottomTab
-import os.kei.ui.page.main.widget.glass.LiquidBottomTabs
-import os.kei.ui.page.main.widget.glass.AppLiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppSwitch
+import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceList
 import os.kei.ui.page.main.widget.glass.LiquidKeyPointSlider
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
-import os.kei.ui.page.main.widget.glass.AppLiquidPrimaryToggle
-import os.kei.ui.page.main.widget.glass.LiquidSlider
 import os.kei.ui.page.main.widget.glass.LiquidSliderKeyPoint
-import os.kei.ui.page.main.widget.glass.AppLiquidToggle
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
-import os.kei.ui.page.main.widget.glass.liquidBottomTabContentColor
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
@@ -103,104 +98,69 @@ internal fun DebugLiquidButtonsCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppLiquidButton(
-                onClick = {},
+            AppLiquidTextButton(
                 backdrop = backdrop,
-                tint = accent.copy(alpha = 0.42f),
-                surfaceColor = buttonSurface,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = appLucidePlayIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_button_primary),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Body.fontSize,
-                    lineHeight = AppTypographyTokens.Body.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            AppLiquidButton(
+                text = stringResource(R.string.debug_component_lab_liquid_button_primary),
                 onClick = {},
+                modifier = Modifier.weight(1f),
+                textColor = contentColor,
+                containerColor = buttonSurface,
+                leadingIcon = appLucidePlayIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.SheetPrimaryAction,
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
+            AppLiquidTextButton(
                 backdrop = backdrop,
-                tint = accent.copy(alpha = 0.34f),
-                surfaceColor = buttonSurface,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = appLucideShuffleIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_button_shuffle),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Body.fontSize,
-                    lineHeight = AppTypographyTokens.Body.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+                text = stringResource(R.string.debug_component_lab_liquid_button_shuffle),
+                onClick = {},
+                modifier = Modifier.weight(1f),
+                textColor = contentColor,
+                containerColor = buttonSurface,
+                leadingIcon = appLucideShuffleIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.SheetAction,
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppLiquidButton(
-                onClick = {},
+            AppLiquidTextButton(
                 backdrop = backdrop,
-                tint = accent.copy(alpha = 0.28f),
-                surfaceColor = buttonSurface,
-                height = 42.dp,
-                horizontalPadding = 12.dp,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = appLucideHeartIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(17.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_button_compact),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            AppLiquidButton(
+                text = stringResource(R.string.debug_component_lab_liquid_button_compact),
                 onClick = {},
-                backdrop = backdrop,
-                surfaceColor = buttonSurface,
-                height = 42.dp,
+                modifier = Modifier.weight(1f),
+                textColor = contentColor,
+                containerColor = buttonSurface,
+                leadingIcon = appLucideHeartIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.Compact,
+                minHeight = 42.dp,
                 horizontalPadding = 12.dp,
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
+            AppLiquidTextButton(
+                backdrop = backdrop,
+                text = stringResource(R.string.debug_component_lab_liquid_button_disabled),
+                onClick = {},
                 enabled = false,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = appLucideDownloadIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(17.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_button_disabled),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+                modifier = Modifier.weight(1f),
+                textColor = contentColor,
+                containerColor = buttonSurface,
+                leadingIcon = appLucideDownloadIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.Compact,
+                minHeight = 42.dp,
+                horizontalPadding = 12.dp,
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
         }
         Text(
             text = stringResource(R.string.debug_component_lab_liquid_button_shapes_label),
@@ -214,72 +174,50 @@ internal fun DebugLiquidButtonsCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppLiquidButton(
-                onClick = {},
+            AppLiquidTextButton(
                 backdrop = backdrop,
-                tint = Color(0xFFFF5C8A).copy(alpha = 0.40f),
-                surfaceColor = buttonSurface,
-                shape = RoundedCornerShape(14.dp),
-                height = 46.dp,
+                text = stringResource(R.string.debug_component_lab_liquid_button_rounded),
+                onClick = {},
+                modifier = Modifier.weight(1f),
+                textColor = contentColor,
+                containerColor = Color(0xFFFF5C8A).copy(alpha = 0.24f),
+                leadingIcon = appLucideConfigIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.SheetAction,
+                minHeight = 46.dp,
                 horizontalPadding = 12.dp,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = appLucideConfigIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(17.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_button_rounded),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            AppLiquidButton(
-                onClick = {},
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
+            AppLiquidTextButton(
                 backdrop = backdrop,
-                tint = Color(0xFFFFC857).copy(alpha = 0.44f),
-                surfaceColor = buttonSurface,
-                height = 46.dp,
+                text = stringResource(R.string.debug_component_lab_liquid_button_oval),
+                onClick = {},
+                modifier = Modifier.weight(1f)
+                    .fillMaxWidth(),
+                textColor = contentColor,
+                containerColor = Color(0xFFFFC857).copy(alpha = 0.26f),
+                leadingIcon = appLucideShuffleIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.SheetAction,
+                minHeight = 46.dp,
                 horizontalPadding = 12.dp,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = appLucideShuffleIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(17.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_button_oval),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            AppLiquidButton(
-                onClick = {},
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
+            AppLiquidIconButton(
                 backdrop = backdrop,
-                tint = Color(0xFF7C5CFF).copy(alpha = 0.42f),
-                surfaceColor = buttonSurface,
+                icon = appLucideMoreIcon(),
+                contentDescription = stringResource(R.string.debug_component_lab_liquid_button_circle),
+                onClick = {},
+                modifier = Modifier.size(46.dp),
+                width = 46.dp,
+                height = 46.dp,
                 shape = CircleShape,
-                height = 46.dp,
-                horizontalPadding = 0.dp,
-                modifier = Modifier.size(46.dp)
-            ) {
-                Icon(
-                    imageVector = appLucideMoreIcon(),
-                    contentDescription = stringResource(R.string.debug_component_lab_liquid_button_circle),
-                    tint = contentColor,
-                    modifier = Modifier.size(19.dp)
-                )
-            }
+                iconTint = contentColor,
+                containerColor = Color(0xFF7C5CFF).copy(alpha = 0.26f),
+                variant = GlassVariant.SheetAction
+            )
         }
     }
 }
@@ -375,30 +313,21 @@ internal fun DebugLiquidGlassDropdownCard(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AppLiquidButton(
-                onClick = { expanded = true },
+            AppLiquidTextButton(
                 backdrop = backdrop,
-                tint = Color.Unspecified,
-                surfaceColor = buttonSurface,
-                height = 44.dp,
+                text = stringResource(R.string.debug_component_lab_liquid_dropdown_open),
+                onClick = { expanded = true },
+                textColor = contentColor,
+                containerColor = buttonSurface,
+                leadingIcon = appLucideMoreIcon(),
+                iconTint = contentColor,
+                variant = GlassVariant.SheetAction,
+                minHeight = 44.dp,
                 horizontalPadding = 14.dp,
-                modifier = Modifier.capturePopupAnchor { anchorBounds = it }
-            ) {
-                Icon(
-                    imageVector = appLucideMoreIcon(),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = stringResource(R.string.debug_component_lab_liquid_dropdown_open),
-                    color = contentColor,
-                    fontSize = AppTypographyTokens.Supporting.fontSize,
-                    lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+                modifier = Modifier.capturePopupAnchor { anchorBounds = it },
+                textMaxLines = 1,
+                textOverflow = TextOverflow.Ellipsis
+            )
         }
 
         if (expanded) {
@@ -619,22 +548,21 @@ internal fun DebugLiquidControlsCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AppLiquidToggle(
-                    selected = { toggleSelected },
-                    onSelect = { toggleSelected = it },
-                    backdrop = backdrop
+                AppSwitch(
+                    checked = toggleSelected,
+                    onCheckedChange = { toggleSelected = it }
                 )
-                AppLiquidPrimaryToggle(
-                    selected = { primaryToggleSelected },
-                    onSelect = { primaryToggleSelected = it },
-                    backdrop = backdrop
+                AppSwitch(
+                    checked = primaryToggleSelected,
+                    onCheckedChange = { primaryToggleSelected = it }
                 )
             }
         }
 
-        LiquidSlider(
+        LiquidVolumeSlider(
             value = { sliderValue },
             onValueChange = { sliderValue = it.coerceIn(0f, 1f) },
+            onValueChangeFinished = { sliderValue = it.coerceIn(0f, 1f) },
             valueRange = 0f..1f,
             visibilityThreshold = 0.001f,
             backdrop = backdrop,
@@ -655,60 +583,6 @@ internal fun DebugLiquidControlsCard(
             contentColor = contentColor,
             secondaryColor = secondaryColor
         )
-    }
-}
-
-@Composable
-internal fun DebugLiquidBottomTabsCard(
-    accent: Color,
-    backdrop: Backdrop
-) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabs = rememberDebugBgmDockTabs()
-    val secondaryColor = MiuixTheme.colorScheme.onBackgroundVariant
-    AppFeatureCard(
-        title = stringResource(R.string.debug_component_lab_liquid_bottom_tabs_label),
-        subtitle = stringResource(R.string.debug_component_lab_liquid_catalog_subtitle),
-        sectionIcon = appLucideLayersIcon(),
-        titleColor = accent,
-        containerColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
-        borderColor = accent.copy(alpha = 0.20f),
-        contentVerticalSpacing = CardLayoutRhythm.sectionGap
-    ) {
-        LiquidBottomTabs(
-            selectedTabIndex = { selectedTabIndex },
-            onTabSelected = { selectedTabIndex = it },
-            backdrop = backdrop,
-            tabsCount = tabs.size,
-            accentColor = accent,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AppChromeTokens.floatingBottomBarOuterHeight)
-        ) {
-            tabs.forEachIndexed { index, tab ->
-                val sampledTint = liquidBottomTabContentColor(index)
-                val tint = if (sampledTint == Color.Unspecified) secondaryColor else sampledTint
-                LiquidBottomTab(
-                    onClick = { selectedTabIndex = index },
-                    tabIndex = index
-                ) {
-                    Icon(
-                        imageVector = tab.icon,
-                        contentDescription = tab.label,
-                        tint = tint,
-                        modifier = Modifier.size(21.dp)
-                    )
-                    Text(
-                        text = tab.label,
-                        color = tint,
-                        fontSize = AppTypographyTokens.Supporting.fontSize,
-                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
     }
 }
 
