@@ -203,13 +203,20 @@ fun LiquidActionBar(
 
     val tabsBackdrop = rememberLayerBackdrop()
     val density = LocalDensity.current
+    val horizontalPaddingPx = with(density) {
+        AppChromeTokens.liquidActionBarHorizontalPadding.toPx()
+    }
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val animationScope = rememberCoroutineScope()
     val onInteractionChangedState = rememberUpdatedState(onInteractionChanged)
+    val itemsState = rememberUpdatedState(items)
     val pressedScale = rememberLiquidActionBarPressedScale()
 
     var tabWidthPx by remember { mutableFloatStateOf(0f) }
     var totalWidthPx by remember { mutableFloatStateOf(0f) }
+    var settledIndex by remember(items.size) {
+        mutableFloatStateOf(clampedSelectedIndex.toFloat())
+    }
 
     val offsetAnimation = remember { Animatable(0f) }
     val panelOffset by remember(density) {
@@ -249,19 +256,29 @@ fun LiquidActionBar(
                 if (!gestureActive) return@DampedDragAnimation
                 gestureActive = false
                 onInteractionChangedState.value(false)
+                val currentItems = itemsState.value
+                val fallbackIndex = settledIndex.fastRoundToInt()
+                    .fastCoerceIn(0, currentItems.lastIndex)
                 if (!dragMoved) {
+                    settledIndex = fallbackIndex.toFloat()
+                    animateToValue(settledIndex)
                     if (layeredStyleEnabled) {
-                        val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
-                        items.getOrNull(targetIndex)?.takeIf { it.enabled }?.onClick?.invoke()
+                        currentItems.getOrNull(fallbackIndex)?.takeIf { it.enabled }?.onClick?.invoke()
                     }
                     animationScope.launch {
                         offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
                     }
                     return@DampedDragAnimation
                 }
-                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, items.lastIndex)
-                animateToValue(targetIndex.toFloat())
-                items.getOrNull(targetIndex)?.takeIf { it.enabled }?.onClick?.invoke()
+                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, currentItems.lastIndex)
+                val resolvedIndex = if (currentItems.getOrNull(targetIndex)?.enabled == true) {
+                    targetIndex
+                } else {
+                    fallbackIndex
+                }
+                settledIndex = resolvedIndex.toFloat()
+                animateToValue(settledIndex)
+                currentItems.getOrNull(resolvedIndex)?.takeIf { it.enabled }?.onClick?.invoke()
                 animationScope.launch {
                     offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
                 }
@@ -284,7 +301,11 @@ fun LiquidActionBar(
     }
     LaunchedEffect(clampedSelectedIndex, items.size) {
         val target = clampedSelectedIndex.toFloat()
-        if (abs(dampedDragAnimation.targetValue - target) > 0.001f) {
+        settledIndex = target
+        if (
+            abs(dampedDragAnimation.value - target) > 0.001f ||
+            abs(dampedDragAnimation.targetValue - target) > 0.001f
+        ) {
             dampedDragAnimation.updateValue(target)
         }
     }
@@ -337,8 +358,15 @@ fun LiquidActionBar(
                 animationScope = animationScope,
                 position = { size, _ ->
                     Offset(
-                        if (isLtr) (dampedDragAnimation.value + 0.5f) * tabWidthPx + effectivePanelOffset
-                        else size.width - (dampedDragAnimation.value + 0.5f) * tabWidthPx + effectivePanelOffset,
+                        if (isLtr) {
+                            horizontalPaddingPx +
+                                (dampedDragAnimation.value + 0.5f) * tabWidthPx +
+                                effectivePanelOffset
+                        } else {
+                            size.width - horizontalPaddingPx -
+                                (dampedDragAnimation.value + 0.5f) * tabWidthPx +
+                                effectivePanelOffset
+                        },
                         size.height / 2f
                     )
                 },
@@ -385,7 +413,7 @@ fun LiquidActionBar(
                 if (abs(totalWidthPx - measuredTotalWidthPx) > 0.5f) {
                     totalWidthPx = measuredTotalWidthPx
                 }
-                val contentWidthPx = measuredTotalWidthPx - with(density) { 8.dp.toPx() }
+                val contentWidthPx = measuredTotalWidthPx - horizontalPaddingPx * 2f
                 val measuredTabWidthPx = contentWidthPx / items.size
                 if (abs(tabWidthPx - measuredTabWidthPx) > 0.5f) {
                     tabWidthPx = measuredTabWidthPx
@@ -478,7 +506,8 @@ fun LiquidActionBar(
                         1f + (selectionProgress * 0.05f) + (dampedDragAnimation.pressProgress * selectionProgress * 0.03f)
                     },
                     onClick = {
-                        dampedDragAnimation.animateToValue(index.toFloat())
+                        settledIndex = index.toFloat()
+                        dampedDragAnimation.animateToValue(settledIndex)
                         item.onClick()
                         animationScope.launch {
                             offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f))
@@ -497,6 +526,7 @@ fun LiquidActionBar(
             combinedBackdrop = combinedBackdrop,
             palette = palette,
             accentColor = accentColor,
+            barWidth = barWidth,
             dampedDragAnimation = dampedDragAnimation,
             effectBlurDp = effectBlurDp,
             effectLensDp = effectLensDp,
