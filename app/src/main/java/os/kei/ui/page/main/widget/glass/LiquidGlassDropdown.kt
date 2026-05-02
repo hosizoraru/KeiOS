@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,6 +75,7 @@ fun LiquidGlassDropdownColumn(
     minWidth: Dp = LiquidGlassDropdownMinWidth,
     maxWidth: Dp = LiquidGlassDropdownMaxWidth,
     maxHeight: Dp = LiquidGlassDropdownMaxHeight,
+    initialScrollItemIndex: Int? = null,
     accentColor: Color = MiuixTheme.colorScheme.primary,
     backdrop: Backdrop? = null,
     content: @Composable () -> Unit
@@ -80,11 +83,22 @@ fun LiquidGlassDropdownColumn(
     val isDark = isSystemInDarkTheme()
     val containerShape = RoundedRectangle(LiquidGlassDropdownContainerRadius)
     val scrollState = rememberScrollState()
+    val density = LocalDensity.current
     val colors = liquidGlassDropdownContainerColors(
         isDark = isDark,
         accentColor = accentColor
     )
     val activeBackdrop = backdrop.takeIf { LocalLiquidControlsEnabled.current }
+    LaunchedEffect(initialScrollItemIndex, scrollState.maxValue, density) {
+        val itemIndex = initialScrollItemIndex?.coerceAtLeast(0) ?: return@LaunchedEffect
+        if (scrollState.maxValue <= 0) return@LaunchedEffect
+        val targetOffset = with(density) {
+            val rowOffset = LiquidGlassDropdownRowMinHeight.toPx() * itemIndex
+            val contextInset = maxHeight.toPx() * 0.34f
+            (rowOffset - contextInset).toInt()
+        }.coerceIn(0, scrollState.maxValue)
+        scrollState.scrollTo(targetOffset)
+    }
 
     Box(
         modifier = modifier
@@ -533,6 +547,7 @@ fun AppStandaloneLiquidGlassDropdownColumn(
     minWidth: Dp = LiquidGlassDropdownMinWidth,
     maxWidth: Dp = LiquidGlassDropdownMaxWidth,
     maxHeight: Dp = LiquidGlassDropdownMaxHeight,
+    initialScrollItemIndex: Int? = null,
     accentColor: Color = MiuixTheme.colorScheme.primary,
     content: @Composable () -> Unit
 ) {
@@ -545,6 +560,7 @@ fun AppStandaloneLiquidGlassDropdownColumn(
             minWidth = minWidth,
             maxWidth = maxWidth,
             maxHeight = maxHeight,
+            initialScrollItemIndex = initialScrollItemIndex,
             accentColor = accentColor,
             backdrop = localBackdrop,
             content = content
@@ -558,6 +574,7 @@ fun AppLiquidGlassDropdownColumn(
     minWidth: Dp = LiquidGlassDropdownMinWidth,
     maxWidth: Dp = LiquidGlassDropdownMaxWidth,
     maxHeight: Dp = LiquidGlassDropdownMaxHeight,
+    initialScrollItemIndex: Int? = null,
     accentColor: Color = MiuixTheme.colorScheme.primary,
     backdrop: Backdrop? = null,
     content: @Composable () -> Unit
@@ -568,6 +585,7 @@ fun AppLiquidGlassDropdownColumn(
             minWidth = minWidth,
             maxWidth = maxWidth,
             maxHeight = maxHeight,
+            initialScrollItemIndex = initialScrollItemIndex,
             accentColor = accentColor,
             backdrop = backdrop,
             content = content
@@ -578,6 +596,7 @@ fun AppLiquidGlassDropdownColumn(
             minWidth = minWidth,
             maxWidth = maxWidth,
             maxHeight = maxHeight,
+            initialScrollItemIndex = initialScrollItemIndex,
             accentColor = accentColor,
             content = content
         )

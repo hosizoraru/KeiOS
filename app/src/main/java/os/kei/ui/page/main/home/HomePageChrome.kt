@@ -62,9 +62,7 @@ private val HOME_KEI_TITLE_GRADIENT_COLORS = listOf(
     Color(0xFFFF6098),
     Color(0xFFFF5893)
 )
-private val HOME_HERO_ICON_AVOIDANCE_LIFT = 88.dp
-private val HOME_HERO_TITLE_AVOIDANCE_LIFT = 70.dp
-private val HOME_HERO_SUMMARY_AVOIDANCE_LIFT = 56.dp
+private val HOME_HERO_SHARED_AVOIDANCE_LIFT = 72.dp
 private const val HOME_HERO_AVOIDANCE_ALPHA_WEIGHT = 0.28f
 
 internal data class HomeHeaderStatusPillState(
@@ -200,9 +198,8 @@ internal fun HomePageHero(
     onSummaryBottomChanged: (Float) -> Unit
 ) {
     val density = LocalDensity.current
-    val iconAvoidanceLiftPx = with(density) { HOME_HERO_ICON_AVOIDANCE_LIFT.toPx() }
-    val titleAvoidanceLiftPx = with(density) { HOME_HERO_TITLE_AVOIDANCE_LIFT.toPx() }
-    val summaryAvoidanceLiftPx = with(density) { HOME_HERO_SUMMARY_AVOIDANCE_LIFT.toPx() }
+    val sharedAvoidanceLiftPx = with(density) { HOME_HERO_SHARED_AVOIDANCE_LIFT.toPx() }
+    val sharedLiftProgress = max(avoidanceProgress, max(iconProgress, max(titleProgress, summaryProgress)))
     val iconExitProgress = max(iconProgress, avoidanceProgress * HOME_HERO_AVOIDANCE_ALPHA_WEIGHT)
     val titleExitProgress = max(titleProgress, avoidanceProgress * HOME_HERO_AVOIDANCE_ALPHA_WEIGHT)
     val summaryExitProgress = max(summaryProgress, avoidanceProgress * HOME_HERO_AVOIDANCE_ALPHA_WEIGHT)
@@ -224,7 +221,7 @@ internal fun HomePageHero(
                 .size(88.dp)
                 .graphicsLayer {
                     alpha = 1f - iconExitProgress
-                    translationY = -iconAvoidanceLiftPx * max(iconProgress, avoidanceProgress)
+                    translationY = -sharedAvoidanceLiftPx * sharedLiftProgress
                     scaleX = 1f - (iconExitProgress * 0.05f)
                     scaleY = 1f - (iconExitProgress * 0.05f)
                 }
@@ -274,7 +271,7 @@ internal fun HomePageHero(
                 }
                 .graphicsLayer {
                     alpha = 1f - titleExitProgress
-                    translationY = -titleAvoidanceLiftPx * max(titleProgress, avoidanceProgress)
+                    translationY = -sharedAvoidanceLiftPx * sharedLiftProgress
                     scaleX = 1f - (titleExitProgress * 0.05f)
                     scaleY = 1f - (titleExitProgress * 0.05f)
                 }
@@ -293,7 +290,7 @@ internal fun HomePageHero(
                 .fillMaxWidth()
                 .graphicsLayer {
                     alpha = 1f - summaryExitProgress
-                    translationY = -summaryAvoidanceLiftPx * max(summaryProgress, avoidanceProgress)
+                    translationY = -sharedAvoidanceLiftPx * sharedLiftProgress
                     scaleX = 1f - (summaryExitProgress * 0.05f)
                     scaleY = 1f - (summaryExitProgress * 0.05f)
                 }

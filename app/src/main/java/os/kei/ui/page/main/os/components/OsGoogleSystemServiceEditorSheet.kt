@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -298,8 +300,10 @@ internal fun OsGoogleSystemServiceEditorSheet(
                             val selectedTypeIndex = ShortcutIntentExtraType.entries.indexOf(extra.type)
                                 .coerceAtLeast(0)
                             SheetSectionCard(verticalSpacing = 8.dp) {
+                                val intentExtraControlHeight = 44.dp
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     AppLiquidSearchField(
@@ -330,8 +334,11 @@ internal fun OsGoogleSystemServiceEditorSheet(
                                         onAnchorBoundsChange = { bounds ->
                                             intentExtraController.onExtraTypeAnchorBoundsChange(index, bounds)
                                         },
+                                        modifier = Modifier.widthIn(min = 104.dp),
                                         backdrop = sheetBackdrop,
-                                        variant = GlassVariant.SheetAction
+                                        variant = GlassVariant.SheetAction,
+                                        minHeight = intentExtraControlHeight,
+                                        verticalPadding = 10.dp
                                     )
                                     AppLiquidIconButton(
                                         backdrop = sheetBackdrop,
@@ -340,8 +347,8 @@ internal fun OsGoogleSystemServiceEditorSheet(
                                         contentDescription = stringResource(
                                             R.string.os_google_system_service_cd_remove_intent_extra
                                         ),
-                                        width = 40.dp,
-                                        height = 32.dp,
+                                        width = intentExtraControlHeight,
+                                        height = intentExtraControlHeight,
                                         onClick = { intentExtraController.onRemoveIntentExtra(index) }
                                     )
                                 }

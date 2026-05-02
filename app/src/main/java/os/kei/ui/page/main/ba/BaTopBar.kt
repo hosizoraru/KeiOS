@@ -112,11 +112,14 @@ internal fun BaTopBarActions(
                     onDismissRequest = { onShowCalendarIntervalPopupChange(false) },
                     enableWindowDim = false,
                 ) {
-                    LiquidGlassDropdownColumn(backdrop = backdrop) {
-                        val options = BaCalendarRefreshIntervalOption.entries
-                        val selected = BaCalendarRefreshIntervalOption.fromHours(
-                            calendarRefreshIntervalHours,
-                        )
+                    val options = BaCalendarRefreshIntervalOption.entries
+                    val selected = BaCalendarRefreshIntervalOption.fromHours(
+                        calendarRefreshIntervalHours,
+                    )
+                    LiquidGlassDropdownColumn(
+                        backdrop = backdrop,
+                        initialScrollItemIndex = options.indexOf(selected)
+                    ) {
                         options.forEachIndexed { index, option ->
                             LiquidGlassDropdownSingleChoiceItem(
                                 text = stringResource(option.labelRes),

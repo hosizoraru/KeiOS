@@ -39,8 +39,7 @@ import os.kei.core.platform.LocalNetworkPermissionCompat
 import os.kei.mcp.server.McpServerManager
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.AppFloatingLiquidActionButton
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
@@ -516,7 +515,7 @@ fun McpPage(
                 exit = appFloatingExit(),
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
-                AppLiquidIconButton(
+                AppFloatingLiquidActionButton(
                     backdrop = backdrops.content,
                     icon = if (uiState.running) appLucidePauseIcon() else osLucideRunIcon(),
                     contentDescription = if (uiState.running) {
@@ -526,11 +525,7 @@ fun McpPage(
                     },
                     onClick = toggleServer,
                     modifier = Modifier.padding(end = 14.dp, bottom = runtime.contentBottomPadding - 24.dp),
-                    width = 60.dp,
-                    height = 44.dp,
-                    iconTint = if (uiState.running) MiuixTheme.colorScheme.error else MiuixTheme.colorScheme.primary,
-                    containerColor = if (uiState.running) MiuixTheme.colorScheme.error else MiuixTheme.colorScheme.primary,
-                    variant = GlassVariant.Floating
+                    iconTint = if (uiState.running) MiuixTheme.colorScheme.error else MiuixTheme.colorScheme.primary
                 )
             }
         }

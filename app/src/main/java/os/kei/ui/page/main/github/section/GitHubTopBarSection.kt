@@ -141,8 +141,11 @@ internal fun GitHubTopBarActions(
                         onDismissRequest = { onShowSortPopupChange(false) },
                         enableWindowDim = false
                     ) {
-                        LiquidGlassDropdownColumn(backdrop = backdrop) {
-                            val modes = GitHubSortMode.entries
+                        val modes = GitHubSortMode.entries
+                        LiquidGlassDropdownColumn(
+                            backdrop = backdrop,
+                            initialScrollItemIndex = modes.indexOf(sortMode)
+                        ) {
                             modes.forEachIndexed { index, mode ->
                                 LiquidGlassDropdownSingleChoiceItem(
                                     text = stringResource(mode.labelRes),

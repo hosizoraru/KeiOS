@@ -283,6 +283,7 @@ fun GuideGalleryExpressionCardItem(
                             AppLiquidGlassDropdownColumn(
                                 modifier = Modifier.heightIn(max = pickerMaxHeight),
                                 accentColor = Color(0xFF3B82F6),
+                                initialScrollItemIndex = selectedIndex,
                                 backdrop = backdrop
                             ) {
                                 optionLabels.forEachIndexed { idx, option ->

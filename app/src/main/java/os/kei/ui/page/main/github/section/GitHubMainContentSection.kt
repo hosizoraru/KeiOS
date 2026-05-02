@@ -30,14 +30,12 @@ import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.AppFloatingLiquidActionButton
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 internal fun GitHubMainContent(
@@ -190,16 +188,12 @@ internal fun GitHubMainContent(
                     exit = appFloatingExit(),
                     modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
                 ) {
-                    AppLiquidIconButton(
+                    AppFloatingLiquidActionButton(
                         backdrop = if (reduceEffectsDuringListScroll) null else contentBackdrop,
                         icon = appLucideAddIcon(),
                         contentDescription = stringResource(R.string.github_cd_add_track),
                         onClick = onOpenTrackSheetForAdd,
                         modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
-                        width = 60.dp,
-                        height = 44.dp,
-                        containerColor = MiuixTheme.colorScheme.primary,
-                        variant = GlassVariant.Floating
                     )
                 }
             }

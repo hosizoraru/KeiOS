@@ -195,6 +195,8 @@ fun AppLiquidFloatingSurface(
     } else {
         Color.White.copy(alpha = 0.54f)
     }
+    val shadowAlpha = (if (isDark) 0.12f else 0.05f) * (1f - 0.35f * pressProgress)
+    val pressedBorderColor = borderColor.copy(alpha = borderColor.alpha * (1f - 0.72f * pressProgress))
 
     Box(
         modifier = modifier.graphicsLayer {
@@ -229,7 +231,7 @@ fun AppLiquidFloatingSurface(
                             },
                             shadow = {
                                 Shadow.Default.copy(
-                                    color = Color.Black.copy(alpha = if (isDark) 0.20f else 0.10f)
+                                    color = Color.Black.copy(alpha = shadowAlpha)
                                 )
                             },
                             onDrawSurface = { drawRect(surfaceColor) }
@@ -258,7 +260,7 @@ fun AppLiquidFloatingSurface(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(shape)
-                .border(1.dp, borderColor, shape)
+                .border(1.dp, pressedBorderColor, shape)
         )
         if (consumeTouches && onClick == null) {
             Box(

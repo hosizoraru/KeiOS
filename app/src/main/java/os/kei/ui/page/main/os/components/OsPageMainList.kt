@@ -38,8 +38,7 @@ import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
+import os.kei.ui.page.main.widget.glass.AppFloatingLiquidActionButton
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
@@ -411,17 +410,14 @@ internal fun OsPageMainList(
             enter = appFloatingEnter(),
             exit = appFloatingExit(),
             modifier = Modifier.align(Alignment.BottomEnd)
-            ) {
-                AppLiquidIconButton(
-                    backdrop = contentBackdrop,
-                    icon = appLucideAddIcon(),
-                    contentDescription = stringResource(R.string.os_cd_add_activity_card),
-                    onClick = onOpenAddActivityShortcutCard,
-                    modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
-                width = 60.dp,
-                height = 44.dp,
-                containerColor = MiuixTheme.colorScheme.primary,
-                variant = GlassVariant.Floating
+        ) {
+            AppFloatingLiquidActionButton(
+                backdrop = contentBackdrop,
+                icon = appLucideAddIcon(),
+                contentDescription = stringResource(R.string.os_cd_add_activity_card),
+                onClick = onOpenAddActivityShortcutCard,
+                modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
+                iconTint = MiuixTheme.colorScheme.primary
             )
         }
     }

@@ -204,6 +204,11 @@ private fun AppLiquidIconButtonContainer(
         durationMillis = 110,
         label = "glass_icon_button_overlay"
     )
+    val borderAlpha by appMotionFloatState(
+        targetValue = if (isPressed) 0f else 1f,
+        durationMillis = 110,
+        label = "glass_icon_button_border_alpha"
+    )
     Box(
         modifier = modifier
             .width(width)
@@ -256,7 +261,13 @@ private fun AppLiquidIconButtonContainer(
                         },
                         shadow = {
                             Shadow.Default.copy(
-                                color = Color.Black.copy(alpha = glass.shadowAlpha)
+                                color = Color.Black.copy(
+                                    alpha = appLiquidButtonShadowAlpha(
+                                        baseAlpha = glass.shadowAlpha,
+                                        variant = variant,
+                                        isPressed = isPressed
+                                    )
+                                )
                             )
                         },
                         innerShadow = {
@@ -305,7 +316,7 @@ private fun AppLiquidIconButtonContainer(
                     .clip(ContinuousCapsule)
                     .border(
                         width = glass.borderWidth,
-                        color = glass.borderColor,
+                        color = glass.borderColor.copy(alpha = glass.borderColor.alpha * borderAlpha),
                         shape = shape
                     )
             )
@@ -381,15 +392,6 @@ fun AppLiquidTextButton(
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(animationScope = animationScope)
     }
-    val borderModifier = if (glass.showBorder) {
-        Modifier.border(
-            width = glass.borderWidth,
-            color = glass.borderColor,
-            shape = ContinuousCapsule
-        )
-    } else {
-        Modifier
-    }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val animatedScale by appMotionFloatState(
@@ -409,6 +411,20 @@ fun AppLiquidTextButton(
         durationMillis = 110,
         label = "app_liquid_text_button_overlay"
     )
+    val borderAlpha by appMotionFloatState(
+        targetValue = if (enabled && isPressed) 0f else 1f,
+        durationMillis = 110,
+        label = "app_liquid_text_button_border_alpha"
+    )
+    val borderModifier = if (glass.showBorder && borderAlpha > 0.01f) {
+        Modifier.border(
+            width = glass.borderWidth,
+            color = glass.borderColor.copy(alpha = glass.borderColor.alpha * borderAlpha),
+            shape = ContinuousCapsule
+        )
+    } else {
+        Modifier
+    }
 
     LaunchedEffect(isPressed, onPressedChange) {
         onPressedChange?.invoke(isPressed)
@@ -469,7 +485,13 @@ fun AppLiquidTextButton(
                         },
                         shadow = {
                             Shadow.Default.copy(
-                                color = Color.Black.copy(alpha = glass.shadowAlpha)
+                                color = Color.Black.copy(
+                                    alpha = appLiquidButtonShadowAlpha(
+                                        baseAlpha = glass.shadowAlpha,
+                                        variant = variant,
+                                        isPressed = isPressed
+                                    )
+                                )
                             )
                         },
                         innerShadow = {
@@ -559,6 +581,25 @@ private fun glassContainerOverlayAlpha(
         GlassVariant.Floating -> if (isDark) 0.20f else 0.18f
         GlassVariant.Content -> if (isDark) 0.26f else 0.32f
     }
+}
+
+private fun appLiquidButtonShadowAlpha(
+    baseAlpha: Float,
+    variant: GlassVariant,
+    isPressed: Boolean
+): Float {
+    val variantScale = when (variant) {
+        GlassVariant.Floating -> 0.42f
+        GlassVariant.Compact -> 0.58f
+        GlassVariant.SheetAction,
+        GlassVariant.SheetPrimaryAction,
+        GlassVariant.SheetDangerAction,
+        GlassVariant.SheetInput -> 0.64f
+        GlassVariant.Content -> 0.72f
+        GlassVariant.Bar -> 0.84f
+    }
+    val pressScale = if (isPressed) 0.45f else 1f
+    return baseAlpha * variantScale * pressScale
 }
 
 private fun resolveDarkCapsuleOverlayColor(

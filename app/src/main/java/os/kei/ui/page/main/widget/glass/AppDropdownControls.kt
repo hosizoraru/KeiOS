@@ -126,6 +126,7 @@ fun AppDropdownSelector(
                 val accentColor = dropdownAnchorTint(textColor = textColor, variant = variant)
                 AppLiquidGlassDropdownColumn(
                     accentColor = accentColor,
+                    initialScrollItemIndex = selectedIndex,
                     backdrop = backdrop
                 ) {
                     DropdownSelectorChoiceList(
