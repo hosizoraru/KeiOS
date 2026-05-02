@@ -58,7 +58,7 @@ import os.kei.ui.page.main.widget.chrome.AppPageScaffold
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
+import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton
 import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -561,12 +561,12 @@ private fun OsShellDangerousCommandConfirmDialog(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LiquidDialogActionButton(
+            AppLiquidDialogActionButton(
                 modifier = Modifier.weight(1f),
                 text = stringResource(R.string.common_cancel),
                 onClick = onDismissRequest
             )
-            LiquidDialogActionButton(
+            AppLiquidDialogActionButton(
                 modifier = Modifier.weight(1f),
                 text = confirmText,
                 containerColor = MiuixTheme.colorScheme.error,

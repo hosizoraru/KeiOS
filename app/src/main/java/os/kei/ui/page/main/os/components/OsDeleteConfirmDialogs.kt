@@ -12,7 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
+import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 
@@ -36,12 +36,12 @@ internal fun OsDeleteConfirmDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onDismissRequest
                 )
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_delete),
                     containerColor = MiuixTheme.colorScheme.error,

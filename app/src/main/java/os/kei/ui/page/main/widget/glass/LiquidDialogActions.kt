@@ -11,7 +11,7 @@ import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun LiquidDialogActionButton(
+fun AppLiquidDialogActionButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

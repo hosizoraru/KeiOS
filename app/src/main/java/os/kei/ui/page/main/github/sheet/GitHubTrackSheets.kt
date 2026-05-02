@@ -36,7 +36,7 @@ import os.kei.ui.page.main.github.query.systemDefaultDownloaderOption
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.AppSwitch
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -100,7 +100,7 @@ internal fun GitHubCheckLogicSheet(
         title = stringResource(R.string.github_check_sheet_title),
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
@@ -109,7 +109,7 @@ internal fun GitHubCheckLogicSheet(
             )
         },
         endAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),

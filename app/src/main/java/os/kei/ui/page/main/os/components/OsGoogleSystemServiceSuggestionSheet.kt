@@ -15,7 +15,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutActivityIcon
 import os.kei.ui.page.main.os.shortcut.ShortcutInstalledAppOption
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionItem
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetChoiceCard
@@ -65,7 +65,7 @@ internal fun OsGoogleSystemServiceSuggestionSheet(
         title = uiState.sheetTitle,
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),

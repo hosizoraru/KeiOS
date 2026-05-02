@@ -30,7 +30,7 @@ import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
@@ -190,7 +190,7 @@ internal fun GitHubMainContent(
                     exit = appFloatingExit(),
                     modifier = Modifier.align(androidx.compose.ui.Alignment.BottomEnd)
                 ) {
-                    GlassIconButton(
+                    AppLiquidIconButton(
                         backdrop = if (reduceEffectsDuringListScroll) null else contentBackdrop,
                         icon = appLucideAddIcon(),
                         contentDescription = stringResource(R.string.github_cd_add_track),

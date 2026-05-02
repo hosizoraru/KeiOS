@@ -108,7 +108,7 @@ import kotlin.math.tanh
 // Adapted from Kyant0/AndroidLiquidGlass catalog components, Apache-2.0.
 
 @Composable
-fun LiquidButton(
+fun AppLiquidButton(
     onClick: () -> Unit,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
@@ -220,7 +220,7 @@ fun LiquidButton(
 }
 
 @Composable
-fun LiquidToggle(
+fun AppLiquidToggle(
     selected: () -> Boolean,
     onSelect: (Boolean) -> Unit,
     backdrop: Backdrop,
@@ -404,14 +404,14 @@ fun LiquidToggle(
 }
 
 @Composable
-fun LiquidPrimaryToggle(
+fun AppLiquidPrimaryToggle(
     selected: () -> Boolean,
     onSelect: (Boolean) -> Unit,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    LiquidToggle(
+    AppLiquidToggle(
         selected = selected,
         onSelect = onSelect,
         backdrop = backdrop,

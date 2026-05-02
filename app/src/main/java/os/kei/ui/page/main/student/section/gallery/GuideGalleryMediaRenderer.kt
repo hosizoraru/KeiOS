@@ -23,7 +23,7 @@ import os.kei.ui.page.main.student.GuideVideoControlAction
 import os.kei.ui.page.main.student.GuideVideoFullscreenActivity
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.student.section.GuidePressableMediaSurface
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
@@ -172,7 +172,7 @@ internal fun GuideGalleryCardContent(
             if (normalizedMediaType == "audio" && audioTargetUrl.isNotBlank()) {
                 if (showBgmFavoriteAction) {
                     val favoriteColor = if (isBgmFavorite) Color(0xFFEC4899) else Color(0xFF3B82F6)
-                    GlassIconButton(
+                    AppLiquidIconButton(
                         backdrop = backdrop,
                         icon = MiuixIcons.Regular.FavoritesFill,
                         contentDescription = bgmFavoriteContentDescription,

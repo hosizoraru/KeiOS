@@ -41,16 +41,16 @@ import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.LiquidBottomTab
 import os.kei.ui.page.main.widget.glass.LiquidBottomTabs
-import os.kei.ui.page.main.widget.glass.LiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidButton
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceList
 import os.kei.ui.page.main.widget.glass.LiquidKeyPointSlider
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
-import os.kei.ui.page.main.widget.glass.LiquidPrimaryToggle
+import os.kei.ui.page.main.widget.glass.AppLiquidPrimaryToggle
 import os.kei.ui.page.main.widget.glass.LiquidSlider
 import os.kei.ui.page.main.widget.glass.LiquidSliderKeyPoint
-import os.kei.ui.page.main.widget.glass.LiquidToggle
+import os.kei.ui.page.main.widget.glass.AppLiquidToggle
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.glass.liquidBottomTabContentColor
 import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
@@ -103,7 +103,7 @@ internal fun DebugLiquidButtonsCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 tint = accent.copy(alpha = 0.42f),
@@ -125,7 +125,7 @@ internal fun DebugLiquidButtonsCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 tint = accent.copy(alpha = 0.34f),
@@ -153,7 +153,7 @@ internal fun DebugLiquidButtonsCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 tint = accent.copy(alpha = 0.28f),
@@ -177,7 +177,7 @@ internal fun DebugLiquidButtonsCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 surfaceColor = buttonSurface,
@@ -214,7 +214,7 @@ internal fun DebugLiquidButtonsCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 tint = Color(0xFFFF5C8A).copy(alpha = 0.40f),
@@ -239,7 +239,7 @@ internal fun DebugLiquidButtonsCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 tint = Color(0xFFFFC857).copy(alpha = 0.44f),
@@ -263,7 +263,7 @@ internal fun DebugLiquidButtonsCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            LiquidButton(
+            AppLiquidButton(
                 onClick = {},
                 backdrop = backdrop,
                 tint = Color(0xFF7C5CFF).copy(alpha = 0.42f),
@@ -375,7 +375,7 @@ internal fun DebugLiquidGlassDropdownCard(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LiquidButton(
+            AppLiquidButton(
                 onClick = { expanded = true },
                 backdrop = backdrop,
                 tint = Color.Unspecified,
@@ -619,12 +619,12 @@ internal fun DebugLiquidControlsCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LiquidToggle(
+                AppLiquidToggle(
                     selected = { toggleSelected },
                     onSelect = { toggleSelected = it },
                     backdrop = backdrop
                 )
-                LiquidPrimaryToggle(
+                AppLiquidPrimaryToggle(
                     selected = { primaryToggleSelected },
                     onSelect = { primaryToggleSelected = it },
                     backdrop = backdrop

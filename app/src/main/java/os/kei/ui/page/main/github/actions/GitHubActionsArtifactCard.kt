@@ -27,7 +27,7 @@ import os.kei.ui.page.main.github.asset.formatReleaseUpdatedAtNoYear
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.Text
@@ -213,7 +213,7 @@ internal fun GitHubActionsArtifactCard(
                 textMaxLines = 1,
                 textOverflow = TextOverflow.Ellipsis
             )
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.SheetAction,
                 icon = appLucideShareIcon(),

@@ -34,7 +34,7 @@ object AppInteractiveTokens {
     const val disabledContentAlpha: Float = 0.56f
 }
 
-internal fun defaultGlassIconButtonSize(variant: GlassVariant): Dp {
+internal fun defaultAppLiquidIconButtonSize(variant: GlassVariant): Dp {
     return when (variant) {
         GlassVariant.Compact -> AppInteractiveTokens.compactGlassIconButtonSize
         else -> AppInteractiveTokens.glassIconButtonSize

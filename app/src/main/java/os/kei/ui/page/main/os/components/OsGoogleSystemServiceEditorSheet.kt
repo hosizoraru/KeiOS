@@ -18,7 +18,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutIntentExtraType
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -56,7 +56,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
         title = title,
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
@@ -65,7 +65,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
             )
         },
         endAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),
@@ -333,7 +333,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                                         backdrop = sheetBackdrop,
                                         variant = GlassVariant.SheetAction
                                     )
-                                    GlassIconButton(
+                                    AppLiquidIconButton(
                                         backdrop = sheetBackdrop,
                                         variant = GlassVariant.SheetDangerAction,
                                         icon = appLucideCloseIcon(),
@@ -389,7 +389,7 @@ private fun SuggestionTriggerAction(
     sheetBackdrop: LayerBackdrop,
     onClick: () -> Unit
 ) {
-    GlassIconButton(
+    AppLiquidIconButton(
         backdrop = sheetBackdrop,
         variant = GlassVariant.SheetAction,
         icon = appLucideAddIcon(),

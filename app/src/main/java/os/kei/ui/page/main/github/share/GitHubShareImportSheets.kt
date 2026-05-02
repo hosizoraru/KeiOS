@@ -45,7 +45,7 @@ import os.kei.ui.page.main.widget.sheet.SheetLiquidChoiceIndicator
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowBottomSheet
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
-import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
+import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.layout.BottomSheetDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -251,12 +251,12 @@ internal fun GitHubShareImportSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel
                 )
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.github_share_import_dialog_action_confirm),
                     containerColor = GitHubStatusPalette.Active,
@@ -317,12 +317,12 @@ internal fun GitHubShareImportPendingSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_close),
                     onClick = onClose
                 )
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.github_share_import_pending_action_cancel),
                     containerColor = GitHubStatusPalette.PreRelease,
@@ -400,7 +400,7 @@ internal fun GitHubShareImportAttachConfirmSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    LiquidDialogActionButton(
+                    AppLiquidDialogActionButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.common_close),
                         containerColor = GitHubStatusPalette.Active,
@@ -413,13 +413,13 @@ internal fun GitHubShareImportAttachConfirmSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    LiquidDialogActionButton(
+                    AppLiquidDialogActionButton(
                         modifier = Modifier.weight(1f),
                         text = stringResource(R.string.common_cancel),
                         onClick = onCancel,
                         enabled = !submitting
                     )
-                    LiquidDialogActionButton(
+                    AppLiquidDialogActionButton(
                         modifier = Modifier.weight(1f),
                         text = if (submitting && !submittingAndOpen) {
                             stringResource(R.string.common_processing)
@@ -432,7 +432,7 @@ internal fun GitHubShareImportAttachConfirmSheet(
                     )
                 }
                 if (onConfirmAndOpenGitHub != null) {
-                    LiquidDialogActionButton(
+                    AppLiquidDialogActionButton(
                         modifier = Modifier.fillMaxWidth(),
                         text = if (submitting && submittingAndOpen) {
                             stringResource(R.string.common_processing)

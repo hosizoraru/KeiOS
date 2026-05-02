@@ -21,7 +21,7 @@ import os.kei.ui.page.main.os.shell.ShellOutputDisplayEntry
 import os.kei.ui.page.main.os.shell.ShellOutputGlassPanel
 import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -63,7 +63,7 @@ internal fun OsShellRunnerInputCard(
                 }
             },
             endActions = {
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = osLucideRunIcon(),
                     contentDescription = runActionDescription,
@@ -75,7 +75,7 @@ internal fun OsShellRunnerInputCard(
                     },
                     variant = GlassVariant.Bar
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = osLucideStopIcon(),
                     contentDescription = stopActionDescription,
@@ -87,7 +87,7 @@ internal fun OsShellRunnerInputCard(
                     },
                     variant = GlassVariant.Bar
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = osLucideSaveIcon(),
                     contentDescription = saveCommandActionDescription,
@@ -137,7 +137,7 @@ internal fun OsShellRunnerOutputCard(
             title = outputTitle,
             subtitle = "",
             endActions = {
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = osLucideFormatIcon(),
                     contentDescription = formatOutputActionDescription,
@@ -145,7 +145,7 @@ internal fun OsShellRunnerOutputCard(
                     iconTint = MiuixTheme.colorScheme.primary,
                     variant = GlassVariant.Bar
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = osLucideCopyIcon(),
                     contentDescription = copyOutputActionDescription,
@@ -153,7 +153,7 @@ internal fun OsShellRunnerOutputCard(
                     iconTint = MiuixTheme.colorScheme.primary,
                     variant = GlassVariant.Bar
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = osLucideClearIcon(),
                     contentDescription = clearOutputActionDescription,

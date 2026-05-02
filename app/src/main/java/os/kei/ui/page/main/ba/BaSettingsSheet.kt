@@ -21,7 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import os.kei.R
 import os.kei.ui.page.main.ba.support.BA_AP_MAX
 import os.kei.ui.page.main.widget.glass.AppSwitch
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -90,7 +90,7 @@ internal fun BaSettingsSheet(
         title = stringResource(R.string.ba_settings_title),
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 icon = MiuixIcons.Regular.Close,
                 contentDescription = stringResource(R.string.common_close),
@@ -99,7 +99,7 @@ internal fun BaSettingsSheet(
             )
         },
         endAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 icon = MiuixIcons.Regular.Ok,
                 contentDescription = stringResource(R.string.common_save),

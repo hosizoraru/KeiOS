@@ -35,7 +35,7 @@ import os.kei.ui.page.main.ba.support.displayAp
 import os.kei.ui.page.main.ba.support.formatBaDateTime
 import os.kei.ui.page.main.ba.support.formatBaRemainingTime
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -140,7 +140,7 @@ internal fun BaOverviewCard(
                     ) {
                         Text(stringResource(R.string.ba_overview_catalog_title), color = MiuixTheme.colorScheme.onBackground)
                     }
-                    GlassIconButton(
+                    AppLiquidIconButton(
                         backdrop = backdrop,
                         painter = painterResource(id = R.drawable.common_icon_dailyreward),
                         contentDescription = stringResource(R.string.ba_overview_cd_open_catalog),
@@ -277,7 +277,7 @@ internal fun BaOverviewCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    GlassIconButton(
+                    AppLiquidIconButton(
                         backdrop = backdrop,
                         painter = painterResource(id = R.drawable.item_icon_consumable_ap_3),
                         contentDescription = stringResource(R.string.ba_overview_cd_claim_cafe_ap),

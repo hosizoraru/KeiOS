@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 
 @Composable
@@ -18,7 +18,7 @@ fun AppLiquidNavigationButton(
     layeredStyleEnabled: Boolean = true,
     onInteractionChanged: (Boolean) -> Unit = {}
 ) {
-    GlassIconButton(
+    AppLiquidIconButton(
         modifier = modifier,
         backdrop = backdrop,
         icon = icon,

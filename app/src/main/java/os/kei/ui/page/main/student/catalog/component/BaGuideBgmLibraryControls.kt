@@ -30,7 +30,7 @@ import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidLinearProgressBar
@@ -131,7 +131,7 @@ internal fun BaGuideBgmLibraryHeader(
                     color = accent,
                     size = AppStatusPillSize.Compact
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = if (toolsExpanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
                     contentDescription = toolsDescription,
@@ -259,7 +259,7 @@ private fun BaGuideBgmLibraryToolsContent(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = null,
                 icon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
                 contentDescription = cacheActionText,
@@ -274,7 +274,7 @@ private fun BaGuideBgmLibraryToolsContent(
                 containerColor = accent,
                 variant = GlassVariant.Compact
             )
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = null,
                 icon = appLucideAddIcon(),
                 contentDescription = stringResource(R.string.ba_catalog_bgm_action_import),
@@ -285,7 +285,7 @@ private fun BaGuideBgmLibraryToolsContent(
                 containerColor = accent,
                 variant = GlassVariant.Compact
             )
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = null,
                 icon = appLucideShareIcon(),
                 contentDescription = stringResource(R.string.ba_catalog_bgm_action_export),

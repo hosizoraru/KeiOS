@@ -58,7 +58,7 @@ import kotlin.math.sin
 import kotlin.math.tanh
 
 @Composable
-fun GlassIconButton(
+fun AppLiquidIconButton(
     backdrop: Backdrop?,
     icon: ImageVector,
     contentDescription: String,
@@ -75,9 +75,9 @@ fun GlassIconButton(
     enabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
-    val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
-    val resolvedHeight = if (height == Dp.Unspecified) defaultGlassIconButtonSize(variant) else height
-    GlassIconButtonContainer(
+    val resolvedWidth = if (width == Dp.Unspecified) defaultAppLiquidIconButtonSize(variant) else width
+    val resolvedHeight = if (height == Dp.Unspecified) defaultAppLiquidIconButtonSize(variant) else height
+    AppLiquidIconButtonContainer(
         backdrop = backdrop,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -100,7 +100,7 @@ fun GlassIconButton(
 }
 
 @Composable
-fun GlassIconButton(
+fun AppLiquidIconButton(
     backdrop: Backdrop?,
     painter: Painter,
     contentDescription: String,
@@ -118,9 +118,9 @@ fun GlassIconButton(
     enabled: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
-    val resolvedWidth = if (width == Dp.Unspecified) defaultGlassIconButtonSize(variant) else width
-    val resolvedHeight = if (height == Dp.Unspecified) defaultGlassIconButtonSize(variant) else height
-    GlassIconButtonContainer(
+    val resolvedWidth = if (width == Dp.Unspecified) defaultAppLiquidIconButtonSize(variant) else width
+    val resolvedHeight = if (height == Dp.Unspecified) defaultAppLiquidIconButtonSize(variant) else height
+    AppLiquidIconButtonContainer(
         backdrop = backdrop,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -144,7 +144,7 @@ fun GlassIconButton(
 }
 
 @Composable
-private fun GlassIconButtonContainer(
+private fun AppLiquidIconButtonContainer(
     backdrop: Backdrop?,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,

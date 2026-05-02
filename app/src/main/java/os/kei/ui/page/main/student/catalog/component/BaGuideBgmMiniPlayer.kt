@@ -44,7 +44,7 @@ import os.kei.ui.page.main.student.section.gallery.formatAudioDuration
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Text
@@ -191,7 +191,7 @@ internal fun BaGuideBgmMiniPlayer(
                         )
                     }
                 }
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = if (expanded) appLucideChevronDownIcon() else appLucideChevronUpIcon(),
                     contentDescription = expandCollapseDescription,
@@ -202,7 +202,7 @@ internal fun BaGuideBgmMiniPlayer(
                     iconTint = neutralControlTint,
                     containerColor = neutralControlContainer
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = if (runtimeState.isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
                     contentDescription = playPauseDescription,
@@ -256,7 +256,7 @@ internal fun BaGuideBgmMiniPlayer(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        GlassIconButton(
+                        AppLiquidIconButton(
                             backdrop = null,
                             icon = appLucideListIcon(),
                             contentDescription = openQueueDescription,
@@ -267,7 +267,7 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        GlassIconButton(
+                        AppLiquidIconButton(
                             backdrop = null,
                             icon = appLucideSkipBackIcon(),
                             contentDescription = previousDescription,
@@ -278,7 +278,7 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        GlassIconButton(
+                        AppLiquidIconButton(
                             backdrop = null,
                             icon = appLucideSkipForwardIcon(),
                             contentDescription = nextDescription,
@@ -289,7 +289,7 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        GlassIconButton(
+                        AppLiquidIconButton(
                             backdrop = null,
                             icon = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
                                 appLucideRepeatOneIcon()
@@ -312,7 +312,7 @@ internal fun BaGuideBgmMiniPlayer(
                                 neutralControlContainer
                             }
                         )
-                        GlassIconButton(
+                        AppLiquidIconButton(
                             backdrop = null,
                             icon = appLucideExternalLinkIcon(),
                             contentDescription = openGalleryDescription,

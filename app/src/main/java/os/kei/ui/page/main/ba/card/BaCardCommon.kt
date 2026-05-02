@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.ba.BaGlassPanel
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
@@ -87,7 +87,7 @@ internal fun BaInlineActionPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (buttonIconRes != null) {
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrop,
                     painter = painterResource(id = buttonIconRes),
                     contentDescription = buttonText,

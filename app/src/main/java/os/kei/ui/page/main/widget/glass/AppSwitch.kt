@@ -48,7 +48,7 @@ fun AppSwitch(
         contentAlignment = Alignment.Center
     ) {
         Box(modifier = Modifier.matchParentSize().layerBackdrop(switchBackdrop))
-        LiquidToggle(
+        AppLiquidToggle(
             selected = { checked },
             onSelect = onCheckedChange,
             backdrop = switchBackdrop,

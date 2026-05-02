@@ -38,8 +38,8 @@ import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideMusicIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.LiquidButton
-import os.kei.ui.page.main.widget.glass.LiquidPrimaryToggle
+import os.kei.ui.page.main.widget.glass.AppLiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidPrimaryToggle
 import os.kei.ui.page.main.widget.glass.LiquidRoundedCard
 import os.kei.ui.page.main.widget.glass.LiquidSlider
 import os.kei.ui.page.main.widget.glass.LiquidSurface
@@ -213,7 +213,7 @@ internal fun DebugLiquidTransparentButtonSamples(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LiquidButton(
+        AppLiquidButton(
             onClick = {},
             backdrop = backdrop,
             height = 46.dp,
@@ -641,7 +641,7 @@ internal fun DebugLiquidParameterPanelSample(
                         lineHeight = AppTypographyTokens.Supporting.lineHeight,
                         maxLines = 1
                     )
-                    LiquidPrimaryToggle(
+                    AppLiquidPrimaryToggle(
                         selected = { chromaticAberrationEnabled },
                         onSelect = onChromaticAberrationChange,
                         backdrop = panelBackdrop

@@ -39,7 +39,7 @@ import os.kei.core.platform.LocalNetworkPermissionCompat
 import os.kei.mcp.server.McpServerManager
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppPageScaffold
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
@@ -516,7 +516,7 @@ fun McpPage(
                 exit = appFloatingExit(),
                 modifier = Modifier.align(Alignment.BottomEnd)
             ) {
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrops.content,
                     icon = if (uiState.running) appLucidePauseIcon() else osLucideRunIcon(),
                     contentDescription = if (uiState.running) {

@@ -27,7 +27,7 @@ import os.kei.ui.page.main.os.osLucideRunIcon
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.glass.AppSwitch
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -150,7 +150,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
         enableNestedScroll = false,
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
@@ -262,7 +262,7 @@ internal fun OsShellCommandCardEditorSheet(
         title = title,
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
@@ -271,7 +271,7 @@ internal fun OsShellCommandCardEditorSheet(
             )
         },
         endAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = sheetBackdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),

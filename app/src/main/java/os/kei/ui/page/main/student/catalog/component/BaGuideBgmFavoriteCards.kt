@@ -40,7 +40,7 @@ import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
@@ -289,7 +289,7 @@ internal fun BaGuideBgmFavoriteCard(
                     )
                 }
             }
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = null,
                 icon = appLucidePlayIcon(),
                 contentDescription = playContentDescription,
@@ -304,7 +304,7 @@ internal fun BaGuideBgmFavoriteCard(
                 modifier = Modifier.capturePopupAnchor { actionAnchorBounds = it },
                 contentAlignment = Alignment.Center
             ) {
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = appLucideMoreIcon(),
                     contentDescription = moreContentDescription,

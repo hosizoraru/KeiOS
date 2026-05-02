@@ -29,7 +29,7 @@ import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.LiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -97,7 +97,7 @@ private fun DebugBgmTopBackAction(
     backdrop: Backdrop
 ) {
     val closeContentDescription = stringResource(R.string.common_close)
-    LiquidButton(
+    AppLiquidButton(
         onClick = onClose,
         backdrop = backdrop,
         tint = accent.copy(alpha = 0.12f),

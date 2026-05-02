@@ -29,7 +29,7 @@ import os.kei.ui.page.main.ba.support.formatBaDateTimeNoYearInTimeZone
 import os.kei.ui.page.main.ba.support.formatBaRemainingTime
 import os.kei.ui.page.main.ba.support.poolProgress
 import os.kei.ui.page.main.ba.support.serverRefreshTimeZone
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidLinearProgressBar
 import com.kyant.backdrop.Backdrop
@@ -89,7 +89,7 @@ internal fun BaCalendarSectionHeaderCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
                     contentDescription = stringResource(R.string.ba_calendar_cd_refresh),
@@ -143,7 +143,7 @@ internal fun BaCalendarCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
                     contentDescription = stringResource(R.string.ba_calendar_cd_refresh),
@@ -340,7 +340,7 @@ internal fun BaPoolSectionHeaderCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
                     contentDescription = stringResource(R.string.ba_pool_cd_refresh),
@@ -395,7 +395,7 @@ internal fun BaPoolCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrop,
                     icon = MiuixIcons.Regular.Refresh,
                     contentDescription = stringResource(R.string.ba_pool_cd_refresh),

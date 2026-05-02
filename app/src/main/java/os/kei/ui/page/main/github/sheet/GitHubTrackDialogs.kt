@@ -35,11 +35,11 @@ import os.kei.ui.page.main.github.query.noOnlineShareTargetOption
 import os.kei.ui.page.main.github.query.systemDefaultDownloaderOption
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
+import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
@@ -79,12 +79,12 @@ internal fun GitHubDeleteTrackDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel
                 )
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = if (deleteInProgress) {
                         stringResource(R.string.github_delete_dialog_deleting)
@@ -201,13 +201,13 @@ internal fun GitHubTrackImportDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel,
                     enabled = !importInProgress
                 )
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = when {
                         importInProgress -> stringResource(R.string.github_check_sheet_action_importing)

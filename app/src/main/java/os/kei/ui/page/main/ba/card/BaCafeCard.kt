@@ -23,7 +23,7 @@ import os.kei.ui.page.main.ba.support.formatBaRemainingTime
 import os.kei.ui.page.main.ba.support.nextArenaRefreshMs
 import os.kei.ui.page.main.ba.support.nextCafeStudentRefreshMs
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 
@@ -83,7 +83,7 @@ internal fun BaCafeCard(
         BaCardHeader(
             title = stringResource(R.string.ba_cafe_title),
             trailing = {
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = backdrop,
                     painter = painterResource(id = R.drawable.mp_cafe),
                     contentDescription = stringResource(R.string.ba_cafe_title),

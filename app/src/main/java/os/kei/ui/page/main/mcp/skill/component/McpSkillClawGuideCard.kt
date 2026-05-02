@@ -20,7 +20,7 @@ import os.kei.ui.page.main.os.osLucideCopyIcon
 import os.kei.ui.page.main.mcp.skill.support.buildInlineStyledText
 import os.kei.ui.page.main.mcp.util.copyToClipboard
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import os.kei.ui.page.main.widget.support.copyModeAwareRow
@@ -62,7 +62,7 @@ internal fun McpSkillClawGuideCard(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp
                 )
-                GlassIconButton(
+                AppLiquidIconButton(
                     backdrop = null,
                     icon = copyIcon,
                     contentDescription = copyContentDescription,

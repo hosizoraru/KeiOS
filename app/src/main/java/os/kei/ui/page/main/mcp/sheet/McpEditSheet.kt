@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.Dp
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -46,7 +46,7 @@ internal fun McpEditServiceSheet(
         title = stringResource(R.string.mcp_sheet_edit_service_title),
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
@@ -55,7 +55,7 @@ internal fun McpEditServiceSheet(
             )
         },
         endAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),

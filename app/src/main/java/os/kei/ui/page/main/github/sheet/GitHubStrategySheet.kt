@@ -33,7 +33,7 @@ import os.kei.ui.page.main.github.githubFineGrainedPatDocsUrl
 import os.kei.ui.page.main.github.githubActionsStrategyGuides
 import os.kei.ui.page.main.github.githubRecommendedTokenGuide
 import os.kei.ui.page.main.github.githubStrategyGuides
-import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -86,7 +86,7 @@ internal fun GitHubStrategySheet(
         title = stringResource(R.string.github_strategy_sheet_title),
         onDismissRequest = onDismissRequest,
         startAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
@@ -95,7 +95,7 @@ internal fun GitHubStrategySheet(
             )
         },
         endAction = {
-            GlassIconButton(
+            AppLiquidIconButton(
                 backdrop = backdrop,
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),

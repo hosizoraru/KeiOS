@@ -49,7 +49,7 @@ import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideRepeatIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.LiquidButton
+import os.kei.ui.page.main.widget.glass.AppLiquidButton
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.resolvedMotionDuration
@@ -371,7 +371,7 @@ private fun DebugBgmRoundAction(
     } else {
         MiuixTheme.colorScheme.onBackground
     }
-    LiquidButton(
+    AppLiquidButton(
         onClick = onClick,
         backdrop = backdrop,
         tint = Color.Unspecified,
@@ -407,7 +407,7 @@ private fun DebugBgmPlayAction(
     } else {
         MiuixTheme.colorScheme.onBackground
     }
-    LiquidButton(
+    AppLiquidButton(
         onClick = onClick,
         backdrop = backdrop,
         modifier = Modifier

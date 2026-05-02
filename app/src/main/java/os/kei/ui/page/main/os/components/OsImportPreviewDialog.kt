@@ -17,7 +17,7 @@ import os.kei.ui.page.main.os.state.OsCardImportTarget
 import os.kei.ui.page.main.os.transfer.OsCardImportFileKind
 import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
-import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
+import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
@@ -108,13 +108,13 @@ internal fun OsImportPreviewDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = stringResource(R.string.common_cancel),
                     onClick = onCancel,
                     enabled = !importInProgress
                 )
-                LiquidDialogActionButton(
+                AppLiquidDialogActionButton(
                     modifier = Modifier.weight(1f),
                     text = when {
                         importInProgress -> stringResource(R.string.os_import_dialog_action_importing)
