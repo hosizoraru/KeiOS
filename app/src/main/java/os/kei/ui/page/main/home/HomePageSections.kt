@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -20,6 +22,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,7 +90,7 @@ internal fun Modifier.homeKeiHdrAccent(
 
 @Composable
 internal fun HomeInfoCard(
-    backdrop: Backdrop,
+    backdrop: Backdrop?,
     blurEnabled: Boolean,
     content: @Composable () -> Unit,
 ) {
@@ -100,31 +103,37 @@ internal fun HomeInfoCard(
         MiuixTheme.colorScheme.surfaceContainer
     }
 
-    Box(
-        modifier = Modifier
-            .padding(horizontal = HOME_CARD_HORIZONTAL_PADDING_DP.dp)
-            .padding(bottom = 6.dp)
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { RoundedRectangle(20.dp) },
-                effects = {
-                    if (blurEnabled) {
+    val cardModifier = Modifier
+        .padding(horizontal = HOME_CARD_HORIZONTAL_PADDING_DP.dp)
+        .padding(bottom = 6.dp)
+        .let { baseModifier ->
+            if (backdrop != null && blurEnabled) {
+                baseModifier.drawBackdrop(
+                    backdrop = backdrop,
+                    shape = { RoundedRectangle(20.dp) },
+                    effects = {
                         vibrancy()
                         blur(blurRadius.toPx())
                         lens(lensRadius.toPx(), lensRadius.toPx())
-                    }
-                },
-                highlight = {
-                    Highlight.Default.copy(alpha = if (blurEnabled) 1f else 0f)
-                },
-                shadow = {
-                    Shadow.Default.copy(
-                        color = Color.Black.copy(if (isInLightTheme) 0.1f else 0.2f)
-                    )
-                },
-                onDrawSurface = { drawRect(containerColor) }
-            )
-    ) {
+                    },
+                    highlight = {
+                        Highlight.Default.copy(alpha = 1f)
+                    },
+                    shadow = {
+                        Shadow.Default.copy(
+                            color = Color.Black.copy(if (isInLightTheme) 0.1f else 0.2f)
+                        )
+                    },
+                    onDrawSurface = { drawRect(containerColor) }
+                )
+            } else {
+                baseModifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MiuixTheme.colorScheme.surfaceContainer)
+            }
+        }
+
+    Box(modifier = cardModifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

@@ -100,7 +100,7 @@ fun HomePage(
             drawContent()
         }
     } else {
-        actionBarBackdrop
+        null
     }
     val contentState = rememberHomePageContentState(
         shizukuStatus = shizukuStatus,
@@ -297,6 +297,7 @@ fun HomePage(
                         .fillMaxSize()
                         .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
                     contentPadding = listContentPadding,
+                    overscrollEffect = null,
                 ) {
                     item(key = "logo_spacer") {
                         HomePageHeroSpacer(
@@ -318,7 +319,7 @@ fun HomePage(
                             HomePageOverviewCards(
                                 visibleOverviewCards = visibleOverviewCards,
                                 homeCardBackdrop = homeCardBackdrop,
-                                blurEnabled = blurEnabled,
+                                blurEnabled = blurEnabled && fullBackdropEffectsEnabled,
                                 homeNa = contentState.homeNa,
                                 homeCardMcp = contentState.homeCardMcp,
                                 mcpStats = overviewCardState.mcpOverviewStats,

@@ -368,7 +368,7 @@ internal fun HomePageHeroSpacer(
 @Composable
 internal fun HomePageOverviewCards(
     visibleOverviewCards: Set<HomeOverviewCard>,
-    homeCardBackdrop: Backdrop,
+    homeCardBackdrop: Backdrop?,
     blurEnabled: Boolean,
     homeNa: String,
     homeCardMcp: String,
