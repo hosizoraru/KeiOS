@@ -1,7 +1,8 @@
 package os.kei.ui.page.main.widget.glass
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,9 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.highlight.Highlight
-import com.kyant.backdrop.shadow.Shadow
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -31,69 +31,81 @@ fun FrostedBlock(
 ) {
     val isDark = isSystemInDarkTheme()
     val cardSurface = if (isDark) {
-        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f)
+        MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.84f)
     } else {
-        Color.White.copy(alpha = 0.62f)
+        Color.White.copy(alpha = 0.66f)
     }
-    val overlayColor = if (isDark) {
-        Color.White.copy(alpha = 0.03f)
-    } else {
-        Color.White.copy(alpha = 0.08f)
-    }
-    val shadowColor = if (isDark) {
-        Color.Black.copy(alpha = 0.24f)
-    } else {
-        Color.Black.copy(alpha = 0.08f)
-    }
+    val localBackdrop = rememberLayerBackdrop()
+    val blockBackdrop = backdrop ?: localBackdrop
+    val cornerRadius = 16.dp
 
-    androidx.compose.foundation.layout.Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .then(
-                if (backdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = backdrop,
-                        shape = { RoundedRectangle(16.dp) },
-                        effects = {},
-                        highlight = { Highlight.Default.copy(alpha = if (isDark) 0.32f else 0.75f) },
-                        shadow = { Shadow.Default.copy(color = shadowColor) },
-                        onDrawSurface = {
-                            drawRect(cardSurface)
-                        }
-                    )
-                } else {
-                    Modifier.background(cardSurface)
-                }
-            )
-            .background(overlayColor)
-            .padding(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.foundation.layout.Box(
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (backdrop == null) {
+            Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(accent.copy(alpha = 0.22f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(text = title, color = accent)
-            }
-        }
-        Text(
-            text = subtitle,
-            color = MiuixTheme.colorScheme.onBackgroundVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-        if (content != null) {
-            androidx.compose.foundation.layout.Column(modifier = Modifier.padding(top = 8.dp)) {
-                content()
-            }
-        } else if (body.isNotBlank()) {
-            Text(
-                text = body,
-                color = MiuixTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 8.dp)
+                    .matchParentSize()
+                    .layerBackdrop(localBackdrop)
             )
+        }
+        LiquidSurface(
+            backdrop = blockBackdrop,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedRectangle(cornerRadius),
+            isInteractive = false,
+            surfaceColor = cardSurface,
+            blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Content),
+            lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Content)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(cornerRadius))
+                    .padding(16.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .then(
+                                Modifier
+                                    .padding(horizontal = 0.dp, vertical = 0.dp)
+                            )
+                    ) {
+                        LiquidSurface(
+                            backdrop = blockBackdrop,
+                            modifier = Modifier,
+                            shape = RoundedRectangle(999.dp),
+                            isInteractive = false,
+                            surfaceColor = accent.copy(alpha = 0.18f),
+                            blurRadius = 3.dp,
+                            lensRadius = 12.dp,
+                            shadow = false
+                        ) {
+                            Text(
+                                text = title,
+                                color = accent,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = subtitle,
+                    color = MiuixTheme.colorScheme.onBackgroundVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                if (content != null) {
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        content()
+                    }
+                } else if (body.isNotBlank()) {
+                    Text(
+                        text = body,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
         }
     }
 }

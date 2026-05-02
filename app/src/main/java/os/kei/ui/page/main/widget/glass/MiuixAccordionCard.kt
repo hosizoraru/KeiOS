@@ -1,29 +1,14 @@
 package os.kei.ui.page.main.widget.glass
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import os.kei.ui.page.main.widget.core.AppCardBodyColumn
 import os.kei.ui.page.main.widget.core.AppCardHeader
-import os.kei.ui.page.main.widget.core.CardLayoutRhythm
+import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
 import com.kyant.backdrop.Backdrop
-import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
-import com.kyant.backdrop.highlight.Highlight
-import com.kyant.backdrop.shadow.Shadow
-import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -39,34 +24,13 @@ fun MiuixAccordionCard(
     onHeaderLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
     val surface = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
-    val shadowColor = if (isDark) Color.Black.copy(alpha = 0.20f) else Color.Black.copy(alpha = 0.10f)
-    val blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Content)
-    val lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Content)
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(CardLayoutRhythm.cardCornerRadius))
-            .then(
-                if (backdrop != null) {
-                    Modifier.drawBackdrop(
-                        backdrop = backdrop,
-                        shape = { RoundedRectangle(CardLayoutRhythm.cardCornerRadius) },
-                        effects = {
-                            vibrancy()
-                            blur(blurRadius.toPx())
-                            lens(lensRadius.toPx(), lensRadius.toPx())
-                        },
-                        highlight = { Highlight.Default.copy(alpha = 1f) },
-                        shadow = { Shadow.Default.copy(color = shadowColor) },
-                        onDrawSurface = { drawRect(surface) }
-                    )
-                } else {
-                    Modifier.background(surface)
-                }
-            )
+    AppSurfaceCard(
+        backdrop = backdrop,
+        containerColor = surface,
+        borderColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.14f),
+        showIndication = false
     ) {
         AppCardHeader(
             title = title,
