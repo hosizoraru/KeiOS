@@ -128,9 +128,9 @@
     <string name="ba_catalog_tab_student_short">生徒</string>
     <string name="ba_catalog_tab_npc_satellite">NPC・未実装</string>
     <string name="ba_catalog_tab_npc_satellite_short">NPC</string>
-    <string name="ba_catalog_tab_student_bgm">生徒BGM</string>
-    <string name="ba_catalog_tab_student_bgm_short">生徒BGM</string>
-    <string name="ba_catalog_tab_bgm">BGM</string>
+    <string name="ba_catalog_tab_student_bgm">音楽</string>
+    <string name="ba_catalog_tab_student_bgm_short">音楽</string>
+    <string name="ba_catalog_tab_bgm">再生</string>
     <string name="ba_catalog_action_sort">並べ替え</string>
     <string name="ba_catalog_action_refresh">リストを更新</string>
     <string name="ba_catalog_search_label">名前 / 別名 / ID を検索</string>

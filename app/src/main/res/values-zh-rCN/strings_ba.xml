@@ -129,9 +129,9 @@
     <string name="ba_catalog_tab_student_short">实装学生</string>
     <string name="ba_catalog_tab_npc_satellite">NPC及卫星</string>
     <string name="ba_catalog_tab_npc_satellite_short">NPC及卫星</string>
-    <string name="ba_catalog_tab_student_bgm">学生BGM</string>
-    <string name="ba_catalog_tab_student_bgm_short">学生BGM</string>
-    <string name="ba_catalog_tab_bgm">BGM</string>
+    <string name="ba_catalog_tab_student_bgm">音乐</string>
+    <string name="ba_catalog_tab_student_bgm_short">音乐</string>
+    <string name="ba_catalog_tab_bgm">播放</string>
     <string name="ba_catalog_action_sort">排序</string>
     <string name="ba_catalog_action_refresh">刷新列表</string>
     <string name="ba_catalog_search_label">搜索名称 / 别名 / ID</string>

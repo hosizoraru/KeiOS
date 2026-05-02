@@ -109,14 +109,14 @@ private enum class BaGuideCatalogPageTab(
     StudentBgm(
         labelRes = R.string.ba_catalog_tab_student_bgm,
         compactLabelRes = R.string.ba_catalog_tab_student_bgm_short,
-        iconRes = R.drawable.ba_tab_student_bgm,
+        iconRes = R.drawable.ba_tab_bgm,
         catalogTab = null,
         specialTab = BaGuideCatalogSpecialTab.StudentBgm
     ),
     Bgm(
         labelRes = R.string.ba_catalog_tab_bgm,
         compactLabelRes = R.string.ba_catalog_tab_bgm,
-        iconRes = R.drawable.ba_tab_bgm,
+        iconRes = R.drawable.ba_tab_play,
         catalogTab = null,
         specialTab = BaGuideCatalogSpecialTab.FavoriteBgm
     )

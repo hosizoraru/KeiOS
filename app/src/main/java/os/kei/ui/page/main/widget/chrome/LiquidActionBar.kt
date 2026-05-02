@@ -360,6 +360,12 @@ fun LiquidActionBar(
     val barWidth = remember(items.size, compactSingleItem) {
         maxOf(minimumWidth, (items.size * AppChromeTokens.liquidActionBarItemStep.value).dp)
     }
+    val singleBreakoutPadding = if (compactSingleItem && items.size == 1) {
+        AppChromeTokens.liquidActionBarSingleBreakoutPadding
+    } else {
+        0.dp
+    }
+    val canvasWidth = barWidth + singleBreakoutPadding * 2
     val interactionLockModifier = rememberLiquidActionBarInteractionLockModifier(
         onInteractionChanged = onInteractionChangedState.value
     )
@@ -367,12 +373,13 @@ fun LiquidActionBar(
     Box(
         modifier = modifier
             .graphicsLayer { clip = false }
-            .width(barWidth)
+            .width(canvasWidth)
+            .height(AppChromeTokens.liquidActionBarOuterHeight)
             .then(interactionLockModifier),
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.Center
     ) {
         val primaryRowModifier = Modifier
-            .fillMaxWidth()
+            .width(barWidth)
             .onGloballyPositioned { coords ->
                 val measuredTotalWidthPx = coords.size.width.toFloat()
                 if (abs(totalWidthPx - measuredTotalWidthPx) > 0.5f) {
@@ -495,6 +502,7 @@ fun LiquidActionBar(
             effectLensDp = effectLensDp,
             tabWidthPx = tabWidthPx,
             totalWidthPx = totalWidthPx,
+            singleBreakoutPadding = singleBreakoutPadding,
             isInLightTheme = isInLightTheme,
             isLtr = isLtr,
             effectivePanelOffset = effectivePanelOffset,

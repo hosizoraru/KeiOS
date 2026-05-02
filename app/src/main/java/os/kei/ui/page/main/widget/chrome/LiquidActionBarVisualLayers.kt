@@ -46,6 +46,7 @@ internal fun LiquidActionBarLayeredVisualOverlay(
     effectLensDp: Dp,
     tabWidthPx: Float,
     totalWidthPx: Float,
+    singleBreakoutPadding: Dp,
     isInLightTheme: Boolean,
     isLtr: Boolean,
     effectivePanelOffset: Float,
@@ -54,6 +55,18 @@ internal fun LiquidActionBarLayeredVisualOverlay(
 ) {
     if (!layeredStyleEnabled) return
     val density = LocalDensity.current
+    val breakoutPaddingPx = with(density) { singleBreakoutPadding.toPx() }
+    val breakoutScaleX = if (breakoutPaddingPx > 0f && tabWidthPx > 0f) {
+        tabWidthPx / (tabWidthPx + breakoutPaddingPx * 2f)
+    } else {
+        1f
+    }
+    val breakoutScaleY = if (singleBreakoutPadding > 0.dp) {
+        AppChromeTokens.liquidActionBarInnerHeight /
+            (AppChromeTokens.liquidActionBarInnerHeight + singleBreakoutPadding * 2)
+    } else {
+        1f
+    }
     Row(
         Modifier
             .fillMaxWidth()
@@ -136,8 +149,8 @@ internal fun LiquidActionBarLayeredVisualOverlay(
                 },
                 layerBlock = {
                     if (isBlurEnabled) {
-                        scaleX = dampedDragAnimation.scaleX
-                        scaleY = dampedDragAnimation.scaleY
+                        scaleX = dampedDragAnimation.scaleX * breakoutScaleX
+                        scaleY = dampedDragAnimation.scaleY * breakoutScaleY
                         val velocity = dampedDragAnimation.velocity / 10f
                         scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
                         scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
@@ -156,10 +169,11 @@ internal fun LiquidActionBarLayeredVisualOverlay(
                     drawRect(Color.Black.copy(alpha = 0.03f * progress))
                 }
             )
-            .height(AppChromeTokens.liquidActionBarInnerHeight)
+            .height(AppChromeTokens.liquidActionBarInnerHeight + singleBreakoutPadding * 2)
             .width(
                 with(density) {
-                    ((totalWidthPx - (AppChromeTokens.liquidActionBarHorizontalPadding * 2).toPx()) / items.size).toDp()
+                    ((totalWidthPx - (AppChromeTokens.liquidActionBarHorizontalPadding * 2).toPx()) / items.size +
+                        breakoutPaddingPx * 2f).toDp()
                 }
             )
     )
