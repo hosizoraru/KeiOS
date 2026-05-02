@@ -30,8 +30,8 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidDropdownColumn
-import os.kei.ui.page.main.widget.glass.LiquidDropdownImpl
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
+import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceList
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.support.LocalTextCopyExpandedOverride
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -381,26 +381,14 @@ class AppDesignSystemScreenshotTest {
                                     onClick = {},
                                     variant = GlassVariant.Compact
                                 )
-                                LiquidDropdownColumn {
-                                    LiquidDropdownImpl(
-                                        text = "默认排序",
-                                        optionSize = 3,
-                                        isSelected = true,
-                                        index = 0,
-                                        onSelectedIndexChange = {}
-                                    )
-                                    LiquidDropdownImpl(
-                                        text = "创建条目：新到旧",
-                                        optionSize = 3,
-                                        isSelected = false,
-                                        index = 1,
-                                        onSelectedIndexChange = {}
-                                    )
-                                    LiquidDropdownImpl(
-                                        text = "创建条目：旧到新",
-                                        optionSize = 3,
-                                        isSelected = false,
-                                        index = 2,
+                                LiquidGlassDropdownColumn {
+                                    LiquidGlassDropdownSingleChoiceList(
+                                        options = listOf(
+                                            "默认排序",
+                                            "创建条目：新到旧",
+                                            "创建条目：旧到新"
+                                        ),
+                                        selectedIndex = 0,
                                         onSelectedIndexChange = {}
                                     )
                                 }

@@ -465,33 +465,6 @@ private fun LiquidGlassDropdownRowContent(
 }
 
 @Composable
-fun LiquidGlassDropdownImpl(
-    text: String,
-    optionSize: Int,
-    isSelected: Boolean,
-    index: Int,
-    onSelectedIndexChange: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-    trailingIcon: ImageVector? = null,
-    accentColor: Color = MiuixTheme.colorScheme.primary,
-    variant: GlassVariant = GlassVariant.SheetAction
-) {
-    LiquidGlassDropdownSingleChoiceItem(
-        text = text,
-        optionSize = optionSize,
-        isSelected = isSelected,
-        index = index,
-        onSelectedIndexChange = onSelectedIndexChange,
-        modifier = modifier,
-        leadingIcon = leadingIcon,
-        trailingIcon = trailingIcon,
-        accentColor = accentColor,
-        variant = variant
-    )
-}
-
-@Composable
 fun LiquidGlassDropdownSingleChoiceItem(
     text: String,
     optionSize: Int,
