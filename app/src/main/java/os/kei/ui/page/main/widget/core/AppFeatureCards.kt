@@ -64,6 +64,11 @@ fun AppSurfaceCard(
         Modifier
     }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val borderAlpha by appMotionFloatState(
+        targetValue = if (showIndication && clickable && isPressed) 0f else 1f,
+        durationMillis = 120,
+        label = "app_surface_card_border_alpha"
+    )
     val pressedScale by appMotionFloatState(
         targetValue = if (showIndication && clickable && !useLiquidClick && isPressed) {
             0.992f
@@ -96,13 +101,18 @@ fun AppSurfaceCard(
             backdrop = cardBackdrop,
             modifier = Modifier
                 .fillMaxWidth()
-                .border(width = 1.dp, color = borderColor, shape = shape)
+                .border(
+                    width = 1.dp,
+                    color = borderColor.copy(alpha = borderColor.alpha * borderAlpha),
+                    shape = shape
+                )
                 .then(clickModifier),
             shape = RoundedRectangle(CardLayoutRhythm.cardCornerRadius),
             isInteractive = showIndication && clickable,
             surfaceColor = containerColor,
             blurRadius = blurRadius,
             lensRadius = lensRadius,
+            interactionSource = interactionSource,
             onClick = if (useLiquidClick) onClick else null
         ) {
             Column(

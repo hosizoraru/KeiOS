@@ -64,6 +64,7 @@ fun LiquidSurface(
     chromaticAberration: Boolean = false,
     depthEffect: Boolean = true,
     shadow: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -71,10 +72,10 @@ fun LiquidSurface(
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(animationScope = animationScope)
     }
-    val interactionSource = remember { MutableInteractionSource() }
+    val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val clickableModifier = if (onClick != null) {
         Modifier.clickable(
-            interactionSource = interactionSource,
+            interactionSource = resolvedInteractionSource,
             indication = if (isInteractive) null else LocalIndication.current,
             enabled = enabled,
             role = Role.Button,
