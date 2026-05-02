@@ -9,6 +9,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.R
+import com.kyant.backdrop.Backdrop
 import os.kei.ui.page.main.widget.core.AppInfoRow
 import os.kei.ui.page.main.widget.core.AppOverviewInlineMetricTile
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -73,7 +74,8 @@ internal fun GitHubOverviewMetricItem(
     labelMaxLines: Int = 2,
     valueMaxLines: Int = 2,
     labelWeight: Float = 0.58f,
-    valueWeight: Float = 0.42f
+    valueWeight: Float = 0.42f,
+    backdrop: Backdrop? = null
 ) {
     AppOverviewInlineMetricTile(
         label = label,
@@ -85,6 +87,7 @@ internal fun GitHubOverviewMetricItem(
         valueMaxLines = valueMaxLines,
         labelWeight = labelWeight,
         valueWeight = valueWeight,
+        backdrop = backdrop,
         emphasizedValue = emphasized
     )
 }

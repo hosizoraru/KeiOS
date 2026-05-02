@@ -170,6 +170,7 @@ fun AppOverviewMetricTile(
     valueColor: Color = MiuixTheme.colorScheme.onBackground,
     containerColor: Color? = null,
     borderColor: Color? = null,
+    backdrop: Backdrop? = null,
     valueMaxLines: Int = 2,
     emphasizedValue: Boolean = true
 ) {
@@ -192,13 +193,19 @@ fun AppOverviewMetricTile(
         Color.White.copy(alpha = 0.86f)
     }
     val shape = RoundedCornerShape(12.dp)
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .background(resolvedContainerColor, shape)
-            .background(resolvedOverlayColor, shape)
-            .border(width = 1.dp, color = resolvedBorderColor, shape = shape)
-    ) {
+    val tileModifier = modifier
+        .clip(shape)
+        .then(
+            if (backdrop == null) {
+                Modifier
+                    .background(resolvedContainerColor, shape)
+                    .background(resolvedOverlayColor, shape)
+            } else {
+                Modifier
+            }
+        )
+        .border(width = 1.dp, color = resolvedBorderColor, shape = shape)
+    val content: @Composable () -> Unit = {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -227,6 +234,29 @@ fun AppOverviewMetricTile(
             )
         }
     }
+    if (backdrop != null) {
+        LiquidSurface(
+            backdrop = backdrop,
+            modifier = tileModifier,
+            shape = RoundedRectangle(12.dp),
+            isInteractive = false,
+            surfaceColor = resolvedContainerColor,
+            blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Compact),
+            lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Compact),
+            shadow = false
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(resolvedOverlayColor, shape)
+            )
+            content()
+        }
+    } else {
+        Box(modifier = tileModifier) {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -242,6 +272,7 @@ fun AppOverviewInlineMetricTile(
     valueMaxLines: Int = 2,
     labelWeight: Float = 0.58f,
     valueWeight: Float = 0.42f,
+    backdrop: Backdrop? = null,
     emphasizedValue: Boolean = true
 ) {
     val isDark = isSystemInDarkTheme()
@@ -263,13 +294,19 @@ fun AppOverviewInlineMetricTile(
         Color.White.copy(alpha = 0.84f)
     }
     val shape = RoundedCornerShape(12.dp)
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .background(resolvedContainerColor, shape)
-            .background(resolvedOverlayColor, shape)
-            .border(width = 1.dp, color = resolvedBorderColor, shape = shape)
-    ) {
+    val tileModifier = modifier
+        .clip(shape)
+        .then(
+            if (backdrop == null) {
+                Modifier
+                    .background(resolvedContainerColor, shape)
+                    .background(resolvedOverlayColor, shape)
+            } else {
+                Modifier
+            }
+        )
+        .border(width = 1.dp, color = resolvedBorderColor, shape = shape)
+    val content: @Composable () -> Unit = {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -300,6 +337,29 @@ fun AppOverviewInlineMetricTile(
                 maxLines = valueMaxLines,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+    if (backdrop != null) {
+        LiquidSurface(
+            backdrop = backdrop,
+            modifier = tileModifier,
+            shape = RoundedRectangle(12.dp),
+            isInteractive = false,
+            surfaceColor = resolvedContainerColor,
+            blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Compact),
+            lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Compact),
+            shadow = false
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(resolvedOverlayColor, shape)
+            )
+            content()
+        }
+    } else {
+        Box(modifier = tileModifier) {
+            content()
         }
     }
 }

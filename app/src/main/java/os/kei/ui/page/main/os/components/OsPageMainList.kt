@@ -190,6 +190,7 @@ internal fun OsPageMainList(
                                     valueMaxLines = 1,
                                     labelWeight = metricLabelWeight(pair[0].label),
                                     valueWeight = metricValueWeight(pair[0].label),
+                                    backdrop = contentBackdrop,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (pair.size > 1) {
@@ -203,6 +204,7 @@ internal fun OsPageMainList(
                                         valueMaxLines = 1,
                                         labelWeight = metricLabelWeight(pair[1].label),
                                         valueWeight = metricValueWeight(pair[1].label),
+                                        backdrop = contentBackdrop,
                                         modifier = Modifier.weight(1f)
                                     )
                                 } else {

@@ -75,6 +75,7 @@ internal fun McpOverviewCardSection(
                         metric = metric,
                         labelColor = subtitleColor,
                         defaultValueColor = titleColor,
+                        backdrop = backdrop,
                         modifier = Modifier.fillMaxWidth()
                     )
                     metricIndex += 1
@@ -88,6 +89,7 @@ internal fun McpOverviewCardSection(
                         metric = metric,
                         labelColor = subtitleColor,
                         defaultValueColor = titleColor,
+                        backdrop = backdrop,
                         modifier = Modifier.weight(1f)
                     )
                     val nextMetric = overviewMetrics.getOrNull(metricIndex + 1)
@@ -96,6 +98,7 @@ internal fun McpOverviewCardSection(
                             metric = nextMetric,
                             labelColor = subtitleColor,
                             defaultValueColor = titleColor,
+                            backdrop = backdrop,
                             modifier = Modifier.weight(1f)
                         )
                         metricIndex += 2
@@ -114,6 +117,7 @@ internal fun McpOverviewMetricItem(
     metric: McpOverviewMetric,
     labelColor: Color,
     defaultValueColor: Color,
+    backdrop: Backdrop?,
     modifier: Modifier = Modifier
 ) {
     AppOverviewInlineMetricTile(
@@ -125,6 +129,7 @@ internal fun McpOverviewMetricItem(
         valueMaxLines = metric.valueMaxLines,
         labelWeight = metric.labelWeight,
         valueWeight = metric.valueWeight,
+        backdrop = backdrop,
         emphasizedValue = true
     )
 }

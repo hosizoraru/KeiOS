@@ -154,6 +154,7 @@ internal fun GitHubOverviewCard(
                             GitHubLookupStrategyOption.GitHubApiToken -> GitHubStatusPalette.Update
                         }
                     },
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
@@ -177,6 +178,7 @@ internal fun GitHubOverviewCard(
                     valueMaxLines = 1,
                     labelWeight = 0.24f,
                     valueWeight = 0.76f,
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -193,6 +195,7 @@ internal fun GitHubOverviewCard(
                         emphasized = metrics.trackedCount > 0,
                         isDark = isDark
                     ),
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
@@ -204,6 +207,7 @@ internal fun GitHubOverviewCard(
                         emphasized = metrics.updatableCount > 0,
                         isDark = isDark
                     ),
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -220,6 +224,7 @@ internal fun GitHubOverviewCard(
                         emphasized = metrics.stableLatestCount > 0,
                         isDark = isDark
                     ),
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
@@ -231,6 +236,7 @@ internal fun GitHubOverviewCard(
                         emphasized = metrics.preReleaseCount > 0,
                         isDark = isDark
                     ),
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -247,6 +253,7 @@ internal fun GitHubOverviewCard(
                         emphasized = metrics.preReleaseUpdateCount > 0,
                         isDark = isDark
                     ),
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
                 GitHubOverviewMetricItem(
@@ -258,6 +265,7 @@ internal fun GitHubOverviewCard(
                         emphasized = metrics.failedCount > 0,
                         isDark = isDark
                     ),
+                    backdrop = backdrop,
                     modifier = Modifier.weight(1f)
                 )
             }
