@@ -140,7 +140,6 @@ val navigationCommonVersion = "2.9.8"
 val backdropVersion = "2.0.0-alpha03"
 val capsuleVersion = "2.1.3"
 val shapesVersion = "1.2.0"
-val liquidGlassVersion = "1.0.4"
 val shizukuVersion = "13.1.5"
 val mmkvVersion = "2.4.0"
 val mcpKotlinSdkVersion = "0.12.0"
@@ -207,7 +206,6 @@ android {
         buildConfigField("String", "BACKDROP_VERSION", "\"$backdropVersion\"")
         buildConfigField("String", "CAPSULE_VERSION", "\"$capsuleVersion\"")
         buildConfigField("String", "SHAPES_VERSION", "\"$shapesVersion\"")
-        buildConfigField("String", "LIQUID_GLASS_VERSION", "\"$liquidGlassVersion\"")
         buildConfigField("String", "MMKV_VERSION", "\"$mmkvVersion\"")
         buildConfigField("String", "MCP_KOTLIN_SDK_VERSION", "\"$mcpKotlinSdkVersion\"")
         buildConfigField("String", "KTOR_VERSION", "\"$ktorVersion\"")
@@ -359,7 +357,6 @@ dependencies {
     implementation("io.github.kyant0:backdrop:$backdropVersion")
     implementation("io.github.kyant0:capsule:$capsuleVersion")
     implementation("io.github.kyant0:shapes:$shapesVersion")
-    implementation("com.qmdeve.liquidglass:core:$liquidGlassVersion")
 
     implementation("dev.rikka.shizuku:api:$shizukuVersion")
     implementation("dev.rikka.shizuku:provider:$shizukuVersion")

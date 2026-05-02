@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,7 +38,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val BaLiquidCardShape = RoundedCornerShape(24.dp)
 private val BaLiquidPanelShape = RoundedCornerShape(18.dp)
-private val BaLiquidBadgeShape = RoundedCornerShape(999.dp)
 
 @Composable
 private fun Modifier.baLiquidSurface(
@@ -192,36 +190,6 @@ internal fun BaLiquidPanel(
         verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         content = content,
     )
-}
-
-@Composable
-internal fun BaLiquidBadge(
-    text: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    val isDark = isSystemInDarkTheme()
-    Box(
-        modifier = modifier
-            .clip(BaLiquidBadgeShape)
-            .background(
-                color = color.copy(alpha = if (isDark) 0.18f else 0.14f),
-                shape = BaLiquidBadgeShape,
-            )
-            .border(
-                width = 1.dp,
-                color = color.copy(alpha = if (isDark) 0.28f else 0.22f),
-                shape = BaLiquidBadgeShape,
-            )
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = color,
-            fontWeight = FontWeight.Medium,
-        )
-    }
 }
 
 @Composable
