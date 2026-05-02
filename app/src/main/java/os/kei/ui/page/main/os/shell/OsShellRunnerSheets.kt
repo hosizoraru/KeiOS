@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.widget.glass.AppSwitch
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetChoiceCard
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -41,8 +41,7 @@ internal fun OsShellSettingsSheet(
         title = stringResource(R.string.os_shell_settings_sheet_title),
         onDismissRequest = onDismissRequest,
         startAction = {
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
                 contentDescription = stringResource(R.string.common_close),

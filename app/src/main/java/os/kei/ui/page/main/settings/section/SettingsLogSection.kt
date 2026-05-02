@@ -1,6 +1,8 @@
 package os.kei.ui.page.main.settings.section
 
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import os.kei.R
@@ -12,7 +14,7 @@ import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.settings.support.formatBytes
 import os.kei.ui.page.main.settings.support.formatLogTime
 import os.kei.ui.page.main.widget.core.AppDualActionRow
-import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -74,8 +76,7 @@ internal fun SettingsLogSection(
         )
         AppDualActionRow(
             first = { modifier ->
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.SheetPrimaryAction,
                     text = if (exportingLogZip) {
                         stringResource(R.string.common_processing)
@@ -83,14 +84,14 @@ internal fun SettingsLogSection(
                         stringResource(R.string.settings_log_action_export_zip)
                     },
                     modifier = modifier,
+                    buttonModifier = Modifier.fillMaxWidth(),
                     textColor = MiuixTheme.colorScheme.primary,
                     enabled = !exportingLogZip && !clearingLogs,
                     onClick = onExportZipClick
                 )
             },
             second = { modifier ->
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.SheetDangerAction,
                     text = if (clearingLogs) {
                         stringResource(R.string.common_processing)
@@ -98,6 +99,7 @@ internal fun SettingsLogSection(
                         stringResource(R.string.settings_log_action_clear)
                     },
                     modifier = modifier,
+                    buttonModifier = Modifier.fillMaxWidth(),
                     textColor = MiuixTheme.colorScheme.error,
                     enabled = !exportingLogZip && !clearingLogs,
                     onClick = onClearLogsClick

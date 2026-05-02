@@ -27,7 +27,7 @@ import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_MAX_MS
 import os.kei.ui.page.main.settings.support.SUPER_ISLAND_RESTORE_DELAY_MIN_MS
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.settings.support.formatMilliseconds
-import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import kotlin.math.roundToInt
@@ -64,8 +64,7 @@ internal fun SettingsPermissionKeepAliveSection(
                 stringResource(R.string.settings_notification_permission_status_restricted)
             },
             trailing = {
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.Compact,
                     text = if (state.notificationPermissionGranted) {
                         stringResource(R.string.common_open)
@@ -101,8 +100,7 @@ internal fun SettingsPermissionKeepAliveSection(
                 stringResource(R.string.settings_battery_optimization_status_restricted)
             },
             trailing = {
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.Compact,
                     text = if (state.ignoringBatteryOptimizations) {
                         stringResource(R.string.common_open)
@@ -171,8 +169,7 @@ internal fun SettingsPermissionKeepAliveSection(
             },
             trailing = {
                 if (state.oemAutoStartActionAvailable) {
-                    AppLiquidTextButton(
-                        backdrop = null,
+                    AppStandaloneLiquidTextButton(
                         variant = GlassVariant.Compact,
                         text = if (state.oemAutoStartState == SettingsOemAutoStartState.Allowed) {
                             stringResource(R.string.common_open)
@@ -216,8 +213,7 @@ internal fun SettingsPermissionKeepAliveSection(
                 }
             },
             trailing = {
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.Compact,
                     text = if (state.appListSettingsActionAvailable) {
                         stringResource(R.string.common_open)
@@ -254,8 +250,7 @@ internal fun SettingsPermissionKeepAliveSection(
                 }
             },
             trailing = {
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.Compact,
                     text = if (state.shizukuGranted) {
                         stringResource(R.string.common_refresh)
@@ -374,7 +369,6 @@ internal fun SettingsVisualSection(
                     actions.onAppThemeModeChanged(themeModeOptions[selectedIndex].first)
                 },
                 onAnchorBoundsChange = actions.onThemePopupAnchorBoundsChange,
-                backdrop = null,
                 variant = GlassVariant.SheetAction
             )
         }
@@ -385,8 +379,7 @@ internal fun SettingsVisualSection(
             infoValue = stringResource(R.string.settings_app_language_scope),
             onClick = if (state.appLanguageActionAvailable) actions.onOpenAppLanguageSettings else null,
             trailing = {
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.Compact,
                     text = stringResource(R.string.common_open),
                     enabled = state.appLanguageActionAvailable,

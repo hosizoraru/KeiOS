@@ -30,7 +30,7 @@ import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidLinearProgressBar
@@ -131,8 +131,7 @@ internal fun BaGuideBgmLibraryHeader(
                     color = accent,
                     size = AppStatusPillSize.Compact
                 )
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = if (toolsExpanded) appLucideChevronUpIcon() else appLucideChevronDownIcon(),
                     contentDescription = toolsDescription,
                     onClick = { toolsExpanded = !toolsExpanded },
@@ -259,8 +258,7 @@ private fun BaGuideBgmLibraryToolsContent(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = if (batchCaching || retryMode) appLucideRefreshIcon() else appLucideDownloadIcon(),
                 contentDescription = cacheActionText,
                 onClick = {
@@ -274,8 +272,7 @@ private fun BaGuideBgmLibraryToolsContent(
                 containerColor = accent,
                 variant = GlassVariant.Compact
             )
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = appLucideAddIcon(),
                 contentDescription = stringResource(R.string.ba_catalog_bgm_action_import),
                 onClick = { if (importEnabled) onImport() },
@@ -285,8 +282,7 @@ private fun BaGuideBgmLibraryToolsContent(
                 containerColor = accent,
                 variant = GlassVariant.Compact
             )
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = appLucideShareIcon(),
                 contentDescription = stringResource(R.string.ba_catalog_bgm_action_export),
                 onClick = { if (exportEnabled) onExport() },

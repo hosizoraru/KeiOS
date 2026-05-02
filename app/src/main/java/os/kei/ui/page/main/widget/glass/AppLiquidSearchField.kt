@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -46,11 +49,12 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun AppLiquidSearchField(
+fun AppLiquidInputField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -60,7 +64,6 @@ fun AppLiquidSearchField(
     textAlign: TextAlign = TextAlign.Start,
     fontSize: TextUnit = AppTypographyTokens.Body.fontSize,
     textColor: Color = MiuixTheme.colorScheme.onBackground,
-    onImeActionDone: (() -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
@@ -68,9 +71,12 @@ fun AppLiquidSearchField(
     horizontalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldHorizontalPadding,
     verticalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldVerticalPadding,
     keyboardOptions: KeyboardOptions? = null,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     focusRequester: FocusRequester? = null,
+    onFocusActiveChange: ((Boolean) -> Unit)? = null,
+    leadingContentGap: Dp = AppInteractiveTokens.controlContentGap,
+    leadingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
-    val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
     val activeBackdrop = backdrop.takeIf { LocalLiquidControlsEnabled.current }
     var focused by remember { mutableStateOf(false) }
@@ -214,49 +220,216 @@ fun AppLiquidSearchField(
             ),
         contentAlignment = Alignment.CenterStart
     ) {
-        BasicTextField(
+        @Composable
+        fun TextInput(modifier: Modifier) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = singleLine,
+                textStyle = inputTextStyle,
+                cursorBrush = SolidColor(textColor),
+                visualTransformation = visualTransformation,
+                keyboardOptions = effectiveKeyboardOptions,
+                keyboardActions = keyboardActions,
+                modifier = modifier
+                    .wrapContentHeight(align = Alignment.CenterVertically)
+                    .onFocusChanged { state ->
+                        val active = state.isFocused || state.hasFocus
+                        focused = active
+                        onFocusActiveChange?.invoke(active)
+                    }
+                    .then(
+                        if (focusRequester != null) {
+                            Modifier.focusRequester(focusRequester)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(align = Alignment.CenterVertically),
+                        contentAlignment = contentAlignment
+                    ) {
+                        if (value.isBlank()) {
+                            BasicText(
+                                text = label,
+                                style = inputTextStyle.copy(color = placeholderColor),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+        }
+
+        if (leadingContent == null) {
+            TextInput(modifier = Modifier.fillMaxWidth())
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(leadingContentGap),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                leadingContent()
+                TextInput(modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+fun AppLiquidSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    backdrop: Backdrop?,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    textAlign: TextAlign = TextAlign.Start,
+    fontSize: TextUnit = AppTypographyTokens.Body.fontSize,
+    textColor: Color = MiuixTheme.colorScheme.onBackground,
+    onImeActionDone: (() -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    blurRadius: Dp? = null,
+    variant: GlassVariant = GlassVariant.Content,
+    minHeight: Dp = AppInteractiveTokens.appLiquidSearchFieldMinHeight,
+    horizontalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldHorizontalPadding,
+    verticalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldVerticalPadding,
+    keyboardOptions: KeyboardOptions? = null,
+    focusRequester: FocusRequester? = null,
+) {
+    val focusManager = LocalFocusManager.current
+    AppLiquidInputField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        backdrop = backdrop,
+        modifier = modifier,
+        singleLine = singleLine,
+        textAlign = textAlign,
+        fontSize = fontSize,
+        textColor = textColor,
+        visualTransformation = visualTransformation,
+        blurRadius = blurRadius,
+        variant = variant,
+        minHeight = minHeight,
+        horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onImeActionDone?.invoke()
+                focusManager.clearFocus()
+            }
+        ),
+        focusRequester = focusRequester
+    )
+}
+
+@Composable
+fun AppStandaloneLiquidInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    fieldModifier: Modifier = Modifier.fillMaxWidth(),
+    singleLine: Boolean = true,
+    textAlign: TextAlign = TextAlign.Start,
+    fontSize: TextUnit = AppTypographyTokens.Body.fontSize,
+    textColor: Color = MiuixTheme.colorScheme.onBackground,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    blurRadius: Dp? = null,
+    variant: GlassVariant = GlassVariant.Content,
+    minHeight: Dp = AppInteractiveTokens.appLiquidSearchFieldMinHeight,
+    horizontalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldHorizontalPadding,
+    verticalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldVerticalPadding,
+    keyboardOptions: KeyboardOptions? = null,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    focusRequester: FocusRequester? = null,
+    onFocusActiveChange: ((Boolean) -> Unit)? = null,
+    leadingContentGap: Dp = AppInteractiveTokens.controlContentGap,
+    leadingContent: (@Composable RowScope.() -> Unit)? = null
+) {
+    val localBackdrop = rememberLayerBackdrop()
+    AppStandaloneBackdropHost(
+        backdrop = localBackdrop,
+        modifier = modifier
+    ) {
+        AppLiquidInputField(
             value = value,
             onValueChange = onValueChange,
+            label = label,
+            backdrop = localBackdrop,
+            modifier = fieldModifier,
             singleLine = singleLine,
-            textStyle = inputTextStyle,
-            cursorBrush = SolidColor(textColor),
+            textAlign = textAlign,
+            fontSize = fontSize,
+            textColor = textColor,
             visualTransformation = visualTransformation,
-            keyboardOptions = effectiveKeyboardOptions,
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    onImeActionDone?.invoke()
-                    focusManager.clearFocus()
-                }
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(align = Alignment.CenterVertically)
-                .onFocusChanged { focused = it.isFocused || it.hasFocus }
-                .then(
-                    if (focusRequester != null) {
-                        Modifier.focusRequester(focusRequester)
-                    } else {
-                        Modifier
-                    }
-                ),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight(align = Alignment.CenterVertically),
-                    contentAlignment = contentAlignment
-                ) {
-                    if (value.isBlank()) {
-                        BasicText(
-                            text = label,
-                            style = inputTextStyle.copy(color = placeholderColor),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    innerTextField()
-                }
-            }
+            blurRadius = blurRadius,
+            variant = variant,
+            minHeight = minHeight,
+            horizontalPadding = horizontalPadding,
+            verticalPadding = verticalPadding,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            focusRequester = focusRequester,
+            onFocusActiveChange = onFocusActiveChange,
+            leadingContentGap = leadingContentGap,
+            leadingContent = leadingContent
         )
     }
+}
+
+@Composable
+fun AppStandaloneLiquidSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    fieldModifier: Modifier = Modifier.fillMaxWidth(),
+    singleLine: Boolean = true,
+    textAlign: TextAlign = TextAlign.Start,
+    fontSize: TextUnit = AppTypographyTokens.Body.fontSize,
+    textColor: Color = MiuixTheme.colorScheme.onBackground,
+    onImeActionDone: (() -> Unit)? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    blurRadius: Dp? = null,
+    variant: GlassVariant = GlassVariant.Content,
+    minHeight: Dp = AppInteractiveTokens.appLiquidSearchFieldMinHeight,
+    horizontalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldHorizontalPadding,
+    verticalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldVerticalPadding,
+    keyboardOptions: KeyboardOptions? = null,
+    focusRequester: FocusRequester? = null,
+) {
+    val focusManager = LocalFocusManager.current
+    AppStandaloneLiquidInputField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        modifier = modifier,
+        fieldModifier = fieldModifier,
+        singleLine = singleLine,
+        textAlign = textAlign,
+        fontSize = fontSize,
+        textColor = textColor,
+        visualTransformation = visualTransformation,
+        blurRadius = blurRadius,
+        variant = variant,
+        minHeight = minHeight,
+        horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onImeActionDone?.invoke()
+                focusManager.clearFocus()
+            }
+        ),
+        focusRequester = focusRequester
+    )
 }

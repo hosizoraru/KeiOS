@@ -12,8 +12,8 @@ import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.os.shell.ShellOutputDisplayEntry
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetFieldBlock
@@ -50,8 +50,7 @@ internal fun OsShellRunnerSaveSheet(
         title = title,
         onDismissRequest = onDismissRequest,
         startAction = {
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 variant = GlassVariant.Bar,
                 icon = appLucideCloseIcon(),
                 contentDescription = stringResource(R.string.common_close),
@@ -59,8 +58,7 @@ internal fun OsShellRunnerSaveSheet(
             )
         },
         endAction = {
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 variant = GlassVariant.Bar,
                 icon = appLucideConfirmIcon(),
                 contentDescription = stringResource(R.string.common_save),
@@ -110,11 +108,10 @@ internal fun OsShellRunnerSaveSheet(
             }
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetFieldBlock(title = saveSheetFieldTitle) {
-                    AppLiquidSearchField(
+                    AppStandaloneLiquidSearchField(
                         value = saveTitleInput,
                         onValueChange = onSaveTitleInputChange,
                         label = saveSheetTitleHint,
-                        backdrop = null,
                         variant = GlassVariant.SheetInput,
                         textColor = MiuixTheme.colorScheme.primary,
                         singleLine = true,
@@ -122,11 +119,10 @@ internal fun OsShellRunnerSaveSheet(
                     )
                 }
                 SheetFieldBlock(title = saveSheetFieldSubtitle) {
-                    AppLiquidSearchField(
+                    AppStandaloneLiquidSearchField(
                         value = saveSubtitleInput,
                         onValueChange = onSaveSubtitleInputChange,
                         label = saveSheetSubtitleHint,
-                        backdrop = null,
                         variant = GlassVariant.SheetInput,
                         textColor = MiuixTheme.colorScheme.primary,
                         singleLine = true,

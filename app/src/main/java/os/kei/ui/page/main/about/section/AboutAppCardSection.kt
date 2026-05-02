@@ -29,7 +29,7 @@ import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppInfoListBody
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.glass.AppInteractiveTokens
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.about.util.formatTime
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
@@ -91,8 +91,7 @@ fun AboutAppCardSection(
                     )
                 },
                 endActions = {
-                    AppLiquidIconButton(
-                        backdrop = null,
+                    AppStandaloneLiquidIconButton(
                         icon = appLucideFlaskIcon(),
                         contentDescription = stringResource(R.string.about_action_open_debug_activity),
                         onClick = onOpenDebugActivity,

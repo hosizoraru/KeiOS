@@ -21,7 +21,7 @@ import os.kei.ui.page.main.settings.support.SettingsInfoItem
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.settings.support.formatOpacityPercent
 import os.kei.ui.page.main.widget.core.AppDualActionRow
-import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -67,21 +67,21 @@ internal fun SettingsBackgroundSection(
         )
         AppDualActionRow(
             first = { modifier ->
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.SheetPrimaryAction,
                     text = stringResource(R.string.settings_non_home_background_action_select),
                     modifier = modifier,
+                    buttonModifier = Modifier.fillMaxWidth(),
                     textColor = MiuixTheme.colorScheme.primary,
                     onClick = { backgroundPickerLauncher.launch(arrayOf("image/*")) }
                 )
             },
             second = { modifier ->
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.SheetDangerAction,
                     text = stringResource(R.string.settings_non_home_background_action_clear),
                     modifier = modifier,
+                    buttonModifier = Modifier.fillMaxWidth(),
                     textColor = MiuixTheme.colorScheme.error,
                     enabled = nonHomeBackgroundUri.isNotBlank(),
                     onClick = {

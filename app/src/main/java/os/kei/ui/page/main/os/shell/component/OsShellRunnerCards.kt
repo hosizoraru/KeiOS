@@ -21,7 +21,7 @@ import os.kei.ui.page.main.os.shell.ShellOutputDisplayEntry
 import os.kei.ui.page.main.os.shell.ShellOutputGlassPanel
 import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -63,8 +63,7 @@ internal fun OsShellRunnerInputCard(
                 }
             },
             endActions = {
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = osLucideRunIcon(),
                     contentDescription = runActionDescription,
                     onClick = onRunCommand,
@@ -75,8 +74,7 @@ internal fun OsShellRunnerInputCard(
                     },
                     variant = GlassVariant.Bar
                 )
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = osLucideStopIcon(),
                     contentDescription = stopActionDescription,
                     onClick = onStopCommand,
@@ -87,8 +85,7 @@ internal fun OsShellRunnerInputCard(
                     },
                     variant = GlassVariant.Bar
                 )
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = osLucideSaveIcon(),
                     contentDescription = saveCommandActionDescription,
                     onClick = onOpenSaveCommandSheet,
@@ -137,24 +134,21 @@ internal fun OsShellRunnerOutputCard(
             title = outputTitle,
             subtitle = "",
             endActions = {
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = osLucideFormatIcon(),
                     contentDescription = formatOutputActionDescription,
                     onClick = onFormatOutput,
                     iconTint = MiuixTheme.colorScheme.primary,
                     variant = GlassVariant.Bar
                 )
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = osLucideCopyIcon(),
                     contentDescription = copyOutputActionDescription,
                     onClick = onCopyOutput,
                     iconTint = MiuixTheme.colorScheme.primary,
                     variant = GlassVariant.Bar
                 )
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = osLucideClearIcon(),
                     contentDescription = clearOutputActionDescription,
                     onClick = onClearOutput,

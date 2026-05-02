@@ -1,13 +1,10 @@
 package os.kei.ui.page.main.widget.glass
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.kyant.backdrop.backdrops.layerBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -28,27 +25,19 @@ fun AppLiquidDialogActionButton(
         GlassVariant.SheetAction
     }
 ) {
-    val actionBackdrop = rememberLayerBackdrop()
-    Box(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .layerBackdrop(actionBackdrop)
-        )
-        AppLiquidTextButton(
-            backdrop = actionBackdrop,
-            text = text,
-            onClick = onClick,
-            textColor = textColor,
-            containerColor = containerColor,
-            enabled = enabled,
-            variant = variant,
-            minHeight = 40.dp,
-            horizontalPadding = 12.dp,
-            verticalPadding = 8.dp,
-            textMaxLines = 1,
-            textOverflow = TextOverflow.Ellipsis,
-            textSoftWrap = false
-        )
-    }
+    AppStandaloneLiquidTextButton(
+        text = text,
+        onClick = onClick,
+        modifier = modifier,
+        textColor = textColor,
+        containerColor = containerColor,
+        enabled = enabled,
+        variant = variant,
+        minHeight = 40.dp,
+        horizontalPadding = 12.dp,
+        verticalPadding = 8.dp,
+        textMaxLines = 1,
+        textOverflow = TextOverflow.Ellipsis,
+        textSoftWrap = false
+    )
 }

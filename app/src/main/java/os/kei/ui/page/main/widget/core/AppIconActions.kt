@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -20,8 +20,7 @@ fun AppCompactIconAction(
     tint: Color = MiuixTheme.colorScheme.primary,
     minSize: Dp = 30.dp
 ) {
-    AppLiquidIconButton(
-        backdrop = null,
+    AppStandaloneLiquidIconButton(
         icon = icon,
         contentDescription = contentDescription,
         onClick = onClick,

@@ -43,22 +43,41 @@ fun AppDropdownAnchorButton(
     horizontalPadding: Dp = 10.dp,
     verticalPadding: Dp = 6.dp
 ) {
-    AppLiquidTextButton(
-        backdrop = backdrop,
-        text = text,
-        onClick = onClick,
-        modifier = modifier,
-        textColor = textColor,
-        containerColor = dropdownAnchorTint(textColor = textColor, variant = variant),
-        enabled = enabled,
-        variant = variant,
-        minHeight = minHeight,
-        horizontalPadding = horizontalPadding,
-        verticalPadding = verticalPadding,
-        textMaxLines = 1,
-        textOverflow = TextOverflow.Ellipsis,
-        textSoftWrap = false
-    )
+    val accentColor = dropdownAnchorTint(textColor = textColor, variant = variant)
+    if (backdrop != null) {
+        AppLiquidTextButton(
+            backdrop = backdrop,
+            text = text,
+            onClick = onClick,
+            modifier = modifier,
+            textColor = textColor,
+            containerColor = accentColor,
+            enabled = enabled,
+            variant = variant,
+            minHeight = minHeight,
+            horizontalPadding = horizontalPadding,
+            verticalPadding = verticalPadding,
+            textMaxLines = 1,
+            textOverflow = TextOverflow.Ellipsis,
+            textSoftWrap = false
+        )
+    } else {
+        AppStandaloneLiquidTextButton(
+            text = text,
+            onClick = onClick,
+            modifier = modifier,
+            textColor = textColor,
+            containerColor = accentColor,
+            enabled = enabled,
+            variant = variant,
+            minHeight = minHeight,
+            horizontalPadding = horizontalPadding,
+            verticalPadding = verticalPadding,
+            textMaxLines = 1,
+            textOverflow = TextOverflow.Ellipsis,
+            textSoftWrap = false
+        )
+    }
 }
 
 @Composable

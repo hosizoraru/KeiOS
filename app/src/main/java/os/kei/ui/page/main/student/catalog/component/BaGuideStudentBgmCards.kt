@@ -24,7 +24,7 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Text
@@ -239,8 +239,7 @@ internal fun BaGuideStudentBgmCard(
                     )
                 }
             }
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = if (playing) appLucidePauseIcon() else appLucidePlayIcon(),
                 contentDescription = stringResource(
                     if (playing) {
@@ -257,8 +256,7 @@ internal fun BaGuideStudentBgmCard(
                 containerColor = if (playing || selected) accent else neutralContainer,
                 enabled = !isLoading
             )
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = appLucideHeartIcon(),
                 contentDescription = stringResource(
                     if (favorite) {
@@ -275,8 +273,7 @@ internal fun BaGuideStudentBgmCard(
                 containerColor = if (favorite) Color(0x33EC4899) else neutralContainer,
                 enabled = !isLoading
             )
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = appLucideExternalLinkIcon(),
                 contentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery),
                 onClick = onOpenGuide,

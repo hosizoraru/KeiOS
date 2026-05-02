@@ -40,8 +40,8 @@ import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
@@ -289,8 +289,7 @@ internal fun BaGuideBgmFavoriteCard(
                     )
                 }
             }
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = appLucidePlayIcon(),
                 contentDescription = playContentDescription,
                 onClick = onPlay,
@@ -304,8 +303,7 @@ internal fun BaGuideBgmFavoriteCard(
                 modifier = Modifier.capturePopupAnchor { actionAnchorBounds = it },
                 contentAlignment = Alignment.Center
             ) {
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = appLucideMoreIcon(),
                     contentDescription = moreContentDescription,
                     onClick = { actionExpanded = true },
@@ -419,8 +417,7 @@ internal fun BaGuideBgmUndoBlock(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            AppLiquidTextButton(
-                backdrop = null,
+            AppStandaloneLiquidTextButton(
                 text = undoText,
                 leadingIcon = appLucideUndoIcon(),
                 onClick = onUndo,

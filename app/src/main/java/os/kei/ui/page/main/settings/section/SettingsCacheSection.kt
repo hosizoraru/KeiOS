@@ -15,7 +15,7 @@ import os.kei.ui.page.main.settings.support.SettingsCacheRow
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -82,8 +82,7 @@ internal fun SettingsCacheSection(
                 )
             }
             else -> {
-                AppLiquidTextButton(
-                    backdrop = null,
+                AppStandaloneLiquidTextButton(
                     variant = GlassVariant.SheetDangerAction,
                     text = if (clearingAllCaches) {
                         stringResource(R.string.common_processing)
@@ -91,6 +90,7 @@ internal fun SettingsCacheSection(
                         stringResource(R.string.settings_cache_action_clear_all)
                     },
                     modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                    buttonModifier = Modifier.fillMaxWidth(),
                     textColor = MiuixTheme.colorScheme.error,
                     enabled = !clearingAllCaches && clearingCacheId == null,
                     onClick = onClearAllCaches

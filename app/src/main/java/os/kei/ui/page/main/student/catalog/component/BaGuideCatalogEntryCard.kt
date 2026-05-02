@@ -18,7 +18,7 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Text
@@ -101,8 +101,7 @@ internal fun BaGuideCatalogEntryCard(
                     }
                 }
             }
-            AppLiquidIconButton(
-                backdrop = null,
+            AppStandaloneLiquidIconButton(
                 icon = MiuixIcons.Regular.FavoritesFill,
                 contentDescription = uiState.favoriteContentDescription,
                 onClick = { onToggleFavorite(entry.contentId) },

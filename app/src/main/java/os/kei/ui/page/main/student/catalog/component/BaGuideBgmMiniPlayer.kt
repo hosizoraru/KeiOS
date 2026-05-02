@@ -44,7 +44,7 @@ import os.kei.ui.page.main.student.section.gallery.formatAudioDuration
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
+import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Text
@@ -191,8 +191,7 @@ internal fun BaGuideBgmMiniPlayer(
                         )
                     }
                 }
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = if (expanded) appLucideChevronDownIcon() else appLucideChevronUpIcon(),
                     contentDescription = expandCollapseDescription,
                     onClick = { onExpandedChange(!expanded) },
@@ -202,8 +201,7 @@ internal fun BaGuideBgmMiniPlayer(
                     iconTint = neutralControlTint,
                     containerColor = neutralControlContainer
                 )
-                AppLiquidIconButton(
-                    backdrop = null,
+                AppStandaloneLiquidIconButton(
                     icon = if (runtimeState.isPlaying) appLucidePauseIcon() else appLucidePlayIcon(),
                     contentDescription = playPauseDescription,
                     onClick = onTogglePlayback,
@@ -256,8 +254,7 @@ internal fun BaGuideBgmMiniPlayer(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        AppLiquidIconButton(
-                            backdrop = null,
+                        AppStandaloneLiquidIconButton(
                             icon = appLucideListIcon(),
                             contentDescription = openQueueDescription,
                             onClick = onOpenQueue,
@@ -267,8 +264,7 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        AppLiquidIconButton(
-                            backdrop = null,
+                        AppStandaloneLiquidIconButton(
                             icon = appLucideSkipBackIcon(),
                             contentDescription = previousDescription,
                             onClick = onPrevious,
@@ -278,8 +274,7 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        AppLiquidIconButton(
-                            backdrop = null,
+                        AppStandaloneLiquidIconButton(
                             icon = appLucideSkipForwardIcon(),
                             contentDescription = nextDescription,
                             onClick = onNext,
@@ -289,8 +284,7 @@ internal fun BaGuideBgmMiniPlayer(
                             iconTint = neutralControlTint,
                             containerColor = neutralControlContainer
                         )
-                        AppLiquidIconButton(
-                            backdrop = null,
+                        AppStandaloneLiquidIconButton(
                             icon = if (queueMode == BaGuideBgmQueueMode.SingleLoop) {
                                 appLucideRepeatOneIcon()
                             } else {
@@ -312,8 +306,7 @@ internal fun BaGuideBgmMiniPlayer(
                                 neutralControlContainer
                             }
                         )
-                        AppLiquidIconButton(
-                            backdrop = null,
+                        AppStandaloneLiquidIconButton(
                             icon = appLucideExternalLinkIcon(),
                             contentDescription = openGalleryDescription,
                             onClick = onOpenGuide,
