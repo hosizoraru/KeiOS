@@ -14,6 +14,9 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -80,6 +83,7 @@ fun GitHubPage(
     ).getMiuixAppBarColor()
 
     val state = rememberGitHubPageState(githubPageViewModel)
+    var searchExpanded by rememberSaveable { mutableStateOf(false) }
     val transferState by githubPageViewModel.transferState.collectAsState()
     val installedOnlineShareTargets by githubPageViewModel.installedOnlineShareTargets.collectAsState()
     val checkLogicDownloaderOptions by githubPageViewModel.checkLogicDownloaderOptions.collectAsState()
@@ -230,11 +234,10 @@ fun GitHubPage(
             topBarBackdrop = backdrops.topBar,
             contentBackdrop = backdrops.content,
             topBarColor = topBarColor,
-            enableSearchBar = enableSearchBar,
             liquidActionBarLayeredStyleEnabled = liquidActionBarLayeredStyleEnabled,
             reduceEffectsDuringPagerScroll = runtime.isPagerScrollInProgress,
             reduceEffectsDuringListScroll = isListScrolling,
-            showSearchBar = state.showSearchBar,
+            searchExpanded = enableSearchBar && searchExpanded,
             trackedSearch = state.trackedSearch,
             sortMode = state.sortMode,
             showSortPopup = state.showSortPopup,
@@ -262,6 +265,9 @@ fun GitHubPage(
             showPendingShareImportCard = contentDerivedState.showPendingShareImportCard,
             pendingShareImportRepoOverlapCount = contentDerivedState.pendingShareImportRepoOverlapCount,
             onTrackedSearchChange = { state.trackedSearch = it },
+            onSearchExpandedChange = { expanded ->
+                searchExpanded = enableSearchBar && expanded
+            },
             onShowSortPopupChange = { state.showSortPopup = it },
             onSortModeChange = { state.sortMode = it },
             onOpenStrategySheet = actions::openStrategySheet,

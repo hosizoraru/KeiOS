@@ -3,12 +3,9 @@ package os.kei.ui.page.main.os
 import android.widget.Toast
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import os.kei.R
 import os.kei.core.system.ShizukuApiUtils
@@ -19,7 +16,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import os.kei.ui.page.main.host.pager.MainPageRuntime
-import os.kei.ui.page.main.host.pager.rememberMainPageBackdropSet
 import os.kei.ui.page.main.os.components.OsPageMainList
 import os.kei.ui.page.main.os.components.OsPageOverlayCoordinator
 import os.kei.ui.page.main.os.state.createOsPageActionState
@@ -34,11 +30,9 @@ import os.kei.ui.page.main.os.shortcut.BUILTIN_GOOGLE_SETTINGS_SAMPLE_CARD_ID
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
 import os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
-import os.kei.ui.page.main.widget.chrome.ScrollChromeVisibilityController
 import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
 import os.kei.ui.page.main.widget.glass.rememberListScrollGlassRuntime
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun OsPage(
@@ -123,27 +117,10 @@ fun OsPage(
     var runningShellCommandCardIds by remember { mutableStateOf(emptySet<String>()) }
     val sectionLoadMutex = remember { Mutex() }
     val sectionLoadDeferreds = remember { mutableStateMapOf<SectionKind, Deferred<List<InfoRow>>>() }
-    var showSearchBar by remember { mutableStateOf(true) }
+    var searchExpanded by rememberSaveable { mutableStateOf(false) }
     val surfaceColor = uiContext.surfaceColor
     val backdrops = uiContext.backdrops
     val topBarMaterialBackdrop = uiContext.topBarMaterialBackdrop
-    val searchBarHideThresholdPx = uiContext.searchBarHideThresholdPx
-    val searchBarVisibilityController = remember(searchBarHideThresholdPx) {
-        ScrollChromeVisibilityController(searchBarHideThresholdPx)
-    }
-    val searchBarScrollConnection = remember(searchBarVisibilityController) {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                searchBarVisibilityController.updateWithinScrollBounds(
-                    deltaY = available.y,
-                    visible = showSearchBar,
-                    canScrollBackward = listState.canScrollBackward,
-                    canScrollForward = listState.canScrollForward
-                ) { showSearchBar = it }
-                return Offset.Zero
-            }
-        }
-    }
     DisposableEffect(Unit) {
         onDispose { onActionBarInteractingChanged(false) }
     }
@@ -325,10 +302,6 @@ fun OsPage(
             onOpenShellCardVisibilityManager = { overlayState.onShowShellCardVisibilityManagerChange(true) },
             onRefresh = { scope.launch { actionState.refreshAllSections() } },
             onActionBarInteractingChanged = onActionBarInteractingChanged,
-            searchBarVisible = enableSearchBar && showSearchBar,
-            queryInput = queryInput,
-            onQueryInputChange = osPageViewModel::updateQueryInput,
-            searchLabel = textBundle.searchLabel
         ) { innerPadding ->
             OsPageOverlayCoordinator(
                 context = context,
@@ -351,7 +324,6 @@ fun OsPage(
                 context = context,
                 listState = listState,
                 innerPadding = innerPadding,
-                searchBarScrollConnection = searchBarScrollConnection,
                 scrollBehaviorConnection = scrollBehavior.nestedScrollConnection,
                 contentBackdrop = backdrops.content,
                 isDark = isDark,
@@ -489,7 +461,14 @@ fun OsPage(
                         createDefaultActivityShortcutDraft(textBundle.googleSystemServiceDefaults)
                     )
                     overlayState.onShowActivityShortcutEditorChange(true)
-                }
+                },
+                searchExpanded = enableSearchBar && searchExpanded,
+                queryInput = queryInput,
+                onQueryInputChange = osPageViewModel::updateQueryInput,
+                onSearchExpandedChange = { expanded ->
+                    searchExpanded = enableSearchBar && expanded
+                },
+                searchLabel = textBundle.searchLabel
             )
         }
     }

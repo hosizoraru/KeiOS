@@ -26,11 +26,13 @@ import os.kei.ui.page.main.github.OverviewRefreshState
 import os.kei.ui.page.main.github.VersionCheckUi
 import os.kei.ui.page.main.github.share.GitHubPendingShareImportTrack
 import os.kei.ui.page.main.os.appLucideAddIcon
+import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.chrome.AppTopEndActionBarOverlay
 import os.kei.ui.page.main.widget.chrome.appPageBottomPaddingWithFloatingOverlay
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.AppFloatingLiquidActionButton
+import os.kei.ui.page.main.widget.glass.AppFloatingSearchDock
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
 import os.kei.ui.page.main.widget.motion.appFloatingExit
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -46,11 +48,10 @@ internal fun GitHubMainContent(
     topBarBackdrop: LayerBackdrop,
     contentBackdrop: LayerBackdrop,
     topBarColor: Color,
-    enableSearchBar: Boolean,
     liquidActionBarLayeredStyleEnabled: Boolean,
     reduceEffectsDuringPagerScroll: Boolean,
     reduceEffectsDuringListScroll: Boolean,
-    showSearchBar: Boolean,
+    searchExpanded: Boolean,
     trackedSearch: String,
     sortMode: GitHubSortMode,
     showSortPopup: Boolean,
@@ -78,6 +79,7 @@ internal fun GitHubMainContent(
     showPendingShareImportCard: Boolean,
     pendingShareImportRepoOverlapCount: Int,
     onTrackedSearchChange: (String) -> Unit,
+    onSearchExpandedChange: (Boolean) -> Unit,
     onShowSortPopupChange: (Boolean) -> Unit,
     onSortModeChange: (GitHubSortMode) -> Unit,
     onOpenStrategySheet: () -> Unit,
@@ -104,14 +106,8 @@ internal fun GitHubMainContent(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 GitHubTopBarSection(
-                    backdrop = topBarBackdrop,
                     topBarColor = topBarColor,
                     scrollBehavior = scrollBehavior,
-                    enableSearchBar = enableSearchBar,
-                    showSearchBar = showSearchBar,
-                    trackedSearch = trackedSearch,
-                    reduceEffectsDuringListScroll = reduceEffectsDuringListScroll,
-                    onTrackedSearchChange = onTrackedSearchChange,
                 )
             }
         ) { innerPadding ->
@@ -194,9 +190,22 @@ internal fun GitHubMainContent(
                         icon = appLucideAddIcon(),
                         contentDescription = stringResource(R.string.github_cd_add_track),
                         onClick = onOpenTrackSheetForAdd,
-                        modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
+                        modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding + 44.dp),
                     )
                 }
+                AppFloatingSearchDock(
+                    backdrop = if (reduceEffectsDuringListScroll) null else contentBackdrop,
+                    expanded = searchExpanded,
+                    query = trackedSearch,
+                    onQueryChange = onTrackedSearchChange,
+                    onExpandedChange = onSearchExpandedChange,
+                    searchIcon = appLucideSearchIcon(),
+                    contentDescription = stringResource(R.string.github_topbar_search_label),
+                    placeholder = stringResource(R.string.github_topbar_search_label),
+                    modifier = Modifier
+                        .align(androidx.compose.ui.Alignment.BottomEnd)
+                        .padding(end = 14.dp, bottom = contentBottomPadding - 24.dp)
+                )
             }
         }
         AppTopEndActionBarOverlay {

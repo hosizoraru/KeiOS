@@ -31,6 +31,7 @@ import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.SectionKind
 import os.kei.ui.page.main.os.SystemOverviewState
 import os.kei.ui.page.main.os.appLucideAddIcon
+import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.github.GitHubOverviewMetricItem
 import os.kei.ui.page.main.os.osLucideEnterIcon
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
@@ -39,6 +40,7 @@ import os.kei.ui.page.main.widget.chrome.AppPageLazyColumn
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.AppFloatingLiquidActionButton
+import os.kei.ui.page.main.widget.glass.AppFloatingSearchDock
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.motion.appFloatingEnter
@@ -51,7 +53,6 @@ internal fun OsPageMainList(
     context: Context,
     listState: LazyListState,
     innerPadding: PaddingValues,
-    searchBarScrollConnection: NestedScrollConnection,
     scrollBehaviorConnection: NestedScrollConnection,
     contentBackdrop: LayerBackdrop,
     isDark: Boolean,
@@ -119,7 +120,12 @@ internal fun OsPageMainList(
     onRefreshAll: () -> Unit,
     contentBottomPadding: Dp,
     showFloatingAddButton: Boolean,
-    onOpenAddActivityShortcutCard: () -> Unit
+    onOpenAddActivityShortcutCard: () -> Unit,
+    searchExpanded: Boolean,
+    queryInput: String,
+    onQueryInputChange: (String) -> Unit,
+    onSearchExpandedChange: (Boolean) -> Unit,
+    searchLabel: String
 ) {
     val topMetricLabel = stringResource(R.string.os_overview_metric_top_info)
     fun metricLabelWeight(label: String): Float {
@@ -133,7 +139,6 @@ internal fun OsPageMainList(
         AppPageLazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(searchBarScrollConnection)
                 .nestedScroll(scrollBehaviorConnection),
             state = listState,
             innerPadding = innerPadding,
@@ -420,9 +425,22 @@ internal fun OsPageMainList(
                 icon = appLucideAddIcon(),
                 contentDescription = stringResource(R.string.os_cd_add_activity_card),
                 onClick = onOpenAddActivityShortcutCard,
-                modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding - 24.dp),
+                modifier = Modifier.padding(end = 14.dp, bottom = contentBottomPadding + 44.dp),
                 iconTint = MiuixTheme.colorScheme.primary
             )
         }
+        AppFloatingSearchDock(
+            backdrop = contentBackdrop,
+            expanded = searchExpanded,
+            query = queryInput,
+            onQueryChange = onQueryInputChange,
+            onExpandedChange = onSearchExpandedChange,
+            searchIcon = appLucideSearchIcon(),
+            contentDescription = searchLabel,
+            placeholder = searchLabel,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 14.dp, bottom = contentBottomPadding - 24.dp)
+        )
     }
 }
