@@ -50,7 +50,7 @@ import com.kyant.shapes.Capsule
 import kotlinx.coroutines.flow.collectLatest
 import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.animation.DampedDragAnimation
-import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
+import os.kei.ui.page.main.widget.motion.appMotionFloatState
 
 val LocalLiquidControlsEnabled = staticCompositionLocalOf { true }
 
@@ -68,16 +68,12 @@ fun AppSwitch(
         .defaultMinSize(minWidth = 64.dp, minHeight = 48.dp)
 
     if (!LocalLiquidControlsEnabled.current) {
-        Box(
+        AppFallbackSwitchToggle(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
             modifier = touchModifier,
-            contentAlignment = Alignment.Center
-        ) {
-            MiuixSwitch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                enabled = enabled
-            )
-        }
+            enabled = enabled
+        )
         return
     }
 
@@ -98,6 +94,76 @@ fun AppSwitch(
             } else {
                 AppLiquidSwitchLightBlue
             }
+        )
+    }
+}
+
+@Composable
+private fun AppFallbackSwitchToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    val isLightTheme = !androidx.compose.foundation.isSystemInDarkTheme()
+    val accentColor = if (isLightTheme) AppLiquidSwitchLightBlue else AppLiquidSwitchDarkBlue
+    val trackColor = if (isLightTheme) {
+        Color(0xFF787878).copy(alpha = 0.20f)
+    } else {
+        Color(0xFF787880).copy(alpha = 0.36f)
+    }
+    val thumbColor = if (isLightTheme) Color.White else Color(0xFFE5E7EB)
+    val progress by appMotionFloatState(
+        targetValue = if (checked) 1f else 0f,
+        durationMillis = 160,
+        label = "app_fallback_switch_progress"
+    )
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = modifier
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                interactionSource = interactionSource,
+                indication = null,
+                onValueChange = onCheckedChange
+            )
+            .graphicsLayer {
+                alpha = if (enabled) 1f else AppInteractiveTokens.disabledContentAlpha
+            }
+            .semantics {
+                role = Role.Switch
+                toggleableState = ToggleableState(checked)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(Capsule())
+                .drawBehind {
+                    drawRect(lerpColor(trackColor, accentColor, progress))
+                }
+                .size(52.dp, 28.dp)
+        )
+        Box(
+            modifier = Modifier
+                .graphicsLayer {
+                    val padding = 2.dp.toPx()
+                    val travel = 24.dp.toPx()
+                    translationX = if (isLtr) {
+                        lerp(-travel / 2f + padding, travel / 2f - padding, progress)
+                    } else {
+                        lerp(travel / 2f - padding, -travel / 2f + padding, progress)
+                    }
+                }
+                .clip(Capsule())
+                .drawBehind {
+                    drawRect(thumbColor)
+                }
+                .size(24.dp)
         )
     }
 }

@@ -58,9 +58,9 @@ private fun Modifier.baLiquidSurface(
     val fallbackSurface = accentColor
         .copy(alpha = (accentAlpha * 0.25f).coerceIn(0f, 0.04f))
         .compositeOver(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = glass.fallbackAlpha))
-    val borderColor = accentColor
-        .copy(alpha = if (isDark) accentAlpha * 1.1f else accentAlpha * 0.95f)
-        .compositeOver(glass.borderColor)
+    val borderColor = accentColor.copy(
+        alpha = if (isDark) accentAlpha * 1.1f else accentAlpha * 0.95f
+    )
     val accentTint = accentColor.copy(alpha = (accentAlpha * 0.35f).coerceIn(0f, 0.05f))
 
     val surfaceModifier = if (backdrop != null && effectsEnabled) {
@@ -97,10 +97,16 @@ private fun Modifier.baLiquidSurface(
     return this
         .clip(shape)
         .then(surfaceModifier)
-        .border(
-            width = glass.borderWidth,
-            color = borderColor,
-            shape = shape,
+        .then(
+            if (borderColor.alpha > 0.01f && glass.borderWidth > 0.dp) {
+                Modifier.border(
+                    width = glass.borderWidth,
+                    color = borderColor,
+                    shape = shape,
+                )
+            } else {
+                Modifier
+            }
         )
 }
 

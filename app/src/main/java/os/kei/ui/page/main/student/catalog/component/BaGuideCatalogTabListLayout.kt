@@ -22,9 +22,11 @@ import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.catalog.BaGuideCatalogEntry
 import os.kei.ui.page.main.student.catalog.state.BaGuideCatalogTabContentUiState
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
+import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
-import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 internal fun BaGuideCatalogTabListLayout(
@@ -66,7 +68,13 @@ internal fun BaGuideCatalogTabListLayout(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    SmallTitle(uiState.tabTitle)
+                    Text(
+                        text = uiState.tabTitle,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                        lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
+                        fontWeight = AppTypographyTokens.SectionTitle.fontWeight
+                    )
                 }
                 LiquidCircularProgressBar(
                     progress = { progress },

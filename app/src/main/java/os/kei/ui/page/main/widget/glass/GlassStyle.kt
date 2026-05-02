@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -306,4 +308,18 @@ internal fun GlassStyle.tintWithAccent(
             borderTint.compositeOver(borderColor)
         }
     )
+}
+
+internal fun resolveGlassAccentColor(
+    color: Color,
+    isDark: Boolean
+): Color {
+    val fallback = if (isDark) Color(0xFF71ADFF) else Color(0xFF3B82F6)
+    if (!color.isSpecified || color.alpha <= 0f) return fallback
+    val opaque = color.copy(alpha = 1f)
+    val maxChannel = maxOf(opaque.red, opaque.green, opaque.blue)
+    val minChannel = minOf(opaque.red, opaque.green, opaque.blue)
+    val chroma = maxChannel - minChannel
+    val neutral = chroma <= 0.10f || opaque.luminance() <= 0.10f || opaque.luminance() >= 0.92f
+    return if (neutral) fallback else opaque
 }

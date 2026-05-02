@@ -89,6 +89,7 @@ fun AppLiquidIconButton(
         variant = variant,
         isDark = isDark,
         containerColor = containerColor,
+        contentTint = iconTint,
         enabled = enabled
     ) {
         Icon(
@@ -132,6 +133,7 @@ fun AppLiquidIconButton(
         variant = variant,
         isDark = isDark,
         containerColor = containerColor,
+        contentTint = iconTint,
         enabled = enabled
     ) {
         Icon(
@@ -156,6 +158,7 @@ private fun AppLiquidIconButtonContainer(
     variant: GlassVariant,
     isDark: Boolean,
     containerColor: Color?,
+    contentTint: Color,
     enabled: Boolean,
     content: @Composable () -> Unit
 ) {
@@ -166,7 +169,13 @@ private fun AppLiquidIconButtonContainer(
         isDark = isDark,
         variant = variant,
         blurRadius = blurRadius
-    )
+    ).let { baseStyle ->
+        val accentSource = containerColor ?: contentTint
+        baseStyle.tintWithAccent(
+            accentColor = resolveGlassAccentColor(accentSource, isDark),
+            isDark = isDark
+        )
+    }
     val surfaceOverlayColor = resolveDarkCapsuleOverlayColor(
         defaultOverlayColor = glass.overlayColor,
         isDark = isDark
@@ -181,7 +190,7 @@ private fun AppLiquidIconButtonContainer(
         isDark = isDark
     )
     val transparentContainer = containerColor?.alpha == 0f
-    val showBorder = glass.showBorder && !transparentContainer
+    val showBorder = glass.showBorder && !transparentContainer && containerColor == null
     val containerOverlay = resolvedContainerColor
         ?.takeUnless { transparentContainer }
         ?.copy(alpha = glassContainerOverlayAlpha(variant, isDark))
@@ -368,7 +377,13 @@ fun AppLiquidTextButton(
         isDark = isDark,
         variant = variant,
         blurRadius = blurRadius
-    )
+    ).let { baseStyle ->
+        val accentSource = containerColor ?: textColor
+        baseStyle.tintWithAccent(
+            accentColor = resolveGlassAccentColor(accentSource, isDark),
+            isDark = isDark
+        )
+    }
     val surfaceOverlayColor = resolveDarkCapsuleOverlayColor(
         defaultOverlayColor = glass.overlayColor,
         isDark = isDark
@@ -420,7 +435,7 @@ fun AppLiquidTextButton(
         durationMillis = 110,
         label = "app_liquid_text_button_border_alpha"
     )
-    val borderModifier = if (glass.showBorder && borderAlpha > 0.01f) {
+    val borderModifier = if (glass.showBorder && containerColor == null && borderAlpha > 0.01f) {
         Modifier.border(
             width = glass.borderWidth,
             color = glass.borderColor.copy(alpha = glass.borderColor.alpha * borderAlpha),

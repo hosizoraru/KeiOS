@@ -34,13 +34,13 @@ import os.kei.ui.page.main.student.GuideBottomTab
 import os.kei.ui.page.main.student.page.state.buildBaStudentGuidePagerHeaderState
 import os.kei.ui.page.main.student.page.state.resolveBaStudentGuideTabRenderState
 import os.kei.ui.page.main.student.tabcontent.renderBaStudentGuideTabContent
+import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.flow.distinctUntilChanged
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -161,7 +161,13 @@ internal fun BaStudentGuidePagerPage(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
-                            SmallTitle(headerState.title)
+                            Text(
+                                text = headerState.title,
+                                color = MiuixTheme.colorScheme.onBackground,
+                                fontSize = AppTypographyTokens.SectionTitle.fontSize,
+                                lineHeight = AppTypographyTokens.SectionTitle.lineHeight,
+                                fontWeight = AppTypographyTokens.SectionTitle.fontWeight
+                            )
                         }
                         if (headerState.showSyncIndicator) {
                             LiquidCircularProgressBar(

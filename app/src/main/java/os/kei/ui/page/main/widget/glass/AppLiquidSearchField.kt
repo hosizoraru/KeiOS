@@ -85,8 +85,9 @@ fun AppLiquidInputField(
         durationMillis = 140,
         label = "app_liquid_search_field_focus"
     )
+    val sheetInputAccent = resolveGlassAccentColor(textColor, isDark)
     val placeholderColor = if (variant == GlassVariant.SheetInput) {
-        textColor.copy(alpha = if (isDark) 0.72f else 0.62f)
+        sheetInputAccent.copy(alpha = if (isDark) 0.72f else 0.62f)
     } else {
         MiuixTheme.colorScheme.onBackgroundVariant
     }
@@ -109,7 +110,7 @@ fun AppLiquidInputField(
     ).let { baseStyle ->
         if (variant == GlassVariant.SheetInput) {
             baseStyle.tintWithAccent(
-                accentColor = textColor,
+                accentColor = sheetInputAccent,
                 isDark = isDark
             )
         } else {
@@ -187,7 +188,7 @@ fun AppLiquidInputField(
                                 drawRect(glass.baseColor)
                                 if (glass.overlayColor != Color.Transparent) drawRect(glass.overlayColor)
                                 if (focusProgress > 0f) {
-                                    drawRect(textColor.copy(alpha = 0.04f * focusProgress))
+                                    drawRect(sheetInputAccent.copy(alpha = 0.04f * focusProgress))
                                 }
                             }
                         }
