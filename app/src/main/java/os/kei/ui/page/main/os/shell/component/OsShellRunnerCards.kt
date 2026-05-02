@@ -107,7 +107,7 @@ internal fun OsShellRunnerInputCard(
                 value = commandInput,
                 onValueChange = onCommandInputChange,
                 label = inputHint,
-                minHeight = 90.dp,
+                minHeight = 136.dp,
                 focusRequestToken = focusRequestToken,
                 modifier = Modifier.fillMaxWidth()
             )

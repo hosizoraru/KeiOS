@@ -1,8 +1,10 @@
 package os.kei.ui.page.main.os.shell
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.LaunchedEffect
@@ -46,39 +48,50 @@ internal fun ShellCommandInputField(
         lineHeight = AppTypographyTokens.Body.lineHeight,
         platformStyle = PlatformTextStyle(includeFontPadding = false)
     )
+    val promptStyle = textStyle.copy(color = MiuixTheme.colorScheme.primary)
+    val placeholderStyle = textStyle.copy(color = MiuixTheme.colorScheme.onBackgroundVariant)
 
     ShellGlassPanelSurface(
         modifier = modifier
             .fillMaxWidth(),
         minHeight = minHeight
     ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            textStyle = textStyle,
-            cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = minHeight - 24.dp)
-                .focusRequester(focusRequester),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.TopStart
-                ) {
-                    if (value.isBlank()) {
-                        BasicText(
-                            text = label,
-                            style = textStyle.copy(
-                                color = MiuixTheme.colorScheme.onBackgroundVariant
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            BasicText(
+                text = "$",
+                style = promptStyle,
+                maxLines = 1
+            )
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = textStyle,
+                cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = minHeight - 24.dp)
+                    .focusRequester(focusRequester),
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.TopStart
+                    ) {
+                        if (value.isBlank()) {
+                            BasicText(
+                                text = label,
+                                style = placeholderStyle,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
                 }
-            }
-        )
+            )
+        }
     }
 }

@@ -33,7 +33,7 @@ internal fun SettingsLiquidKeyPointSlider(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(34.dp)
+            .height(48.dp)
             .semantics {
                 contentDescription?.let { this.contentDescription = it }
             }
@@ -58,7 +58,7 @@ internal fun SettingsLiquidKeyPointSlider(
             onInteractionChanged = onInteractionChanged,
             modifier = Modifier
                 .matchParentSize()
-                .padding(horizontal = 4.dp)
+                .padding(horizontal = 4.dp, vertical = 7.dp)
         )
     }
 }

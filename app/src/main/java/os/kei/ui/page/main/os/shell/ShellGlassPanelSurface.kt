@@ -61,11 +61,7 @@ internal fun ShellGlassPanelSurface(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = minHeight)
-                .border(width = 1.dp, color = borderColor, shape = shape)
-                .padding(
-                    horizontal = contentPaddingHorizontal,
-                    vertical = contentPaddingVertical
-                ),
+                .border(width = 1.dp, color = borderColor, shape = shape),
             shape = shape,
             tint = Color.Unspecified,
             surfaceColor = baseColor,
@@ -81,7 +77,15 @@ internal fun ShellGlassPanelSurface(
                     .matchParentSize()
                     .background(overlayColor, shape)
             )
-            content()
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(
+                        horizontal = contentPaddingHorizontal,
+                        vertical = contentPaddingVertical
+                    ),
+                content = content
+            )
         }
     }
 }

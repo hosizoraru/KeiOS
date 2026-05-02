@@ -1,7 +1,7 @@
 package os.kei.ui.page.main.widget.glass
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -25,12 +25,12 @@ fun AppSwitch(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val switchModifier = modifier
-        .size(width = 64.dp, height = 40.dp)
+    val touchModifier = modifier
+        .defaultMinSize(minWidth = 64.dp, minHeight = 48.dp)
 
     if (!LocalLiquidSwitchEnabled.current) {
         Box(
-            modifier = switchModifier,
+            modifier = touchModifier,
             contentAlignment = Alignment.Center
         ) {
             MiuixSwitch(
@@ -44,20 +44,16 @@ fun AppSwitch(
 
     val switchBackdrop = rememberLayerBackdrop()
     Box(
-        modifier = switchModifier,
+        modifier = touchModifier,
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(switchBackdrop)
-        )
+        Box(modifier = Modifier.matchParentSize().layerBackdrop(switchBackdrop))
         LiquidToggle(
             selected = { checked },
             onSelect = onCheckedChange,
             backdrop = switchBackdrop,
             enabled = enabled,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.matchParentSize(),
             checkedColor = if (androidx.compose.foundation.isSystemInDarkTheme()) {
                 AppLiquidSwitchDarkBlue
             } else {

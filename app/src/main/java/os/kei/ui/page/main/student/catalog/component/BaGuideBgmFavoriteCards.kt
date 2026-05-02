@@ -70,7 +70,7 @@ internal fun BaGuideBgmPlaybackSeekBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(28.dp)
+            .height(44.dp)
             .semantics { this.contentDescription = contentDescription }
     ) {
         Box(
@@ -91,7 +91,7 @@ internal fun BaGuideBgmPlaybackSeekBar(
             inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
             modifier = Modifier
                 .matchParentSize()
-                .padding(horizontal = 4.dp)
+                .padding(horizontal = 4.dp, vertical = 8.dp)
         )
     }
 }
@@ -149,7 +149,7 @@ private fun BaGuideBgmVolumeSlider(
     val activeColor = MiuixTheme.colorScheme.onBackgroundVariant.copy(alpha = 0.78f)
     Box(
         modifier = modifier
-            .height(26.dp)
+            .height(44.dp)
             .semantics { this.contentDescription = contentDescription }
     ) {
         Box(
@@ -168,7 +168,7 @@ private fun BaGuideBgmVolumeSlider(
             inactiveColor = MiuixTheme.colorScheme.secondaryContainer.copy(alpha = 0.34f),
             modifier = Modifier
                 .matchParentSize()
-                .padding(horizontal = 3.dp)
+                .padding(horizontal = 3.dp, vertical = 8.dp)
         )
     }
 }
