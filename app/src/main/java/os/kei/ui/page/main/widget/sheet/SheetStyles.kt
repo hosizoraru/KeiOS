@@ -3,10 +3,6 @@ package os.kei.ui.page.main.widget.sheet
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,13 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -49,6 +42,7 @@ import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppCardBodyColumn
 import os.kei.ui.page.main.widget.core.AppCardHeader
 import os.kei.ui.page.main.widget.core.AppControlRow
+import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.core.AppSupportingBlock
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
@@ -56,7 +50,6 @@ import os.kei.ui.page.main.widget.glass.AppInteractiveTokens
 import os.kei.ui.page.main.widget.glass.LiquidSurface
 import os.kei.ui.page.main.widget.motion.appExpandIn
 import os.kei.ui.page.main.widget.motion.appExpandOut
-import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -165,39 +158,12 @@ fun SheetSurfaceCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(16.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val clickModifier = if (onClick != null) {
-        Modifier.combinedClickable(
-            interactionSource = interactionSource,
-            indication = null,
-            role = Role.Button,
-            onClick = onClick
-        )
-    } else {
-        Modifier
-    }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressedScale by appMotionFloatState(
-        targetValue = if (onClick != null && isPressed) 0.992f else 1f,
-        durationMillis = 120,
-        label = "sheet_surface_card_press_scale"
-    )
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = pressedScale
-                scaleY = pressedScale
-            }
-            .clip(shape)
-            .background(containerColor, shape)
-            .border(
-                width = 1.dp,
-                color = borderColor,
-                shape = shape
-            )
-            .then(clickModifier)
+    AppSurfaceCard(
+        modifier = modifier,
+        containerColor = containerColor,
+        borderColor = borderColor,
+        contentColor = contentColor,
+        onClick = onClick
     ) {
         AppCardBodyColumn(
             contentPadding = contentPadding,
