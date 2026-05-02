@@ -98,7 +98,8 @@ internal fun BaInlineActionPanel(
                     variant = GlassVariant.Content,
                     width = 52.dp,
                     height = 40.dp,
-                    iconTint = Color.Unspecified
+                    iconTint = Color.Unspecified,
+                    containerColor = accentColor
                 )
             } else {
                 AppLiquidTextButton(

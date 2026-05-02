@@ -283,6 +283,7 @@ internal fun BaOverviewCard(
                         contentDescription = stringResource(R.string.ba_overview_cd_claim_cafe_ap),
                         variant = GlassVariant.Content,
                         iconTint = Color.Unspecified,
+                        containerColor = accentGreen,
                         onClick = onClaimCafeStoredAp,
                     )
                     AppLiquidTextButton(

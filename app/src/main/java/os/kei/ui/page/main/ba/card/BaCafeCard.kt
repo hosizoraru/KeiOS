@@ -92,6 +92,7 @@ internal fun BaCafeCard(
                     width = 52.dp,
                     height = 40.dp,
                     iconTint = Color.Unspecified,
+                    containerColor = accentPink,
                     iconModifier = Modifier
                         .width(30.dp)
                         .height(22.dp)
