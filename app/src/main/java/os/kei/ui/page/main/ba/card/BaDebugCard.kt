@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.ui.page.main.ba.BaGlassCard
+import os.kei.ui.page.main.ba.BaLiquidCard
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
@@ -26,7 +26,7 @@ internal fun BaDebugCard(
 ) {
     val accentAmber = Color(0xFFF59E0B)
 
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = accentAmber,
         accentAlpha = 0f,

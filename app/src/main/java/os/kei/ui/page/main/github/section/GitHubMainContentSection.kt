@@ -132,6 +132,7 @@ internal fun GitHubMainContent(
                 ) {
                     item {
                         GitHubOverviewCard(
+                            backdrop = contentBackdrop,
                             isDark = isDark,
                             lookupConfig = lookupConfig,
                             overviewRefreshState = overviewRefreshState,

@@ -110,7 +110,7 @@ internal fun BaSettingsSheet(
     ) {
         SheetContentColumn(verticalSpacing = 10.dp) {
             SheetSectionTitle(stringResource(R.string.ba_settings_section_basic))
-            BaGlassPanel(
+            BaLiquidPanel(
                 backdrop = backdrop,
                 accentColor = settingsAccent,
                 variant = GlassVariant.SheetAction,
@@ -174,7 +174,7 @@ internal fun BaSettingsSheet(
                     )
                 }
             }
-            BaGlassPanel(
+            BaLiquidPanel(
                 backdrop = backdrop,
                 accentColor = settingsAccent,
                 variant = GlassVariant.SheetAction,
@@ -254,7 +254,7 @@ internal fun BaSettingsSheet(
                 }
             }
             SheetSectionTitle(stringResource(R.string.ba_settings_section_content))
-            BaGlassPanel(
+            BaLiquidPanel(
                 backdrop = backdrop,
                 accentColor = Color(0xFF60A5FA),
                 variant = GlassVariant.SheetAction,
@@ -278,7 +278,7 @@ internal fun BaSettingsSheet(
                     )
                 }
             }
-            BaGlassPanel(
+            BaLiquidPanel(
                 backdrop = backdrop,
                 accentColor = Color(0xFFF59E0B),
                 variant = GlassVariant.SheetAction,

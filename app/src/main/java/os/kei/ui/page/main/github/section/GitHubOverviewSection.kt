@@ -28,6 +28,7 @@ import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
+import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -55,6 +56,7 @@ private fun overviewMetricColor(
 
 @Composable
 internal fun GitHubOverviewCard(
+    backdrop: Backdrop? = null,
     isDark: Boolean,
     lookupConfig: GitHubLookupConfig,
     overviewRefreshState: OverviewRefreshState,
@@ -76,6 +78,7 @@ internal fun GitHubOverviewCard(
     }
     AppOverviewCard(
         title = stringResource(R.string.github_overview_title),
+        backdrop = backdrop,
         titleColor = MiuixTheme.colorScheme.onBackground,
         subtitleColor = MiuixTheme.colorScheme.onBackgroundVariant,
         containerColor = displayRefreshState.surfaceColor(

@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.ui.page.main.ba.BaGlassCard
-import os.kei.ui.page.main.ba.BaGlassPanel
+import os.kei.ui.page.main.ba.BaLiquidCard
+import os.kei.ui.page.main.ba.BaLiquidPanel
 import os.kei.ui.page.main.ba.support.BaCalendarEntry
 import os.kei.ui.page.main.ba.support.BaPoolEntry
 import os.kei.ui.page.main.ba.support.GameKeeCoverImage
@@ -74,7 +74,7 @@ internal fun BaCalendarSectionHeaderCard(
         )
         else -> stringResource(R.string.ba_state_not_synced)
     }
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
         accentAlpha = 0f,
@@ -128,7 +128,7 @@ internal fun BaCalendarCard(
         )
         else -> stringResource(R.string.ba_state_not_synced)
     }
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
         accentAlpha = 0f,
@@ -200,7 +200,7 @@ internal fun BaCalendarStatePanel(
     accentColor: Color,
     effectsEnabled: Boolean,
 ) {
-    BaGlassPanel(
+    BaLiquidPanel(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth(),
         accentColor = accentColor,
@@ -247,7 +247,7 @@ internal fun BaCalendarEntryPanel(
     val serverTimeZone = serverRefreshTimeZone(serverIndex)
     val kindLabel = baCalendarKindLabel(activity.kindId, activity.kindName)
 
-    BaGlassPanel(
+    BaLiquidPanel(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth(),
         accentColor = statusColor,
@@ -325,7 +325,7 @@ internal fun BaPoolSectionHeaderCard(
         )
         else -> stringResource(R.string.ba_state_not_synced)
     }
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
         accentAlpha = 0f,
@@ -380,7 +380,7 @@ internal fun BaPoolCard(
         )
         else -> stringResource(R.string.ba_state_not_synced)
     }
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = Color(0xFF3B82F6),
         accentAlpha = 0f,
@@ -453,7 +453,7 @@ internal fun BaPoolStatePanel(
     accentColor: Color,
     effectsEnabled: Boolean,
 ) {
-    BaGlassPanel(
+    BaLiquidPanel(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth(),
         accentColor = accentColor,
@@ -502,7 +502,7 @@ internal fun BaPoolEntryPanel(
     val showPoolCoverImage = showCalendarPoolImages && pool.imageUrl.isNotBlank()
     val tagLabel = baPoolTagLabel(pool.tagId, pool.tagName)
 
-    BaGlassPanel(
+    BaLiquidPanel(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth(),
         accentColor = statusColor,

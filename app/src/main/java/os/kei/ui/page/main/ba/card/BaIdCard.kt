@@ -21,8 +21,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.ui.page.main.ba.BaGlassCard
-import os.kei.ui.page.main.ba.BaGlassPanel
+import os.kei.ui.page.main.ba.BaLiquidCard
+import os.kei.ui.page.main.ba.BaLiquidPanel
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_FRIEND_CODE
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_NICKNAME
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -53,14 +53,14 @@ internal fun BaIdCard(
     )
     val accentBlue = Color(0xFF3B82F6)
 
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = accentBlue,
         accentAlpha = 0f,
     ) {
         BaCardHeader(title = stringResource(R.string.ba_id_card_title))
 
-        BaGlassPanel(
+        BaLiquidPanel(
             backdrop = backdrop,
             accentColor = accentBlue,
         ) {
@@ -111,7 +111,7 @@ internal fun BaIdCard(
             }
         }
 
-        BaGlassPanel(
+        BaLiquidPanel(
             backdrop = backdrop,
             accentColor = accentBlue,
         ) {

@@ -14,8 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.ui.page.main.ba.BaGlassCard
-import os.kei.ui.page.main.ba.BaGlassMetricPanel
+import os.kei.ui.page.main.ba.BaLiquidCard
+import os.kei.ui.page.main.ba.BaLiquidMetricPanel
 import os.kei.ui.page.main.ba.support.calculateInviteTicketAvailableMs
 import os.kei.ui.page.main.ba.support.calculateNextHeadpatAvailableMs
 import os.kei.ui.page.main.ba.support.formatBaDateTimeNoSeconds
@@ -75,7 +75,7 @@ internal fun BaCafeCard(
         formatBaDateTimeNoSeconds(if (invite2Ready) uiNowMs else invite2AvailableAt, notSyncedText)
     val headpatTimeText = if (coffeeHeadpatMs > 0L) formatBaDateTimeNoSeconds(coffeeHeadpatMs, notSyncedText) else "-"
 
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = accentPink,
         accentAlpha = 0f,
@@ -119,7 +119,7 @@ internal fun BaCafeCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            BaGlassMetricPanel(
+            BaLiquidMetricPanel(
                 backdrop = backdrop,
                 label = stringResource(R.string.ba_cafe_metric_tactical_challenge),
                 value = nextArenaRefreshText,
@@ -127,7 +127,7 @@ internal fun BaCafeCard(
                 valueColor = countdownBlue,
                 modifier = Modifier.weight(1f),
             )
-            BaGlassMetricPanel(
+            BaLiquidMetricPanel(
                 backdrop = backdrop,
                 label = stringResource(R.string.ba_cafe_metric_student_visit),
                 value = nextStudentRefreshText,

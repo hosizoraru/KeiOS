@@ -36,7 +36,7 @@ import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
+import os.kei.ui.page.main.widget.glass.AppLiquidAccordionCard
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
 import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
@@ -61,7 +61,7 @@ internal fun LazyListScope.addTopInfoCard(
 ) {
     if (!visible) return
     item {
-        MiuixAccordionCard(
+        AppLiquidAccordionCard(
             backdrop = contentBackdrop,
             title = stringResource(R.string.os_section_top_info_title),
             subtitle = stringResource(R.string.common_item_count, displayedTopInfoRows.size),
@@ -103,7 +103,7 @@ internal fun LazyListScope.addShortcutActivityCards(
     cards.filter { it.visible }.forEach { card ->
         val shortcutConfig = card.config
         item(key = "os-activity-${card.id}") {
-            MiuixAccordionCard(
+            AppLiquidAccordionCard(
                 backdrop = contentBackdrop,
                 title = shortcutConfig.title.ifBlank { defaultCardTitle },
                 subtitle = shortcutConfig.subtitle,
@@ -197,7 +197,7 @@ internal fun LazyListScope.addKeyValueSectionCard(
 ) {
     if (!visible) return
     item {
-        MiuixAccordionCard(
+        AppLiquidAccordionCard(
             backdrop = contentBackdrop,
             title = title,
             subtitle = subtitle,

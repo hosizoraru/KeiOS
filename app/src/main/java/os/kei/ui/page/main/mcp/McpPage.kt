@@ -445,6 +445,7 @@ fun McpPage(
             ) {
                 item {
                     McpOverviewCardSection(
+                        backdrop = backdrops.content,
                         titleColor = titleColor,
                         subtitleColor = subtitleColor,
                         overviewCardColor = overviewState.overviewCardColor,

@@ -25,9 +25,9 @@ import androidx.compose.ui.unit.sp
 import os.kei.R
 import os.kei.ui.page.main.ba.support.BAInitState
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_FRIEND_CODE
-import os.kei.ui.page.main.ba.BaGlassCard
-import os.kei.ui.page.main.ba.BaGlassMetricPanel
-import os.kei.ui.page.main.ba.BaGlassPanel
+import os.kei.ui.page.main.ba.BaLiquidCard
+import os.kei.ui.page.main.ba.BaLiquidMetricPanel
+import os.kei.ui.page.main.ba.BaLiquidPanel
 import os.kei.ui.page.main.ba.support.cafeDailyCapacity
 import os.kei.ui.page.main.ba.support.calculateApFullAtMs
 import os.kei.ui.page.main.ba.support.calculateApNextPointAtMs
@@ -96,7 +96,7 @@ internal fun BaOverviewCard(
     val accentAmber = Color(0xFFF59E0B)
     val stateAccent = if (isWorkActivated) accentBlue else accentAmber
 
-    BaGlassCard(
+    BaLiquidCard(
         backdrop = backdrop,
         accentColor = stateAccent,
         accentAlpha = 0f,
@@ -121,7 +121,7 @@ internal fun BaOverviewCard(
             },
         )
 
-        BaGlassPanel(
+        BaLiquidPanel(
             backdrop = backdrop,
             accentColor = stateAccent,
         ) {
@@ -192,7 +192,7 @@ internal fun BaOverviewCard(
             }
         }
 
-        BaGlassPanel(
+        BaLiquidPanel(
             backdrop = backdrop,
             accentColor = accentGreen,
         ) {
@@ -258,7 +258,7 @@ internal fun BaOverviewCard(
             )
         }
 
-        BaGlassPanel(
+        BaLiquidPanel(
             backdrop = backdrop,
             accentColor = accentGreen,
         ) {
@@ -302,7 +302,7 @@ internal fun BaOverviewCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            BaGlassMetricPanel(
+            BaLiquidMetricPanel(
                 backdrop = backdrop,
                 label = stringResource(R.string.ba_metric_ap_sync),
                 value = apSyncTimeText,
@@ -310,7 +310,7 @@ internal fun BaOverviewCard(
                 valueColor = accentBlue,
                 modifier = Modifier.weight(1f),
             )
-            BaGlassMetricPanel(
+            BaLiquidMetricPanel(
                 backdrop = backdrop,
                 label = stringResource(R.string.ba_metric_ap_full),
                 value = apFullTimeText,

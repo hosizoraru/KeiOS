@@ -86,7 +86,7 @@ import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
-import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
+import os.kei.ui.page.main.widget.glass.AppLiquidAccordionCard
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.status.StatusPill
 import os.kei.ui.page.main.widget.motion.appExpandIn
@@ -170,7 +170,7 @@ internal fun LazyListScope.GitHubTrackedItemsSection(
             contentType = { "tracked_app" }
         ) { item ->
             val expanded = trackedCardExpanded[item.id] == true
-            MiuixAccordionCard(
+            AppLiquidAccordionCard(
                 backdrop = accordionBackdrop,
                 title = item.appLabel,
                 subtitle = item.packageName,

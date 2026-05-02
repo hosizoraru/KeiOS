@@ -19,7 +19,7 @@ import os.kei.ui.page.main.widget.core.AppDualActionRow
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.MiuixExpandableSection
+import os.kei.ui.page.main.widget.glass.AppLiquidExpandableSection
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -35,7 +35,7 @@ internal fun McpServiceControlSection(
     onSendTestNotification: () -> Unit,
     onShowResetConfigConfirm: () -> Unit,
 ) {
-    MiuixExpandableSection(
+    AppLiquidExpandableSection(
         backdrop = backdrop,
         title = stringResource(R.string.mcp_section_service_control_title),
         subtitle = stringResource(R.string.mcp_section_service_control_subtitle),
@@ -81,7 +81,7 @@ internal fun McpToolsSection(
     onExpandedChange: (Boolean) -> Unit,
     uiState: McpServerUiState,
 ) {
-    MiuixExpandableSection(
+    AppLiquidExpandableSection(
         backdrop = backdrop,
         title = stringResource(R.string.mcp_section_tools_title),
         subtitle = stringResource(R.string.mcp_section_tools_subtitle, uiState.tools.size),
@@ -114,7 +114,7 @@ internal fun McpLogsSection(
     onClearLogs: () -> Unit,
     subtitleColor: Color,
 ) {
-    MiuixExpandableSection(
+    AppLiquidExpandableSection(
         backdrop = backdrop,
         title = stringResource(R.string.mcp_section_logs_title),
         subtitle = stringResource(R.string.mcp_section_logs_subtitle, uiState.logs.size),

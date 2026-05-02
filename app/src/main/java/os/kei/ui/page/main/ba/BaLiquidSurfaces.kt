@@ -37,12 +37,12 @@ import com.kyant.shapes.RoundedRectangle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val BaCardShape = RoundedCornerShape(24.dp)
-private val BaPanelShape = RoundedCornerShape(18.dp)
-private val BaBadgeShape = RoundedCornerShape(999.dp)
+private val BaLiquidCardShape = RoundedCornerShape(24.dp)
+private val BaLiquidPanelShape = RoundedCornerShape(18.dp)
+private val BaLiquidBadgeShape = RoundedCornerShape(999.dp)
 
 @Composable
-private fun Modifier.baGlassSurface(
+private fun Modifier.baLiquidSurface(
     backdrop: Backdrop?,
     shape: RoundedCornerShape,
     cornerRadius: Dp,
@@ -107,7 +107,7 @@ private fun Modifier.baGlassSurface(
 }
 
 @Composable
-internal fun BaGlassCard(
+internal fun BaLiquidCard(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
@@ -134,9 +134,9 @@ internal fun BaGlassCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .baGlassSurface(
+            .baLiquidSurface(
                 backdrop = backdrop,
-                shape = BaCardShape,
+                shape = BaLiquidCardShape,
                 cornerRadius = 24.dp,
                 accentColor = accentColor,
                 accentAlpha = accentAlpha,
@@ -151,7 +151,7 @@ internal fun BaGlassCard(
 }
 
 @Composable
-internal fun BaGlassPanel(
+internal fun BaLiquidPanel(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier,
     accentColor: Color = MiuixTheme.colorScheme.primary,
@@ -178,9 +178,9 @@ internal fun BaGlassPanel(
 
     Column(
         modifier = modifier
-            .baGlassSurface(
+            .baLiquidSurface(
                 backdrop = backdrop,
-                shape = BaPanelShape,
+                shape = BaLiquidPanelShape,
                 cornerRadius = 18.dp,
                 accentColor = accentColor,
                 accentAlpha = accentAlpha,
@@ -195,7 +195,7 @@ internal fun BaGlassPanel(
 }
 
 @Composable
-internal fun BaGlassBadge(
+internal fun BaLiquidBadge(
     text: String,
     color: Color,
     modifier: Modifier = Modifier,
@@ -203,15 +203,15 @@ internal fun BaGlassBadge(
     val isDark = isSystemInDarkTheme()
     Box(
         modifier = modifier
-            .clip(BaBadgeShape)
+            .clip(BaLiquidBadgeShape)
             .background(
                 color = color.copy(alpha = if (isDark) 0.18f else 0.14f),
-                shape = BaBadgeShape,
+                shape = BaLiquidBadgeShape,
             )
             .border(
                 width = 1.dp,
                 color = color.copy(alpha = if (isDark) 0.28f else 0.22f),
-                shape = BaBadgeShape,
+                shape = BaLiquidBadgeShape,
             )
             .padding(horizontal = 10.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center,
@@ -225,7 +225,7 @@ internal fun BaGlassBadge(
 }
 
 @Composable
-internal fun BaGlassMetricPanel(
+internal fun BaLiquidMetricPanel(
     backdrop: Backdrop?,
     label: String,
     value: String,
@@ -235,7 +235,7 @@ internal fun BaGlassMetricPanel(
     valueColor: Color = accentColor,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
-    BaGlassPanel(
+    BaLiquidPanel(
         backdrop = backdrop,
         modifier = modifier,
         accentColor = accentColor,

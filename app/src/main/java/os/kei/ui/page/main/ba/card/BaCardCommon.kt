@@ -14,7 +14,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import os.kei.ui.page.main.ba.BaGlassPanel
+import os.kei.ui.page.main.ba.BaLiquidPanel
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
@@ -76,7 +76,7 @@ internal fun BaInlineActionPanel(
     onLongClick: (() -> Unit)? = null,
 ) {
     val countdownBlue = Color(0xFF60A5FA)
-    BaGlassPanel(
+    BaLiquidPanel(
         backdrop = backdrop,
         modifier = Modifier.fillMaxWidth(),
         accentColor = accentColor,

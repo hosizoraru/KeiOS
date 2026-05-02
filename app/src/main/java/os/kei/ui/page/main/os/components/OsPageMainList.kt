@@ -143,6 +143,7 @@ internal fun OsPageMainList(
             item {
                 AppOverviewCard(
                     title = stringResource(R.string.os_overview_title),
+                    backdrop = contentBackdrop,
                     containerColor = overviewCardColor,
                     borderColor = overviewBorderColor,
                     contentColor = titleColor,

@@ -19,11 +19,13 @@ import os.kei.ui.page.main.widget.core.AppOverviewCard
 import os.kei.ui.page.main.widget.core.AppOverviewInlineMetricTile
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.status.StatusPill
+import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 internal fun McpOverviewCardSection(
+    backdrop: Backdrop?,
     titleColor: Color,
     subtitleColor: Color,
     overviewCardColor: Color,
@@ -39,6 +41,7 @@ internal fun McpOverviewCardSection(
 ) {
     AppOverviewCard(
         title = stringResource(R.string.mcp_overview_title),
+        backdrop = backdrop,
         containerColor = overviewCardColor,
         borderColor = overviewBorderColor,
         contentColor = titleColor,

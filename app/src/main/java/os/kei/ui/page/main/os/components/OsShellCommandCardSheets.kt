@@ -32,7 +32,7 @@ import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
-import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
+import os.kei.ui.page.main.widget.glass.AppLiquidAccordionCard
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
 import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
@@ -58,7 +58,7 @@ internal fun LazyListScope.addShellCommandCards(
     cards.filter { it.visible }.forEach { card ->
         item(key = "os-shell-command-${card.id}") {
             val cardIsRunning = runningCardIds.contains(card.id)
-            MiuixAccordionCard(
+            AppLiquidAccordionCard(
                 backdrop = contentBackdrop,
                 title = card.title.ifBlank { defaultOsShellCommandCardTitle(card.command) },
                 subtitle = card.subtitle,
