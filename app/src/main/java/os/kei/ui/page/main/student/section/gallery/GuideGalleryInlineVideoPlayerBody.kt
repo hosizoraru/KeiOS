@@ -18,7 +18,7 @@ import androidx.media3.common.Player
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import os.kei.ui.page.main.student.GuideRemoteImageAdaptive
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,7 +85,7 @@ internal fun GuideInlineVideoPlayerBody(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             text = "",
             leadingIcon = MiuixIcons.Regular.Replace,
@@ -93,7 +93,7 @@ internal fun GuideInlineVideoPlayerBody(
             variant = GlassVariant.Compact,
             onClick = onToggleLoop
         )
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             text = "",
             leadingIcon = MiuixIcons.Regular.ExpandLess,

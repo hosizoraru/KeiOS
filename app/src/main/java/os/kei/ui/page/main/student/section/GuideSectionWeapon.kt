@@ -47,7 +47,7 @@ import os.kei.ui.page.main.student.GuideWeaponStatRow
 import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.section.gallery.GuideImageFullscreenDialog
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
@@ -120,7 +120,7 @@ fun GuideWeaponCardItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = uniqueWeaponShortLabel,
                         enabled = false,
@@ -337,7 +337,7 @@ internal fun GuideWeaponStarEffectItem(
             ) {
                 GuideWeaponStarBadgeRow(effect.starLabel, iconSize = 18.dp)
                 if (effect.roleTag.isNotBlank()) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = displayRoleTag,
                         enabled = false,
@@ -434,7 +434,7 @@ internal fun GuideWeaponTwoStarEffectItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 if (effect.roleTag.isNotBlank()) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = displayRoleTag,
                         enabled = false,

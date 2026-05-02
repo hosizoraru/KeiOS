@@ -12,7 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.ba.BaGlassCard
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 
@@ -39,14 +39,14 @@ internal fun BaDebugCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = stringResource(R.string.ba_debug_action_ap_notification),
                     textColor = Color(0xFF3B82F6),
                     variant = GlassVariant.SheetPrimaryAction,
                     onClick = onSendApTestNotification,
                 )
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = stringResource(R.string.ba_debug_action_arena_refresh_notification),
                     textColor = Color(0xFF3B82F6),
@@ -59,14 +59,14 @@ internal fun BaDebugCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = stringResource(R.string.ba_debug_action_cafe_plus_3h_ap),
                     textColor = Color(0xFF3B82F6),
                     variant = GlassVariant.SheetPrimaryAction,
                     onClick = onTestCafePlus3Hours,
                 )
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = stringResource(R.string.ba_debug_action_cafe_visit_notification),
                     textColor = Color(0xFF3B82F6),

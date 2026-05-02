@@ -25,7 +25,7 @@ import os.kei.ui.page.main.student.guideLocalizedVoiceLanguage
 import os.kei.ui.page.main.student.guideLocalizedVoiceLineLabel
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
@@ -88,7 +88,7 @@ fun GuideVoiceLanguageCard(
                 ) {
                     visibleHeaderLabels.forEach { (header, headerLabel) ->
                         val selected = header.equals(selectedHeader.trim(), ignoreCase = true)
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = backdrop,
                             text = headerLabel,
                             textColor = if (selected) Color(0xFF2563EB) else MiuixTheme.colorScheme.onBackgroundVariant,
@@ -152,7 +152,7 @@ fun GuideVoiceEntryCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (entry.section.isNotBlank()) {
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = backdrop,
                             text = displaySection,
                             enabled = false,
@@ -180,7 +180,7 @@ fun GuideVoiceEntryCard(
                                     inactiveColor = Color(0x553B82F6)
                                 )
                             }
-                            GlassTextButton(
+                            AppLiquidTextButton(
                                 backdrop = backdrop,
                                 text = "",
                                 leadingIcon = if (isPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,

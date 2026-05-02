@@ -37,7 +37,7 @@ import os.kei.ui.page.main.ba.support.formatBaRemainingTime
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Text
@@ -285,7 +285,7 @@ internal fun BaOverviewCard(
                         iconTint = Color.Unspecified,
                         onClick = onClaimCafeStoredAp,
                     )
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = "${displayAp(cafeStoredAp)}/${cafeDailyCapacity(cafeLevel)}",
                         textColor = accentGreen,

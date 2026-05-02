@@ -22,7 +22,7 @@ import os.kei.ui.page.main.student.buildGuideTabCopyPayload
 import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.tabcontent.profile.normalizeProfileFieldKey
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import top.yukonga.miuix.kmp.basic.Text
@@ -77,7 +77,7 @@ internal fun GuideSimulateAbilityCard(
                 )
                 listOf("初始能力" to initialStatsLabel, "最大培养" to maxStatsLabel).forEach { (option, optionLabel) ->
                     val selected = selectedAbility == option
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = optionLabel,
                         textColor = if (selected) Color(0xFF2563EB) else MiuixTheme.colorScheme.onBackgroundVariant,

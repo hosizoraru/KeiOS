@@ -35,7 +35,7 @@ import os.kei.ui.page.main.github.githubRecommendedTokenGuide
 import os.kei.ui.page.main.github.githubStrategyGuides
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetActionGroup
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -184,7 +184,7 @@ internal fun GitHubStrategySheet(
                             stringResource(R.string.github_strategy_field_token_summary_filled)
                         },
                         trailing = {
-                            GlassTextButton(
+                            AppLiquidTextButton(
                                 backdrop = backdrop,
                                 variant = GlassVariant.SheetAction,
                                 text = if (showApiTokenPlainText) {
@@ -218,7 +218,7 @@ internal fun GitHubStrategySheet(
                 SheetSectionTitle(stringResource(R.string.github_strategy_section_verify_now))
                 SheetSectionCard {
                     SheetActionGroup {
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = backdrop,
                             variant = GlassVariant.SheetAction,
                             text = if (credentialCheckRunning) {
@@ -271,7 +271,7 @@ internal fun GitHubStrategySheet(
                     onExpandedChange = onRecommendedTokenGuideExpandedChange
                 )
                 SheetActionGroup {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetAction,
                         text = stringResource(R.string.github_strategy_btn_open_prefilled_create),
@@ -283,7 +283,7 @@ internal fun GitHubStrategySheet(
                             )
                         }
                     )
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetAction,
                         text = stringResource(R.string.github_strategy_btn_open_docs),
@@ -339,7 +339,7 @@ private fun GitHubStrategyBenchmarkSection(
         )
         if (trackedCount > 0) {
             SheetActionGroup {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.SheetAction,
                     text = if (strategyBenchmarkRunning) {

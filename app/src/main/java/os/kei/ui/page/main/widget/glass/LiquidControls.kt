@@ -5,6 +5,7 @@ import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -120,6 +121,16 @@ fun LiquidButton(
     horizontalPadding: Dp = 16.dp,
     content: @Composable RowScope.() -> Unit
 ) {
+    val liquidControlsEnabled = LocalLiquidControlsEnabled.current
+    val resolvedInteractive = isInteractive && liquidControlsEnabled
+    val isDark = isSystemInDarkTheme()
+    val fallbackStyle = glassStyle(isDark = isDark, variant = GlassVariant.SheetAction, blurRadius = null)
+    val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
+    val fallbackColor = when {
+        surfaceColor.isSpecified -> surfaceColor
+        tint.isSpecified -> tint.copy(alpha = if (isDark) 0.22f else 0.18f)
+        else -> fallbackSurface.copy(alpha = fallbackStyle.fallbackAlpha)
+    }
     val animationScope = rememberCoroutineScope()
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(animationScope = animationScope)
@@ -128,55 +139,68 @@ fun LiquidButton(
 
     Row(
         modifier = modifier
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { shape },
-                effects = {
-                    vibrancy()
-                    blur(2.dp.toPx())
-                    lens(12.dp.toPx(), 24.dp.toPx())
-                },
-                layerBlock = if (isInteractive && enabled) {
-                    {
-                        val progress = interactiveHighlight.pressProgress
-                        val scale = lerp(1f, 1f + 4.dp.toPx() / size.height, progress)
-                        val maxOffset = size.minDimension
-                        val offset = interactiveHighlight.offset
-                        val initialDerivative = 0.05f
-                        translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
-                        translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
+            .clip(shape)
+            .then(
+                if (liquidControlsEnabled) {
+                    Modifier.drawBackdrop(
+                        backdrop = backdrop,
+                        shape = { shape },
+                        effects = {
+                            vibrancy()
+                            blur(2.dp.toPx())
+                            lens(12.dp.toPx(), 24.dp.toPx())
+                        },
+                        layerBlock = if (resolvedInteractive && enabled) {
+                            {
+                                val progress = interactiveHighlight.pressProgress
+                                val scale = lerp(1f, 1f + 4.dp.toPx() / size.height, progress)
+                                val maxOffset = size.minDimension
+                                val offset = interactiveHighlight.offset
+                                val initialDerivative = 0.05f
+                                translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
+                                translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
 
-                        val maxDragScale = 4.dp.toPx() / size.height
-                        val offsetAngle = atan2(offset.y, offset.x)
-                        scaleX = scale +
-                            maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
-                            (size.width / size.height).fastCoerceAtMost(1f)
-                        scaleY = scale +
-                            maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
-                            (size.height / size.width).fastCoerceAtMost(1f)
-                    }
+                                val maxDragScale = 4.dp.toPx() / size.height
+                                val offsetAngle = atan2(offset.y, offset.x)
+                                scaleX = scale +
+                                    maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
+                                    (size.width / size.height).fastCoerceAtMost(1f)
+                                scaleY = scale +
+                                    maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
+                                    (size.height / size.width).fastCoerceAtMost(1f)
+                            }
+                        } else {
+                            null
+                        },
+                        onDrawSurface = {
+                            if (tint.isSpecified) {
+                                drawRect(tint, blendMode = BlendMode.Hue)
+                                drawRect(tint.copy(alpha = tint.alpha * 0.72f))
+                            }
+                            if (surfaceColor.isSpecified) {
+                                drawRect(surfaceColor)
+                            }
+                        }
+                    )
                 } else {
-                    null
-                },
-                onDrawSurface = {
-                    if (tint.isSpecified) {
-                        drawRect(tint, blendMode = BlendMode.Hue)
-                        drawRect(tint.copy(alpha = tint.alpha * 0.72f))
-                    }
-                    if (surfaceColor.isSpecified) {
-                        drawRect(surfaceColor)
-                    }
+                    Modifier
+                        .background(fallbackColor, shape)
+                        .border(
+                            width = fallbackStyle.borderWidth,
+                            color = fallbackStyle.borderColor,
+                            shape = shape
+                        )
                 }
             )
             .clickable(
                 interactionSource = clickInteractionSource,
-                indication = if (isInteractive) null else LocalIndication.current,
+                indication = if (resolvedInteractive) null else LocalIndication.current,
                 enabled = enabled,
                 role = Role.Button,
                 onClick = onClick
             )
             .then(
-                if (isInteractive && enabled) {
+                if (resolvedInteractive && enabled) {
                     Modifier
                         .then(interactiveHighlight.modifier)
                         .then(interactiveHighlight.gestureModifier)

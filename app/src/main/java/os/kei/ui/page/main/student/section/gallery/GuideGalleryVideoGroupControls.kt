@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.IntRect
 import os.kei.R
 import os.kei.ui.page.main.os.appLucideFullscreenIcon
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
@@ -90,7 +90,7 @@ internal fun GuideGalleryVideoGroupHeaderActions(
     }
 
     if (displayMediaUrl.isNotBlank()) {
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             text = "",
             leadingIcon = if (videoInlineExpanded && videoInlinePlaying) {
@@ -102,7 +102,7 @@ internal fun GuideGalleryVideoGroupHeaderActions(
             variant = GlassVariant.Compact,
             onClick = onToggleInlinePlay
         )
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             text = "",
             leadingIcon = fullscreenIcon,
@@ -113,7 +113,7 @@ internal fun GuideGalleryVideoGroupHeaderActions(
     }
 
     if (saveTargetUrl.isNotBlank()) {
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             text = "",
             leadingIcon = MiuixIcons.Regular.Download,

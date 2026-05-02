@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,7 +14,8 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
 
-val LocalLiquidSwitchEnabled = staticCompositionLocalOf { true }
+val LocalLiquidControlsEnabled = staticCompositionLocalOf { true }
+val LocalLiquidSwitchEnabled: ProvidableCompositionLocal<Boolean> = LocalLiquidControlsEnabled
 
 private val AppLiquidSwitchLightBlue = Color(0xFF3B82F6)
 private val AppLiquidSwitchDarkBlue = Color(0xFF7AB8FF)
@@ -28,7 +30,7 @@ fun AppSwitch(
     val touchModifier = modifier
         .defaultMinSize(minWidth = 64.dp, minHeight = 48.dp)
 
-    if (!LocalLiquidSwitchEnabled.current) {
+    if (!LocalLiquidControlsEnabled.current) {
         Box(
             modifier = touchModifier,
             contentAlignment = Alignment.Center

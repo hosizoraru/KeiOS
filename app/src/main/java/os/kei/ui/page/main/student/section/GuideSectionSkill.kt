@@ -38,7 +38,7 @@ import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.GuideSkillCardModel
 import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
@@ -246,7 +246,7 @@ fun GuideSkillCardItem(
                                 Spacer(modifier = Modifier.height(typeAlignToTitleOffset))
                             }
                             Box(modifier = Modifier.onSizeChanged { typeCapsuleHeightPx = it.height }) {
-                                GlassTextButton(
+                                AppLiquidTextButton(
                                     backdrop = backdrop,
                                     text = displaySkillType,
                                     enabled = false,
@@ -313,7 +313,7 @@ fun GuideSkillCardItem(
                             Spacer(modifier = Modifier.height(costAlignToDescriptionOffset))
                         }
                         if (skillCost.isNotBlank()) {
-                            GlassTextButton(
+                            AppLiquidTextButton(
                                 backdrop = backdrop,
                                 text = "COST:$skillCost",
                                 enabled = false,
@@ -361,7 +361,7 @@ internal fun GuideSkillStateTagButton(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier
 ) {
-    GlassTextButton(
+    AppLiquidTextButton(
         backdrop = backdrop,
         text = label,
         enabled = false,

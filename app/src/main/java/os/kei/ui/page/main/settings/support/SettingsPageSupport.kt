@@ -27,7 +27,7 @@ import os.kei.ui.page.main.widget.core.AppInfoRow
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.AppSwitch
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import java.io.File
 import java.text.SimpleDateFormat
@@ -167,7 +167,7 @@ internal fun SettingsCacheRow(
             minHeight = 48.dp,
             trailing = {
                 if (entry.clearLabel.isNotBlank()) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = null,
                         variant = GlassVariant.Compact,
                         text = if (clearing) stringResource(R.string.common_processing) else entry.clearLabel,

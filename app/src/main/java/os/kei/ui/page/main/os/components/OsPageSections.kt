@@ -34,7 +34,7 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -481,7 +481,7 @@ internal fun OsActivityVisibilityManagerSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = sheetBackdrop,
                             text = stringResource(R.string.os_activity_sheet_action_export_backup),
                             onClick = onExportAllCards,
@@ -492,7 +492,7 @@ internal fun OsActivityVisibilityManagerSheet(
                         )
                     }
                     Box(modifier = Modifier.weight(1f)) {
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = sheetBackdrop,
                             text = stringResource(R.string.os_activity_sheet_action_import_backup),
                             onClick = onImportAllCards,

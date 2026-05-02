@@ -12,7 +12,7 @@ import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.settings.support.formatBytes
 import os.kei.ui.page.main.settings.support.formatLogTime
 import os.kei.ui.page.main.widget.core.AppDualActionRow
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -74,7 +74,7 @@ internal fun SettingsLogSection(
         )
         AppDualActionRow(
             first = { modifier ->
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = null,
                     variant = GlassVariant.SheetPrimaryAction,
                     text = if (exportingLogZip) {
@@ -89,7 +89,7 @@ internal fun SettingsLogSection(
                 )
             },
             second = { modifier ->
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = null,
                     variant = GlassVariant.SheetDangerAction,
                     text = if (clearingLogs) {

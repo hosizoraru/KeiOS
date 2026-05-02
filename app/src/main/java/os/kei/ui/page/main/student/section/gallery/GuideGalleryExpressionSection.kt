@@ -56,7 +56,7 @@ import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.normalizeGalleryTitle
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownSingleChoiceItem
@@ -303,7 +303,7 @@ fun GuideGalleryExpressionCardItem(
                     }
                 }
                 if (isVideoType && displayMediaUrl.isNotBlank()) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = "",
                         leadingIcon = if (videoInlineExpanded && videoInlinePlaying) {
@@ -327,7 +327,7 @@ fun GuideGalleryExpressionCardItem(
                             }
                         }
                     )
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = "",
                         leadingIcon = fullscreenIcon,
@@ -351,7 +351,7 @@ fun GuideGalleryExpressionCardItem(
                     )
                 }
                 if (saveTargetUrl.isNotBlank()) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = "",
                         leadingIcon = MiuixIcons.Regular.Download,
@@ -366,7 +366,7 @@ fun GuideGalleryExpressionCardItem(
                     )
                 }
                 if (expressionPackTargets.size > 1) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = "",
                         leadingIcon = packDownloadIcon,
@@ -477,7 +477,7 @@ fun GuideGalleryExpressionCardItem(
                         onIsPlayingChange = { playing -> videoInlinePlaying = playing }
                     )
                 } else {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = stringResource(R.string.guide_action_open),
                         leadingIcon = MiuixIcons.Regular.Play,

@@ -22,7 +22,7 @@ import os.kei.R
 import os.kei.ui.page.main.ba.support.BA_AP_MAX
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -210,7 +210,7 @@ internal fun BaSettingsSheet(
                             stringResource(R.string.ba_settings_summary_media_save_fixed_uri_ready)
                         },
                         trailing = {
-                            GlassTextButton(
+                            AppLiquidTextButton(
                                 backdrop = backdrop,
                                 variant = GlassVariant.SheetPrimaryAction,
                                 textColor = Color(0xFF3B82F6),

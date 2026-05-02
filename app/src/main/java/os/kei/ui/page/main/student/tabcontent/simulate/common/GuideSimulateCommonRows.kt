@@ -23,7 +23,7 @@ import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.rememberGuideTabCopyAction
 import os.kei.ui.page.main.student.tabcontent.simulate.isSimulateSubHeader
 import os.kei.ui.page.main.student.tabcontent.simulate.simulateStatGlyphForKey
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import os.kei.ui.page.main.widget.support.copyModeAwareRow
@@ -72,7 +72,7 @@ internal fun GuideSimulateInlineCapsule(
     backdrop: LayerBackdrop
 ) {
     val displayText = guideLocalizedLabel(text)
-    GlassTextButton(
+    AppLiquidTextButton(
         backdrop = backdrop,
         text = displayText,
         enabled = false,
@@ -112,7 +112,7 @@ internal fun GuideSimulateRowItem(
                         iconHeight = 24.dp
                     )
                 }
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = displayKey,
                     enabled = false,

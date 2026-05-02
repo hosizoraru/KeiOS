@@ -13,7 +13,7 @@ import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetActionGroup
 import os.kei.ui.page.main.widget.sheet.SheetChoiceCard
@@ -112,7 +112,7 @@ internal fun McpEditServiceSheet(
                 danger = true
             )
             SheetSectionCard {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.SheetDangerAction,
                     text = stringResource(R.string.mcp_action_reset_token),

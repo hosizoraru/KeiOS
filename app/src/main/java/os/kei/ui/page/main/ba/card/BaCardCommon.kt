@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.ba.BaGlassPanel
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Text
@@ -101,7 +101,7 @@ internal fun BaInlineActionPanel(
                     iconTint = Color.Unspecified
                 )
             } else {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = buttonText,
                     textColor = accentColor,

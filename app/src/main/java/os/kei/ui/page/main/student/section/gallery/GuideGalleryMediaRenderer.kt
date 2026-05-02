@@ -24,7 +24,7 @@ import os.kei.ui.page.main.student.GuideVideoFullscreenActivity
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.student.section.GuidePressableMediaSurface
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import com.kyant.backdrop.Backdrop
@@ -90,7 +90,7 @@ internal fun GuideGalleryCardContent(
                 overflow = TextOverflow.Ellipsis
             )
             if (showMediaTypeLabel && mediaTypeLabel.isNotBlank()) {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = mediaTypeLabel,
                     enabled = false,
@@ -100,7 +100,7 @@ internal fun GuideGalleryCardContent(
                 )
             }
             if (normalizedMediaType == "video" && displayMediaUrl.isNotBlank()) {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = "",
                     leadingIcon = if (gestureState.videoInlineExpanded && gestureState.videoInlinePlaying) {
@@ -124,7 +124,7 @@ internal fun GuideGalleryCardContent(
                         }
                     }
                 )
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = "",
                     leadingIcon = fullscreenIcon,
@@ -148,7 +148,7 @@ internal fun GuideGalleryCardContent(
                 )
             }
             if (canSaveMedia) {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = "",
                     leadingIcon = MiuixIcons.Regular.Download,
@@ -185,7 +185,7 @@ internal fun GuideGalleryCardContent(
                     )
                 }
                 if (showAudioLoopAction) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = "",
                         leadingIcon = MiuixIcons.Regular.Replace,
@@ -194,7 +194,7 @@ internal fun GuideGalleryCardContent(
                         onClick = onToggleAudioLoop
                     )
                 }
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = "",
                     leadingIcon = if (audioState.isPlaying) MiuixIcons.Regular.Pause else MiuixIcons.Regular.Play,
@@ -291,7 +291,7 @@ internal fun GuideGalleryCardContent(
                 }
 
                 else -> {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         text = stringResource(R.string.guide_action_open),
                         leadingIcon = MiuixIcons.Regular.Play,

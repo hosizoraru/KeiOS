@@ -38,7 +38,7 @@ import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -151,7 +151,7 @@ internal fun GitHubTrackEditSheet(
                         null
                     }
                 ) {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetAction,
                         text = if (pickerExpanded) {
@@ -233,7 +233,7 @@ internal fun GitHubTrackEditSheet(
                     danger = true
                 )
                 SheetSectionCard {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = backdrop,
                         variant = GlassVariant.SheetDangerAction,
                         text = stringResource(R.string.github_track_sheet_btn_delete),

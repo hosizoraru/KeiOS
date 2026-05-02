@@ -15,7 +15,7 @@ import os.kei.ui.page.main.settings.support.SettingsCacheRow
 import os.kei.ui.page.main.settings.support.SettingsGroupCard
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -82,7 +82,7 @@ internal fun SettingsCacheSection(
                 )
             }
             else -> {
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = null,
                     variant = GlassVariant.SheetDangerAction,
                     text = if (clearingAllCaches) {

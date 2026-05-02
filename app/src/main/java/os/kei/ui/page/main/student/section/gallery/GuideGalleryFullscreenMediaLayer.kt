@@ -21,7 +21,7 @@ import androidx.media3.common.Player
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import os.kei.R
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import top.yukonga.miuix.kmp.basic.Text
@@ -56,7 +56,7 @@ internal fun GuideFullscreenImageRetryHint(
             text = stringResource(R.string.guide_gallery_image_load_error),
             color = Color(0xFFBFDBFE)
         )
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = null,
             text = stringResource(R.string.guide_action_retry),
             leadingIcon = MiuixIcons.Regular.Refresh,

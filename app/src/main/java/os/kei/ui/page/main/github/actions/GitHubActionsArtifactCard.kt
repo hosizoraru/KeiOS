@@ -28,7 +28,7 @@ import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -193,7 +193,7 @@ internal fun GitHubActionsArtifactCard(
             } else {
                 Spacer(modifier = Modifier.weight(1f))
             }
-            GlassTextButton(
+            AppLiquidTextButton(
                 backdrop = backdrop,
                 variant = GlassVariant.SheetAction,
                 text = artifactDownloadLabel(

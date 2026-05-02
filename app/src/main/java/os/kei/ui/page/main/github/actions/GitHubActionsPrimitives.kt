@@ -19,7 +19,7 @@ import os.kei.R
 import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.sheet.SheetSurfaceCard
@@ -52,7 +52,7 @@ internal fun GitHubActionsLoadMoreRunsButton(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End
     ) {
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             variant = GlassVariant.SheetAction,
             text = if (loading) {

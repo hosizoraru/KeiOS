@@ -33,7 +33,7 @@ import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -138,7 +138,7 @@ internal fun GitHubTrackedItemAssetRow(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 Spacer(modifier = Modifier.weight(1f))
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = contentBackdrop,
                     text = sizeLabel,
                     leadingIcon = appLucideDownloadIcon(),

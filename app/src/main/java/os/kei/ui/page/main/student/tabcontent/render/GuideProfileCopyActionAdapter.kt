@@ -19,7 +19,7 @@ import os.kei.ui.page.main.student.buildGuideTabCopyPayload
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.tabcontent.profile.GuideProfileSectionHeader
 import os.kei.ui.page.main.student.tabcontent.profile.SameNameRoleItem
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -108,7 +108,7 @@ internal fun GuideSameNameRoleSection(
                             overflow = TextOverflow.Clip
                         )
                         if (link.isNotBlank()) {
-                            GlassTextButton(
+                            AppLiquidTextButton(
                                 backdrop = backdrop,
                                 text = stringResource(R.string.guide_profile_archive_action),
                                 textColor = Color(0xFF3B82F6),

@@ -44,6 +44,7 @@ import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.basic.Icon
@@ -158,6 +159,8 @@ private fun GlassIconButtonContainer(
     enabled: Boolean,
     content: @Composable () -> Unit
 ) {
+    val liquidControlsEnabled = LocalLiquidControlsEnabled.current
+    val activeBackdrop = backdrop.takeIf { liquidControlsEnabled }
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
     val glass = glassStyle(
         isDark = isDark,
@@ -229,9 +232,9 @@ private fun GlassIconButtonContainer(
                 }
             )
             .then(
-                if (backdrop != null) {
+                if (activeBackdrop != null) {
                     Modifier.drawBackdrop(
-                        backdrop = backdrop,
+                        backdrop = activeBackdrop,
                         shape = { shape },
                         layerBlock = if (enabled) {
                             { applyLiquidButtonLayer(interactiveHighlight) }
@@ -240,8 +243,13 @@ private fun GlassIconButtonContainer(
                         },
                         effects = {
                             vibrancy()
-                            blur(glass.blur.toPx())
-                            lens(glass.lensStart.toPx(), glass.lensEnd.toPx())
+                            blur(2.dp.toPx())
+                            lens(
+                                12.dp.toPx(),
+                                24.dp.toPx(),
+                                chromaticAberration = variant != GlassVariant.Compact,
+                                depthEffect = true
+                            )
                         },
                         highlight = {
                             Highlight.Default.copy(alpha = surfaceHighlightAlpha)
@@ -250,6 +258,10 @@ private fun GlassIconButtonContainer(
                             Shadow.Default.copy(
                                 color = Color.Black.copy(alpha = glass.shadowAlpha)
                             )
+                        },
+                        innerShadow = {
+                            val progress = if (enabled) interactiveHighlight.pressProgress else 0f
+                            InnerShadow(radius = 6.dp * progress, alpha = progress)
                         },
                         onDrawSurface = {
                             if (variant == GlassVariant.Bar) {
@@ -334,6 +346,8 @@ fun GlassTextButton(
     pressScaleEnabled: Boolean = true,
     pressOverlayEnabled: Boolean = true
 ) {
+    val liquidControlsEnabled = LocalLiquidControlsEnabled.current
+    val activeBackdrop = backdrop.takeIf { liquidControlsEnabled }
     val isDark = isSystemInDarkTheme()
     val fallbackSurface = MiuixTheme.colorScheme.surfaceContainer
     val longClick = onLongClick
@@ -362,7 +376,7 @@ fun GlassTextButton(
         variant = variant,
         accentColor = resolvedContainerColor ?: textColor
     )
-    val liquidInteractionEnabled = enabled && (pressScaleEnabled || pressOverlayEnabled)
+    val liquidInteractionEnabled = enabled && liquidControlsEnabled && (pressScaleEnabled || pressOverlayEnabled)
     val animationScope = rememberCoroutineScope()
     val interactiveHighlight = remember(animationScope) {
         InteractiveHighlight(animationScope = animationScope)
@@ -431,9 +445,9 @@ fun GlassTextButton(
                 }
             )
             .then(
-                if (backdrop != null) {
+                if (activeBackdrop != null) {
                     Modifier.drawBackdrop(
-                        backdrop = backdrop,
+                        backdrop = activeBackdrop,
                         shape = { ContinuousCapsule },
                         layerBlock = if (liquidInteractionEnabled) {
                             { applyLiquidButtonLayer(interactiveHighlight) }
@@ -442,8 +456,13 @@ fun GlassTextButton(
                         },
                         effects = {
                             vibrancy()
-                            blur(glass.blur.toPx())
-                            lens(glass.lensStart.toPx(), glass.lensEnd.toPx())
+                            blur(2.dp.toPx())
+                            lens(
+                                12.dp.toPx(),
+                                24.dp.toPx(),
+                                chromaticAberration = variant != GlassVariant.Compact,
+                                depthEffect = true
+                            )
                         },
                         highlight = {
                             Highlight.Default.copy(alpha = surfaceHighlightAlpha)
@@ -452,6 +471,10 @@ fun GlassTextButton(
                             Shadow.Default.copy(
                                 color = Color.Black.copy(alpha = glass.shadowAlpha)
                             )
+                        },
+                        innerShadow = {
+                            val progress = if (liquidInteractionEnabled) interactiveHighlight.pressProgress else 0f
+                            InnerShadow(radius = 6.dp * progress, alpha = progress)
                         },
                         onDrawSurface = {
                             if (variant == GlassVariant.Bar) {

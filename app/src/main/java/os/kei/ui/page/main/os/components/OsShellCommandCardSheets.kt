@@ -28,7 +28,7 @@ import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassIconButton
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
@@ -216,7 +216,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = sheetBackdrop,
                             text = stringResource(R.string.os_shell_sheet_action_export_backup),
                             onClick = onExportAllCards,
@@ -227,7 +227,7 @@ internal fun OsShellCommandVisibilityManagerSheet(
                         )
                     }
                     Box(modifier = Modifier.weight(1f)) {
-                        GlassTextButton(
+                        AppLiquidTextButton(
                             backdrop = sheetBackdrop,
                             text = stringResource(R.string.os_shell_sheet_action_import_backup),
                             onClick = onImportAllCards,
@@ -322,7 +322,7 @@ internal fun OsShellCommandCardEditorSheet(
                     danger = true
                 )
                 SheetSectionCard {
-                    GlassTextButton(
+                    AppLiquidTextButton(
                         backdrop = sheetBackdrop,
                         variant = GlassVariant.SheetDangerAction,
                         text = stringResource(R.string.common_delete),

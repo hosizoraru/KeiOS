@@ -17,7 +17,7 @@ import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.widget.core.AppCompactIconAction
 import os.kei.ui.page.main.widget.core.AppDualActionRow
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.MiuixExpandableSection
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
@@ -51,7 +51,7 @@ internal fun McpServiceControlSection(
         AppDualActionRow(
             spacing = CardLayoutRhythm.infoRowGap,
             first = { modifier ->
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.SheetPrimaryAction,
                     text = stringResource(R.string.mcp_action_send_test_notification),
@@ -61,7 +61,7 @@ internal fun McpServiceControlSection(
                 )
             },
             second = { modifier ->
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     variant = GlassVariant.SheetDangerAction,
                     text = stringResource(R.string.mcp_action_reset_service_config),
@@ -169,7 +169,7 @@ internal fun McpLogsSection(
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = backdrop,
             variant = GlassVariant.Content,
             text = stringResource(R.string.mcp_action_clear_logs),

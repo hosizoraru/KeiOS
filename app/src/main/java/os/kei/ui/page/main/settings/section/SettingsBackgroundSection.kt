@@ -21,7 +21,7 @@ import os.kei.ui.page.main.settings.support.SettingsInfoItem
 import os.kei.ui.page.main.settings.support.SettingsToggleItem
 import os.kei.ui.page.main.settings.support.formatOpacityPercent
 import os.kei.ui.page.main.widget.core.AppDualActionRow
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -67,7 +67,7 @@ internal fun SettingsBackgroundSection(
         )
         AppDualActionRow(
             first = { modifier ->
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = null,
                     variant = GlassVariant.SheetPrimaryAction,
                     text = stringResource(R.string.settings_non_home_background_action_select),
@@ -77,7 +77,7 @@ internal fun SettingsBackgroundSection(
                 )
             },
             second = { modifier ->
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = null,
                     variant = GlassVariant.SheetDangerAction,
                     text = stringResource(R.string.settings_non_home_background_action_clear),

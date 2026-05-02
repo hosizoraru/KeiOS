@@ -32,7 +32,7 @@ import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.core.AppFeatureCard
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
-import os.kei.ui.page.main.widget.glass.GlassTextButton
+import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Text
@@ -191,7 +191,7 @@ fun GuideGalleryUnlockLevelCardItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                GlassTextButton(
+                AppLiquidTextButton(
                     backdrop = backdrop,
                     text = level,
                     enabled = false,
