@@ -1,6 +1,5 @@
 package os.kei.ui.page.main.student.section
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,18 +10,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.composed
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.BaGuideMetaItem
 import os.kei.ui.page.main.student.GuideRemoteIcon
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.guideLocalizedValue
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
@@ -274,17 +272,7 @@ fun GuideCombatMetaTile(
     val extraIconHeight = 18.dp
     val iconSlotWidth = 30.dp
     val iconSlotHeight = 22.dp
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .copyModeAwareRow(
-                copyPayload = buildGuideCopyPayload(displayTitle, value),
-                onLongClick = rowCopyAction
-            )
-            .clip(RoundedCornerShape(12.dp))
-            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.36f))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val trailingSlotsWidth = if (item.extraImageUrl.isNotBlank()) iconSlotWidth * 2 else iconSlotWidth
         val titleMaxWidth = ((maxWidth - trailingSlotsWidth) * if (adaptiveWide) 0.52f else 0.46f)
             .coerceIn(86.dp, 180.dp)
@@ -293,52 +281,65 @@ fun GuideCombatMetaTile(
             .coerceAtLeast(10)
         val valueMaxLines = adaptiveValueMaxLines(value, valueCharBudget)
 
-        CopyModeSelectionContainer {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = displayTitle,
-                    color = MiuixTheme.colorScheme.onBackgroundVariant,
-                    modifier = Modifier.widthIn(max = titleMaxWidth),
-                    maxLines = 2,
-                    overflow = TextOverflow.Clip
-                )
-                Text(
-                    text = value,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f),
-                    maxLines = valueMaxLines,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Box(
+        GuideLiquidCard(
+            cornerRadius = 12.dp,
+            surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.26f),
+            isInteractive = false,
+            shadow = false
+        ) {
+            CopyModeSelectionContainer {
+                Row(
                     modifier = Modifier
-                        .width(iconSlotWidth)
-                        .height(iconSlotHeight),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (item.imageUrl.isNotBlank()) {
-                        GuideRemoteIcon(
-                            imageUrl = item.imageUrl,
-                            iconWidth = iconWidth,
-                            iconHeight = iconHeight
+                        .fillMaxWidth()
+                        .copyModeAwareRow(
+                            copyPayload = buildGuideCopyPayload(displayTitle, value),
+                            onLongClick = rowCopyAction
                         )
-                    }
-                }
-                if (item.extraImageUrl.isNotBlank()) {
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = displayTitle,
+                        color = MiuixTheme.colorScheme.onBackgroundVariant,
+                        modifier = Modifier.widthIn(max = titleMaxWidth),
+                        maxLines = 2,
+                        overflow = TextOverflow.Clip
+                    )
+                    Text(
+                        text = value,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
+                        maxLines = valueMaxLines,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Box(
                         modifier = Modifier
                             .width(iconSlotWidth)
                             .height(iconSlotHeight),
                         contentAlignment = Alignment.Center
                     ) {
-                        GuideRemoteIcon(
-                            imageUrl = item.extraImageUrl,
-                            iconWidth = extraIconWidth,
-                            iconHeight = extraIconHeight
-                        )
+                        if (item.imageUrl.isNotBlank()) {
+                            GuideRemoteIcon(
+                                imageUrl = item.imageUrl,
+                                iconWidth = iconWidth,
+                                iconHeight = iconHeight
+                            )
+                        }
+                    }
+                    if (item.extraImageUrl.isNotBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .width(iconSlotWidth)
+                                .height(iconSlotHeight),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            GuideRemoteIcon(
+                                imageUrl = item.extraImageUrl,
+                                iconWidth = extraIconWidth,
+                                iconHeight = extraIconHeight
+                            )
+                        }
                     }
                 }
             }

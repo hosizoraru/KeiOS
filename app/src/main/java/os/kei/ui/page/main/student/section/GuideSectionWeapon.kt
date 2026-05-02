@@ -4,7 +4,6 @@ import os.kei.ui.page.main.widget.glass.GlassVariant
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,7 +27,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -320,66 +317,71 @@ internal fun GuideWeaponStarEffectItem(
         return
     }
 
-    CopyModeSelectionContainer {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .guideCopyable(effectCopyPayload)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.28f))
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+    GuideLiquidCard(
+        cornerRadius = 12.dp,
+        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.24f),
+        isInteractive = false,
+        shadow = false
+    ) {
+        CopyModeSelectionContainer {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .guideCopyable(effectCopyPayload)
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                GuideWeaponStarBadgeRow(effect.starLabel, iconSize = 18.dp)
-                if (effect.roleTag.isNotBlank()) {
-                    AppLiquidTextButton(
-                        backdrop = backdrop,
-                        text = displayRoleTag,
-                        enabled = false,
-                        textColor = Color(0xFF3B82F6),
-                        variant = GlassVariant.Compact,
-                        onClick = {}
-                    )
-                }
-                Text(
-                    text = displayEffectName,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (effect.iconUrl.isNotBlank()) {
-                    GuideRemoteIcon(
-                        imageUrl = effect.iconUrl,
-                        iconWidth = 20.dp,
-                        iconHeight = 20.dp
-                    )
-                }
-                GuideEffectLevelPicker(
-                    backdrop = backdrop,
-                    levelOptions = levelOptions,
-                    selectedLevel = selectedLevel,
-                    showLevelPopup = showLevelPopup,
-                    onTogglePopup = { showLevelPopup = !showLevelPopup },
-                    onDismissPopup = { showLevelPopup = false },
-                    onLevelSelected = { selected ->
-                        selectedLevel = levelOptions[selected]
-                        showLevelPopup = false
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GuideWeaponStarBadgeRow(effect.starLabel, iconSize = 18.dp)
+                    if (effect.roleTag.isNotBlank()) {
+                        AppLiquidTextButton(
+                            backdrop = backdrop,
+                            text = displayRoleTag,
+                            enabled = false,
+                            textColor = Color(0xFF3B82F6),
+                            variant = GlassVariant.Compact,
+                            onClick = {}
+                        )
                     }
-                )
-            }
+                    Text(
+                        text = displayEffectName,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (effect.iconUrl.isNotBlank()) {
+                        GuideRemoteIcon(
+                            imageUrl = effect.iconUrl,
+                            iconWidth = 20.dp,
+                            iconHeight = 20.dp
+                        )
+                    }
+                    GuideEffectLevelPicker(
+                        backdrop = backdrop,
+                        levelOptions = levelOptions,
+                        selectedLevel = selectedLevel,
+                        showLevelPopup = showLevelPopup,
+                        onTogglePopup = { showLevelPopup = !showLevelPopup },
+                        onDismissPopup = { showLevelPopup = false },
+                        onLevelSelected = { selected ->
+                            selectedLevel = levelOptions[selected]
+                            showLevelPopup = false
+                        }
+                    )
+                }
 
-            if (desc.isNotBlank()) {
-                GuideSkillDescriptionText(
-                    description = desc,
-                    glossaryIcons = glossaryIcons,
-                    descriptionIcons = effect.descriptionIconsFor(selectedLevel)
-                )
+                if (desc.isNotBlank()) {
+                    GuideSkillDescriptionText(
+                        description = desc,
+                        glossaryIcons = glossaryIcons,
+                        descriptionIcons = effect.descriptionIconsFor(selectedLevel)
+                    )
+                }
             }
         }
     }
@@ -403,67 +405,72 @@ internal fun GuideWeaponTwoStarEffectItem(
     val emptyEffectDescription = stringResource(R.string.guide_weapon_effect_empty)
     val displayEffectName = guideLocalizedLabel(effect.name.ifBlank { passiveUpgradeLabel })
     val displayRoleTag = effect.roleTag.takeIf { it.isNotBlank() }?.let { guideLocalizedLabel(it) }.orEmpty()
-    CopyModeSelectionContainer {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .guideCopyable(copyPayload)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.34f))
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+    GuideLiquidCard(
+        cornerRadius = 12.dp,
+        surfaceColor = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.30f),
+        isInteractive = false,
+        shadow = false
+    ) {
+        CopyModeSelectionContainer {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .guideCopyable(copyPayload)
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                GuideWeaponStarBadgeRow(effect.starLabel, iconSize = 19.dp)
-                if (effect.iconUrl.isNotBlank()) {
-                    GuideRemoteIcon(
-                        imageUrl = effect.iconUrl,
-                        iconWidth = 20.dp,
-                        iconHeight = 20.dp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    GuideWeaponStarBadgeRow(effect.starLabel, iconSize = 19.dp)
+                    if (effect.iconUrl.isNotBlank()) {
+                        GuideRemoteIcon(
+                            imageUrl = effect.iconUrl,
+                            iconWidth = 20.dp,
+                            iconHeight = 20.dp
+                        )
+                    }
+                    Text(
+                        text = displayEffectName,
+                        color = MiuixTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    if (effect.roleTag.isNotBlank()) {
+                        AppLiquidTextButton(
+                            backdrop = backdrop,
+                            text = displayRoleTag,
+                            enabled = false,
+                            textColor = Color(0xFF3B82F6),
+                            variant = GlassVariant.Compact,
+                            onClick = {}
+                        )
+                    }
                 }
-                Text(
-                    text = displayEffectName,
-                    color = MiuixTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (effect.roleTag.isNotBlank()) {
-                    AppLiquidTextButton(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    GuideSkillDescriptionText(
+                        description = desc.ifBlank { emptyEffectDescription },
+                        glossaryIcons = glossaryIcons,
+                        descriptionIcons = effect.descriptionIconsFor(selectedLevel),
+                        modifier = Modifier.weight(1f)
+                    )
+                    GuideEffectLevelPicker(
                         backdrop = backdrop,
-                        text = displayRoleTag,
-                        enabled = false,
-                        textColor = Color(0xFF3B82F6),
-                        variant = GlassVariant.Compact,
-                        onClick = {}
+                        levelOptions = levelOptions,
+                        selectedLevel = selectedLevel,
+                        showLevelPopup = showLevelPopup,
+                        onTogglePopup = onTogglePopup,
+                        onDismissPopup = onDismissPopup,
+                        onLevelSelected = onLevelSelected
                     )
                 }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                GuideSkillDescriptionText(
-                    description = desc.ifBlank { emptyEffectDescription },
-                    glossaryIcons = glossaryIcons,
-                    descriptionIcons = effect.descriptionIconsFor(selectedLevel),
-                    modifier = Modifier.weight(1f)
-                )
-                GuideEffectLevelPicker(
-                    backdrop = backdrop,
-                    levelOptions = levelOptions,
-                    selectedLevel = selectedLevel,
-                    showLevelPopup = showLevelPopup,
-                    onTogglePopup = onTogglePopup,
-                    onDismissPopup = onDismissPopup,
-                    onLevelSelected = onLevelSelected
-                )
             }
         }
     }

@@ -4,10 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -234,6 +237,58 @@ internal fun GuideProfileValueCapsule(
 }
 
 @Composable
+private fun GuideProfileLiquidSurfaceBox(
+    modifier: Modifier,
+    shape: Shape,
+    surfaceColor: Color,
+    borderColor: Color,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    contentAlignment: Alignment = Alignment.TopStart,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val localBackdrop = rememberLayerBackdrop()
+    val activeBackdrop = localBackdrop.takeIf { LocalLiquidControlsEnabled.current }
+
+    Box(modifier = modifier) {
+        if (activeBackdrop != null) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .layerBackdrop(localBackdrop)
+            )
+            LiquidSurface(
+                backdrop = activeBackdrop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .border(width = 0.8.dp, color = borderColor, shape = shape),
+                shape = shape,
+                isInteractive = false,
+                surfaceColor = surfaceColor,
+                blurRadius = resolvedGlassBlurDp(UiPerformanceBudget.backdropBlur, GlassVariant.Compact),
+                lensRadius = resolvedGlassLensDp(UiPerformanceBudget.backdropLens, GlassVariant.Compact),
+                shadow = false
+            ) {}
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .background(surfaceColor)
+                    .border(width = 0.8.dp, color = borderColor, shape = shape)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(contentPadding),
+            contentAlignment = contentAlignment,
+            content = content
+        )
+    }
+}
+
+@Composable
 internal fun GuideProfileRowsSection(
     rows: List<BaGuideRow>,
     emptyText: String,
@@ -433,17 +488,13 @@ internal fun GuideGiftPreferenceGrid(
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
+                    GuideProfileLiquidSurfaceBox(
                         modifier = Modifier
                             .width(cardWidth)
-                            .height(giftBoxHeight)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0x163B82F6))
-                            .border(
-                                width = 0.8.dp,
-                                color = Color(0x243B82F6),
-                                shape = RoundedCornerShape(12.dp)
-                            )
+                            .height(giftBoxHeight),
+                        shape = RoundedCornerShape(12.dp),
+                        surfaceColor = Color(0x163B82F6),
+                        borderColor = Color(0x243B82F6)
                     ) {
                         GuideRemoteIcon(
                             imageUrl = item.giftImageUrl,
@@ -454,20 +505,14 @@ internal fun GuideGiftPreferenceGrid(
                             iconHeight = giftIconHeight
                         )
                         if (item.emojiImageUrl.isNotBlank()) {
-                            Box(
+                            GuideProfileLiquidSurfaceBox(
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
-                                    .padding(bottom = 3.dp, end = 3.dp)
-                                    .clip(ContinuousCapsule)
-                                    .background(
-                                        if (isDark) Color(0x663B82F6) else Color(0xCCEFF6FF)
-                                    )
-                                    .border(
-                                        width = 0.8.dp,
-                                        color = if (isDark) Color(0x553B82F6) else Color(0x553BA8FF),
-                                        shape = ContinuousCapsule
-                                    )
-                                    .padding(horizontal = 3.dp, vertical = 3.dp)
+                                    .padding(bottom = 3.dp, end = 3.dp),
+                                shape = ContinuousCapsule,
+                                surfaceColor = if (isDark) Color(0x663B82F6) else Color(0xCCEFF6FF),
+                                borderColor = if (isDark) Color(0x553B82F6) else Color(0x553BA8FF),
+                                contentPadding = PaddingValues(horizontal = 3.dp, vertical = 3.dp)
                             ) {
                                 GuideRemoteIcon(
                                     imageUrl = item.emojiImageUrl,
