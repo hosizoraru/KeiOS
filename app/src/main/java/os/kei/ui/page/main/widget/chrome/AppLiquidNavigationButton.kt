@@ -1,10 +1,12 @@
 package os.kei.ui.page.main.widget.chrome
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
+import os.kei.ui.page.main.widget.glass.GlassIconButton
+import os.kei.ui.page.main.widget.glass.GlassVariant
 
 @Composable
 fun AppLiquidNavigationButton(
@@ -16,21 +18,14 @@ fun AppLiquidNavigationButton(
     layeredStyleEnabled: Boolean = true,
     onInteractionChanged: (Boolean) -> Unit = {}
 ) {
-    val items = remember(icon, contentDescription, onClick) {
-        listOf(
-            LiquidActionItem(
-                icon = icon,
-                contentDescription = contentDescription,
-                onClick = onClick
-            )
-        )
-    }
-    LiquidActionBar(
+    GlassIconButton(
         modifier = modifier,
         backdrop = backdrop,
-        items = items,
-        compactSingleItem = true,
-        layeredStyleEnabled = layeredStyleEnabled,
-        onInteractionChanged = onInteractionChanged
+        icon = icon,
+        contentDescription = contentDescription,
+        onClick = onClick,
+        width = 52.dp,
+        height = 52.dp,
+        variant = GlassVariant.Bar
     )
 }

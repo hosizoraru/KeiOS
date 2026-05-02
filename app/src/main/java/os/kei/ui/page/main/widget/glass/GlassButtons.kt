@@ -232,7 +232,7 @@ private fun GlassIconButtonContainer(
                 if (backdrop != null) {
                     Modifier.drawBackdrop(
                         backdrop = backdrop,
-                        shape = { ContinuousCapsule },
+                        shape = { shape },
                         layerBlock = if (enabled) {
                             { applyLiquidButtonLayer(interactiveHighlight) }
                         } else {
@@ -294,7 +294,7 @@ private fun GlassIconButtonContainer(
                     .border(
                         width = glass.borderWidth,
                         color = glass.borderColor,
-                        shape = ContinuousCapsule
+                        shape = shape
                     )
             )
         }
