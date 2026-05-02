@@ -13,7 +13,7 @@ import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.os.shell.ShellOutputDisplayEntry
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetFieldBlock
@@ -110,7 +110,7 @@ internal fun OsShellRunnerSaveSheet(
             }
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetFieldBlock(title = saveSheetFieldTitle) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = saveTitleInput,
                         onValueChange = onSaveTitleInputChange,
                         label = saveSheetTitleHint,
@@ -122,7 +122,7 @@ internal fun OsShellRunnerSaveSheet(
                     )
                 }
                 SheetFieldBlock(title = saveSheetFieldSubtitle) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = saveSubtitleInput,
                         onValueChange = onSaveSubtitleInputChange,
                         label = saveSheetSubtitleHint,

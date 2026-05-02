@@ -83,6 +83,7 @@ fun LiquidGlassDropdownColumn(
         isDark = isDark,
         accentColor = accentColor
     )
+    val activeBackdrop = backdrop.takeIf { LocalLiquidControlsEnabled.current }
 
     Box(
         modifier = modifier
@@ -101,9 +102,9 @@ fun LiquidGlassDropdownColumn(
                 shape = containerShape
             )
             .then(
-                if (backdrop != null) {
+                if (activeBackdrop != null) {
                     Modifier.drawBackdrop(
-                        backdrop = backdrop,
+                        backdrop = activeBackdrop,
                         shape = { containerShape },
                         effects = {
                             vibrancy()
@@ -137,7 +138,7 @@ fun LiquidGlassDropdownColumn(
                 }
             )
     ) {
-        CompositionLocalProvider(LocalLiquidGlassDropdownBackdrop provides backdrop) {
+        CompositionLocalProvider(LocalLiquidGlassDropdownBackdrop provides activeBackdrop) {
             SubcomposeLayout(
                 modifier = Modifier
                     .padding(LiquidGlassDropdownContentPadding)

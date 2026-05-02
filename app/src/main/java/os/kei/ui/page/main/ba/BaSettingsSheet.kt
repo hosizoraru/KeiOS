@@ -23,7 +23,7 @@ import os.kei.ui.page.main.ba.support.BA_AP_MAX
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
 import os.kei.ui.page.main.widget.sheet.SheetControlRow
@@ -132,7 +132,7 @@ internal fun BaSettingsSheet(
                             BA_AP_MAX
                         ),
                     ) {
-                        GlassSearchField(
+                        AppLiquidSearchField(
                             modifier = Modifier.width(70.dp),
                             value = state.apNotifyThresholdText,
                             onValueChange = { input ->
@@ -239,7 +239,7 @@ internal fun BaSettingsSheet(
                             )
                         }
                     ) {
-                        GlassSearchField(
+                        AppLiquidSearchField(
                             modifier = Modifier.fillMaxWidth(),
                             value = state.mediaSaveFixedTreeUri,
                             onValueChange = { onMediaSaveFixedTreeUriChange(it.trim()) },

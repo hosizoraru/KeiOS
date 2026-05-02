@@ -26,7 +26,7 @@ import os.kei.ui.page.main.ba.BaGlassPanel
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_FRIEND_CODE
 import os.kei.ui.page.main.ba.support.BA_DEFAULT_NICKNAME
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.Text
@@ -73,7 +73,7 @@ internal fun BaIdCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         modifier = Modifier.width(nicknameFieldWidth),
                         value = idNicknameInput,
                         onValueChange = onIdNicknameInputChange,
@@ -119,7 +119,7 @@ internal fun BaIdCard(
                 label = stringResource(R.string.ba_id_label_friend_code),
                 trailingSlotWidth = trailingSlotWidth,
             ) {
-                GlassSearchField(
+                AppLiquidSearchField(
                     modifier = Modifier.width(friendCodeFieldWidth),
                     value = idFriendCodeInput,
                     onValueChange = onIdFriendCodeInputChange,

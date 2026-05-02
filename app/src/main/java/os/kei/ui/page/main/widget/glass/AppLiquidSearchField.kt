@@ -50,7 +50,7 @@ import com.kyant.capsule.ContinuousCapsule
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun GlassSearchField(
+fun AppLiquidSearchField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -64,19 +64,20 @@ fun GlassSearchField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
-    minHeight: Dp = AppInteractiveTokens.glassSearchFieldMinHeight,
-    horizontalPadding: Dp = AppInteractiveTokens.glassSearchFieldHorizontalPadding,
-    verticalPadding: Dp = AppInteractiveTokens.glassSearchFieldVerticalPadding,
+    minHeight: Dp = AppInteractiveTokens.appLiquidSearchFieldMinHeight,
+    horizontalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldHorizontalPadding,
+    verticalPadding: Dp = AppInteractiveTokens.appLiquidSearchFieldVerticalPadding,
     keyboardOptions: KeyboardOptions? = null,
     focusRequester: FocusRequester? = null,
 ) {
     val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
+    val activeBackdrop = backdrop.takeIf { LocalLiquidControlsEnabled.current }
     var focused by remember { mutableStateOf(false) }
     val focusProgress by appMotionFloatState(
         targetValue = if (focused) 1f else 0f,
         durationMillis = 140,
-        label = "glass_search_field_focus"
+        label = "app_liquid_search_field_focus"
     )
     val placeholderColor = if (variant == GlassVariant.SheetInput) {
         textColor.copy(alpha = if (isDark) 0.72f else 0.62f)
@@ -138,9 +139,9 @@ fun GlassSearchField(
             .defaultMinSize(minHeight = minHeight)
             .clip(ContinuousCapsule)
             .then(
-                if (backdrop != null) {
+                if (activeBackdrop != null) {
                     Modifier.drawBackdrop(
-                        backdrop = backdrop,
+                        backdrop = activeBackdrop,
                         shape = { ContinuousCapsule },
                         layerBlock = {
                             val focusScale = 1f + 2.dp.toPx() / size.height.coerceAtLeast(1f) * focusProgress

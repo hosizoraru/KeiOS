@@ -50,7 +50,7 @@ import os.kei.ui.page.main.os.appLucideHeartIcon
 import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownActionItem
 import os.kei.ui.page.main.widget.glass.LiquidGlassDropdownColumn
@@ -461,7 +461,7 @@ internal fun DebugBgmSearchPanel(
             .height(54.dp),
         contentAlignment = Alignment.Center
     ) {
-        GlassSearchField(
+        AppLiquidSearchField(
             value = query,
             onValueChange = onQueryChange,
             label = stringResource(R.string.debug_component_lab_search_placeholder),

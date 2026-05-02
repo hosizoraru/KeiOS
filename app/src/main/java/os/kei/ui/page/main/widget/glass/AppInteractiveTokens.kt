@@ -10,19 +10,19 @@ object AppInteractiveTokens {
     val compactControlRowMinHeight: Dp = 42.dp
     val cardHeaderLeadingSlotSize: Dp = 22.dp
 
-    val glassIconButtonSize: Dp = 40.dp
-    val compactGlassIconButtonSize: Dp = 36.dp
+    val appLiquidIconButtonSize: Dp = 40.dp
+    val compactAppLiquidIconButtonSize: Dp = 36.dp
 
-    val liquidTextButtonMinHeight: Dp = 40.dp
-    val compactLiquidTextButtonMinHeight: Dp = 36.dp
-    val liquidTextButtonHorizontalPadding: Dp = 14.dp
-    val liquidTextButtonVerticalPadding: Dp = 10.dp
-    val compactLiquidTextButtonHorizontalPadding: Dp = 12.dp
-    val compactLiquidTextButtonVerticalPadding: Dp = 8.dp
+    val appLiquidTextButtonMinHeight: Dp = 40.dp
+    val compactAppLiquidTextButtonMinHeight: Dp = 36.dp
+    val appLiquidTextButtonHorizontalPadding: Dp = 14.dp
+    val appLiquidTextButtonVerticalPadding: Dp = 10.dp
+    val compactAppLiquidTextButtonHorizontalPadding: Dp = 12.dp
+    val compactAppLiquidTextButtonVerticalPadding: Dp = 8.dp
 
-    val glassSearchFieldMinHeight: Dp = 44.dp
-    val glassSearchFieldHorizontalPadding: Dp = 14.dp
-    val glassSearchFieldVerticalPadding: Dp = 10.dp
+    val appLiquidSearchFieldMinHeight: Dp = 44.dp
+    val appLiquidSearchFieldHorizontalPadding: Dp = 14.dp
+    val appLiquidSearchFieldVerticalPadding: Dp = 10.dp
 
     val controlContentGap: Dp = 8.dp
 
@@ -36,29 +36,29 @@ object AppInteractiveTokens {
 
 internal fun defaultAppLiquidIconButtonSize(variant: GlassVariant): Dp {
     return when (variant) {
-        GlassVariant.Compact -> AppInteractiveTokens.compactGlassIconButtonSize
-        else -> AppInteractiveTokens.glassIconButtonSize
+        GlassVariant.Compact -> AppInteractiveTokens.compactAppLiquidIconButtonSize
+        else -> AppInteractiveTokens.appLiquidIconButtonSize
     }
 }
 
-internal fun defaultLiquidTextButtonMinHeight(variant: GlassVariant): Dp {
+internal fun defaultAppLiquidTextButtonMinHeight(variant: GlassVariant): Dp {
     return when (variant) {
-        GlassVariant.Compact -> AppInteractiveTokens.compactLiquidTextButtonMinHeight
-        else -> AppInteractiveTokens.liquidTextButtonMinHeight
+        GlassVariant.Compact -> AppInteractiveTokens.compactAppLiquidTextButtonMinHeight
+        else -> AppInteractiveTokens.appLiquidTextButtonMinHeight
     }
 }
 
-internal fun defaultLiquidTextButtonHorizontalPadding(variant: GlassVariant): Dp {
+internal fun defaultAppLiquidTextButtonHorizontalPadding(variant: GlassVariant): Dp {
     return when (variant) {
-        GlassVariant.Compact -> AppInteractiveTokens.compactLiquidTextButtonHorizontalPadding
-        else -> AppInteractiveTokens.liquidTextButtonHorizontalPadding
+        GlassVariant.Compact -> AppInteractiveTokens.compactAppLiquidTextButtonHorizontalPadding
+        else -> AppInteractiveTokens.appLiquidTextButtonHorizontalPadding
     }
 }
 
-internal fun defaultLiquidTextButtonVerticalPadding(variant: GlassVariant): Dp {
+internal fun defaultAppLiquidTextButtonVerticalPadding(variant: GlassVariant): Dp {
     return when (variant) {
-        GlassVariant.Compact -> AppInteractiveTokens.compactLiquidTextButtonVerticalPadding
-        else -> AppInteractiveTokens.liquidTextButtonVerticalPadding
+        GlassVariant.Compact -> AppInteractiveTokens.compactAppLiquidTextButtonVerticalPadding
+        else -> AppInteractiveTokens.appLiquidTextButtonVerticalPadding
     }
 }
 

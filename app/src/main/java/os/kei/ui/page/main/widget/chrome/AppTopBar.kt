@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -67,7 +67,7 @@ fun AppTopBarSearchField(
     singleLine: Boolean = true
 ) {
     Column {
-        GlassSearchField(
+        AppLiquidSearchField(
             modifier = modifier,
             value = value,
             onValueChange = onValueChange,

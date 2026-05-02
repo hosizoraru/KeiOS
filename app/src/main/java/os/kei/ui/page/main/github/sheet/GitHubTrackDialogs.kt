@@ -36,7 +36,7 @@ import os.kei.ui.page.main.github.query.systemDefaultDownloaderOption
 import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton

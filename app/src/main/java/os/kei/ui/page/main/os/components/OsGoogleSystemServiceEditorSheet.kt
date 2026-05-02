@@ -19,7 +19,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -95,7 +95,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                 SheetFieldBlock(
                     title = stringResource(R.string.os_google_system_service_field_title)
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.title,
                         onValueChange = { onDraftChange(draft.copy(title = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_title),
@@ -109,7 +109,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                 SheetFieldBlock(
                     title = stringResource(R.string.os_google_system_service_field_subtitle)
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.subtitle,
                         onValueChange = { onDraftChange(draft.copy(subtitle = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_subtitle),
@@ -127,7 +127,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                 SheetFieldBlock(
                     title = stringResource(R.string.os_google_system_service_field_app_name)
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.appName,
                         onValueChange = { onDraftChange(draft.copy(appName = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_app_name),
@@ -147,7 +147,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.packageName,
                         onValueChange = { onDraftChange(draft.copy(packageName = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_package_name),
@@ -167,7 +167,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.className,
                         onValueChange = { onDraftChange(draft.copy(className = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_class_name),
@@ -187,7 +187,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.intentAction,
                         onValueChange = { onDraftChange(draft.copy(intentAction = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_intent_action),
@@ -207,7 +207,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.intentCategory,
                         onValueChange = { onDraftChange(draft.copy(intentCategory = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_intent_category),
@@ -227,7 +227,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.intentFlags,
                         onValueChange = { onDraftChange(draft.copy(intentFlags = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_intent_flags),
@@ -247,7 +247,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.intentUriData,
                         onValueChange = { onDraftChange(draft.copy(intentUriData = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_intent_data),
@@ -267,7 +267,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                         )
                     }
                 ) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.intentMimeType,
                         onValueChange = { onDraftChange(draft.copy(intentMimeType = it)) },
                         label = stringResource(R.string.os_google_system_service_hint_intent_mime_type),
@@ -302,7 +302,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    GlassSearchField(
+                                    AppLiquidSearchField(
                                         value = extra.key,
                                         onValueChange = { input ->
                                             intentExtraController.onExtraKeyChange(index, input)
@@ -345,7 +345,7 @@ internal fun OsGoogleSystemServiceEditorSheet(
                                         onClick = { intentExtraController.onRemoveIntentExtra(index) }
                                     )
                                 }
-                                GlassSearchField(
+                                AppLiquidSearchField(
                                     value = extra.value,
                                     onValueChange = { input ->
                                         intentExtraController.onExtraValueChange(index, input)

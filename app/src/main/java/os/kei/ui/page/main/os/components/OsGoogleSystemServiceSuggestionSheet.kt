@@ -16,7 +16,7 @@ import os.kei.ui.page.main.os.shortcut.ShortcutInstalledAppOption
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionField
 import os.kei.ui.page.main.os.shortcut.ShortcutSuggestionItem
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetChoiceCard
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
@@ -76,7 +76,7 @@ internal fun OsGoogleSystemServiceSuggestionSheet(
     ) {
         SheetContentColumn(verticalSpacing = 10.dp) {
             if (uiState.showPackageSearch) {
-                GlassSearchField(
+                AppLiquidSearchField(
                     value = packageSuggestionQuery,
                     onValueChange = onPackageSuggestionQueryChange,
                     label = stringResource(R.string.os_google_system_service_hint_package_suggestion_search),
@@ -88,7 +88,7 @@ internal fun OsGoogleSystemServiceSuggestionSheet(
                 )
             }
             if (uiState.showClassSearch) {
-                GlassSearchField(
+                AppLiquidSearchField(
                     value = classSuggestionQuery,
                     onValueChange = onClassSuggestionQueryChange,
                     label = stringResource(R.string.os_google_system_service_hint_class_suggestion_search),

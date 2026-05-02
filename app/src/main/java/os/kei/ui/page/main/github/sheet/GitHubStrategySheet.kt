@@ -34,7 +34,7 @@ import os.kei.ui.page.main.github.githubActionsStrategyGuides
 import os.kei.ui.page.main.github.githubRecommendedTokenGuide
 import os.kei.ui.page.main.github.githubStrategyGuides
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetActionGroup
@@ -196,7 +196,7 @@ internal fun GitHubStrategySheet(
                             )
                         }
                     ) {
-                        GlassSearchField(
+                        AppLiquidSearchField(
                             value = githubApiTokenInput,
                             onValueChange = onTokenInputChange,
                             label = stringResource(R.string.github_strategy_token_input_label),

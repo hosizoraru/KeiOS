@@ -12,7 +12,7 @@ import os.kei.R
 import os.kei.ui.page.main.os.appLucideCloseIcon
 import os.kei.ui.page.main.os.appLucideConfirmIcon
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.sheet.SheetActionGroup
@@ -68,7 +68,7 @@ internal fun McpEditServiceSheet(
             SheetSectionTitle(stringResource(R.string.mcp_sheet_section_basic))
             SheetSectionCard {
                 SheetControlRow(label = stringResource(R.string.mcp_overview_label_service_name)) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = serverName,
                         onValueChange = onServerNameChange,
                         label = stringResource(R.string.mcp_input_service_name_hint),
@@ -80,7 +80,7 @@ internal fun McpEditServiceSheet(
                     )
                 }
                 SheetControlRow(label = stringResource(R.string.mcp_sheet_label_service_port)) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = portText,
                         onValueChange = onPortTextChange,
                         label = stringResource(R.string.mcp_input_port_hint),

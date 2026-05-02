@@ -37,7 +37,7 @@ import os.kei.ui.page.main.github.query.systemDownloadManagerOption
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
@@ -114,7 +114,7 @@ internal fun GitHubTrackEditSheet(
             SheetSectionTitle(stringResource(R.string.github_track_sheet_section_repo_app))
             SheetSectionCard {
                 SheetInputTitle(stringResource(R.string.github_track_sheet_input_repo))
-                GlassSearchField(
+                AppLiquidSearchField(
                     value = repoUrlInput,
                     onValueChange = onRepoUrlInputChange,
                     label = stringResource(R.string.github_track_sheet_input_repo),
@@ -123,7 +123,7 @@ internal fun GitHubTrackEditSheet(
                     singleLine = true
                 )
                 SheetInputTitle(stringResource(R.string.github_track_sheet_input_package_title))
-                GlassSearchField(
+                AppLiquidSearchField(
                     value = packageNameInput,
                     onValueChange = onPackageNameInputChange,
                     label = stringResource(R.string.github_track_sheet_input_package),
@@ -135,7 +135,7 @@ internal fun GitHubTrackEditSheet(
                     text = stringResource(R.string.github_track_sheet_summary_package_optional)
                 )
                 SheetInputTitle(stringResource(R.string.github_track_sheet_input_app_filter_title))
-                GlassSearchField(
+                AppLiquidSearchField(
                     value = appSearch,
                     onValueChange = onAppSearchChange,
                     label = stringResource(R.string.github_track_sheet_input_app_filter),

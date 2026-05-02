@@ -29,7 +29,7 @@ import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
-import os.kei.ui.page.main.widget.glass.GlassSearchField
+import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidCircularProgressBar
 import os.kei.ui.page.main.widget.glass.MiuixAccordionCard
@@ -283,7 +283,7 @@ internal fun OsShellCommandCardEditorSheet(
         SheetContentColumn(verticalSpacing = 10.dp) {
             SheetSectionCard(verticalSpacing = 10.dp) {
                 SheetFieldBlock(title = stringResource(R.string.os_shell_card_field_title)) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.title,
                         onValueChange = { onDraftChange(draft.copy(title = it)) },
                         label = stringResource(R.string.os_shell_card_hint_title),
@@ -295,7 +295,7 @@ internal fun OsShellCommandCardEditorSheet(
                     )
                 }
                 SheetFieldBlock(title = stringResource(R.string.os_shell_card_field_subtitle)) {
-                    GlassSearchField(
+                    AppLiquidSearchField(
                         value = draft.subtitle,
                         onValueChange = { onDraftChange(draft.copy(subtitle = it)) },
                         label = stringResource(R.string.os_shell_card_hint_subtitle),
