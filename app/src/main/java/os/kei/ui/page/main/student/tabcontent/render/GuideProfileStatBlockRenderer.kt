@@ -18,14 +18,12 @@ import androidx.compose.ui.unit.dp
 import os.kei.ui.page.main.student.BaGuideGalleryItem
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.section.GuideGalleryCardItem
 import os.kei.ui.page.main.student.tabcontent.profile.GuideProfileInfoItem
 import os.kei.ui.page.main.student.tabcontent.profile.GuideProfileInfoRows
 import os.kei.ui.page.main.student.tabcontent.profile.GuideProfileSectionHeader
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal fun LazyListScope.guideProfileCard(
     addTopSpacing: Boolean = false,
@@ -35,12 +33,9 @@ internal fun LazyListScope.guideProfileCard(
         item { Spacer(modifier = Modifier.height(10.dp)) }
     }
     item {
-        Card(
+        GuideLiquidCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.defaultColors(
-                color = Color(0x223B82F6),
-                contentColor = MiuixTheme.colorScheme.onBackground
-            ),
+            surfaceColor = Color(0x223B82F6),
             onClick = {}
         ) {
             Column(

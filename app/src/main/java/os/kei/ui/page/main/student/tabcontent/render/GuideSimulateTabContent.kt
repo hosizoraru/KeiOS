@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.student.BaStudentGuideInfo
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateAbilityCard
 import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateBondCard
 import os.kei.ui.page.main.student.tabcontent.simulate.GuideSimulateEquipmentCard
@@ -24,8 +25,6 @@ import os.kei.ui.page.main.student.tabcontent.simulate.buildGuideSimulateData
 import os.kei.ui.page.main.student.simulateRowsForDisplay
 import os.kei.ui.page.main.widget.glass.FrostedBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -54,12 +53,9 @@ internal fun LazyListScope.renderGuideSimulateTabContent(
 
     if (!error.isNullOrBlank()) {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(
@@ -147,12 +143,9 @@ internal fun LazyListScope.renderGuideSimulateTabContent(
         }
     } else {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(

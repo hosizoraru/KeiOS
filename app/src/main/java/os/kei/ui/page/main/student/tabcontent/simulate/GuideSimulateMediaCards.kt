@@ -18,11 +18,10 @@ import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.guideTabCopyable
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -37,12 +36,9 @@ internal fun GuideSimulateBondCard(
     val levelCapsule = extractSimulateLevelCapsule(hint)
     val bondCharacterLabel = stringResource(R.string.guide_simulate_bond_character)
 
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(
@@ -121,12 +117,9 @@ internal fun GuideSimulateWeaponCard(
     val viewData = buildSimulateWeaponViewData(rows)
     val levelCapsule = extractSimulateLevelCapsule(hint)
 
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(

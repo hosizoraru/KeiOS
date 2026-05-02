@@ -14,14 +14,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.student.BaStudentGuideInfo
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.section.GuideSkillCardItem
 import os.kei.ui.page.main.student.section.GuideWeaponCardItem
 import os.kei.ui.page.main.student.skillCardsForDisplay
 import os.kei.ui.page.main.student.weaponCardForDisplay
 import os.kei.ui.page.main.widget.glass.FrostedBlock
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -61,12 +60,9 @@ internal fun LazyListScope.renderGuideSkillsTabContent(
 
     if (!error.isNullOrBlank()) {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(
@@ -101,12 +97,9 @@ internal fun LazyListScope.renderGuideSkillsTabContent(
         }
     } else {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(

@@ -52,6 +52,7 @@ import os.kei.ui.page.main.student.section.GuidePressableMediaSurface
 import os.kei.ui.page.main.student.GuideRemoteImageAdaptive
 import os.kei.ui.page.main.student.GuideVideoControlAction
 import os.kei.ui.page.main.student.GuideVideoFullscreenActivity
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.normalizeGalleryTitle
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
 import os.kei.ui.page.main.widget.glass.AppDropdownAnchorButton
@@ -65,8 +66,6 @@ import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -236,12 +235,9 @@ fun GuideGalleryExpressionCardItem(
         }.distinctBy { it.first }
     }
 
-    Card(
+    GuideLiquidCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(

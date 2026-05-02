@@ -26,6 +26,7 @@ import os.kei.ui.page.main.os.appLucideChevronUpIcon
 import os.kei.ui.page.main.os.appLucideDownloadIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideShareIcon
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
@@ -34,8 +35,6 @@ import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidLinearProgressBar
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.util.Locale
@@ -85,12 +84,11 @@ internal fun BaGuideBgmLibraryHeader(
             R.string.ba_catalog_bgm_overview_expand_tools
         }
     )
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
         cornerRadius = 16.dp,
-        colors = CardDefaults.defaultColors(
-            color = Color(0x123B82F6)
-        )
+        surfaceColor = Color(0x123B82F6),
+        onClick = {}
     ) {
         Column(
             modifier = Modifier

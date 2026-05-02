@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.BaGuideTempMediaCache
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.isExpressionGalleryItem
 import os.kei.ui.page.main.student.section.GuideGalleryCardItem
 import os.kei.ui.page.main.student.section.gallery.GuideGalleryExpressionCardItem
@@ -25,8 +26,6 @@ import os.kei.ui.page.main.student.section.gallery.GuideGalleryVideoGroupCardIte
 import os.kei.ui.page.main.student.tabcontent.profile.GuideGalleryRelatedLinkRows
 import os.kei.ui.page.main.student.tabcontent.profile.GuideProfileSectionHeader
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -280,12 +279,9 @@ internal fun LazyListScope.renderGuideGalleryStateContent(
 
 @Composable
 private fun GuideGalleryErrorCard(error: String) {
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(
@@ -306,12 +302,9 @@ private fun GuideGalleryErrorCard(error: String) {
 
 @Composable
 private fun GuideGalleryEmptyCard() {
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(
@@ -332,12 +325,9 @@ private fun GuideGalleryRelatedLinksCard(
     rows: List<BaGuideRow>,
     onOpenExternal: (String) -> Unit
 ) {
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(

@@ -35,6 +35,7 @@ import os.kei.ui.page.main.os.appLucideUndoIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.os.appLucideVolumeOffIcon
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -50,8 +51,6 @@ import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
 import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
 import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
@@ -210,7 +209,7 @@ internal fun BaGuideBgmFavoriteCard(
     val listActionContainer = MiuixTheme.colorScheme.surfaceContainer
     var actionExpanded by remember { mutableStateOf(false) }
     var actionAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
-    Card(
+    GuideLiquidCard(
         modifier = Modifier
             .fillMaxWidth()
             .border(
@@ -225,9 +224,8 @@ internal fun BaGuideBgmFavoriteCard(
                 onLongClick = onRemove
         ),
         cornerRadius = 14.dp,
-        colors = CardDefaults.defaultColors(
-            color = if (selected) accent.copy(alpha = 0.11f) else MiuixTheme.colorScheme.surface.copy(alpha = 0.58f)
-        )
+        surfaceColor = if (selected) accent.copy(alpha = 0.11f) else MiuixTheme.colorScheme.surface.copy(alpha = 0.58f),
+        isInteractive = false
     ) {
         Row(
             modifier = Modifier
@@ -399,12 +397,11 @@ internal fun BaGuideBgmUndoBlock(
         bgmTitle
     )
     val undoText = stringResource(R.string.ba_catalog_bgm_action_undo)
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
         cornerRadius = 16.dp,
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6)
-        )
+        surfaceColor = Color(0x223B82F6),
+        onClick = {}
     ) {
         Row(
             modifier = Modifier

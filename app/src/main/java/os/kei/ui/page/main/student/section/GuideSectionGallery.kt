@@ -21,6 +21,7 @@ import os.kei.R
 import os.kei.ui.page.main.student.BaGuideGalleryItem
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 import os.kei.ui.page.main.student.GuideBgmFavoriteStore
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.extractGuideWebLinks
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.isInteractiveFurnitureAnimatedGalleryItem
@@ -36,9 +37,6 @@ import os.kei.ui.page.main.student.section.gallery.rememberGuideGalleryGestureSt
 import os.kei.ui.page.main.student.stripGuideWebLinks
 import com.kyant.backdrop.Backdrop
 import kotlinx.coroutines.flow.MutableStateFlow
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun GuideGalleryCardItem(
@@ -275,14 +273,12 @@ fun GuideGalleryCardItem(
         } else {
             Modifier
         }
-        Card(
+        GuideLiquidCard(
             modifier = modifier
                 .fillMaxWidth()
                 .then(clickableModifier),
-            colors = CardDefaults.defaultColors(
-                color = Color(0x223B82F6),
-                contentColor = MiuixTheme.colorScheme.onBackground
-            )
+            surfaceColor = Color(0x223B82F6),
+            isInteractive = false
         ) {
             content(
                 Modifier

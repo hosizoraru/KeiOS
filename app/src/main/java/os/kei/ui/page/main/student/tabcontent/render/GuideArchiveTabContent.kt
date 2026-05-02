@@ -21,11 +21,10 @@ import os.kei.ui.page.main.student.BaStudentGuideInfo
 import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.buildCombatMetaItems
 import os.kei.ui.page.main.student.buildProfileMetaItems
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.isNpcSatelliteGuideSource
 import os.kei.ui.page.main.student.section.GuideCombatMetaTile
 import os.kei.ui.page.main.student.section.GuideProfileMetaLine
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -40,12 +39,9 @@ internal fun LazyListScope.renderGuideArchiveTabContent(
         ) {
             guide?.buildProfileMetaItems().orEmpty()
         }
-        Card(
+        GuideLiquidCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.defaultColors(
-                color = Color(0x223B82F6),
-                contentColor = MiuixTheme.colorScheme.onBackground
-            ),
+            surfaceColor = Color(0x223B82F6),
             onClick = {}
         ) {
             if (guide != null) {
@@ -164,12 +160,9 @@ internal fun LazyListScope.renderGuideArchiveTabContent(
         ) {
             guide?.buildCombatMetaItems().orEmpty()
         }
-        Card(
+        GuideLiquidCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.defaultColors(
-                color = Color(0x223B82F6),
-                contentColor = MiuixTheme.colorScheme.onBackground
-            ),
+            surfaceColor = Color(0x223B82F6),
             onClick = {}
         ) {
             if (guide != null) {

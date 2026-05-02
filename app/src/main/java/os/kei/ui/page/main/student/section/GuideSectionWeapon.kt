@@ -44,14 +44,13 @@ import os.kei.ui.page.main.student.GuideRemoteImage
 import os.kei.ui.page.main.student.GuideWeaponCardModel
 import os.kei.ui.page.main.student.GuideWeaponStarEffect
 import os.kei.ui.page.main.student.GuideWeaponStatRow
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.section.gallery.GuideImageFullscreenDialog
 import os.kei.ui.page.main.widget.glass.GlassTextButton
 import os.kei.ui.page.main.widget.motion.appMotionFloatState
 import os.kei.ui.page.main.widget.support.CopyModeSelectionContainer
 import com.kyant.backdrop.Backdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import os.kei.ui.page.main.widget.glass.AppDropdownSelector
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -96,12 +95,9 @@ fun GuideWeaponCardItem(
         )
     }
 
-    Card(
+    GuideLiquidCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         CopyModeSelectionContainer {

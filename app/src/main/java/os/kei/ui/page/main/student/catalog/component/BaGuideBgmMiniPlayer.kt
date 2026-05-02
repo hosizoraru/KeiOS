@@ -39,6 +39,7 @@ import os.kei.ui.page.main.os.appLucideRepeatOneIcon
 import os.kei.ui.page.main.os.appLucideSkipBackIcon
 import os.kei.ui.page.main.os.appLucideSkipForwardIcon
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.section.gallery.formatAudioDuration
 import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -46,8 +47,6 @@ import os.kei.ui.page.main.widget.core.CardLayoutRhythm
 import os.kei.ui.page.main.widget.glass.GlassIconButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.status.StatusPill
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -113,7 +112,7 @@ internal fun BaGuideBgmMiniPlayer(
     val timeText = "${formatAudioDuration(runtimeState.positionMs)} / ${formatAudioDuration(runtimeState.durationMs)}"
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
 
-    Card(
+    GuideLiquidCard(
         modifier = modifier
             .fillMaxWidth()
             .pointerInput(expanded) {
@@ -139,9 +138,8 @@ internal fun BaGuideBgmMiniPlayer(
                 shape = shape
             ),
         cornerRadius = 18.dp,
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surface.copy(alpha = 0.94f)
-        )
+        surfaceColor = MiuixTheme.colorScheme.surface.copy(alpha = 0.94f),
+        isInteractive = false
     ) {
         Column(
             modifier = Modifier

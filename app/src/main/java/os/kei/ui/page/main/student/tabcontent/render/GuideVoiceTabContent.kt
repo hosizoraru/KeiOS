@@ -28,13 +28,12 @@ import os.kei.ui.page.main.student.tabcontent.normalizeGuidePlaybackSource
 import os.kei.ui.page.main.student.profileRowsForDisplay
 import os.kei.ui.page.main.student.rememberGuideTabCopyAction
 import os.kei.ui.page.main.student.tabcontent.resolveVoicePlaybackUrl
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.section.GuideVoiceEntryCard
 import os.kei.ui.page.main.student.section.GuideVoiceLanguageCard
 import os.kei.ui.page.main.widget.glass.FrostedBlock
 import os.kei.ui.page.main.widget.core.MiuixInfoItem
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -100,12 +99,9 @@ internal fun LazyListScope.renderGuideVoiceTabContent(
 
     if (voiceCvByLanguage.isNotEmpty()) {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(
@@ -149,12 +145,9 @@ internal fun LazyListScope.renderGuideVoiceTabContent(
 
     if (!error.isNullOrBlank()) {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(
@@ -215,12 +208,9 @@ internal fun LazyListScope.renderGuideVoiceTabContent(
         }
     } else {
         item {
-            Card(
+            GuideLiquidCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.defaultColors(
-                    color = Color(0x223B82F6),
-                    contentColor = MiuixTheme.colorScheme.onBackground
-                ),
+                surfaceColor = Color(0x223B82F6),
                 onClick = {}
             ) {
                 Column(

@@ -16,12 +16,11 @@ import os.kei.R
 import os.kei.ui.page.main.student.BaGuideRow
 import os.kei.ui.page.main.student.GuideRemoteIcon
 import os.kei.ui.page.main.student.buildGuideTabCopyPayload
+import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.student.guideTabCopyable
 import os.kei.ui.page.main.student.tabcontent.profile.normalizeProfileFieldKey
 import com.kyant.backdrop.backdrops.LayerBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -55,12 +54,9 @@ internal fun GuideSimulateSectionCard(
     }
     val displayTitle = guideLocalizedLabel(title)
 
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(
@@ -106,12 +102,9 @@ internal fun GuideSimulateEquipmentCard(
     val hintCapsule = extractSimulateLevelCapsule(hint)
     val equipmentLabel = stringResource(R.string.guide_simulate_equipment)
 
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(
@@ -212,12 +205,9 @@ internal fun GuideSimulateUnlockCard(
 ) {
     val viewData = buildSimulateUnlockViewData(rows, hint)
 
-    Card(
+    GuideLiquidCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = Color(0x223B82F6),
-            contentColor = MiuixTheme.colorScheme.onBackground
-        ),
+        surfaceColor = Color(0x223B82F6),
         onClick = {}
     ) {
         Column(
