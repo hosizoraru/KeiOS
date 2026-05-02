@@ -39,11 +39,11 @@ fun AppDropdownAnchorButton(
     variant: GlassVariant = GlassVariant.SheetAction,
     enabled: Boolean = true,
     textColor: Color = MiuixTheme.colorScheme.primary,
-    minHeight: Dp = AppInteractiveTokens.compactGlassTextButtonMinHeight,
+    minHeight: Dp = AppInteractiveTokens.compactLiquidTextButtonMinHeight,
     horizontalPadding: Dp = 10.dp,
     verticalPadding: Dp = 6.dp
 ) {
-    GlassTextButton(
+    AppLiquidTextButton(
         backdrop = backdrop,
         text = text,
         onClick = onClick,
@@ -75,7 +75,7 @@ fun AppDropdownSelector(
     backdrop: Backdrop? = null,
     variant: GlassVariant = GlassVariant.SheetAction,
     textColor: Color = MiuixTheme.colorScheme.primary,
-    minHeight: Dp = AppInteractiveTokens.compactGlassTextButtonMinHeight,
+    minHeight: Dp = AppInteractiveTokens.compactLiquidTextButtonMinHeight,
     horizontalPadding: Dp = 10.dp,
     verticalPadding: Dp = 6.dp,
     alignment: PopupPositionProvider.Align = PopupPositionProvider.Align.BottomEnd,

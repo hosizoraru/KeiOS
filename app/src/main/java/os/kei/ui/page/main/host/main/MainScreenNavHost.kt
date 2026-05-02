@@ -29,7 +29,7 @@ import os.kei.ui.page.main.host.pager.MainPagerLayout
 import os.kei.ui.page.main.settings.page.SettingsPage
 import os.kei.ui.page.main.student.catalog.page.BaGuideCatalogPage
 import os.kei.ui.page.main.student.page.BaStudentGuidePage
-import os.kei.ui.page.main.widget.glass.LocalLiquidSwitchEnabled
+import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
 import os.kei.ui.page.main.widget.motion.LocalPredictiveBackAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 
@@ -183,7 +183,7 @@ internal fun MainScreenNavHost(
     CompositionLocalProvider(
         LocalTransitionAnimationsEnabled provides prefsState.transitionAnimationsEnabled,
         LocalPredictiveBackAnimationsEnabled provides predictiveBackPreviewEnabled,
-        LocalLiquidSwitchEnabled provides prefsState.liquidSwitchEnabled
+        LocalLiquidControlsEnabled provides prefsState.liquidSwitchEnabled
     ) {
         NavDisplay(
             entries = entries,

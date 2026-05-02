@@ -35,7 +35,7 @@ fun LiquidDialogActionButton(
                 .matchParentSize()
                 .layerBackdrop(actionBackdrop)
         )
-        GlassTextButton(
+        AppLiquidTextButton(
             backdrop = actionBackdrop,
             text = text,
             onClick = onClick,

@@ -323,7 +323,7 @@ private fun GlassIconButtonContainer(
 }
 
 @Composable
-fun GlassTextButton(
+fun AppLiquidTextButton(
     backdrop: Backdrop?,
     text: String,
     onClick: () -> Unit,
@@ -337,9 +337,9 @@ fun GlassTextButton(
     onPressedChange: ((Boolean) -> Unit)? = null,
     blurRadius: Dp? = null,
     variant: GlassVariant = GlassVariant.Content,
-    minHeight: Dp = defaultGlassTextButtonMinHeight(variant),
-    horizontalPadding: Dp = defaultGlassTextButtonHorizontalPadding(variant),
-    verticalPadding: Dp = defaultGlassTextButtonVerticalPadding(variant),
+    minHeight: Dp = defaultLiquidTextButtonMinHeight(variant),
+    horizontalPadding: Dp = defaultLiquidTextButtonHorizontalPadding(variant),
+    verticalPadding: Dp = defaultLiquidTextButtonVerticalPadding(variant),
     textMaxLines: Int = Int.MAX_VALUE,
     textOverflow: TextOverflow = TextOverflow.Clip,
     textSoftWrap: Boolean = true,
@@ -399,7 +399,7 @@ fun GlassTextButton(
             1f
         },
         durationMillis = 110,
-        label = "glass_text_button_scale"
+        label = "app_liquid_text_button_scale"
     )
     val pressedOverlayAlpha by appMotionFloatState(
         targetValue = appControlPressedOverlayAlpha(
@@ -407,7 +407,7 @@ fun GlassTextButton(
             isDark = isDark
         ),
         durationMillis = 110,
-        label = "glass_text_button_overlay"
+        label = "app_liquid_text_button_overlay"
     )
 
     LaunchedEffect(isPressed, onPressedChange) {

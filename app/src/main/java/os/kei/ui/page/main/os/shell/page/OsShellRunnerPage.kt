@@ -59,7 +59,7 @@ import os.kei.ui.page.main.widget.chrome.LiquidActionBar
 import os.kei.ui.page.main.widget.chrome.LiquidActionItem
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidDialogActionButton
-import os.kei.ui.page.main.widget.glass.LocalLiquidSwitchEnabled
+import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlinx.coroutines.CancellationException
@@ -476,7 +476,7 @@ fun OsShellRunnerPage(
         onConfirm = { saveCommandToCard() }
     )
 
-    CompositionLocalProvider(LocalLiquidSwitchEnabled provides chromePrefs.liquidSwitchEnabled) {
+    CompositionLocalProvider(LocalLiquidControlsEnabled provides chromePrefs.liquidSwitchEnabled) {
         OsShellSettingsSheet(
             show = showSettingsSheet,
             onDismissRequest = { showSettingsSheet = false },
