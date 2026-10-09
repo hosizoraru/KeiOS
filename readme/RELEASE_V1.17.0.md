@@ -2,9 +2,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-> 发布准备：当前公开稳定版为 v1.15.0，v1.16.0 是本地开发里程碑。本文合并 v1.16 阶段与后续 v1.17 阶段的用户可见变化。六段 Baseline Profile 采集已在 HyperOS Phone 完成。签名 APK、版本和打包结果按构建指南核对，当前尚未发布 v1.17.0。
+> 发布准备：当前公开稳定版为 v1.15.0，v1.16.0 是本地开发里程碑。本文合并 v1.16 阶段与后续 v1.17 阶段的用户可见变化。六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集。签名 APK、版本和打包结果按构建指南核对，当前尚未发布 v1.17.0。
 >
-> Release preparation: the published stable release is v1.15.0; v1.16.0 is a local development milestone. These notes combine the v1.16 work and subsequent v1.17 changes. The six-journey Baseline Profile has been collected on HyperOS Phone. Signed APK, version, and packaging checks follow the build guide; v1.17.0 has not been published yet.
+> Release preparation: the published stable release is v1.15.0; v1.16.0 is a local development milestone. These notes combine the v1.16 work and subsequent v1.17 changes. The six-journey Baseline Profile was collected on HyperOS Phone and recollected on HyperOS Pad after the tablet viewer changes. Signed APK, version, and packaging checks follow the build guide; v1.17.0 has not been published yet.
 
 ## 中文
 
@@ -24,6 +24,15 @@ KeiOS v1.17.0 让学生图鉴多了两种鉴赏方式：可交互的动态回忆
 - 可切换可用模型和动画，旋转、缩放、移动视角，并重置视角。动画支持暂停、拖动进度、调整播放速度和循环。
 - 提供描边开关与宽度调节，以及背景调色盘。默认背景适应系统深浅色模式，自选背景色会保存，控件颜色随背景调整。
 - 已下载的模型可以复用，模型缓存有容量限制。关于页新增 Blue Archive Wiki 与 BlueArchiveModels 项目的鸣谢和来源入口。
+
+### Pad 鉴赏与画面呈现
+
+- 修复部分 OEM Pad 主页两侧出现黑边的问题，横竖屏按照当前设备方向显示。
+- 3D 工具在宽横屏使用覆盖场景的液态玻璃侧栏，打开时不再拉伸模型；调色盘在栏内展开，选色后工具继续保留。竖屏及较窄窗口保留底部面板。
+- 修复旋转、缩放、移动和进度拖动时动画偶发停住的问题；隐藏控件后仍可操作模型，轻点画面恢复控件。
+- 输入背景颜色时，键盘不再将整个模型界面顶起；播放底栏暂时让出空间，完成输入或轻点场景即可收起键盘，动画继续播放。
+- 动态回忆大厅和 3D 模型都默认使用「系统 WebView」。若画面在某些设备上显示异常，可在设置 → 界面 → 性能预取中分别选择「兼容画面呈现」，下次进入鉴赏页生效；已保存的选择继续保留。
+- 兼容模式保留原有材质、描边、动画与像素分辨率。部分模拟器仍有画面传输开销；该选项不保证更高帧率。
 
 ### 搜索和弹层：输入不再打乱光标
 
@@ -79,6 +88,15 @@ KeiOS v1.17.0 adds two ways to explore the Student Guide: interactive Memorial L
 - Choose available models and animations, rotate, zoom, pan, and reset the view. Animation controls include pause, seeking, speed, and looping.
 - Adjust outlines and their width, or choose a background from the palette. The default follows system light/dark mode, custom colors are saved, and controls adapt to the background.
 - Downloaded models are reused within a bounded cache. About includes acknowledgements and source links for Blue Archive Wiki and BlueArchiveModels.
+
+### Tablet Viewing And Presentation Options
+
+- Fixes side bars on the Home screen of affected OEM tablets. The layout follows the current landscape or portrait orientation.
+- Wide landscape windows use a Liquid Glass tools sidebar over the 3D scene. Opening it keeps the model geometry stable; its inline palette stays open after color selection. Portrait and narrower windows retain bottom sheets.
+- Fixes occasional animation stalls during rotation, zooming, panning, and seeking. Camera gestures remain available with controls hidden; tap the scene to restore controls.
+- Entering a background color no longer pans the entire model screen upward. Playback controls temporarily make room for the keyboard; Done or a scene tap dismisses it while animation continues.
+- Both viewers default to **System WebView**. If a device displays the scene incorrectly, choose **Compatible presentation** independently for either viewer under Settings → Interface → Performance preload. Changes apply on the next entry, and saved selections are retained.
+- Compatibility mode preserves materials, outlines, animations, and pixel resolution. Some emulators still incur frame-transfer overhead; this option does not guarantee a higher frame rate.
 
 ### Search And Sheets
 

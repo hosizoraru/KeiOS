@@ -341,9 +341,11 @@
     <string name="about_release_row_lobby">Interactive Memorial Lobbies</string>
     <string name="about_release_value_lobby">Supports the WIKI Spine lobbies while keeping MP4 available for older students. Choose actions, zoom, pan, or reset the view. Hiding controls keeps the animation playing; tap the scene to restore them. Linked BGM plays by default with a separate mute button. Arona accompanies loading, and downloaded assets are reused</string>
     <string name="about_release_row_models">Student 3D models</string>
-    <string name="about_release_value_models">Students with matched model resources have a 3D entry. Choose models and animations, rotate, zoom, pan, seek, and adjust speed, looping, and outlines. The background follows light/dark mode or remembers a custom palette color. Downloaded models are reused</string>
+    <string name="about_release_value_models">Adds 3D viewing for students with mapped resources, with model and animation selection, camera, seeking, speed, looping, and outline controls. Fixes playback stalls during interaction and distortion when tools open. Landscape tablets use a glass sidebar with an inline palette; the keyboard no longer pans the entire scene. Custom backgrounds are saved</string>
+    <string name="about_release_row_rendering">Presentation options</string>
+    <string name="about_release_value_rendering">Both viewers default to System WebView. For display issues, choose compatibility presentation independently in Settings → Interface. Changes apply on the next entry; saved choices are retained</string>
     <string name="about_release_row_input">Search and sheets</string>
-    <string name="about_release_value_input">Fixes the cursor jumping to the beginning while typing, preserving insertion, selection, and Chinese composition. Sheet glass keeps a continuous blurred background as the keyboard opens or closes</string>
+    <string name="about_release_value_input">Fixes search cursors jumping to the start, preserving insertion, selection, and Chinese composition. Sheet blur remains continuous as the keyboard changes</string>
     <string name="about_release_row_startup">Startup experience</string>
     <string name="about_release_value_startup">Cold starts use a background suited to the icon and light/dark theme, then fade into a destination with its local state prepared. This reduces flashes of default or loading values and follows the transition-animation setting</string>
     <string name="about_release_row_notifications">Super Island closing time</string>

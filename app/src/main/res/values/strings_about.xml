@@ -345,9 +345,11 @@
     <string name="about_release_row_lobby">动态回忆大厅</string>
     <string name="about_release_value_lobby">适配 WIKI 新的 Spine 回忆大厅，旧学生仍可选择 MP4。支持切换动作、缩放、移动和重置视角；隐藏控件后动画继续播放，点击画面恢复。有关联 BGM 时默认播放，可单独静音；加载沿用 Arona 动画，已下载资源可复用</string>
     <string name="about_release_row_models">学生 3D 模型</string>
-    <string name="about_release_value_models">为已匹配模型资源的学生新增 3D 入口，可切换模型与动作、旋转、缩放和移动视角，调节进度、速度、循环及描边。背景适应深浅色模式，也可用调色盘自选并记住颜色；已下载模型可复用</string>
+    <string name="about_release_value_models">为已匹配资源的学生新增 3D 鉴赏，支持模型与动作选择、旋转、缩放、移动、进度、速度、循环和描边。修复操作时意外停住及侧栏展开时画面变形；Pad 横屏使用玻璃侧栏，调色盘留在栏内，输入法不再顶起整个画面。自选背景可保存</string>
+    <string name="about_release_row_rendering">画面呈现选项</string>
+    <string name="about_release_value_rendering">动态大厅和 3D 默认使用系统 WebView。画面显示异常时，可在设置 → 界面中分别选择兼容呈现，下次进入鉴赏页生效；已有选择继续保留</string>
     <string name="about_release_row_input">搜索与弹层</string>
-    <string name="about_release_value_input">修复搜索输入时光标跳到开头的问题，保留中间插入、选择范围与中文输入状态；键盘弹出或收起时，弹层的玻璃模糊背景保持连续</string>
+    <string name="about_release_value_input">修复搜索输入时光标跳到开头的问题，保留中间插入、选择范围与中文输入状态；键盘弹出或收起时，弹层玻璃模糊保持连续</string>
     <string name="about_release_row_startup">启动体验</string>
     <string name="about_release_value_startup">冷启动先呈现与图标、深浅色主题协调的背景，等入口页面的本地状态准备好再淡出过渡，减少默认状态或读取中信息一闪而过；遵循过渡动画开关</string>
     <string name="about_release_row_notifications">超级岛关闭时间</string>

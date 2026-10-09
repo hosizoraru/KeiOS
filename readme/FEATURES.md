@@ -145,6 +145,10 @@ The student guide expands the BA workflow into catalog and media browsing:
 - Student 3D models where resource mappings are available, with model/animation selection,
   camera controls, seeking, speed, looping, outlines, and a saved background palette.
   Spine assets and model files use bounded caches to reuse downloads.
+- Wide tablet model tools use a scene-backed Liquid Glass sidebar with an inline palette and keyboard
+  avoidance. Opening tools preserves the model viewport; immersion retains camera gestures and playback.
+- Interactive lobbies and 3D models default to System WebView. Independent compatibility presentation
+  options are available in Settings → Interface for devices with display problems, effective on re-entry.
 - BGM favorites library with playback queue, liquid bottom dock, mini player, batch cache, retry,
   removal Undo, import/export, native media notifications, and jump back into the student guide.
 - Media cache controls and export flows, including archive-style saves for expression/media packs.

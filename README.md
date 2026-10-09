@@ -93,12 +93,17 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 ## v1.17.0 Highlights
 
 This release is being prepared. Its complete six-journey Baseline Profile has been collected on
-HyperOS Phone; the stable download link still resolves to the published stable release.
+HyperOS Phone and recollected on HyperOS Pad after the tablet viewer changes; the stable download
+link still resolves to the published stable release.
 
 - Interactive Spine Memorial Lobbies add action selection, zoom, pan, view reset, and linked BGM.
   Hiding controls keeps the animation playing, and older students retain their MP4 option.
 - Students with mapped 3D resources have model and animation selection, camera controls, seeking,
   speed, looping, outlines, and a saved background palette with light/dark defaults.
+- Tablet viewing adds a scene-backed glass tools sidebar and inline palette. Opening tools keeps the
+  model stable; keyboard input stays above the IME, and camera gestures no longer stall playback.
+- Both viewers default to System WebView. Settings → Interface offers independent compatibility
+  choices for devices with display issues; changes apply on the next entry and retain saved choices.
 - Search fields preserve cursor, selection, and Chinese composition; sheet blur stays continuous
   as the keyboard opens or closes.
 - Pre-release-only repositories can be scanned when pre-releases are enabled. Main apps and plugins

@@ -338,9 +338,11 @@
     <string name="about_release_row_lobby">動くメモリアルロビー</string>
     <string name="about_release_value_lobby">WIKI の Spine ロビーに対応し、従来の学生の MP4 も引き続き選べます。動作の切替、拡大縮小、移動、視点のリセットに対応。操作ボタンを隠してもアニメーションは続き、画面をタップすると戻ります。関連 BGM は既定で再生し、個別にミュートできます。読み込みには Arona を表示し、取得済み素材を再利用します</string>
     <string name="about_release_row_models">学生の 3D モデル</string>
-    <string name="about_release_value_models">モデル資源を対応付けた学生に 3D 入口を追加。モデルとアニメーションの切替、回転、拡大縮小、移動、シーク、速度、ループ、輪郭を調整できます。背景はライト・ダークモードに合わせるほか、パレットで選んだ色も保存できます。取得済みモデルを再利用します</string>
+    <string name="about_release_value_models">対応する資源がある学生に 3D 鑑賞を追加。モデル・動作の選択、視点、シーク、速度、ループ、輪郭を調整できます。操作中の停止やツール表示時の変形を修正。タブレット横画面はガラスのサイドバーと内蔵パレットを使い、キーボードで画面全体が押し上がる現象を修正。背景色も保存できます</string>
+    <string name="about_release_row_rendering">画面表示の選択</string>
+    <string name="about_release_value_rendering">両鑑賞画面は既定でシステム WebView を使用。表示に問題がある場合は設定の「画面」で互換表示を個別に選べます。次回入場時に反映し、保存済みの選択は保持します</string>
     <string name="about_release_row_input">検索とシート</string>
-    <string name="about_release_value_input">入力中にカーソルが先頭へ戻る問題を修正し、途中への挿入、選択範囲、中国語の変換状態を保持します。キーボードの表示・非表示でもシートのガラス背景のぼかしが途切れません</string>
+    <string name="about_release_value_input">検索カーソルが先頭へ戻る問題を修正し、途中への挿入、選択、中国語の変換状態を保持。キーボード表示時もガラスのぼかしは連続します</string>
     <string name="about_release_row_startup">起動時の表示</string>
     <string name="about_release_value_startup">コールドスタートはアイコンとライト・ダークテーマに合う背景から始まり、入口ページのローカル状態が整ってからフェードします。初期値や読み込み中の表示が一瞬見える現象を抑え、画面の遷移アニメーション設定に従います</string>
     <string name="about_release_row_notifications">スーパーアイランドの終了時間</string>
