@@ -2,12 +2,14 @@ package os.kei.ui.page.main.widget.glass
 
 import android.app.Application
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -52,6 +54,23 @@ import kotlin.test.assertTrue
 class LiquidSliderGestureTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun replacingCallbackDuringGestureDoesNotEndTheInteractionAndUsesTheLatestCallbackOnRelease() {
+        val revision = mutableStateOf(0)
+        val events = mutableListOf<Pair<Int, Boolean>>()
+        composeRule.setContent {
+            val captured = revision.value
+            Box(Modifier.fillMaxWidth().height(48.dp).testTag("interaction-lock")
+                .liquidSliderInteractionLock(true) { events += captured to it })
+        }
+        composeRule.onNodeWithTag("interaction-lock").performTouchInput { down(center) }
+        composeRule.runOnIdle { assertEquals(listOf(0 to true), events); revision.value++ }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { assertEquals(listOf(0 to true), events) }
+        composeRule.onNodeWithTag("interaction-lock").performTouchInput { up() }
+        composeRule.runOnIdle { assertEquals(listOf(0 to true, 1 to false), events) }
+    }
 
     @Test
     fun compactVisualInputsKeepFortyEightDpSemanticRoots() {
