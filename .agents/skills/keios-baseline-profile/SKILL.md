@@ -33,6 +33,16 @@ separate outcomes. Paths in commands are relative to the repository root.
   release/debug/diagnostic/old producer packages and data. Connected tasks may
   uninstall their APKs; never use the main-package benchmark variant for collection.
   Snapshot window/system settings and verify restoration after success or failure.
+- Permission grants are a prerequisite to all journeys. The producer's
+  `prepareProfileCapturePermissions()` runs after installation, grants declared
+  runtime permissions and corresponding AppOps, handles the verified HyperOS
+  installed-app gate, and checks readback. Fix a failed preflight before expensive
+  collection. Keep authorization limited to the disposable capture identity; do
+  not use blanket operations against release/debug/diagnostic packages.
+- The producer temporarily uses priority DND and restores the previous mode. Include
+  `zen_mode` in the host snapshot for interrupted-run recovery. On OEM Pads, keep
+  taps outside status-bar bounds and wait for chrome geometry to settle; preserve
+  failure screenshots/coordinates when a system overlay blocks navigation.
 
 ## Collection and acceptance
 

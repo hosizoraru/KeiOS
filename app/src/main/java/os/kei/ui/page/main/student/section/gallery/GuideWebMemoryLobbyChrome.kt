@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,7 +77,9 @@ internal fun GuideWebMemoryLobbyControls(
 ) {
     var expanded by remember(actions, playing) { mutableStateOf(false) }
     Row(
-        Modifier.fillMaxWidth(),
+        // Actions arrive only after decoded readiness (and a drawn frame in compatible mode).
+        // Keep the marker on chrome: the full-screen gesture layer occludes the media's semantics.
+        Modifier.fillMaxWidth().then(if (actions.isNotEmpty()) Modifier.testTag(GuideWebMemoryLobbyReadyTag) else Modifier),
         horizontalArrangement = Arrangement.spacedBy(AppChromeTokens.liquidToolbarGroupSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -133,3 +136,5 @@ internal fun GuideWebMemoryLobbyControls(
         )
     }
 }
+
+internal const val GuideWebMemoryLobbyReadyTag = "guide_lobby_ready"

@@ -13,6 +13,7 @@ import android.webkit.ConsoleMessage
 import android.view.ViewConfiguration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.graphics.toArgb
@@ -138,7 +139,7 @@ internal fun GuideModel3dPlayer(
         LaunchedEffect(view, scriptReady, resetRequest) {
             if (scriptReady && resetRequest > 0) view?.evaluateJavascript("window.keiosModel.resetCamera()", null)
         }
-        Box(modifier) {
+        Box(if (ready && !failed) modifier.testTag(GuideModel3dReadyTag) else modifier) {
             AndroidView(modifier = modifier, factory = { context ->
                 GuideWebPresentation(context, rendering, MODEL_ORIGIN,
                     onFrame = { frameVisible = it }, onUnavailable = { failed = true; notifyError(true) }).apply {
@@ -206,3 +207,5 @@ internal fun GuideModel3dPlayer(
 
 private fun unavailable() = WebResourceResponse("text/plain", "UTF-8", 503, "Model unavailable",
     mapOf("Cache-Control" to "no-store"), ByteArrayInputStream(byteArrayOf()))
+
+internal const val GuideModel3dReadyTag = "guide_model3d_ready"

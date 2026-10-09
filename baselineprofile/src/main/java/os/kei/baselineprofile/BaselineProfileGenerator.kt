@@ -4,6 +4,8 @@ import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import org.junit.Rule
+import org.junit.BeforeClass
+import org.junit.AfterClass
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -30,6 +32,19 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class BaselineProfileGenerator {
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun preparePermissions() {
+            prepareProfileCapturePermissions()
+            ProfileCaptureInterruptions.begin()
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun restoreInterruptions() = ProfileCaptureInterruptions.restore()
+    }
+
     @get:Rule
     val rule = BaselineProfileRule()
 
@@ -272,6 +287,8 @@ class BaselineProfileGenerator {
             maxIterations = ADAPTIVE_MAX_ITERATIONS,
             stableIterations = ADAPTIVE_STABLE_ITERATIONS,
             includeInStartupProfile = false,
+            // The fixed launch harness exists only in the disposable collector APK.
+            filterPredicate = { rule -> "Los/kei/profilecapture/" !in rule },
         ) {
             val originalWindowSize = readWindowSizeOverride()
             try {
@@ -324,6 +341,7 @@ class BaselineProfileGenerator {
                 openBaCalendarPoolAndReturn(wide = true)
 
                 exerciseBaCatalogAndReturn(wide = true)
+                exerciseGuideViewersAndReturn()
 
                 clickSidebarPage(
                     rowTag = MAIN_SIDEBAR_ROW_GITHUB,
@@ -351,6 +369,14 @@ class BaselineProfileGenerator {
                 clickTestTag(MAIN_SIDEBAR_TOGGLE)
                 forceWindowSizeDp(widthDp = 775, heightDp = 800)
                 forceWindowSizeDp(widthDp = 500, heightDp = 800)
+                // Recollect compact guide tabs and finger paging on this source instead of
+                // carrying forward an older Phone profile when only the Pad is available.
+                navigateToMainPage(
+                    tabTag = MAIN_BOTTOM_TAB_BA,
+                    pageTag = BA_PAGE_ROOT,
+                    settledTag = MAIN_PAGER_SETTLED_BA,
+                )
+                exerciseBaCatalogAndReturn(wide = false)
                 navigateToMainPage(
                     tabTag = MAIN_BOTTOM_TAB_HOME,
                     pageTag = HOME_PAGE_ROOT,

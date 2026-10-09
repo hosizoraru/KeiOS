@@ -9,7 +9,7 @@
 - 稳定安装建议直接使用 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases)。
 - 公开稳定版通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
 - 当前源码目标为 v1.17.0，包含动态回忆大厅、学生 3D 工具、搜索修复与按包名识别的预发行版追踪。
-  六段 Baseline Profile 采集已在 HyperOS Phone 完成，v1.17.0 尚未发布。
+  六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集，v1.17.0 尚未发布。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出 Debug、Benchmark 与 Release APK。
 
@@ -169,6 +169,11 @@ git diff --check
 ```bash
 ANDROID_SERIAL=<空闲-avd-serial> ./gradlew :app:generateReleaseBaselineProfile
 ```
+
+权限授权是采集前提。安装两个独立采集包后，采集器会先授予目标系统支持的全部已声明运行时权限、
+对应 AppOps 及 HyperOS 的应用列表访问权限，并回读核对。必要授权失败时立即停止；授权仅作用于
+`os.kei.profilecapture`，后续采集保留授权，正式版、调试版和诊断版的权限配置不变。
+采集期间临时开启勿扰并恢复原模式；开始前记录 `zen_mode` 和窗口设置，以便异常中断后恢复。
 
 核对六段旅程、有效且新鲜的导出及两份生成源文件。先提交已验收的采集结果和最终运行时修复，
 再运行比较已提交引用的新鲜度门禁：

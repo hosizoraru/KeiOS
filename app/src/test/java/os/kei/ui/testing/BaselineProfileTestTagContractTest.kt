@@ -304,6 +304,8 @@ private val COMPONENT_TAG_SOURCES =
         "ui-liquid-glass/src/main/java/os/kei/ui/page/main/widget/sheet/LiquidSheet.kt",
         "ui-liquid-glass/src/main/java/os/kei/ui/page/main/widget/sheet/MiuixSnapshotAdapters.kt",
         "ui-liquid-glass/src/main/java/os/kei/ui/page/main/widget/sheet/UnsavedSheetDismiss.kt",
+        "app/src/main/java/os/kei/ui/page/main/student/model3d/GuideModel3dPlayer.kt",
+        "app/src/main/java/os/kei/ui/page/main/student/section/gallery/GuideWebMemoryLobbyChrome.kt",
     )
 
 private const val BA_CALENDAR_POOL_PAGE =
@@ -379,6 +381,7 @@ private val PROFILE_CALLER_SOURCES =
     listOf(
         GENERATOR_SOURCE,
         GENERATOR_ACTIONS_SOURCE,
+        "baselineprofile/src/main/java/os/kei/baselineprofile/GuideViewerProfileActions.kt",
         MAIN_NAVIGATION_BENCHMARK_SOURCE,
         STARTUP_BENCHMARK_SOURCE,
         JOURNEY_SUPPORT_SOURCE,

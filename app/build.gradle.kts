@@ -286,6 +286,13 @@ android {
 }
 
 androidComponents {
+    finalizeDsl { android ->
+        // AndroidX copies release's manifest onto its derived collector source set. Restore the
+        // collector-only overlay after that copy; no launch harness is exported by release/debug.
+        android.sourceSets.getByName("nonMinifiedRelease").manifest.srcFile(
+            "src/nonMinifiedRelease/AndroidManifest.xml",
+        )
+    }
     beforeVariants(selector().withBuildType("nonMinifiedRelease")) { variant ->
         variant.isMinifyEnabled = false
         variant.shrinkResources = false

@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Disposable collector only; no test entry point is shipped in release/debug. -->
+        <activity android:name="os.kei.profilecapture.GuideViewerCaptureActivity"
+            android:exported="true" android:screenOrientation="fullUser" />
+    </application>
+</manifest>

@@ -4,6 +4,7 @@ import android.graphics.Rect
 import android.util.Log
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
@@ -403,14 +404,24 @@ private fun MacrobenchmarkScope.clickVisibleTag(
 
 /** Accessibility idleness can precede Compose motion settling; wait on the target's geometry. */
 private fun MacrobenchmarkScope.waitForStableTagBounds(tag: String, timeoutMs: Long): Rect? {
+    val resources = InstrumentationRegistry.getInstrumentation().context.resources
+    val statusBarId = resources.getIdentifier("status_bar_height", "dimen", "android")
+    val statusBarBottom = if (statusBarId != 0) resources.getDimensionPixelSize(statusBarId) else 0
     val deadline = System.nanoTime() + timeoutMs * 1_000_000L
     var previous: Rect? = null
     var matchingSamples = 0
     while (System.nanoTime() < deadline) {
-        val node = device.findObject(testTagSelector(tag))
-        val bounds = node?.visibleBounds
-        if (node?.isEnabled == true && bounds != null &&
-            bounds.width() >= MIN_TAPPABLE_HEIGHT_PX && bounds.height() >= MIN_TAPPABLE_HEIGHT_PX
+        // Compose can replace the semantics node between lookup and bounds read, especially
+        // while a catalog switches tabs after a viewport change. Resample only stale nodes.
+        val bounds = try {
+            device.findObject(testTagSelector(tag))?.takeIf { it.isEnabled }?.visibleBounds
+        } catch (_: StaleObjectException) {
+            null
+        }
+        if (bounds != null &&
+            bounds.width() >= MIN_TAPPABLE_HEIGHT_PX && bounds.height() >= MIN_TAPPABLE_HEIGHT_PX &&
+            bounds.centerY() >= statusBarBottom && bounds.centerY() < device.displayHeight &&
+            bounds.centerX() in 0 until device.displayWidth
         ) {
             matchingSamples = if (bounds == previous) matchingSamples + 1 else 1
             if (matchingSamples >= STABLE_TARGET_SAMPLES) return bounds
@@ -439,9 +450,10 @@ private fun MacrobenchmarkScope.findCompactNavigationDock(): UiObject2? {
 }
 
 internal fun MacrobenchmarkScope.clickTestTag(tag: String) {
-    val node = device.findObject(testTagSelector(tag))
-        ?: error("Unable to find testTag=$tag in ${targetAppId()}")
-    node.click()
+    val bounds = waitForStableTagBounds(tag, timeoutMs = 8_000)
+        ?: error("Unable to find a settled, safe target testTag=$tag in ${targetAppId()}")
+    check(device.click(bounds.centerX(), bounds.centerY()))
+    Log.i("ProfileJourney", "Tapped $tag at $bounds")
     device.waitForIdle()
 }
 
@@ -476,9 +488,13 @@ internal fun MacrobenchmarkScope.scrollTestTagIntoReach(
 internal fun MacrobenchmarkScope.clickBottomBarTab(tag: String) {
     repeat(BOTTOM_BAR_REEXPAND_ATTEMPTS) {
         val tab = device.findObject(testTagSelector(tag))
-        if (tab != null && runCatching { tab.click() }.isSuccess) {
-            device.waitForIdle()
-            return
+        if (tab != null) {
+            val bounds = waitForStableTagBounds(tag, timeoutMs = 3_000)
+            if (bounds != null && device.click(bounds.centerX(), bounds.centerY())) {
+                Log.i("ProfileJourney", "Tapped navigation $tag at $bounds")
+                device.waitForIdle()
+                return
+            }
         }
 
         val compactDock = findCompactNavigationDock()
@@ -599,8 +615,22 @@ private fun MacrobenchmarkScope.forceWindowSize(
     widthPx: Int,
     heightPx: Int,
 ) {
-    device.executeShellCommand("wm size ${widthPx}x$heightPx")
+    // wm size uses the display's natural orientation, while journey widths are current viewport
+    // widths. Native landscape Pads rotate the physical override before reporting window bounds.
+    val rotated = device.displayRotation % 2 != 0
+    val naturalWidth = if (rotated) heightPx else widthPx
+    val naturalHeight = if (rotated) widthPx else heightPx
+    device.executeShellCommand("wm size ${naturalWidth}x$naturalHeight")
     device.waitForIdle()
+    val deadline = android.os.SystemClock.uptimeMillis() + 5_000
+    while ((device.displayWidth != widthPx || device.displayHeight != heightPx) &&
+        android.os.SystemClock.uptimeMillis() < deadline
+    ) {
+        android.os.SystemClock.sleep(100)
+    }
+    check(device.displayWidth == widthPx && device.displayHeight == heightPx) {
+        "Expected ${widthPx}x$heightPx viewport, got ${device.displayWidth}x${device.displayHeight}"
+    }
 }
 
 private fun MacrobenchmarkScope.deviceDensityDpi(): Int {
@@ -630,6 +660,12 @@ internal fun MacrobenchmarkScope.launchHomeFromColdStart() {
             "-c android.intent.category.LAUNCHER -n $launcherComponent",
     )
     waitForTestTag(HOME_PAGE_ROOT, timeoutMs = 15_000)
+    // Adaptive captures and an interrupted run can leave the collector's navigation rail saved.
+    // Start every replay in the same tab mode before individual journeys choose their own shape.
+    if (waitForOptionalTestTag(MAIN_SIDEBAR_ROW_HOME, timeoutMs = 500)) {
+        clickTestTag(MAIN_SIDEBAR_TOGGLE)
+        waitForTestTag(MAIN_BOTTOM_TAB_HOME, timeoutMs = 15_000)
+    }
 }
 
 private fun MacrobenchmarkScope.resolveLauncherComponent(): String {

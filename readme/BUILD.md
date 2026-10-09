@@ -9,7 +9,8 @@
 - Stable installs should use [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
 - Source targets v1.17.0 with interactive lobbies, student 3D tools, search fixes, and package-aware
-  pre-release tracking. The six-journey Baseline Profile has been collected on HyperOS Phone;
+  pre-release tracking. The six-journey Baseline Profile was collected on HyperOS Phone and
+  recollected on HyperOS Pad after the tablet viewer changes;
   v1.17.0 has not been published yet.
 - This build guide covers local source builds, debug packages, and contributor workflows.
 - Use the commands in `Common Local Commands` to generate debug, benchmark, and release APKs.
@@ -183,6 +184,14 @@ self-instrumenting producer `os.kei.baselineprofile.capture`. Both are disposabl
 release, debug, diagnostic and the older `os.kei.baselineprofile` installation
 remain separate. Verify those identities and existing device/package state before
 a physical run. Never substitute `benchmarkRelease` for this collector.
+
+After installation, the producer authorizes all declared runtime permissions available
+on the target, their associated AppOps, and HyperOS's installed-app query gate before
+any journey. It verifies readback and fails immediately if a required grant cannot be
+established. Grants apply only to the disposable collector and remain available for
+later runs when the collector installation is retained; existing release/debug/diagnostic permissions
+are preserved. Priority DND is enabled during journeys and the previous mode is restored afterward.
+Snapshot `zen_mode` along with window settings for recovery if instrumentation is interrupted.
 
 The six journeys have a maximum of 16 replays per device. To collect a Phone/Tablet
 matrix in one task, bind both with `ANDROID_SERIAL=<phone-serial>,<tablet-serial>`;
