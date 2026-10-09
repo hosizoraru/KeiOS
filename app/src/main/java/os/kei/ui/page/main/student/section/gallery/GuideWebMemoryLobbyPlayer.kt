@@ -4,7 +4,6 @@ package os.kei.ui.page.main.student.section.gallery
 
 import android.annotation.SuppressLint
 import android.graphics.Color
-import android.view.View
 import android.webkit.CookieManager
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceError
@@ -42,6 +41,9 @@ import os.kei.ui.page.main.student.BaGuideSpineWebCache
 import os.kei.ui.page.main.student.BaGuideSpineWebCacheSession
 import os.kei.ui.page.main.widget.motion.AppMotionTokens
 import os.kei.ui.page.main.widget.motion.appMotionFloatState
+import os.kei.BuildConfig
+import os.kei.ui.page.main.student.rendering.GuideViewerRendering
+import os.kei.ui.page.main.student.rendering.GuideWebPresentation
 import kotlin.coroutines.resume
 
 /** Reuses the Wiki renderer through a narrow playback controller. */
@@ -56,6 +58,7 @@ internal fun GuideWebMemoryLobbyPlayer(
     selectedAction: String,
     camera: GuideWebMemoryLobbyCamera,
     onActionsAvailable: (List<String>, String) -> Unit,
+    rendering: GuideViewerRendering = GuideViewerRendering.SystemWebView,
     modifier: Modifier = Modifier,
 ) {
     val viewerUrl = resource.viewerUrl
@@ -69,10 +72,12 @@ internal fun GuideWebMemoryLobbyPlayer(
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
     val notifyActions by rememberUpdatedState(onActionsAvailable)
-    key(resource, retryToken) {
+    key(resource, retryToken, rendering) {
         var view by remember { mutableStateOf<WebView?>(null) }
         var ready by remember { mutableStateOf(false) }
         var failed by remember { mutableStateOf(false) }
+        var frameVisible by remember { mutableStateOf(false) }
+        var frameScript by remember { mutableStateOf("") }
         val playerAlpha = appMotionFloatState(
             targetValue = if (ready) 1f else 0f,
             durationMillis = AppMotionTokens.floatingFadeInMs,
@@ -85,12 +90,13 @@ internal fun GuideWebMemoryLobbyPlayer(
             if (failed) return@LaunchedEffect
             repeat(90) {
                 val state = suspendCancellableCoroutine { continuation ->
-                    web.evaluateJavascript(GameKeeLobbyFocusScript) { result ->
+                    web.evaluateJavascript(frameScript + "\n" + GameKeeLobbyFocusScript) { result ->
                         if (continuation.isActive) continuation.resume(result.orEmpty())
                     }
                 }
                 if (state.startsWith("\"ready")) {
-                    ready = true
+                    ready = rendering == GuideViewerRendering.SystemWebView || frameVisible
+                    if (!ready) { delay(100); return@repeat }
                     return@LaunchedEffect
                 }
                 delay(1_000)
@@ -115,6 +121,7 @@ internal fun GuideWebMemoryLobbyPlayer(
             view?.let { web ->
                 if (resumed) web.onResume() else web.onPause()
                 if (ready) web.evaluateJavascript("window.keiosLobby.setPlaying(${playing && resumed})", null)
+                web.evaluateJavascript("window.keiosLobby?.setForeground($resumed)", null)
             }
         }
         LaunchedEffect(view, ready, resumed, camera) {
@@ -138,14 +145,20 @@ internal fun GuideWebMemoryLobbyPlayer(
         Box(modifier, contentAlignment = Alignment.Center) {
             if (!failed) {
                 AndroidView(
-                    modifier = Modifier.fillMaxSize().graphicsLayer { alpha = playerAlpha.value },
+                    // Compatibility readiness is acknowledged by Canvas's first actual draw.
+                    // An alpha-zero parent would prevent that draw and deadlock the loading gate.
+                    modifier = Modifier.fillMaxSize().graphicsLayer {
+                        alpha = if (rendering == GuideViewerRendering.CompatibleFrames) 1f else playerAlpha.value
+                    },
                     factory = { context ->
-                        WebView(context).apply {
+                        GuideWebPresentation(context, rendering, "https://www.gamekee.com",
+                            onFrame = { frameVisible = it }, onUnavailable = { failed = true }).apply {
+                          web.apply {
+                            if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
+                            if (rendering == GuideViewerRendering.CompatibleFrames) {
+                                frameScript = context.assets.open("ba3d/frame-presentation.js").bufferedReader().use { it.readText() }
+                            }
                             setBackgroundColor(Color.TRANSPARENT)
-                            // Compose glass samples this view more than once. Cache its hardware
-                            // output so those samples reuse pixels instead of replaying WebView's
-                            // Vulkan draw functor into multiple offscreen layers in one frame.
-                            setLayerType(View.LAYER_TYPE_HARDWARE, null)
                             settings.apply {
                                 javaScriptEnabled = true
                                 domStorageEnabled = true
@@ -187,9 +200,13 @@ internal fun GuideWebMemoryLobbyPlayer(
                             }
                             view = this
                             loadUrl(viewerUrl)
+                          }
                         }
                     },
-                    onRelease = { web ->
+                    onRelease = { presentation ->
+                        presentation.web.evaluateJavascript("window.keiosLobbyLoop?.dispose();window.keiosLobbyFrames?.dispose()", null)
+                        presentation.close()
+                        val web = presentation.web
                         web.stopLoading()
                         cacheSession?.close()
                         web.onPause()

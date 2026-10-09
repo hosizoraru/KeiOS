@@ -4,6 +4,7 @@ package os.kei
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -147,6 +148,11 @@ class MainActivity : ComponentActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // OEM tablets can still letterbox the manifest's phone portrait request even at API 37.
+        // Release it before content/startup setup; phones retain their manifest orientation.
+        if (resources.configuration.smallestScreenWidthDp >= 600) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+        }
         super.onCreate(savedInstanceState)
         startupTransition = MainStartupTransition(this)
         enableEdgeToEdge()

@@ -53,6 +53,28 @@ class GuideWebMemoryLobbySceneTest {
     private var playerDisposals = 0
 
     @Test
+    fun editingWithKeyboardHidesOnlyPlaybackControlsAndKeepsHeaderAndMediaMounted() {
+        val playbackVisible = mutableStateOf(true)
+        setScene(playbackControlsVisible = { playbackVisible.value })
+        val viewport = bounds(GuideWebMemoryLobbyViewportTag)
+        val header = bounds(GuideWebMemoryLobbyHeaderTag)
+
+        composeRule.runOnIdle { playbackVisible.value = false }
+        composeRule.onNodeWithTag(GuideWebMemoryLobbyControlsTag).assertDoesNotExist()
+        composeRule.onNodeWithTag(GuideWebMemoryLobbyRestoreTag).assertDoesNotExist()
+        assertBoundsEqual(header, bounds(GuideWebMemoryLobbyHeaderTag))
+        assertBoundsEqual(viewport, bounds(GuideWebMemoryLobbyViewportTag))
+        assertEquals(1, playerMounts)
+        assertEquals(0, playerDisposals)
+
+        composeRule.runOnIdle { playbackVisible.value = true }
+        composeRule.onNodeWithContentDescription(text(R.string.guide_action_pause)).assertIsDisplayed()
+        assertBoundsEqual(viewport, bounds(GuideWebMemoryLobbyViewportTag))
+        assertEquals(1, playerMounts)
+        assertEquals(0, playerDisposals)
+    }
+
+    @Test
     fun draggingInImmersionMovesTheCameraWithoutRestoringChromeOrRemountingMedia() {
         val camera = GuideWebMemoryLobbyCamera()
         setScene(camera = camera)
@@ -187,6 +209,7 @@ class GuideWebMemoryLobbySceneTest {
         onDismiss: () -> Unit = {},
         camera: GuideWebMemoryLobbyCamera = GuideWebMemoryLobbyCamera(),
         hasBgm: Boolean = false,
+        playbackControlsVisible: () -> Boolean = { true },
     ) {
         composeRule.setContent {
             val density = LocalDensity.current
@@ -201,6 +224,7 @@ class GuideWebMemoryLobbySceneTest {
                     SceneBackdropHost(backgroundColor = Color.Black) {
                         GuideWebMemoryLobbyScene(
                             controlsVisible = visible,
+                            playbackControlsVisible = playbackControlsVisible(),
                             onShowControls = { visible = true },
                             camera = camera,
                             header = { GuideWebMemoryLobbyHeader(it, onDismiss, hasBgm, muted, { muted = !muted }) },

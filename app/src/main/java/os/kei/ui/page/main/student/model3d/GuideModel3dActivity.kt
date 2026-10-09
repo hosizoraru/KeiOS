@@ -18,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import os.kei.core.concurrency.AppDispatchers
+import os.kei.ui.page.main.student.rendering.GuideViewerRenderingStore
 import os.kei.ui.page.main.ba.BaStandaloneActivityTheme
 import os.kei.ui.page.main.widget.sheet.SceneBackdropHost
 import os.kei.ui.page.main.student.section.gallery.GuideWebMemoryLobbyLoading
@@ -64,6 +65,7 @@ class GuideModel3dActivity : ComponentActivity() {
                     val model = resource
                     if (model == null) GuideWebMemoryLobbyLoading(true, MiuixTheme.colorScheme.onBackground)
                     else GuideModel3dScreen(model, background, customBackground, { customBackground = it },
+                        rendering = remember { GuideViewerRenderingStore.preferences.value.model },
                         onBackgroundDismiss = { lifecycleScope.launch(AppDispatchers.fileIo) { BaModel3dAppearanceStore.saveBackground(customBackground) } },
                         onDismiss = ::finish, onControlsVisible = { visible ->
                         WindowCompat.getInsetsController(window, window.decorView).apply {

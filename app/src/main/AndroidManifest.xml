@@ -60,19 +60,9 @@
         </provider>
 
         <!--
-            screenOrientation is a phone-only declaration now, and deliberately kept as one.
-
-            From targetSdk 36 Android ignores an activity's orientation request on any display whose smallest
-            width is >= 600dp, and targetSdk 37 removes PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY, the
-            opt-out. So on a tablet this line does nothing and the app rotates freely, which is why the
-            large-screen layout work exists at all. On a phone (sw < 600dp) it still applies, and it should:
-            the app is designed portrait-first and has no phone landscape design beyond the compact hero.
-            Changing this to fullUser would not improve the tablet — it is already unrestricted there — it
-            would only unlock a phone geometry nothing is drawn for.
-
-            There is deliberately no android:resizableActivity here: the attribute no longer exists at
-            compileSdk 37 and adding it fails the build with "attribute android:resizableActivity not found".
-            Nothing to opt into — resizability is simply what large screens do now.
+            Phones retain sensorPortrait. MainActivity explicitly releases that request on
+            large screens before setting up content: OEM Pad compatibility policies can still
+            letterbox a portrait request, even where AOSP ignores it for targetSdk 37.
         -->
         <activity
             android:name=".MainActivity"
@@ -229,7 +219,8 @@
             android:enableOnBackInvokedCallback="true"
             android:exported="false"
             android:label="@string/guide_model_3d_title"
-            android:screenOrientation="fullUser" />
+            android:screenOrientation="fullUser"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.page.main.student.GuideWebMemoryLobbyActivity"

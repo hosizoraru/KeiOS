@@ -55,6 +55,24 @@ internal val GameKeeLobbyFocusScript = """
       const rendererElement = document.querySelector('.ba-pixi-live2d-view');
       const renderer = rendererElement && rendererElement.__vue__;
       if (!renderer || !renderer.pixiApp || !renderer.spineLayers.length) return 'waiting';
+      if (window.KeiViewerFrames && !window.keiosLobbyFrames) {
+        const output = renderer.pixiApp.renderer;
+        const frames = window.keiosCreateFramePresenter?.(output.gl);
+        if (!frames) return 'waiting';
+        const draw = output.render;
+        output.render = function() {
+          const result = draw.apply(this, arguments); frames.present(); return result;
+        };
+        const app = renderer.pixiApp;
+        app.stop();
+        const loop = window.keiosCreateFrameLoop(time => app.ticker.update(time), frames);
+        app.start = () => loop.start();
+        app.stop = () => loop.stop();
+        window.keiosLobbyFrames = frames;
+        window.keiosLobbyLoop = loop;
+        loop.start();
+        window.addEventListener('pagehide', () => { loop.dispose(); frames.dispose(); }, {once:true});
+      }
       if (!window.keiosLobby) {
         const base = renderer.layerList && renderer.layerList.length
           ? { ...renderer.layerList[renderer.layerList.length - 1].position } : null;
@@ -74,7 +92,8 @@ internal val GameKeeLobbyFocusScript = """
             x: Number(base.x || 0) + (base.width - width) / 2 - camera.panX * screen.width / fit,
             y: Number(base.y || 0) + (base.height - height) / 2 + camera.panY * screen.height / fit });
           // The camera also works on a paused pose without starting its ticker or animation.
-          if (typeof renderer.pixiApp.render === 'function') renderer.pixiApp.render();
+          if (window.keiosLobbyLoop) window.keiosLobbyLoop.request();
+          else if (typeof renderer.pixiApp.render === 'function') renderer.pixiApp.render();
           return true;
         };
         const resize = renderer.resizeToContainer;
@@ -106,7 +125,8 @@ internal val GameKeeLobbyFocusScript = """
           setPlaying(playing) {
             renderer.spineLayers.forEach(layer => { layer.spine.state.timeScale = playing ? 1 : 0; });
             if (playing) renderer.pixiApp.start(); else renderer.pixiApp.stop();
-          }
+          },
+          setForeground(value) { window.keiosLobbyFrames?.setForeground(value); window.keiosLobbyLoop?.setForeground(value); }
         };
       }
       return 'ready';

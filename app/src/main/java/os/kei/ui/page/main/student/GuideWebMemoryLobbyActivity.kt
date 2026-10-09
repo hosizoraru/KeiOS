@@ -18,10 +18,13 @@ import os.kei.ui.page.main.ba.BaStandaloneActivityTheme
 import os.kei.ui.page.main.student.section.gallery.GuideWebMemoryLobbyScreen
 import os.kei.ui.page.main.widget.sheet.SceneBackdropHost
 import org.json.JSONObject
+import os.kei.ui.page.main.student.rendering.GuideViewerRenderingStore
+import os.kei.ui.page.main.student.rendering.GuideViewerRendering
 
 /** A media host independent of the gallery's lazy items and portrait-only navigation. */
 class GuideWebMemoryLobbyActivity : ComponentActivity() {
     private var resource by mutableStateOf<BaGuideWebMemoryLobby?>(null)
+    private var rendering by mutableStateOf(GuideViewerRendering.SystemWebView)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +41,7 @@ class GuideWebMemoryLobbyActivity : ComponentActivity() {
                         resource = lobby,
                         onDismiss = ::finish,
                         onControlsVisibleChange = ::updateSystemBars,
+                        rendering = rendering,
                     )
                 }
             }
@@ -63,7 +67,10 @@ class GuideWebMemoryLobbyActivity : ComponentActivity() {
             val raw = intent.getStringExtra(EXTRA_RESOURCE).orEmpty()
             if (raw.length > 64 * 1024) null else decodeWebMemoryLobby(JSONObject(raw))
         }.getOrNull()
-        if (resource != null) return true
+        if (resource != null) {
+            rendering = GuideViewerRenderingStore.preferences.value.lobby
+            return true
+        }
         finish()
         return false
     }

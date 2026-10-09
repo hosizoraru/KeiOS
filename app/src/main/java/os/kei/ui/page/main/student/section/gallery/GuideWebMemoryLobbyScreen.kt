@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -41,12 +43,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.offset
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import os.kei.R
 import os.kei.ui.page.main.student.BaGuideWebMemoryLobby
+import os.kei.ui.page.main.student.rendering.GuideViewerRendering
 import os.kei.ui.page.main.widget.chrome.AppChromeTokens
 import os.kei.ui.page.main.widget.core.AppAronaLoadingPanel
 import os.kei.ui.page.main.widget.core.AppSurfaceCard
@@ -63,6 +68,7 @@ internal fun GuideWebMemoryLobbyScreen(
     resource: BaGuideWebMemoryLobby,
     onDismiss: () -> Unit,
     onControlsVisibleChange: (Boolean) -> Unit,
+    rendering: GuideViewerRendering = GuideViewerRendering.SystemWebView,
 ) {
     val viewerUrl = resource.viewerUrl
     var playing by rememberSaveable(viewerUrl) { mutableStateOf(true) }
@@ -110,6 +116,7 @@ internal fun GuideWebMemoryLobbyScreen(
             selectedAction = selectedAction,
             camera = camera,
             onActionsAvailable = { available, current -> actions = available; selectedAction = current },
+            rendering = rendering,
             modifier = viewport,
         )
     }
@@ -122,13 +129,17 @@ internal fun GuideWebMemoryLobbyScene(
     controls: @Composable (Backdrop) -> Unit,
     modifier: Modifier = Modifier,
     controlsVisible: Boolean = true,
+    playbackControlsVisible: Boolean = true,
     onShowControls: () -> Unit = {},
     camera: GuideWebMemoryLobbyCamera? = null,
     backgroundColor: Color = Color.Black,
     statusBarScrimColor: Color = Color.Black.copy(alpha = 0.30f),
+    cinematicFraming: Boolean = true,
+    mediaBackdrop: com.kyant.backdrop.backdrops.LayerBackdrop = rememberLayerBackdrop(),
+    chromeEndInset: State<androidx.compose.ui.unit.Dp>? = null,
+    contentRestoresControls: Boolean = false,
     content: @Composable (Modifier) -> Unit,
 ) {
-    val mediaBackdrop = rememberLayerBackdrop()
     BoxWithConstraints(
         modifier = modifier.fillMaxSize().background(backgroundColor)
             .testTag(GuideWebMemoryLobbySceneTag)
@@ -136,7 +147,7 @@ internal fun GuideWebMemoryLobbyScene(
     ) {
         // The Wiki uses cover scaling. Preserve its cinematic framing in wide windows,
         // while using the full window height, including the area beneath floating chrome.
-        val viewportWidthFraction = if (maxWidth > maxHeight * (16f / 9f)) maxHeight * (16f / 9f) / maxWidth else 1f
+        val viewportWidthFraction = if (cinematicFraming && maxWidth > maxHeight * (16f / 9f)) maxHeight * (16f / 9f) / maxWidth else 1f
         val viewport = if (viewportWidthFraction < 1f) {
             Modifier.fillMaxHeight().aspectRatio(16f / 9f)
         } else {
@@ -161,19 +172,25 @@ internal fun GuideWebMemoryLobbyScene(
                     Brush.verticalGradient(listOf(statusBarScrimColor, Color.Transparent)),
                 ),
             )
-            Box(viewport.align(Alignment.Center).safeDrawingPadding()) {
+            Box(viewport.align(Alignment.Center).safeDrawingPadding().layout { measurable, constraints ->
+                val inset = chromeEndInset?.value?.roundToPx() ?: 0
+                val placeable = measurable.measure(constraints.offset(horizontal = -inset))
+                layout(constraints.maxWidth, constraints.maxHeight) { placeable.placeRelative(0, 0) }
+            }) {
                 Box(
                     Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(
                         horizontal = AppChromeTokens.pageHorizontalPadding,
                         vertical = AppChromeTokens.topBarChromeTopPadding,
                     ).testTag(GuideWebMemoryLobbyHeaderTag),
                 ) { header(mediaBackdrop) }
-                Box(
-                    Modifier.align(Alignment.BottomCenter).padding(
-                        horizontal = AppChromeTokens.pageHorizontalPadding,
-                        vertical = AppChromeTokens.pageBottomInsetExtra,
-                    ).widthIn(max = 460.dp).fillMaxWidth().testTag(GuideWebMemoryLobbyControlsTag),
-                ) { controls(mediaBackdrop) }
+                if (playbackControlsVisible) {
+                    Box(
+                        Modifier.align(Alignment.BottomCenter).padding(
+                            horizontal = AppChromeTokens.pageHorizontalPadding,
+                            vertical = AppChromeTokens.pageBottomInsetExtra,
+                        ).widthIn(max = 460.dp).fillMaxWidth().testTag(GuideWebMemoryLobbyControlsTag),
+                    ) { controls(mediaBackdrop) }
+                }
             }
         } else if (camera == null) {
             // Keep the media subtree mounted and playing. Only this transparent tap target
@@ -182,13 +199,15 @@ internal fun GuideWebMemoryLobbyScene(
             Box(
                 Modifier.fillMaxSize().testTag(GuideWebMemoryLobbyRestoreTag)
                     .semantics { contentDescription = showControls }
-                    .clickable(
+                    .then(if (contentRestoresControls) Modifier.semantics {
+                        onClick(showControls) { onShowControls(); true }
+                    } else Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         role = Role.Button,
                         onClickLabel = showControls,
                         onClick = onShowControls,
-                    ),
+                    )),
             )
         }
     }

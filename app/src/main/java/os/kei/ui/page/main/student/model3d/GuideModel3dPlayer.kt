@@ -10,6 +10,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebChromeClient
 import android.webkit.ConsoleMessage
+import android.view.ViewConfiguration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +26,8 @@ import org.json.JSONObject
 import os.kei.ui.page.main.student.section.gallery.GuideWebMemoryLobbyLoading
 import os.kei.BuildConfig
 import os.kei.core.log.AppLogger
+import os.kei.ui.page.main.student.rendering.GuideViewerRendering
+import os.kei.ui.page.main.student.rendering.GuideWebPresentation
 import java.io.ByteArrayInputStream
 import kotlin.coroutines.resume
 
@@ -44,9 +47,11 @@ internal fun GuideModel3dPlayer(
     options: BaModel3dOptions,
     seekRequest: Pair<Int, Float>,
     pollProgress: Boolean,
+    rendering: GuideViewerRendering,
     onState: (BaModel3dPlaybackState) -> Unit,
     onError: (Boolean) -> Unit,
     modifier: Modifier,
+    onSceneTap: (() -> Unit)? = null,
 ) {
     val owner = LocalLifecycleOwner.current
     var resumed by remember(owner) { mutableStateOf(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -57,13 +62,15 @@ internal fun GuideModel3dPlayer(
     }
     val notifyState by rememberUpdatedState(onState)
     val notifyError by rememberUpdatedState(onError)
+    val notifyTap by rememberUpdatedState(onSceneTap)
     val shouldPollProgress by rememberUpdatedState(pollProgress && resumed)
     val isResumed by rememberUpdatedState(resumed)
-    key(resource.contentId, retry) {
+    key(resource.contentId, retry, rendering) {
         var view by remember { mutableStateOf<WebView?>(null) }
         var ready by remember { mutableStateOf(false) }
         var scriptReady by remember { mutableStateOf(false) }
         var failed by remember { mutableStateOf(false) }
+        var frameVisible by remember { mutableStateOf(false) }
         val session = remember(model.gitBlob) { BaModel3dCacheSession() }
         val currentSession by rememberUpdatedState(session)
         val currentModel by rememberUpdatedState(model)
@@ -83,7 +90,7 @@ internal fun GuideModel3dPlayer(
                 if (state != null) {
                     scriptReady = true
                   if (state.optString("url") == "$MODEL_ORIGIN/ba3d/models/${model.gitBlob}.glb") {
-                    ready = state.optBoolean("ready")
+                    ready = state.optBoolean("ready") && (rendering == GuideViewerRendering.SystemWebView || frameVisible)
                     if (state.optString("error").isNotBlank()) { failed = true; notifyError(true) }
                     val array = state.optJSONArray("actions")
                     val actions = if (array == null) emptyList() else List(minOf(array.length(), 100)) { array.optString(it) }
@@ -133,7 +140,14 @@ internal fun GuideModel3dPlayer(
         }
         Box(modifier) {
             AndroidView(modifier = modifier, factory = { context ->
-                WebView(context).apply {
+                GuideWebPresentation(context, rendering, MODEL_ORIGIN,
+                    onFrame = { frameVisible = it }, onUnavailable = { failed = true; notifyError(true) }).apply {
+                  web.apply {
+                    val tap = GuideModel3dTapObserver(ViewConfiguration.get(context).scaledTouchSlop.toFloat())
+                    setOnTouchListener { _, event ->
+                        if (tap.onTouch(event)) notifyTap?.invoke()
+                        false // OrbitControls receives the complete native stream, including pinch and cancel.
+                    }
                     if (BuildConfig.DEBUG || BuildConfig.APPLICATION_ID.endsWith(".diag")) WebView.setWebContentsDebuggingEnabled(true)
                     webChromeClient = object : WebChromeClient() {
                         override fun onConsoleMessage(message: ConsoleMessage): Boolean {
@@ -144,7 +158,6 @@ internal fun GuideModel3dPlayer(
                         }
                     }
                     setBackgroundColor(currentBackground.toArgb())
-                    setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                     settings.apply {
                         javaScriptEnabled = true; domStorageEnabled = false
                         allowFileAccess = false; allowContentAccess = false
@@ -178,8 +191,12 @@ internal fun GuideModel3dPlayer(
                     view = this
                     // The renderer starts with the right color, before the first JS state poll can arrive.
                     loadUrl("$MODEL_PAGE#background=${model3dBackgroundHex(currentBackground).removePrefix("#")}")
+                  }
                 }
-            }, onRelease = { web ->
+            }, onRelease = { presentation ->
+                presentation.web.evaluateJavascript("window.keiosModel?.dispose()", null)
+                presentation.close()
+                val web = presentation.web
                 currentSession.close(); web.stopLoading(); web.onPause(); web.webViewClient = WebViewClient(); web.removeAllViews(); web.destroy()
             })
             if (!failed) GuideWebMemoryLobbyLoading(visible = !ready, textColor = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.onBackground)
