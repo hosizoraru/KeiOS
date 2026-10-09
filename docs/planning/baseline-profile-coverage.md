@@ -14,7 +14,7 @@ The default generator contains six user journeys with a maximum of 16 replays pe
 | commonRoutesAndChrome | 2/2 | Settings Interface and theme selector, About, WebDAV, Shell, MCP Skill, shared menu presentation |
 | gitHubTrackingCore | 2/2 | tracked-card expansion, Actions, add-track, and strategy-Sheet drag/content motion |
 | baOfficeAndCatalogCore | 2/2 | office cards, calendar/pool, daily sheet, catalog, selected guide tabs, playback |
-| adaptiveLargeScreenCore | 2/2 | recent two-lane pages, independent lane scrolling, sidebar and fold reflow |
+| adaptiveLargeScreenCore | 2/2 | two-lane pages, sidebar/fold reflow, compact guide paging, compatible model tools/palette/IME/camera and Spine controls |
 
 The previous generator had 23 journeys with a 96-replay ceiling. Its last capture took 35m24s on the
 API 37 AVD and produced 72,507 textual baseline rules plus 24,710 startup rules. That run followed an
@@ -87,6 +87,88 @@ The Gradle merge is the authority for combining method flags and duplicate rules
 from the six journeys. Regenerate obsolete signatures from current code; do not
 delete library or animation rules merely to reduce the textual rule count.
 
+### Pad viewer coverage maintenance, 2026-10-10
+
+The adaptive journey also opens the real Kei model and reviewed GameKee 714062
+lobby using CompatibleFrames on the stock Vulkan HyperOS Pad AVD. The direct
+System WebView composition path blocked HWUI during smoke and produced an ANR;
+the collector therefore selects compatible presentation only in its own store,
+without changing production defaults or the system renderer. It waits for decoded player
+readiness; compatible readiness additionally requires an actual native frame.
+Model tools, the inline palette with the real color-input IME, camera rotation/pinch,
+immersion/restoration, view reset, lobby action menu and separate BGM mute/restoration
+are required. After the 500dp reflow, the compact student guide tabs and finger
+paging are recollected on this source, preserving compact coverage without
+appending older Phone rules.
+These steps share the existing two replays, keeping six journeys and the
+16-replay ceiling. Budget up to 20 minutes for the full native HyperOS Pad run;
+individual first loads are bounded at 75 seconds and fail rather than silently
+skip the new surfaces.
+
+A fixed launch Activity and metadata-only lobby descriptor live exclusively in
+`app/src/nonMinifiedRelease/`. This avoids dependence on remote catalog ordering
+without mocking the player, bypassing resource integrity, or shipping a test
+entry point. Only the disposable collector's preferences select presentation.
+Original resource caches are reused after a short smoke; a cold cache can still
+require network access. The adaptive export excludes the capture-only namespace
+before merge, since its launch harness does not exist in release. Library,
+material and animation rules are retained. Acceptance checks fresh exports,
+rule syntax, signature/flag deduplication, startup membership, new viewer
+coverage and the absence of test-only rules instead of appending old profiles.
+
+### Accepted HyperOS Pad capture, 2026-10-10
+
+The complete generation task captured source `908c0ea97` plus the reviewed collector,
+readiness and release-copy changes on `KeiOS_HyperOS4_Pad` (`emulator-5582`, API 37,
+HyperOS 4.0.15.0, physical 2272×3408 at 400 dpi, native landscape rotation 3,
+4 vCPU / 4 GiB). It completed in 14m02s with all six tests passing and no skips.
+The adaptive path completed two replays of both real viewers, wide tools/palette/IME,
+camera and immersion controls, BGM, sidebar navigation and 500dp compact guide paging.
+The capture's 1,830 source-input hashes match the accepted final inputs.
+
+| Generated output | Previous accepted rules | Fresh rules | Added signatures | Removed signatures |
+| --- | ---: | ---: | ---: | ---: |
+| Baseline | 59,676 | 63,171 | 4,717 | 1,222 |
+| Startup | 24,555 | 24,028 | 119 | 646 |
+
+The six fresh exports contain 225,036 raw rules. Normal AndroidX 1.5 merging removes
+2,154 within-journey duplicates and 159,711 cross-journey duplicate signatures;
+their union is exactly the 63,171 generated signatures. There are no omitted fresh
+signatures, appended old rules, invalid rules, duplicate signatures or capture-only
+launch-harness rules. Flags match AndroidX's sorted-first-rule policy. Startup
+matches only the startup journey and is a subset of baseline. No manual deletion
+of material, animation or library rules was used to reach a size target.
+
+Named coverage includes 483 model-shell rules, 346 Spine-shell rules, 18 Web
+presentation rules, 20 RGBA bridge rules, 46 Miuix color-picker rules, 84 student
+guide-pager rules, 6,743 student-guide rules and 5,429 Media3 rules. The 2,506
+liquid-glass and 1,587 Backdrop rules remain; frequent navigation gestures retain
+`startUserScroll`, `dragBy` and `settleAfterDrag`.
+
+Permission preflight grants/readback and temporary priority DND completed before
+journeys. Stable navigation taps logged their bounds outside the status bar.
+The former overlay's trigger was not captured, so a Super Island tap versus a
+notification tap cannot be distinguished from the old screenshot alone. The
+accepted run had no blocking overlay. The original DND mode (0), window size,
+density, letterbox, system settings, music volume, input property and local SDK
+configuration were restored; SELinux and `skiavk` were unchanged. The ADB shim
+used owned port 5041 and only Pad 5582, leaving the occupied Phone untouched.
+
+Only the disposable collector APKs were installed. Existing debug/diagnostic APK
+hashes, installation identities and data-directory inodes match the preflight.
+Eight debug preference files (background recovery and GitHub refresh data,
+including CRCs) and two diagnostic BA-settings files changed since the preflight;
+preference bytes are therefore not claimed unchanged. No protected package was
+cleared, uninstalled or replaced, and concurrent preference changes were not
+rolled back. The two collector APKs were retained and stopped after collection.
+
+This run validates complete collection, source coverage and restoration. Because
+direct System WebView blocked HWUI on this stock-Vulkan OEM AVD, the two viewer
+paths used compatible presentation in the disposable store. Production defaults
+remain System WebView. ART profiles describe Android methods, not JavaScript JIT
+or WebGL shaders; this capture is not a frame-rate or System-WebView performance
+acceptance result.
+
 ### Accepted HyperOS Phone capture, 2026-10-09
 
 For the v1.17.0 release preparation, the complete connected task captured runtime
@@ -114,8 +196,8 @@ rules, 1,573 main-host rules, 5,867 Student Guide rules, 4,350 Media3 rules,
 `startUserScroll`, `dragBy`, `settleAfterDrag` and
 `animateLoadedPagerSettlePosition` remain present. The adaptive export reaches
 wide lanes and the student-guide sidebar; this is Phone plus forced-window
-coverage, not native Pad device acceptance. Recollect on the planned HyperOS Pad
-when it is configured.
+coverage, not native Pad device acceptance. The subsequent native Pad capture
+above supersedes these generated files after the tablet viewer changes.
 
 Collection used the two disposable APK identities and a host-only SDK ADB shim
 bound to the existing port 5039. Its init script skips the included `build-logic`
@@ -523,10 +605,12 @@ Install both APKs first, or the run instruments a stale build:
 This smoke run proves the UI script. Complete Profile collection proof comes from the generation task,
 its per-journey outputs and the merged generated artifacts.
 
-A hand-run leaves both APKs installed, with whatever the journey did to the app's data; the Gradle task
-uninstalls them when it finishes. So smoke runs can be repeated on warm state, and a capture always starts
-fresh. When a journey's value depends on an optional step -- playback, a page change -- read that
-journey's own `baseline-prof.txt` for the classes the step exists to reach, rather than trusting a pass.
+A hand-run leaves both disposable APKs installed. The connected runner can uninstall them at the
+end unless `keepInstalledApks` is configured for the owned collector. Permission preflight runs after
+installation in either case; an uninstall cannot silently restore a first-run permission blocker.
+Do not equate a cold process start with cleared application data. When a journey's value depends on an
+optional step -- playback, a page change -- read that journey's own `baseline-prof.txt` for the classes
+the step exists to reach, rather than trusting a pass.
 
 ## Full capture acceptance
 
@@ -570,12 +654,30 @@ uninstall, clear or overwrite release/debug/diagnostic data or an older producer
 The connected task can uninstall only the two verified disposable APKs. Bind every
 connected task to the selected serial; leave other devices and forwards alone.
 
-On an OEM device, launch the disposable collector during preflight and resolve its
-first-run permission prompts before collection. HyperOS can show an installed-app
-query permission dialog outside Android's runtime-permission API. Verify the dialog
-belongs to os.kei.profilecapture before granting it; retain that owned installation
-for the connected task's replacement install. Do not add translated permission-button
-clicks to generic navigation helpers or change existing user-package permissions.
+Permission authorization is a prerequisite, after installation and before any journey.
+`ProfileCapturePermissions.kt` runs once through JUnit `@BeforeClass`: it validates the
+two disposable identities, grants every declared Android runtime permission available
+on the device, sets their associated AppOps to `allow`, and verifies grant/mode readback.
+On HyperOS it also reads `MiuiHooks.OP_GET_INSTALLED_APPS` from the device framework
+(the tested Pad exposes 10022) and authorizes that additional installed-app gate.
+Do not assume another ROM uses the same numeric operation. An unresolved grant fails
+the run immediately; no translated dialog clicks or silent grant failures are accepted.
+Keep these grants on the disposable collector between runs. Never change existing
+release/debug/diagnostic package permissions. For OEM gates not covered by the device's
+public or verified framework interfaces, stop before collection and identify the missing
+gate instead of granting arbitrary operations.
+
+Window-size overrides describe the current viewport in dp. On a rotated Pad, convert
+those dimensions to the display's natural orientation before `wm size`, and assert the
+actual viewport dimensions; otherwise a requested wide journey can run in a narrow
+window. Restore the original physical override after success or failure.
+
+The producer temporarily enables priority DND before the journeys and restores the
+previous interruption mode in `@AfterClass`. Include `zen_mode` in the host-side
+snapshot and restore it if instrumentation dies before cleanup. Native Pad navigation
+sits near the top: wait for stable semantics bounds and reject tap centers inside
+the status bar before injecting input. Log actual coordinates to diagnose OEM overlays
+rather than assuming a returned click means the destination opened.
 
 The generated profiles in the working tree represent the accepted six-journey capture. The freshness
 script dates a capture from the latest commit touching the generated Profile directory, so it continues
