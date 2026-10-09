@@ -1,5 +1,6 @@
 package os.kei.ui.page.main.settings.section
 
+import os.kei.ui.page.main.student.rendering.GuideViewerRendering
 import androidx.compose.runtime.Immutable
 import os.kei.core.background.AppBackgroundRecoverySnapshot
 import os.kei.core.prefs.AppThemeMode
@@ -94,6 +95,8 @@ internal data class SettingsVisualSectionState(
     val appLanguageActionAvailable: Boolean,
     val showThemeModePopup: Boolean,
     val showLauncherIconDesignPopup: Boolean,
+    val lobbyRendering: GuideViewerRendering = GuideViewerRendering.SystemWebView,
+    val modelRendering: GuideViewerRendering = GuideViewerRendering.SystemWebView,
 )
 
 internal data class SettingsVisualSectionActions(
@@ -105,6 +108,8 @@ internal data class SettingsVisualSectionActions(
     val onOpenAppLanguageSettings: () -> Unit,
     val onShowThemeModePopupChange: (Boolean) -> Unit,
     val onShowLauncherIconDesignPopupChange: (Boolean) -> Unit,
+    val onLobbyRenderingChanged: (GuideViewerRendering) -> Unit = {},
+    val onModelRenderingChanged: (GuideViewerRendering) -> Unit = {},
 )
 
 @Immutable

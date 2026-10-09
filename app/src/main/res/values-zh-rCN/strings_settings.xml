@@ -489,4 +489,10 @@
     <string name="settings_cache_entry_ba_spine_title">动态回忆大厅缓存</string>
     <string name="settings_cache_entry_ba_spine_summary">复用动态回忆大厅的动画资源，减少重复下载。较久未使用的资源会自动清理。</string>
     <string name="settings_cache_entry_ba_spine_detail">%1$d 个资源 · 上限 %2$s</string>
+    <string name="settings_lobby_rendering">动态记忆大厅渲染</string>
+    <string name="settings_model_rendering">3D 模型渲染</string>
+    <string name="settings_viewer_rendering_system">系统 WebView</string>
+    <string name="settings_viewer_rendering_compatible">兼容画面呈现</string>
+    <string name="settings_viewer_rendering_system_summary">直接显示系统 WebView 的画面，图形后端由设备选择。下次进入鉴赏页生效。</string>
+    <string name="settings_viewer_rendering_compatible_summary">保留原有 WebGL 材质，以原生画布显示画面，适合纹理合成异常的设备。最高 60 帧/秒；下次进入鉴赏页生效。</string>
 </resources>

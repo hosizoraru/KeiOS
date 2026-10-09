@@ -238,6 +238,10 @@ internal fun buildSettingsSearchTargets(resolveString: (Int) -> String): List<Se
                     legacyAppearanceCategoryLabel,
                     performanceGroupLabel,
                     preloadingLabel,
+                    resolveString(R.string.settings_lobby_rendering),
+                    resolveString(R.string.settings_model_rendering),
+                    resolveString(R.string.settings_viewer_rendering_compatible),
+                    "Spine", "3D", "WebGL", "OpenGL", "Vulkan",
                 ),
         ),
         SettingsSearchTarget(

@@ -2,6 +2,9 @@ package os.kei.ui.page.main.settings.page
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import os.kei.ui.page.main.student.rendering.GuideViewerRenderingStore
 import os.kei.R
 import os.kei.core.ext.showToast
 import os.kei.core.prefs.AppThemeMode
@@ -72,8 +75,9 @@ internal fun rememberSettingsPageSectionContracts(
     privilegeMode: PrivilegeMode,
     onPrivilegeModeChanged: (PrivilegeMode) -> Unit,
     onCheckOrRequestPrivilege: () -> Unit,
-): SettingsSectionContractBundle =
-    rememberSettingsSectionContractBundle(
+): SettingsSectionContractBundle {
+    val renderingPreferences by GuideViewerRenderingStore.preferences.collectAsStateWithLifecycle()
+    return rememberSettingsSectionContractBundle(
         notificationPermissionGranted = notificationPermissionGranted,
         notificationsEnabled = permissionKeepAliveState.notificationsEnabled,
         notificationSettingsActionAvailable = permissionKeepAliveState.notificationSettingsActionAvailable,
@@ -204,7 +208,11 @@ internal fun rememberSettingsPageSectionContracts(
             settingsPageViewModel.beginAccessibilityGuardHistoryExport()
         },
         onTextCopyCapabilityExpandedChanged = onTextCopyCapabilityExpandedChanged,
+        renderingPreferences = renderingPreferences,
+        onLobbyRenderingChanged = GuideViewerRenderingStore::setLobby,
+        onModelRenderingChanged = GuideViewerRenderingStore::setModel,
     )
+}
 
 private fun showSettingsToastIfClosed(
     context: Context,

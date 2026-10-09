@@ -4,6 +4,8 @@ package os.kei.ui.page.main.settings.state
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import os.kei.ui.page.main.student.rendering.GuideViewerRendering
+import os.kei.ui.page.main.student.rendering.GuideViewerRenderingPreferences
 import os.kei.core.background.AppBackgroundRecoverySnapshot
 import os.kei.core.prefs.AppThemeMode
 import os.kei.core.prefs.LauncherIconDesign
@@ -119,6 +121,9 @@ internal fun rememberSettingsSectionContractBundle(
     onRunAccessibilityGuardCheck: () -> Unit,
     onExportAccessibilityGuardHistory: () -> Unit,
     onTextCopyCapabilityExpandedChanged: (Boolean) -> Unit,
+    renderingPreferences: GuideViewerRenderingPreferences,
+    onLobbyRenderingChanged: (GuideViewerRendering) -> Unit,
+    onModelRenderingChanged: (GuideViewerRendering) -> Unit,
 ): SettingsSectionContractBundle {
     val permissionKeepAliveState =
         remember(
@@ -212,6 +217,7 @@ internal fun rememberSettingsSectionContractBundle(
             appLanguageActionAvailable,
             pageUiState.showThemeModePopup,
             pageUiState.showLauncherIconDesignPopup,
+            renderingPreferences,
         ) {
             SettingsVisualSectionState(
                 preloadingEnabled = preloadingEnabled,
@@ -222,6 +228,8 @@ internal fun rememberSettingsSectionContractBundle(
                 appLanguageActionAvailable = appLanguageActionAvailable,
                 showThemeModePopup = pageUiState.showThemeModePopup,
                 showLauncherIconDesignPopup = pageUiState.showLauncherIconDesignPopup,
+                lobbyRendering = renderingPreferences.lobby,
+                modelRendering = renderingPreferences.model,
             )
         }
     val visualActions =
@@ -232,6 +240,8 @@ internal fun rememberSettingsSectionContractBundle(
             onHomeDynamicFullEffectChanged,
             onAppThemeModeChanged,
             onOpenAppLanguageSettings,
+            onLobbyRenderingChanged,
+            onModelRenderingChanged,
         ) {
             SettingsVisualSectionActions(
                 onPreloadingEnabledChanged = onPreloadingEnabledChanged,
@@ -244,6 +254,8 @@ internal fun rememberSettingsSectionContractBundle(
                 onShowLauncherIconDesignPopupChange = {
                     pageUiState.showLauncherIconDesignPopup = it
                 },
+                onLobbyRenderingChanged = onLobbyRenderingChanged,
+                onModelRenderingChanged = onModelRenderingChanged,
             )
         }
     val animationState =

@@ -20,6 +20,7 @@ constraintlayout-compose = "1.1.2"
 navigation-event = "1.2.0-rc01"
 lifecycle = "2.11.0"
 documentfile = "1.1.0"
+webkit = "1.18.0-rc01"
 metrics-performance = "1.0.0"
 profileinstaller = "1.4.1"
 benchmark = "1.5.0"
@@ -78,6 +79,7 @@ androidx-navigation-event-compose = { module = "androidx.navigationevent:navigat
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
+androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 androidx-metrics-performance = { module = "androidx.metrics:metrics-performance", version.ref = "metrics-performance" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }

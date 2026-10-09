@@ -144,6 +144,7 @@ internal fun SettingsVisualSection(
                 title = stringResource(R.string.settings_group_performance_title),
                 subtitle = stringResource(R.string.settings_group_performance_summary),
                 sectionIcon = appLucideLayersIcon(),
+                exportBackdropToContent = true,
                 containerColor =
                     settingsSectionContainerColor(
                         SettingsSectionPresentationState(active = state.preloadingEnabled),
@@ -166,6 +167,8 @@ internal fun SettingsVisualSection(
                     infoKey = stringResource(R.string.common_scope),
                     infoValue = stringResource(R.string.settings_preloading_scope),
                 )
+                SettingsViewerRenderingControls(state.lobbyRendering, state.modelRendering,
+                    actions.onLobbyRenderingChanged, actions.onModelRenderingChanged)
             }
         }
         if (onlyCardId == null || onlyCardId == SettingsCardExpansionId.HomeEffects) {
