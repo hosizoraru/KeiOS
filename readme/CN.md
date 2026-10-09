@@ -39,7 +39,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 | UI 技术栈 | Jetpack Compose、Miuix、液态玻璃风格 chrome |
 | 运行技术栈 | Kotlin、Java 21、Shizuku/Root、Media3、MMKV、Ktor、OkHttp |
 | 语言资源 | 简体中文、English、日本語 |
-| 源码发布目标 | `v1.17.0`（发布准备中） |
+| 发布版本 | [`v1.17.0`](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) |
 
 ## 常用入口
 
@@ -74,19 +74,19 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 
 ## v1.17.0 重点变化
 
-本版本处于发布准备阶段，已在 HyperOS Phone 完成六段 Baseline Profile 采集，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集；稳定版下载入口仍指向已经发布的稳定版。
+本次发布包含自公开 v1.15.0 起的变化，已在 HyperOS Phone 完成六段 Baseline Profile 采集，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集。正式签名 APK 可从 [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) 下载。
 
 - Spine 动态回忆大厅支持动作切换、缩放、移动、重置视角与关联 BGM；隐藏控件后动画继续播放，老学生的 MP4 观看方式也保留。
 - 已匹配 3D 资源的学生可切换模型和动画、调整视角、进度、速度、循环和描边；背景支持深浅色默认值及可保存的调色盘。
-- Pad 鉴赏增加叠在场景上的液态玻璃工具侧栏及内联调色盘，打开工具时模型保持稳定；优化输入法避让，并修复视角操作时动画偶发停住的问题。
-- 两个鉴赏界面都默认使用系统 WebView，可在设置 → 界面中分别选择兼容呈现，下次进入生效；已有选择继续保留。
+- Pad 鉴赏增加叠在场景上的液态玻璃工具侧栏及内联调色盘，打开工具时模型保持稳定，选色后调色盘继续保留；颜色编辑区为键盘让出空间，整个场景保持原位，并修复视角操作时动画偶发停住的问题。
+- 两个鉴赏界面都默认使用系统 WebView，可在设置 → 界面 → 性能预取中分别选择「兼容画面呈现」，下次进入生效；已有选择继续保留。这些选项调整鉴赏画面的呈现方式，不会切换设备的 Vulkan/OpenGL 驱动，也不保证更高帧率。
 - 搜索栏保留光标、选择范围和中文输入状态；键盘弹出或收起时，弹层玻璃模糊保持连续。
 - 开启预发行选项后，仅预发行仓库也可扫描包名；同仓库的主应用与插件按各自 APK 包名追踪，旧 Atom 判断会自动刷新。
 - 冷启动增加主题协调的过渡，减少初始状态闪现；改善学生详情及多处页面滚动体验，保留玻璃材质与动画。
 - 可选择超级岛的关闭时间；Shell 命令长时间无输出也能触发超时，避免一直等待。
 - 一并包含本地 v1.16 阶段的改进：更可靠的版本判断、刷新诊断、发行版/F-Droid 旧版本应用内安装，以及更低的玻璃渲染开销。
 
-从公开 v1.15.0 升级的完整变化见 [v1.17.0 更新说明](RELEASE_V1.17.0.md)；v1.16.0 的历史说明记录本地开发里程碑。
+从公开 v1.15.0 升级的完整变化、CI 用户安装说明及兼容性说明见 [v1.17.0 更新说明](RELEASE_V1.17.0.md)；v1.16.0 的历史说明记录本地开发里程碑。
 
 完整功能介绍：
 
@@ -97,7 +97,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 
 - 稳定版安装包通过 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases) 发布。
 - 公开稳定版始终通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- 当前源码目标为 `v1.17.0`。本地预备 tag 将在发布产物验收后指向最终发布提交；v1.17.0 尚未发布。
+- 当前发布版本为 [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0)，提供 KeiOS Release 签名 APK 和 SHA-256 校验文件。CI 包使用独立的签名证书。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
 - 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.0`、Kotlin `2.4.21-RC`、
   Compose `1.12.1`、Android Gradle Plugin `9.4.1`、Ktor `3.6.0`。
@@ -106,7 +106,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 ## 文档
 
 - [文档索引](INDEX.md)
-- [Release Notes v1.17.0（发布准备）](RELEASE_V1.17.0.md)
+- [Release Notes v1.17.0](RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)
 - [Build Guide (EN)](BUILD.md)
 - [构建指南 (CN)](BUILD_CN.md)

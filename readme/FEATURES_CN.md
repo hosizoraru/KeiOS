@@ -136,5 +136,5 @@ BA 页面是 Blue Archive 办公室仪表盘：
   Chrome、MMKV 偏好存储。
 - 构建基线：Java 21、Gradle Wrapper `9.8.0`、Kotlin `2.4.21-RC`、Android Gradle Plugin
   `9.4.1`、Ktor `3.6.0`、已生成的 Baseline Profiles 与共享 build-logic 约定。
-- Baseline Profile 采集覆盖六段有回放上限的旅程，采集结果与发布新鲜度分别核对；v1.17.0 已在 HyperOS Phone 完成采集，含强制宽窗口覆盖，原生 HyperOS Pad 采集留待设备配置完成后进行。
+- Baseline Profile 采集覆盖六段有回放上限的旅程，采集结果与发布新鲜度分别核对；v1.17.0 已在 HyperOS Phone 完成采集，并在 Pad 鉴赏适配后使用原生 HyperOS Pad 重新完整采集。
   详见 [构建指南](BUILD_CN.md) 和 [采集计划](../docs/planning/baseline-profile-coverage.md)。

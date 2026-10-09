@@ -8,7 +8,7 @@
 - [功能完整介绍 (CN)](FEATURES_CN.md)
 - [Build Guide (EN)](BUILD.md)
 - [构建指南 (CN)](BUILD_CN.md)
-- [Release Notes v1.17.0 (preparation)](RELEASE_V1.17.0.md)
+- [Release Notes v1.17.0](RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)
 - [Release Notes v1.15.0](RELEASE_V1.15.0.md)
 - [Release Notes v1.14.0](RELEASE_V1.14.0.md)
@@ -29,7 +29,7 @@
   i18n.
 - `BUILD.md` / `BUILD_CN.md`: local build, versioning, CI APK, signing, nightly.link, live GitHub
   strategy/subscription tests, and screenshot-baseline workflow.
-- `RELEASE_V1.17.0.md`: bilingual v1.17.0 notes and the remaining publication checks.
+- `RELEASE_V1.17.0.md`: bilingual v1.17.0 notes, installation guidance, and compatibility notes.
 - `RELEASE_V1.16.0.md`: retained bilingual notes for the local v1.16.0 development milestone.
 - `RELEASE_V1.15.0.md`: archived bilingual GitHub Release notes for v1.15.0.
 - `RELEASE_V1.14.0.md`: archived bilingual GitHub Release notes for v1.14.0.

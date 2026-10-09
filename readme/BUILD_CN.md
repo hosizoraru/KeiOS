@@ -8,8 +8,8 @@
 
 - 稳定安装建议直接使用 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases)。
 - 公开稳定版通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- 当前源码目标为 v1.17.0，包含动态回忆大厅、学生 3D 工具、搜索修复与按包名识别的预发行版追踪。
-  六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集，v1.17.0 尚未发布。
+- v1.17.0 包含动态回忆大厅、学生 3D 工具、搜索修复与按包名识别的预发行版追踪。
+  六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集；正式签名 APK 可从 [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) 下载。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出 Debug、Benchmark 与 Release APK。
 

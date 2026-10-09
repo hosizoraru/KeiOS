@@ -2,9 +2,9 @@
 
 <!-- markdownlint-disable MD013 -->
 
-> 发布准备：当前公开稳定版为 v1.15.0，v1.16.0 是本地开发里程碑。本文合并 v1.16 阶段与后续 v1.17 阶段的用户可见变化。六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集。签名 APK、版本和打包结果按构建指南核对，当前尚未发布 v1.17.0。
+> 本次发布合并自公开 v1.15.0 起的用户可见变化，包含本地 v1.16 开发里程碑及后续 v1.17 改进。六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集。正式 APK 使用 KeiOS Release 签名，与公开 v1.15.0 的证书一致。
 >
-> Release preparation: the published stable release is v1.15.0; v1.16.0 is a local development milestone. These notes combine the v1.16 work and subsequent v1.17 changes. The six-journey Baseline Profile was collected on HyperOS Phone and recollected on HyperOS Pad after the tablet viewer changes. Signed APK, version, and packaging checks follow the build guide; v1.17.0 has not been published yet.
+> This release combines the user-visible changes since the published v1.15.0, including the local v1.16 development milestone and subsequent v1.17 improvements. The six-journey Baseline Profile was collected on HyperOS Phone and recollected on HyperOS Pad after the tablet viewer changes. The APK uses the KeiOS Release signing certificate, matching the published v1.15.0.
 
 ## 中文
 
@@ -15,7 +15,7 @@ KeiOS v1.17.0 让学生图鉴多了两种鉴赏方式：可交互的动态回忆
 - 适配 WIKI 迁移后的 Spine 回忆大厅。新学生可以打开动态入口；老学生同时有 MP4 和 Spine 资源时，两种都保留，不必放弃原来的视频观看方式。
 - 支持选择动作、暂停与继续、双指缩放、拖动画面和重置视角。液态控件覆盖在画面上，减少固定上下栏占用的鉴赏空间。
 - 隐藏控件后，当前动画继续播放；点击画面即可恢复控件。重置视角和隐藏控件不会打断动画。
-- 有关联回忆大厅 BGM 时默认播放，并提供独立静音按钮。静音不暂停动画，切到后台时按播放生命周期处理音频。
+- 有关联回忆大厅 BGM 时默认播放，并提供独立静音按钮。静音不暂停动画；切到后台暂停音频，返回前台按原静音状态恢复。
 - 加载过程沿用学生详情的 Arona 动画。已下载的 Spine 素材会复用，缓存有容量限制，减少重复下载及长期占用。
 
 ### 学生 3D 模型：可旋转的模型与动画工具
@@ -32,7 +32,7 @@ KeiOS v1.17.0 让学生图鉴多了两种鉴赏方式：可交互的动态回忆
 - 修复旋转、缩放、移动和进度拖动时动画偶发停住的问题；隐藏控件后仍可操作模型，轻点画面恢复控件。
 - 输入背景颜色时，键盘不再将整个模型界面顶起；播放底栏暂时让出空间，完成输入或轻点场景即可收起键盘，动画继续播放。
 - 动态回忆大厅和 3D 模型都默认使用「系统 WebView」。若画面在某些设备上显示异常，可在设置 → 界面 → 性能预取中分别选择「兼容画面呈现」，下次进入鉴赏页生效；已保存的选择继续保留。
-- 兼容模式保留原有材质、描边、动画与像素分辨率。部分模拟器仍有画面传输开销；该选项不保证更高帧率。
+- 两个选项调整鉴赏画面的呈现方式，不会切换设备的 Vulkan/OpenGL 驱动。兼容模式保留原有材质、描边、动画与像素分辨率，但画面传输会有额外开销，不保证更高帧率。
 
 ### 搜索和弹层：输入不再打乱光标
 
@@ -62,13 +62,18 @@ KeiOS v1.17.0 让学生图鉴多了两种鉴赏方式：可交互的动态回忆
 - 学生图鉴在列表惯性滚动中也可横滑翻页，音频进度条仍保留自己的拖动；MCP 展开的卡片在进程回收后可恢复。
 - 不受信任的其他应用只能读取 BGM 播放状态，不能控制播放；应用自身、媒体通知及受信任控制方继续正常操作。
 
-这些变化属于本地 v1.16 开发阶段，详细历史说明保留在 [v1.16.0 记录](RELEASE_V1.16.0.md)，本次发布将一并交付。
+这些变化属于本地 v1.16 开发阶段，详细历史说明保留在 [v1.16.0 记录](RELEASE_V1.16.0.md)，本次发布一并包含。
 
 ### 升级与安装
 
-- 从公开 v1.15.x 或已有 v1.16 开发版升级保留设置、追踪和收藏，无需清除数据或重新添加项目。
+- 从公开 v1.15.x 或使用相同正式签名的 v1.16 开发版覆盖升级，可保留设置、追踪和收藏，无需清除数据或重新添加项目。
 - 正式包名 `os.kei`，支持 `arm64-v8a`，Android 15+（minSdk 35），targetSdk 37。
-- 正式版本目标：`1.17.0` / `versionCode 11700999`。最终签名 APK 和校验文件将在发布时提供。
+- 正式版本：`1.17.0` / `versionCode 11700999`。Release 附件提供正式签名 APK 和 SHA-256 校验文件。
+- CI Debug 使用独立包名 `os.kei.debug`；CI Benchmark 与正式版共用 `os.kei`，但 CI 签名与正式签名不同，而且 `1.17.1+…` 的版本码高于本次正式版。Android 可能拒绝直接覆盖，不能仅凭版本名称判断能否升级。遇到这种情况先导出数据并核对安装渠道，避免为解决安装提示而直接卸载或清除数据。
+
+### 兼容性说明
+
+- 在本次测试的一台实体机上，横屏 Spine 的黑色侧边区域出现系统栏文字对比度不足。应用已请求亮色图标，显示差异的来源仍在核对；这项观察不代表所有设备都会出现同样现象。
 
 ## English
 
@@ -79,7 +84,7 @@ KeiOS v1.17.0 adds two ways to explore the Student Guide: interactive Memorial L
 - Supports the WIKI Spine lobbies after their migration. New students can open the interactive entry; older students with both MP4 and Spine resources keep both viewing options.
 - Choose an action, pause or resume, pinch to zoom, drag to pan, or reset the view. Liquid controls overlay the scene, leaving more space for viewing.
 - Hiding controls keeps the current animation playing. Tap the scene to restore them. Resetting the view and hiding controls do not interrupt playback.
-- Linked lobby BGM plays by default with a separate mute button. Muting does not pause the animation, and audio follows the player lifecycle when the app goes into the background.
+- Linked lobby BGM plays by default with a separate mute button. Muting does not pause the animation. Audio pauses in the background and resumes in the foreground according to the previous mute state.
 - Loading uses the Student Guide Arona animation. Downloaded Spine assets are reused within a bounded cache to reduce repeated downloads and storage growth.
 
 ### Student 3D Models
@@ -96,7 +101,7 @@ KeiOS v1.17.0 adds two ways to explore the Student Guide: interactive Memorial L
 - Fixes occasional animation stalls during rotation, zooming, panning, and seeking. Camera gestures remain available with controls hidden; tap the scene to restore controls.
 - Entering a background color no longer pans the entire model screen upward. Playback controls temporarily make room for the keyboard; Done or a scene tap dismisses it while animation continues.
 - Both viewers default to **System WebView**. If a device displays the scene incorrectly, choose **Compatible presentation** independently for either viewer under Settings → Interface → Performance preload. Changes apply on the next entry, and saved selections are retained.
-- Compatibility mode preserves materials, outlines, animations, and pixel resolution. Some emulators still incur frame-transfer overhead; this option does not guarantee a higher frame rate.
+- These options change how viewer frames are presented; they do not switch the device's Vulkan/OpenGL driver. Compatibility mode preserves materials, outlines, animations, and pixel resolution, but adds frame-transfer overhead and does not guarantee a higher frame rate.
 
 ### Search And Sheets
 
@@ -130,17 +135,13 @@ This work belongs to the local v1.16 development milestone. Its detailed [v1.16.
 
 ### Upgrade And Package
 
-- Upgrading from the published v1.15.x or a v1.16 development build retains settings, tracked projects, and favorites. Clearing data or adding projects again is unnecessary.
+- Installing over the published v1.15.x or a v1.16 development build with the same release signing certificate retains settings, tracked projects, and favorites. Clearing data or adding projects again is unnecessary.
 - Stable package: `os.kei`; ABI: `arm64-v8a`; Android 15+ (minSdk 35); targetSdk 37.
-- Release target: `1.17.0` / `versionCode 11700999`. The final signed APK and checksum will be provided at publication.
+- Release version: `1.17.0` / `versionCode 11700999`. Release assets include the release-signed APK and its SHA-256 checksum.
+- CI Debug uses the separate package `os.kei.debug`. CI Benchmark shares `os.kei` with the release, but uses a different signing certificate, and its `1.17.1+…` version code is higher than this release. Android may reject an overwrite; the version name alone does not establish upgrade compatibility. Export data and check the installed channel before changing packages, rather than uninstalling or clearing data to dismiss the error.
 
-## 发布前核对 / Before Publication
+### Compatibility Notes
 
-- 在最终源码上完成 Baseline Profile 采集，核对六段旅程的有效输出及生成文件，提交后通过新鲜度门禁。
-- 验证正式 APK 的 R8/lint、版本、签名及 `assets/dexopt/baseline.prof` 和 `baseline.profm`。
-- 本地预备 tag 在上述提交完成后指向最终发布提交，再推送并发布；移除本文的发布准备提示。
-- Complete Baseline Profile collection on the final source, verify all six journeys and generated files, then commit the outputs and pass the freshness gate.
-- Verify release R8/lint, version, signing, and packaged `baseline.prof` / `baseline.profm`.
-- Point the local preparation tag at the final release commit before pushing and publishing, and remove the preparation notice above.
+- One physical device in this test showed low-contrast status-bar text over the black sides of landscape Spine scenes. The app requests light icons, and the source of the display difference is still being checked. This observation does not establish the same behavior on all devices.
 
 详见 [构建与发布门禁](BUILD_CN.md#v1170-发布门禁) / [Build and release gate](BUILD.md#v1170-release-gate)。

@@ -40,7 +40,7 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 | UI stack | Jetpack Compose, Miuix, liquid-glass chrome |
 | Runtime stack | Kotlin, Java 21, Shizuku/Root, Media3, MMKV, Ktor, OkHttp |
 | Languages | Simplified Chinese, English, Japanese |
-| Source release target | `v1.17.0` (release preparation) |
+| Release version | [`v1.17.0`](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) |
 
 ## Quick Links
 
@@ -92,18 +92,21 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 
 ## v1.17.0 Highlights
 
-This release is being prepared. Its complete six-journey Baseline Profile has been collected on
-HyperOS Phone and recollected on HyperOS Pad after the tablet viewer changes; the stable download
-link still resolves to the published stable release.
+This release includes the changes since the published v1.15.0. Its complete six-journey Baseline
+Profile was collected on HyperOS Phone and recollected on HyperOS Pad after the tablet viewer
+changes. Download the release-signed APK from [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0).
 
 - Interactive Spine Memorial Lobbies add action selection, zoom, pan, view reset, and linked BGM.
   Hiding controls keeps the animation playing, and older students retain their MP4 option.
 - Students with mapped 3D resources have model and animation selection, camera controls, seeking,
   speed, looping, outlines, and a saved background palette with light/dark defaults.
 - Tablet viewing adds a scene-backed glass tools sidebar and inline palette. Opening tools keeps the
-  model stable; keyboard input stays above the IME, and camera gestures no longer stall playback.
-- Both viewers default to System WebView. Settings → Interface offers independent compatibility
-  choices for devices with display issues; changes apply on the next entry and retain saved choices.
+  model stable; the palette stays open after color selection, and camera gestures no longer stall
+  playback. The color editor makes room for the keyboard without moving the whole scene.
+- Both viewers default to System WebView. Settings → Interface → Performance preload offers
+  independent Compatible presentation choices for devices with display issues. Changes apply on
+  the next entry and retain saved choices. These options change how viewer frames are presented;
+  they do not switch the device's Vulkan/OpenGL driver or guarantee a higher frame rate.
 - Search fields preserve cursor, selection, and Chinese composition; sheet blur stays continuous
   as the keyboard opens or closes.
 - Pre-release-only repositories can be scanned when pre-releases are enabled. Main apps and plugins
@@ -115,7 +118,8 @@ link still resolves to the published stable release.
   installation of historical releases/F-Droid builds, and lower glass rendering overhead.
 
 See [v1.17.0 release notes](readme/RELEASE_V1.17.0.md) for the complete upgrade from the published
-v1.15.0. The v1.16.0 notes document a local development milestone.
+v1.15.0, installation guidance for CI users, and compatibility notes.
+The v1.16.0 notes document a local development milestone.
 
 Read the full feature tour:
 
@@ -126,8 +130,8 @@ Read the full feature tour:
 
 - Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel always resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
-- This source targets `v1.17.0`. Its local preparation tag will be finalized after release
-  artifact verification; v1.17.0 has not been published yet.
+- The current release is [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0), with a
+  KeiOS Release-signed APK and SHA-256 checksum. CI packages use their own signing certificate.
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
 - Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.0`, Kotlin `2.4.21-RC`,
   Compose `1.12.1`, Android Gradle Plugin `9.4.1`, Ktor `3.6.0`.
@@ -136,7 +140,7 @@ Read the full feature tour:
 ## Documentation
 
 - [Documentation Index](readme/INDEX.md)
-- [Release Notes v1.17.0 (preparation)](readme/RELEASE_V1.17.0.md)
+- [Release Notes v1.17.0](readme/RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](readme/RELEASE_V1.16.0.md)
 - [Build Guide (EN)](readme/BUILD.md)
 - [构建指南 (CN)](readme/BUILD_CN.md)
