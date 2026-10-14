@@ -336,6 +336,7 @@ object GitHubActionsUpdateNotificationHelper {
     ): PendingIntent {
         val openIntent =
             Intent(context, MainActivity::class.java).apply {
+                identifier = "os.kei.github.actions.notification:$notificationId"
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or

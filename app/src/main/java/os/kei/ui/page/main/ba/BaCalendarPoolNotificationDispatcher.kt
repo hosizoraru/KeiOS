@@ -493,7 +493,9 @@ internal object BaCalendarPoolNotificationDispatcher {
         destination: BaCalendarPoolNotificationDestination,
         serverIndex: Int,
     ): PendingIntent {
-        val intent = baCalendarPoolOpenIntent(context, destination, serverIndex)
+        val intent = baCalendarPoolOpenIntent(context, destination, serverIndex).apply {
+            identifier = "os.kei.ba.calendar.pool.notification:body:$notificationId"
+        }
         return PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
             context,
             520_100 + notificationId,
@@ -508,7 +510,9 @@ internal object BaCalendarPoolNotificationDispatcher {
         destination: BaCalendarPoolNotificationDestination,
         serverIndex: Int,
     ): PendingIntent {
-        val intent = baCalendarPoolOpenIntent(context, destination, serverIndex)
+        val intent = baCalendarPoolOpenIntent(context, destination, serverIndex).apply {
+            identifier = "os.kei.ba.calendar.pool.notification:focus:$notificationId"
+        }
         return PendingIntent.getActivity(
             context,
             522_100 + notificationId,

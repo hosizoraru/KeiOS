@@ -13,7 +13,6 @@ import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import os.kei.feature.mcp.R
-import os.kei.core.intent.PendingIntentLaunchOptionsCompat
 import os.kei.core.log.AppLogger
 import os.kei.core.notification.live.SessionNotifier
 import os.kei.core.notification.live.NotificationHelper
@@ -101,11 +100,11 @@ object McpNotificationHelper {
                 serverName = serverName,
                 targetBaAccountId = targetBaAccountId,
             )
-        val openPendingIntent = PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
-            context,
-            310_100 + notificationId,
-            openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val openPendingIntent = McpNotificationOpenIntents.create(
+            context = context,
+            notificationId = notificationId,
+            intent = openIntent,
+            entry = McpNotificationOpenEntry.ForegroundBootstrap,
         )
         val resolvedMiFocusOrderId =
             resolveMiFocusOrderId(
@@ -176,8 +175,6 @@ object McpNotificationHelper {
                 serverName = serverName,
                 targetBaAccountId = targetBaAccountId,
             )
-        val openRequestCode = 110_100 + notificationId
-        val focusOpenRequestCode = 410_100 + notificationId
         val secondaryRequestCode = 110_200 + notificationId
         val openIntent =
             buildOpenIntent(
@@ -186,17 +183,17 @@ object McpNotificationHelper {
                 targetBaAccountId = resolvedTargetBaAccountId,
                 targetRoute = targetRoute,
             )
-        val focusOpenPendingIntent = PendingIntent.getActivity(
-            context,
-            focusOpenRequestCode,
-            openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val focusOpenPendingIntent = McpNotificationOpenIntents.create(
+            context = context,
+            notificationId = notificationId,
+            intent = openIntent,
+            entry = McpNotificationOpenEntry.Focus,
         )
-        val openPendingIntent = PendingIntentLaunchOptionsCompat.getUserVisibleActivity(
-            context,
-            openRequestCode,
-            openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val openPendingIntent = McpNotificationOpenIntents.create(
+            context = context,
+            notificationId = notificationId,
+            intent = openIntent,
+            entry = McpNotificationOpenEntry.Body,
         )
         val (stopPendingIntent, resolvedSecondaryActionLabel) = if (secondaryActionMode == SecondaryActionMode.MARK_READ) {
             McpNotificationInteractionIntents.markReadPendingIntent(

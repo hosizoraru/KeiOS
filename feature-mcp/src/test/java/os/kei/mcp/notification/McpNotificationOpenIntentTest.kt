@@ -50,4 +50,37 @@ class McpNotificationOpenIntentTest {
         )
         assertNull(intent.getStringExtra(McpAppIntentContract.EXTRA_BA_ACCOUNT_ID))
     }
+
+    @Test
+    fun `every ba notification opens ba and preserves its account`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val serverNames = listOf(
+            McpNotificationPayload.BA_AP_SERVER_NAME,
+            McpNotificationPayload.BA_CAFE_AP_SERVER_NAME,
+            McpNotificationPayload.BA_CAFE_VISIT_SERVER_NAME,
+            McpNotificationPayload.BA_ARENA_REFRESH_SERVER_NAME,
+            McpNotificationPayload.BA_CALENDAR_POOL_SERVER_NAME,
+            McpNotificationPayload.BA_CRAFT_SERVER_NAME,
+            McpNotificationPayload.BA_DAILY_DONE_SERVER_NAME,
+        )
+
+        serverNames.forEach { serverName ->
+            val intent = McpNotificationHelper.buildOpenIntent(
+                context = context,
+                serverName = serverName,
+                targetBaAccountId = "  cn-alt  ",
+            )
+
+            assertEquals(
+                McpAppIntentContract.TARGET_BOTTOM_PAGE_BA,
+                intent.getStringExtra(McpAppIntentContract.EXTRA_TARGET_BOTTOM_PAGE),
+                serverName,
+            )
+            assertEquals(
+                "cn-alt",
+                intent.getStringExtra(McpAppIntentContract.EXTRA_BA_ACCOUNT_ID),
+                serverName,
+            )
+        }
+    }
 }

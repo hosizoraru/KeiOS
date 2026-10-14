@@ -91,8 +91,10 @@ data class LiveNotificationPayload(
             return isBaApServerName(serverName) ||
                 isBaCafeApServerName(serverName) ||
                 isBaCafeVisitServerName(serverName) ||
-                    isBaArenaRefreshServerName(serverName) ||
-                    isBaCalendarPoolServerName(serverName)
+                isBaArenaRefreshServerName(serverName) ||
+                isBaCalendarPoolServerName(serverName) ||
+                isBaDailyDoneServerName(serverName) ||
+                serverName.trim() == BA_CRAFT_SERVER_NAME
         }
     }
 
