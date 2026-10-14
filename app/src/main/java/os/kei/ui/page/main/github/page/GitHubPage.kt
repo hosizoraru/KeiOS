@@ -53,6 +53,7 @@ import kotlin.math.abs
 fun GitHubPage(
     privilegedShell: PrivilegedShell,
     runtime: MainPageRuntime = MainPageRuntime(contentBottomPadding = 72.dp),
+    externalNavigationTriggerToken: Int = 0,
     externalRefreshTriggerToken: Int = 0,
     externalActionsTrackId: String? = null,
     externalActionsSheetToken: Int = 0,
@@ -62,6 +63,7 @@ fun GitHubPage(
     onOpenFdroidVersionList: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
+    val presentationOwnerActive = os.kei.ui.page.main.widget.glass.LocalLiquidPresentationOwnerActive.current
     val openLinkFailureMessage = context.resolveString(R.string.github_error_open_link)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -107,6 +109,7 @@ fun GitHubPage(
         )
 
     var consumedExternalActionsSheetToken by rememberSaveable { mutableIntStateOf(0) }
+    var consumedExternalNavigationToken by rememberSaveable { mutableIntStateOf(0) }
     val pageUiState by githubPageViewModel.uiState.collectAsStateWithLifecycle()
     val appIconState by githubPageViewModel.appIconState.collectAsStateWithLifecycle()
     val transferState = pageUiState.transferState
@@ -263,14 +266,28 @@ fun GitHubPage(
         actions.refreshAllTracked(showToast = true)
     }
     LaunchedEffect(
+        externalNavigationTriggerToken,
         externalActionsSheetToken,
         externalActionsTrackId,
         contentDerivedState.trackedItemIdKey,
         runtime.contentReady,
+        presentationOwnerActive,
     ) {
-        if (externalActionsSheetToken <= 0 ||
-            externalActionsSheetToken == consumedExternalActionsSheetToken ||
-            !runtime.contentReady
+        if (shouldDismissGitHubActionsForNavigation(
+                token = externalNavigationTriggerToken,
+                consumedToken = consumedExternalNavigationToken,
+            )
+        ) {
+            consumedExternalNavigationToken = externalNavigationTriggerToken
+            actions.closeActionsSheet()
+        }
+        if (!canConsumeGitHubActionsOpenRequest(
+                token = externalActionsSheetToken,
+                consumedToken = consumedExternalActionsSheetToken,
+                ownerActive = presentationOwnerActive,
+                contentReady = runtime.contentReady,
+                trackId = externalActionsTrackId,
+            )
         ) {
             return@LaunchedEffect
         }

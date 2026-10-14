@@ -42,6 +42,7 @@ import os.kei.ui.page.main.widget.chrome.LocalSearchAutoFocusEnabled
 import os.kei.ui.page.main.widget.glass.BindLiquidToastBridge
 import os.kei.ui.page.main.widget.glass.LiquidToastHost
 import os.kei.ui.page.main.widget.glass.LocalLiquidControlsEnabled
+import os.kei.ui.page.main.widget.glass.LocalLiquidPresentationOwnerActive
 import os.kei.ui.page.main.widget.glass.rememberLiquidToastState
 import os.kei.ui.page.main.widget.isAppInDarkTheme
 import os.kei.ui.page.main.widget.motion.LocalPredictiveBackAnimationsEnabled
@@ -62,6 +63,7 @@ internal fun MainScreenNavHost(
     backStack: NavBackStack,
     navigator: Navigator,
     pagerCoordinator: MainScreenPagerCoordinator,
+    externalNavigationToken: Int,
     prefsState: MainScreenUiPrefsState,
     appLabel: String,
     onCheckOrRequestPrivilege: () -> Unit,
@@ -193,6 +195,7 @@ internal fun MainScreenNavHost(
                             onOpenBaCalendarPool = pagerCoordinator.onOpenBaCalendarPool,
                             requestedBottomPage = pagerCoordinator.requestedBottomPage,
                             requestedBottomPageToken = pagerCoordinator.requestedBottomPageToken,
+                            externalNavigationToken = externalNavigationToken,
                             requestedGitHubRefreshToken = pagerCoordinator.requestedGitHubRefreshToken,
                             requestedGitHubActionsTrackId = pagerCoordinator.requestedGitHubActionsTrackId,
                             requestedGitHubActionsSheetToken = pagerCoordinator.requestedGitHubActionsSheetToken,
@@ -498,19 +501,23 @@ private fun MainScreenRouteBackgroundHost(
     exportBackdropToContent: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    AppManagedBackgroundHost(
-        enabled = prefsState.nonHomeBackgroundEnabled,
-        imageUri = prefsState.nonHomeBackgroundUri,
-        opacity = prefsState.nonHomeBackgroundOpacity,
-        saturation = prefsState.nonHomeBackgroundSaturation,
-        contentScale = prefsState.nonHomeBackgroundContentScale,
-        alignment = prefsState.nonHomeBackgroundAlignment,
-        pageStyle = prefsState.nonHomeBackgroundPageStyle,
-        scrim = prefsState.nonHomeBackgroundScrim,
-        style = style,
-        exportBackdropToContent = exportBackdropToContent,
-        content = content,
-    )
+    CompositionLocalProvider(
+        LocalLiquidPresentationOwnerActive provides rememberNavEntryAtTop(),
+    ) {
+        AppManagedBackgroundHost(
+            enabled = prefsState.nonHomeBackgroundEnabled,
+            imageUri = prefsState.nonHomeBackgroundUri,
+            opacity = prefsState.nonHomeBackgroundOpacity,
+            saturation = prefsState.nonHomeBackgroundSaturation,
+            contentScale = prefsState.nonHomeBackgroundContentScale,
+            alignment = prefsState.nonHomeBackgroundAlignment,
+            pageStyle = prefsState.nonHomeBackgroundPageStyle,
+            scrim = prefsState.nonHomeBackgroundScrim,
+            style = style,
+            exportBackdropToContent = exportBackdropToContent,
+            content = content,
+        )
+    }
 }
 
 private const val CatalogRouteTopOffsetDivisor = 7

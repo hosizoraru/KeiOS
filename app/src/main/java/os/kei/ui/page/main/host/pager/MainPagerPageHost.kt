@@ -93,6 +93,7 @@ internal data class MainPagerMcpPageState(
 @Stable
 internal data class MainPagerGitHubPageState(
     val privilegedShell: PrivilegedShell,
+    val requestedNavigationToken: Int,
     val requestedGitHubRefreshToken: Int,
     val requestedGitHubActionsTrackId: String?,
     val requestedGitHubActionsSheetToken: Int,
@@ -218,6 +219,7 @@ internal fun MainPagerPageHost(
                     GitHubPage(
                         privilegedShell = githubState.privilegedShell,
                         runtime = runtime,
+                        externalNavigationTriggerToken = githubState.requestedNavigationToken,
                         externalRefreshTriggerToken = githubState.requestedGitHubRefreshToken,
                         externalActionsTrackId = githubState.requestedGitHubActionsTrackId,
                         externalActionsSheetToken = githubState.requestedGitHubActionsSheetToken,

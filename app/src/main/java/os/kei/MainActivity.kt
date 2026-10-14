@@ -418,7 +418,7 @@ class MainActivity : ComponentActivity() {
             ) ?: return
         val intentServerIndex = intent?.baCalendarPoolServerIndexOrNull()
         val previous = hostUiState
-        val nextActionsTrackId = route.githubActionsTrackId ?: previous.requestedGitHubActionsTrackId
+        val nextActionsTrackId = route.githubActionsTrackId
         val nextActionsSheetToken = if (route.githubActionsTrackId != null) {
             previous.requestedGitHubActionsSheetToken + 1
         } else {

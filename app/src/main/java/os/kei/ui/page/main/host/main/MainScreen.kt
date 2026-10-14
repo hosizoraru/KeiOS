@@ -57,9 +57,17 @@ fun MainScreen(
     var localRequestedBottomPageToken by rememberSaveable { mutableIntStateOf(0) }
     var localRequestedGitHubActionsTrackId by rememberSaveable { mutableStateOf<String?>(null) }
     var localRequestedGitHubActionsSheetToken by rememberSaveable { mutableIntStateOf(0) }
+    var preferLocalActionsRequest by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(hostState.requestedBottomPageToken) {
+        if (hostState.requestedBottomPageToken > 0) {
+            localRequestedGitHubActionsTrackId = null
+            preferLocalActionsRequest = false
+        }
+    }
     val externalBottomPageRequested = !hostState.requestedBottomPage.isNullOrBlank()
     val externalGitHubActionsRequested =
-        hostState.requestedGitHubActionsSheetToken > 0 &&
+        !preferLocalActionsRequest &&
+            hostState.requestedGitHubActionsSheetToken > 0 &&
             !hostState.requestedGitHubActionsTrackId.isNullOrBlank()
     val effectiveRequestedBottomPage = if (externalBottomPageRequested) {
         hostState.requestedBottomPage
@@ -73,13 +81,16 @@ fun MainScreen(
     }
     val effectiveRequestedGitHubActionsTrackId = if (externalGitHubActionsRequested) {
         hostState.requestedGitHubActionsTrackId
+    } else if (externalBottomPageRequested) {
+        null
     } else {
         localRequestedGitHubActionsTrackId
     }
     val effectiveRequestedGitHubActionsSheetToken = if (externalGitHubActionsRequested) {
         hostState.requestedGitHubActionsSheetToken
     } else {
-        localRequestedGitHubActionsSheetToken
+        // Local history and platform notification counters must not deduplicate each other.
+        -localRequestedGitHubActionsSheetToken
     }
     LaunchedEffect(prefsViewModel) {
         prefsViewModel.loadInitialSnapshot()
@@ -228,6 +239,7 @@ fun MainScreen(
         backStack = backStack,
         navigator = navigator,
         pagerCoordinator = pagerCoordinator,
+        externalNavigationToken = hostState.requestedBottomPageToken,
         prefsState = uiPrefsState,
         appLabel = currentAppLabel,
         onCheckOrRequestPrivilege = currentOnCheckOrRequestPrivilege,
@@ -244,6 +256,7 @@ fun MainScreen(
                 localRequestedBottomPageToken += 1
                 localRequestedGitHubActionsTrackId = normalizedTrackId
                 localRequestedGitHubActionsSheetToken += 1
+                preferLocalActionsRequest = true
                 navigator.popUntil { route -> route == KeiosRoute.Main }
             }
         },

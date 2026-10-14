@@ -72,6 +72,7 @@ import os.kei.ui.page.main.widget.chrome.appTopBarEdgePadding
 import androidx.compose.foundation.layout.padding
 import os.kei.core.prefs.UiPrefs
 import os.kei.ui.page.main.widget.chrome.appNavigationVisible
+import os.kei.ui.page.main.widget.glass.LocalLiquidPresentationOwnerActive
 
 @Composable
 internal fun MainPagerLayout(
@@ -102,6 +103,7 @@ internal fun MainPagerLayout(
     onOpenBaCalendarPool: (Int?) -> Unit,
     requestedBottomPage: String?,
     requestedBottomPageToken: Int,
+    externalNavigationToken: Int,
     requestedGitHubRefreshToken: Int,
     requestedGitHubActionsTrackId: String?,
     requestedGitHubActionsSheetToken: Int,
@@ -332,7 +334,10 @@ internal fun MainPagerLayout(
       // Published here rather than derived per page: the bar is one overlay owned by the pager, but all five
       // pages are composed at once, so each page's own chrome has to be told to leave the centre of the top
       // row alone. See LocalAppNavigationPlacement.
-      CompositionLocalProvider(LocalAppNavigationPlacement provides navigationPlacement) {
+      CompositionLocalProvider(
+          LocalAppNavigationPlacement provides navigationPlacement,
+          LocalLiquidPresentationOwnerActive provides rootBackHandlersEnabled,
+      ) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (coordinator.pagerRuntime.shouldRenderNonHomeBackground) {
                 val backgroundStyle =
@@ -612,6 +617,7 @@ internal fun MainPagerLayout(
                         if (pageType == BottomPage.GitHub) {
                             remember(
                                 privilegedShell,
+                                externalNavigationToken,
                                 requestedGitHubRefreshToken,
                                 requestedGitHubActionsTrackId,
                                 requestedGitHubActionsSheetToken,
@@ -619,6 +625,7 @@ internal fun MainPagerLayout(
                             ) {
                                 MainPagerGitHubPageState(
                                     privilegedShell = privilegedShell,
+                                    requestedNavigationToken = externalNavigationToken,
                                     requestedGitHubRefreshToken = requestedGitHubRefreshToken,
                                     requestedGitHubActionsTrackId = requestedGitHubActionsTrackId,
                                     requestedGitHubActionsSheetToken = requestedGitHubActionsSheetToken,
@@ -635,6 +642,8 @@ internal fun MainPagerLayout(
                     CompositionLocalProvider(
                         LocalAppManagedSceneBackdrop provides
                             sceneBackdrop.takeIf { pageType != BottomPage.Home },
+                        LocalLiquidPresentationOwnerActive provides
+                            (rootBackHandlersEnabled && pageIndex == coordinator.pagerState.targetPage),
                     ) {
                         MainPagerPageHost(
                             pageType = pageType,
