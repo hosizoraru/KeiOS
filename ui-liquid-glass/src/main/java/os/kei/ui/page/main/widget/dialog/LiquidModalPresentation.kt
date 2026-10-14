@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import os.kei.ui.page.main.widget.glass.LiquidOverlayPortal
 import os.kei.ui.page.main.widget.glass.LocalLiquidOverlayDepth
+import os.kei.ui.page.main.widget.glass.LocalLiquidPresentationOwnerActive
 import os.kei.ui.page.main.widget.glass.presentationGlassBlur
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import os.kei.ui.page.main.widget.sheet.BlockedDismissRequestGate
@@ -67,6 +69,10 @@ internal fun LiquidModalPresentation(
     content: @Composable (progressProvider: () -> Float) -> Unit,
 ) {
     var keepMounted by remember { mutableStateOf(false) }
+    if (!LocalLiquidPresentationOwnerActive.current) {
+        SideEffect { keepMounted = false }
+        return
+    }
     if (!show && !keepMounted) return
 
     LiquidOverlayPortal {

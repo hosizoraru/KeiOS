@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +82,10 @@ internal fun LiquidMenuPresentation(
     content: @Composable () -> Unit,
 ) {
     var keepMounted by remember { mutableStateOf(false) }
+    if (!LocalLiquidPresentationOwnerActive.current) {
+        SideEffect { keepMounted = false }
+        return
+    }
     if (!show && !keepMounted) return
 
     LiquidOverlayPortal {

@@ -163,6 +163,7 @@ fun LiquidGlassActionMenu(
     layout: LiquidMenuLayout? = null,
     onDismissRequest: () -> Unit = {},
 ) {
+    if (!LocalLiquidPresentationOwnerActive.current) return
     // Apple defines the top row's size and whether it carries labels; the plan decides which layout is
     // actually achievable for the quick actions given, and lists anything that does not fit rather than
     // dropping it. See resolveLiquidMenuLayoutPlan.

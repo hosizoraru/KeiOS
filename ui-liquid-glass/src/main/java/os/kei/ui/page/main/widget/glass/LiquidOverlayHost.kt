@@ -162,6 +162,9 @@ internal class LiquidOverlayEntry(
  */
 val LocalLiquidOverlayHost = staticCompositionLocalOf<LiquidOverlayHostState?> { null }
 
+/** Retained pages may keep their state, but only the foreground owner may present modal chrome. */
+val LocalLiquidPresentationOwnerActive = staticCompositionLocalOf { true }
+
 /**
  * How many overlays are already stacked below this one. `0` is the bottom-most.
  *
@@ -188,6 +191,8 @@ fun LiquidOverlayPortal(
     layer: LiquidOverlayLayer = LiquidOverlayLayer.Presentation,
     content: @Composable () -> Unit,
 ) {
+    val ownerActive = LocalLiquidPresentationOwnerActive.current
+    if (layer == LiquidOverlayLayer.Presentation && !ownerActive) return
     val host = LocalLiquidOverlayHost.current
     if (host == null) {
         content()

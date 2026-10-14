@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import os.kei.ui.page.main.widget.glass.LiquidOverlayPortal
+import os.kei.ui.page.main.widget.glass.LocalLiquidPresentationOwnerActive
 import os.kei.ui.page.main.widget.glass.presentationGlassBlur
 import os.kei.ui.page.main.widget.isAppInDarkTheme
 import top.yukonga.miuix.kmp.layout.BottomSheetDefaults
@@ -108,6 +110,10 @@ fun LiquidGlassBottomSheet(
     // Stays mounted through the exit animation, so the sheet is never torn out from under a running
     // dismissal — the previous sheet's flinch was exactly that kind of cut.
     var keepMounted by remember { mutableStateOf(false) }
+    if (!LocalLiquidPresentationOwnerActive.current) {
+        SideEffect { keepMounted = false }
+        return
+    }
     if (!show && !keepMounted) return
 
     val isDark = isAppInDarkTheme()
