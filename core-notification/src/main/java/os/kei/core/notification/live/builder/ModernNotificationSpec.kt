@@ -56,10 +56,8 @@ object ModernNotificationSpecResolver {
     private val CONTENT_ICON_BA_DAILY_DONE = R.drawable.ic_ba_daily_done_live_update
     private val CONTENT_ICON_GITHUB_SHARE_IMPORT = R.drawable.ic_github_invertocat_island_blue
 
-    @Suppress("UNUSED_PARAMETER")
     fun resolve(
         state: LiveNotificationPayload,
-        preferOemLiveIconLayout: Boolean = false,
         @androidx.annotation.DrawableRes defaultAppIconResId: Int = ICON_DEFAULT,
     ): ModernNotificationSpec {
         val kind = resolveKind(state.serverName)

@@ -58,7 +58,6 @@ class SessionNotifierImpl(
             environment = EnvironmentContext(
                 channelId = helper.resolveChannel(style),
                 isHyperOS = helper.isHyperOS,
-                preferOemLiveIconLayout = helper.preferOemLiveIconLayout
             ),
             miIslandProgressColorOverride = payload.overrideAccentColor
         )

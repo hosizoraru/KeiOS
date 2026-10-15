@@ -577,7 +577,6 @@ object GitHubShareImportNotificationHelper {
             environment = EnvironmentContext(
                 channelId = McpNotificationHelper.LIVE_CHANNEL_ID,
                 isHyperOS = helper.isHyperOS,
-                preferOemLiveIconLayout = helper.preferOemLiveIconLayout
             ),
             semanticIconBitmap = resolveSemanticIconBitmap(context, state)
         )
@@ -603,7 +602,6 @@ object GitHubShareImportNotificationHelper {
             environment = EnvironmentContext(
                 channelId = helper.resolveChannel(NotificationRenderStyle.MI_ISLAND),
                 isHyperOS = helper.isHyperOS,
-                preferOemLiveIconLayout = helper.preferOemLiveIconLayout
             ),
             semanticIconBitmap = resolveSemanticIconBitmap(context, state),
             miIslandProgressColorOverride = state.phase.miIslandProgressColor

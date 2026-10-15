@@ -66,7 +66,6 @@ class ModernNotificationSpecResolverTest {
         ).forEach { (serverName, shortMode) ->
             val spec = ModernNotificationSpecResolver.resolve(
                 createState(serverName = serverName, running = true, port = 0, clients = 0, ongoing = false),
-                preferOemLiveIconLayout = true,
             )
 
             assertEquals(100, spec.progressPercent, serverName)
@@ -108,7 +107,6 @@ class ModernNotificationSpecResolverTest {
                 overrideProgressPercent = 67,
                 deadlineAtMs = 1_778_007_600_000L
             ),
-            preferOemLiveIconLayout = true
         )
 
         assertEquals(ModernNotificationKind.BA_CALENDAR_POOL, spec.kind)
@@ -130,7 +128,6 @@ class ModernNotificationSpecResolverTest {
                 overrideProgressPercent = 0,
                 deadlineAtMs = null
             ),
-            preferOemLiveIconLayout = true
         )
 
         assertEquals(ModernNotificationKind.BA_CALENDAR_POOL, spec.kind)
@@ -152,7 +149,6 @@ class ModernNotificationSpecResolverTest {
                 ongoing = true,
                 overrideProgressPercent = 72
             ),
-            preferOemLiveIconLayout = true
         )
         val phaseOnly = ModernNotificationSpecResolver.resolve(
             state = createState(
@@ -162,7 +158,6 @@ class ModernNotificationSpecResolverTest {
                 clients = 1,
                 ongoing = true
             ),
-            preferOemLiveIconLayout = true
         )
 
         assertEquals(ModernNotificationKind.GITHUB_SHARE_IMPORT, withOverride.kind)
@@ -187,7 +182,6 @@ class ModernNotificationSpecResolverTest {
                 overrideProgressPercent = 45,
                 overrideAccentColor = "#F59E0B"
             ),
-            preferOemLiveIconLayout = true
         )
 
         assertEquals(ModernNotificationKind.WEBDAV_SYNC, spec.kind)
@@ -209,7 +203,6 @@ class ModernNotificationSpecResolverTest {
                 overrideProgressPercent = 100,
                 overrideAccentColor = "#22C55E"
             ),
-            preferOemLiveIconLayout = true
         )
 
         assertEquals(ModernNotificationKind.WEBDAV_SYNC, spec.kind)

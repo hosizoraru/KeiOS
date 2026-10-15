@@ -20,7 +20,6 @@ class LegacyNotificationBuilder(
         val state = payload.state
         val spec = ModernNotificationSpecResolver.resolve(
             state = state,
-            preferOemLiveIconLayout = payload.environment.preferOemLiveIconLayout,
             defaultAppIconResId = NotificationAppIconResolver.smallIconResId(),
         )
         val isBlueArchiveAp = spec.kind == ModernNotificationKind.BA_AP ||
