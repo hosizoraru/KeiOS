@@ -100,6 +100,12 @@ those composition reads were retained because the selected visual transition req
 
 ### Page insets and navigation controls
 
+Maintenance follow-up (2026-10-16): the old top-bar search host and scaffold search switches had
+no production consumers; only their dedicated fixtures enabled them. That path, its animated
+placeholder, three search-only scaffold cases, and the top-bar search screenshot have been retired.
+The production floating search dock and its tests remain. The live-inset measurement behavior and
+tablet/RTL regression below remain relevant; the earlier search-placeholder result is historical.
+
 Search-height padding is represented by a remembered `PaddingValues` wrapper. The shared content
 padding helper and dual-column layouts also preserve live inset getters, including the header's
 top inset and the separate column-bottom padding. The inset is therefore read during padding/list
@@ -156,7 +162,6 @@ For the broader affected tests and a Release compiler report:
   --tests os.kei.ui.page.main.student.catalog.component.BaGuideBgmMiniPlayerRecompositionTest \
   --tests os.kei.ui.page.main.student.catalog.component.bgm.BaGuideBgmChromeMiniPlayerTest \
   --tests os.kei.ui.page.main.student.StudentGuideLocalBackdropFallbackTest \
-  --tests os.kei.ui.page.main.widget.AppTopBarSearchShellScreenshotTest \
   --tests 'os.kei.ui.page.main.ba.card.BaAccountPager*' \
   --tests os.kei.ui.page.main.widget.chrome.AppPageScaffoldInteractionTest \
   --tests os.kei.ui.page.main.widget.chrome.AppPageInsetRecompositionTest \

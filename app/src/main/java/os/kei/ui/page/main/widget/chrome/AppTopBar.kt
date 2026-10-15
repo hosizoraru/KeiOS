@@ -1,11 +1,9 @@
 package os.kei.ui.page.main.widget.chrome
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,8 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
-import os.kei.ui.page.main.widget.glass.GlassVariant
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 
 @Composable
@@ -36,10 +32,7 @@ fun AppTopBarSection(
     titleBackdrop: Backdrop? = null,
     titleStartReserve: Dp? = null,
     titleEndReserve: Dp? = null,
-    searchBarVisible: Boolean = false,
-    searchBarAnimationLabelPrefix: String = "appTopBarSearch",
     onTitleClick: () -> Unit = {},
-    searchBarContent: (@Composable BoxScope.() -> Unit)? = null,
 ) {
     val safeTop = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
     val barHeight = AppChromeTokens.topBarCollapsedHeight
@@ -127,35 +120,5 @@ fun AppTopBarSection(
                 content = actions,
             )
         }
-        if (searchBarContent != null) {
-            SearchBarHost(
-                visible = searchBarVisible,
-                animationLabelPrefix = searchBarAnimationLabelPrefix,
-                content = searchBarContent,
-            )
-        }
-    }
-}
-
-@Composable
-fun AppTopBarSearchField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-    backdrop: Backdrop? = null,
-    singleLine: Boolean = true,
-) {
-    Column {
-        AppLiquidSearchField(
-            modifier = modifier,
-            value = value,
-            onValueChange = onValueChange,
-            label = label,
-            backdrop = backdrop,
-            variant = GlassVariant.SearchField,
-            singleLine = singleLine,
-        )
-        Spacer(modifier = Modifier.height(AppChromeTokens.searchFieldBottomSpacing))
     }
 }

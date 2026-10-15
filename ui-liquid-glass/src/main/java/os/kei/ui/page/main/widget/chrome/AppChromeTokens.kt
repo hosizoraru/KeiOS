@@ -22,10 +22,6 @@ object AppChromeTokens {
     val topBarTitleMaxWidth: Dp = 280.dp
     val topBarTitleHeight: Dp = 52.dp
 
-    val searchBarHostHeight: Dp = 54.dp
-    val searchFieldHorizontalPadding: Dp = 14.dp
-    val searchFieldBottomSpacing: Dp = 6.dp
-
     // The fixed bar widths and item step that used to live here belonged to the old bar's
     // weight-based slot maths. The toolbar sizes itself from its actions.
     val liquidActionBarMinimumTouchTarget: Dp = 48.dp

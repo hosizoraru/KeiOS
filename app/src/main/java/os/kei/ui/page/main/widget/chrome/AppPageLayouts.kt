@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -36,8 +34,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
-import os.kei.ui.page.main.widget.motion.AppMotionTokens
-import os.kei.ui.page.main.widget.motion.appMotionDpState
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.ToolbarPosition
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -169,9 +165,6 @@ fun AppPageScaffold(
     floatingToolbar: @Composable () -> Unit = {},
     floatingToolbarPosition: ToolbarPosition = ToolbarPosition.BottomCenter,
     snackbarHost: @Composable () -> Unit = {},
-    searchBarVisible: Boolean = false,
-    searchBarAnimationLabelPrefix: String = "appPageSearch",
-    searchBarContent: (@Composable BoxScope.() -> Unit)? = null,
     onTitleClick: () -> Unit = {},
     /**
      * Widest this page's content column may get.
@@ -183,18 +176,6 @@ fun AppPageScaffold(
     contentMaxWidth: Dp = AppPageContentMaxWidth,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val hasSearchBar = searchBarContent != null
-    val searchBarPlaceholderHeightState =
-        appMotionDpState(
-            targetValue =
-                if (hasSearchBar && searchBarVisible) {
-                    AppChromeTokens.searchBarHostHeight
-                } else {
-                    0.dp
-                },
-            durationMillis = AppMotionTokens.searchBarSlideMs,
-            label = "${searchBarAnimationLabelPrefix}ScaffoldPadding",
-        )
     val currentContent = rememberUpdatedState(content)
     val scaffoldTopBar: @Composable () -> Unit =
         remember(
@@ -220,11 +201,7 @@ fun AppPageScaffold(
                 floatingToolbarPosition = floatingToolbarPosition,
                 snackbarHost = snackbarHost,
                 content = { innerPadding ->
-                    val adjustedPadding =
-                        remember(innerPadding, searchBarPlaceholderHeightState) {
-                            SearchBarInsetPaddingValues(innerPadding, searchBarPlaceholderHeightState)
-                        }
-                    currentContent.value(adjustedPadding)
+                    currentContent.value(innerPadding)
                 },
             )
             AppTopBarSection(
@@ -241,9 +218,6 @@ fun AppPageScaffold(
                         null
                     },
                 onTitleClick = onTitleClick,
-                searchBarVisible = searchBarVisible,
-                searchBarAnimationLabelPrefix = searchBarAnimationLabelPrefix,
-                searchBarContent = searchBarContent,
             )
             AppTopEndActionBarOverlay {
                 Row {
@@ -252,17 +226,6 @@ fun AppPageScaffold(
             }
         }
     }
-}
-
-/** The inset is read where padding is used, normally by the list or Modifier.padding during layout. */
-private class SearchBarInsetPaddingValues(
-    private val base: PaddingValues,
-    private val searchHeight: State<Dp>,
-) : PaddingValues {
-    override fun calculateTopPadding(): Dp = base.calculateTopPadding() + searchHeight.value
-    override fun calculateBottomPadding(): Dp = base.calculateBottomPadding()
-    override fun calculateLeftPadding(layoutDirection: LayoutDirection): Dp = base.calculateLeftPadding(layoutDirection)
-    override fun calculateRightPadding(layoutDirection: LayoutDirection): Dp = base.calculateRightPadding(layoutDirection)
 }
 
 @Composable

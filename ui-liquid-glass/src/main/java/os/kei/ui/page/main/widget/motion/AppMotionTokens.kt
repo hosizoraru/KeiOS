@@ -17,8 +17,6 @@ val LocalPredictiveBackAnimationsEnabled = staticCompositionLocalOf { true }
 
 object AppMotionTokens {
     const val disabledDurationMs = 0
-    const val searchBarFadeMs = 160
-    const val searchBarSlideMs = 220
     const val expandFadeInMs = 160
     const val expandSizeInMs = 220
     const val expandFadeOutMs = 120
