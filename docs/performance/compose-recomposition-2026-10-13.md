@@ -225,3 +225,63 @@ add helper/dot methods and change media signatures, so the existing profile is n
 series of commits.
 Recollect the profile on the final source with an explicitly selected disposable collector before
 shipping; packaged existing profile files alone do not establish freshness for this change.
+
+## P1/P2 maintenance follow-up (2026-10-16)
+
+The follow-up removes 1,280 lines from retired catalog/BGM views, unreferenced blend-token
+configuration, and unused share-notification adapters. Reference graphs and caller-removal history
+were checked before deletion. The active V2 catalog state helpers, BGM playback/seek/volume/undo
+primitives, and directly called notification helpers remain. No current tests or goldens were
+deleted, and no Sheet detents, materials, effects, or gesture behavior were changed.
+
+Cloud validation passed 167 focused catalog, share/notification, and design-system screenshot
+tests, plus Release Kotlin compilation. This proves neither APK shrinkage nor device frame-time
+improvement from dead-source removal.
+
+The quick QA gate now runs its existing 14 class filters in one Gradle invocation instead of four,
+including one app test run instead of three. Captured JUnit identities matched exactly: 41 cases,
+zero failures, errors, or skips before and after. Both modules' XML reports are copied to the
+artifact directory before an optional Release audit can clean build outputs. A single instrumented
+pair on the same cloud source and offline cache took 61.20 seconds before and 25.78 seconds after;
+an earlier 72.65-second uninstrumented run was warmup. This is a local gate observation, not a CI
+duration guarantee or device benchmark. The final production quick gate was also verified.
+
+Agent instructions now resolve optional skills against the available catalog/local directories and
+use the existing measurement reference when the optional release-measurement skill is unavailable.
+Routing and local links were checked. No independent model-task replay, token-cost comparison,
+or instruction-quality improvement was measured.
+
+### macOS / HyperOS acceptance handoff
+
+The cloud worker has no ADB target. Run the following acceptance on the user's HyperOS AVD and
+physical device; keep their results separate. Build `:app:assembleReleaseDiagnostic` and use only
+the isolated `os.kei.diag` package. Record the source commit and dirty diff, APK SHA-256, installed
+package/version, device/API, window size, density, font scale, refresh regime, mirroring state,
+and compilation/Baseline Profile mode with each capture. Compare matching conditions and verify
+profile freshness before making a release performance claim.
+
+Check phone/tablet layouts, light/dark themes, and font scales 1.0/1.5. Smoke-test the active catalog
+and memory lobby, BGM playback/seek/volume/remove-and-undo, and share/import notification transitions
+using disposable repositories/data. For long KernelSU v3.3.1 release notes, check scrolling to the
+last item, copy/link actions, expansion/collapse, and nested scrolling. The Sheet must still resize
+up and down through its supported heights, with content scrolling and grabber dragging both usable.
+
+Capture idle, opening, grabber expansion, content scrolling in each direction, grabber collapse,
+and closing as separate phases. On macOS, select the intended serial and manually navigate the
+diagnostic app to the starting state, then capture each short phase:
+
+```bash
+export KEIOS_TEST_SERIAL='<selected-adb-serial>'
+adb -s "$KEIOS_TEST_SERIAL" shell dumpsys gfxinfo os.kei.diag reset
+# Perform one fixed phase in the diagnostic app, then immediately collect it.
+adb -s "$KEIOS_TEST_SERIAL" shell dumpsys gfxinfo os.kei.diag framestats > /tmp/keios-sheet-phase.txt
+python3 scripts/perf/frame_stages.py /tmp/keios-sheet-phase.txt
+```
+
+Repeat comparable passes with unique output names. Capture Perfetto for a reproduced spike and
+separate UI/Compose/layout work from RenderThread/GPU work using the linked measurement setup.
+The existing `liquidSheetMotionBaselineProfile` and `liquidSheetMotionCompilationNone` macrobenchmark
+journeys can supplement this manual acceptance under explicitly recorded compilation modes.
+Do not use a journey label alone to capture a manually opened Sheet with `idle_dwell.sh`: that
+script restarts the app. AVD timings establish emulator behavior; physical-device captures remain
+necessary for conclusions about HyperOS GPU cost and perceived smoothness.

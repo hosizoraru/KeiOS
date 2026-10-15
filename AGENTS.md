@@ -24,10 +24,10 @@
 
 ## Skill routing
 
-- Use android-ux-design for Android visual design and UX, and compose-expert for Compose implementation or review. Preserve Miuix and existing custom surfaces when applying general Material guidance.
+- Use android-ux-design for Android visual design and UX, and compose-expert for Compose implementation or review when those skills are available. Resolve these optional skills from the session catalog and local .agents/skills or .claude/skills directories. If absent, continue with owning sources, nearby tests, and platform guidance; record the unavailable skill without repeating an exhaustive search. Preserve Miuix and existing custom surfaces when applying general Material guidance.
 - Use focused platform, accessibility, navigation, coroutine, and ViewModel skills for the behavior being changed. Load supporting references only when the active task needs them.
 - For KeiOS frame-time or jank investigations, use [the KeiOS frame-performance skill](.claude/skills/keios-frame-performance/SKILL.md) when available. Use a focused performance skill for a known issue and auditing-compose-performance for a requested broad audit or broad symptom that needs measurement and diagnosis.
-- For Baseline Profile collection, packaging diagnosis, or regeneration, use [KeiOS Baseline Profile](.agents/skills/keios-baseline-profile/SKILL.md). Use testing-compose-in-release-mode for performance measurements. A freshness check alone can use the release gate below without loading a collection workflow.
+- For Baseline Profile collection, packaging diagnosis, or regeneration, use [KeiOS Baseline Profile](.agents/skills/keios-baseline-profile/SKILL.md). Use testing-compose-in-release-mode for performance measurements when available; otherwise follow the measurement setup linked from the local frame-performance skill. A freshness check alone can use the release gate below without loading a collection workflow.
 - Apply skill checklists to the selected task and supported environment. A text edit does not need an app-wide UX audit; a Profile-only refresh does not need a new performance study. Preserve release gates when shipping is in scope.
 
 ## Verification by change
