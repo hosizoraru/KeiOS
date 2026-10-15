@@ -6,6 +6,7 @@
 - Complete the requested outcome through the relevant checks below. Run focused local checks when they can catch a regression; use local or disposable data, inspect UI/device behavior when the change affects it, fix failures caused by the change, and rerun invalidated checks. Skip unrelated full-suite runs and audits.
 - Make routine choices from current code and conventions. Continue without pausing for routine approval. Ask only when a material product or scope decision is missing, or when the request does not authorize an external or shared-state action.
 - Commit, push, release, or publish only when explicitly requested. A skill example does not authorize an architecture migration, dependency upgrade, commit, or publication.
+- Keep commit subjects concise, aiming for 50 characters or fewer. Put details, rationale, and validation in the body.
 - Keep long-task handoffs in ignored .planning/: objective, owning paths, decisions, verification results and inputs, remaining gates, and next action. On resume, refresh evidence whose inputs changed.
 - When parallel work is authorized, keep one owner for shared worktree, device, ADB, and Gradle state.
 - Report what changed, what was checked, and the remaining evidence limits. Separate source, build/artifact, installation, and observed behavior claims.

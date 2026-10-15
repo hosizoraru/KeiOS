@@ -1,5 +1,5 @@
 name: CI / Debug APK
-run-name: "D#${{ github.run_number }} - ${{ github.event.pull_request.title || github.event.head_commit.message || github.event.inputs.commit || github.ref_name }}"
+run-name: "D#${{ github.run_number }} - ${{ github.event.pull_request.number && format('PR #{0}', github.event.pull_request.number) || github.ref_name }}"
 
 on:
   push:
