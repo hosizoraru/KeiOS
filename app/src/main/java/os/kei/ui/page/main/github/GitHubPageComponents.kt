@@ -47,25 +47,6 @@ internal fun GitHubCompactInfoRow(
 }
 
 @Composable
-internal fun VersionValueRow(
-    label: String,
-    value: String,
-    valueColor: Color,
-    emphasized: Boolean = false,
-    onClick: (() -> Unit)? = null
-) {
-    GitHubCompactInfoRow(
-        label = label,
-        value = value,
-        valueColor = valueColor,
-        titleColor = MiuixTheme.colorScheme.primary,
-        emphasized = emphasized,
-        titleMinWidth = 52.dp,
-        onClick = onClick
-    )
-}
-
-@Composable
 internal fun GitHubOverviewMetricItem(
     label: String,
     value: String,

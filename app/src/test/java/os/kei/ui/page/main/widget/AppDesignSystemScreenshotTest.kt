@@ -29,7 +29,6 @@ import os.kei.ui.page.main.about.section.AboutAppCardSection
 import os.kei.ui.page.main.about.section.AboutReleaseCardSection
 import os.kei.ui.page.main.about.model.AboutAppDetails
 import os.kei.ui.page.main.github.GitHubEnhancedInfoFixture
-import os.kei.ui.page.main.github.VersionValueRow
 import os.kei.ui.page.main.github.importer.StarImportApkVerificationUiState
 import os.kei.ui.page.main.github.importer.StarImportCandidateCard
 import os.kei.ui.page.main.github.importer.StarImportConflictStrategy
@@ -414,38 +413,6 @@ class AppDesignSystemScreenshotTest {
     }
 
     @Test
-    fun githubDecisionAssistSummaryLight() {
-        captureRoboImage(filePath = "src/test/screenshots/design-system/github_decision_assist_summary_light.png", roborazziOptions = KeiOSScreenshotOptions) {
-            CompositionLocalProvider(LocalTextCopyExpandedOverride provides false) {
-                MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
-                    Column(
-                        modifier =
-                            Modifier
-                                .background(Color(0xFFF3F4F6))
-                                .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        VersionValueRow(
-                            label = "健康评分",
-                            value = "88",
-                            valueColor = Color(0xFF22C55E),
-                            emphasized = true,
-                            onClick = {},
-                        )
-                        AppSupportingBlock(
-                            text = "Release Notes\n${GitHubEnhancedInfoFixture.releaseBundle.releaseName}",
-                            accentColor = Color(0xFF0EA5E9),
-                            maxLines = 3,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            onClick = {},
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @Test
     fun githubStarImportControlsLight() {
         captureRoboImage(filePath = "src/test/screenshots/design-system/github_star_import_controls_light.png", roborazziOptions = KeiOSScreenshotOptions) {
             CompositionLocalProvider(LocalTextCopyExpandedOverride provides false) {
@@ -562,8 +529,6 @@ class AppDesignSystemScreenshotTest {
         }
     }
 
-    // topbar_search_shell_light.png lives in AppTopBarSearchShellScreenshotTest, which needs a
-    // compose rule this class must not have -- see that file for why.
 
     @Test
     fun controlClusterLight() {
