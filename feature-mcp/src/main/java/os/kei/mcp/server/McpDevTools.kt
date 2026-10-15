@@ -97,7 +97,7 @@ internal class McpDevTools(
         }.trim()
     }
 
-    private fun buildProjectSnapshot(): String =
+    internal fun buildProjectSnapshot(): String =
         buildString {
             appendLine("appLabel=${environment.appLabel}")
             appendLine("package=${environment.appPackageName}")
@@ -113,11 +113,11 @@ internal class McpDevTools(
             appendLine("keySourceFiles=${DEV_SOURCE_FILES.joinToString(",")}")
             appendLine("keyTestFiles=${DEV_TEST_FILES.joinToString(",")}")
             appendLine("quickCompile=./gradlew --no-parallel :app:compileDebugKotlin")
-            appendLine("mcpTests=./gradlew --no-parallel :app:testDebugUnitTest --tests \"os.kei.mcp.server.*\"")
+            appendLine("mcpTests=$MCP_TEST_COMMAND")
             appendLine("diffCheck=git diff --check")
         }.trim()
 
-    private fun buildValidationPlan(scope: String): String {
+    internal fun buildValidationPlan(scope: String): String {
         val normalized =
             when (scope) {
                 "mcp", "release", "ui", "baseline" -> scope
@@ -150,21 +150,24 @@ internal class McpDevTools(
 
     private companion object {
         const val DEFAULT_CODEX_TOKEN_ENV = "KEIOS_MCP_TOKEN"
+        const val MCP_TEST_COMMAND =
+            "./gradlew --no-parallel :feature-mcp:testDebugUnitTest --tests \"os.kei.mcp.server.*\" " +
+                ":app:testDebugUnitTest --tests \"os.kei.mcp.server.*\""
 
         val DEV_SOURCE_FILES =
             listOf(
-                "app/src/main/java/os/kei/mcp/server/LocalMcpService.kt",
-                "app/src/main/java/os/kei/mcp/server/McpKtorEndpointHost.kt",
-                "app/src/main/java/os/kei/mcp/server/McpToolCatalog.kt",
-                "app/src/main/java/os/kei/mcp/server/McpToolExecution.kt",
-                "app/src/main/assets/mcp/SKILL.md",
+                "feature-mcp/src/main/java/os/kei/mcp/server/LocalMcpService.kt",
+                "feature-mcp/src/main/java/os/kei/mcp/server/McpKtorEndpointHost.kt",
+                "feature-mcp/src/main/java/os/kei/mcp/server/McpToolCatalog.kt",
+                "feature-mcp/src/main/java/os/kei/mcp/server/McpToolExecution.kt",
+                "feature-mcp/src/main/assets/mcp/SKILL.md",
             )
 
         val DEV_TEST_FILES =
             listOf(
                 "app/src/test/java/os/kei/mcp/server/McpToolRegistrationTest.kt",
-                "app/src/test/java/os/kei/mcp/server/McpToolCatalogLocalizationTest.kt",
-                "app/src/test/java/os/kei/mcp/server/McpKtorEndpointHostTest.kt",
+                "feature-mcp/src/test/java/os/kei/mcp/server/McpToolCatalogLocalizationTest.kt",
+                "feature-mcp/src/test/java/os/kei/mcp/server/McpKtorEndpointHostTest.kt",
             )
 
         val QUICK_VALIDATION_COMMANDS =
@@ -175,7 +178,7 @@ internal class McpDevTools(
 
         val MCP_VALIDATION_COMMANDS =
             listOf(
-                "./gradlew --no-parallel :app:testDebugUnitTest --tests \"os.kei.mcp.server.*\"",
+                MCP_TEST_COMMAND,
                 "./gradlew --no-parallel :app:compileDebugKotlin",
                 "git diff --check",
             )
