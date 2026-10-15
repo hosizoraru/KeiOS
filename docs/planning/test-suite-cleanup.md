@@ -1,5 +1,9 @@
 # Test suite cleanup
 
+The [2026-10-16 maintenance decisions](maintenance-debt.md) revisit the ignored notification
+parameter, stale MCP development guide, and permanently enabled share-import switch noted below.
+The measurements and decisions in the dated rounds here remain historical records.
+
 ## Current state (2026-09-25)
 
 | | before | after round 2 (a29fe48e0) | after round 3 |
