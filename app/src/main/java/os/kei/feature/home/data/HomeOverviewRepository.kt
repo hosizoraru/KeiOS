@@ -360,7 +360,6 @@ internal fun loadHomeGitHubOverview(
         failedCount = failedCount,
         strategy = snapshot.lookupConfig.selectedStrategy,
         apiTokenConfigured = snapshot.lookupConfig.apiToken.isNotBlank(),
-        shareImportLinkageEnabled = snapshot.lookupConfig.shareImportLinkageEnabled,
         pendingShareImport = snapshot.pendingShareImportTrack != null,
         refreshIntervalHours = snapshot.refreshIntervalHours,
         cachedRefreshMs = if (cacheHitCount > 0) snapshot.lastRefreshMs else 0L,

@@ -57,7 +57,6 @@ data class GitHubLookupConfig(
     val preciseApkVersionEnabled: Boolean = false,
     val scanSystemAppsByDefault: Boolean = false,
     val profileDepth: GitHubProfileDepth = GitHubProfileDepth.Basic,
-    val shareImportLinkageEnabled: Boolean = true,
     val shareImportFlowMode: GitHubShareImportFlowMode = GitHubShareImportFlowMode.SheetAssisted,
     val appManagedShareInstallEnabled: Boolean = false,
     val foregroundManagedDownloadBoostEnabled: Boolean = false,
@@ -69,6 +68,10 @@ data class GitHubLookupConfig(
     val releaseNotesMode: GitHubReleaseNotesMode = GitHubReleaseNotesMode.Off,
     val fdroidCommonRepoIds: List<String> = FdroidRepositoryPresets.defaultCommonSearchRepoIds
 ) {
+    // Compatibility field for MCP diagnostics; share-import linkage is always enabled.
+    val shareImportLinkageEnabled: Boolean
+        get() = true
+
     val normalizedFdroidCommonRepoIds: List<String>
         get() = FdroidRepositoryPresets.normalizedCommonSearchRepoIds(fdroidCommonRepoIds)
 

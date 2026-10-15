@@ -249,7 +249,6 @@ internal class GitHubConfigActions(
                     preciseApkVersionEnabled = previousConfig.preciseApkVersionEnabled,
                     scanSystemAppsByDefault = previousConfig.scanSystemAppsByDefault,
                     profileDepth = previousConfig.profileDepth,
-                    shareImportLinkageEnabled = true,
                     shareImportFlowMode = previousConfig.shareImportFlowMode,
                     appManagedShareInstallEnabled = previousConfig.appManagedShareInstallEnabled,
                     foregroundManagedDownloadBoostEnabled =
@@ -342,7 +341,6 @@ internal class GitHubConfigActions(
                     preciseApkVersionEnabled = state.preciseApkVersionEnabledInput,
                     scanSystemAppsByDefault = state.scanSystemAppsByDefaultInput,
                     profileDepth = state.profileDepthInput,
-                    shareImportLinkageEnabled = true,
                     shareImportFlowMode = state.shareImportFlowModeInput,
                     appManagedShareInstallEnabled = state.appManagedShareInstallEnabledInput,
                     foregroundManagedDownloadBoostEnabled =

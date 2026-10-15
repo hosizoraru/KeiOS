@@ -38,7 +38,6 @@ data class HomeGitHubOverview(
     val failedCount: Int = 0,
     val strategy: GitHubLookupStrategyOption = GitHubLookupStrategyOption.AtomFeed,
     val apiTokenConfigured: Boolean = false,
-    val shareImportLinkageEnabled: Boolean = true,
     val pendingShareImport: Boolean = false,
     val refreshIntervalHours: Int = 3,
     val cachedRefreshMs: Long = 0L,

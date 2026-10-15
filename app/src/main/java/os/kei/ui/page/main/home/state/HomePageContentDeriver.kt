@@ -105,8 +105,7 @@ internal fun deriveHomePageContentState(
         when {
             !githubOverview.loaded -> text.loading
             githubOverview.pendingShareImport -> text.githubSharePending
-            githubOverview.shareImportLinkageEnabled -> text.valueOn
-            else -> text.valueOff
+            else -> text.valueOn
         }
     val webDavStatusLine =
         when {

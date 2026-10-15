@@ -128,7 +128,6 @@ object GitHubTrackStore {
     private const val KEY_PRECISE_APK_VERSION_ENABLED = "github_precise_apk_version_enabled"
     private const val KEY_SCAN_SYSTEM_APPS_BY_DEFAULT = "github_scan_system_apps_by_default"
     private const val KEY_PROFILE_DEPTH = "github_profile_depth"
-    private const val KEY_SHARE_IMPORT_LINKAGE_ENABLED = "github_share_import_linkage_enabled"
     private const val KEY_SHARE_IMPORT_FLOW_MODE = "github_share_import_flow_mode"
     private const val KEY_APP_MANAGED_SHARE_INSTALL_ENABLED =
         "github_app_managed_share_install_enabled"
@@ -917,7 +916,6 @@ object GitHubTrackStore {
             profileDepth = GitHubProfileDepth.fromStorageId(
                 kv().decodeString(KEY_PROFILE_DEPTH).orEmpty()
             ),
-            shareImportLinkageEnabled = true,
             shareImportFlowMode = GitHubShareImportFlowMode.fromStorageId(
                 kv().decodeString(KEY_SHARE_IMPORT_FLOW_MODE).orEmpty()
             ),
@@ -958,7 +956,6 @@ object GitHubTrackStore {
         kv().encode(KEY_PRECISE_APK_VERSION_ENABLED, config.preciseApkVersionEnabled)
         kv().encode(KEY_SCAN_SYSTEM_APPS_BY_DEFAULT, config.scanSystemAppsByDefault)
         kv().encode(KEY_PROFILE_DEPTH, config.profileDepth.storageId)
-        kv().encode(KEY_SHARE_IMPORT_LINKAGE_ENABLED, true)
         kv().encode(KEY_SHARE_IMPORT_FLOW_MODE, config.shareImportFlowMode.storageId)
         kv().encode(
             KEY_APP_MANAGED_SHARE_INSTALL_ENABLED,

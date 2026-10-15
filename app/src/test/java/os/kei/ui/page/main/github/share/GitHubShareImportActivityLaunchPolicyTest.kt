@@ -11,7 +11,6 @@ class GitHubShareImportActivityLaunchPolicyTest {
         data class Case(
             val name: String,
             val sharedText: String,
-            val linkageEnabled: Boolean,
             val flowMode: GitHubShareImportFlowMode,
             val expected: GitHubShareImportActivityDisplayState,
         )
@@ -20,28 +19,18 @@ class GitHubShareImportActivityLaunchPolicyTest {
             Case(
                 name = "notification first incoming share starts hidden",
                 sharedText = releasesUrl,
-                linkageEnabled = true,
                 flowMode = GitHubShareImportFlowMode.NotificationFirst,
                 expected = GitHubShareImportActivityDisplayState.Hidden,
             ),
             Case(
                 name = "sheet assisted incoming share starts sheet",
                 sharedText = releasesUrl,
-                linkageEnabled = true,
                 flowMode = GitHubShareImportFlowMode.SheetAssisted,
                 expected = GitHubShareImportActivityDisplayState.Sheet,
             ),
             Case(
-                name = "legacy disabled share import flag still follows flow mode",
-                sharedText = releasesUrl,
-                linkageEnabled = false,
-                flowMode = GitHubShareImportFlowMode.NotificationFirst,
-                expected = GitHubShareImportActivityDisplayState.Hidden,
-            ),
-            Case(
                 name = "invalid incoming share finishes activity",
                 sharedText = "hello",
-                linkageEnabled = true,
                 flowMode = GitHubShareImportFlowMode.NotificationFirst,
                 expected = GitHubShareImportActivityDisplayState.Finish,
             ),
@@ -51,7 +40,6 @@ class GitHubShareImportActivityLaunchPolicyTest {
                 GitHubShareImportActivityLaunchPolicy.forIncomingShare(
                     sharedText = case.sharedText,
                     lookupConfig = GitHubLookupConfig(
-                        shareImportLinkageEnabled = case.linkageEnabled,
                         shareImportFlowMode = case.flowMode
                     )
                 ),
