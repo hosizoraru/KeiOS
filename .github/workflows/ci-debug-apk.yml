@@ -210,6 +210,7 @@ jobs:
       # without it they only compose. `--continue` reports every failing module, not the first.
       # Included builds are independent: the Android task selector does not run build-logic tests.
       - name: Validate build logic, run unit tests (all modules) and verify screenshots
+        id: unit_tests
         run: ./gradlew :build-logic:check testDebugUnitTest -Proborazzi.test.verify=true --continue --stacktrace
 
       - name: Upload test results
@@ -228,10 +229,32 @@ jobs:
       - name: Write test summary
         if: always()
         run: |
+          report_status=0
+          scripts/qa/test_report.sh --slowest 10 > "${RUNNER_TEMP}/unit-test-summary.txt" || report_status=$?
           {
             echo "### Unit tests"
             echo ""
-            echo "- Tasks: \`:build-logic:check\`, \`testDebugUnitTest\` (every Android module), screenshots verified"
+            echo "- Requested tasks: \`:build-logic:check\`, \`testDebugUnitTest\` (every Android module), screenshot verification enabled"
+            echo "- Gradle test step: \`${{ steps.unit_tests.outcome }}\`"
             echo "- Commit: \`$(git rev-parse HEAD)\`"
             echo "- Run number: \`${GITHUB_RUN_NUMBER}\`"
+            echo "- XML report exit code: \`${report_status}\` (0 passed, 1 failed, 3 no results)"
+            echo ""
+            echo '```text'
+            cat "${RUNNER_TEMP}/unit-test-summary.txt"
+            echo '```'
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      # Successful runs supply the timing baseline too. Keep the small XML reports for two weeks;
+      # HTML and screenshot diffs above remain failure-only. Reporting never replaces the test gate.
+      - name: Upload unit test timing data
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-timings
+          path: |
+            */build/test-results/testDebugUnitTest/TEST-*.xml
+            build-logic/build/test-results/test/TEST-*.xml
+            ${{ runner.temp }}/unit-test-summary.txt
+          if-no-files-found: warn
+          retention-days: 14

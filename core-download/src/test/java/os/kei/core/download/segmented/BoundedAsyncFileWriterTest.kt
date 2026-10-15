@@ -64,7 +64,9 @@ class BoundedAsyncFileWriterTest {
     }
 
     @Test
-    fun `writer failure is reported by close`() = runBlocking(Dispatchers.IO) {
+    fun `writer failure is reported by close`() = runBlocking {
+        // Keep the consumer on this event loop: enqueue fills the buffer before close lets it run.
+        // On Dispatchers.IO the consumer can fail first, so enqueue correctly throws outside the assertion.
         coroutineScope {
             val writer = BoundedAsyncFileWriter(
                 scope = this,
@@ -80,7 +82,7 @@ class BoundedAsyncFileWriterTest {
     }
 
     @Test
-    fun `progress callback failure has a distinct fatal type`() = runBlocking(Dispatchers.IO) {
+    fun `progress callback failure has a distinct fatal type`() = runBlocking {
         coroutineScope {
             val writer = BoundedAsyncFileWriter(
                 scope = this,
