@@ -2,35 +2,21 @@
 
 package os.kei.ui.page.main.student.catalog.component
 
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import os.kei.R
-import os.kei.ui.page.main.os.appLucideDatabaseIcon
-import os.kei.ui.page.main.os.appLucideExternalLinkIcon
-import os.kei.ui.page.main.os.appLucideMoreIcon
-import os.kei.ui.page.main.os.appLucidePlayIcon
-import os.kei.ui.page.main.os.appLucideTrashIcon
 import os.kei.ui.page.main.os.appLucideUndoIcon
 import os.kei.ui.page.main.os.appLucideVolume2Icon
 import os.kei.ui.page.main.os.appLucideVolumeOffIcon
@@ -39,25 +25,15 @@ import os.kei.ui.page.main.student.component.GuideLiquidCard
 import os.kei.ui.page.main.student.guideLocalizedLabel
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
 import os.kei.ui.page.main.widget.core.CardLayoutRhythm
-import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppStandaloneLiquidTextButton
 import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.glass.LiquidGlassActionMenu
-import os.kei.ui.page.main.widget.glass.LiquidGlassActionMenuActionRow
 import os.kei.ui.page.main.widget.glass.LiquidMusicProgressSlider
 import os.kei.ui.page.main.widget.glass.LiquidVolumeSlider
 import os.kei.ui.page.main.widget.glass.LocalLiquidParentBackdrop
-import os.kei.ui.page.main.widget.sheet.SnapshotPopupPlacement
-import os.kei.ui.page.main.widget.sheet.SnapshotWindowListPopup
-import os.kei.ui.page.main.widget.sheet.capturePopupAnchor
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val BgmFavoriteActionMenuMinWidth = 168.dp
-private val BgmFavoriteActionMenuMaxWidth = 280.dp
-private val BgmFavoriteActionMenuMaxHeight = 336.dp
 
 @Composable
 internal fun BaGuideBgmPlaybackSeekBar(
@@ -172,197 +148,6 @@ private fun BaGuideBgmVolumeSlider(
 }
 
 @Composable
-internal fun BaGuideBgmFavoriteCard(
-    favorite: GuideBgmFavoriteItem,
-    selected: Boolean,
-    cached: Boolean,
-    caching: Boolean,
-    accent: Color,
-    onOpenGuide: () -> Unit,
-    onSelect: () -> Unit,
-    onPlay: () -> Unit,
-    onCache: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    val unknownStudent = stringResource(R.string.ba_catalog_bgm_student_unknown)
-    val studentTitle = favorite.studentTitle.ifBlank { unknownStudent }
-    val cacheReadyLabel = stringResource(R.string.ba_catalog_bgm_cache_ready)
-    val cacheContentDescription =
-        stringResource(
-            if (caching) R.string.ba_catalog_bgm_action_cache_busy else R.string.ba_catalog_bgm_action_cache,
-        )
-    val deleteContentDescription = stringResource(R.string.ba_catalog_bgm_action_delete)
-    val playContentDescription = stringResource(R.string.ba_catalog_bgm_action_play)
-    val openGalleryContentDescription = stringResource(R.string.ba_catalog_bgm_action_open_gallery)
-    val moreContentDescription = stringResource(R.string.ba_catalog_bgm_action_more)
-    val currentLabel = stringResource(R.string.ba_catalog_bgm_status_current)
-    val detailTitle = favorite.title.takeIf { isMeaningfulBgmFavoriteDetail(it, studentTitle) }
-    val detailNote =
-        favorite.note.takeIf { note ->
-            isMeaningfulBgmFavoriteDetail(note, studentTitle) &&
-                (detailTitle?.let { !sameBgmFavoriteDetail(note, it) } ?: true)
-        }
-    val trackSubtitle = (detailTitle ?: detailNote)?.let { guideLocalizedLabel(it) }
-    val listActionTint = MiuixTheme.colorScheme.onBackgroundVariant
-    val listActionContainer = MiuixTheme.colorScheme.surfaceContainer
-    var actionExpanded by remember { mutableStateOf(false) }
-    var actionAnchorBounds by remember { mutableStateOf<IntRect?>(null) }
-    GuideLiquidCard(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onSelect,
-                    onLongClick = onRemove,
-                ),
-        cornerRadius = 14.dp,
-        surfaceColor = if (selected) accent.copy(alpha = 0.14f) else MiuixTheme.colorScheme.surface.copy(alpha = 0.58f),
-        tint = accent.copy(alpha = if (selected) 0.10f else 0.03f),
-        isInteractive = false,
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(CardLayoutRhythm.infoRowGap),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier.size(48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                BaGuideCatalogEntryAvatar(
-                    imageUrl = favorite.studentImageUrl.ifBlank { favorite.imageUrl },
-                    fallbackRes = R.drawable.ba_tab_bgm,
-                    size = 48.dp,
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = studentTitle,
-                        modifier = Modifier.weight(1f),
-                        color = MiuixTheme.colorScheme.onBackground,
-                        fontSize = AppTypographyTokens.CompactTitle.fontSize,
-                        lineHeight = AppTypographyTokens.CompactTitle.lineHeight,
-                        fontWeight = AppTypographyTokens.CompactTitle.fontWeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (selected) {
-                        BaGuideCatalogStatusIconPill(
-                            label = currentLabel,
-                            color = accent,
-                            icon = appLucidePlayIcon(),
-                        )
-                    }
-                    if (cached) {
-                        BaGuideCatalogStatusIconPill(
-                            label = cacheReadyLabel,
-                            color = Color(0xFF22C55E),
-                            icon = appLucideDatabaseIcon(),
-                        )
-                    }
-                }
-                trackSubtitle?.let { subtitle ->
-                    Text(
-                        text = subtitle,
-                        color = MiuixTheme.colorScheme.onBackgroundVariant,
-                        fontSize = AppTypographyTokens.Supporting.fontSize,
-                        lineHeight = AppTypographyTokens.Supporting.lineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            AppStandaloneLiquidIconButton(
-                icon = appLucidePlayIcon(),
-                contentDescription = playContentDescription,
-                onClick = onPlay,
-                width = 38.dp,
-                height = 38.dp,
-                variant = GlassVariant.Compact,
-                iconTint = listActionTint,
-                containerColor = listActionContainer,
-            )
-            Box(
-                modifier = Modifier.capturePopupAnchor { actionAnchorBounds = it },
-                contentAlignment = Alignment.Center,
-            ) {
-                AppStandaloneLiquidIconButton(
-                    icon = appLucideMoreIcon(),
-                    contentDescription = moreContentDescription,
-                    onClick = { actionExpanded = true },
-                    width = 32.dp,
-                    height = 32.dp,
-                    variant = GlassVariant.Compact,
-                    iconTint = listActionTint,
-                    containerColor = listActionContainer,
-                )
-                key("ba-guide-bgm-favorite-action-popup") {
-                    SnapshotWindowListPopup(
-                        show = actionExpanded,
-                        alignment = PopupPositionProvider.Align.BottomEnd,
-                        anchorBoundsProvider = { actionAnchorBounds },
-                        placement = SnapshotPopupPlacement.ButtonEnd,
-                        onDismissRequest = { actionExpanded = false },
-                    ) {
-                        LiquidGlassActionMenu(
-                            minWidth = BgmFavoriteActionMenuMinWidth,
-                            maxWidth = BgmFavoriteActionMenuMaxWidth,
-                            maxHeight = BgmFavoriteActionMenuMaxHeight,
-                            items =
-                                listOf(
-                                    LiquidGlassActionMenuActionRow(
-                                        id = "open_gallery",
-                                        text = openGalleryContentDescription,
-                                        leadingIcon = appLucideExternalLinkIcon(),
-                                        onClick = {
-                                            actionExpanded = false
-                                            onOpenGuide()
-                                        },
-                                    ),
-                                    LiquidGlassActionMenuActionRow(
-                                        id = "cache",
-                                        text = cacheContentDescription,
-                                        leadingIcon = appLucideDatabaseIcon(),
-                                        enabled = !caching,
-                                        onClick = {
-                                            actionExpanded = false
-                                            onCache()
-                                        },
-                                    ),
-                                    LiquidGlassActionMenuActionRow(
-                                        id = "delete",
-                                        text = deleteContentDescription,
-                                        leadingIcon = appLucideTrashIcon(),
-                                        variant = GlassVariant.SheetDangerAction,
-                                        onClick = {
-                                            actionExpanded = false
-                                            onRemove()
-                                        },
-                                    ),
-                                ),
-                            onDismissRequest = { actionExpanded = false },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 internal fun BaGuideBgmUndoBlock(
     removedFavorite: GuideBgmFavoriteItem,
     accent: Color,
@@ -417,25 +202,3 @@ internal fun BaGuideBgmUndoBlock(
         }
     }
 }
-
-private fun isMeaningfulBgmFavoriteDetail(
-    raw: String,
-    studentTitle: String,
-): Boolean {
-    if (raw.isBlank()) return false
-    if (sameBgmFavoriteDetail(raw, studentTitle)) return false
-    val compact = raw.bgmFavoriteDetailKey()
-    return compact != "bgm" &&
-        compact != "回忆大厅" &&
-        compact != "回忆大厅bgm"
-}
-
-private fun sameBgmFavoriteDetail(
-    first: String,
-    second: String,
-): Boolean = first.bgmFavoriteDetailKey() == second.bgmFavoriteDetailKey()
-
-private fun String.bgmFavoriteDetailKey(): String =
-    replace(Regex("\\s+"), "")
-        .trim()
-        .lowercase()
