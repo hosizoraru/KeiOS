@@ -114,9 +114,10 @@ write_metric_summary() {
 
 printf 'Compose QA artifacts: %s\n' "$ARTIFACT_DIR"
 
-run_step "Debug Kotlin compile" ./gradlew "${GRADLE_QA_ARGS[@]}" :app:compileDebugKotlin
-run_step "Markdown parser unit test" ./gradlew "${GRADLE_QA_ARGS[@]}" :app:testDebugUnitTest --tests os.kei.ui.page.main.widget.markdown.AppMarkdownParserTest
-run_step "Compose recomposition regressions" ./gradlew "${GRADLE_QA_ARGS[@]}" \
+# Keep one task graph and one app test run: separate --tests invocations launch new test JVMs and
+# overwrite earlier XML reports. The combined filters below retain the same regression coverage.
+run_step "Debug compile and Compose regressions" ./gradlew "${GRADLE_QA_ARGS[@]}" \
+  :app:compileDebugKotlin \
   :ui-liquid-glass:testDebugUnitTest \
   --tests os.kei.ui.page.main.widget.sheet.SheetContentRecompositionTest \
   --tests os.kei.ui.page.main.widget.sheet.LiquidSheetContentScrollTest \
@@ -124,16 +125,24 @@ run_step "Compose recomposition regressions" ./gradlew "${GRADLE_QA_ARGS[@]}" \
   --tests os.kei.ui.page.main.widget.glass.LiquidSliderRecompositionTest \
   --tests os.kei.ui.page.main.widget.chrome.LiquidBottomBarRecompositionTest \
   :app:testDebugUnitTest \
+  --tests os.kei.ui.page.main.widget.markdown.AppMarkdownParserTest \
   --tests os.kei.ui.page.main.student.section.GuideSectionVoiceInteractionTest \
   --tests os.kei.ui.page.main.student.page.support.GuideSyncProgressRecompositionTest \
   --tests os.kei.ui.page.main.student.section.gallery.GuideGalleryAudioRecompositionTest \
   --tests os.kei.ui.page.main.student.catalog.component.BaGuideBgmMiniPlayerRecompositionTest \
   --tests os.kei.ui.page.main.ba.card.BaAccountPagerRecompositionTest \
   --tests os.kei.ui.page.main.widget.chrome.AppPageScaffoldInteractionTest \
-  --tests os.kei.ui.page.main.widget.chrome.AppPageInsetRecompositionTest
-run_step "Long Release Notes rendering" ./gradlew "${GRADLE_QA_ARGS[@]}" \
-  :app:testDebugUnitTest \
+  --tests os.kei.ui.page.main.widget.chrome.AppPageInsetRecompositionTest \
   --tests os.kei.ui.page.main.github.sheet.GitHubReleaseNotesRenderingTest
+
+# Preserve the complete quick-check results before the optional Release audit cleans build outputs.
+for module in app ui-liquid-glass; do
+  test_results="$ROOT_DIR/$module/build/test-results/testDebugUnitTest"
+  if [[ -d "$test_results" ]]; then
+    mkdir -p "$ARTIFACT_DIR/$module/test-results"
+    cp -R "$test_results/." "$ARTIFACT_DIR/$module/test-results/"
+  fi
+done
 
 if [[ "$WITH_AUDIT" -eq 1 ]]; then
   if AUDIT_INIT_SCRIPT="$(resolve_audit_init_script)"; then
