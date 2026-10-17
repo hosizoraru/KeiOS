@@ -26,7 +26,7 @@ This repo keeps machine-specific paths and secrets out of VCS on purpose.
 - Android config baseline: `compileSdk=37`, `targetSdk=37`, `minSdk=35`. API 37 ships minor
   revisions, and this app pins `compileSdkMinor = 0` — it compiles against **37.0** (SDK extension
   22), not whichever 37.x the local SDK happens to have installed.
-- Gradle Wrapper: `9.8.0`; Kotlin plugin: `2.4.21-RC`; Android Gradle Plugin: `9.4.1`;
+- Gradle Wrapper: `9.8.1`; Kotlin plugin: `2.4.21`; Android Gradle Plugin: `9.4.1`;
   Compose runtime: `1.12.1`; Ktor: `3.6.0`.
 - Release APKs read generated Baseline Profiles from `app/src/release/generated/baselineProfiles/`.
   The benchmark build wires the same profile directory so pre-release performance checks exercise
@@ -88,7 +88,7 @@ Use `~/.gradle/gradle.properties` (preferred) or `local.properties` for local-on
 org.gradle.java.home=/path/to/your/jdk
 
 # Optional: pin another Miuix version locally
-miuix.version=0.9.4-5c91d5e5-SNAPSHOT
+miuix.version=0.9.4-8972f941-SNAPSHOT
 ```
 
 Miuix iterates fast. When something Miuix-shaped misbehaves, check whether the pin is current
@@ -101,6 +101,9 @@ scripts/deps/miuix_snapshot_check.sh
 It reports the effective pin and which file supplies it, the newest published snapshot, and the
 library commits in between. `--diff PullToRefresh` prints the patch for one component, `--update`
 moves the pin. Exit codes: 0 up to date, 1 behind.
+
+GitHub Packages can order hash-named snapshots lexically in Maven metadata. Use publication times
+(as the script does), rather than the Maven `<latest>` field, to identify the newest snapshot.
 
 Every other pin has a sibling script, which reads the catalog itself rather than a hardcoded list:
 

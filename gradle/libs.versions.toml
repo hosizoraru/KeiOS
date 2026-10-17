@@ -12,8 +12,8 @@ java = "21"
 androidx-core = "1.19.1"
 activity-compose = "1.13.0"
 material = "1.14.0"
-# A floor, not a free choice: miuix 0.9.4 depends on JetBrains Compose 1.12.1, whose Android variants ARE
-# the androidx artifacts, so every androidx.compose module resolves to the higher of this and 1.12.1.
+# Keep the AndroidX floor aligned with Miuix's Android dependencies. JetBrains Compose 1.12.2
+# delegates its Android variants to AndroidX Compose 1.12.1; their version numbers need not match.
 # Keep this equal to the resolved version -- BuildConfig.COMPOSE_VERSION feeds the diagnostics page.
 compose = "1.12.1"
 constraintlayout-compose = "1.1.2"
@@ -29,7 +29,7 @@ androidx-test-ext-junit = "1.3.0"
 espresso = "3.7.0"
 uiautomator = "2.4.0"
 
-miuix = "0.9.4-5c91d5e5-SNAPSHOT"
+miuix = "0.9.4-8972f941-SNAPSHOT"
 backdrop = "2.0.1"
 capsule = "2.1.3"
 shapes = "1.2.1"

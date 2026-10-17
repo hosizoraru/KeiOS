@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.Dialog
 import os.kei.ui.page.main.widget.glass.AppLiquidWindowBoundary
 import top.yukonga.miuix.kmp.layout.DialogDefaults
+import top.yukonga.miuix.kmp.theme.ProvideDisplayCutoutFix
 import top.yukonga.miuix.kmp.utils.RemovePlatformDialogDefaultEffects
 import top.yukonga.miuix.kmp.utils.WindowNavigationEventScope
 import top.yukonga.miuix.kmp.utils.platformDialogProperties
@@ -77,6 +78,8 @@ fun AppWindowDialogHost(
             },
             properties = platformDialogProperties(),
         ) {
+            // Theme locals cross into this window, but the host theme's cutout effect does not.
+            ProvideDisplayCutoutFix()
             RemovePlatformDialogDefaultEffects()
             // A navigation-event owner provided in the host composition (miuix-nav's
             // entry dispatcher) is inherited across the platform-window boundary and

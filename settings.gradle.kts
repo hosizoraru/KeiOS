@@ -17,6 +17,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         maven(url = "https://maven.pkg.github.com/compose-miuix-ui/miuix") {
+            content {
+                includeGroup("top.yukonga.miuix.kmp")
+            }
             credentials {
                 username = providers.gradleProperty("gpr.user")
                     .orElse(System.getenv("GITHUB_ACTOR"))
