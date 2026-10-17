@@ -1,6 +1,6 @@
 [versions]
 agp = "9.4.1"
-kotlin = "2.4.21-RC"
+kotlin = "2.4.21"
 baseline-profile-plugin = "1.5.0"
 roborazzi = "1.76.0"
 
