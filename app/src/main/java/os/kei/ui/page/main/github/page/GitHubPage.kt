@@ -97,6 +97,10 @@ fun GitHubPage(
             state.actionsArtifactDetailRequest != null ||
             state.apkInfoDetailRequest != null ||
             state.managedInstallConfirmRequest != null
+    LaunchedEffect(sheetBackdropVisible) {
+        // A retained search editor must not reopen the IME behind a sheet after configuration changes.
+        if (sheetBackdropVisible) githubPageViewModel.updateSearchExpanded(false)
+    }
     val backdrops =
         rememberMainPageBackdropSet(
             keyPrefix = "github",
