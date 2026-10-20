@@ -147,6 +147,57 @@ material and animation rules are retained. Acceptance checks fresh exports,
 rule syntax, signature/flag deduplication, startup membership, new viewer
 coverage and the absence of test-only rules instead of appending old profiles.
 
+### Accepted HyperOS Phone capture, 2026-10-20
+
+The full generation task captured collection source `7f037c60d` on
+`KeiOS_HyperOS4_Phone` (`emulator-5580`, API 37, HyperOS 4.0.24.0,
+1120x2436 at 480 dpi, 6 vCPU / 8 GiB). It completed in 15m31s; all six
+tests passed with zero failures or skips. Device test time was 14m00s.
+The source-input fingerprint remained unchanged throughout collection.
+
+| Journey | Device time |
+| --- | ---: |
+| commonRoutesAndChrome | 94.8s |
+| baOfficeAndCatalogCore | 134.4s |
+| gitHubTrackingCore | 80.3s |
+| mainPagesAndNavigation | 75.8s |
+| startupAndFirstScroll | 34.6s |
+| adaptiveLargeScreenCore | 419.9s |
+
+| Generated output | Previous rules | Fresh rules | Added signatures | Removed signatures |
+| --- | ---: | ---: | ---: | ---: |
+| Baseline | 63,171 | 64,543 | 2,865 | 1,493 |
+| Startup | 24,028 | 24,734 | 1,037 | 331 |
+
+The six fresh exports contain 220,079 rule lines. AndroidX merging removes
+191 within-journey duplicates and 155,345 cross-journey duplicate signatures.
+Their exact union is the 64,543 generated baseline signatures, with zero
+missing/extra signatures or flag-policy differences. Startup matches only its
+fresh owning journey and is a subset of baseline. Both generated files have
+zero duplicate signatures and zero capture-only namespace rules.
+
+Named new coverage includes 40 `SheetGlassNode` rules, 5 `LiquidShaderPool`
+rules, 4 `LiquidDecorationGeometry` rules, 6 `LiquidSheetViewportDrawNode`
+rules and 6 shared scene-host rules. The pool's acquire/release methods are
+recorded by the BA journey; the shared Sheet renderer and partial-height
+motion are also exercised by the GitHub journey. The adaptive journey passed
+both replays of the real model and Lobby in CompatibleFrames, with native
+frame readiness, tools/palette/IME, camera, immersion, BGM and compact guide
+paging. This is a fresh Phone capture including forced wide/compact paths;
+no older Phone or Pad rules were appended.
+
+Collection used the Phone's existing isolated ADB service on port 5039.
+The disposable APK identities and existing signatures were verified before
+installation. The runner retained both APKs and their data directories.
+The seven protected KeiOS/ErinAO packages retained APK identities and data
+directory inodes. Original window/density/letterbox, DND, input property,
+volume, renderer, SELinux and local SDK configuration were restored.
+
+The initial offline dependency-resolution attempt ended before device tests;
+the accepted online run kept the same source and dependency versions.
+Collection and rule coverage are established here; frame-rate improvement
+is not inferred from the rule count or AVD collection time.
+
 ### Accepted HyperOS Pad capture, 2026-10-10
 
 The complete generation task captured source `908c0ea97` plus the reviewed collector,
