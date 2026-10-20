@@ -39,7 +39,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 | UI 技术栈 | Jetpack Compose、Miuix、液态玻璃风格 chrome |
 | 运行技术栈 | Kotlin、Java 21、Shizuku/Root、Media3、MMKV、Ktor、OkHttp |
 | 语言资源 | 简体中文、English、日本語 |
-| 源码发布目标 | [v1.18.0](RELEASE_V1.18.0.md) |
+| 当前稳定版 | [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) |
 
 ## 常用入口
 
@@ -74,7 +74,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 
 ## v1.18.0 重点变化
 
-当前源码准备发布 v1.18.0，汇总自公开 v1.17.0 起的变化。已公开的安装包继续通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
+v1.18.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 发布，汇总自 v1.17.0 起的变化。后续稳定更新继续通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
 
 - 改善 Liquid Sheet 刚打开、非全屏高度和首次拖动时的卡顿，减少重复 Shader 编译、图层处理与绘制，保留玻璃材质、模糊、折射、阴影、动画和特效。
 - GitHub 长发行日志使用受窗口约束的正文区域，按可见段落加载，保留 Markdown、链接、完整复制、嵌套滚动和面板高度手势。
@@ -95,7 +95,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 
 - 稳定版安装包通过 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases) 发布。
 - 公开稳定版始终通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- 当前源码发布目标为 v1.18.0。本地 Tag 或发布准备提交不代表 APK 已公开，公开下载以稳定版入口为准。正式 APK 使用 KeiOS Release 签名并提供 SHA-256 校验文件，CI 包使用独立的签名证书。
+- [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 已提供 KeiOS Release 签名 APK 与 SHA-256 校验文件。后续公开更新以稳定版入口为准，CI 包使用独立的签名证书。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
 - 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.1`、Kotlin `2.4.21`、
   Compose `1.12.1`、Android Gradle Plugin `9.4.1`、Ktor `3.6.0`。

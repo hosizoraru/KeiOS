@@ -40,7 +40,7 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 | UI stack | Jetpack Compose, Miuix, liquid-glass chrome |
 | Runtime stack | Kotlin, Java 21, Shizuku/Root, Media3, MMKV, Ktor, OkHttp |
 | Languages | Simplified Chinese, English, Japanese |
-| Source release target | [v1.18.0](readme/RELEASE_V1.18.0.md) |
+| Stable release | [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) |
 
 ## Quick Links
 
@@ -92,8 +92,9 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 
 ## v1.18.0 Highlights
 
-This checkout prepares v1.18.0, covering changes since the published v1.17.0. Published APKs remain
-available through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
+v1.18.0 is available on [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0),
+covering changes since v1.17.0. Future stable updates remain available through
+[Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
 
 - Liquid Sheet opening and initial partial-height dragging do less redundant shader, layer, and
   drawing work. Glass materials, blur, refraction, shadows, animations, and effects are preserved.
@@ -121,9 +122,9 @@ Read the full feature tour:
 
 - Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel always resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
-- The source release target is v1.18.0. A local tag or release-preparation commit does not publish
-  an APK; use the stable-channel link for public downloads. Release APKs use the KeiOS Release
-  certificate and a SHA-256 checksum; CI packages use their own signing certificate.
+- [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) is published with the
+  KeiOS Release-signed APK and a SHA-256 checksum. Use the stable-channel link for future
+  public updates; CI packages use their own signing certificate.
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
 - Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.1`, Kotlin `2.4.21`,
   Compose `1.12.1`, Android Gradle Plugin `9.4.1`, Ktor `3.6.0`.

@@ -8,8 +8,8 @@
 
 - 稳定安装建议直接使用 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases)。
 - 公开稳定版通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- 当前源码发布目标为 v1.18.0，重点改善 Sheet 性能、长发行日志、通知唤起和播放／页面更新。
-  详见 [v1.18.0 更新说明](RELEASE_V1.18.0.md)，已公开的 APK 继续通过上方稳定版入口获取。
+- [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 已发布，重点改善 Sheet 性能、长发行日志、通知唤起和播放／页面更新。
+  详见 [v1.18.0 更新说明](RELEASE_V1.18.0.md)，后续公开更新继续通过上方稳定版入口获取。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出 Debug、Benchmark 与 Release APK。
 

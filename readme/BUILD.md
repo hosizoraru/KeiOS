@@ -8,9 +8,9 @@
 
 - Stable installs should use [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
-- The source release target is v1.18.0: Sheet performance, long release notes, notification reentry,
-  and playback/page-update improvements. See [v1.18.0 notes](RELEASE_V1.18.0.md). Published APKs
-  remain available through the stable-channel link above.
+- [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) is published: Sheet performance,
+  long release notes, notification reentry, and playback/page-update improvements. See
+  [v1.18.0 notes](RELEASE_V1.18.0.md). Use the stable-channel link above for future public updates.
 - This build guide covers local source builds, debug packages, and contributor workflows.
 - Use the commands in `Common Local Commands` to generate debug, benchmark, and release APKs.
 
