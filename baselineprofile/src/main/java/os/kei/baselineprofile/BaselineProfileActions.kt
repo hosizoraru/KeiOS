@@ -250,14 +250,16 @@ internal fun MacrobenchmarkScope.openAndDismissOverlay(
 /**
  * Compiles the shared Sheet paths that opening and pressing Back never reaches.
  *
- * The strategy sheet is deterministic, long and lazy. Expanding through the grabber first lets the
- * following swipes belong to its content; the final grabber drag warms resize, nested-scroll
- * arbitration, layout-height updates and the settle spring without adding another cold start.
+ * Exercise the opening detent before expanding: its first resize creates and reuses the retained
+ * material, decorations and draw viewport. Expanded content swipes then cover nested-scroll
+ * arbitration, followed by the collapse and settle spring, without adding another cold start.
  */
 internal fun MacrobenchmarkScope.openExerciseAndDismissLiquidSheet(triggerTag: String) {
     openWindowFrom(triggerTag = triggerTag, arrivalTag = LIQUID_SHEET_PANEL)
     waitForTestTag(LIQUID_SHEET_DRAG_REGION, timeoutMs = 12_000)
 
+    dragLiquidSheetRegion(up = false, distanceFraction = LIQUID_SHEET_PARTIAL_DRAG_FRACTION)
+    dragLiquidSheetRegion(up = true, distanceFraction = LIQUID_SHEET_PARTIAL_DRAG_FRACTION)
     dragLiquidSheetRegion(up = true)
     swipeWithinTestTag(LIQUID_SHEET_PANEL, up = true)
     swipeWithinTestTag(LIQUID_SHEET_PANEL, up = false)
@@ -266,10 +268,13 @@ internal fun MacrobenchmarkScope.openExerciseAndDismissLiquidSheet(triggerTag: S
     dismissTheOpenOverlay(LIQUID_SHEET_PANEL)
 }
 
-private fun MacrobenchmarkScope.dragLiquidSheetRegion(up: Boolean) {
+private fun MacrobenchmarkScope.dragLiquidSheetRegion(
+    up: Boolean,
+    distanceFraction: Float = LIQUID_SHEET_DRAG_DISTANCE_FRACTION,
+) {
     val bounds = device.findObject(testTagSelector(LIQUID_SHEET_DRAG_REGION))?.visibleBounds
         ?: error("Unable to find Liquid Sheet drag region in ${targetAppId()}")
-    val distance = (device.displayHeight * LIQUID_SHEET_DRAG_DISTANCE_FRACTION).toInt()
+    val distance = (device.displayHeight * distanceFraction).toInt()
     val startY = bounds.centerY()
     val endY =
         (if (up) startY - distance else startY + distance)
@@ -706,5 +711,6 @@ private const val PAGER_SWIPE_NEAR_X = 0.22f
 private const val PAGER_SWIPE_FAR_X = 0.78f
 private const val PAGER_SWIPE_Y = 0.55f
 private const val LIQUID_SHEET_DRAG_DISTANCE_FRACTION = 0.14f
+private const val LIQUID_SHEET_PARTIAL_DRAG_FRACTION = 0.06f
 private const val LIQUID_SHEET_CONTENT_UPPER_FRACTION = 0.34f
 private const val LIQUID_SHEET_CONTENT_LOWER_FRACTION = 0.82f

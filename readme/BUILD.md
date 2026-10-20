@@ -206,6 +206,17 @@ verify both `assets/dexopt/baseline.prof` and `baseline.profm`. See
 [the collection plan](../docs/planning/baseline-profile-coverage.md) for coverage and
 device restoration. Collection success is separate from a measured speedup.
 
+Audit the complete fresh merge before packaging:
+
+```bash
+python3 scripts/qa/baseline_profile_rules.py \
+  --capture-dir baselineprofile/build/outputs/connected_android_test_additional_output/nonMinifiedRelease \
+  --capture-start-marker baselineprofile/build/intermediates/profile-capture-start.txt
+```
+
+This checks all six exports per device, exact signature/flag merging, startup
+membership, duplicate and capture-only rules, and the retained Liquid Sheet paths.
+
 ### v1.17.0 Release Gate
 
 Release preparation can update notes, version targets, and an unpublished local preparation tag.

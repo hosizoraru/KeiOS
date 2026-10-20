@@ -106,7 +106,7 @@ class BaselineProfileTestTagContractTest {
         helpers.forEach { helper ->
             // More than one: the declaration itself is in these sources and matches too.
             assertTrue(
-                Regex("""\b$helper\s*\(""").findAll(callers).count() > 1,
+                Regex("""\b$helper\s*\(|::\s*$helper\b""").findAll(callers).count() > 1,
                 "$helper is shared and nothing calls it",
             )
         }
@@ -187,6 +187,10 @@ class BaselineProfileTestTagContractTest {
         var totalMaxReplays = 0
         journeys.forEach { journey ->
             val arguments = journey.groupValues[2]
+            assertTrue(
+                "filterPredicate = ::isReleaseProfileRule" in arguments,
+                "${journey.groupValues[1]} must exclude capture-only rules before the merge",
+            )
             fun limit(argument: String): Int {
                 val constant = requireNotNull(Regex("$argument\\s*=\\s*(\\w+)").find(arguments))
                     .groupValues[1]

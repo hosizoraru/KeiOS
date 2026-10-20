@@ -58,6 +58,7 @@ class BaselineProfileGenerator {
             maxIterations = STARTUP_MAX_ITERATIONS,
             stableIterations = STARTUP_STABLE_ITERATIONS,
             includeInStartupProfile = true,
+            filterPredicate = ::isReleaseProfileRule,
         ) {
             launchHomeFromColdStart()
             flingVisibleScrollable(times = 2)
@@ -74,6 +75,7 @@ class BaselineProfileGenerator {
             maxIterations = CORE_MAX_ITERATIONS,
             stableIterations = CORE_STABLE_ITERATIONS,
             includeInStartupProfile = false,
+            filterPredicate = ::isReleaseProfileRule,
         ) {
             launchHomeFromColdStart()
             flingVisibleScrollable(times = 2)
@@ -127,6 +129,7 @@ class BaselineProfileGenerator {
             maxIterations = FEATURE_MAX_ITERATIONS,
             stableIterations = FEATURE_STABLE_ITERATIONS,
             includeInStartupProfile = false,
+            filterPredicate = ::isReleaseProfileRule,
         ) {
             launchHomeFromColdStart()
 
@@ -191,6 +194,7 @@ class BaselineProfileGenerator {
             maxIterations = FEATURE_MAX_ITERATIONS,
             stableIterations = FEATURE_STABLE_ITERATIONS,
             includeInStartupProfile = false,
+            filterPredicate = ::isReleaseProfileRule,
         ) {
             launchHomeFromColdStart()
             navigateToMainPage(
@@ -240,6 +244,7 @@ class BaselineProfileGenerator {
             maxIterations = FEATURE_MAX_ITERATIONS,
             stableIterations = FEATURE_STABLE_ITERATIONS,
             includeInStartupProfile = false,
+            filterPredicate = ::isReleaseProfileRule,
         ) {
             launchHomeFromColdStart()
             navigateToMainPage(
@@ -287,8 +292,7 @@ class BaselineProfileGenerator {
             maxIterations = ADAPTIVE_MAX_ITERATIONS,
             stableIterations = ADAPTIVE_STABLE_ITERATIONS,
             includeInStartupProfile = false,
-            // The fixed launch harness exists only in the disposable collector APK.
-            filterPredicate = { rule -> "Los/kei/profilecapture/" !in rule },
+            filterPredicate = ::isReleaseProfileRule,
         ) {
             val originalWindowSize = readWindowSizeOverride()
             try {

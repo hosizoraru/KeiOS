@@ -87,6 +87,37 @@ The Gradle merge is the authority for combining method flags and duplicate rules
 from the six journeys. Regenerate obsolete signatures from current code; do not
 delete library or animation rules merely to reduce the textual rule count.
 
+### Liquid Sheet coverage maintenance, 2026-10-20
+
+The GitHub Strategy Sheet journey now drags the opening detent down and back up
+before its existing expansion, content scrolling and collapse. This reaches the
+first partial-height resize, retained material/decoration updates and draw-viewport
+exposure paths introduced by the Sheet renderer changes. It remains inside the
+existing two replays, so collection still has six journeys and a 16-replay ceiling.
+
+All six collectors apply `isReleaseProfileRule`, excluding only the disposable
+viewer harness and producer namespaces. Startup still has one owning journey;
+library, animation and material rules remain eligible. AndroidX performs the
+merge, without appending older Phone/Pad profiles or manually unioning flags.
+
+`scripts/qa/baseline_profile_rules.py` checks generated syntax, duplicate signatures,
+startup membership, capture-only leakage and named runtime coverage, including
+`SheetGlassNode`, `LiquidShaderPool`, `LiquidDecorationGeometry`,
+`LiquidSheetViewportDrawNode` and the shared scene producer. With fresh capture
+inputs it also requires all six exports per device and verifies the exact merged
+signature set and AndroidX 1.5 sorted-first-rule flag policy:
+
+```bash
+python3 scripts/qa/baseline_profile_rules.py \
+  --capture-dir baselineprofile/build/outputs/connected_android_test_additional_output/nonMinifiedRelease \
+  --capture-start-marker baselineprofile/build/intermediates/profile-capture-start.txt
+```
+
+This audit validates the merge; the existing Gradle capture guard separately
+requires six fresh passing JUnit results on every selected serial before copying
+source profiles. Check the audit itself with
+`python3 -m unittest discover -s scripts/qa/tests -p 'test_baseline_profile_rules.py'`.
+
 ### Pad viewer coverage maintenance, 2026-10-10
 
 The adaptive journey also opens the real Kei model and reviewed GameKee 714062
@@ -483,10 +514,11 @@ needs the grabber, resize layout, nested-scroll arbitration, content fling and s
 gitHubTrackingCore uses the deterministic long Strategy Sheet as the representative shared surface:
 
 1. open the Sheet and wait for both the panel and shared drag-region tags;
-2. drag the grabber upward to expand it;
-3. scroll the lazy content up and back down;
-4. drag the grabber downward to resize it;
-5. dismiss through the normal back path.
+2. drag the opening detent downward slightly and back upward while still partial-height;
+3. drag the grabber upward to expand it;
+4. scroll the lazy content up and back down;
+5. drag the grabber downward to resize it;
+6. dismiss through the normal back path.
 
 This stays inside the existing GitHub cold start and its 2/2 replay budget. It covers shared Sheet
 implementation rather than adding one journey per business Sheet.
@@ -633,7 +665,9 @@ Accept the result after all of these checks:
 5. scripts/qa/baseline_profile_freshness.sh reports the expected generated artifacts.
 6. The release APK contains assets/dexopt/baseline.prof and assets/dexopt/baseline.profm.
 7. Named critical components retain rules: startup/Home, main navigation, Compose scrolling,
-   Liquid presentation, Markdown, Media3 when catalog data is available, and adaptive layout helpers.
+   Liquid presentation and its retained renderer/shader/viewport paths, Markdown, Media3 when catalog
+   data is available, and adaptive layout helpers. Run `scripts/qa/baseline_profile_rules.py` with the
+   fresh capture directory and marker to check the merge and required runtime groups.
 8. If a performance comparison is requested, measure A/B medians with BaselineProfileMode.Require
    under comparable release conditions; successful collection alone does not establish a speedup.
 

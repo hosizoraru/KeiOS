@@ -27,6 +27,10 @@ internal fun profileCaptureAppId(): String =
         }
     }
 
+/** The fixed viewer harness and instrumentation runner never ship in the release application. */
+internal fun isReleaseProfileRule(rule: String): Boolean =
+    "Los/kei/profilecapture/" !in rule && "Los/kei/baselineprofile/" !in rule
+
 internal fun testTagSelector(tag: String): BySelector = By.res(tag)
 
 internal fun MacrobenchmarkScope.waitForTestTag(
