@@ -17,9 +17,9 @@ class AboutReleaseSearchTest {
     fun releaseHighlightsAreSearchableInSupportedLanguages() {
         val application = RuntimeEnvironment.getApplication()
         val queriesByLanguage = mapOf(
-            "zh-CN" to listOf("v1.17.0", "Spine", "3D", "WebView", "中文输入", "超级岛"),
-            "en" to listOf("v1.17.0", "Spine", "3D", "WebView", "Chinese composition", "Super Island"),
-            "ja" to listOf("v1.17.0", "Spine", "3D", "WebView", "中国語", "スーパーアイランド"),
+            "zh-CN" to listOf("v1.18.0", "Liquid Sheet", "长发行日志", "BGM", "通知", "页面切换"),
+            "en" to listOf("v1.18.0", "Liquid Sheet", "long release notes", "BGM", "notification", "page transitions"),
+            "ja" to listOf("v1.18.0", "Liquid Sheet", "長いリリースノート", "BGM", "通知", "ページ切替"),
         )
         queriesByLanguage.forEach { (language, queries) ->
             val configuration = Configuration(application.resources.configuration).apply {

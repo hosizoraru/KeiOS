@@ -21,7 +21,6 @@ import os.kei.ui.page.main.os.appLucideBellIcon
 import os.kei.ui.page.main.os.appLucideBranchIcon
 import os.kei.ui.page.main.os.appLucideLayersIcon
 import os.kei.ui.page.main.os.appLucidePackageIcon
-import os.kei.ui.page.main.os.appLucidePlayIcon
 import os.kei.ui.page.main.os.appLucideSearchIcon
 import os.kei.ui.page.main.os.appLucideVersionIcon
 import os.kei.ui.page.main.widget.core.AppTypographyTokens
@@ -56,13 +55,13 @@ fun AboutReleaseCardSection(
                 icon = appLucideVersionIcon(),
             )
             AboutReleaseHighlightBlock(
-                title = stringResource(R.string.about_release_row_lobby),
-                value = stringResource(R.string.about_release_value_lobby),
-                icon = appLucidePlayIcon(),
+                title = stringResource(R.string.about_release_row_sheet),
+                value = stringResource(R.string.about_release_value_sheet),
+                icon = appLucideLayersIcon(),
             )
             AboutReleaseHighlightBlock(
-                title = stringResource(R.string.about_release_row_models),
-                value = stringResource(R.string.about_release_value_models),
+                title = stringResource(R.string.about_release_row_notes),
+                value = stringResource(R.string.about_release_value_notes),
                 icon = appLucidePackageIcon(),
             )
             AboutReleaseHighlightBlock(

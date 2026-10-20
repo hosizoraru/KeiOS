@@ -8,8 +8,8 @@
 
 - 稳定安装建议直接使用 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases)。
 - 公开稳定版通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- v1.17.0 包含动态回忆大厅、学生 3D 工具、搜索修复与按包名识别的预发行版追踪。
-  六段 Baseline Profile 已在 HyperOS Phone 完成，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集；正式签名 APK 可从 [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) 下载。
+- 当前源码发布目标为 v1.18.0，重点改善 Sheet 性能、长发行日志、通知唤起和播放／页面更新。
+  详见 [v1.18.0 更新说明](RELEASE_V1.18.0.md)，已公开的 APK 继续通过上方稳定版入口获取。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出 Debug、Benchmark 与 Release APK。
 
@@ -45,8 +45,8 @@ Git 版本元数据辅助代码和 Profile 采集完整性校验任务也位于�
 - CI 会在 Gradle 外根据当前 HEAD 已合入的最新 semver tag 和当前发布目标注入版本元数据。
 - 本地构建可在 `~/.gradle/gradle.properties` 或 `local.properties` 覆盖
   `keios.version.name`、`keios.nextVersion.name`、`keios.version.anchorTag` 与 `keios.git.*`。
-- Release 构建使用最新已合入 semver tag 与当前发布目标之间更新的版本，例如 `1.17.0`。
-- Debug / Benchmark 构建使用下一 patch 版本，并追加 commit 数和短 SHA，例如 `1.17.1+12.gabcdef0`。
+- Release 构建使用最新已合入 semver tag 与当前发布目标之间更新的版本，例如 `1.18.0`。
+- Debug / Benchmark 构建使用下一 patch 版本，并追加 commit 数和短 SHA，例如 `1.18.1+12.gabcdef0`。
 - 缺少 CI 注入 metadata 的本地构建会直接读取 git metadata，以最新已合入 tag 作为 commit 数锚点，并在发布目标更新时使用发布目标作为 release base。
 - 包名链路保持精简：Debug 安装为 `os.kei.debug`；Benchmark 与 Release 安装为 `os.kei`。
 - 当前 CI artifact 名称保持简洁：`KeiOS_<versionName>`，APK 文件名为 `KeiOS_<versionName>.apk`。
@@ -155,7 +155,7 @@ scripts/dev/avd_tablet.sh    # Android 17 平板（KeiOS_Pad_API37_Validation）
 （`.diag`）。在验证用 AVD 上这正是本意；在随身手机上不是，因此非模拟器目标默认拒绝，必须显式传
 `--allow-physical`。
 
-### v1.17.0 发布门禁
+### v1.18.0 发布门禁
 
 发布准备阶段可以同步文案、版本目标，并建立未推送的本地预备 tag。采集和产物验证通过后，
 再让 tag 指向最终源码并发布；被其他任务占用的 AVD 不参与这些检查。
@@ -188,16 +188,23 @@ scripts/qa/baseline_profile_freshness.sh
 
 本次发布重点复查：
 
-- 搜索：连续输入、中间插入、文字选择、中文输入法组词保留光标和编辑状态；键盘切换时弹层模糊连续。
-- GitHub：仅预发行仓库开启选项后可扫描与追踪；API、Atom、刷新与重启后，主应用和插件按各自包名判断版本。
-- 学生图鉴：有资源时 MP4 与 Spine 入口共存；沉浸和重置视角不中断动画；BGM 静音及后台行为正确。
-  3D 模型与服装对应、视角、进度、速度、循环、描边、背景保存和控件对比度正确。
-- 冷启动深浅色背景及入口状态正确，关闭过渡动画仍正常；玻璃材质和组件动效保留。
-- 新鲜度门禁对已提交源码和依赖报告 fresh，未提交运行时变更另行核对；生成文件非空且保留采集计划的路径。
-  规则数量只记录当次采集，不作为固定发布门禁。
-- 正式 APK 的签名、1.17.0 / versionCode 11700999、R8/lint，以及 assets/dexopt/baseline.prof 和 baseline.profm 完成核对。
-- 让未推送的本地 v1.17.0 tag 指向最终验收提交，复核 tag 目标与 APK 元数据；不强制替换已发布的 tag。
-- 使用 [Release Notes v1.17.0](RELEASE_V1.17.0.md)，检查通过后移除发布准备提示，发布签名 APK 和校验文件。
+- Liquid Sheet：非全屏高度打开、初始下拉与回拉、展开、嵌套内容滚动、收起、输入法、返回及后台恢复。
+  保留材质、模糊、折射、阴影、分辨率与动画；帧时间结论使用可比的实体机测量。
+- 发行日志：真实长文能够到达末段和链接，完整复制正常；小高度、大字体、嵌套滚动与宽屏仍可操作。
+- 再次唤起：通知／超级岛／快捷方式不残留启动遮罩；重复进入 Actions、活动／卡池、制造室与日常通知时目标及账户正确。
+- 关于：v1.18.0 卡片与简体中文、英文、日文搜索关键词一致；更新截图基线前先审查差异。
+- 新鲜度门禁对已提交源码和依赖报告 fresh，未提交运行时变更另行核对；六段新鲜导出使用
+  `scripts/qa/baseline_profile_rules.py` 核对精确合并。规则数量只记录当次采集，不作为固定门禁。
+- 核对最终源码与 Tag 对应的正式签名、1.18.0 / versionCode 11800999、R8/lint，以及
+  assets/dexopt/baseline.prof 和 baseline.profm。
+- 在最终验收提交上创建带说明的本地 v1.18.0 Tag。Tag 定稿后重新构建，让 APK 中的 Git 版本锚点一致；不强制替换已发布 Tag。
+- 使用 [Release Notes v1.18.0](RELEASE_V1.18.0.md)。推送分支／Tag 与公开 GitHub Release 是分别授权的动作，
+  明确要求发布时再交付签名 APK 和校验文件。
+
+### v1.17.0 发布门禁
+
+[v1.17.0 历史说明](RELEASE_V1.17.0.md) 保留该版本的发布范围；当前发布目标使用上方
+[v1.18.0 门禁](#v1180-发布门禁)。
 
 ### 截图基线
 

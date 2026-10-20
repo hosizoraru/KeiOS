@@ -8,10 +8,9 @@
 
 - Stable installs should use [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
-- v1.17.0 includes interactive lobbies, student 3D tools, search fixes, and package-aware
-  pre-release tracking. The six-journey Baseline Profile was collected on HyperOS Phone and
-  recollected on HyperOS Pad after the tablet viewer changes. Download the release-signed APK from
-  [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0).
+- The source release target is v1.18.0: Sheet performance, long release notes, notification reentry,
+  and playback/page-update improvements. See [v1.18.0 notes](RELEASE_V1.18.0.md). Published APKs
+  remain available through the stable-channel link above.
 - This build guide covers local source builds, debug packages, and contributor workflows.
 - Use the commands in `Common Local Commands` to generate debug, benchmark, and release APKs.
 
@@ -52,9 +51,9 @@ ownership and configuration-cache checks. This command does not generate Baselin
 - Local builds can override `keios.version.name`, `keios.nextVersion.name`,
   `keios.version.anchorTag`, and `keios.git.*` in `~/.gradle/gradle.properties` or `local.properties`.
 - Release builds use the newer value between the latest merged semver tag and the current release
-  target, for example `1.17.0`.
+  target, for example `1.18.0`.
 - Debug and benchmark builds use the next patch version plus commit count and short SHA, for example
-  `1.17.1+12.gabcdef0`.
+  `1.18.1+12.gabcdef0`.
 - Local builds resolve git metadata directly when CI metadata is absent, using the latest merged tag
   as the commit-count anchor and the current release target as the release base when it is newer.
 - Package chains stay compact: debug installs as `os.kei.debug`; benchmark and release install as `os.kei`.
@@ -217,7 +216,7 @@ python3 scripts/qa/baseline_profile_rules.py \
 This checks all six exports per device, exact signature/flag merging, startup
 membership, duplicate and capture-only rules, and the retained Liquid Sheet paths.
 
-### v1.17.0 Release Gate
+### v1.18.0 Release Gate
 
 Release preparation can update notes, version targets, and an unpublished local preparation tag.
 Finalize the tag and publish only after collection and artifact checks pass on the final source.
@@ -246,24 +245,29 @@ scripts/qa/baseline_profile_freshness.sh
 
 Recommended focused checks for this release:
 
-- Search: continuous typing, middle insertion, text selection, and Chinese IME composition retain
-  the cursor and composing state; sheet blur remains continuous during keyboard transitions.
-- GitHub: a pre-release-only repository can scan and track with the option enabled; main-app and
-  plugin package identities stay separate across API, Atom, refresh, and restart.
-- Student Guide: legacy MP4 and migrated Spine entries coexist where provided; animation continues
-  in immersion and after view reset; linked BGM mute/background behavior is correct. Verify 3D model
-  and outfit selection, camera, timeline, speed, loop, outline, and saved background contrast.
-- Cold starts use the correct light/dark launch background and prepared destination; disabling
-  transition animations still works. Glass materials and component motion remain unchanged.
+- Liquid Sheet: opening at partial height, initial down/up drag, expansion, nested content scrolling,
+  collapse, IME, back, and background return. Retain material, blur, refraction, shadows, resolution,
+  and animation. Use comparable physical-device evidence for frame-time claims.
+- Release notes: a long real document reaches its final block and links with full-copy behavior;
+  small detents, large fonts, nested scroll ownership, and wide windows remain usable.
+- Reentry: notification/Super Island/shortcut entry does not retain a launch overlay. Repeated
+  Actions, calendar/pool, Craft Chamber, and daily notifications retain their destinations/accounts.
+- About: the v1.18.0 card and search keywords agree in Simplified Chinese, English, and Japanese.
+  Review its changed screenshot before updating the golden.
 - The freshness gate reports fresh for committed sources and dependency versions; account separately
-  for uncommitted runtime edits. Profiles must be nonempty and retain the named collection paths.
-  Rule counts describe a capture and are not fixed release gates.
-- Verify release signing, version 1.17.0 / versionCode 11700999, R8/lint, and packaged
-  assets/dexopt/baseline.prof plus baseline.profm.
-- Point the unpublished local v1.17.0 tag at the final accepted release commit, then verify its target
-  and the built APK metadata. Do not replace a published tag by force.
-- Use [Release Notes v1.17.0](RELEASE_V1.17.0.md), remove its preparation notice after the checks pass,
-  and publish the signed APK with its checksum.
+  for uncommitted runtime edits. Verify all six fresh capture exports and the exact merge with
+  `scripts/qa/baseline_profile_rules.py`. Counts are capture evidence, not fixed release gates.
+- Verify release signing, version 1.18.0 / versionCode 11800999, R8/lint, and packaged
+  assets/dexopt/baseline.prof plus baseline.profm against the final source and tag.
+- Create the annotated local v1.18.0 tag on the final accepted commit. Rebuild after finalizing the tag
+  so git-derived APK metadata uses the correct version anchor. Never force-replace a published tag.
+- Use [Release Notes v1.18.0](RELEASE_V1.18.0.md). Push/tag publication and GitHub Release publication
+  are separate, explicitly authorized actions; publish the signed APK and checksum only when requested.
+
+### v1.17.0 Release Gate
+
+The archived [v1.17.0 release notes](RELEASE_V1.17.0.md) retain that release's scope.
+Use the [v1.18.0 gate](#v1180-release-gate) for the current release target.
 
 ### Screenshot Baseline
 

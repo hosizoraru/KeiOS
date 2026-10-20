@@ -19,7 +19,7 @@
   <a href="https://github.com/hosizoraru/KeiOS/actions/workflows/ci-benchmark-apk.yml"><img alt="Benchmark APK CI" src="https://github.com/hosizoraru/KeiOS/actions/workflows/ci-benchmark-apk.yml/badge.svg?branch=master"></a>
   <img alt="minSdk" src="https://img.shields.io/badge/minSdk-35-3DDC84?style=flat-square&logo=android&logoColor=white">
   <img alt="targetSdk" src="https://img.shields.io/badge/targetSdk-37-3DDC84?style=flat-square&logo=android&logoColor=white">
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.21--RC-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
   <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-1.12.1-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white">
 </p>
 
@@ -39,7 +39,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 | UI 技术栈 | Jetpack Compose、Miuix、液态玻璃风格 chrome |
 | 运行技术栈 | Kotlin、Java 21、Shizuku/Root、Media3、MMKV、Ktor、OkHttp |
 | 语言资源 | 简体中文、English、日本語 |
-| 发布版本 | [`v1.17.0`](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) |
+| 源码发布目标 | [v1.18.0](RELEASE_V1.18.0.md) |
 
 ## 常用入口
 
@@ -72,21 +72,19 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 - 设置页提供主题、动效、v2 液态玻璃组件、底栏特效策略、搜索默认聚焦、握姿感知浮动
   dock、背景图、应用语言、权限、缓存诊断、结构化日志、本地 GitHub Issue 反馈、无遥测诊断与通知兼容配置。
 
-## v1.17.0 重点变化
+## v1.18.0 重点变化
 
-本次发布包含自公开 v1.15.0 起的变化，已在 HyperOS Phone 完成六段 Baseline Profile 采集，并在 Pad 鉴赏适配后使用 HyperOS Pad 重新完整采集。正式签名 APK 可从 [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) 下载。
+当前源码准备发布 v1.18.0，汇总自公开 v1.17.0 起的变化。已公开的安装包继续通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
 
-- Spine 动态回忆大厅支持动作切换、缩放、移动、重置视角与关联 BGM；隐藏控件后动画继续播放，老学生的 MP4 观看方式也保留。
-- 已匹配 3D 资源的学生可切换模型和动画、调整视角、进度、速度、循环和描边；背景支持深浅色默认值及可保存的调色盘。
-- Pad 鉴赏增加叠在场景上的液态玻璃工具侧栏及内联调色盘，打开工具时模型保持稳定，选色后调色盘继续保留；颜色编辑区为键盘让出空间，整个场景保持原位，并修复视角操作时动画偶发停住的问题。
-- 两个鉴赏界面都默认使用系统 WebView，可在设置 → 界面 → 性能预取中分别选择「兼容画面呈现」，下次进入生效；已有选择继续保留。这些选项调整鉴赏画面的呈现方式，不会切换设备的 Vulkan/OpenGL 驱动，也不保证更高帧率。
-- 搜索栏保留光标、选择范围和中文输入状态；键盘弹出或收起时，弹层玻璃模糊保持连续。
-- 开启预发行选项后，仅预发行仓库也可扫描包名；同仓库的主应用与插件按各自 APK 包名追踪，旧 Atom 判断会自动刷新。
-- 冷启动增加主题协调的过渡，减少初始状态闪现；改善学生详情及多处页面滚动体验，保留玻璃材质与动画。
-- 可选择超级岛的关闭时间；Shell 命令长时间无输出也能触发超时，避免一直等待。
-- 一并包含本地 v1.16 阶段的改进：更可靠的版本判断、刷新诊断、发行版/F-Droid 旧版本应用内安装，以及更低的玻璃渲染开销。
+- 改善 Liquid Sheet 刚打开、非全屏高度和首次拖动时的卡顿，减少重复 Shader 编译、图层处理与绘制，保留玻璃材质、模糊、折射、阴影、动画和特效。
+- GitHub 长发行日志使用受窗口约束的正文区域，按可见段落加载，保留 Markdown、链接、完整复制、嵌套滚动和面板高度手势。
+- 修复从通知、超级岛或快捷方式重复唤起后，启动画面残留遮挡应用的问题；不同通知保留各自目标，BA 通知携带账户信息。
+- Actions 通知清理过期目标，旧页面的弹层不会残留在新页面上；打开 GitHub Sheet 保留搜索词，同时防止后方搜索栏重新弹出键盘。
+- BGM、学生语音和图库音频的进度更新集中到较小区域；底栏、BA 账户翻页与页面间距动画减少整页更新，保留原有动效。
+- 重新完整采集 HyperOS Phone Baseline Profile，包含新的 Sheet 渲染和初始拖动路径；采集、打包结果与帧时间测量分别验证。
+- 构建工具更新为 Gradle 9.8.1、Kotlin 2.4.21 正式版，并更新 Miuix 与相关运行库。
 
-从公开 v1.15.0 升级的完整变化、CI 用户安装说明及兼容性说明见 [v1.17.0 更新说明](RELEASE_V1.17.0.md)；v1.16.0 的历史说明记录本地开发里程碑。
+完整变化和覆盖升级说明见 [v1.18.0 更新说明](RELEASE_V1.18.0.md)；之前的鉴赏与追踪改进保留在 [v1.17.0 记录](RELEASE_V1.17.0.md)。
 
 完整功能介绍：
 
@@ -97,15 +95,16 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 
 - 稳定版安装包通过 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases) 发布。
 - 公开稳定版始终通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- 当前发布版本为 [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0)，提供 KeiOS Release 签名 APK 和 SHA-256 校验文件。CI 包使用独立的签名证书。
+- 当前源码发布目标为 v1.18.0。本地 Tag 或发布准备提交不代表 APK 已公开，公开下载以稳定版入口为准。正式 APK 使用 KeiOS Release 签名并提供 SHA-256 校验文件，CI 包使用独立的签名证书。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
-- 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.0`、Kotlin `2.4.21-RC`、
+- 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.1`、Kotlin `2.4.21`、
   Compose `1.12.1`、Android Gradle Plugin `9.4.1`、Ktor `3.6.0`。
 - 当前应用语言资源覆盖简体中文、English、日本語。
 
 ## 文档
 
 - [文档索引](INDEX.md)
+- [Release Notes v1.18.0](RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)
 - [Build Guide (EN)](BUILD.md)

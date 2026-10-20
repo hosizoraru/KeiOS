@@ -19,7 +19,7 @@
   <a href="https://github.com/hosizoraru/KeiOS/actions/workflows/ci-benchmark-apk.yml"><img alt="Benchmark APK CI" src="https://github.com/hosizoraru/KeiOS/actions/workflows/ci-benchmark-apk.yml/badge.svg?branch=master"></a>
   <img alt="minSdk" src="https://img.shields.io/badge/minSdk-35-3DDC84?style=flat-square&logo=android&logoColor=white">
   <img alt="targetSdk" src="https://img.shields.io/badge/targetSdk-37-3DDC84?style=flat-square&logo=android&logoColor=white">
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.21--RC-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?style=flat-square&logo=kotlin&logoColor=white">
   <img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-1.12.1-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white">
 </p>
 
@@ -40,7 +40,7 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 | UI stack | Jetpack Compose, Miuix, liquid-glass chrome |
 | Runtime stack | Kotlin, Java 21, Shizuku/Root, Media3, MMKV, Ktor, OkHttp |
 | Languages | Simplified Chinese, English, Japanese |
-| Release version | [`v1.17.0`](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0) |
+| Source release target | [v1.18.0](readme/RELEASE_V1.18.0.md) |
 
 ## Quick Links
 
@@ -90,36 +90,27 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
   diagnostics, structured logs, local GitHub issue feedback, telemetry-free diagnostics, and
   notification compatibility.
 
-## v1.17.0 Highlights
+## v1.18.0 Highlights
 
-This release includes the changes since the published v1.15.0. Its complete six-journey Baseline
-Profile was collected on HyperOS Phone and recollected on HyperOS Pad after the tablet viewer
-changes. Download the release-signed APK from [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0).
+This checkout prepares v1.18.0, covering changes since the published v1.17.0. Published APKs remain
+available through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
 
-- Interactive Spine Memorial Lobbies add action selection, zoom, pan, view reset, and linked BGM.
-  Hiding controls keeps the animation playing, and older students retain their MP4 option.
-- Students with mapped 3D resources have model and animation selection, camera controls, seeking,
-  speed, looping, outlines, and a saved background palette with light/dark defaults.
-- Tablet viewing adds a scene-backed glass tools sidebar and inline palette. Opening tools keeps the
-  model stable; the palette stays open after color selection, and camera gestures no longer stall
-  playback. The color editor makes room for the keyboard without moving the whole scene.
-- Both viewers default to System WebView. Settings → Interface → Performance preload offers
-  independent Compatible presentation choices for devices with display issues. Changes apply on
-  the next entry and retain saved choices. These options change how viewer frames are presented;
-  they do not switch the device's Vulkan/OpenGL driver or guarantee a higher frame rate.
-- Search fields preserve cursor, selection, and Chinese composition; sheet blur stays continuous
-  as the keyboard opens or closes.
-- Pre-release-only repositories can be scanned when pre-releases are enabled. Main apps and plugins
-  sharing a repository are tracked by their own APK package identity, and old Atom results refresh.
-- Theme-aware cold-start transitions reduce flashes of initial state. Student details and other
-  pages scroll with less unnecessary work while keeping the glass materials and animations.
-- Choose when Super Islands close; quiet Shell commands now time out instead of waiting indefinitely.
-- Also includes the local v1.16 work: more reliable version selection, refresh diagnostics, in-app
-  installation of historical releases/F-Droid builds, and lower glass rendering overhead.
+- Liquid Sheet opening and initial partial-height dragging do less redundant shader, layer, and
+  drawing work. Glass materials, blur, refraction, shadows, animations, and effects are preserved.
+- Long GitHub release notes use a bounded document viewport with visible-block loading, retaining
+  Markdown, links, full copying, nested scrolling, and panel-resize gestures.
+- Repeated notification, Super Island, and shortcut entry no longer leaves a launch surface over
+  the app. Notification targets stay separate, and BA entries retain account information.
+- Actions notification entry clears stale targets. Covered pages no longer leave old overlays
+  above a new page; GitHub Sheets retain search queries without a covered search field raising the keyboard.
+- BGM, voice, and gallery audio progress update smaller UI regions. Bottom-bar presses, BA account
+  paging, and animated page spacing retain their motion with less page-wide work.
+- The complete HyperOS Phone Baseline Profile is refreshed, including the new Sheet rendering and
+  initial-drag paths. Collection and packaging checks remain separate from frame-time measurements.
+- Build tooling uses Gradle 9.8.1 and Kotlin 2.4.21 final, with updated Miuix and runtime libraries.
 
-See [v1.17.0 release notes](readme/RELEASE_V1.17.0.md) for the complete upgrade from the published
-v1.15.0, installation guidance for CI users, and compatibility notes.
-The v1.16.0 notes document a local development milestone.
+See [v1.18.0 release notes](readme/RELEASE_V1.18.0.md) for the complete changes and upgrade guidance.
+The [v1.17.0 notes](readme/RELEASE_V1.17.0.md) retain the earlier viewer and tracking improvements.
 
 Read the full feature tour:
 
@@ -130,16 +121,18 @@ Read the full feature tour:
 
 - Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel always resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
-- The current release is [v1.17.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.17.0), with a
-  KeiOS Release-signed APK and SHA-256 checksum. CI packages use their own signing certificate.
+- The source release target is v1.18.0. A local tag or release-preparation commit does not publish
+  an APK; use the stable-channel link for public downloads. Release APKs use the KeiOS Release
+  certificate and a SHA-256 checksum; CI packages use their own signing certificate.
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
-- Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.0`, Kotlin `2.4.21-RC`,
+- Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.1`, Kotlin `2.4.21`,
   Compose `1.12.1`, Android Gradle Plugin `9.4.1`, Ktor `3.6.0`.
 - App language resources currently cover Simplified Chinese, English, and Japanese.
 
 ## Documentation
 
 - [Documentation Index](readme/INDEX.md)
+- [Release Notes v1.18.0](readme/RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](readme/RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](readme/RELEASE_V1.16.0.md)
 - [Build Guide (EN)](readme/BUILD.md)
