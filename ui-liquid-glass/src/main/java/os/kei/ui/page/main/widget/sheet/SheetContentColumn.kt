@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ fun SheetContentColumn(
     content: @Composable () -> Unit,
 ) {
     val scrollState = rememberScrollState()
+    val drawViewport = if (scrollable) remember { LiquidSheetDrawViewport() } else null
     val overflowReporter = rememberUpdatedState(LocalLiquidSheetContentOverflowReporter.current)
     val managedScrollableContentReporter = rememberUpdatedState(
         LocalLiquidSheetManagedScrollableContentReporter.current,
@@ -74,18 +76,23 @@ fun SheetContentColumn(
             managedScrollableContentReporter.value(false)
         }
     }
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .then(scrollModifier)
-                .navigationBarsPadding()
-                .padding(
-                    top = SheetContentShadowEdgePadding,
-                    bottom = SheetContentBottomPadding + SheetContentShadowEdgePadding,
-                ),
-        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+    CompositionLocalProvider(
+        LocalLiquidSheetDrawViewport provides (drawViewport ?: LocalLiquidSheetDrawViewport.current),
     ) {
-        content()
+        Column(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .then(drawViewport?.let { Modifier.liquidSheetDrawViewport(it) } ?: Modifier)
+                    .then(scrollModifier)
+                    .navigationBarsPadding()
+                    .padding(
+                        top = SheetContentShadowEdgePadding,
+                        bottom = SheetContentBottomPadding + SheetContentShadowEdgePadding,
+                    ),
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+        ) {
+            content()
+        }
     }
 }

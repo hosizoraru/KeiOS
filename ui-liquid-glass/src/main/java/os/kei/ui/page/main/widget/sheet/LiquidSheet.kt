@@ -59,6 +59,7 @@ import os.kei.ui.page.main.widget.isAppInDarkTheme
 import os.kei.ui.page.main.widget.glass.claimFloatingChromeCrossAxisDrags
 import os.kei.ui.page.main.widget.glass.LocalLiquidParentBackdrop
 import os.kei.ui.page.main.widget.glass.LocalLiquidParentBackdropOverridesFallback
+import os.kei.ui.page.main.widget.glass.LocalRetainedLiquidMaterial
 import os.kei.ui.page.main.widget.motion.LocalPredictiveBackAnimationsEnabled
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
 import top.yukonga.miuix.kmp.anim.folmeSpring
@@ -685,6 +686,7 @@ internal fun LiquidSheetPresentation(
                     if (userResized.value) currentHeightPx().roundToInt() else 0
                 },
                 LocalLiquidParentBackdrop provides surface.exportedBackdrop,
+                LocalRetainedLiquidMaterial provides true,
                 LocalLiquidParentBackdropOverridesFallback provides preferExportedBackdrop,
                 LocalLiquidSheetContentScroll provides contentScroll,
             ) {

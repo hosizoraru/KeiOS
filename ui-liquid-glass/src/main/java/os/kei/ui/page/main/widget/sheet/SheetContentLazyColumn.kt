@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -61,6 +62,7 @@ fun SheetContentLazyColumn(
     content: LazyListScope.() -> Unit,
 ) {
     val state = rememberLazyListState()
+    val drawViewport = remember { LiquidSheetDrawViewport() }
     val overflowReporter = rememberUpdatedState(LocalLiquidSheetContentOverflowReporter.current)
     val managedScrollableContentReporter = rememberUpdatedState(
         LocalLiquidSheetManagedScrollableContentReporter.current,
@@ -100,11 +102,13 @@ fun SheetContentLazyColumn(
             bottom = SheetContentBottomPadding + SheetContentShadowEdgePadding + navigationBarsBottom,
         )
     }
-    LazyColumn(
-        state = state,
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = resolvedContentPadding,
-        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
-        content = content,
-    )
+    CompositionLocalProvider(LocalLiquidSheetDrawViewport provides drawViewport) {
+        LazyColumn(
+            state = state,
+            modifier = modifier.fillMaxWidth().liquidSheetDrawViewport(drawViewport),
+            contentPadding = resolvedContentPadding,
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+            content = content,
+        )
+    }
 }

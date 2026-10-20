@@ -183,7 +183,7 @@ fun SheetSurfaceCard(
     val resolvedContainerColor = containerColor ?: sheetCardSurfaceColor(surfaceTone, isDark)
     val optics = sheetCardOptics(interactive = onClick != null)
     AppSurfaceCard(
-        modifier = modifier,
+        modifier = Modifier.cullOutsideLiquidSheetViewport().then(modifier),
         exportBackdropToContent = true,
         containerColor = resolvedContainerColor,
         borderColor = borderColor ?: sheetCardBorderColor(surfaceTone),
@@ -263,7 +263,7 @@ fun SheetControlRow(
 ) {
     AppControlRow(
         title = label,
-        modifier = modifier,
+        modifier = Modifier.cullOutsideLiquidSheetViewport().then(modifier),
         summary = summary,
         titleColor = labelColor,
         summaryColor = summaryColor,
@@ -282,7 +282,7 @@ fun SheetControlRow(
     trailing: @Composable RowScope.() -> Unit,
 ) {
     AppControlRow(
-        modifier = modifier,
+        modifier = Modifier.cullOutsideLiquidSheetViewport().then(modifier),
         summary = summary,
         summaryColor = summaryColor,
         minHeight = minHeight,

@@ -14,7 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
+import os.kei.ui.page.main.widget.glass.drawSheetGlassBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
@@ -102,9 +103,11 @@ internal fun rememberLiquidSheetSurface(
         } else {
             Color.White.copy(alpha = lerp(0.56f, 0.64f, solidness))
         }
+    val frontBackdrop = rememberLayerBackdrop()
+    val materialBackdrop = rememberCombinedBackdrop(sheetBackdrop, frontBackdrop)
 
     return LiquidSheetSurface(
-        modifier = Modifier.drawBackdrop(
+        modifier = Modifier.drawSheetGlassBackdrop(
             backdrop = sceneBackdrop,
             shape = { shape },
             effects = {
@@ -124,6 +127,7 @@ internal fun rememberLiquidSheetSurface(
             // it, and the glass would read as a moving decal rather than a lens.
             layerBlock = { translationY = offsetProvider() },
             exportedBackdrop = sheetBackdrop,
+            exportedFrontBackdrop = frontBackdrop,
             highlight = { Highlight.Default.copy(alpha = if (isDark) 0.74f else 0.88f) },
             shadow = {
                 Shadow.Default.copy(
@@ -147,7 +151,7 @@ internal fun rememberLiquidSheetSurface(
                 )
             },
         ),
-        exportedBackdrop = sheetBackdrop,
+        exportedBackdrop = materialBackdrop,
         glassEnabled = true,
     )
 }

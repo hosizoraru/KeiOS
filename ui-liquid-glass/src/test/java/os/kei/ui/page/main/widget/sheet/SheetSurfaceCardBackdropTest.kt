@@ -20,6 +20,7 @@ import org.robolectric.annotation.GraphicsMode
 import os.kei.ui.page.main.widget.glass.BackdropScene
 import os.kei.ui.page.main.widget.glass.LocalLiquidParentBackdrop
 import os.kei.ui.page.main.widget.glass.LocalLiquidParentBackdropOverridesFallback
+import os.kei.ui.page.main.widget.glass.LocalRetainedLiquidMaterial
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -53,7 +54,10 @@ class SheetSurfaceCardBackdropTest {
                 val parentBackdrop = rememberLayerBackdrop()
                 sheetBackdrop = parentBackdrop
                 BackdropScene(parentBackdrop, 240.dp) {
-                    CompositionLocalProvider(LocalLiquidParentBackdrop provides parentBackdrop) {
+                    CompositionLocalProvider(
+                        LocalLiquidParentBackdrop provides parentBackdrop,
+                        LocalRetainedLiquidMaterial provides true,
+                    ) {
                         SheetSurfaceCard {
                             cardBackdrop = LocalLiquidParentBackdrop.current
                             overridesFallback = LocalLiquidParentBackdropOverridesFallback.current

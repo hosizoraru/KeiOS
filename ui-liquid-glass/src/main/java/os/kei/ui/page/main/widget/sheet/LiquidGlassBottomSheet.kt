@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import os.kei.ui.page.main.widget.glass.LiquidOverlayPortal
+import os.kei.ui.page.main.widget.glass.LocalLiquidShaderPooling
 import os.kei.ui.page.main.widget.glass.LocalLiquidPresentationOwnerActive
 import os.kei.ui.page.main.widget.glass.presentationGlassBlur
 import os.kei.ui.page.main.widget.isAppInDarkTheme
@@ -148,7 +149,7 @@ fun LiquidGlassBottomSheet(
     val shouldBoundManagedScrollableContent =
         managedScrollableContent && scrollableContentOverflowsOpeningDetent
 
-    LiquidOverlayPortal {
+    LiquidSheetPortal {
         LiquidSheetPresentation(
             show = show,
             onMountedChanged = { mounted -> keepMounted = mounted },
@@ -241,6 +242,13 @@ fun LiquidGlassBottomSheet(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LiquidSheetPortal(content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalLiquidShaderPooling provides true) {
+        LiquidOverlayPortal(content = content)
     }
 }
 

@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.kyant.backdrop.Backdrop
@@ -66,6 +69,13 @@ fun SceneBackdropHost(
         drawContent()
     }
     val overlayHost = remember { LiquidOverlayHostState() }
+    SideEffect {
+        // The captured display list points at the same retained page used on screen. A second
+        // full-window target here would duplicate that page. Preserve its former Offscreen bounds
+        // for blur samples at window edges without forcing another texture.
+        sceneBackdrop.graphicsLayer.compositingStrategy = CompositingStrategy.Auto
+        sceneBackdrop.graphicsLayer.clip = true
+    }
     CompositionLocalProvider(
         LocalSceneBackdrop provides sceneBackdrop,
         LocalLiquidOverlayHost provides overlayHost,
@@ -74,7 +84,16 @@ fun SceneBackdropHost(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .layerBackdrop(sceneBackdrop),
+                    // Isolate the capture's display list from overlay sibling redraws.
+                    .graphicsLayer()
+                    .layerBackdrop(sceneBackdrop)
+                    // Both the visible page and the exported backdrop reference this producer.
+                    // Retain the producer before a modal opens too: switching its target during
+                    // entry would move a full-window allocation onto the first sheet frame.
+                    // Child animations and page changes continue to invalidate the producer.
+                    .graphicsLayer {
+                        compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                    },
             ) {
                 content()
             }

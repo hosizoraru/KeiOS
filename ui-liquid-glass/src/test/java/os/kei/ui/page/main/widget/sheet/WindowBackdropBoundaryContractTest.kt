@@ -35,9 +35,14 @@ class WindowBackdropBoundaryContractTest {
      */
     @Test
     fun sampledSurfacesNeverAlsoProduceABackdrop() {
-        for (relativePath in listOf(LIQUID_SHEET_SURFACE_SOURCE, LIQUID_MODAL_SURFACE_SOURCE)) {
+        val samplers = mapOf(
+            LIQUID_SHEET_SURFACE_SOURCE to ".drawSheetGlassBackdrop(",
+            LIQUID_MODAL_SURFACE_SOURCE to ".drawBackdrop(",
+            LIQUID_SHEET_RENDERER_SOURCE to "drawBackdrop(density = effectScope,",
+        )
+        for ((relativePath, sampleCall) in samplers) {
             val surface = windowBoundarySource(relativePath)
-            assertTrue(".drawBackdrop(" in surface, "$relativePath no longer samples; update this guard")
+            assertTrue(sampleCall in surface, "$relativePath no longer samples; update this guard")
             assertFalse(".layerBackdrop(" in surface, "$relativePath: a second layerBackdrop after drawBackdrop is the documented draw loop")
         }
     }
@@ -193,6 +198,8 @@ private fun windowBoundarySource(relativePath: String): String {
 
 private const val LIQUID_SHEET_SURFACE_SOURCE =
     "ui-liquid-glass/src/main/java/os/kei/ui/page/main/widget/sheet/LiquidSheetSurface.kt"
+private const val LIQUID_SHEET_RENDERER_SOURCE =
+    "ui-liquid-glass/src/main/java/os/kei/ui/page/main/widget/glass/SheetGlassBackdrop.kt"
 private const val LIQUID_MODAL_SURFACE_SOURCE =
     "ui-liquid-glass/src/main/java/os/kei/ui/page/main/widget/dialog/LiquidModalSurface.kt"
 private val LIQUID_MODAL_CONSUMER_SOURCES =
