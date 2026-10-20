@@ -147,7 +147,36 @@ material and animation rules are retained. Acceptance checks fresh exports,
 rule syntax, signature/flag deduplication, startup membership, new viewer
 coverage and the absence of test-only rules instead of appending old profiles.
 
-### Accepted HyperOS Phone capture, 2026-10-20
+### Accepted v1.18.0 source refresh, 2026-10-20
+
+After the v1.18.0 About card, localized resources and version target changed,
+collection was repeated on source `ef6a89027`. The same HyperOS Phone target,
+six journeys and 16-replay ceiling were retained. The accepted full task exited
+0 in 14m33s; all six tests passed with no failures or skips (13m37s device time).
+The runtime-input fingerprint remained unchanged during collection.
+
+This replaces the earlier preparation capture below rather than appending its
+rules. Baseline now has 63,645 signatures (120 added, 1,018 removed), and startup
+has 24,735 (2 added, 1 removed). The six fresh exports contain 218,341 raw lines;
+AndroidX resolves 53 within-journey and 154,643 cross-journey duplicates. The exact
+merge has zero missing/extra signatures, flag differences, generated duplicates
+or capture-only rules. Startup remains exactly its owning journey and a baseline
+subset.
+
+The retained Sheet coverage remains present: `SheetGlassNode` 40,
+`LiquidShaderPool` 5, `LiquidDecorationGeometry` 4,
+`LiquidSheetViewportDrawNode` 6 and shared scene host 6 rules. Source profile
+SHA-256 values are `1bfbc91c254e21a0bebd6e6f2cc83349c38f40e01703240e43ec40220bfe1271`
+and `7d809b153ae0527b943346ff5bb42bc200bab8dbdb72e1b9bf7d3cc8690e139f`.
+
+An earlier menu-wait failure and a host Gradle stop were rejected. The accepted
+run uses a private Gradle daemon registry and the existing isolated ADB server.
+AVD window/system/input/DND/SDK settings were restored, existing apps and data
+were preserved, and both collector packages remain installed and stopped.
+This establishes capture freshness; final release packaging and frame-time
+measurements remain separate checks.
+
+### Earlier preparation capture, 2026-10-20
 
 The full generation task captured collection source `7f037c60d` on
 `KeiOS_HyperOS4_Phone` (`emulator-5580`, API 37, HyperOS 4.0.24.0,
