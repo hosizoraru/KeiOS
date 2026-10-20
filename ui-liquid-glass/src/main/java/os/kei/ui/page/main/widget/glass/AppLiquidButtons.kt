@@ -451,7 +451,7 @@ private fun AppLiquidIconButtonContainer(
                                     } else {
                                         null
                                     },
-                                effects = {
+                                effects = pooledLiquidEffects(LocalLiquidShaderPooling.current) {
                                     applyLiquidButtonEffects(
                                         glass = glass,
                                         variant = variant,
@@ -789,7 +789,7 @@ fun AppLiquidTextButton(
                                     } else {
                                         null
                                     },
-                                effects = {
+                                effects = pooledLiquidEffects(LocalLiquidShaderPooling.current) {
                                     applyLiquidButtonEffects(
                                         glass = glass,
                                         variant = variant,

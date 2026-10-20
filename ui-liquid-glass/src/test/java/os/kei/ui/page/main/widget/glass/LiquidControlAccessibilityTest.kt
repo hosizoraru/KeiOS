@@ -113,7 +113,10 @@ class LiquidControlAccessibilityTest {
         composeRule.setContent {
             MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
                 val parentBackdrop = rememberLayerBackdrop()
-                CompositionLocalProvider(LocalLiquidParentBackdrop provides parentBackdrop) {
+                CompositionLocalProvider(
+                    LocalLiquidParentBackdrop provides parentBackdrop,
+                    LocalRetainedLiquidMaterial provides true,
+                ) {
                     var checked by remember { mutableStateOf(false) }
                     AppSwitch(
                         checked = checked,

@@ -158,7 +158,7 @@ internal fun AppLiquidIconBadge(
             Modifier.drawBackdrop(
                 backdrop = activeBackdrop,
                 shape = { shape },
-                effects = {
+                effects = pooledLiquidEffects(LocalLiquidShaderPooling.current) {
                     vibrancy()
                     blur(AppLiquidIconBadgeBlur.toPx())
                     safeLiquidLens(

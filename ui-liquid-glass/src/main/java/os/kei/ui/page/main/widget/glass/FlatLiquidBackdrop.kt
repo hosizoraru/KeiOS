@@ -101,6 +101,11 @@ fun Modifier.drawFlatLiquidBackdrop(
 internal class LiquidOutlineProvider(
     val shapeBlock: () -> Shape,
 ) {
+    // Cache contents are not modifier inputs; the shape producer defines logical equality.
+    override fun equals(other: Any?): Boolean = other is LiquidOutlineProvider && shapeBlock == other.shapeBlock
+
+    override fun hashCode(): Int = shapeBlock.hashCode()
+
     private var cachedShape: Shape? = null
     private var cachedOutline: Outline? = null
     private var cachedSize = Size.Unspecified
@@ -237,30 +242,39 @@ private class FlatBackdropNode(
 private class LiquidHighlightElement(
     val outline: LiquidOutlineProvider,
     val highlight: () -> Highlight?,
+    val cacheRecording: Boolean = false,
 ) : ModifierNodeElement<LiquidHighlightNode>() {
-    override fun create() = LiquidHighlightNode(outline, highlight)
+    override fun create() = LiquidHighlightNode(outline, highlight, cacheRecording)
 
     override fun update(node: LiquidHighlightNode) {
         node.outline = outline
         node.highlight = highlight
+        node.cacheRecording = cacheRecording
         node.invalidateDraw()
     }
 
     override fun equals(other: Any?): Boolean =
-        other is LiquidHighlightElement && other.outline.shapeBlock == outline.shapeBlock && other.highlight == highlight
+        other is LiquidHighlightElement && other.outline.shapeBlock == outline.shapeBlock &&
+            other.highlight == highlight && other.cacheRecording == cacheRecording
 
-    override fun hashCode(): Int = 31 * outline.shapeBlock.hashCode() + highlight.hashCode()
+    override fun hashCode(): Int = 31 * (31 * outline.shapeBlock.hashCode() + highlight.hashCode()) + cacheRecording.hashCode()
 }
 
 /** The library's `HighlightNode`. */
 private class LiquidHighlightNode(
     var outline: LiquidOutlineProvider,
     var highlight: () -> Highlight?,
+    var cacheRecording: Boolean,
 ) : Modifier.Node(),
     DrawModifierNode {
     private var layer: GraphicsLayer? = null
     private val paint = Paint().apply { style = PaintingStyle.Stroke }
     private var roundedPath: Path? = null
+    private var recordedHighlight: Highlight? = null
+    private val geometry = LiquidDecorationGeometry()
+    private var recordedOutline: Outline? = null
+    private var recordedSize = Size.Unspecified
+    private var recordedDensity = Float.NaN
 
     override fun onAttach() {
         layer = requireGraphicsContext().createGraphicsLayer()
@@ -270,8 +284,14 @@ private class LiquidHighlightNode(
         layer?.let { requireGraphicsContext().releaseGraphicsLayer(it) }
         layer = null
         roundedPath = null
+        paint.nativePaint.shader = null
+        releaseShaders()
         defaultShader = null
         ambientShader = null
+        recordedHighlight = null
+        recordedOutline = null
+        recordedSize = Size.Unspecified
+        recordedDensity = Float.NaN
     }
 
     override fun ContentDrawScope.draw() {
@@ -282,35 +302,57 @@ private class LiquidHighlightNode(
         }
         drawContent()
         val layer = layer ?: return
-        val layerSize = IntSize(ceil(size.width).toInt() + 2, ceil(size.height).toInt() + 2)
-        val shapeOutline = outline.shape.createOutline(size, layoutDirection, this)
+        val (materialSize, shapeOutline) = geometry.resolve(this, outline, resolved.blurRadius.toPx() * 4f, cacheRecording)
+        val layerSize = IntSize(ceil(materialSize.width).toInt() + 2, ceil(materialSize.height).toInt() + 2)
+        layer.compositingStrategy = if (materialSize != size) {
+            androidx.compose.ui.graphics.layer.CompositingStrategy.Offscreen
+        } else androidx.compose.ui.graphics.layer.CompositingStrategy.Auto
         val path =
             if (shapeOutline is Outline.Rounded) roundedPath ?: Path().also { roundedPath = it } else null
-        configurePaint(resolved)
         layer.alpha = resolved.alpha
         layer.blendMode = resolved.style.blendMode
-        layer.record(layerSize) {
-            translate(1f, 1f) {
-                drawIntoCanvas { canvas ->
-                    canvas.save()
-                    canvas.clipLiquidOutline(shapeOutline, path)
-                    canvas.drawOutline(shapeOutline, paint)
-                    canvas.restore()
+        if (
+            !cacheRecording || recordedHighlight != resolved || recordedOutline != shapeOutline ||
+            recordedSize != materialSize || recordedDensity != density
+        ) {
+            try {
+                configurePaint(resolved, materialSize)
+                layer.record(layerSize) {
+                    translate(1f, 1f) {
+                        drawIntoCanvas { canvas ->
+                            canvas.save()
+                            canvas.clipLiquidOutline(shapeOutline, path)
+                            canvas.drawOutline(shapeOutline, paint)
+                            canvas.restore()
+                        }
+                    }
+                }
+            } finally {
+                if (cacheRecording) {
+                    paint.nativePaint.shader = null
+                    releaseShaders()
+                    defaultShader = null
+                    ambientShader = null
                 }
             }
+            recordedHighlight = resolved
+            recordedOutline = shapeOutline
+            recordedSize = materialSize
+            recordedDensity = density
         }
-        translate(-1f, -1f) { drawLayer(layer) }
+        val extraHeight = size.height - materialSize.height
+        translate(-1f, -1f) { drawLiquidDecoration(layer, extraHeight) }
     }
 
-    private fun DrawScope.configurePaint(highlight: Highlight) {
+    private fun DrawScope.configurePaint(highlight: Highlight, materialSize: Size) {
         paint.color = highlight.style.color
         val width = highlight.width.toPx()
-        val maxWidth = size.minDimension / 2f
+        val maxWidth = materialSize.minDimension / 2f
         paint.strokeWidth = ceil(if (width > maxWidth) maxWidth else width) * 2f
         paint.applyBlur(highlight.blurRadius.toPx())
         // The library draws the highlight shader only where `RuntimeShader` exists.
         if (android.os.Build.VERSION.SDK_INT >= 33) {
-            paint.nativePaint.shader = highlightShader(highlight.style)
+            paint.nativePaint.shader = highlightShader(highlight.style, materialSize)
         }
     }
 
@@ -323,28 +365,38 @@ private class LiquidHighlightNode(
      * corner radius is half the short side.
      */
     @androidx.annotation.RequiresApi(33)
-    private fun DrawScope.highlightShader(style: HighlightStyle): android.graphics.RuntimeShader {
-        val radius = size.minDimension / 2f
+    private fun DrawScope.highlightShader(style: HighlightStyle, materialSize: Size): android.graphics.RuntimeShader {
+        val radius = materialSize.minDimension / 2f
         val shader =
             when (style) {
                 is HighlightStyle.Default -> {
-                    val shader = defaultShader ?: android.graphics.RuntimeShader(DefaultHighlightShader).also { defaultShader = it }
+                    val shader = defaultShader ?: createShader(DefaultHighlightShader).also { defaultShader = it }
                     shader.setColorUniform("color", style.color.copy(alpha = 1f).toArgb())
                     shader.setFloatUniform("angle", style.angle * 0.017453292f)
                     shader.setFloatUniform("falloff", style.falloff)
                     shader
                 }
                 is HighlightStyle.Ambient -> {
-                    val shader = ambientShader ?: android.graphics.RuntimeShader(AmbientHighlightShader).also { ambientShader = it }
+                    val shader = ambientShader ?: createShader(AmbientHighlightShader).also { ambientShader = it }
                     shader.setFloatUniform("angle", 0.7853982f)
                     shader.setFloatUniform("falloff", 1f)
                     shader
                 }
                 else -> error("drawFlatLiquidBackdrop draws the library's Default and Ambient highlights only")
             }
-        shader.setFloatUniform("size", size.width, size.height)
+        shader.setFloatUniform("size", materialSize.width, materialSize.height)
         shader.setFloatUniform("cornerRadii", floatArrayOf(radius, radius, radius, radius))
         return shader
+    }
+
+    private fun createShader(program: String): android.graphics.RuntimeShader =
+        if (cacheRecording) LiquidShaderPool.acquire(program) else android.graphics.RuntimeShader(program)
+
+    private fun releaseShaders() {
+        if (cacheRecording) {
+            defaultShader?.let { LiquidShaderPool.release(DefaultHighlightShader, it) }
+            ambientShader?.let { LiquidShaderPool.release(AmbientHighlightShader, it) }
+        }
     }
 }
 
@@ -358,19 +410,22 @@ private fun Paint.applyBlur(radius: Float) {
 private class LiquidShadowElement(
     val outline: LiquidOutlineProvider,
     val shadow: () -> Shadow?,
+    val cacheRecording: Boolean = false,
 ) : ModifierNodeElement<LiquidShadowNode>() {
-    override fun create() = LiquidShadowNode(outline, shadow)
+    override fun create() = LiquidShadowNode(outline, shadow, cacheRecording)
 
     override fun update(node: LiquidShadowNode) {
         node.outline = outline
         node.shadow = shadow
+        node.cacheRecording = cacheRecording
         node.invalidateDraw()
     }
 
     override fun equals(other: Any?): Boolean =
-        other is LiquidShadowElement && other.outline.shapeBlock == outline.shapeBlock && other.shadow == shadow
+        other is LiquidShadowElement && other.outline.shapeBlock == outline.shapeBlock &&
+            other.shadow == shadow && other.cacheRecording == cacheRecording
 
-    override fun hashCode(): Int = 31 * outline.shapeBlock.hashCode() + shadow.hashCode()
+    override fun hashCode(): Int = 31 * (31 * outline.shapeBlock.hashCode() + shadow.hashCode()) + cacheRecording.hashCode()
 }
 
 /**
@@ -380,10 +435,16 @@ private class LiquidShadowElement(
 private class LiquidShadowNode(
     var outline: LiquidOutlineProvider,
     var shadow: () -> Shadow?,
+    var cacheRecording: Boolean,
 ) : Modifier.Node(),
     DrawModifierNode {
     private var layer: GraphicsLayer? = null
     private val paint = Paint()
+    private var recordedShadow: Shadow? = null
+    private val geometry = LiquidDecorationGeometry()
+    private var recordedOutline: Outline? = null
+    private var recordedSize = Size.Unspecified
+    private var recordedDensity = Float.NaN
 
     override fun onAttach() {
         layer = requireGraphicsContext().createGraphicsLayer().apply {
@@ -394,6 +455,10 @@ private class LiquidShadowNode(
     override fun onDetach() {
         layer?.let { requireGraphicsContext().releaseGraphicsLayer(it) }
         layer = null
+        recordedShadow = null
+        recordedOutline = null
+        recordedSize = Size.Unspecified
+        recordedDensity = Float.NaN
     }
 
     override fun ContentDrawScope.draw() {
@@ -406,27 +471,39 @@ private class LiquidShadowNode(
         val radius = resolved.radius.toPx()
         val offsetX = resolved.offset.x.toPx()
         val offsetY = resolved.offset.y.toPx()
+        val (materialSize, shapeOutline) = geometry.resolve(
+            this, outline, radius * 4f + kotlin.math.abs(offsetY), cacheRecording,
+        )
         val layerSize =
             IntSize(
-                ceil(size.width + radius * 4f + offsetX).toInt(),
-                ceil(size.height + radius * 4f + offsetY).toInt(),
+                ceil(materialSize.width + radius * 4f + offsetX).toInt(),
+                ceil(materialSize.height + radius * 4f + offsetY).toInt(),
             )
-        val shapeOutline = outline.shape.createOutline(size, layoutDirection, this)
-        paint.color = resolved.color
-        paint.applyBlur(radius)
         layer.alpha = resolved.alpha
         layer.blendMode = resolved.blendMode
-        layer.record(layerSize) {
-            translate(radius * 2f + offsetX, radius * 2f + offsetY) {
-                drawIntoCanvas { canvas ->
-                    canvas.drawOutline(shapeOutline, paint)
-                    canvas.translate(-offsetX, -offsetY)
-                    canvas.drawOutline(shapeOutline, ShadowMaskPaint)
-                    canvas.translate(offsetX, offsetY)
+        if (
+            !cacheRecording || recordedShadow != resolved || recordedOutline != shapeOutline ||
+            recordedSize != materialSize || recordedDensity != density
+        ) {
+            paint.color = resolved.color
+            paint.applyBlur(radius)
+            layer.record(layerSize) {
+                translate(radius * 2f + offsetX, radius * 2f + offsetY) {
+                    drawIntoCanvas { canvas ->
+                        canvas.drawOutline(shapeOutline, paint)
+                        canvas.translate(-offsetX, -offsetY)
+                        canvas.drawOutline(shapeOutline, ShadowMaskPaint)
+                        canvas.translate(offsetX, offsetY)
+                    }
                 }
             }
+            recordedShadow = resolved
+            recordedOutline = shapeOutline
+            recordedSize = materialSize
+            recordedDensity = density
         }
-        translate(-radius * 2f, -radius * 2f) { drawLayer(layer) }
+        val extraHeight = size.height - materialSize.height
+        translate(-radius * 2f, -radius * 2f) { drawLiquidDecoration(layer, extraHeight) }
         drawContent()
     }
 }
@@ -435,34 +512,53 @@ private val ShadowMaskPaint = Paint().apply { blendMode = BlendMode.Clear }
 
 // ---- inner shadow ------------------------------------------------------------------------------------
 
+internal fun Modifier.cachedLiquidBackdropDecorations(
+    outline: LiquidOutlineProvider,
+    highlight: (() -> Highlight?)?,
+    shadow: (() -> Shadow?)?,
+    innerShadow: (() -> InnerShadow?)?,
+): Modifier = this
+    .then(if (innerShadow != null) LiquidInnerShadowElement(outline, innerShadow, cacheRecording = true) else Modifier)
+    .then(if (shadow != null) LiquidShadowElement(outline, shadow, cacheRecording = true) else Modifier)
+    .then(if (highlight != null) LiquidHighlightElement(outline, highlight, cacheRecording = true) else Modifier)
+
 private class LiquidInnerShadowElement(
     val outline: LiquidOutlineProvider,
     val shadow: () -> InnerShadow?,
+    val cacheRecording: Boolean = false,
 ) : ModifierNodeElement<LiquidInnerShadowNode>() {
-    override fun create() = LiquidInnerShadowNode(outline, shadow)
+    override fun create() = LiquidInnerShadowNode(outline, shadow, cacheRecording)
 
     override fun update(node: LiquidInnerShadowNode) {
         node.outline = outline
         node.shadow = shadow
+        node.cacheRecording = cacheRecording
         node.invalidateDraw()
     }
 
     override fun equals(other: Any?): Boolean =
-        other is LiquidInnerShadowElement && other.outline.shapeBlock == outline.shapeBlock && other.shadow == shadow
+        other is LiquidInnerShadowElement && other.outline.shapeBlock == outline.shapeBlock &&
+            other.shadow == shadow && other.cacheRecording == cacheRecording
 
-    override fun hashCode(): Int = 31 * outline.shapeBlock.hashCode() + shadow.hashCode()
+    override fun hashCode(): Int = 31 * (31 * outline.shapeBlock.hashCode() + shadow.hashCode()) + cacheRecording.hashCode()
 }
 
 /** The library's `InnerShadowNode`. */
 private class LiquidInnerShadowNode(
     var outline: LiquidOutlineProvider,
     var shadow: () -> InnerShadow?,
+    var cacheRecording: Boolean,
 ) : Modifier.Node(),
     DrawModifierNode {
     private var layer: GraphicsLayer? = null
     private val paint = Paint()
     private var roundedPath: Path? = null
     private var previousRadius = Float.NaN
+    private var recordedShadow: InnerShadow? = null
+    private val geometry = LiquidDecorationGeometry()
+    private var recordedOutline: Outline? = null
+    private var recordedSize = Size.Unspecified
+    private var recordedDensity = Float.NaN
 
     override fun onAttach() {
         layer = requireGraphicsContext().createGraphicsLayer()
@@ -473,6 +569,10 @@ private class LiquidInnerShadowNode(
         layer = null
         roundedPath = null
         previousRadius = Float.NaN
+        recordedShadow = null
+        recordedOutline = null
+        recordedSize = Size.Unspecified
+        recordedDensity = Float.NaN
     }
 
     override fun ContentDrawScope.draw() {
@@ -482,7 +582,12 @@ private class LiquidInnerShadowNode(
         val radius = resolved.radius.toPx()
         val offsetX = resolved.offset.x.toPx()
         val offsetY = resolved.offset.y.toPx()
-        val shapeOutline = outline.shape.createOutline(size, layoutDirection, this)
+        val (materialSize, shapeOutline) = geometry.resolve(
+            this, outline, radius * 4f + kotlin.math.abs(offsetY), cacheRecording,
+        )
+        layer.compositingStrategy = if (materialSize != size) {
+            androidx.compose.ui.graphics.layer.CompositingStrategy.Offscreen
+        } else androidx.compose.ui.graphics.layer.CompositingStrategy.Auto
         val path =
             if (shapeOutline is Outline.Rounded) roundedPath ?: Path().also { roundedPath = it } else null
         paint.color = resolved.color
@@ -492,21 +597,33 @@ private class LiquidInnerShadowNode(
             layer.renderEffect = if (radius > 0f) BlurEffect(radius, radius, TileMode.Decal) else null
             previousRadius = radius
         }
-        layer.record {
-            drawIntoCanvas { canvas ->
-                canvas.save()
-                canvas.clipLiquidOutline(shapeOutline, path)
-                canvas.drawOutline(shapeOutline, paint)
-                canvas.translate(offsetX, offsetY)
-                canvas.drawOutline(shapeOutline, InnerShadowMaskPaint)
-                canvas.translate(-offsetX, -offsetY)
-                canvas.restore()
+        if (
+            !cacheRecording || recordedShadow != resolved || recordedOutline != shapeOutline ||
+            recordedSize != materialSize || recordedDensity != density
+        ) {
+            // The shadow contains no sampled backdrop or child content. Retain its exact recording
+            // across content scrolls; re-record when its material or geometry actually changes.
+            layer.record(IntSize(materialSize.width.toInt(), materialSize.height.toInt())) {
+                drawIntoCanvas { canvas ->
+                    canvas.save()
+                    canvas.clipLiquidOutline(shapeOutline, path)
+                    canvas.drawOutline(shapeOutline, paint)
+                    canvas.translate(offsetX, offsetY)
+                    canvas.drawOutline(shapeOutline, InnerShadowMaskPaint)
+                    canvas.translate(-offsetX, -offsetY)
+                    canvas.restore()
+                }
             }
+            recordedShadow = resolved
+            recordedOutline = shapeOutline
+            recordedSize = materialSize
+            recordedDensity = density
         }
         val canvas = drawContext.canvas
         canvas.save()
-        canvas.clipLiquidOutline(shapeOutline, path)
-        drawLayer(layer)
+        val displayOutline = outline.shape.createOutline(size, layoutDirection, this)
+        canvas.clipLiquidOutline(displayOutline, path)
+        drawLiquidDecoration(layer, size.height - materialSize.height)
         canvas.restore()
     }
 }

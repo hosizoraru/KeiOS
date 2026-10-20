@@ -286,6 +286,7 @@ private fun LiquidSwitchToggle(
         }
     }
     val glassRuntime = glassEffectRuntime()
+    val cacheMaterialRecording = LocalRetainedLiquidMaterial.current
 
     val trackBackdrop = rememberLayerBackdrop()
     val combinedBackdrop =
@@ -338,22 +339,24 @@ private fun LiquidSwitchToggle(
                     backdrop = combinedBackdrop,
                     shape = { Capsule() },
                     effects = {
-                        val progress = dampedDragAnimation.pressProgress
-                        vibrancy()
-                        blur(
-                            lerp(
-                                6.dp.toPx() * glassRuntime.blurScaleFor(GlassVariant.Compact),
-                                2.dp.toPx() * glassRuntime.blurScaleFor(GlassVariant.Compact),
-                                progress,
-                            ),
-                        )
-                        val lensScale = glassRuntime.lensScaleFor(GlassVariant.Compact)
-                        safeLiquidLens(
-                            lerp(5.dp.toPx(), 12.dp.toPx(), progress) * lensScale,
-                            lerp(10.dp.toPx(), 22.dp.toPx(), progress) * lensScale,
-                            chromaticAberration = true,
-                            depthEffect = true,
-                        )
+                        withLiquidShaderPool(cacheMaterialRecording) {
+                            val progress = dampedDragAnimation.pressProgress
+                            vibrancy()
+                            blur(
+                                lerp(
+                                    6.dp.toPx() * glassRuntime.blurScaleFor(GlassVariant.Compact),
+                                    2.dp.toPx() * glassRuntime.blurScaleFor(GlassVariant.Compact),
+                                    progress,
+                                ),
+                            )
+                            val lensScale = glassRuntime.lensScaleFor(GlassVariant.Compact)
+                            safeLiquidLens(
+                                lerp(5.dp.toPx(), 12.dp.toPx(), progress) * lensScale,
+                                lerp(10.dp.toPx(), 22.dp.toPx(), progress) * lensScale,
+                                chromaticAberration = true,
+                                depthEffect = true,
+                            )
+                        }
                     },
                     highlight = {
                         val progress = dampedDragAnimation.pressProgress

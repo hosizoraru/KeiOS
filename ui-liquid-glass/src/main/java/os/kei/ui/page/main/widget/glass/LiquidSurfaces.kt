@@ -330,6 +330,7 @@ fun LiquidSurface(
             drawRect(surfaceColor)
         }
     }
+    val cacheMaterialRecording = LocalRetainedLiquidMaterial.current
     val surfaceModifier =
         if (activeBackdrop != null && flatField != null && exportedBackdrop == null) {
             // Over a flat field the library's drawing is reproduced with the clip moved
@@ -344,11 +345,12 @@ fun LiquidSurface(
                 onDrawSurface = surfaceBlock,
             )
         } else if (activeBackdrop != null) {
-            Modifier.drawBackdrop(
+            Modifier.drawLiquidSurfaceBackdrop(
+                cacheRecording = cacheMaterialRecording,
                 backdrop = flatField ?: activeBackdrop,
                 shape = { shape },
-                effects = {
-                    if (flatField != null) return@drawBackdrop
+                effects = effects@{
+                    if (flatField != null) return@effects
                     vibrancy()
                     blur(effectiveBlurRadius.toPx())
                     safeLiquidLens(
@@ -624,7 +626,7 @@ fun AppLiquidFloatingSurface(
                             Modifier.drawBackdrop(
                                 backdrop = activeBackdrop,
                                 shape = { shape },
-                                effects = {
+                                effects = pooledLiquidEffects(LocalLiquidShaderPooling.current) {
                                     vibrancy()
                                     blur(effectBlurRadius.toPx())
                                     val pressProgress = pressProgressProvider()

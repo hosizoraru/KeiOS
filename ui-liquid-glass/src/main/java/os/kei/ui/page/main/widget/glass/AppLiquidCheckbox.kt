@@ -167,7 +167,7 @@ fun AppLiquidCheckbox(
                                 Modifier.drawBackdrop(
                                     backdrop = liquidFlat ?: activeBackdrop,
                                     shape = { ContinuousCapsule },
-                                    effects = {
+                                    effects = pooledLiquidEffects(LocalLiquidShaderPooling.current) {
                                         vibrancy()
                                         blur(4.dp.toPx())
                                         safeLiquidLens(
