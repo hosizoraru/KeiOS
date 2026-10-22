@@ -26,6 +26,7 @@ import os.kei.ui.page.main.student.BaGuideBgmMediaButtonPreferences
 import os.kei.ui.page.main.student.BaGuideBgmPlaybackRepository
 import os.kei.ui.page.main.student.BaGuideBgmPlaybackRouteIntentFactory
 import os.kei.ui.page.main.student.configureGuideMediaAudioBehavior
+import os.kei.ui.page.main.student.createGameKeeMediaBitmapLoader
 import os.kei.ui.page.main.student.createGameKeeMediaSourceFactory
 
 internal const val BA_GUIDE_BGM_MEDIA_SESSION_ID = "ba_guide_bgm_media_session"
@@ -64,6 +65,7 @@ class BaGuideBgmMediaSessionService : MediaSessionService() {
         mediaSession =
             MediaSession
                 .Builder(this, sessionPlayer)
+                .setBitmapLoader(createGameKeeMediaBitmapLoader(this))
                 .setId(BA_GUIDE_BGM_MEDIA_SESSION_ID)
                 .setSessionActivity(createSessionActivity())
                 .setMediaButtonPreferences(

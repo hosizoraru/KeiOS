@@ -14,6 +14,7 @@ import os.kei.R
 import os.kei.ui.page.main.student.media.BA_GUIDE_BGM_MEDIA_NOTIFICATION_ID
 import os.kei.ui.page.main.student.media.BaGuideBgmMediaNotificationProviderFactory
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -22,50 +23,26 @@ import kotlin.test.assertTrue
 @Config(application = Application::class, sdk = [35])
 class BaGuideBgmMediaNotificationProviderFactoryTest {
     @Test
-    fun `AOSP devices use monochrome media small icon`() {
-        val iconRes = BaGuideBgmMediaOemCompat.mediaSmallIconRes(
-            BaGuideBgmMediaOemCompat.DeviceSignals(
-                brand = "google",
-                manufacturer = "Google",
-                display = "BP2A",
-                model = "Pixel 10 Pro"
-            )
-        )
-
-        assertEquals(R.drawable.ic_launcher_monochrome, iconRes)
+    fun `media small icon follows the monochrome contract on every OEM`() {
+        assertEquals(R.drawable.ic_launcher_monochrome, BaGuideBgmMediaOemCompat.mediaSmallIconRes())
     }
 
     @Test
-    fun `Xiaomi family devices use colored KeiOS media small icon`() {
-        val hyperOsIcon = BaGuideBgmMediaOemCompat.mediaSmallIconRes(
-            BaGuideBgmMediaOemCompat.DeviceSignals(
-                brand = "Xiaomi",
-                manufacturer = "Xiaomi",
-                display = "OS2.0.1",
-                model = "Xiaomi 17 Pro",
-                properties = mapOf("ro.mi.os.version.name" to "OS2")
-            )
-        )
-        val miuiIcon = BaGuideBgmMediaOemCompat.mediaSmallIconRes(
-            BaGuideBgmMediaOemCompat.DeviceSignals(
-                brand = "Redmi",
-                manufacturer = "Xiaomi",
-                display = "V816",
-                model = "Redmi",
-                properties = mapOf("ro.miui.ui.version.name" to "V816")
-            )
-        )
-
-        assertEquals(R.drawable.ic_launcher_foreground, hyperOsIcon)
-        assertEquals(R.drawable.ic_launcher_foreground, miuiIcon)
+    fun `island sharing requires a HyperOS island generation rather than a brand name`() {
+        assertTrue(BaGuideBgmMediaOemCompat.mediaIslandDragShareSupported("OS3.0"))
+        assertTrue(BaGuideBgmMediaOemCompat.mediaIslandDragShareSupported("OS4"))
+        assertTrue(BaGuideBgmMediaOemCompat.mediaIslandDragShareSupported("", "OS4.0.4.0.XBLCNXM"))
+        listOf("", "V816", "OS2.0", "xiaomi", "HyperOS", "OSx").forEach { version ->
+            assertFalse(BaGuideBgmMediaOemCompat.mediaIslandDragShareSupported(version), version)
+        }
     }
 
     @Test
-    fun `Xiaomi media source icon is square to avoid HyperOS stretching`() {
+    fun `media source icon remains square`() {
         val context = ApplicationProvider.getApplicationContext<Application>()
         val icon = ContextCompat.getDrawable(
             context,
-            BA_GUIDE_BGM_MEDIA_XIAOMI_SMALL_ICON_RES
+            BA_GUIDE_BGM_MEDIA_SMALL_ICON_RES
         )
 
         assertNotNull(icon)

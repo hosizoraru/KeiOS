@@ -31,10 +31,19 @@ internal class BaGuideBgmMediaIslandShareNotificationProvider(
         actionFactory: MediaNotification.ActionFactory,
         onNotificationChangedCallback: MediaNotification.Provider.Callback
     ): MediaNotification {
+        // Artwork may complete after a track change or session release.
+        val shareParams = if (enabled) {
+            BaGuideBgmMediaIslandShareCompat.buildShareParams(
+                context,
+                mediaSession.player.currentMediaItem
+            )
+        } else {
+            null
+        }
         val callback = if (enabled) {
             MediaNotification.Provider.Callback { notification ->
                 onNotificationChangedCallback.onNotificationChanged(
-                    notification.withMediaIslandShareParams(context, mediaSession)
+                    notification.withMediaIslandShareParams(shareParams)
                 )
             }
         } else {
@@ -47,7 +56,7 @@ internal class BaGuideBgmMediaIslandShareNotificationProvider(
             callback
         )
         return if (enabled) {
-            notification.withMediaIslandShareParams(context, mediaSession)
+            notification.withMediaIslandShareParams(shareParams)
         } else {
             notification
         }
@@ -67,16 +76,15 @@ internal class BaGuideBgmMediaIslandShareNotificationProvider(
 }
 
 private fun MediaNotification.withMediaIslandShareParams(
-    context: Context,
-    mediaSession: MediaSession
+    params: String?
 ): MediaNotification {
-    val params = BaGuideBgmMediaIslandShareCompat.buildShareParams(
-        context = context,
-        mediaItem = mediaSession.player.currentMediaItem
-    )
-    if (params.isNullOrBlank()) return this
-    notification.extras.putString(BA_GUIDE_BGM_MEDIA_ISLAND_PARAMS_KEY, params)
-    return this
+    val decorated = notification.clone()
+    if (params.isNullOrBlank()) {
+        decorated.extras.remove(BA_GUIDE_BGM_MEDIA_ISLAND_PARAMS_KEY)
+    } else {
+        decorated.extras.putString(BA_GUIDE_BGM_MEDIA_ISLAND_PARAMS_KEY, params)
+    }
+    return MediaNotification(notificationId, decorated)
 }
 
 internal object BaGuideBgmMediaIslandShareCompat {
