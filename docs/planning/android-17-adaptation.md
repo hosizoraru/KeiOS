@@ -727,6 +727,18 @@ The AOSP image was
 AVD with a regular app UID. Its emulator used `-no-audio`: AudioTrack state was measured, not acoustic output.
 The HyperOS-AVD reserved by another project was not used for this validation.
 
+Physical global-media-key routing is not an accepted gate: no global key was dispatched to the phone.
+After cleanup, both original players were PLAYING with started AudioTracks, but their stream/port volume
+was muted and the framework media-button target was null. A targeted original-session pause/play did not
+restore the previous target. In the
+[AOSP Android 17 session stack](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/services/core/java/com/android/server/media/MediaSessionStack.java),
+removing the selected session clears that target. Its
+[audio playback configuration](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/media/java/android/media/AudioPlaybackConfiguration.java)
+also excludes volume-muted tracks from active playback. The phone's observation is consistent with those
+platform mechanisms; this does not establish the exact OEM implementation or prove that its previous
+global routing was restored. Accepted physical controls are the targeted session and native Island
+operations above. No global session policy or OEM hook was changed to force a target.
+
 The current AOSP image implements the following command in its
 [android17-release shell source](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/services/core/java/com/android/server/audio/AudioManagerShellCommand.java):
 
