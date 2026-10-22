@@ -1,5 +1,9 @@
 # Android 17 (API 37) adaptation audit
 
+> **Media follow-up, 2026-10-23:** see [Media notification revalidation](#media-notification-revalidation--2026-10-23)
+> for the current Media3 integration and strict-mode evidence. The August captures below are historical;
+> their shell command does not enable hardening on the October AOSP image.
+
 > Source: *Android 17 应用适配指南*, `dev.mi.com` (小米澎湃OS 开发者平台), page updated **2026-05-06**.
 > Audited **2026-08-18**. Every item in that guide is walked below with a verdict.
 >
@@ -634,3 +638,112 @@ receipt for picking it up.
 The NDK also gained `30.0.16138531` in the same refresh. Irrelevant here — this app has no
 `externalNativeBuild`, no `ndkVersion`, and no `CMakeLists.txt` outside the vendored
 `.tmp/Shizuku-API-reference` tree.
+
+## Media notification revalidation — 2026-10-23
+
+This follow-up covers the media changes after published v1.18.0. It does not describe a new
+published release. Minimum API 35 and target API 37 are preserved.
+
+### Platform and dependency contract
+
+Android 13's PlaybackState-derived controls remain relevant, but they are not the complete Android 17
+contract. [Android 17 background audio hardening](https://developer.android.com/about/versions/17/changes/bg-audio)
+also requires a visible activity or an eligible foreground service; a background app targeting 37 needs
+the service's while-in-use capability. Media3 continues to own the media session, audio focus, foreground
+notification and standard controls. Transient interruptions retain its normal lifecycle behavior.
+
+The [Media3 release page](https://developer.android.com/jetpack/androidx/releases/media3) lists **1.11.1**
+as the latest stable release on this audit date. The runtime graph resolves all used Media3 modules to
+that version, including the now-explicit datasource dependency. A scoped constraint resolves the external
+`androidx.media:media` compatibility dependency from 1.7.0 to stable 1.8.0. This does not replace Media3's
+internally bundled legacy-session implementation. The available 1.12 alpha is outside this project's
+stable/RC dependency policy.
+
+[Xiaomi's media notification contract](https://dev.mi.com/xiaomihyperos/documentation/detail?pId=2161)
+uses standard session state and may hide custom controls. The optional
+[Island share extension](https://dev.mi.com/xiaomihyperos/documentation/detail?pId=2162) decorates a clone
+of the Media3 notification; it does not substitute the token, cover, actions, channel or content intent.
+Each asynchronous result keeps its original share snapshot. A missing share URL clears the extension.
+Non-HyperOS devices receive the delegate result unchanged. The small icon is monochrome on all devices;
+the optional HyperOS extension uses the OS version properties instead of broad manufacturer heuristics.
+
+### Artwork and lifecycle changes
+
+The session URI loader now uses the existing GameKee HTTP configuration, preserving its Referer, user
+agent and other request headers. Both the URI path and later artwork hydration use the MediaSession bitmap
+limit. Hydration no longer replaces the initial cover with the catalog's 256-pixel thumbnail. Decode uses
+a relaxed sampling bound before precise aspect-preserving scaling to the session limit; PNG encoding is
+lossless. The payload cache is bounded by both 32 entries and 8 MiB.
+
+Controller connection generations reject obsolete completions, release pending futures correctly and
+invalidate disconnected controllers. Artwork can join an intentional connection but cannot open a new
+session itself. Reordered queues use the new queue's index. Mutating custom commands require a trusted
+controller or the recognized notification controller. Explicit Stop acknowledges the command before
+releasing the session/player, withdrawing the notification and stopping the service, including when
+another controller remains bound. A subsequent explicit connection can create a new session.
+
+### Current verification
+
+The minified, non-debuggable validation package is isolated as `os.kei.mediaqa20261023`. Its entry point
+invokes the production native controller, mapper and service. It uses two real BGM URLs and portrait
+covers obtained from the current GameKee student content API/CDN. The source-input hashes, APK hashes,
+signatures, mappings, decoded cover exports and system dumps are retained locally under
+`.planning/media-notification-android17-20261023/`.
+
+| Gate | Observed result |
+|---|---|
+| Focused regression tests | 89 tests in 24 classes; no failures, errors or skips |
+| Release artifact | Production Release and isolated validation ReleaseDiagnostic assemble with R8; signatures, min/target SDK, 16 KiB ZIP alignment and embedded Profile/intermediate equality verified |
+| Physical HyperOS 4 / API 37 | Playing prepare, background playback, pause/resume, seek, repeat, A/B switching, queue reorder, terminal Stop and reconnection exercised; standard MediaStyle notification/token and framework session recognized |
+| Physical audio focus | Real granted transient, duck and permanent requests exercised; transient loss suppresses playback with playWhenReady retained and automatically resumes on gain; permanent loss clears playWhenReady and requires explicit resume |
+| Physical native Island controls | Three consecutive Next taps update A/B title, portrait and duration; expanded and collapsed covers inspected; native pause/resume and Stop verified against framework state |
+| Physical cover data | Both metadata keys retain 404×456 pixels; ALBUM_ART and DISPLAY_ICON are byte-for-byte equal after decoding. Every opaque pixel matches the corresponding source portrait |
+| Framework notification covers | Expected A/B identity retained; NotificationManager scales them to 138×156 on the phone and 116×132 on AOSP. These platform thumbnails do not replace the session's full cover |
+| AOSP API 37 | Foreground playback, Home/background playback, background media-key pause/resume, next, seek, repeat, reorder, terminal Stop and reconnection pass |
+| Strict-mode readback | `mHardeningOverride=3`, corresponding to THROW; background AudioTrack reports `state:started`, `mutedState:none`; service reports mediaPlayback type `0x2` and `allowWiu:12` |
+| Extra binding excluded | The strict background/pause/resume sequence was repeated after revoking the validation package's notification-listener access and restarting its process; no listener service remained bound |
+| Terminal cleanup | Live session, service and notification disappear even with the inspection controller bound; an explicit reconnection succeeds |
+| Visual inspection | AOSP SystemUI and physical HyperOS notification/Island show the current artwork and standard transport controls |
+| Device preservation | Seven existing package identities and notification-listener settings unchanged; both existing phone players restored to their initial PLAYING state; no existing app was uninstalled or cleared |
+
+The physical phone was `25098PN5AC`, HyperOS `OS4.0.4.0.XBLCNXM`, API 37. The first physical round stayed
+paused to preserve existing playback; the subsequent user-authorized round exercised actual playing
+state and native SystemUI controls. Its evidence is under `.planning/media-physical-full-20261023/`.
+The updated isolated validation APK has SHA-256
+`ce0cb060bc99c9369c9cd51626298d410aa77c03923930c3c9cf893beee11864`.
+The same 16 production/test/dependency inputs still match the accepted test and Release build manifest.
+
+The phone's existing `mIgnrMusicFocusReq=true` policy allows music focus requests to coexist. The focus
+probe therefore used real AudioManager requests with voice-communication/speech attributes; it did not
+inject player callbacks or change the OEM policy. Framework duck loss state and uninterrupted playback were
+verified. Media volume was already zero and was preserved, so neither this check nor the playback checks
+claim acoustic listening or measured duck attenuation. No QA notification-listener access was granted.
+Transient/permanent interruption tests also paused the two pre-existing players; both were explicitly
+restored through their uniquely identified sessions after the QA session was stopped. The isolated QA
+app remains installed but stopped, with no live session, service, notification or focus request.
+
+The AOSP image was
+`Android/sdk_phone64_arm64/emu64a:17/CE2A.260420.051.A3/16571990:userdebug/test-keys`, running as a task-owned
+AVD with a regular app UID. Its emulator used `-no-audio`: AudioTrack state was measured, not acoustic output.
+The HyperOS-AVD reserved by another project was not used for this validation.
+
+The current AOSP image implements the following command in its
+[android17-release shell source](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android17-release/services/core/java/com/android/server/audio/AudioManagerShellCommand.java):
+
+```sh
+adb -P 5057 -s emulator-5590 shell cmd audio set-hardening throw
+adb -P 5057 -s emulator-5590 shell dumpsys audio
+# Verify mHardeningOverride=3; exit status alone is insufficient.
+```
+
+The guide's older `set-enable-hardening` spelling exits successfully without enabling this image's
+override. The August records remain historical and do not establish current strict-mode coverage.
+No physical-phone hardening setting was changed. Failed initial harness entry/file-fixture attempts are
+retained for diagnosis and excluded from the accepted device results.
+
+Full `lintRelease` remains blocked by 111 errors located in files unchanged by this task; no Error/Fatal
+location belongs to the changed media inputs. `lintVitalRelease` passes. The committed-ref Profile
+freshness check at the pre-change base passed and the existing profiles are packaged correctly; that
+result does not establish coverage of the new runtime changes. The final committed-ref check reports
+STALE for seven runtime paths and the compatibility dependency change. New Profile collection and the
+normal release gates remain necessary before shipping these changes as a new release.
