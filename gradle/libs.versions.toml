@@ -47,6 +47,7 @@ json = "20260814"
 xmlpull = "1.1.3.4d_b4_min"
 kxml2 = "2.3.0"
 media3 = "1.11.1"
+androidx-media = "1.8.0"
 coil3 = "3.6.3"
 zoomimage = "1.7.0"
 ucrop = "2.2.11"
@@ -120,7 +121,9 @@ xmlpull = { module = "xmlpull:xmlpull", version.ref = "xmlpull" }
 kxml2 = { module = "net.sf.kxml:kxml2", version.ref = "kxml2" }
 media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
+media3-datasource = { module = "androidx.media3:media3-datasource", version.ref = "media3" }
 media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
+androidx-media = { module = "androidx.media:media", version.ref = "androidx-media" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil3" }
 zoomimage-compose-coil3 = { module = "io.github.panpf.zoomimage:zoomimage-compose-coil3", version.ref = "zoomimage" }

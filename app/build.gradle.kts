@@ -409,7 +409,13 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
+    implementation(libs.media3.datasource)
     implementation(libs.media3.ui)
+    constraints {
+        implementation(libs.androidx.media) {
+            because("Align Media3's transitive compatibility dependency with the latest stable release")
+        }
+    }
     implementation(libs.zoomimage.compose.coil3)
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)
