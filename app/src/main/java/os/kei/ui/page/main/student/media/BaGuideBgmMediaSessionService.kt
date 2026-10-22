@@ -32,9 +32,11 @@ import os.kei.ui.page.main.student.createGameKeeMediaSourceFactory
 internal const val BA_GUIDE_BGM_MEDIA_SESSION_ID = "ba_guide_bgm_media_session"
 
 @OptIn(UnstableApi::class)
-class BaGuideBgmMediaSessionService : MediaSessionService() {
-    private var player: ExoPlayer? = null
+open class BaGuideBgmMediaSessionService : MediaSessionService() {
+    private var player: Player? = null
     private var mediaSession: MediaSession? = null
+    private var destroyed = false
+    internal val sessionCallback: MediaSession.Callback = BaGuideBgmMediaSessionCallback(this)
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val playbackRepository = BaGuideBgmPlaybackRepository()
     private val serviceScope = CoroutineScope(SupervisorJob() + AppDispatchers.media)
@@ -48,49 +50,60 @@ class BaGuideBgmMediaSessionService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_NEVER)
-        val sessionPlayer =
-            ExoPlayer
-                .Builder(this)
-                .setMediaSourceFactory(createGameKeeMediaSourceFactory(this))
-                .build()
-                .apply {
-                    configureGuideMediaAudioBehavior()
-                }
-        sessionPlayer.addListener(repeatModeListener)
-        player = sessionPlayer
-        serviceScope.launch {
-            playbackRepository.loadSnapshot()
-        }
+        restorePlaybackSnapshot()
         setMediaNotificationProvider(BaGuideBgmMediaNotificationProviderFactory.create(this))
-        mediaSession =
-            MediaSession
-                .Builder(this, sessionPlayer)
-                .setBitmapLoader(createGameKeeMediaBitmapLoader(this))
-                .setId(BA_GUIDE_BGM_MEDIA_SESSION_ID)
-                .setSessionActivity(createSessionActivity())
-                .setMediaButtonPreferences(
-                    BaGuideBgmMediaButtonPreferences.mediaButtonPreferences(
-                        context = this,
-                        queueMode =
-                            BaGuideBgmMediaButtonPreferences.queueModeFromNativeRepeatMode(
-                                sessionPlayer.repeatMode,
-                            ),
-                    ),
-                ).setCallback(BaGuideBgmMediaSessionCallback(this))
-                .build()
+        createSession()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
+    protected open fun createPlayer(): Player =
+        ExoPlayer.Builder(this)
+            .setMediaSourceFactory(createGameKeeMediaSourceFactory(this))
+            .build()
+            .apply { configureGuideMediaAudioBehavior() }
+
+    protected open fun restorePlaybackSnapshot() {
+        serviceScope.launch { playbackRepository.loadSnapshot() }
+    }
+
+    private fun createSession(): MediaSession {
+        val sessionPlayer = createPlayer()
+        sessionPlayer.addListener(repeatModeListener)
+        player = sessionPlayer
+        return MediaSession
+            .Builder(this, sessionPlayer)
+            .setBitmapLoader(createGameKeeMediaBitmapLoader(this))
+            .setId(BA_GUIDE_BGM_MEDIA_SESSION_ID)
+            .setSessionActivity(createSessionActivity())
+            .setMediaButtonPreferences(
+                BaGuideBgmMediaButtonPreferences.mediaButtonPreferences(
+                    context = this,
+                    queueMode =
+                        BaGuideBgmMediaButtonPreferences.queueModeFromNativeRepeatMode(
+                            sessionPlayer.repeatMode,
+                        ),
+                ),
+            ).setCallback(sessionCallback)
+            .build()
+            .also { mediaSession = it }
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        if (destroyed) return null
+        return mediaSession ?: if (controllerInfo.isTrusted) createSession() else null
+    }
 
     override fun onDestroy() {
-        BaGuideBgmMediaNotificationProviderFactory.cancelNotification(this)
-        mediaSession?.release()
-        mediaSession = null
-        player?.removeListener(repeatModeListener)
-        player?.release()
-        player = null
-        serviceScope.cancel()
-        super.onDestroy()
+        destroyed = true
+        try {
+            releasePlayback()
+        } finally {
+            try {
+                BaGuideBgmMediaNotificationProviderFactory.cancelNotification(this)
+            } finally {
+                serviceScope.cancel()
+                super.onDestroy()
+            }
+        }
     }
 
     private fun createSessionActivity(): PendingIntent = BaGuideBgmPlaybackRouteIntentFactory.createPendingIntent(this)
@@ -111,33 +124,16 @@ class BaGuideBgmMediaSessionService : MediaSessionService() {
     private class BaGuideBgmMediaSessionCallback(
         private val service: BaGuideBgmMediaSessionService,
     ) : MediaSession.Callback {
-        /**
-         * Grants each controller what Media3 thinks it should have, plus this session's own two buttons.
-         *
-         * `AcceptedResultBuilder(session)` is deprecated as of Media3 1.11 because it handed *every*
-         * controller the trusted defaults — all player commands, all session commands — whether the
-         * caller was the media notification or some other app that had merely found the session. The
-         * `(session, controller)` overload branches on `controller.isTrusted()` instead and gives an
-         * untrusted one the read-only sets. That is a real tightening and the point of the migration,
-         * not a rename: an untrusted controller can still read state and still be told about this
-         * session, but can no longer drive transport.
-         *
-         * The base is read back off a throwaway result rather than re-derived from `DEFAULT_*` here, so
-         * which set a controller belongs in stays Media3's rule to state and cannot drift from it.
-         *
-         * The two custom commands are added on top for every controller, exactly as before. They have to
-         * be available to the media-notification controller for [setMediaButtonPreferences] to render
-         * enabled buttons, and narrowing them by trust as well would be a policy change this migration
-         * has no mandate to make.
-         */
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
         ): MediaSession.ConnectionResult {
+            if (service.mediaSession !== session) return MediaSession.ConnectionResult.reject()
             val defaults =
                 MediaSession.ConnectionResult
                     .AcceptedResultBuilder(session, controller)
                     .build()
+            if (!canMutate(session, controller)) return defaults
             return MediaSession.ConnectionResult
                 .AcceptedResultBuilder(session, controller)
                 .setAvailableSessionCommands(
@@ -160,15 +156,21 @@ class BaGuideBgmMediaSessionService : MediaSessionService() {
             controller: MediaSession.ControllerInfo,
             customCommand: SessionCommand,
             args: Bundle,
-        ): ListenableFuture<SessionResult> =
-            when (customCommand.customAction) {
+        ): ListenableFuture<SessionResult> {
+            if (!canMutate(session, controller)) {
+                return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+            }
+            if (service.mediaSession !== session) {
+                return Futures.immediateFuture(SessionResult(SessionError.ERROR_SESSION_DISCONNECTED))
+            }
+            return when (customCommand.customAction) {
                 BA_GUIDE_BGM_COMMAND_TOGGLE_REPEAT -> {
                     toggleRepeat(session)
                     successResult()
                 }
 
                 BA_GUIDE_BGM_COMMAND_STOP_PLAYBACK -> {
-                    service.stopPlaybackAndDismiss()
+                    service.stopPlaybackAndDismiss(session)
                     successResult()
                 }
 
@@ -178,6 +180,10 @@ class BaGuideBgmMediaSessionService : MediaSessionService() {
                     )
                 }
             }
+        }
+
+        private fun canMutate(session: MediaSession, controller: MediaSession.ControllerInfo): Boolean =
+            controller.isTrusted || session.isMediaNotificationController(controller)
 
         private fun toggleRepeat(session: MediaSession) {
             val currentMode =
@@ -208,22 +214,47 @@ class BaGuideBgmMediaSessionService : MediaSessionService() {
         private fun successResult(): ListenableFuture<SessionResult> = Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
 
-    private fun stopPlaybackAndDismiss() {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            stopPlaybackAndDismissOnMain()
-        } else {
-            mainHandler.post { stopPlaybackAndDismissOnMain() }
+    private fun stopPlaybackAndDismiss(session: MediaSession) {
+        // Media3 must deliver the successful command result before the session is released.
+        mainHandler.post { stopPlaybackAndDismissOnMain(session) }
+    }
+
+    private fun stopPlaybackAndDismissOnMain(session: MediaSession) {
+        if (mediaSession !== session) return
+        // stopSelf alone cannot destroy a service while a UI controller remains bound.
+        try {
+            releasePlayback()
+        } finally {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            BaGuideBgmMediaNotificationProviderFactory.cancelNotification(this)
+            stopSelf()
         }
     }
 
-    private fun stopPlaybackAndDismissOnMain() {
-        player?.let { sessionPlayer ->
-            runCatching { sessionPlayer.playWhenReady = false }
-            runCatching { sessionPlayer.stop() }
-            runCatching { sessionPlayer.clearMediaItems() }
+    private fun releasePlayback() {
+        val session = mediaSession
+        val sessionPlayer = player
+        mediaSession = null
+        player = null
+        try {
+            sessionPlayer?.removeListener(repeatModeListener)
+            sessionPlayer?.playWhenReady = false
+            sessionPlayer?.stop()
+            sessionPlayer?.clearMediaItems()
+            // Let Media3 withdraw its notification and invalidate pending artwork updates.
+            triggerNotificationUpdate()
+        } finally {
+            try {
+                if (session != null) {
+                    try {
+                        if (sessions.contains(session)) removeSession(session)
+                    } finally {
+                        session.release()
+                    }
+                }
+            } finally {
+                sessionPlayer?.release()
+            }
         }
-        runCatching { triggerNotificationUpdate() }
-        runCatching { BaGuideBgmMediaNotificationProviderFactory.cancelNotification(this) }
-        runCatching { pauseAllPlayersAndStopSelf() }
     }
 }

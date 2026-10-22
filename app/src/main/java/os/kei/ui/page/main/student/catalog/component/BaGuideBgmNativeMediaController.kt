@@ -3,12 +3,12 @@ package os.kei.ui.page.main.student.catalog.component
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -29,11 +29,33 @@ internal class BaGuideBgmNativeMediaController(
     private val mainExecutor = appContext.mainExecutor
     private val artworkScope = CoroutineScope(SupervisorJob() + artworkDispatcher)
     private val lock = Any()
-    private val pendingCommands = ArrayDeque<(MediaController) -> Unit>()
-
-    @Volatile
-    private var controller: MediaController? = null
-    private var controllerFuture: ListenableFuture<MediaController>? = null
+    private val connection =
+        BaGuideBgmControllerConnection<MediaController>(
+            executor = mainExecutor,
+            connect = { onControllerDisconnected ->
+                val token =
+                    SessionToken(
+                        appContext,
+                        ComponentName(appContext, BaGuideBgmMediaSessionService::class.java),
+                    )
+                MediaController
+                    .Builder(appContext, token)
+                    .setApplicationLooper(appContext.mainLooper)
+                    .setListener(
+                        object : MediaController.Listener {
+                            override fun onDisconnected(controller: MediaController) {
+                                onControllerDisconnected(controller)
+                            }
+                        },
+                    ).buildAsync()
+            },
+            isConnected = MediaController::isConnected,
+            releaseController = MediaController::release,
+            releaseFuture = { future -> MediaController.releaseFuture(future) },
+            onDisconnected = ::cancelArtworkHydration,
+        )
+    private val controller: MediaController?
+        get() = connection.current
     private var artworkHydrationJob: Job? = null
     private var artworkHydrationGeneration = 0L
 
@@ -48,38 +70,24 @@ internal class BaGuideBgmNativeMediaController(
         val artworkGeneration = nextArtworkHydrationGeneration()
         val mediaItems = queue.toBaGuideBgmMediaItems(appContext)
         if (mediaItems.isEmpty()) return
-        val targetMediaId =
-            normalizeGuideMediaSource(selectedAudioUrl)
-                .takeIf { it.isNotBlank() }
-                ?: mediaItems.first().mediaId
-        val targetIndex =
-            mediaItems
-                .indexOfFirst { it.mediaId == targetMediaId }
-                .takeIf { it >= 0 }
-                ?: 0
-        val safeStartPositionMs = if (restart) 0L else startPositionMs.coerceAtLeast(0L)
         submit { mediaController ->
             val currentIds =
                 (0 until mediaController.mediaItemCount)
                     .map { index -> mediaController.getMediaItemAt(index).mediaId }
             val nextIds = mediaItems.map { item -> item.mediaId }
             val currentMediaId = mediaController.currentMediaItem?.mediaId.orEmpty()
-            val preservedIndex =
-                currentIds
-                    .indexOf(currentMediaId)
-                    .takeIf { index ->
-                        playWhenReady == null &&
-                            !restart &&
-                            index >= 0 &&
-                            currentMediaId in nextIds
-                    }
-            val resolvedIndex = preservedIndex ?: targetIndex
-            val resolvedStartPositionMs =
-                if (preservedIndex != null) {
-                    mediaController.currentPosition.coerceAtLeast(0L)
-                } else {
-                    safeStartPositionMs
-                }
+            val queuePosition =
+                resolveBaGuideBgmNativeQueuePosition(
+                    nextMediaIds = nextIds,
+                    selectedMediaId = normalizeGuideMediaSource(selectedAudioUrl),
+                    currentMediaId = currentMediaId,
+                    currentPositionMs = mediaController.currentPosition,
+                    startPositionMs = startPositionMs,
+                    playWhenReady = playWhenReady,
+                    restart = restart,
+                )
+            val resolvedIndex = queuePosition.index
+            val resolvedStartPositionMs = queuePosition.positionMs
             if (
                 currentIds != nextIds ||
                 currentMediaId != mediaItems[resolvedIndex].mediaId ||
@@ -169,36 +177,26 @@ internal class BaGuideBgmNativeMediaController(
     }
 
     fun stopSession() {
-        controller?.let { mediaController ->
-            mainExecutor.execute {
-                runCatching { mediaController.pause() }
-                runCatching { mediaController.stop() }
-                runCatching { mediaController.clearMediaItems() }
-            }
+        connection.disconnect { mediaController ->
+            stopBaGuideBgmNativePlayback(
+                requestTerminalStop = {
+                    mediaController.sendCustomCommand(
+                        BaGuideBgmMediaButtonPreferences.stopPlaybackCommand(),
+                        Bundle.EMPTY,
+                    )
+                },
+                pause = mediaController::pause,
+                stop = mediaController::stop,
+                clearMediaItems = mediaController::clearMediaItems,
+            )
         }
-        disconnect()
         runCatching {
             appContext.stopService(Intent(appContext, BaGuideBgmMediaSessionService::class.java))
         }
     }
 
     fun disconnect() {
-        cancelArtworkHydration()
-        val futureToCancel: ListenableFuture<MediaController>?
-        val controllerToRelease: MediaController?
-        synchronized(lock) {
-            pendingCommands.clear()
-            futureToCancel = controllerFuture
-            controllerFuture = null
-            controllerToRelease = controller
-            controller = null
-        }
-        controllerToRelease?.let { mediaController ->
-            mainExecutor.execute {
-                runCatching { mediaController.release() }
-            }
-        }
-        futureToCancel?.cancel(true)
+        connection.disconnect()
     }
 
     private fun nextArtworkHydrationGeneration(): Long =
@@ -233,7 +231,7 @@ internal class BaGuideBgmNativeMediaController(
                         BaGuideBgmMediaArtworkPayloadResolver.resolve(appContext, favorite)
                             ?: return@forEach
                     if (!isArtworkHydrationCurrent(generation)) return@launch
-                    submit { mediaController ->
+                    connection.submit(connectIfNeeded = false) { mediaController ->
                         if (!isArtworkHydrationCurrent(generation)) return@submit
                         mediaController.replaceArtworkMetadata(mediaId, artworkData)
                     }
@@ -267,61 +265,7 @@ internal class BaGuideBgmNativeMediaController(
     }
 
     private fun submit(command: (MediaController) -> Unit) {
-        val existing = controller
-        if (existing != null) {
-            mainExecutor.execute { runCatching { command(existing) } }
-            return
-        }
-        synchronized(lock) {
-            controller?.let { connected ->
-                mainExecutor.execute { runCatching { command(connected) } }
-                return
-            }
-            pendingCommands.add(command)
-            ensureControllerLocked()
-        }
-    }
-
-    private fun ensureControllerLocked() {
-        if (controllerFuture != null) return
-        val token =
-            SessionToken(
-                appContext,
-                ComponentName(appContext, BaGuideBgmMediaSessionService::class.java),
-            )
-        controllerFuture =
-            MediaController
-                .Builder(appContext, token)
-                .setApplicationLooper(appContext.mainLooper)
-                .buildAsync()
-                .also { future ->
-                    future.addListener(
-                        {
-                            val connected = runCatching { future.get() }.getOrNull()
-                            if (connected == null) {
-                                synchronized(lock) {
-                                    if (controllerFuture == future) controllerFuture = null
-                                    pendingCommands.clear()
-                                }
-                                return@addListener
-                            }
-                            val commands =
-                                synchronized(lock) {
-                                    if (controllerFuture == future) controllerFuture = null
-                                    controller = connected
-                                    buildList {
-                                        while (pendingCommands.isNotEmpty()) {
-                                            add(pendingCommands.removeFirst())
-                                        }
-                                    }
-                                }
-                            commands.forEach { command ->
-                                runCatching { command(connected) }
-                            }
-                        },
-                        mainExecutor,
-                    )
-                }
+        connection.submit(command = command)
     }
 }
 
@@ -355,4 +299,48 @@ private fun MediaItem.withArtworkData(artworkData: ByteArray): MediaItem {
     return buildUpon()
         .setMediaMetadata(metadata)
         .build()
+}
+
+internal data class BaGuideBgmNativeQueuePosition(
+    val index: Int,
+    val positionMs: Long,
+)
+
+internal fun resolveBaGuideBgmNativeQueuePosition(
+    nextMediaIds: List<String>,
+    selectedMediaId: String,
+    currentMediaId: String,
+    currentPositionMs: Long,
+    startPositionMs: Long,
+    playWhenReady: Boolean?,
+    restart: Boolean,
+): BaGuideBgmNativeQueuePosition {
+    require(nextMediaIds.isNotEmpty())
+    val preservedIndex =
+        nextMediaIds.indexOf(currentMediaId).takeIf { index ->
+            playWhenReady == null && !restart && index >= 0
+        }
+    val targetIndex = nextMediaIds.indexOf(selectedMediaId).takeIf { it >= 0 } ?: 0
+    return BaGuideBgmNativeQueuePosition(
+        index = preservedIndex ?: targetIndex,
+        positionMs =
+            when {
+                restart -> 0L
+                preservedIndex != null -> currentPositionMs.coerceAtLeast(0L)
+                else -> startPositionMs.coerceAtLeast(0L)
+            },
+    )
+}
+
+internal fun stopBaGuideBgmNativePlayback(
+    requestTerminalStop: () -> Unit,
+    pause: () -> Unit,
+    stop: () -> Unit,
+    clearMediaItems: () -> Unit,
+) {
+    runCatching { requestTerminalStop() }
+    // Stop audio locally even if the asynchronous terminal command is rejected or fails.
+    runCatching { pause() }
+    runCatching { stop() }
+    runCatching { clearMediaItems() }
 }

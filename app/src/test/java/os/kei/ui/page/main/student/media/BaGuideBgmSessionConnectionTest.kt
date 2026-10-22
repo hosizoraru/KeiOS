@@ -1,95 +1,129 @@
 package os.kei.ui.page.main.student.media
 
 import android.app.Application
+import android.os.Bundle
+import android.os.Looper
 import androidx.annotation.OptIn
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaController
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.io.File
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
-import os.kei.ui.page.main.student.BA_GUIDE_BGM_COMMAND_STOP_PLAYBACK
-import os.kei.ui.page.main.student.BA_GUIDE_BGM_COMMAND_TOGGLE_REPEAT
 import os.kei.ui.page.main.student.BaGuideBgmMediaButtonPreferences
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/**
- * What the BGM session hands a controller when it connects.
- *
- * Media3 1.11 deprecated `AcceptedResultBuilder(session)` because it granted the trusted defaults to
- * every caller. The replacement branches on `ControllerInfo.isTrusted()`, and adopting it is only
- * worth anything if this session's own commands are layered *on top of* whichever set Media3 picked
- * rather than on a hardcoded trusted one — otherwise the migration compiles, the warning goes away,
- * and an untrusted controller keeps the full session command set through our own helper.
- *
- * Building a real `MediaSession` here would need a real `ExoPlayer`, so the two halves are pinned
- * where they actually live: the helper is held to being base-preserving, and the call site is held to
- * passing the controller through.
- */
 @OptIn(UnstableApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(application = Application::class, sdk = [35])
 class BaGuideBgmSessionConnectionTest {
-    @Test
-    fun `the session command helper adds two commands and invents none`() {
-        listOf(
-            "trusted" to MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS,
-            "untrusted" to MediaSession.ConnectionResult.DEFAULT_UNTRUSTED_SESSION_COMMANDS,
-        ).forEach { (label, base) ->
-            val granted = BaGuideBgmMediaButtonPreferences.availableSessionCommands(base)
+    private lateinit var lifecycle: ServiceController<BgmSessionTestService>
+    private lateinit var service: BgmSessionTestService
+    private lateinit var session: MediaSession
 
-            assertTrue(
-                base.commands.all { command -> granted.contains(command) },
-                "$label: the helper dropped one of Media3's own commands",
-            )
-            assertEquals(
-                base.commands.size + 2,
-                granted.commands.size,
-                "$label: the helper added something other than the repeat and stop commands",
-            )
-            listOf(BA_GUIDE_BGM_COMMAND_TOGGLE_REPEAT, BA_GUIDE_BGM_COMMAND_STOP_PLAYBACK).forEach { action ->
-                assertTrue(
-                    granted.commands.any { command -> command.customAction == action },
-                    "$label: $action is missing, so its notification button would render disabled",
-                )
-            }
+    @Before
+    fun setUp() {
+        lifecycle = Robolectric.buildService(BgmSessionTestService::class.java).create()
+        service = lifecycle.get()
+        session = assertNotNull(service.onGetSession(bgmTestController(service.packageName, trusted = true)))
+    }
+
+    @After
+    fun tearDown() {
+        lifecycle.destroy()
+    }
+
+    @Test
+    fun `untrusted controller retains Media3 read access without mutating commands`() {
+        val controller = bgmTestController("other.media.app", trusted = false)
+        val defaults = MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller).build()
+        val result = service.sessionCallback.onConnect(session, controller)
+
+        assertTrue(result.isAccepted)
+        assertEquals(defaults.availablePlayerCommands, result.availablePlayerCommands)
+        assertEquals(defaults.availableSessionCommands, result.availableSessionCommands)
+        assertFalse(result.availablePlayerCommands.contains(Player.COMMAND_PLAY_PAUSE))
+        assertFalse(result.availableSessionCommands.contains(BaGuideBgmMediaButtonPreferences.repeatCommand()))
+        assertFalse(result.availableSessionCommands.contains(BaGuideBgmMediaButtonPreferences.stopPlaybackCommand()))
+    }
+
+    @Test
+    fun `trusted and notification controllers receive custom buttons and preserve their defaults`() {
+        val notificationHints = Bundle().apply {
+            putBoolean(MediaController.KEY_MEDIA_NOTIFICATION_CONTROLLER_FLAG, true)
+        }
+        val notification = bgmTestController(service.packageName, trusted = false, hints = notificationHints)
+        assertTrue(session.isMediaNotificationController(notification))
+        listOf(bgmTestController(service.packageName, trusted = true), notification).forEach { controller ->
+            val defaults = MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller).build()
+            val result = service.sessionCallback.onConnect(session, controller)
+
+            assertTrue(result.isAccepted)
+            assertEquals(defaults.availablePlayerCommands, result.availablePlayerCommands)
+            assertTrue(defaults.availableSessionCommands.commands.all(result.availableSessionCommands::contains))
+            assertEquals(defaults.availableSessionCommands.commands.size + 2, result.availableSessionCommands.commands.size)
+            assertTrue(result.availableSessionCommands.contains(BaGuideBgmMediaButtonPreferences.repeatCommand()))
+            assertTrue(result.availableSessionCommands.contains(BaGuideBgmMediaButtonPreferences.stopPlaybackCommand()))
+            assertEquals(2, assertNotNull(result.mediaButtonPreferences).size)
         }
     }
 
-    /**
-     * The trust-aware base is only reachable through the controller, so losing the argument would
-     * silently restore the old behaviour while still compiling. `DEFAULT_SESSION_COMMANDS` appearing
-     * at the call site is the same regression wearing the new constructor.
-     */
     @Test
-    fun `onConnect asks Media3 what this controller should get`() {
-        val source = File(repositoryRoot(), SERVICE_SOURCE)
-        assertTrue(source.isFile, "Missing $SERVICE_SOURCE")
-        val body = source.readText().substringAfter("override fun onConnect(").substringBefore("\n        override fun")
+    fun `callback rejects untrusted repeat and stop even when invoked directly`() {
+        val controller = bgmTestController("other.media.app", trusted = false)
+        val player = service.createdPlayers.single()
+        val originalRepeatMode = player.repeatMode
+        listOf(
+            BaGuideBgmMediaButtonPreferences.repeatCommand(),
+            BaGuideBgmMediaButtonPreferences.stopPlaybackCommand(),
+        ).forEach { command ->
+            val result = service.sessionCallback.onCustomCommand(session, controller, command, Bundle.EMPTY).get()
+            assertEquals(SessionError.ERROR_PERMISSION_DENIED, result.resultCode)
+        }
 
-        assertTrue(
-            "AcceptedResultBuilder(session, controller)" in body,
-            "onConnect must build on the controller-aware overload, not the deprecated session-only one",
-        )
-        assertFalse(
-            "DEFAULT_SESSION_COMMANDS" in body,
-            "onConnect hardcodes the trusted command set, which is what the deprecated overload did",
-        )
+        assertEquals(originalRepeatMode, player.repeatMode)
+        assertEquals(0, player.repeatModeWrites)
+        assertEquals(0, player.stopCount)
+        assertEquals(0, player.releaseCount)
+        assertTrue(service.onGetSession(controller) === session)
     }
-}
 
-private const val SERVICE_SOURCE =
-    "app/src/main/java/os/kei/ui/page/main/student/media/BaGuideBgmMediaSessionService.kt"
+    @Test
+    fun `notification hint on another package does not authorize mutation`() {
+        val hints = Bundle().apply { putBoolean(MediaController.KEY_MEDIA_NOTIFICATION_CONTROLLER_FLAG, true) }
+        val controller = bgmTestController("other.media.app", trusted = false, hints = hints)
 
-private fun repositoryRoot(): File {
-    val workingDirectory = File(requireNotNull(System.getProperty("user.dir"))).canonicalFile
-    return requireNotNull(
-        generateSequence(workingDirectory) { directory -> directory.parentFile }
-            .firstOrNull { directory -> File(directory, SERVICE_SOURCE).isFile },
-    ) {
-        "Unable to locate the repository root from $workingDirectory"
+        assertFalse(session.isMediaNotificationController(controller))
+        val result = service.sessionCallback.onCustomCommand(
+            session, controller, BaGuideBgmMediaButtonPreferences.stopPlaybackCommand(), Bundle.EMPTY,
+        ).get()
+        assertEquals(SessionError.ERROR_PERMISSION_DENIED, result.resultCode)
+        assertEquals(0, service.createdPlayers.single().releaseCount)
+    }
+
+    @Test
+    fun `notification controller can execute stop without relying on trusted flag`() {
+        val hints = Bundle().apply { putBoolean(MediaController.KEY_MEDIA_NOTIFICATION_CONTROLLER_FLAG, true) }
+        val notification = bgmTestController(service.packageName, trusted = false, hints = hints)
+        val result = service.sessionCallback.onCustomCommand(
+            session, notification, BaGuideBgmMediaButtonPreferences.stopPlaybackCommand(), Bundle.EMPTY,
+        ).get()
+
+        assertEquals(SessionResult.RESULT_SUCCESS, result.resultCode)
+        assertEquals(0, service.createdPlayers.single().releaseCount)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(1, service.createdPlayers.single().releaseCount)
     }
 }
