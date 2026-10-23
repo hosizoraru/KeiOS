@@ -96,6 +96,14 @@ internal class BaGuideBgmNativeMediaController(
             ) {
                 mediaController.setMediaItems(mediaItems, resolvedIndex, resolvedStartPositionMs)
                 mediaController.prepare()
+            } else {
+                mediaItems.forEachIndexed { index, next ->
+                    val current = mediaController.getMediaItemAt(index)
+                    val updated = current.withUpdatedBaGuideBgmMetadata(next)
+                    if (current.mediaMetadata != updated.mediaMetadata) {
+                        mediaController.replaceMediaItem(index, updated)
+                    }
+                }
             }
             mediaController.repeatMode =
                 BaGuideBgmMediaButtonPreferences.nativeRepeatMode(queueMode)
@@ -224,18 +232,19 @@ internal class BaGuideBgmNativeMediaController(
         if (targets.isEmpty()) return
         val job =
             artworkScope.launch {
-                targets.forEach { favorite ->
-                    if (!isArtworkHydrationCurrent(generation)) return@launch
-                    val mediaId = normalizeGuideMediaSource(favorite.audioUrl)
-                    val artworkData =
-                        BaGuideBgmMediaArtworkPayloadResolver.resolve(appContext, favorite)
-                            ?: return@forEach
-                    if (!isArtworkHydrationCurrent(generation)) return@launch
-                    connection.submit(connectIfNeeded = false) { mediaController ->
-                        if (!isArtworkHydrationCurrent(generation)) return@submit
-                        mediaController.replaceArtworkMetadata(mediaId, artworkData)
-                    }
-                }
+                hydrateBaGuideBgmArtwork(
+                    targets = targets,
+                    isCurrent = { isArtworkHydrationCurrent(generation) },
+                    resolve = { BaGuideBgmMediaArtworkPayloadResolver.resolve(appContext, it) },
+                    publish = { favorite, artworkData ->
+                        val mediaId = normalizeGuideMediaSource(favorite.audioUrl)
+                        val artworkUri = favorite.resolvePlaybackArtworkImageUrl()
+                        connection.submit(connectIfNeeded = false) { mediaController ->
+                            if (!isArtworkHydrationCurrent(generation)) return@submit
+                            mediaController.replaceArtworkMetadata(mediaId, artworkUri, artworkData)
+                        }
+                    },
+                )
             }
         synchronized(lock) {
             if (artworkHydrationGeneration == generation) {
@@ -253,6 +262,7 @@ internal class BaGuideBgmNativeMediaController(
 
     private fun MediaController.replaceArtworkMetadata(
         mediaId: String,
+        expectedArtworkUri: String,
         artworkData: ByteArray,
     ) {
         val index =
@@ -260,6 +270,7 @@ internal class BaGuideBgmNativeMediaController(
                 .firstOrNull { itemIndex -> getMediaItemAt(itemIndex).mediaId == mediaId }
                 ?: return
         val currentItem = getMediaItemAt(index)
+        if (currentItem.mediaMetadata.artworkUri?.toString().orEmpty() != expectedArtworkUri) return
         if (currentItem.mediaMetadata.artworkData?.contentEquals(artworkData) == true) return
         replaceMediaItem(index, currentItem.withArtworkData(artworkData))
     }

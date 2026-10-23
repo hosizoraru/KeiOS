@@ -28,6 +28,7 @@ import os.kei.ui.page.main.student.LocalGuideMediaImageBitmaps
 import os.kei.ui.page.main.student.LocalGuideMediaImageMissingKeys
 import os.kei.ui.page.main.student.LocalGuideMediaImageRequester
 import os.kei.ui.page.main.student.catalog.component.LocalBaGuideCatalogImageBitmaps
+import os.kei.ui.page.main.student.catalog.component.LocalBaGuideCatalogImageRequester
 import os.kei.ui.page.main.student.catalog.component.bgm.rememberBaGuideBgmBottomChromeScrollState
 import os.kei.ui.page.main.student.catalog.component.rememberBaGuideBgmPlaybackCoordinator
 import os.kei.ui.page.main.student.catalog.component.withResolvedCatalogStudentMetadata
@@ -248,6 +249,7 @@ fun BaGuideCatalogPage(
 
     CompositionLocalProvider(
         LocalBaGuideCatalogImageBitmaps provides imageState.bitmaps,
+        LocalBaGuideCatalogImageRequester provides catalogViewModel::requestVisibleCatalogImages,
         LocalGuideMediaImageBitmaps provides mediaImageState.bitmaps,
         LocalGuideMediaImageMissingKeys provides mediaImageState.missingKeys,
         LocalGuideMediaGifTargets provides mediaImageState.resolvedGifTargets,
