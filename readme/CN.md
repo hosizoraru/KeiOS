@@ -97,8 +97,8 @@ v1.18.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/ta
 - 公开稳定版始终通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
 - [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 已提供 KeiOS Release 签名 APK 与 SHA-256 校验文件。后续公开更新以稳定版入口为准，CI 包使用独立的签名证书。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
-- 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.1`、Kotlin `2.4.21`、
-  Compose `1.12.1`、Android Gradle Plugin `9.4.1`、Ktor `3.6.0`。
+- 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.2`、Kotlin `2.4.21`、
+  Compose `1.12.1`、Android Gradle Plugin `9.5.0-rc01`、Ktor `3.6.0`。
 - 当前应用语言资源覆盖简体中文、English、日本語。
 
 ## 文档

@@ -126,8 +126,8 @@ Read the full feature tour:
   KeiOS Release-signed APK and a SHA-256 checksum. Use the stable-channel link for future
   public updates; CI packages use their own signing certificate.
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
-- Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.1`, Kotlin `2.4.21`,
-  Compose `1.12.1`, Android Gradle Plugin `9.4.1`, Ktor `3.6.0`.
+- Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.2`, Kotlin `2.4.21`,
+  Compose `1.12.1`, Android Gradle Plugin `9.5.0-rc01`, Ktor `3.6.0`.
 - App language resources currently cover Simplified Chinese, English, and Japanese.
 
 ## Documentation

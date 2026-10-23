@@ -193,8 +193,8 @@ Settings collect the runtime controls in one place:
 - Android baseline: Android 15+ (`minSdk 35`), `targetSdk=37`.
 - UI stack: Jetpack Compose `1.12.1`, Miuix KMP, Lifecycle ViewModel Compose, custom v2 liquid-glass
   chrome, MMKV-backed preferences.
-- Build baseline: Java 21, Gradle Wrapper `9.8.1`, Kotlin `2.4.21`, Android Gradle Plugin
-  `9.4.1`, Ktor `3.6.0`, generated Baseline Profiles, and shared build-logic conventions.
+- Build baseline: Java 21, Gradle Wrapper `9.8.2`, Kotlin `2.4.21`, Android Gradle Plugin
+  `9.5.0-rc01`, Ktor `3.6.0`, generated Baseline Profiles, and shared build-logic conventions.
 - Baseline Profile collection covers six bounded journeys. Capture results and release freshness
   are checked separately. v1.18.0 includes a complete HyperOS Phone
   capture with the new Liquid Sheet rendering and initial partial-height drag paths.

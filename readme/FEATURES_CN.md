@@ -135,7 +135,7 @@ BA 页面是 Blue Archive 办公室仪表盘：
 - Android 基线：Android 15+（`minSdk 35`），`targetSdk=37`。
 - UI 技术栈：Jetpack Compose `1.12.1`、Miuix KMP、Lifecycle ViewModel Compose、自研 v2 液态玻璃
   Chrome、MMKV 偏好存储。
-- 构建基线：Java 21、Gradle Wrapper `9.8.1`、Kotlin `2.4.21`、Android Gradle Plugin
-  `9.4.1`、Ktor `3.6.0`、已生成的 Baseline Profiles 与共享 build-logic 约定。
+- 构建基线：Java 21、Gradle Wrapper `9.8.2`、Kotlin `2.4.21`、Android Gradle Plugin
+  `9.5.0-rc01`、Ktor `3.6.0`、已生成的 Baseline Profiles 与共享 build-logic 约定。
 - Baseline Profile 采集覆盖六段有回放上限的旅程，采集结果与发布新鲜度分别核对；v1.18.0 包含完整 HyperOS Phone 采集，覆盖新的 Liquid Sheet 渲染与初始非全屏高度拖动路径。
   详见 [构建指南](BUILD_CN.md) 和 [采集计划](../docs/planning/baseline-profile-coverage.md)。

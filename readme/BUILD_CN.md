@@ -23,7 +23,7 @@
 - 跨平台 daemon toolchain 配置已在 `gradle/gradle-daemon-jvm.properties` 中跟踪（JetBrains Java 21）。
 - Android 构建基线：`compileSdk=37`、`targetSdk=37`、`minSdk=35`。API 37 有次版本，本项目固定
   `compileSdkMinor = 0`，即针对 **37.0**（SDK 扩展级别 22）编译，而不是本地 SDK 恰好装了哪个 37.x。
-- Gradle Wrapper：`9.8.1`；Kotlin 插件：`2.4.21`；Android Gradle Plugin：`9.4.1`；
+- Gradle Wrapper：`9.8.2`；Kotlin 插件：`2.4.21`；Android Gradle Plugin：`9.5.0-rc01`；
   Compose 运行库：`1.12.1`；Ktor：`3.6.0`。
 - Release APK 读取 `app/src/release/generated/baselineProfiles/` 中已生成的 Baseline Profiles。
   Benchmark 构建会接入同一份 profile 目录，用于预发行性能验证。
@@ -76,7 +76,7 @@ Gradle 配置也支持环境变量兜底：
 org.gradle.java.home=/path/to/your/jdk
 
 # 可选：本地覆盖 Miuix 版本
-miuix.version=0.9.4-8972f941-SNAPSHOT
+miuix.version=0.9.4-685dceb7-SNAPSHOT
 ```
 
 可选的荣耀订单反馈客户端通过 `keios.oem.honor.appId` 配置真实的平台应用 ID。留空时启用标记为
