@@ -349,15 +349,22 @@ internal fun MacrobenchmarkScope.openWindowFrom(
     arrivalTag: String,
     required: Boolean = true,
 ): Boolean {
-    repeat(OPEN_WINDOW_ATTEMPTS) {
-        if (clickVisibleTag(triggerTag, timeoutMs = 6_000) &&
+    repeat(OPEN_WINDOW_ATTEMPTS) { attempt ->
+        // A delayed previous tap may have opened the menu; tapping again would close it.
+        if (attempt > 0 && device.hasObject(testTagSelector(arrivalTag))) {
+            device.waitForIdle()
+            return true
+        }
+        val tapped = clickVisibleTag(triggerTag, timeoutMs = 6_000)
+        if (tapped &&
             device.wait(Until.hasObject(testTagSelector(arrivalTag)), 12_000)
         ) {
             device.waitForIdle()
             return true
         }
-        Log.i("ProfileJourney", "No arrival at $arrivalTag after $triggerTag (attempt ${it + 1})")
-        nudgeVisibleScrollable(forward = true)
+        Log.i("ProfileJourney", "No arrival at $arrivalTag after $triggerTag (attempt ${attempt + 1})")
+        // Keep a tappable trigger in place instead of scrolling it away after a missed tap.
+        if (!tapped) nudgeVisibleScrollable(forward = true)
     }
 
     if (required) captureFailedOpenScene(triggerTag, arrivalTag)

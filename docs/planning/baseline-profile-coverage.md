@@ -53,7 +53,10 @@ selecting a value. Calendar/Pool, the daily Sheet and catalog route are mandator
 arrivals; remote student content, playback and empty-history paths remain optional.
 Route and menu taps wait for three matching visible bounds samples before input;
 accessibility idleness alone can precede a Compose transition settling. Menu opens
-use the same bounded arrival checks as routes. A failed required arrival saves its
+use the same bounded arrival checks as routes. A tapped trigger stays in place for
+the next bounded retry; only an untappable trigger nudges the list. A retry first
+checks for a delayed arrival so it does not close a menu opened by the preceding tap.
+A failed required arrival saves its
 hierarchy, screenshot and target activity state before the collector closes the app,
 so an exit-animation screenshot cannot be mistaken for the click-time scene.
 The adaptive journey saves and restores the original window-size override in `finally`.
