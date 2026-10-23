@@ -172,6 +172,9 @@ Settings collect the runtime controls in one place:
   route, GitHub tracking and history, and Play use independent two-lane layouts where width allows.
 - Icon design selector with Android Designs as the default set and Apple Designs as the refreshed
   alternate set.
+- Color and themed icons use adaptive layers. A selection is saved after verifying the launcher
+  entries. Themed display and refresh timing depend on the launcher; some system screens retain
+  the default icon.
 - Custom secondary-page background image and opacity controls, including cards, chrome, and modal
   presentation scenes.
 - Notification permission, battery optimization, OEM autostart, app-list access, and Shizuku status.

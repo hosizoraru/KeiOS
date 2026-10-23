@@ -20,7 +20,8 @@
     <string name="settings_launcher_icon_design_android">Android Designs</string>
     <string name="settings_launcher_icon_design_summary_apple">新しい Apple Designs アイコンに切り替えます。</string>
     <string name="settings_launcher_icon_design_summary_android">Android Designs アイコンを現在の既定として使用します。</string>
-    <string name="settings_launcher_icon_design_scope">ランチャーアイコンと、通知などのシステム画面に表示されるアプリ識別アイコンに反映されます。一部のランチャーでは更新に少し時間がかかります。</string>
+    <string name="settings_launcher_icon_design_scope">ホーム画面と対応する通知のアプリアイコンを変更します。一部のシステム画面では既定のアイコンが使われます。ホーム画面への反映には少し時間がかかることがあります。</string>
+    <string name="settings_launcher_icon_switch_failed">アプリアイコンを変更できませんでした。もう一度お試しください。</string>
     <string name="settings_app_language_title">アプリの言語</string>
     <string name="settings_app_language_summary">システム言語を変更せずに i18n をテストするため、Android 標準のアプリ言語設定を開きます。</string>
     <string name="settings_app_language_scope">Android 標準のアプリ別言語設定です。直通ページがない端末ではアプリ情報ページにフォールバックします。</string>

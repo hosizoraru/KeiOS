@@ -20,7 +20,8 @@
     <string name="settings_launcher_icon_design_android">Android Designs</string>
     <string name="settings_launcher_icon_design_summary_apple">Switch to the refreshed Apple Designs icon.</string>
     <string name="settings_launcher_icon_design_summary_android">Use Android Designs as the current default icon.</string>
-    <string name="settings_launcher_icon_design_scope">Affects the launcher icon and app identity shown in notifications and other system surfaces. Some launchers may refresh after a short delay.</string>
+    <string name="settings_launcher_icon_design_scope">Changes the launcher icon and app artwork in supported notifications. Some system screens keep the default icon. Launcher refresh may take a moment.</string>
+    <string name="settings_launcher_icon_switch_failed">Couldn\'t switch the app icon. Try again.</string>
     <string name="settings_app_language_title">App language</string>
     <string name="settings_app_language_summary">Open the native app language settings for i18n testing without changing the system language.</string>
     <string name="settings_app_language_scope">Android native per-app language settings; falls back to the app info page when the direct page is unavailable.</string>

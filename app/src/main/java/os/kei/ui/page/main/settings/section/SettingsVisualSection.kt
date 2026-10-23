@@ -51,7 +51,7 @@ internal fun SettingsVisualSection(
             ?: stringResource(R.string.settings_theme_follow_system)
     val currentLauncherIconLabel =
         launcherIconOptions.firstOrNull { it.first == state.launcherIconDesign }?.second
-            ?: stringResource(R.string.settings_launcher_icon_design_apple)
+            ?: stringResource(R.string.settings_launcher_icon_design_android)
     val themeSummary =
         when (state.appThemeMode) {
             AppThemeMode.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_summary_follow_system)

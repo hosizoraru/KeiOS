@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import os.kei.R
+import os.kei.core.ext.showToast
 import os.kei.core.icon.LauncherIconController
 import os.kei.core.prefs.LauncherIconDesign
 import os.kei.core.log.AppLogLevel
@@ -109,11 +111,16 @@ internal class MainScreenUiPrefsState(
     }
 
     fun updateLauncherIconDesign(value: LauncherIconDesign) {
-        if (value != snapshot.launcherIconDesign) {
-            viewModel.updateLauncherIconDesign(value)
+        val result = LauncherIconController.applyDesign(appContext, value)
+        if (result.isFailure) {
+            appContext.showToast(R.string.settings_launcher_icon_switch_failed)
+            return
         }
-        LauncherIconController.applyDesign(appContext, value)
-        McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
+        // A rapid second switch can arrive before the UI snapshot reflects the first one.
+        viewModel.updateLauncherIconDesign(value)
+        if (value != snapshot.launcherIconDesign || result.getOrDefault(false)) {
+            McpNotificationHelper.refreshCurrentNotificationStyle(appContext)
+        }
     }
 
     fun updateNonHomeBackgroundEnabled(value: Boolean) {
