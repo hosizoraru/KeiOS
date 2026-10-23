@@ -47,6 +47,8 @@ val releaseSigningConfigured =
         releaseSigningStorePassword.isNotBlank() &&
         releaseSigningKeyAlias.isNotBlank() &&
         releaseSigningKeyPassword.isNotBlank()
+val honorSuggestionsAppId =
+    readGradleOrLocalPropertyOrNull("keios.oem.honor.appId")?.trim().orEmpty()
 val shizukuVersion = libs.versions.shizuku.get()
 val hiddenApiBypassVersion = libs.versions.hidden.api.bypass.get()
 val mmkvVersion = libs.versions.mmkv.get()
@@ -86,6 +88,9 @@ plugins {
 
 android {
     namespace = "os.kei"
+    buildFeatures {
+        resValues = true
+    }
 
     signingConfigs {
         getByName("debug") {
@@ -106,6 +111,8 @@ android {
 
     defaultConfig {
         applicationId = "os.kei"
+        resValue("string", "keios_honor_app_id", honorSuggestionsAppId)
+        manifestPlaceholders["keiosHonorSuggestionsEnabled"] = honorSuggestionsAppId.isNotBlank()
         versionCode = releaseVersionCode
         versionName = releaseVersionName
         ndk {

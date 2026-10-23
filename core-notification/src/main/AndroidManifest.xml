@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="com.hihonor.brain.permission.KIT_SERVICE_ACCESS" />
+
     <queries>
+        <package android:name="com.hihonor.brain" />
+        <provider android:authorities="com.hihonor.brain.kitservice.provider.KitProvider" />
         <provider android:authorities="IntelligentIntent" />
     </queries>
 </manifest>

@@ -41,6 +41,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.KeiOS">
 
+        <meta-data
+            android:name="com.hihonor.mcs.client.appid"
+            android:value="@string/keios_honor_app_id" />
+        <meta-data
+            android:name="com.hihonor.intelligence.suggestion-kit.enableFlag"
+            android:value="${keiosHonorSuggestionsEnabled}" />
+
         <receiver
             android:name=".core.notification.VivoAtomicDismissReceiver"
             android:exported="false" />
