@@ -40,6 +40,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 | 运行技术栈 | Kotlin、Java 21、Shizuku/Root、Media3、MMKV、Ktor、OkHttp |
 | 语言资源 | 简体中文、English、日本語 |
 | 当前稳定版 | [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) |
+| 准备发布 | [v1.19.0 双语更新说明](RELEASE_V1.19.0.md) |
 
 ## 常用入口
 
@@ -72,19 +73,20 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 - 设置页提供主题、动效、v2 液态玻璃组件、底栏特效策略、搜索默认聚焦、握姿感知浮动
   dock、背景图、应用语言、权限、缓存诊断、结构化日志、本地 GitHub Issue 反馈、无遥测诊断与通知兼容配置。
 
-## v1.18.0 重点变化
+## v1.19.0 重点变化（准备中）
 
-v1.18.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 发布，汇总自 v1.17.0 起的变化。后续稳定更新继续通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
+v1.19.0 正在准备，汇总自 v1.18.0 起的变化；已公开的稳定版仍为
+[v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0)。
 
-- 改善 Liquid Sheet 刚打开、非全屏高度和首次拖动时的卡顿，减少重复 Shader 编译、图层处理与绘制，保留玻璃材质、模糊、折射、阴影、动画和特效。
-- GitHub 长发行日志使用受窗口约束的正文区域，按可见段落加载，保留 Markdown、链接、完整复制、嵌套滚动和面板高度手势。
-- 修复从通知、超级岛或快捷方式重复唤起后，启动画面残留遮挡应用的问题；不同通知保留各自目标，BA 通知携带账户信息。
-- Actions 通知清理过期目标，旧页面的弹层不会残留在新页面上；打开 GitHub Sheet 保留搜索词，同时防止后方搜索栏重新弹出键盘。
-- BGM、学生语音和图库音频的进度更新集中到较小区域；底栏、BA 账户翻页与页面间距动画减少整页更新，保留原有动效。
-- 重新完整采集 HyperOS Phone Baseline Profile，包含新的 Sheet 渲染和初始拖动路径；采集、打包结果与帧时间测量分别验证。
-- 构建工具更新为 Gradle 9.8.1、Kotlin 2.4.21 正式版，并更新 Miuix 与相关运行库。
+- 修复 BGM 封面和当前曲目显示；从播放通知返回时，即使曲目未收藏，也能保留播放队列和暂停位置。
+- 修正桌面图标形状与角标；离开设置后保留所选设计，更新后修复图标消失或重复的问题。
+- 卡片、追踪与 BGM 收藏导入每次选择一个文件，取消后可重新选择；背景裁剪不再长期保留原图访问权限。
+- 应用被系统关闭后，重新打开可继续最近未完成的 OS 卡片与 GitHub 追踪编辑；主动取消则丢弃草稿。
+- AP 与咖啡厅 AP 提醒可以划除，后续 AP 更新保持静默。
+- 调整窗口大小后，方向行为随手机和大窗口切换。
 
-完整变化和覆盖升级说明见 [v1.18.0 更新说明](RELEASE_V1.18.0.md)；之前的鉴赏与追踪改进保留在 [v1.17.0 记录](RELEASE_V1.17.0.md)。
+详细变化与升级说明见 [v1.19.0 双语更新说明](RELEASE_V1.19.0.md)；
+[v1.18.0 记录](RELEASE_V1.18.0.md) 保留已发布版本的说明。
 
 完整功能介绍：
 
@@ -104,6 +106,7 @@ v1.18.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/ta
 ## 文档
 
 - [文档索引](INDEX.md)
+- [Release Notes v1.19.0（准备中）](RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)

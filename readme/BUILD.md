@@ -11,6 +11,8 @@
 - [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) is published: Sheet performance,
   long release notes, notification reentry, and playback/page-update improvements. See
   [v1.18.0 notes](RELEASE_V1.18.0.md). Use the stable-channel link above for future public updates.
+- v1.19.0 is the release target in preparation; see its [bilingual notes](RELEASE_V1.19.0.md)
+  and [release gate](#v1190-release-gate). It is not yet a public download.
 - This build guide covers local source builds, debug packages, and contributor workflows.
 - Use the commands in `Common Local Commands` to generate debug, benchmark, and release APKs.
 
@@ -51,9 +53,9 @@ ownership and configuration-cache checks. This command does not generate Baselin
 - Local builds can override `keios.version.name`, `keios.nextVersion.name`,
   `keios.version.anchorTag`, and `keios.git.*` in `~/.gradle/gradle.properties` or `local.properties`.
 - Release builds use the newer value between the latest merged semver tag and the current release
-  target, for example `1.18.0`.
+  target, currently `1.19.0` (`versionCode 11900999`).
 - Debug and benchmark builds use the next patch version plus commit count and short SHA, for example
-  `1.18.1+12.gabcdef0`.
+  `1.19.1+12.gabcdef0`.
 - Local builds resolve git metadata directly when CI metadata is absent, using the latest merged tag
   as the commit-count anchor and the current release target as the release base when it is newer.
 - Package chains stay compact: debug installs as `os.kei.debug`; benchmark and release install as `os.kei`.
@@ -222,11 +224,13 @@ python3 scripts/qa/baseline_profile_rules.py \
 This checks all six exports per device, exact signature/flag merging, startup
 membership, duplicate and capture-only rules, and the retained Liquid Sheet paths.
 
-### v1.18.0 Release Gate
+### v1.19.0 Release Gate
 
-Release preparation can update notes, version targets, and an unpublished local preparation tag.
-Finalize the tag and publish only after collection and artifact checks pass on the final source.
-An occupied AVD must not be used for these checks.
+Release preparation updates notes and version targets. Commit, tag, push, and publication each
+require explicit authorization; this checklist does not authorize them.
+An occupied AVD must not be used for these checks. Reuse accepted collection results only while
+their runtime and dependency inputs remain valid; version/copy edits still require final artifact
+checks. Earlier 1.18.0 validation APKs do not establish 1.19.0 artifact acceptance.
 
 Run the device-independent checks first:
 
@@ -235,14 +239,17 @@ Run the device-independent checks first:
 git diff --check
 ```
 
-Once the selected AVD is available, collect with an explicit serial:
+If collection inputs changed or accepted capture evidence is missing, collect on an available
+AVD with an explicit serial:
 
 ```bash
 ANDROID_SERIAL=<available-avd-serial> ./gradlew :app:generateReleaseBaselineProfile
 ```
 
-Verify all six journeys, fresh nonempty exports, and both generated source files. Commit the accepted
-outputs and any final runtime fixes before applying the committed-ref freshness gate:
+Verify all six journeys, fresh nonempty exports, and both generated source files. The
+[coverage record](../docs/planning/baseline-profile-coverage.md) records the accepted API 37
+HyperOS Phone collection. Once authorized commits include accepted outputs and final runtime
+fixes, apply the committed-ref freshness gate; account separately for uncommitted runtime changes:
 
 ```bash
 scripts/qa/baseline_profile_freshness.sh
@@ -251,29 +258,41 @@ scripts/qa/baseline_profile_freshness.sh
 
 Recommended focused checks for this release:
 
-- Liquid Sheet: opening at partial height, initial down/up drag, expansion, nested content scrolling,
-  collapse, IME, back, and background return. Retain material, blur, refraction, shadows, resolution,
-  and animation. Use comparable physical-device evidence for frame-time claims.
-- Release notes: a long real document reaches its final block and links with full-copy behavior;
-  small detents, large fonts, nested scroll ownership, and wide windows remain usable.
-- Reentry: notification/Super Island/shortcut entry does not retain a launch overlay. Repeated
-  Actions, calendar/pool, Craft Chamber, and daily notifications retain their destinations/accounts.
-- About: the v1.18.0 card and search keywords agree in Simplified Chinese, English, and Japanese.
+- Media: artwork matches student identity; native notification reentry retains an unfavorited
+  track, playlist, and paused position. Check Next, Stop, background return, and audio-focus behavior.
+- Imports: one readable document, cancellation/retry, unchanged domain validation, and temporary
+  source access for background cropping.
+- Drafts/window policy: restore after data loads, reject stale edit targets, retain failed-save
+  input, clear on cancellation, and reevaluate orientation after resize. Distinguish automated
+  coverage from actual OEM process-kill timing or physical foldable acceptance.
+- Reminders/icons: dismissible AP/Cafe thresholds and silent AP refreshes; verified icon switching,
+  failure feedback, variant badges, and update recovery without losing launcher access.
+- OEM clients: preserve explicit business bindings and ordinary fallback. Protocol tests do not
+  establish native card recognition, admission, or production credential acceptance.
+- About: the v1.19.0 card and search keywords agree in Simplified Chinese, English, and Japanese.
   Review its changed screenshot before updating the golden.
 - The freshness gate reports fresh for committed sources and dependency versions; account separately
   for uncommitted runtime edits. Verify all six fresh capture exports and the exact merge with
   `scripts/qa/baseline_profile_rules.py`. Counts are capture evidence, not fixed release gates.
-- Verify release signing, version 1.18.0 / versionCode 11800999, R8/lint, and packaged
-  assets/dexopt/baseline.prof plus baseline.profm against the final source and tag.
-- Create the annotated local v1.18.0 tag on the final accepted commit. Rebuild after finalizing the tag
-  so git-derived APK metadata uses the correct version anchor. Never force-replace a published tag.
-- Use [Release Notes v1.18.0](RELEASE_V1.18.0.md). Push/tag publication and GitHub Release publication
-  are separate, explicitly authorized actions; publish the signed APK and checksum only when requested.
+- Verify release signing, version 1.19.0 / versionCode 11900999, R8/lint, and packaged
+  assets/dexopt/baseline.prof plus baseline.profm against final source. Inspect the final APK's
+  version and Git metadata; do not relabel an earlier artifact.
+- If explicitly asked to create the annotated local v1.19.0 tag, use the final accepted commit.
+  Rebuild after finalizing it so git-derived APK metadata uses the correct anchor.
+  Never force-replace a published tag.
+- Use [Release Notes v1.19.0](RELEASE_V1.19.0.md). Push/tag publication and GitHub Release publication
+  remain separate authorized actions. Publish the signed APK and checksum only when requested,
+  then update preparation wording and public links after verifying the published release.
+
+### v1.18.0 Release Gate
+
+Archived: [v1.18.0 notes](RELEASE_V1.18.0.md) retain the published release's scope.
+Use the [v1.19.0 gate](#v1190-release-gate) for current preparation.
 
 ### v1.17.0 Release Gate
 
 The archived [v1.17.0 release notes](RELEASE_V1.17.0.md) retain that release's scope.
-Use the [v1.18.0 gate](#v1180-release-gate) for the current release target.
+Use the [v1.19.0 gate](#v1190-release-gate) for the current release target.
 
 ### Screenshot Baseline
 

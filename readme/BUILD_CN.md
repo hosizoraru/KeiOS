@@ -10,6 +10,8 @@
 - 公开稳定版通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
 - [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 已发布，重点改善 Sheet 性能、长发行日志、通知唤起和播放／页面更新。
   详见 [v1.18.0 更新说明](RELEASE_V1.18.0.md)，后续公开更新继续通过上方稳定版入口获取。
+- v1.19.0 为准备中的发布目标，见 [双语更新说明](RELEASE_V1.19.0.md) 和
+  [发布门禁](#v1190-发布门禁)，尚无公开下载。
 - 本构建指南覆盖源码本地构建、Debug 包生成和贡献者开发流程。
 - 使用 `常用本地命令` 中的命令即可产出 Debug、Benchmark 与 Release APK。
 
@@ -45,8 +47,8 @@ Git 版本元数据辅助代码和 Profile 采集完整性校验任务也位于�
 - CI 会在 Gradle 外根据当前 HEAD 已合入的最新 semver tag 和当前发布目标注入版本元数据。
 - 本地构建可在 `~/.gradle/gradle.properties` 或 `local.properties` 覆盖
   `keios.version.name`、`keios.nextVersion.name`、`keios.version.anchorTag` 与 `keios.git.*`。
-- Release 构建使用最新已合入 semver tag 与当前发布目标之间更新的版本，例如 `1.18.0`。
-- Debug / Benchmark 构建使用下一 patch 版本，并追加 commit 数和短 SHA，例如 `1.18.1+12.gabcdef0`。
+- Release 构建使用最新已合入 semver tag 与当前发布目标之间更新的版本，当前为 `1.19.0`（`versionCode 11900999`）。
+- Debug / Benchmark 构建使用下一 patch 版本，并追加 commit 数和短 SHA，例如 `1.19.1+12.gabcdef0`。
 - 缺少 CI 注入 metadata 的本地构建会直接读取 git metadata，以最新已合入 tag 作为 commit 数锚点，并在发布目标更新时使用发布目标作为 release base。
 - 包名链路保持精简：Debug 安装为 `os.kei.debug`；Benchmark 与 Release 安装为 `os.kei`。
 - 当前 CI artifact 名称保持简洁：`KeiOS_<versionName>`，APK 文件名为 `KeiOS_<versionName>.apk`。
@@ -159,10 +161,11 @@ scripts/dev/avd_tablet.sh    # Android 17 平板（KeiOS_Pad_API37_Validation）
 （`.diag`）。在验证用 AVD 上这正是本意；在随身手机上不是，因此非模拟器目标默认拒绝，必须显式传
 `--allow-physical`。
 
-### v1.18.0 发布门禁
+### v1.19.0 发布门禁
 
-发布准备阶段可以同步文案、版本目标，并建立未推送的本地预备 tag。采集和产物验证通过后，
-再让 tag 指向最终源码并发布；被其他任务占用的 AVD 不参与这些检查。
+发布准备阶段同步文案和版本目标。Commit、tag、push 与公开发布均需明确授权，本清单不构成授权。
+被其他任务占用的 AVD 不参与这些检查。仅在运行时与依赖输入仍有效时复用已验收采集；
+版本／文案修改仍需核对最终产物。此前的 1.18.0 验证 APK 不代表 1.19.0 产物已验收。
 
 先完成不依赖设备的检查：
 
@@ -171,7 +174,7 @@ scripts/dev/avd_tablet.sh    # Android 17 平板（KeiOS_Pad_API37_Validation）
 git diff --check
 ```
 
-选定 AVD 空闲后，显式绑定设备采集：
+采集输入变化或缺少已验收记录时，选定空闲 AVD，显式绑定设备采集：
 
 ```bash
 ANDROID_SERIAL=<空闲-avd-serial> ./gradlew :app:generateReleaseBaselineProfile
@@ -182,8 +185,10 @@ ANDROID_SERIAL=<空闲-avd-serial> ./gradlew :app:generateReleaseBaselineProfile
 `os.kei.profilecapture`，后续采集保留授权，正式版、调试版和诊断版的权限配置不变。
 采集期间临时开启勿扰并恢复原模式；开始前记录 `zen_mode` 和窗口设置，以便异常中断后恢复。
 
-核对六段旅程、有效且新鲜的导出及两份生成源文件。先提交已验收的采集结果和最终运行时修复，
-再运行比较已提交引用的新鲜度门禁：
+核对六段旅程、有效且新鲜的导出及两份生成源文件。
+[覆盖记录](../docs/planning/baseline-profile-coverage.md) 已记录通过的 API 37 HyperOS Phone 采集。
+经授权的提交包含已验收结果与最终运行时修复后，运行比较已提交引用的新鲜度门禁；
+未提交的运行时变化另行核对：
 
 ```bash
 scripts/qa/baseline_profile_freshness.sh
@@ -192,23 +197,30 @@ scripts/qa/baseline_profile_freshness.sh
 
 本次发布重点复查：
 
-- Liquid Sheet：非全屏高度打开、初始下拉与回拉、展开、嵌套内容滚动、收起、输入法、返回及后台恢复。
-  保留材质、模糊、折射、阴影、分辨率与动画；帧时间结论使用可比的实体机测量。
-- 发行日志：真实长文能够到达末段和链接，完整复制正常；小高度、大字体、嵌套滚动与宽屏仍可操作。
-- 再次唤起：通知／超级岛／快捷方式不残留启动遮罩；重复进入 Actions、活动／卡池、制造室与日常通知时目标及账户正确。
-- 关于：v1.18.0 卡片与简体中文、英文、日文搜索关键词一致；更新截图基线前先审查差异。
+- 媒体：封面匹配学生身份，从原生通知返回保留未收藏曲目、播放队列与暂停位置；核对下一曲、停止、后台返回和音频焦点行为。
+- 导入：单个可读取文档、取消／重试、原有数据校验，以及背景裁剪的临时源文件授权。
+- 草稿／窗口：数据加载后恢复、拒绝失效编辑目标、失败保存保留输入、取消后清除，以及窗口调整后的方向判断；
+  自动化覆盖与 OEM 实际进程回收时序、实体折叠屏验收分别说明。
+- 提醒／图标：AP／咖啡厅阈值可划除、AP 后续刷新静默；图标切换核验、失败反馈、变体角标及更新恢复保留可用桌面入口。
+- OEM 客户端：保留明确业务绑定与普通通知回退；协议测试不代表原生卡片识别、准入或正式凭据已验收。
+- 关于：v1.19.0 卡片与简体中文、英文、日文搜索关键词一致；更新截图基线前先审查差异。
 - 新鲜度门禁对已提交源码和依赖报告 fresh，未提交运行时变更另行核对；六段新鲜导出使用
   `scripts/qa/baseline_profile_rules.py` 核对精确合并。规则数量只记录当次采集，不作为固定门禁。
-- 核对最终源码与 Tag 对应的正式签名、1.18.0 / versionCode 11800999、R8/lint，以及
-  assets/dexopt/baseline.prof 和 baseline.profm。
-- 在最终验收提交上创建带说明的本地 v1.18.0 Tag。Tag 定稿后重新构建，让 APK 中的 Git 版本锚点一致；不强制替换已发布 Tag。
-- 使用 [Release Notes v1.18.0](RELEASE_V1.18.0.md)。推送分支／Tag 与公开 GitHub Release 是分别授权的动作，
-  明确要求发布时再交付签名 APK 和校验文件。
+- 核对最终源码对应的正式签名、1.19.0 / versionCode 11900999、R8/lint，以及
+  assets/dexopt/baseline.prof 和 baseline.profm；检查最终 APK 的版本与 Git 元数据，不为旧产物改标签。
+- 仅在明确要求时，于最终验收提交上创建带说明的本地 v1.19.0 Tag。Tag 定稿后重新构建，让 APK 中的 Git 版本锚点一致；不强制替换已发布 Tag。
+- 使用 [Release Notes v1.19.0](RELEASE_V1.19.0.md)。推送分支／Tag 与公开 GitHub Release 仍为分别授权的动作；
+  明确要求发布时再交付签名 APK 和校验文件，核实公开结果后更新准备状态与下载链接。
+
+### v1.18.0 发布门禁
+
+已归档：[v1.18.0 说明](RELEASE_V1.18.0.md) 保留已发布版本的范围；当前准备使用
+[v1.19.0 门禁](#v1190-发布门禁)。
 
 ### v1.17.0 发布门禁
 
 [v1.17.0 历史说明](RELEASE_V1.17.0.md) 保留该版本的发布范围；当前发布目标使用上方
-[v1.18.0 门禁](#v1180-发布门禁)。
+[v1.19.0 门禁](#v1190-发布门禁)。
 
 ### 截图基线
 

@@ -110,6 +110,10 @@ The GitHub page tracks APK updates from GitHub projects and subscription project
 - Local GitHub issue assistant with structured log levels, issue markdown generation, and
   telemetry-free diagnostics.
 - Shared import/export services for OS cards, shell cards, GitHub tracks, and student-guide data.
+- OS card, GitHub tracking, and BGM favorite imports select one file at a time, with the option
+  to choose again after cancellation.
+- Recent unfinished OS Activity/Shell card and GitHub tracking edits can be recovered after the
+  system closes the app. Explicitly cancelling an edit discards its draft.
 
 ## BA Office
 
@@ -118,6 +122,8 @@ The BA page acts as a Blue Archive office dashboard:
 - AP and cafe AP tracking with server-aware timing.
 - AP threshold notifications, cafe visit reminders, arena refresh reminders, and BA-specific Super
   Island presentation using progress and countdown templates.
+- AP and Cafe AP reminders can be dismissed. Later AP updates stay silent;
+  your notification settings control alerts.
 - Shortcut-triggered AP and cafe AP Super Island notifications.
 - Six Craft Chamber timers per account cover three Generate slots and three Fusion slots, with grade,
   count, total-duration editing, precise completion reminders, and compact running summaries.
@@ -151,6 +157,8 @@ The student guide expands the BA workflow into catalog and media browsing:
   options are available in Settings → Interface for devices with display problems, effective on re-entry.
 - BGM favorites library with playback queue, liquid bottom dock, mini player, batch cache, retry,
   removal Undo, import/export, native media notifications, and jump back into the student guide.
+- BGM shows artwork for the current track. Returning from a playback notification keeps the
+  active song, queue, and paused position, even when the song is outside favorites.
 - Media cache controls and export flows, including archive-style saves for expression/media packs.
 - NPC and satellite entries adapt older GameKee pages with broader gallery parsing, related-role
   classification, leaner information rows, and compatibility for pages with fewer implemented-student
@@ -168,6 +176,7 @@ Settings collect the runtime controls in one place:
   the existing material, animation, blur, and interaction effects stay intact.
 - Adaptive main navigation keeps a bottom bar on phones, moves to top navigation at regular tablet
   widths, and uses a remembered drag-to-close sidebar on ultra-wide windows.
+- Resizing the window updates orientation behavior to suit phone and larger windows.
 - Settings, About, MCP, OS cards and Shell, BA Office, Student Guide, the merged calendar-and-pool
   route, GitHub tracking and history, and Play use independent two-lane layouts where width allows.
 - Icon design selector with Android Designs as the default set and Apple Designs as the refreshed
@@ -175,8 +184,11 @@ Settings collect the runtime controls in one place:
 - Color and themed icons use adaptive layers. A selection is saved after verifying the launcher
   entries. Themed display and refresh timing depend on the launcher; some system screens retain
   the default icon.
+- Both launcher designs have test-build badges. Your selection is kept when leaving Settings,
+  and updates recover missing or duplicate icons.
 - Custom secondary-page background image and opacity controls, including cards, chrome, and modal
   presentation scenes.
+- Setting a background no longer keeps long-term access to the original image.
 - Notification permission, battery optimization, OEM autostart, app-list access, and Shizuku status.
 - Super Island notification style, automatic closing time, HyperOS compatibility bypass,
   and restore-delay tuning. GitHub refresh progress keeps its task-specific closing behavior.
@@ -195,7 +207,4 @@ Settings collect the runtime controls in one place:
   chrome, MMKV-backed preferences.
 - Build baseline: Java 21, Gradle Wrapper `9.8.2`, Kotlin `2.4.21`, Android Gradle Plugin
   `9.5.0-rc01`, Ktor `3.6.0`, generated Baseline Profiles, and shared build-logic conventions.
-- Baseline Profile collection covers six bounded journeys. Capture results and release freshness
-  are checked separately. v1.18.0 includes a complete HyperOS Phone
-  capture with the new Liquid Sheet rendering and initial partial-height drag paths.
-  See the [build guide](BUILD.md) and [collection plan](../docs/planning/baseline-profile-coverage.md).
+- Build and profiling details are in the [build guide](BUILD.md).

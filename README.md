@@ -41,6 +41,7 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 | Runtime stack | Kotlin, Java 21, Shizuku/Root, Media3, MMKV, Ktor, OkHttp |
 | Languages | Simplified Chinese, English, Japanese |
 | Stable release | [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) |
+| Release in preparation | [v1.19.0 notes (中文 / English)](readme/RELEASE_V1.19.0.md) |
 
 ## Quick Links
 
@@ -90,28 +91,24 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
   diagnostics, structured logs, local GitHub issue feedback, telemetry-free diagnostics, and
   notification compatibility.
 
-## v1.18.0 Highlights
+## v1.19.0 Highlights — In Preparation
 
-v1.18.0 is available on [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0),
-covering changes since v1.17.0. Future stable updates remain available through
-[Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
+v1.19.0 is being prepared from the changes since v1.18.0. The published stable version remains
+[v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0).
 
-- Liquid Sheet opening and initial partial-height dragging do less redundant shader, layer, and
-  drawing work. Glass materials, blur, refraction, shadows, animations, and effects are preserved.
-- Long GitHub release notes use a bounded document viewport with visible-block loading, retaining
-  Markdown, links, full copying, nested scrolling, and panel-resize gestures.
-- Repeated notification, Super Island, and shortcut entry no longer leaves a launch surface over
-  the app. Notification targets stay separate, and BA entries retain account information.
-- Actions notification entry clears stale targets. Covered pages no longer leave old overlays
-  above a new page; GitHub Sheets retain search queries without a covered search field raising the keyboard.
-- BGM, voice, and gallery audio progress update smaller UI regions. Bottom-bar presses, BA account
-  paging, and animated page spacing retain their motion with less page-wide work.
-- The complete HyperOS Phone Baseline Profile is refreshed, including the new Sheet rendering and
-  initial-drag paths. Collection and packaging checks remain separate from frame-time measurements.
-- Build tooling uses Gradle 9.8.1 and Kotlin 2.4.21 final, with updated Miuix and runtime libraries.
+- BGM shows the correct artwork and current track when returning from a playback notification,
+  even for songs outside favorites. The queue and paused position stay in place.
+- Launcher icons have corrected shapes and badges. Your selected design is kept when leaving
+  Settings, and updates recover missing or duplicate icons.
+- Card, tracking, and BGM favorite imports select one file at a time and let you retry after
+  cancellation. Background cropping no longer keeps access to the original image.
+- Recent unfinished OS card and GitHub tracking edits can be recovered after the system closes
+  the app. Explicitly cancelling an edit discards its draft.
+- AP and Cafe AP reminders can be dismissed, and later AP updates stay silent.
+- Window resizing updates orientation behavior to suit phone and larger windows.
 
-See [v1.18.0 release notes](readme/RELEASE_V1.18.0.md) for the complete changes and upgrade guidance.
-The [v1.17.0 notes](readme/RELEASE_V1.17.0.md) retain the earlier viewer and tracking improvements.
+See the [bilingual v1.19.0 notes](readme/RELEASE_V1.19.0.md) for details and upgrade information.
+[v1.18.0 notes](readme/RELEASE_V1.18.0.md) retain the published release record.
 
 Read the full feature tour:
 
@@ -133,6 +130,7 @@ Read the full feature tour:
 ## Documentation
 
 - [Documentation Index](readme/INDEX.md)
+- [Release Notes v1.19.0 — In Preparation](readme/RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](readme/RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](readme/RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](readme/RELEASE_V1.16.0.md)
