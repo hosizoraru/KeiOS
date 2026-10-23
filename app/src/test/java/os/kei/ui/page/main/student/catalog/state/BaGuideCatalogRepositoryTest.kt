@@ -18,6 +18,7 @@ import os.kei.ui.page.main.student.catalog.component.BaGuideBgmFavoriteSortMode
 import os.kei.ui.page.main.student.catalog.isBaGuideCatalogCacheExpired
 import os.kei.ui.page.main.student.catalog.testBgmFavorite
 import os.kei.ui.page.main.student.catalog.testCatalogEntry
+import os.kei.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import kotlin.test.assertEquals
 
 class BaGuideCatalogRepositoryTest {
@@ -360,6 +361,7 @@ class BaGuideCatalogRepositoryTest {
                     title = "Theme",
                     studentTitle = "",
                 )
+            assertEquals(entry.contentId, extractGuideContentIdFromUrl(favorite.sourceUrl))
             val repository = BaGuideCatalogRepository(parseDispatcher = Dispatchers.Unconfined)
 
             val result =
@@ -426,14 +428,15 @@ class BaGuideCatalogRepositoryTest {
         attributes: BaGuideCatalogEntryFilterAttributes = BaGuideCatalogEntryFilterAttributes.EMPTY,
     ): BaGuideCatalogEntry {
         val hash = name.hashCode().let { if (it < 0) -it else it }
+        val contentId = hash + order + 1L
         return testCatalogEntry(
-            contentId = hash + order + 1L,
+            contentId = contentId,
             name = name,
             tab = tab,
             iconUrl = "https://example.com/icon.png",
             order = order,
             createdAtSec = 1L,
-            detailUrl = "https://www.gamekee.com/ba/tj/${hash + order}.html",
+            detailUrl = "https://www.gamekee.com/ba/tj/$contentId.html",
             filterAttributes = attributes,
         )
     }

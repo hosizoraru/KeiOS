@@ -12,6 +12,7 @@ import os.kei.ui.page.main.student.catalog.testBgmFavorite
 import os.kei.ui.page.main.student.catalog.testCatalogEntry
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertSame
 
 class BaGuideStudentBgmDisplayedModelTest {
     @Test
@@ -151,6 +152,62 @@ class BaGuideStudentBgmDisplayedModelTest {
         assertEquals(entry.iconUrl, playableFavorite.studentImageUrl)
         assertEquals(entry.iconUrl, playableFavorite.imageUrl)
         assertEquals(playableFavorite.audioUrl, model.rows.single().readyAudioUrl)
+    }
+
+    @Test
+    fun `ready lookup receives current entry metadata in row and playback queue`() {
+        val entry = testCatalogEntry(
+            contentId = 8L,
+            name = "Aris",
+            iconUrl = "https://example.com/aris.png",
+        )
+        val favorite = favorite(entry.detailUrl).copy(studentTitle = " ", studentImageUrl = "\t", imageUrl = "")
+        val ready = BaGuideStudentBgmLookupState.Ready(
+            BaGuideStudentBgmResolvedItem(favorite, fromCache = true, fromFavorite = true),
+        )
+
+        val model = buildBaGuideStudentBgmDisplayedModel(
+            displayedEntries = listOf(entry),
+            lookupStates = mapOf(entry.contentId to ready),
+            favoriteByNormalizedSourceUrl = emptyMap(),
+            favoriteAudioUrls = setOf(favorite.audioUrl),
+        )
+
+        val expected = favorite.copy(
+            studentTitle = entry.name,
+            studentImageUrl = entry.iconUrl,
+            imageUrl = entry.iconUrl,
+        )
+        val rowState = assertIs<BaGuideStudentBgmLookupState.Ready>(model.rows.single().displayState)
+        assertEquals(ready.item.copy(favorite = expected), rowState.item)
+        assertEquals(listOf(expected), model.playableFavorites)
+        assertEquals(true, model.rows.single().favorite)
+        assertEquals(
+            rowState,
+            studentBgmStateWithFavoriteFallback(entry, ready, emptyMap()),
+        )
+    }
+
+    @Test
+    fun `ready lookup with complete artwork keeps existing source and state identity`() {
+        val entry = testCatalogEntry(contentId = 8L, name = "Aris", iconUrl = "https://example.com/icon.png")
+        val favorite = favorite(entry.detailUrl).copy(
+            studentImageUrl = "https://example.com/original.png",
+            imageUrl = "https://example.com/gallery.png",
+        )
+        val ready = BaGuideStudentBgmLookupState.Ready(
+            BaGuideStudentBgmResolvedItem(favorite, fromCache = true),
+        )
+
+        val model = buildBaGuideStudentBgmDisplayedModel(
+            displayedEntries = listOf(entry),
+            lookupStates = mapOf(entry.contentId to ready),
+            favoriteByNormalizedSourceUrl = emptyMap(),
+            favoriteAudioUrls = emptySet(),
+        )
+
+        assertSame(ready, model.rows.single().displayState)
+        assertEquals(listOf(favorite), model.playableFavorites)
     }
 
     private fun favorite(sourceUrl: String): GuideBgmFavoriteItem =

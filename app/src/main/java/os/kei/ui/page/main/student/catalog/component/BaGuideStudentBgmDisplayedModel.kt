@@ -62,16 +62,22 @@ internal fun studentBgmStateWithFavoriteFallback(
 ): BaGuideStudentBgmLookupState {
     val favorite = favoriteForStudentBgmEntry(entry, favoriteByNormalizedSourceUrl)
     return studentBgmStateWithFavoriteFallback(
+        entry = entry,
         lookupState = lookupState,
         favorite = favorite,
     )
 }
 
 private fun studentBgmStateWithFavoriteFallback(
+    entry: BaGuideCatalogEntry,
     lookupState: BaGuideStudentBgmLookupState,
     favorite: GuideBgmFavoriteItem?,
 ): BaGuideStudentBgmLookupState {
-    if (lookupState is BaGuideStudentBgmLookupState.Ready) return lookupState
+    if (lookupState is BaGuideStudentBgmLookupState.Ready) {
+        val resolvedFavorite = lookupState.item.favorite.withCatalogEntryStudentMetadata(entry)
+        if (resolvedFavorite == lookupState.item.favorite) return lookupState
+        return lookupState.copy(item = lookupState.item.copy(favorite = resolvedFavorite))
+    }
     if (lookupState == BaGuideStudentBgmLookupState.Loading) return lookupState
     if (favorite == null) return lookupState
     return BaGuideStudentBgmLookupState.Ready(
@@ -109,6 +115,7 @@ internal fun buildBaGuideStudentBgmDisplayedModel(
         }
         val displayState =
             studentBgmStateWithFavoriteFallback(
+                entry = entry,
                 lookupState = lookupState,
                 favorite = sourceFavorite,
             )
