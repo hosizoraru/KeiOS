@@ -64,20 +64,14 @@ object ModernNotificationSpecResolver {
         val isRunning = state.running
         val isCalendarPoolTerminal =
             kind == ModernNotificationKind.BA_CALENDAR_POOL && state.deadlineAtMs == null
-        // Daily-done belongs here for the same reason cafe visit and arena refresh do: it reports an
-        // event that has already happened. Without it the trailing branches below made a finished run an
-        // ongoing PROMOTED_ONGOING ProgressStyle notification with a progress bar — verified on the AVD,
-        // where it also arrived un-dismissible because ONGOING_EVENT was set. `requestPromotedOngoing`
-        // tracks `ongoing` here, so getting `ongoing` right is what stops the promoted request too.
+        // These report completed events, so they have no remaining progress to display.
         val isOneShotBaEvent =
             kind == ModernNotificationKind.BA_CAFE_VISIT ||
                 kind == ModernNotificationKind.BA_ARENA_REFRESH ||
                 kind == ModernNotificationKind.BA_DAILY_DONE
-        val ongoing = if (isCalendarPoolTerminal || isOneShotBaEvent) {
-            state.ongoing
-        } else {
-            isRunning || state.ongoing
-        }
+        // `running` also selects BA reminder copy and artwork. Only the caller's lifecycle
+        // contract can make a notification ongoing; a threshold event is not a service.
+        val ongoing = state.ongoing
         val showProgressStyle = when {
             isCalendarPoolTerminal || isOneShotBaEvent -> false
             kind == ModernNotificationKind.WEBDAV_SYNC -> isRunning
@@ -96,7 +90,7 @@ object ModernNotificationSpecResolver {
                 kind = kind,
                 isRunning = isRunning,
             ),
-            category = if (isRunning && !isCalendarPoolTerminal && !isOneShotBaEvent) {
+            category = if (isRunning && ongoing && !isCalendarPoolTerminal && !isOneShotBaEvent) {
                 NotificationCompat.CATEGORY_PROGRESS
             } else {
                 NotificationCompat.CATEGORY_STATUS

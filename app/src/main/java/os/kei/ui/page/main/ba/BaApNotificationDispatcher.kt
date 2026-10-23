@@ -45,6 +45,9 @@ internal object BaApNotificationDispatcher {
                 port = currentDisplay,
                 path = thresholdDisplay.toString(),
                 clients = limitDisplay,
+                // A threshold reminder must remain eligible for ordinary notification alerts.
+                ongoing = false,
+                onlyAlertOnce = false,
                 overrideTitle = context.getString(R.string.ba_ap_notification_title),
                 overrideContent = baAccountNotificationContent(
                     context = context,
@@ -94,6 +97,8 @@ internal object BaApNotificationDispatcher {
                     port = currentDisplay,
                     path = thresholdDisplay.toString(),
                     clients = limitDisplay,
+                    ongoing = false,
+                    onlyAlertOnce = false,
                     overrideTitle = context.getString(R.string.ba_ap_notification_title),
                     overrideContent =
                         baAccountNotificationContent(
@@ -152,7 +157,7 @@ internal object BaApNotificationDispatcher {
                 port = currentDisplay,
                 path = thresholdDisplay.toString(),
                 clients = limitDisplay,
-                ongoing = true,
+                ongoing = false,
                 onlyAlertOnce = true,
                 overrideTitle = context.getString(R.string.ba_ap_notification_title),
                 overrideContent = baAccountNotificationContent(

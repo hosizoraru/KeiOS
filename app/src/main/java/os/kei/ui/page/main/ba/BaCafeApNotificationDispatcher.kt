@@ -45,6 +45,9 @@ internal object BaCafeApNotificationDispatcher {
                 port = currentDisplay,
                 path = thresholdDisplay.toString(),
                 clients = limitDisplay,
+                // A threshold reminder must remain eligible for ordinary notification alerts.
+                ongoing = false,
+                onlyAlertOnce = false,
                 overrideContent = baAccountNotificationContent(
                     context = context,
                     accountDisplayName = accountDisplayName,
@@ -93,6 +96,8 @@ internal object BaCafeApNotificationDispatcher {
                     port = currentDisplay,
                     path = thresholdDisplay.toString(),
                     clients = limitDisplay,
+                    ongoing = false,
+                    onlyAlertOnce = false,
                     overrideContent =
                         baAccountNotificationContent(
                             context = context,

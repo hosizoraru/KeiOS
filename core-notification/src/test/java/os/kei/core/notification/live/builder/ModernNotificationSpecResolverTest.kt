@@ -44,7 +44,28 @@ class ModernNotificationSpecResolverTest {
         assertEquals(ModernNotificationKind.BA_AP, spec.kind)
         assertEquals(50, spec.progressPercent)
         assertEquals(ModernShortCriticalMode.SHORT_TEXT, spec.shortCriticalMode)
-        assertEquals(true, spec.ongoing)
+        assertEquals(false, spec.ongoing)
+        assertEquals(false, spec.requestPromotedOngoing)
+        assertEquals(true, spec.showProgressStyle)
+        assertEquals(NotificationCompat.CATEGORY_STATUS, spec.category)
+    }
+
+    @Test
+    fun `running presentation never overrides an explicit finite lifecycle`() {
+        listOf(
+            LiveNotificationPayload.BA_CAFE_AP_SERVER_NAME,
+            LiveNotificationPayload.GITHUB_SHARE_IMPORT_SERVER_NAME,
+            LiveNotificationPayload.WEBDAV_SYNC_SERVER_NAME,
+            "One-shot result",
+        ).forEach { serverName ->
+            val spec = ModernNotificationSpecResolver.resolve(
+                createState(serverName, running = true, port = 100, clients = 240, ongoing = false),
+            )
+
+            assertEquals(false, spec.ongoing, serverName)
+            assertEquals(false, spec.requestPromotedOngoing, serverName)
+            assertEquals(NotificationCompat.CATEGORY_STATUS, spec.category, serverName)
+        }
     }
 
     /**

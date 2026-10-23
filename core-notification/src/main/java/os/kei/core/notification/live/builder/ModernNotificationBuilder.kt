@@ -14,10 +14,6 @@ class ModernNotificationBuilder(
     private fun baseNotificationBuilder(channelId: String): NotificationCompat.Builder {
         return NotificationCompat.Builder(context, channelId)
             .setSmallIcon(NotificationAppIconResolver.smallIconResId())
-            .setSilent(true)
-            .setOnlyAlertOnce(true)
-            .setOngoing(true)
-            .setRequestPromotedOngoing(true)
     }
 
     override fun build(payload: NotificationPayload): Notification {
@@ -35,7 +31,7 @@ class ModernNotificationBuilder(
             // Prevent state leakage between updates.
             .setContentText(null)
             .setOnlyAlertOnce(state.onlyAlertOnce)
-            .setSilent(true)
+            .setSilent(state.onlyAlertOnce)
             .setOngoing(spec.ongoing)
             .setRequestPromotedOngoing(spec.requestPromotedOngoing)
             .setSmallIcon(spec.iconResId)
@@ -65,7 +61,7 @@ class ModernNotificationBuilder(
                     builder.addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
                 }
                 val hasCustomDeleteAction = state.deletePendingIntent != state.stopPendingIntent
-                if (showSecondaryAction && (isDismissibleCalendarPoolUpdate || hasCustomDeleteAction)) {
+                if (hasCustomDeleteAction || (showSecondaryAction && isDismissibleCalendarPoolUpdate)) {
                     builder.setDeleteIntent(state.deletePendingIntent)
                 }
             }

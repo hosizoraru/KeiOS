@@ -71,8 +71,9 @@ class LegacyNotificationBuilder(
             builder.addAction(0, state.stopActionTitle(context), state.stopPendingIntent)
         }
         val hasCustomDeleteAction = state.deletePendingIntent != state.stopPendingIntent
-        if (state.stopPendingIntent != state.openPendingIntent &&
-            ((!state.ongoing && state.showSecondaryActionWhenStopped) || hasCustomDeleteAction)
+        if (hasCustomDeleteAction ||
+            (state.stopPendingIntent != state.openPendingIntent &&
+                !state.ongoing && state.showSecondaryActionWhenStopped)
         ) {
             builder.setDeleteIntent(state.deletePendingIntent)
         }
