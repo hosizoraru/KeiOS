@@ -141,7 +141,7 @@ runs:
       run: |
         set -euo pipefail
 
-        release_target_version="1.18.0"
+        release_target_version="1.19.0"
         semver_ge() {
           local left_major left_minor left_patch right_major right_minor right_patch
           IFS='.' read -r left_major left_minor left_patch <<< "$1"

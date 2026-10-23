@@ -6,7 +6,7 @@ import os.kei.buildlogic.miuixVersion
 import os.kei.buildlogic.readGradleOrLocalPropertyOrNull
 import os.kei.buildlogic.resolveKeiosVersionMetadata
 
-val versionMetadata = resolveKeiosVersionMetadata(AppSemVer(major = 1, minor = 18, patch = 0))
+val versionMetadata = resolveKeiosVersionMetadata(AppSemVer(major = 1, minor = 19, patch = 0))
 val releaseVersion = versionMetadata.releaseVersion
 val benchmarkVersion = versionMetadata.benchmarkVersion
 val versionAnchorTag = versionMetadata.versionAnchorTag
