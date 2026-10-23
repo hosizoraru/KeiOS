@@ -2,7 +2,6 @@ package os.kei.mcp.server
 
 import java.io.File
 import kotlin.test.assertTrue
-import kotlinx.coroutines.Dispatchers
 import org.junit.Test
 
 /**
@@ -20,8 +19,7 @@ import org.junit.Test
  *    not: four threads shared by the 30s network and 60s deep-scan profiles, with 4-second cache
  *    reads queued behind them.
  *
- * Neither shows up as a failure — the server keeps answering, just one long tool at a time — so the
- * shape is asserted here rather than left to be rediscovered from a frame chart.
+ * The service wiring stays guarded here; [McpToolExecutionTest] checks the actual execution context.
  */
 class McpHandlerDispatchSourceTest {
     @Test
@@ -31,38 +29,6 @@ class McpHandlerDispatchSourceTest {
         assertTrue(
             "handlerCoroutineContext = AppDispatchers.mcpServer" in source,
             "$LOCAL_SERVICE must pin handlerCoroutineContext, or every MCP tool runs on the CPU pool",
-        )
-    }
-
-    @Test
-    fun onlyComputeBoundWorkLeavesTheHandlerPool() {
-        val overrides =
-            McpToolExecutionProfile.entries.filter { profile -> profile.dispatcherOverride != null }
-
-        assertTrue(
-            overrides == listOf(McpToolExecutionProfile.Cpu),
-            "Only Cpu may leave the handler pool; the rest run where the SDK dispatched them. Found: $overrides",
-        )
-        assertTrue(
-            McpToolExecutionProfile.Cpu.dispatcherOverride === Dispatchers.Default,
-            "Cpu must move compute-bound work off the IO-backed handler pool",
-        )
-    }
-
-    /**
-     * Keyed on the guard, not on the call: an unconditional `withContext` is exactly the regression.
-     */
-    @Test
-    fun theExecutionPathHopsOnlyWhenAProfileAsksForIt() {
-        val source = sourceFile(EXECUTION)
-
-        assertTrue(
-            "profile.dispatcherOverride" in source,
-            "$EXECUTION must consult the override rather than hop unconditionally",
-        )
-        assertTrue(
-            "withContext(profile.dispatcher)" !in source,
-            "$EXECUTION must not reintroduce the unconditional dispatcher hop",
         )
     }
 
@@ -91,7 +57,6 @@ class McpHandlerDispatchSourceTest {
 }
 
 private const val LOCAL_SERVICE = "feature-mcp/src/main/java/os/kei/mcp/server/LocalMcpService.kt"
-private const val EXECUTION = "feature-mcp/src/main/java/os/kei/mcp/server/McpToolExecution.kt"
 
 private fun repositoryRoot(): File {
     val workingDirectory = File(requireNotNull(System.getProperty("user.dir"))).canonicalFile
