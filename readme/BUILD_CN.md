@@ -79,6 +79,10 @@ org.gradle.java.home=/path/to/your/jdk
 miuix.version=0.9.4-8972f941-SNAPSHOT
 ```
 
+可选的荣耀订单反馈客户端通过 `keios.oem.honor.appId` 配置真实的平台应用 ID。留空时启用标记为
+false，客户端不会发送数据。场景和业务参数仍需显式提供；这不会让所有通知自动成为 YOYO 卡片。
+实现范围和验证边界见 [OEM 适配记录](../docs/planning/oem-adaptation-implementation-2026-10-23.md)。
+
 Miuix 迭代很快。遇到疑似 Miuix 的问题时，先确认当前 pin 是不是最新快照再动手改，很多问题上游
 已经修好了：
 

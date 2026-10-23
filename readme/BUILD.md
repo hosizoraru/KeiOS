@@ -90,6 +90,12 @@ org.gradle.java.home=/path/to/your/jdk
 miuix.version=0.9.4-8972f941-SNAPSHOT
 ```
 
+For the optional HONOR order-feedback client, set `keios.oem.honor.appId` to the
+real platform application ID. An empty value keeps its enable flag false and
+prevents transmission. Scene/business values remain explicit integration inputs;
+this does not enable every notification as a YOYO card. See the
+[OEM implementation and verification notes](../docs/planning/oem-adaptation-implementation-2026-10-23.md).
+
 Miuix iterates fast. When something Miuix-shaped misbehaves, check whether the pin is current
 before writing a workaround — the fix is often already upstream:
 
