@@ -21,8 +21,8 @@
 
     <string name="about_card_app_title">App</string>
     <string name="about_card_app_subtitle">应用身份与运行时信息</string>
-    <string name="about_card_release_title">Release v1.18.0</string>
-    <string name="about_card_release_subtitle">Liquid Sheet 性能、长发行日志与通知唤起修复</string>
+    <string name="about_card_release_title">Release v1.19.0</string>
+    <string name="about_card_release_subtitle">音乐播放、图标切换与编辑恢复</string>
     <string name="about_card_runtime_title">运行时状态</string>
     <string name="about_card_runtime_subtitle">通知/Shizuku/系统状态快速检查</string>
     <string name="about_card_permission_title">权限清单</string>
@@ -339,25 +339,25 @@
     <string name="about_label_security_patch">安全补丁</string>
 
     <string name="about_release_row_version">版本线</string>
-    <string name="about_release_value_version">v1.18.0 · Android 15+ · arm64-v8a · targetSdk 37</string>
-    <string name="about_release_row_tracking">Actions 与弹层恢复</string>
-    <string name="about_release_value_tracking">从 Actions 通知再次进入时清理过期目标，打开对应项目与运行记录；页面被覆盖后，旧 Sheet、对话框和菜单不再残留在新页面上，原页面状态继续保留</string>
-    <string name="about_release_row_sheet">Liquid Sheet 打开与拖动</string>
-    <string name="about_release_value_sheet">减少刚打开非全屏高度面板及首次拖动时的卡顿，复用页面与材质绘制，减少重复 Shader 编译和图层开销；嵌套内容各自保持滚动位置，面板高度手势继续保留</string>
-    <string name="about_release_row_notes">长发行日志</string>
-    <string name="about_release_value_notes">GitHub 长发行日志按可见段落加载，修复超大绘制区域导致的内容缺失与滚动异常；保留 Markdown、链接、完整复制，以及大字体下的阅读和面板拖动</string>
-    <string name="about_release_row_rendering">材质与动效</string>
-    <string name="about_release_value_rendering">保留 Liquid Glass 模糊、折射、阴影、动画和特效；复用绘制结果并减少可见区域之外的玻璃绘制，不降低分辨率或替换材质</string>
-    <string name="about_release_row_input">搜索与键盘</string>
-    <string name="about_release_value_input">打开 GitHub Sheet 时收起后方搜索编辑状态，保留搜索词和筛选结果；切换主题或字体后，键盘不会因搜索栏重新取得焦点而盖住内容</string>
-    <string name="about_release_row_startup">启动与重复唤起</string>
-    <string name="about_release_value_startup">修复 HyperOS 上通过通知、超级岛或快捷方式重复进入后，启动画面残留并遮挡应用的问题；首次启动的主题背景、内容准备和过渡动画继续保留</string>
-    <string name="about_release_row_notifications">通知目标与账户</string>
-    <string name="about_release_value_notifications">MCP、活动／卡池和 Actions 通知各自保留打开目标，避免入口互相覆盖；制造室与一键日常通知携带账户信息进入 BA，减少多账户之间跳错位置</string>
-    <string name="about_release_row_performance">播放与页面切换</string>
-    <string name="about_release_value_performance">BGM、学生语音和图库音频的进度更新减少对整页的影响；底栏、BA 账户翻页和页面切换保留原有动效，重新采集完整 Baseline Profile，包含新的 Sheet 渲染与拖动路径</string>
-    <string name="about_release_row_next">升级建议</string>
-    <string name="about_release_value_next">从使用相同 KeiOS Release 签名的 v1.17.x 或更早正式版覆盖升级，可保留设置、追踪、BA 账户和收藏，无需卸载或清除数据</string>
+    <string name="about_release_value_version">v1.19.0 · Android 15+ · arm64-v8a</string>
+    <string name="about_release_row_tracking">找回未完成的编辑</string>
+    <string name="about_release_value_tracking">应用被系统关闭后，可找回未提交的卡片或追踪编辑内容；主动取消的编辑不再恢复</string>
+    <string name="about_release_row_sheet">学生 BGM 封面</string>
+    <string name="about_release_value_sheet">封面与学生、曲目正确对应；图片加载失败时自动重试，减少封面缺失</string>
+    <string name="about_release_row_notes">从通知返回音乐页</string>
+    <string name="about_release_value_notes">回到正在播放的曲目、封面和控制面板；未收藏的曲目也能继续原有队列</string>
+    <string name="about_release_row_rendering">桌面图标更可靠</string>
+    <string name="about_release_value_rendering">改善不同形状下的图标与角标显示；切换后保留所选设计，失败时给出提示</string>
+    <string name="about_release_row_input">文件导入</string>
+    <string name="about_release_value_input">一次选择一个文件；取消选择或选错格式时，已有卡片、追踪和收藏保持原样</string>
+    <string name="about_release_row_startup">窗口大小与方向</string>
+    <string name="about_release_value_startup">调整窗口大小后及时更新屏幕方向，兼顾手机竖屏和大窗口使用</string>
+    <string name="about_release_row_notifications">提醒减少打扰</string>
+    <string name="about_release_value_notifications">AP 与咖啡厅提醒可正常划除，后续 AP 刷新保持静默</string>
+    <string name="about_release_row_performance">背景图片裁剪</string>
+    <string name="about_release_value_performance">保留原有裁剪方式，仅访问本次选中的图片，不额外保留源文件权限</string>
+    <string name="about_release_row_next">保留数据升级</string>
+    <string name="about_release_value_next">使用相同来源的正式版覆盖升级，保留设置、追踪、BA 账户和收藏</string>
 
     <string name="about_row_kotlin">Kotlin</string>
     <string name="about_row_gradle">Gradle</string>

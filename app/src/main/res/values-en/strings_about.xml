@@ -19,8 +19,8 @@
 
     <string name="about_card_app_title">App</string>
     <string name="about_card_app_subtitle">App identity and runtime information</string>
-    <string name="about_card_release_title">Release v1.18.0</string>
-    <string name="about_card_release_subtitle">Liquid Sheet performance, long release notes, and notification fixes</string>
+    <string name="about_card_release_title">Release v1.19.0</string>
+    <string name="about_card_release_subtitle">Music playback, launcher icons, and unfinished edits</string>
     <string name="about_card_runtime_title">Runtime status</string>
     <string name="about_card_runtime_subtitle">Quick checks for notifications, Shizuku, and system state</string>
     <string name="about_card_permission_title">Permission list</string>
@@ -335,25 +335,25 @@
     <string name="about_label_security_patch">Security patch</string>
 
     <string name="about_release_row_version">Release line</string>
-    <string name="about_release_value_version">v1.18.0 · Android 15+ · arm64-v8a · targetSdk 37</string>
-    <string name="about_release_row_tracking">Actions and presentation recovery</string>
-    <string name="about_release_value_tracking">Notification reentry clears stale Actions targets and opens the intended project and run. Covered pages no longer leave old sheets, dialogs, or menus over a new page, while page state is retained</string>
-    <string name="about_release_row_sheet">Liquid Sheet opening and dragging</string>
-    <string name="about_release_value_sheet">Reduces stalls on opening partial-height panels and during the first drag. Reuses page and material recordings to reduce repeated shader compilation and layer work, retaining independent nested scroll positions and panel-resize gestures</string>
-    <string name="about_release_row_notes">Long release notes</string>
-    <string name="about_release_value_notes">GitHub long release notes load visible blocks to prevent missing content and scrolling problems caused by oversized drawing areas. Markdown, links, full copying, large-font reading, and panel gestures are retained</string>
-    <string name="about_release_row_rendering">Materials and motion</string>
-    <string name="about_release_value_rendering">Preserves Liquid Glass blur, refraction, shadows, animations, and effects. Reuses recordings and reduces glass drawing outside the visible area without lowering resolution or substituting materials</string>
-    <string name="about_release_row_input">Search and keyboard</string>
-    <string name="about_release_value_input">Opening a GitHub Sheet collapses search editing behind it while retaining the query and filtered results. Theme or font changes no longer let the covered search field bring the keyboard over the content</string>
-    <string name="about_release_row_startup">Startup and repeated entry</string>
-    <string name="about_release_value_startup">Fixes a launch surface remaining over the app after repeated notification, Super Island, or shortcut entry on HyperOS. The initial theme-aware background, content preparation, and transition animation are retained</string>
-    <string name="about_release_row_notifications">Notification targets and accounts</string>
-    <string name="about_release_value_notifications">MCP, calendar/pool, and Actions notifications retain separate open targets. Craft Chamber and one-tap daily notifications open BA with the account information, reducing incorrect destinations in multi-account use</string>
-    <string name="about_release_row_performance">Playback and page transitions</string>
-    <string name="about_release_value_performance">BGM, student voice, and gallery audio progress do less page-wide work. Bottom-bar, BA account paging, and page transitions retain their motion. The complete Baseline Profile is refreshed, including new Sheet rendering and dragging paths</string>
-    <string name="about_release_row_next">Upgrade advice</string>
-    <string name="about_release_value_next">Installing over v1.17.x or an earlier stable build with the same KeiOS Release certificate retains settings, tracked projects, BA accounts, and favorites. Uninstalling or clearing data is unnecessary</string>
+    <string name="about_release_value_version">v1.19.0 · Android 15+ · arm64-v8a</string>
+    <string name="about_release_row_tracking">Unfinished edits</string>
+    <string name="about_release_value_tracking">Brings back unfinished edits after the system closes the app. Cancelled edits stay discarded</string>
+    <string name="about_release_row_sheet">Student BGM artwork</string>
+    <string name="about_release_value_sheet">Shows the matching student artwork and retries when an image fails to load</string>
+    <string name="about_release_row_notes">Return from notifications</string>
+    <string name="about_release_value_notes">Return to the current song, artwork, and controls, even when the song is outside favorites</string>
+    <string name="about_release_row_rendering">Launcher icons</string>
+    <string name="about_release_value_rendering">Improves icon shapes and badges, keeps your chosen design, and reports failed changes</string>
+    <string name="about_release_row_input">File imports</string>
+    <string name="about_release_value_input">Choose one file to import. Cancelling or choosing an incompatible file leaves your data intact</string>
+    <string name="about_release_row_startup">Window size and direction</string>
+    <string name="about_release_value_startup">Updates the screen direction when the window size changes, including large windows</string>
+    <string name="about_release_row_notifications">Quieter reminders</string>
+    <string name="about_release_value_notifications">Dismiss AP and Cafe alerts normally. Later AP refreshes stay silent</string>
+    <string name="about_release_row_performance">Background image cropping</string>
+    <string name="about_release_value_performance">Crop your background as before, with access limited to the image you select</string>
+    <string name="about_release_row_next">Keep your data</string>
+    <string name="about_release_value_next">Update over the same-source stable release to keep settings, tracked projects, BA accounts, and favorites</string>
 
     <string name="about_row_kotlin">Kotlin</string>
     <string name="about_row_gradle">Gradle</string>
