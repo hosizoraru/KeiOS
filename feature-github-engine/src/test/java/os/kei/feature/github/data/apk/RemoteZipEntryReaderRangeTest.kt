@@ -7,17 +7,20 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Test
+import os.kei.core.download.range.RemoteByteRangeResourceChangedException
 import os.kei.feature.github.data.apk.ZipRangeTestFixtures.rangeDispatcher
-import os.kei.feature.github.data.apk.ZipRangeTestFixtures.zipWithManifest
+import os.kei.feature.github.data.apk.ZipRangeTestFixtures.zipWithEntries
 import os.kei.feature.github.data.apk.ZipRangeTestFixtures.zipWithStoredEntry
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-class RemoteZipEntryReaderTest {
+class RemoteZipEntryReaderRangeTest {
     @Test
     fun `reader fetches AndroidManifest entry through explicit byte ranges`() = runBlocking {
-        val manifest = BinaryManifestFixture.build(packageName = "os.kei.remote")
-        val apkBytes = zipWithManifest(manifest)
+        val manifest = "manifest-content".encodeToByteArray()
+        val apkBytes = zipWithEntries("AndroidManifest.xml" to manifest)
         MockWebServer().use { server ->
             server.dispatcher = rangeDispatcher(apkBytes)
             val reader = RemoteZipEntryReader(client = OkHttpClient())
@@ -26,9 +29,7 @@ class RemoteZipEntryReaderTest {
                 url = server.url("/download/app.apk").toString(),
                 entryName = "AndroidManifest.xml"
             ).getOrThrow()
-            val packageName = AndroidBinaryXmlPackageNameParser.parsePackageName(bytes).getOrThrow()
-
-            assertEquals("os.kei.remote", packageName)
+            assertContentEquals(manifest, bytes)
             val ranges = buildList {
                 repeat(server.requestCount) {
                     val request = server.takeRequest()
@@ -38,16 +39,15 @@ class RemoteZipEntryReaderTest {
                 }
             }
             assertEquals("bytes=0-0", ranges.first())
-            assertTrue(ranges.none { it.startsWith("bytes=-") })
             assertTrue(ranges.size <= 4)
-            assertTrue(ranges.any { it.startsWith("bytes=0-") || it.matches(Regex("""bytes=\d+-\d+""")) })
+            assertTrue(ranges.all { it.matches(Regex("""bytes=\d+-\d+""")) })
         }
     }
 
     @Test
     fun `reader lists entries and reads selected entries from one central directory`() = runBlocking {
-        val manifest = BinaryManifestFixture.build(packageName = "os.kei.batch")
-        val apkBytes = zipWithManifest(manifest)
+        val manifest = "selected-manifest-content".encodeToByteArray()
+        val apkBytes = zipWithEntries("AndroidManifest.xml" to manifest)
         MockWebServer().use { server ->
             server.dispatcher = rangeDispatcher(apkBytes)
             val reader = RemoteZipEntryReader(client = OkHttpClient())
@@ -58,11 +58,7 @@ class RemoteZipEntryReaderTest {
                     entryNames.filter { it == "AndroidManifest.xml" }
                 }
             ).getOrThrow()
-            val packageName = AndroidBinaryXmlPackageNameParser
-                .parsePackageName(selected.entries.getValue("AndroidManifest.xml"))
-                .getOrThrow()
-
-            assertEquals("os.kei.batch", packageName)
+            assertContentEquals(manifest, selected.entries.getValue("AndroidManifest.xml"))
             assertEquals(listOf("AndroidManifest.xml"), selected.entryNames)
             assertTrue(server.requestCount <= 4)
         }
@@ -70,8 +66,7 @@ class RemoteZipEntryReaderTest {
 
     @Test
     fun `reader fails without downloading full body when range is ignored`() = runBlocking {
-        val manifest = BinaryManifestFixture.build(packageName = "os.kei.remote")
-        val apkBytes = zipWithManifest(manifest)
+        val apkBytes = zipWithEntries("AndroidManifest.xml" to "manifest-content".encodeToByteArray())
         MockWebServer().use { server ->
             server.enqueue(
                 MockResponse()
@@ -85,15 +80,16 @@ class RemoteZipEntryReaderTest {
                 entryName = "AndroidManifest.xml"
             )
 
-            assertTrue(result.isFailure)
+            assertIs<RemoteByteRangeResourceChangedException>(result.exceptionOrNull())
+            assertEquals(1, server.requestCount)
             assertEquals("bytes=0-0", server.takeRequest().getHeader("Range"))
         }
     }
 
     @Test
     fun `reader reuses redirected range url after probe`() = runBlocking {
-        val manifest = BinaryManifestFixture.build(packageName = "os.kei.redirect")
-        val apkBytes = zipWithManifest(manifest)
+        val manifest = "redirected-manifest-content".encodeToByteArray()
+        val apkBytes = zipWithEntries("AndroidManifest.xml" to manifest)
         MockWebServer().use { server ->
             server.dispatcher = object : Dispatcher() {
                 private val assetDispatcher = rangeDispatcher(apkBytes)
@@ -114,9 +110,7 @@ class RemoteZipEntryReaderTest {
                 url = server.url("/download/app.apk").toString(),
                 entryName = "AndroidManifest.xml"
             ).getOrThrow()
-            val packageName = AndroidBinaryXmlPackageNameParser.parsePackageName(bytes).getOrThrow()
-
-            assertEquals("os.kei.redirect", packageName)
+            assertContentEquals(manifest, bytes)
             val paths = buildList {
                 repeat(server.requestCount) {
                     add(server.takeRequest().path.orEmpty())
@@ -129,8 +123,8 @@ class RemoteZipEntryReaderTest {
 
     @Test
     fun `reader fetches manifest from nested stored apk entry through ranges`() = runBlocking {
-        val manifest = BinaryManifestFixture.build(packageName = "os.kei.nested")
-        val apkBytes = zipWithManifest(manifest)
+        val manifest = "nested-manifest-content".encodeToByteArray()
+        val apkBytes = zipWithEntries("AndroidManifest.xml" to manifest)
         val artifactBytes = zipWithStoredEntry(
             entryName = "outputs/app-universal-release.apk",
             bytes = apkBytes
@@ -144,9 +138,7 @@ class RemoteZipEntryReaderTest {
                 outerEntryName = "outputs/app-universal-release.apk",
                 innerEntryName = "AndroidManifest.xml"
             ).getOrThrow()
-            val packageName = AndroidBinaryXmlPackageNameParser.parsePackageName(bytes).getOrThrow()
-
-            assertEquals("os.kei.nested", packageName)
+            assertContentEquals(manifest, bytes)
             val ranges = buildList {
                 repeat(server.requestCount) {
                     add(server.takeRequest().getHeader("Range").orEmpty())
