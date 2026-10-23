@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/ic_launcher_foreground_inset" />
-    <item
-        android:width="36dp"
-        android:height="36dp"
-        android:bottom="18dp"
-        android:drawable="@drawable/ic_launcher_badge_debug"
-        android:gravity="bottom|end"
-        android:right="18dp" />
+    <item android:drawable="@drawable/ic_launcher_badge_debug" />
 </layer-list>

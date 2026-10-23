@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_apple_foreground"
+    android:insetLeft="2.2%"
+    android:insetTop="2.2%"
+    android:insetRight="2.2%"
+    android:insetBottom="2.2%" />
