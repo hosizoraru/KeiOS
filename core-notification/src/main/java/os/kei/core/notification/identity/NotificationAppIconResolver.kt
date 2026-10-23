@@ -28,13 +28,15 @@ object NotificationAppIconResolver {
         val design = currentDesign()
         val cacheKey = "${context.packageName}|${design.storageId}|${context.resources.displayMetrics.densityDpi}"
         largeIconCache[cacheKey]?.let { return it }
-        val drawable = resolveActiveLauncherDrawable(context) ?: return null
+        // Own the vector state before rendering into the notification bitmap cache.
+        val drawable = resolveActiveLauncherDrawable(context)?.mutate() ?: return null
         return drawable.renderLargeIcon(context).also { bitmap ->
             largeIconCache[cacheKey] = bitmap
         }
     }
 
     fun applyDesign(design: LauncherIconDesign) {
+        if (runtimeDesign == design) return
         runtimeDesign = design
         largeIconCache.clear()
     }
