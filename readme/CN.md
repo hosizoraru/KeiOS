@@ -39,8 +39,8 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 | UI 技术栈 | Jetpack Compose、Miuix、液态玻璃风格 chrome |
 | 运行技术栈 | Kotlin、Java 21、Shizuku/Root、Media3、MMKV、Ktor、OkHttp |
 | 语言资源 | 简体中文、English、日本語 |
-| 当前稳定版 | [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) |
-| 准备发布 | [v1.19.0 双语更新说明](RELEASE_V1.19.0.md) |
+| 当前稳定版 | [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) |
+| 更新说明 | [v1.19.0 双语更新说明](RELEASE_V1.19.0.md) |
 
 ## 常用入口
 
@@ -73,10 +73,10 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 - 设置页提供主题、动效、v2 液态玻璃组件、底栏特效策略、搜索默认聚焦、握姿感知浮动
   dock、背景图、应用语言、权限、缓存诊断、结构化日志、本地 GitHub Issue 反馈、无遥测诊断与通知兼容配置。
 
-## v1.19.0 重点变化（准备中）
+## v1.19.0 重点变化
 
-v1.19.0 正在准备，汇总自 v1.18.0 起的变化；已公开的稳定版仍为
-[v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0)。
+v1.19.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) 发布，
+以下为自 v1.18.0 起的变化。
 
 - 修复 BGM 封面和当前曲目显示；从播放通知返回时，即使曲目未收藏，也能保留播放队列和暂停位置。
 - 修正桌面图标形状与角标；离开设置后保留所选设计，更新后修复图标消失或重复的问题。
@@ -97,7 +97,7 @@ v1.19.0 正在准备，汇总自 v1.18.0 起的变化；已公开的稳定版仍
 
 - 稳定版安装包通过 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases) 发布。
 - 公开稳定版始终通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) 已提供 KeiOS Release 签名 APK 与 SHA-256 校验文件。后续公开更新以稳定版入口为准，CI 包使用独立的签名证书。
+- [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) 已提供 KeiOS Release 签名 APK 与 SHA-256 校验文件。后续公开更新以稳定版入口为准，CI 包使用独立的签名证书。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
 - 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.2`、Kotlin `2.4.21`、
   Compose `1.12.1`、Android Gradle Plugin `9.5.0-rc01`、Ktor `3.6.0`。
@@ -106,7 +106,7 @@ v1.19.0 正在准备，汇总自 v1.18.0 起的变化；已公开的稳定版仍
 ## 文档
 
 - [文档索引](INDEX.md)
-- [Release Notes v1.19.0（准备中）](RELEASE_V1.19.0.md)
+- [Release Notes v1.19.0](RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)

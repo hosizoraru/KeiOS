@@ -8,7 +8,7 @@
 - [功能完整介绍 (CN)](FEATURES_CN.md)
 - [Build Guide (EN)](BUILD.md)
 - [构建指南 (CN)](BUILD_CN.md)
-- [Release Notes v1.19.0 — In Preparation / 准备中](RELEASE_V1.19.0.md)
+- [Release Notes v1.19.0](RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)
@@ -22,9 +22,9 @@
 
 ## Map
 
-- `../README.md`: public project overview, release channel, v1.19.0 preparation highlights,
+- `../README.md`: public project overview, release channel, v1.19.0 highlights,
   install links, and quick feature summary.
-- `CN.md`: Chinese public project overview, release channel, v1.19.0 preparation highlights,
+- `CN.md`: Chinese public project overview, release channel, v1.19.0 highlights,
   install links, and quick feature summary.
 - `FEATURES.md` / `FEATURES_CN.md`: fuller feature tour for Home, OS, MCP, GitHub
   tracking/subscription projects/discovery/Star import, Blue Archive, Student Guide, settings, and

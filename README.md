@@ -40,8 +40,8 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 | UI stack | Jetpack Compose, Miuix, liquid-glass chrome |
 | Runtime stack | Kotlin, Java 21, Shizuku/Root, Media3, MMKV, Ktor, OkHttp |
 | Languages | Simplified Chinese, English, Japanese |
-| Stable release | [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) |
-| Release in preparation | [v1.19.0 notes (中文 / English)](readme/RELEASE_V1.19.0.md) |
+| Stable release | [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) |
+| Release notes | [v1.19.0 notes (中文 / English)](readme/RELEASE_V1.19.0.md) |
 
 ## Quick Links
 
@@ -91,10 +91,10 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
   diagnostics, structured logs, local GitHub issue feedback, telemetry-free diagnostics, and
   notification compatibility.
 
-## v1.19.0 Highlights — In Preparation
+## v1.19.0 Highlights
 
-v1.19.0 is being prepared from the changes since v1.18.0. The published stable version remains
-[v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0).
+v1.19.0 is available on [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0),
+with the following improvements since v1.18.0.
 
 - BGM shows the correct artwork and current track when returning from a playback notification,
   even for songs outside favorites. The queue and paused position stay in place.
@@ -119,7 +119,7 @@ Read the full feature tour:
 
 - Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
 - The public stable channel always resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
-- [v1.18.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.18.0) is published with the
+- [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) is published with the
   KeiOS Release-signed APK and a SHA-256 checksum. Use the stable-channel link for future
   public updates; CI packages use their own signing certificate.
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
@@ -130,7 +130,7 @@ Read the full feature tour:
 ## Documentation
 
 - [Documentation Index](readme/INDEX.md)
-- [Release Notes v1.19.0 — In Preparation](readme/RELEASE_V1.19.0.md)
+- [Release Notes v1.19.0](readme/RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](readme/RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](readme/RELEASE_V1.17.0.md)
 - [Release Notes v1.16.0](readme/RELEASE_V1.16.0.md)
