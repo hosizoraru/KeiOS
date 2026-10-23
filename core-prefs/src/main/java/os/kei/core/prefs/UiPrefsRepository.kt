@@ -1,10 +1,13 @@
 package os.kei.core.prefs
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import os.kei.core.concurrency.AppDispatchers
 import os.kei.core.log.AppLogLevel
@@ -12,6 +15,7 @@ import os.kei.core.log.AppLogLevel
 class UiPrefsRepository(
     private val ioDispatcher: CoroutineDispatcher = AppDispatchers.fileIo,
     initialSnapshot: UiPrefsSnapshot = UiPrefs.defaultSnapshot(),
+    private val persistLauncherIconDesign: (LauncherIconDesign) -> Unit = { UiPrefs.setLauncherIconDesign(it) },
 ) {
     private val snapshots = MutableStateFlow(initialSnapshot)
 
@@ -91,8 +95,14 @@ class UiPrefsRepository(
     }
 
     suspend fun setLauncherIconDesign(value: LauncherIconDesign) {
-        updateAndPersist({ copy(launcherIconDesign = value) }) {
-            UiPrefs.setLauncherIconDesign(value)
+        snapshots.update { it.copy(launcherIconDesign = value) }
+        // The platform switch is already applied. Finish ordered writes even if settings closes.
+        withContext(NonCancellable) {
+            launcherIconWriteMutex.withLock {
+                withContext(ioDispatcher) {
+                    persistLauncherIconDesign(value)
+                }
+            }
         }
     }
 
@@ -294,5 +304,9 @@ class UiPrefsRepository(
         withContext(ioDispatcher) {
             persist()
         }
+    }
+
+    private companion object {
+        val launcherIconWriteMutex = Mutex()
     }
 }
