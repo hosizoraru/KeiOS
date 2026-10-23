@@ -41,6 +41,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.KeiOS">
 
+        <receiver
+            android:name=".core.notification.VivoAtomicDismissReceiver"
+            android:exported="false" />
+
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
