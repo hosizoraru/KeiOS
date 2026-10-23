@@ -23,16 +23,16 @@ class LauncherIconContractTest {
     }
 
     @Test
-    fun `component state specs reapply selected design for release package chain`() {
+    fun `component state specs place selected entry before inactive entries`() {
         val specs = LauncherIconDesign.Apple.componentStateSpecs("os.kei")
 
         assertEquals(2, specs.size)
         assertEquals("os.kei", specs[0].component.packageName)
-        assertEquals("os.kei.LauncherAndroidDesigns", specs[0].component.className)
-        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DISABLED, specs[0].enabledState)
+        assertEquals("os.kei.LauncherAppleDesigns", specs[0].component.className)
+        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_ENABLED, specs[0].enabledState)
         assertEquals("os.kei", specs[1].component.packageName)
-        assertEquals("os.kei.LauncherAppleDesigns", specs[1].component.className)
-        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_ENABLED, specs[1].enabledState)
+        assertEquals("os.kei.LauncherAndroidDesigns", specs[1].component.className)
+        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DISABLED, specs[1].enabledState)
     }
 
     @Test

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
 import os.kei.core.log.AppLogger
+import os.kei.core.icon.LauncherIconController
 
 class AppBackgroundSystemEventReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -19,6 +20,9 @@ class AppBackgroundSystemEventReceiver : BroadcastReceiver() {
             val startedElapsedRealtimeMs = SystemClock.elapsedRealtime()
             AppLogger.i(TAG, "reschedule background alarms after $action")
             try {
+                if (action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+                    LauncherIconController.recoverAfterUpdate(appContext)
+                }
                 AppBackgroundScheduler.scheduleAll(appContext)
                 AppBackgroundRecoveryStore.recordSucceeded(
                     action = action,
