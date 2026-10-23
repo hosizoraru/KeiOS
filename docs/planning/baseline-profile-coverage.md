@@ -150,6 +150,65 @@ material and animation rules are retained. Acceptance checks fresh exports,
 rule syntax, signature/flag deduplication, startup membership, new viewer
 coverage and the absence of test-only rules instead of appending old profiles.
 
+### Accepted release-preparation capture, 2026-10-24
+
+The full generation task captured source `ba0a00992`, including the BGM artwork
+and native-session reentry fixes, on `KeiOS_HyperOS4_Phone` (`emulator-5580`,
+API 37, HyperOS `OS4.0.24.0.XFRCNXM`, 1120x2436 at 480 dpi). It exited 0 in
+14m42s. All six journeys passed with zero failures, errors or skips; device test
+time was 13m35s. The six-journey, 16-replay ceiling is unchanged, and all 1,866
+capture-input hashes remained unchanged during collection.
+
+| Journey | Device time |
+| --- | ---: |
+| commonRoutesAndChrome | 113.2s |
+| baOfficeAndCatalogCore | 124.3s |
+| gitHubTrackingCore | 76.8s |
+| mainPagesAndNavigation | 74.8s |
+| startupAndFirstScroll | 35.4s |
+| adaptiveLargeScreenCore | 390.8s |
+
+| Generated output | Previous rules | Fresh rules | Added signatures | Removed signatures |
+| --- | ---: | ---: | ---: | ---: |
+| Baseline | 63,645 | 64,370 | 1,429 | 704 |
+| Startup | 24,735 | 24,606 | 42 | 171 |
+
+The six fresh exports contain 234,388 raw rule lines. Normal AndroidX merging
+resolves 145 within-journey and 169,873 cross-journey duplicates. The generated
+baseline matches the exact fresh signature set and sorted-first-rule flag
+policy, with zero missing/extra signatures, flag differences, generated
+duplicates or capture-only rules. Startup matches only its owning fresh journey
+and remains a baseline subset. No older Phone or Pad rules were appended.
+
+Named retained coverage includes `SheetGlassNode` 40, `LiquidShaderPool` 5,
+`LiquidDecorationGeometry` 4, `LiquidSheetViewportDrawNode` 6 and shared scene
+host 6 rules, plus 5,435 Media3 rules. Both adaptive replays completed real model
+and Lobby CompatibleFrames readiness, tools/palette/IME, camera, immersion,
+BGM restoration and compact guide paging.
+
+An earlier incomplete run was rejected after a missed theme-menu arrival. Its
+recovery path scrolled a tapped selector offscreen; the producer now retries
+that tap in place and recognizes delayed arrivals. The accepted run repeated
+all six journeys, retaining the existing arrival assertions and replay limits.
+The initial missed tap's unique cause was not established.
+
+Collection used the Phone's existing private ADB service through an owned
+loopback relay. Only the two verified disposable collector APKs were installed;
+both remain retained and stopped. Eight protected applications retained their
+APK identities and data-directory inodes. Window/density/letterbox, DND, system
+settings, music volume, input property and local SDK configuration were restored;
+renderer and SELinux were unchanged. The owned relay was removed without
+restarting the AVD or either existing ADB server.
+
+Source SHA-256 values are
+`f5bad4f56e966c2a33a69714980427d67b418d4bc87e66c3ab36f510b820c46c`
+for baseline and
+`355227b136f1906d030c2c513a3439c1f720a3d1e6215216ae47bdb50c4f9dc1`
+for startup. Logs, input hashes, test results, exact-merge audit and restoration
+receipts are retained in `.planning/release-prep-20261024/`.
+This establishes collection and coverage; committed freshness, final packaging
+and measured performance remain separate evidence gates.
+
 ### Accepted v1.18.0 source refresh, 2026-10-20
 
 After the v1.18.0 About card, localized resources and version target changed,
