@@ -153,6 +153,7 @@ internal suspend fun GitHubRefreshActions.applyTrackSnapshot(trackSnapshot: GitH
 
     state.trackedItems.clear()
     state.trackedItems.addAll(trackSnapshot.items)
+    state.reconcileRecoveredTrackEditor(trackSnapshot.items)
     val validItemIds = trackSnapshot.items.map { it.id }.toSet()
     state.retainTrackedUiState(validItemIds)
     env.viewModel.retainTrackedExpansion(validItemIds)

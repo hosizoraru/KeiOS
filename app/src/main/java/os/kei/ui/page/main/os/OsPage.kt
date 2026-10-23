@@ -116,7 +116,14 @@ fun OsPage(
     val overlayRuntimeActions = osPageViewModel.overlayRuntimeActions
     val overlayState =
         rememberOsPageOverlayState(
-            googleSystemServiceDefaults = textBundle.googleSystemServiceDefaults,
+            activityShortcutDraft = runtimeState.activityShortcutDraft
+                ?: os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft(
+                    textBundle.googleSystemServiceDefaults,
+                ),
+            onActivityShortcutDraftChange = overlayRuntimeActions::updateActivityShortcutDraft,
+            shellCommandCardDraft = runtimeState.shellCommandCardDraft
+                ?: os.kei.ui.page.main.os.shell.createDefaultShellCommandCardDraft(),
+            onShellCommandCardDraftChange = overlayRuntimeActions::updateShellCommandCardDraft,
             showCardManager = runtimeState.showCardManager,
             onShowCardManagerChange = overlayRuntimeActions::updateShowCardManager,
             showActivityVisibilityManager = runtimeState.showActivityVisibilityManager,
@@ -329,16 +336,10 @@ fun OsPage(
             context.showToast(R.string.os_google_system_service_toast_invalid_target)
         },
         onShowActivityShortcutEditor = { request ->
-            overlayState.onActivityCardEditModeChange(request.editMode)
-            overlayState.onEditingActivityShortcutCardIdChange(request.editingCardId)
-            overlayState.onEditingActivityShortcutBuiltInChange(request.editingBuiltIn)
-            overlayState.onActivityShortcutDraftChange(request.draft)
-            overlayState.onShowActivityShortcutEditorChange(true)
+            overlayRuntimeActions.openActivityEditor(request)
         },
         onShowShellCommandCardEditor = { card ->
-            overlayState.onEditingShellCommandCardIdChange(card.id)
-            overlayState.onShellCommandCardDraftChange(card)
-            overlayState.onShowShellCommandCardEditorChange(true)
+            overlayRuntimeActions.openShellEditor(card)
         },
     )
     val sectionStates = runtimeState.sectionStates
@@ -655,6 +656,7 @@ fun OsPage(
                 context = context,
                 sheetBackdrop = backdrops.sheet,
                 overlayState = overlayState,
+                editorDataReady = persistentState.loaded,
                 visibleCards = visibleCards,
                 activityShortcutCards = activityShortcutCards,
                 activityIconBitmaps = activityIconState.bitmaps,

@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import os.kei.core.privilege.PrivilegedShell
+import os.kei.core.state.EditorRecoveryStore
+import os.kei.ui.page.main.os.state.OsEditorRecovery
 import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
@@ -76,9 +78,10 @@ internal class OsPageViewModel : ViewModel() {
     private val _chromeState = MutableStateFlow(OsPageChromeState())
     val chromeState: StateFlow<OsPageChromeState> = _chromeState.asStateFlow()
 
-    private val _runtimeState = MutableStateFlow(OsPageRuntimeState())
+    private val editorRecovery = OsEditorRecovery(EditorRecoveryStore.shared)
+    private val _runtimeState = MutableStateFlow(editorRecovery.restore())
     val runtimeState: StateFlow<OsPageRuntimeState> = _runtimeState.asStateFlow()
-    val overlayRuntimeActions = OsPageOverlayRuntimeActions(_runtimeState)
+    val overlayRuntimeActions = OsPageOverlayRuntimeActions(_runtimeState, editorRecovery::save)
 
     val activitySuggestionState: StateFlow<OsActivitySuggestionUiState> =
         activitySuggestionController.state
@@ -291,6 +294,7 @@ internal class OsPageViewModel : ViewModel() {
                 builtInActivityShortcutCards = builtInActivityShortcutCards,
                 builtInShellCommandCards = builtInShellCommandCards,
             )
+            overlayRuntimeActions.reconcileEditorTargets(repository.observePersistentState().value)
         }
     }
 

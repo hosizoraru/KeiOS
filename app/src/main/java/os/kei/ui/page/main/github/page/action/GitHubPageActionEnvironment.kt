@@ -9,6 +9,7 @@ import os.kei.core.privilege.PrivilegedShell
 import os.kei.feature.github.domain.GitHubActionsService
 import os.kei.feature.github.domain.GitHubTrackChangeSemanticUpdate
 import os.kei.feature.github.model.GitHubTrackChangeHistorySource
+import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.page.GitHubPageRepository
 import os.kei.ui.page.main.github.page.GitHubPageState
 import os.kei.ui.page.main.github.page.GitHubPageViewModel
@@ -56,8 +57,7 @@ internal class GitHubPageActionEnvironment(
         val trackedAddedAtById = state.trackedAddedAtById.toMap()
         val trackedModifiedAtById = state.trackedModifiedAtById.toMap()
         scope.launch {
-            repository.saveTrackedItems(
-                context = context,
+            saveTrackedItemsAwaiting(
                 items = items,
                 trackedFirstInstallAtByPackage = trackedFirstInstallAtByPackage,
                 trackedAddedAtById = trackedAddedAtById,
@@ -67,7 +67,30 @@ internal class GitHubPageActionEnvironment(
                 trackChangeSource = trackChangeSource,
                 semanticTrackUpdates = semanticTrackUpdates,
             )
-            viewModel.refreshHistoryUnreadCount()
         }
+    }
+
+    suspend fun saveTrackedItemsAwaiting(
+        items: List<GitHubTrackedApp>,
+        trackedFirstInstallAtByPackage: Map<String, Long>,
+        trackedAddedAtById: Map<String, Long>,
+        trackedModifiedAtById: Map<String, Long>,
+        refreshTrackIds: Set<String> = emptySet(),
+        emitStoreSignal: Boolean = true,
+        trackChangeSource: GitHubTrackChangeHistorySource = GitHubTrackChangeHistorySource.Page,
+        semanticTrackUpdates: List<GitHubTrackChangeSemanticUpdate> = emptyList(),
+    ) {
+        repository.saveTrackedItems(
+            context = context,
+            items = items,
+            trackedFirstInstallAtByPackage = trackedFirstInstallAtByPackage,
+            trackedAddedAtById = trackedAddedAtById,
+            trackedModifiedAtById = trackedModifiedAtById,
+            refreshTrackIds = refreshTrackIds,
+            emitStoreSignal = emitStoreSignal,
+            trackChangeSource = trackChangeSource,
+            semanticTrackUpdates = semanticTrackUpdates,
+        )
+        viewModel.refreshHistoryUnreadCount()
     }
 }

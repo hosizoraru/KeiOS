@@ -171,12 +171,8 @@ class KeiOSApp : Application() {
     private fun registerMemoryPressureHandling() {
         AppMemoryRelease.registerAppCaches()
         ItgsaFairMemoryReceiver.register(context = this) {
-            // Nothing to flush yet, and that is a real answer rather than a stub: every page state this app
-            // would want back is written through to MMKV or a file store as it changes, so a KILL loses the
-            // Compose state of the current screen and nothing else. If that stops being true -- an editor
-            // buffer, an unsent draft -- this is where it gets saved, and it runs on a background thread
-            // inside a 3-second budget.
-            Unit
+            // Input callbacks prepare the snapshots; this background callback never reads UI state.
+            os.kei.core.state.EditorRecoveryStore.checkpointIfInitialized()
         }
     }
 

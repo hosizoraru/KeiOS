@@ -15,6 +15,8 @@ import os.kei.ui.page.main.os.shortcut.normalizeActivityShortcutConfig
 internal class OsPageCardRepository(
     private val ioDispatcher: CoroutineDispatcher = AppDispatchers.osOperations,
     private val shellCommandCards: OsShellCommandCardDataSource = OsShellCommandCardStoreDataSource,
+    private val saveActivityCards: (List<OsActivityShortcutCard>, OsGoogleSystemServiceConfig) -> Unit =
+        { cards, defaults -> OsActivityShortcutCardStore.saveCards(cards, defaults) },
 ) {
     suspend fun saveShellCommandCardEdit(
         cardId: String,
@@ -43,13 +45,18 @@ internal class OsPageCardRepository(
         }
 
     suspend fun saveActivityShortcutCard(
-        cards: List<OsActivityShortcutCard>,
+        persistent: OsPagePersistentState,
         editMode: OsActivityCardEditMode,
         editingCardId: String?,
         draft: OsGoogleSystemServiceConfig,
         defaults: OsGoogleSystemServiceConfig,
     ): List<OsActivityShortcutCard> =
         withContext(ioDispatcher) {
+            check(persistent.loaded) { "Activity cards must be loaded before editing" }
+            val cards = persistent.activityShortcutCards
+            check(editMode == OsActivityCardEditMode.Add || cards.any { it.id == editingCardId }) {
+                "Activity edit target no longer exists"
+            }
             val normalized = normalizeActivityShortcutConfig(draft, defaults)
             val updatedCards =
                 if (editMode == OsActivityCardEditMode.Add || editingCardId.isNullOrBlank()) {
@@ -65,10 +72,7 @@ internal class OsPageCardRepository(
                         if (card.id == editingCardId) card.copy(config = normalized) else card
                     }
                 }
-            OsActivityShortcutCardStore.saveCards(
-                cards = updatedCards,
-                defaults = defaults,
-            )
+            saveActivityCards(updatedCards, defaults)
             updatedCards
         }
 

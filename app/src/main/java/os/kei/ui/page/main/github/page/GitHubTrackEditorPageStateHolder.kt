@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 import os.kei.feature.github.model.FdroidAppSearchCandidate
 import os.kei.feature.github.model.FdroidAppSearchFailure
 import os.kei.feature.github.model.FdroidAppSearchRepoReport
@@ -21,40 +23,52 @@ import os.kei.feature.github.model.GitHubTrackedUpdateIntervalMode
 import os.kei.feature.github.model.InstalledAppItem
 
 @Stable
-internal class GitHubTrackEditorPageStateHolder {
-    var repoUrlInput by mutableStateOf("")
-    var packageNameInput by mutableStateOf("")
+internal class GitHubTrackEditorPageStateHolder(private val onInputChanged: () -> Unit = {}) {
+    private fun <T> durableStateOf(initial: T): ReadWriteProperty<Any?, T> {
+        val state = mutableStateOf(initial)
+        return object : ReadWriteProperty<Any?, T> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T = state.value
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+                if (state.value == value) return
+                state.value = value
+                onInputChanged()
+            }
+        }
+    }
+
+    var repoUrlInput by durableStateOf("")
+    var packageNameInput by durableStateOf("")
     var repoScanCandidates by mutableStateOf<List<GitHubPackageRepositoryScanCandidate>>(emptyList())
     var appSearch by mutableStateOf("")
     var addTrackAppPickerFirstVisibleItemIndex by mutableIntStateOf(0)
     var addTrackAppPickerFirstVisibleItemScrollOffset by mutableIntStateOf(0)
     var pickerExpanded by mutableStateOf(false)
-    var preferPreReleaseInput by mutableStateOf(false)
-    var alwaysShowLatestReleaseDownloadButtonInput by mutableStateOf(false)
-    var checkActionsUpdatesInput by mutableStateOf(false)
-    var externalBuildUntilReleaseInput by mutableStateOf(false)
-    var updateIntervalModeInput by mutableStateOf(GitHubTrackedUpdateIntervalMode.FollowGlobal)
-    var actionsUpdateIntervalModeInput by mutableStateOf(
+    var preferPreReleaseInput by durableStateOf(false)
+    var alwaysShowLatestReleaseDownloadButtonInput by durableStateOf(false)
+    var checkActionsUpdatesInput by durableStateOf(false)
+    var externalBuildUntilReleaseInput by durableStateOf(false)
+    var updateIntervalModeInput by durableStateOf(GitHubTrackedUpdateIntervalMode.FollowGlobal)
+    var actionsUpdateIntervalModeInput by durableStateOf(
         GitHubTrackedActionsUpdateIntervalMode.FollowGlobal,
     )
-    var preciseApkVersionModeInput by mutableStateOf(GitHubTrackedPreciseApkVersionMode.FollowGlobal)
-    var ignoreModeInput by mutableStateOf(GitHubTrackedIgnoreMode.None)
-    var ignoredStableReleaseKeyInput by mutableStateOf("")
-    var ignoredPreReleaseKeyInput by mutableStateOf("")
-    var fdroidVersionSelectionModeInput by mutableStateOf(FdroidVersionSelectionMode.SuggestedVersionCode)
-    var fdroidVersionNameRegexInput by mutableStateOf("")
-    var fdroidApkNameRegexInput by mutableStateOf("")
-    var fdroidTrustPolicyInput by mutableStateOf(FdroidTrustPolicy.TrackOnlyWarn)
-    var fdroidAntiFeaturePolicyInput by mutableStateOf(FdroidAntiFeaturePolicy.ShowAndWarn)
-    var fdroidRepoScopeIdInput by mutableStateOf(FdroidRepositoryPresets.COMMON_ID)
-    var fdroidAppSearchQueryInput by mutableStateOf("")
+    var preciseApkVersionModeInput by durableStateOf(GitHubTrackedPreciseApkVersionMode.FollowGlobal)
+    var ignoreModeInput by durableStateOf(GitHubTrackedIgnoreMode.None)
+    var ignoredStableReleaseKeyInput by durableStateOf("")
+    var ignoredPreReleaseKeyInput by durableStateOf("")
+    var fdroidVersionSelectionModeInput by durableStateOf(FdroidVersionSelectionMode.SuggestedVersionCode)
+    var fdroidVersionNameRegexInput by durableStateOf("")
+    var fdroidApkNameRegexInput by durableStateOf("")
+    var fdroidTrustPolicyInput by durableStateOf(FdroidTrustPolicy.TrackOnlyWarn)
+    var fdroidAntiFeaturePolicyInput by durableStateOf(FdroidAntiFeaturePolicy.ShowAndWarn)
+    var fdroidRepoScopeIdInput by durableStateOf(FdroidRepositoryPresets.COMMON_ID)
+    var fdroidAppSearchQueryInput by durableStateOf("")
     var fdroidAppSearchCandidates by mutableStateOf<List<FdroidAppSearchCandidate>>(emptyList())
     var fdroidAppSearchFailures by mutableStateOf<List<FdroidAppSearchFailure>>(emptyList())
     var fdroidAppSearchFailuresExpanded by mutableStateOf(false)
     var fdroidAppSearchRepoReports by mutableStateOf<List<FdroidAppSearchRepoReport>>(emptyList())
-    var fdroidSelectedCandidate by mutableStateOf<FdroidAppSearchCandidate?>(null)
+    var fdroidSelectedCandidate by durableStateOf<FdroidAppSearchCandidate?>(null)
     var fdroidAppSearchRunning by mutableStateOf(false)
-    var trackSourceModeInput by mutableStateOf(GitHubTrackedSourceMode.GitHubRepository)
+    var trackSourceModeInput by durableStateOf(GitHubTrackedSourceMode.GitHubRepository)
     var repoUrlScanRunning by mutableStateOf(false)
     var packageNameScanRunning by mutableStateOf(false)
     var selectedApp by mutableStateOf<InstalledAppItem?>(null)

@@ -1,10 +1,10 @@
 package os.kei.ui.page.main.github.page.action
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import os.kei.BuildConfig
 import os.kei.R
-import os.kei.feature.github.domain.GitHubTrackChangeSemanticUpdate
 import os.kei.feature.github.model.FdroidAppSearchCandidate
 import os.kei.feature.github.model.FdroidAntiFeaturePolicy
 import os.kei.feature.github.model.FdroidRepositoryPresets
@@ -41,6 +41,7 @@ internal class GitHubTrackActions(
     private val assetActions: GitHubAssetActions,
 ) {
     private var appListRefreshJob: Job? = null
+    private var trackEditorSaveJob: Job? = null
     private val fdroidSearchActions = GitHubFdroidTrackSearchActions(env)
     private val state get() = env.state
     private val scope get() = env.scope
@@ -48,51 +49,12 @@ internal class GitHubTrackActions(
 
     fun openTrackSheetForAdd() {
         fdroidSearchActions.cancel()
-        state.resetTrackEditor()
-        state.showAddSheet = true
+        state.replaceTrackEditorForAdd()
     }
 
     fun openTrackSheetForEdit(item: GitHubTrackedApp) {
         fdroidSearchActions.cancel()
-        state.editingTrackedItem = item
-        state.repoUrlInput = item.repoUrl
-        state.packageNameInput = item.packageName
-        state.selectedApp =
-            state.appList.firstOrNull {
-                it.packageName.equals(item.packageName, ignoreCase = true)
-            }
-        state.appSearch = ""
-        state.pickerExpanded = false
-        state.repoScanCandidates = emptyList()
-        state.trackSourceModeInput = item.sourceMode
-        state.preferPreReleaseInput = item.preferPreRelease
-        state.alwaysShowLatestReleaseDownloadButtonInput = item.alwaysShowLatestReleaseDownloadButton
-        state.checkActionsUpdatesInput = item.checkActionsUpdates
-        state.externalBuildUntilReleaseInput = item.externalBuildUntilRelease
-        state.updateIntervalModeInput = item.updateIntervalMode.coerceForSource(item.sourceMode)
-        state.actionsUpdateIntervalModeInput = item.actionsUpdateIntervalMode
-        state.preciseApkVersionModeInput = item.preciseApkVersionMode
-        state.ignoreModeInput = item.ignoreMode
-        state.ignoredStableReleaseKeyInput = item.ignoredStableReleaseKey
-        state.ignoredPreReleaseKeyInput = item.ignoredPreReleaseKey
-        state.fdroidVersionSelectionModeInput = item.fdroidConfig.selectionMode
-        state.fdroidVersionNameRegexInput = item.fdroidConfig.versionNameRegex
-        state.fdroidApkNameRegexInput = item.fdroidConfig.apkNameRegex
-        state.fdroidTrustPolicyInput = item.fdroidConfig.trustPolicy
-        state.fdroidAntiFeaturePolicyInput = item.fdroidConfig.antiFeaturePolicy
-        state.fdroidRepoScopeIdInput = item.fdroidConfig.repoPresetId
-            .ifBlank {
-                FdroidRepositoryPresets.presetForRepoUrl(item.repoUrl)?.id.orEmpty()
-            }
-            .ifBlank { FdroidRepositoryPresets.CUSTOM_ID }
-        state.fdroidAppSearchQueryInput = item.appLabel
-        state.fdroidAppSearchCandidates = emptyList()
-        state.fdroidAppSearchFailures = emptyList()
-        state.fdroidAppSearchFailuresExpanded = false
-        state.fdroidAppSearchRepoReports = emptyList()
-        state.fdroidSelectedCandidate = null
-        state.fdroidAppSearchRunning = false
-        state.showAddSheet = true
+        state.replaceTrackEditorForEdit(item)
         ensureAppListForTrackSheet()
     }
 
@@ -543,6 +505,9 @@ internal class GitHubTrackActions(
     }
 
     fun applyTrackSheet() {
+        if (!state.trackDataReady || !state.showAddSheet || trackEditorSaveJob?.isActive == true) return
+        val token = state.editorSessionToken
+        val editing = state.editingTrackedItem
         val selectedFdroidCandidate = selectedFdroidCandidateForDraft()
         val editingFdroidConfig = editingFdroidConfigForDraft()
         val draft =
@@ -634,110 +599,66 @@ internal class GitHubTrackActions(
                     },
                 appList = state.appList,
             )
-        scope.launch {
-            val nowMillis = env.clock.nowMs()
-            val newItem =
-                when (val result = repository.buildTrackedItem(draft)) {
+        trackEditorSaveJob = scope.launch {
+            try {
+                val newItem = when (val result = repository.buildTrackedItem(draft)) {
                     GitHubTrackEditorResult.InvalidRepository -> {
                         env.toast(R.string.github_toast_fill_repo_and_select_app)
                         return@launch
                     }
-
                     GitHubTrackEditorResult.InvalidPackageName -> {
                         env.toast(R.string.github_toast_invalid_package_name)
                         return@launch
                     }
-
-                    is GitHubTrackEditorResult.Ready -> {
-                        result.item
+                    is GitHubTrackEditorResult.Ready -> result.item
+                }
+                val editingState = editing?.let { state.checkStates[it.id] } ?: VersionCheckUi()
+                val saved = persistTrackEditorSave(
+                    state = state,
+                    expectedToken = token,
+                    editing = editing,
+                    newItem = newItem,
+                    nowMillis = env.clock.nowMs(),
+                    persist = { plan ->
+                        env.saveTrackedItemsAwaiting(
+                            items = plan.items,
+                            trackedFirstInstallAtByPackage = plan.firstInstallAt,
+                            trackedAddedAtById = plan.addedAt,
+                            trackedModifiedAtById = plan.modifiedAt,
+                            refreshTrackIds = plan.refreshTrackIds,
+                            semanticTrackUpdates = plan.semanticUpdates,
+                        )
+                    },
+                )
+                if (saved == TrackEditorSaveResult.Duplicate) {
+                    env.toast(R.string.github_toast_track_exists)
+                    return@launch
+                }
+                if (saved != TrackEditorSaveResult.Saved) return@launch
+                if (editing != null) {
+                    if (editing != newItem && !editing.hasSameGitHubTrackingConfigIgnoringLocalAppType(newItem)) {
+                        assetActions.clearApkAssetStateAndCacheNow(item = editing, itemState = editingState)
+                    }
+                    if (editing.id != newItem.id) {
+                        state.checkStates.remove(editing.id)
+                        env.viewModel.removeTrackedExpansion(editing.id, removePersistedReleaseExpansion = true)
+                        env.actionsRepository.removeRecommendedRunSnapshot(editing.id)
+                        state.actionsRecommendedRunSnapshots.remove(editing.id)
                     }
                 }
-            val editing = state.editingTrackedItem
-            if (editing == null) {
-                if (state.trackedItems.any { it.id == newItem.id }) {
-                    env.toast(R.string.github_toast_track_exists)
-                    return@launch
-                }
-                state.trackedItems.add(newItem)
-                state.recordTrackedAddedAt(newItem.id, nowMillis)
-                state.recordTrackedModifiedAt(newItem.id, nowMillis)
                 if (!newItem.checkActionsUpdates) {
                     env.actionsRepository.removeRecommendedRunSnapshot(newItem.id)
                     state.actionsRecommendedRunSnapshots.remove(newItem.id)
                 }
                 state.requestTrackCardFocus(newItem.id)
-                env.saveTrackedItems(refreshTrackIds = setOf(newItem.id))
-                env.toast(R.string.github_toast_track_added)
-            } else {
-                val duplicate = state.trackedItems.any { it.id == newItem.id && it.id != editing.id }
-                if (duplicate) {
-                    env.toast(R.string.github_toast_track_exists)
-                    return@launch
-                }
-                val editingState = state.checkStates[editing.id] ?: VersionCheckUi()
-                val itemChanged = editing != newItem
-                val trackingConfigChanged =
-                    !editing.hasSameGitHubTrackingConfigIgnoringLocalAppType(newItem)
-                val existingAddedAt =
-                    state.trackedAddedAtById[editing.id]
-                        ?.takeIf { it > 0L }
-                        ?: state.trackedAddedAtById[newItem.id]
-                            ?.takeIf { it > 0L }
-                        ?: nowMillis
-                val index = state.trackedItems.indexOfFirst { it.id == editing.id }
-                if (index >= 0) {
-                    state.trackedItems[index] = newItem
-                } else {
-                    state.trackedItems.add(newItem)
-                }
-                if (itemChanged && trackingConfigChanged) {
-                    assetActions.clearApkAssetStateAndCacheNow(
-                        item = editing,
-                        itemState = editingState,
-                    )
-                }
-                if (editing.id != newItem.id) {
-                    state.checkStates.remove(editing.id)
-                    env.viewModel.removeTrackedExpansion(
-                        itemId = editing.id,
-                        removePersistedReleaseExpansion = true,
-                    )
-                    state.trackedAddedAtById.remove(editing.id)
-                    state.trackedModifiedAtById.remove(editing.id)
-                    env.actionsRepository.removeRecommendedRunSnapshot(editing.id)
-                    state.actionsRecommendedRunSnapshots.remove(editing.id)
-                }
-                if (!newItem.checkActionsUpdates) {
-                    env.actionsRepository.removeRecommendedRunSnapshot(newItem.id)
-                    state.actionsRecommendedRunSnapshots.remove(newItem.id)
-                }
-                state.recordTrackedAddedAt(newItem.id, existingAddedAt)
-                if (itemChanged) {
-                    state.recordTrackedModifiedAt(newItem.id, nowMillis)
-                }
-                state.requestTrackCardFocus(newItem.id)
-                env.saveTrackedItems(
-                    refreshTrackIds =
-                        if (trackingConfigChanged) {
-                            setOf(newItem.id)
-                        } else {
-                            emptySet()
-                        },
-                    semanticTrackUpdates =
-                        if (itemChanged) {
-                            listOf(
-                                GitHubTrackChangeSemanticUpdate(
-                                    previous = editing,
-                                    next = newItem,
-                                ),
-                            )
-                        } else {
-                            emptyList()
-                        },
+                env.toast(if (editing == null) R.string.github_toast_track_added else R.string.github_toast_track_updated)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                env.toast(
+                    R.string.common_save_failed_with_reason,
+                    localizedGitHubPageErrorMessage(env.context, error),
                 )
-                env.toast(R.string.github_toast_track_updated)
             }
-            state.dismissTrackSheet()
         }
     }
 

@@ -2,13 +2,65 @@ package os.kei.ui.page.main.os
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
+import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.state.OsCardImportTarget
 import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 
 internal class OsPageOverlayRuntimeActions(
     private val runtimeMutableState: MutableStateFlow<OsPageRuntimeState>,
+    private val persistEditor: (OsPageRuntimeState) -> Unit = {},
 ) {
+    private fun updateEditor(transform: (OsPageRuntimeState) -> OsPageRuntimeState) {
+        persistEditor(runtimeMutableState.updateAndGet(transform))
+    }
+
+    fun openActivityEditor(request: OsActivityShortcutEditorRequest) {
+        updateEditor { state ->
+            state.copy(
+                showActivityShortcutEditor = true,
+                showShellCommandCardEditor = false,
+                activityCardEditMode = request.editMode,
+                editingActivityShortcutCardId = request.editingCardId,
+                editingActivityShortcutBuiltIn = request.editingBuiltIn,
+                activityShortcutDraft = request.draft,
+            )
+        }
+    }
+
+    fun openShellEditor(card: OsShellCommandCard) {
+        updateEditor { state ->
+            state.copy(
+                showActivityShortcutEditor = false,
+                showShellCommandCardEditor = true,
+                editingShellCommandCardId = card.id,
+                shellCommandCardDraft = card,
+            )
+        }
+    }
+
+    fun reconcileEditorTargets(persistent: OsPagePersistentState) {
+        if (!persistent.loaded) return
+        updateEditor { state ->
+            state.copy(
+                showActivityShortcutEditor = state.showActivityShortcutEditor &&
+                    (state.activityCardEditMode == OsActivityCardEditMode.Add ||
+                        persistent.activityShortcutCards.any { it.id == state.editingActivityShortcutCardId }),
+                showShellCommandCardEditor = state.showShellCommandCardEditor &&
+                    persistent.shellCommandCards.any { it.id == state.editingShellCommandCardId },
+            )
+        }
+    }
+
+    fun updateActivityShortcutDraft(draft: OsGoogleSystemServiceConfig) {
+        updateEditor { it.copy(activityShortcutDraft = draft) }
+    }
+
+    fun updateShellCommandCardDraft(draft: OsShellCommandCard) {
+        updateEditor { it.copy(shellCommandCardDraft = draft) }
+    }
+
     fun updatePendingExportContent(content: String?) {
         runtimeMutableState.update { state ->
             if (state.pendingExportContent == content) state else state.copy(pendingExportContent = content)
@@ -68,19 +120,19 @@ internal class OsPageOverlayRuntimeActions(
     }
 
     fun updateShowActivityShortcutEditor(show: Boolean) {
-        runtimeMutableState.update { state ->
+        updateEditor { state ->
             if (state.showActivityShortcutEditor == show) state else state.copy(showActivityShortcutEditor = show)
         }
     }
 
     fun updateActivityCardEditMode(mode: OsActivityCardEditMode) {
-        runtimeMutableState.update { state ->
+        updateEditor { state ->
             if (state.activityCardEditMode == mode) state else state.copy(activityCardEditMode = mode)
         }
     }
 
     fun updateEditingActivityShortcutCardId(cardId: String?) {
-        runtimeMutableState.update { state ->
+        updateEditor { state ->
             if (state.editingActivityShortcutCardId == cardId) {
                 state
             } else {
@@ -90,7 +142,7 @@ internal class OsPageOverlayRuntimeActions(
     }
 
     fun updateEditingActivityShortcutBuiltIn(builtIn: Boolean) {
-        runtimeMutableState.update { state ->
+        updateEditor { state ->
             if (state.editingActivityShortcutBuiltIn == builtIn) {
                 state
             } else {
@@ -100,13 +152,13 @@ internal class OsPageOverlayRuntimeActions(
     }
 
     fun updateShowShellCommandCardEditor(show: Boolean) {
-        runtimeMutableState.update { state ->
+        updateEditor { state ->
             if (state.showShellCommandCardEditor == show) state else state.copy(showShellCommandCardEditor = show)
         }
     }
 
     fun updateEditingShellCommandCardId(cardId: String?) {
-        runtimeMutableState.update { state ->
+        updateEditor { state ->
             if (state.editingShellCommandCardId == cardId) state else state.copy(editingShellCommandCardId = cardId)
         }
     }

@@ -28,6 +28,7 @@ internal fun OsPageOverlayHost(
     context: Context,
     sheetBackdrop: Backdrop,
     overlayState: OsPageOverlayState,
+    editorDataReady: Boolean,
     visibleCardsTitle: String,
     visibleCardsHint: String,
     visibleCards: Set<OsSectionCard>,
@@ -144,7 +145,7 @@ internal fun OsPageOverlayHost(
         onShellCommandCardVisibilityChange = { cardId, checked ->
             applyShellCommandCardVisibility(cardId, checked)
         },
-        showShellCommandCardEditor = overlayState.showShellCommandCardEditor,
+        showShellCommandCardEditor = overlayState.showShellCommandCardEditor && editorDataReady,
         editShellCommandCardTitle = editShellCommandCardTitle,
         shellCommandCardDraft = overlayState.shellCommandCardDraft,
         onShellCommandCardDraftChange = overlayState.onShellCommandCardDraftChange,
@@ -154,7 +155,7 @@ internal fun OsPageOverlayHost(
         onDismissShellCommandCardEditor = editorActions.onDismissShellCommandCardEditor,
         onDismissShellCommandCardEditorFinished = editorActions.onDismissShellCommandCardEditorFinished,
         onSaveShellCommandCard = editorActions.onSaveShellCommandCard,
-        showActivityShortcutEditor = overlayState.showActivityShortcutEditor,
+        showActivityShortcutEditor = overlayState.showActivityShortcutEditor && editorDataReady,
         activityEditorTitle =
             if (overlayState.activityCardEditMode == OsActivityCardEditMode.Add) {
                 addActivityCardTitle

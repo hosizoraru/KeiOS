@@ -258,7 +258,9 @@ internal class GitHubPageViewModel(
     fun pageState(): GitHubPageState {
         val current = pageState
         if (current != null) return current
-        return GitHubPageState().also {
+        return GitHubPageState(
+            editorRecovery = GitHubEditorRecovery(os.kei.core.state.EditorRecoveryStore.shared),
+        ).also {
             pageState = it
             bindContentState(it)
             sheetDerivationController.bindActionsSheetState(it)

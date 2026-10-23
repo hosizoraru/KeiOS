@@ -30,11 +30,20 @@ import os.kei.ui.page.main.github.section.GitHubTrackedReleaseExpansionState
 internal class GitHubPageState(
     pageUiState: GitHubPageUiState = GitHubPageUiState(),
     actionsSectionExpansionState: GitHubActionsSectionExpansionState = GitHubActionsSectionExpansionState(),
+    private val editorRecovery: GitHubEditorRecovery? = null,
 ) {
+    private var restoringEditor = false
+    private var editorMutationDepth = 0
+    private var recoveredEditorPending = false
+    private var recoveredEditTargetId: String? = null
+    var trackDataReady by mutableStateOf(false)
+        private set
+    var editorSessionToken: Long = 0
+        private set
     private val sheetState = GitHubPageSheetStateHolder()
     private val actionsState = GitHubActionsPageStateHolder(actionsSectionExpansionState)
     private val assetState = GitHubAssetPageStateHolder()
-    private val trackEditorState = GitHubTrackEditorPageStateHolder()
+    private val trackEditorState = GitHubTrackEditorPageStateHolder(::persistTrackEditor)
     private val strategyState = GitHubStrategyPageStateHolder()
     private val overviewState = GitHubOverviewPageStateHolder()
 
@@ -50,14 +59,26 @@ internal class GitHubPageState(
     var addTrackAppPickerFirstVisibleItemIndex by trackEditorState::addTrackAppPickerFirstVisibleItemIndex
     var addTrackAppPickerFirstVisibleItemScrollOffset by trackEditorState::addTrackAppPickerFirstVisibleItemScrollOffset
     var pickerExpanded by trackEditorState::pickerExpanded
-    var showAddSheet by sheetState::showAddSheet
+    var showAddSheet: Boolean
+        get() = sheetState.showAddSheet
+        set(value) {
+            if (sheetState.showAddSheet == value) return
+            sheetState.showAddSheet = value
+            persistTrackEditor()
+        }
     var showStrategySheet by sheetState::showStrategySheet
     var showCheckLogicSheet by sheetState::showCheckLogicSheet
     var showDroidSourcesSheet by sheetState::showDroidSourcesSheet
     var showDebugSheet by sheetState::showDebugSheet
     var showActionsSheet by sheetState::showActionsSheet
     var showDownloaderPopup by sheetState::showDownloaderPopup
-    var editingTrackedItem by sheetState::editingTrackedItem
+    var editingTrackedItem: GitHubTrackedApp?
+        get() = sheetState.editingTrackedItem
+        set(value) {
+            if (sheetState.editingTrackedItem == value) return
+            sheetState.editingTrackedItem = value
+            persistTrackEditor()
+        }
     var actionsTargetItem by sheetState::actionsTargetItem
     var actionsLoading by actionsState::actionsLoading
     var actionsRunsLoading by actionsState::actionsRunsLoading
@@ -472,6 +493,7 @@ internal class GitHubPageState(
     }
 
     fun resetTrackEditor() {
+        showAddSheet = false
         editingTrackedItem = null
         trackEditorState.reset()
     }
@@ -479,6 +501,52 @@ internal class GitHubPageState(
     fun dismissTrackSheet() {
         showAddSheet = false
         resetTrackEditor()
+    }
+
+    fun reconcileRecoveredTrackEditor(items: List<GitHubTrackedApp>) {
+        trackDataReady = true
+        if (!recoveredEditorPending) return
+        val targetId = recoveredEditTargetId
+        recoveredEditorPending = false
+        recoveredEditTargetId = null
+        replaceTrackEditor {
+            val current = targetId?.let { id -> items.firstOrNull { it.id == id } }
+            if (targetId != null && current == null) {
+                dismissTrackSheet()
+            } else {
+                editingTrackedItem = current
+                showAddSheet = true
+            }
+        }
+    }
+
+    fun replaceTrackEditor(block: () -> Unit) {
+        recoveredEditorPending = false
+        editorMutationDepth++
+        try {
+            block()
+        } finally {
+            editorMutationDepth--
+            if (editorMutationDepth == 0) persistTrackEditor()
+        }
+    }
+
+    fun completeTrackEditorSave(expectedToken: Long) {
+        if (editorSessionToken == expectedToken) replaceTrackEditor { dismissTrackSheet() }
+    }
+
+    private fun persistTrackEditor() {
+        if (!restoringEditor && !recoveredEditorPending && editorMutationDepth == 0) {
+            editorSessionToken++
+            editorRecovery?.save(this)
+        }
+    }
+
+    init {
+        restoringEditor = true
+        recoveredEditorPending = editorRecovery?.restore(this) == true
+        restoringEditor = false
+        recoveredEditTargetId = editingTrackedItem?.id
     }
 }
 

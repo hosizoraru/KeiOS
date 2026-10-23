@@ -130,6 +130,7 @@ internal class OsPageCardCoordinator(
         command: String,
         builtInShellCommandCards: List<OsShellCommandCard>,
     ) {
+        if (!persistentState.value.loaded) return
         scope.launch {
             try {
                 val updatedCards =
@@ -157,6 +158,7 @@ internal class OsPageCardCoordinator(
         cardId: String,
         builtInShellCommandCards: List<OsShellCommandCard>,
     ) {
+        if (!persistentState.value.loaded) return
         scope.launch {
             try {
                 val updatedCards =
@@ -179,11 +181,13 @@ internal class OsPageCardCoordinator(
         draft: OsGoogleSystemServiceConfig,
         defaults: OsGoogleSystemServiceConfig,
     ) {
+        val persistent = persistentState.value
+        if (!persistent.loaded) return
         scope.launch {
             try {
                 val updatedCards =
                     cardRepository.saveActivityShortcutCard(
-                        cards = persistentState.value.activityShortcutCards,
+                        persistent = persistent,
                         editMode = editMode,
                         editingCardId = editingCardId,
                         draft = draft,
@@ -202,6 +206,7 @@ internal class OsPageCardCoordinator(
         cardId: String,
         defaults: OsGoogleSystemServiceConfig,
     ) {
+        if (!persistentState.value.loaded) return
         scope.launch {
             try {
                 val updatedCards =

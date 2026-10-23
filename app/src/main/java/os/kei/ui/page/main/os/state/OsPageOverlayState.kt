@@ -1,15 +1,10 @@
 package os.kei.ui.page.main.os.state
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import os.kei.ui.page.main.os.OsGoogleSystemServiceConfig
 import os.kei.ui.page.main.os.shell.OsShellCommandCard
-import os.kei.ui.page.main.os.shell.createDefaultShellCommandCardDraft
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
-import os.kei.ui.page.main.os.shortcut.createDefaultActivityShortcutDraft
 import os.kei.ui.page.main.os.transfer.OsCardImportPreview
 
 internal enum class OsCardImportTarget {
@@ -60,7 +55,10 @@ internal data class OsPageOverlayState(
 
 @Composable
 internal fun rememberOsPageOverlayState(
-    googleSystemServiceDefaults: OsGoogleSystemServiceConfig,
+    activityShortcutDraft: OsGoogleSystemServiceConfig,
+    onActivityShortcutDraftChange: (OsGoogleSystemServiceConfig) -> Unit,
+    shellCommandCardDraft: OsShellCommandCard,
+    onShellCommandCardDraftChange: (OsShellCommandCard) -> Unit,
     showCardManager: Boolean,
     onShowCardManagerChange: (Boolean) -> Unit,
     showActivityVisibilityManager: Boolean,
@@ -96,12 +94,10 @@ internal fun rememberOsPageOverlayState(
     cardTransferInProgress: Boolean,
     onCardTransferInProgressChange: (Boolean) -> Unit,
 ): OsPageOverlayState {
-    var activityShortcutDraft by remember {
-        mutableStateOf(createDefaultActivityShortcutDraft(googleSystemServiceDefaults))
-    }
-    var shellCommandCardDraft by remember { mutableStateOf(createDefaultShellCommandCardDraft()) }
     return remember(
         activityShortcutDraft,
+        onActivityShortcutDraftChange,
+        onShellCommandCardDraftChange,
         showActivityShortcutEditor,
         onShowActivityShortcutEditorChange,
         activityCardEditMode,
@@ -140,7 +136,7 @@ internal fun rememberOsPageOverlayState(
     ) {
         OsPageOverlayState(
             activityShortcutDraft = activityShortcutDraft,
-            onActivityShortcutDraftChange = { activityShortcutDraft = it },
+            onActivityShortcutDraftChange = onActivityShortcutDraftChange,
             showActivityShortcutEditor = showActivityShortcutEditor,
             onShowActivityShortcutEditorChange = onShowActivityShortcutEditorChange,
             activityCardEditMode = activityCardEditMode,
@@ -164,7 +160,7 @@ internal fun rememberOsPageOverlayState(
             editingShellCommandCardId = editingShellCommandCardId,
             onEditingShellCommandCardIdChange = onEditingShellCommandCardIdChange,
             shellCommandCardDraft = shellCommandCardDraft,
-            onShellCommandCardDraftChange = { shellCommandCardDraft = it },
+            onShellCommandCardDraftChange = onShellCommandCardDraftChange,
             showShellCardDeleteConfirm = showShellCardDeleteConfirm,
             onShowShellCardDeleteConfirmChange = onShowShellCardDeleteConfirmChange,
             showActivityCardDeleteConfirm = showActivityCardDeleteConfirm,

@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.os
 
 import android.graphics.Bitmap
+import os.kei.ui.page.main.os.shell.OsShellCommandCard
 import os.kei.ui.page.main.os.shortcut.OsActivityCardEditMode
 import os.kei.ui.page.main.os.shortcut.ShortcutActivityClassOption
 import os.kei.ui.page.main.os.shortcut.ShortcutInstalledAppOption
@@ -27,8 +28,10 @@ internal data class OsPageRuntimeState(
     val activityCardEditMode: OsActivityCardEditMode = OsActivityCardEditMode.Edit,
     val editingActivityShortcutCardId: String? = null,
     val editingActivityShortcutBuiltIn: Boolean = false,
+    val activityShortcutDraft: OsGoogleSystemServiceConfig? = null,
     val showShellCommandCardEditor: Boolean = false,
     val editingShellCommandCardId: String? = null,
+    val shellCommandCardDraft: OsShellCommandCard? = null,
     val showShellCardDeleteConfirm: Boolean = false,
     val showActivityCardDeleteConfirm: Boolean = false,
     val pendingExportContent: String? = null,
