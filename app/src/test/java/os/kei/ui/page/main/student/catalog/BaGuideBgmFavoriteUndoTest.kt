@@ -5,12 +5,14 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,6 +21,9 @@ import os.kei.R
 import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 import os.kei.ui.page.main.student.catalog.component.BaGuideBgmPlaybackCoordinator
 import os.kei.ui.page.main.student.catalog.component.BaGuideBgmPlaybackUiState
+import os.kei.ui.page.main.student.catalog.component.BaGuideBgmNativeSessionSnapshot
+import os.kei.ui.page.main.student.catalog.component.BaGuideBgmQueueMode
+import os.kei.ui.page.main.student.catalog.component.withNativeSession
 import os.kei.ui.page.main.student.catalog.page.BaGuideFavoriteBgmMusicContent
 import os.kei.ui.page.main.student.catalog.state.BaGuideFavoriteBgmListDerivedState
 import os.kei.ui.page.main.student.catalog.state.BaGuideFavoriteBgmOfflineCacheUiState
@@ -59,9 +64,40 @@ class BaGuideBgmFavoriteUndoTest {
         assertEquals(1, undoClicks, "the card's Undo must reach the list's undo callback")
     }
 
+    @Test
+    fun `playback page shows the native unfavorited track and requests its artwork`() {
+        val playing = testBgmFavorite(
+            audioUrl = "https://example.invalid/unfavorited.ogg",
+            title = "Lobby Theme",
+            studentTitle = "Hina",
+            studentImageUrl = "https://example.invalid/hina.png",
+        )
+        val restored = BaGuideBgmPlaybackUiState().withNativeSession(
+            BaGuideBgmNativeSessionSnapshot(
+                queue = listOf(playing),
+                selectedAudioUrl = playing.audioUrl,
+                queueMode = BaGuideBgmQueueMode.Continuous,
+            ),
+            restoreQueue = true,
+        )
+        val requested = mutableListOf<String>()
+        setFavoritesList(
+            pendingUndoFavorite = null,
+            onUndo = {},
+            playbackState = restored,
+            onRequestVisibleImages = { requested.addAll(it) },
+        )
+
+        composeRule.onNodeWithText(playing.studentTitle).assertIsDisplayed()
+        assertTrue(playing.studentImageUrl in requested)
+        assertTrue(restored.favorites.isEmpty())
+    }
+
     private fun setFavoritesList(
         pendingUndoFavorite: GuideBgmFavoriteItem?,
         onUndo: () -> Unit,
+        playbackState: BaGuideBgmPlaybackUiState = BaGuideBgmPlaybackUiState(),
+        onRequestVisibleImages: (List<String>) -> Unit = {},
     ) {
         val coordinator = BaGuideBgmPlaybackCoordinator(context)
         composeRule.setContent {
@@ -72,7 +108,7 @@ class BaGuideBgmFavoriteUndoTest {
                     derivedState = BaGuideFavoriteBgmListDerivedState(),
                     offlineCacheState = BaGuideFavoriteBgmOfflineCacheUiState(),
                     playbackCoordinator = coordinator,
-                    playbackState = BaGuideBgmPlaybackUiState(),
+                    playbackState = playbackState,
                     volumeControlVisible = false,
                     lastAudibleVolume = 1f,
                     accent = Color(0xFF3B82F6),
@@ -90,7 +126,7 @@ class BaGuideBgmFavoriteUndoTest {
                     onUndoRemoveBgmFavorite = onUndo,
                     onRequestOfflineCache = { _, _, _ -> },
                     onToggleFavoriteCache = { _, _ -> },
-                    onRequestVisibleImages = {},
+                    onRequestVisibleImages = onRequestVisibleImages,
                     onOpenGuide = {},
                     onRequestGuideDetailTab = { _, _ -> },
                 )

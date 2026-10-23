@@ -9,6 +9,12 @@ internal enum class BaGuideBgmPlaybackBackendMode {
     NativeMedia,
 }
 
+internal data class BaGuideBgmNativeSessionSnapshot(
+    val queue: List<GuideBgmFavoriteItem>,
+    val selectedAudioUrl: String,
+    val queueMode: BaGuideBgmQueueMode,
+)
+
 internal fun resolveBaGuideBgmPlaybackBackendMode(nativeMediaNotificationEnabled: Boolean): BaGuideBgmPlaybackBackendMode =
     if (nativeMediaNotificationEnabled) {
         BaGuideBgmPlaybackBackendMode.NativeMedia
@@ -18,6 +24,13 @@ internal fun resolveBaGuideBgmPlaybackBackendMode(nativeMediaNotificationEnabled
 
 internal interface BaGuideBgmPlaybackBackend {
     val mode: BaGuideBgmPlaybackBackendMode
+
+    val isConnected: Boolean
+        get() = true
+
+    fun connect(onConnected: () -> Unit) = onConnected()
+
+    fun currentSession(): BaGuideBgmNativeSessionSnapshot? = null
 
     fun updateQueue(
         queue: List<GuideBgmFavoriteItem>,
@@ -179,6 +192,13 @@ internal class BaGuideBgmNativePlaybackBackend(
     private val controller: BaGuideBgmNativeMediaController,
 ) : BaGuideBgmPlaybackBackend {
     override val mode: BaGuideBgmPlaybackBackendMode = BaGuideBgmPlaybackBackendMode.NativeMedia
+
+    override val isConnected: Boolean
+        get() = controller.isConnected
+
+    override fun connect(onConnected: () -> Unit) = controller.connect(onConnected)
+
+    override fun currentSession(): BaGuideBgmNativeSessionSnapshot? = controller.currentSession()
 
     override fun updateQueue(
         queue: List<GuideBgmFavoriteItem>,

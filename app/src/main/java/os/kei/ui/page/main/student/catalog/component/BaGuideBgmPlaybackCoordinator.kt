@@ -26,6 +26,7 @@ import os.kei.ui.page.main.student.GuideBgmFavoriteItem
 import os.kei.ui.page.main.student.GuideBgmFavoritePlaybackProgress
 import os.kei.ui.page.main.student.GuideBgmFavoritePlaybackSnapshot
 import os.kei.ui.page.main.student.normalizeGuideMediaSource
+import os.kei.ui.page.main.student.fetch.extractGuideContentIdFromUrl
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -49,22 +50,73 @@ internal data class BaGuideBgmPlaybackUiState(
 }
 
 internal fun BaGuideBgmPlaybackUiState.withResolvedSelection(): BaGuideBgmPlaybackUiState {
-    val nextSelectedQueueFavorite = queue.firstOrNull { it.audioUrl == selectedAudioUrl }
+    val favoritesById = favorites.associateBy { it.audioUrl }
+    val nextQueue = queue.map { item ->
+        val favorite = favoritesById[item.audioUrl] ?: return@map item
+        val source = item.sourceUrl.trim()
+        val savedSource = favorite.sourceUrl.trim()
+        val contentId = extractGuideContentIdFromUrl(source)
+        val savedContentId = extractGuideContentIdFromUrl(savedSource)
+        if (source.isNotEmpty() && savedSource.isNotEmpty()) {
+            val sameOwner = if (contentId != null && savedContentId != null) {
+                contentId == savedContentId
+            } else {
+                normalizeGuideMediaSource(source) == normalizeGuideMediaSource(savedSource)
+            }
+            if (!sameOwner) return@map item
+        } else if (item.studentTitle.isNotBlank() && favorite.studentTitle.isNotBlank() &&
+            !item.studentTitle.trim().equals(favorite.studentTitle.trim(), ignoreCase = true)
+        ) {
+            return@map item
+        }
+        item.copy(
+            studentImageUrl = item.studentImageUrl.trim().ifBlank { favorite.studentImageUrl.trim() },
+            imageUrl = item.imageUrl.trim().ifBlank { favorite.imageUrl.trim() },
+            sourceUrl = item.sourceUrl.trim().ifBlank { favorite.sourceUrl.trim() },
+            studentTitle = item.studentTitle.trim().ifBlank { favorite.studentTitle.trim() },
+        )
+    }
+    val nextSelectedQueueFavorite = nextQueue.firstOrNull { it.audioUrl == selectedAudioUrl }
     val nextSelectedFavorite =
         nextSelectedQueueFavorite
             ?: favorites.firstOrNull { it.audioUrl == selectedAudioUrl }
-            ?: queue.firstOrNull()
+            ?: nextQueue.firstOrNull()
             ?: favorites.firstOrNull()
     if (
+        queue == nextQueue &&
         selectedFavorite == nextSelectedFavorite &&
         selectedQueueFavorite == nextSelectedQueueFavorite
     ) {
         return this
     }
     return copy(
+        queue = nextQueue,
         selectedFavorite = nextSelectedFavorite,
         selectedQueueFavorite = nextSelectedQueueFavorite,
     )
+}
+
+internal fun BaGuideBgmPlaybackUiState.withNativeSession(
+    snapshot: BaGuideBgmNativeSessionSnapshot,
+    restoreQueue: Boolean = false,
+): BaGuideBgmPlaybackUiState {
+    val selected = snapshot.queue.firstOrNull { it.audioUrl == snapshot.selectedAudioUrl }
+        ?: return this
+    val resolvedQueue =
+        if (restoreQueue || queue.isEmpty()) {
+            snapshot.queue
+        } else {
+            resolveBaGuideBgmPlaybackQueueSelection(
+                nextQueue = queue,
+                currentSelectedAudioUrl = selected.audioUrl,
+                currentSelectedFavorite = selected,
+            ).queue
+        }
+    return copy(
+        queue = resolvedQueue,
+        selectedAudioUrl = selected.audioUrl,
+        queueModeName = snapshot.queueMode.name,
+    ).withResolvedSelection()
 }
 
 internal class BaGuideBgmPlaybackCoordinator(
@@ -92,6 +144,7 @@ internal class BaGuideBgmPlaybackCoordinator(
     private var seekPlaybackPreserveAudioUrl = ""
     private var seekPlaybackPreserveUntilMs = 0L
     private var playbackSnapshot = GuideBgmFavoritePlaybackSnapshot.Empty
+    private var playbackCommandGeneration = 0L
 
     val uiState: StateFlow<BaGuideBgmPlaybackUiState> = _uiState.asStateFlow()
     val sessionState: StateFlow<BaGuideBgmPlaybackUiState> = _uiState.asStateFlow()
@@ -161,6 +214,7 @@ internal class BaGuideBgmPlaybackCoordinator(
     }
 
     fun updateQueue(nextQueue: List<GuideBgmFavoriteItem>) {
+        restoreNativeSession()
         val currentState = _uiState.value
         val selection =
             resolveBaGuideBgmPlaybackQueueSelection(
@@ -183,30 +237,51 @@ internal class BaGuideBgmPlaybackCoordinator(
         syncActiveQueue()
     }
 
+    fun updateFavoriteQueue(nextFavorites: List<GuideBgmFavoriteItem>) {
+        val nativeSession = if (nativeMediaNotificationEnabled) nativeBackend.currentSession() else null
+        updateQueue(resolveBaGuideBgmFavoritePlaybackQueue(nextFavorites, nativeSession))
+    }
+
     fun updateNativeMediaNotificationEnabled(enabled: Boolean) {
         if (nativeMediaNotificationEnabled == enabled) return
+        val migrationGeneration = ++playbackCommandGeneration
         val favorite = selectedFavorite
         val previousBackend = activeBackend
         val previousState = previousBackend.runtimeState(favorite)
         if (favorite != null) saveProgress(favorite, previousState, force = true)
+        _uiState.update { state -> state.copy(nativeMediaNotificationEnabled = enabled) }
+        setRuntimeState(previousState.copy(isPlaying = previousState.isPlaying && enabled), force = true)
         if (enabled) {
-            favorite?.let { selected ->
-                lightweightBackend.pause(selected)
-                nativeBackend.prepare(
-                    favorite = selected,
-                    queue = activePlaybackQueue(selected),
-                    queueMode = queueMode,
-                    startPositionMs = previousState.positionMs,
-                )
-                if (previousState.isPlaying) {
-                    nativeBackend.play(
-                        favorite = selected,
-                        queue = activePlaybackQueue(selected),
-                        queueMode = queueMode,
-                        startPositionMs = previousState.positionMs,
-                        restart = false,
-                    )
+            favorite?.let(lightweightBackend::pause)
+            // A fresh UI must observe the surviving service before preparing its saved favourites.
+            nativeBackend.connect {
+                if (!nativeMediaNotificationEnabled ||
+                    migrationGeneration != playbackCommandGeneration
+                ) return@connect
+                if (!restoreNativeSession(restoreQueue = true)) {
+                    if (favorite != null &&
+                        (previousState.durationMs > 0L || previousState.isPlaying || previousState.isBuffering)
+                    ) {
+                        nativeBackend.prepare(
+                            favorite = favorite,
+                            queue = activePlaybackQueue(favorite),
+                            queueMode = queueMode,
+                            startPositionMs = previousState.positionMs,
+                        )
+                        if (previousState.isPlaying) {
+                            nativeBackend.play(
+                                favorite = favorite,
+                                queue = activePlaybackQueue(favorite),
+                                queueMode = queueMode,
+                                startPositionMs = previousState.positionMs,
+                                restart = false,
+                            )
+                        }
+                    } else {
+                        syncActiveQueue()
+                    }
                 }
+                refreshRuntime()
             }
         } else {
             nativeBackend.stopSession()
@@ -219,12 +294,6 @@ internal class BaGuideBgmPlaybackCoordinator(
                 )
             }
         }
-        _uiState.update { state ->
-            state.copy(
-                nativeMediaNotificationEnabled = enabled,
-            )
-        }
-        setRuntimeState(previousState.copy(isPlaying = previousState.isPlaying && enabled), force = true)
     }
 
     fun restoreSnapshot() {
@@ -242,11 +311,16 @@ internal class BaGuideBgmPlaybackCoordinator(
                         queueModeName = queueModeName,
                     ).withResolvedSelection()
             }
-            setRuntimeState(BaGuideBgmPlaybackRuntimeState(volume = snapshot.volume), force = true)
+            if (restoreNativeSession()) {
+                refreshRuntime()
+            } else {
+                setRuntimeState(BaGuideBgmPlaybackRuntimeState(volume = snapshot.volume), force = true)
+            }
         }
     }
 
     fun select(audioUrl: String) {
+        playbackCommandGeneration += 1L
         _uiState.update { state -> state.copy(selectedAudioUrl = audioUrl).withResolvedSelection() }
         persistSelection()
     }
@@ -266,12 +340,17 @@ internal class BaGuideBgmPlaybackCoordinator(
         if (startPlayback) {
             play(favorite, restart = restart)
         } else {
+            playbackCommandGeneration += 1L
             persistSelection()
         }
         return true
     }
 
     fun prepareSelected() {
+        if (nativeMediaNotificationEnabled) {
+            if (!nativeBackend.isConnected) return
+            restoreNativeSession()
+        }
         val favorite = selectedQueueFavorite ?: selectedFavorite ?: return
         activeBackend.prepare(
             favorite = favorite,
@@ -286,6 +365,7 @@ internal class BaGuideBgmPlaybackCoordinator(
         favorite: GuideBgmFavoriteItem,
         restart: Boolean = false,
     ) {
+        playbackCommandGeneration += 1L
         val previousRuntimeState = activeBackend.runtimeState(favorite)
         _uiState.update { state -> state.copy(selectedAudioUrl = favorite.audioUrl).withResolvedSelection() }
         persistSelection()
@@ -300,6 +380,7 @@ internal class BaGuideBgmPlaybackCoordinator(
     }
 
     fun toggle(favorite: GuideBgmFavoriteItem) {
+        playbackCommandGeneration += 1L
         val currentRuntimeState = _runtimeState.value
         val shouldPauseCurrentFavorite =
             currentRuntimeState.isPlaying &&
@@ -329,6 +410,7 @@ internal class BaGuideBgmPlaybackCoordinator(
     }
 
     fun pause(favorite: GuideBgmFavoriteItem): BaGuideBgmPlaybackRuntimeState {
+        playbackCommandGeneration += 1L
         clearSeekPlaybackPreserve()
         val nextState = activeBackend.pause(favorite)
         setRuntimeState(nextState, force = true)
@@ -388,16 +470,7 @@ internal class BaGuideBgmPlaybackCoordinator(
 
     fun refreshRuntime(favorite: GuideBgmFavoriteItem? = selectedFavorite) {
         if (nativeMediaNotificationEnabled) {
-            val currentAudioUrl = activeBackend.currentAudioUrl()
-            if (currentAudioUrl.isNotBlank() && queue.any { it.audioUrl == currentAudioUrl }) {
-                _uiState.update { state -> state.copy(selectedAudioUrl = currentAudioUrl).withResolvedSelection() }
-                persistSelection()
-            }
-            val nativeQueueMode = activeBackend.currentQueueMode()
-            if (nativeQueueMode != null && queueModeName != nativeQueueMode.name) {
-                _uiState.update { state -> state.copy(queueModeName = nativeQueueMode.name) }
-                persistSelection()
-            }
+            restoreNativeSession()
         }
         val resolvedFavorite = selectedFavorite ?: favorite
         val nextRuntimeState =
@@ -439,6 +512,7 @@ internal class BaGuideBgmPlaybackCoordinator(
     }
 
     fun dispose() {
+        playbackCommandGeneration += 1L
         stopRuntimePolling()
         nativeBackend.disconnect()
         scope.cancel()
@@ -451,7 +525,8 @@ internal class BaGuideBgmPlaybackCoordinator(
     }
 
     private fun syncActiveQueue() {
-        if (!nativeMediaNotificationEnabled) return
+        if (!nativeMediaNotificationEnabled || !nativeBackend.isConnected) return
+        restoreNativeSession()
         val favorite = selectedFavorite ?: return
         activeBackend.updateQueue(
             queue = activePlaybackQueue(favorite),
@@ -459,6 +534,19 @@ internal class BaGuideBgmPlaybackCoordinator(
             queueMode = queueMode,
             startPositionMs = resumePosition(favorite),
         )
+    }
+
+    private fun restoreNativeSession(restoreQueue: Boolean = false): Boolean {
+        if (!nativeMediaNotificationEnabled) return false
+        val snapshot = nativeBackend.currentSession() ?: return false
+        val previousState = _uiState.value
+        _uiState.update { state -> state.withNativeSession(snapshot, restoreQueue) }
+        if (previousState.selectedAudioUrl != selectedAudioUrl ||
+            previousState.queueModeName != queueModeName
+        ) {
+            persistSelection()
+        }
+        return true
     }
 
     private fun persistSelection(audioUrl: String = selectedAudioUrl) {

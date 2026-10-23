@@ -153,7 +153,7 @@ internal fun BaGuideFavoriteBgmMusicContent(
     }
     LaunchedEffect(playbackCoordinator, displayedFavorites, isPageActive) {
         if (isPageActive) {
-            playbackCoordinator.updateQueue(displayedFavorites)
+            playbackCoordinator.updateFavoriteQueue(displayedFavorites)
         }
     }
     LaunchedEffect(paneStates, isPageActive, snapshotFlowManager) {

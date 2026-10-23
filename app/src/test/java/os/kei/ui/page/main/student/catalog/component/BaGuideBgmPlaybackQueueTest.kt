@@ -8,6 +8,47 @@ import kotlin.test.assertNull
 
 class BaGuideBgmPlaybackQueueTest {
     @Test
+    fun `opening an empty favorite library preserves the native playlist`() {
+        val native = nativeSession()
+
+        val queue = resolveBaGuideBgmFavoritePlaybackQueue(emptyList(), native)
+        val selection = resolveBaGuideBgmPlaybackQueueSelection(queue, native.selectedAudioUrl)
+
+        assertEquals(native.queue, selection.queue)
+        assertEquals("b", selection.selectedAudioUrl)
+        assertEquals("c", selectBaGuideBgmPlaybackQueueOffset(queue, "b", 1)?.audioUrl)
+    }
+
+    @Test
+    fun `other saved favorites cannot replace an unfavorited native playlist`() {
+        val native = nativeSession()
+        val favorites = listOf(track("saved"))
+
+        assertEquals(native.queue, resolveBaGuideBgmFavoritePlaybackQueue(favorites, native))
+    }
+
+    @Test
+    fun `a visible favorite still uses the displayed favorite queue`() {
+        val favorites = listOf(track("b"), track("saved"))
+
+        assertEquals(favorites, resolveBaGuideBgmFavoritePlaybackQueue(favorites, nativeSession()))
+    }
+
+    @Test
+    fun `no live native selection leaves favorite queue behavior intact`() {
+        val favorites = listOf(track("saved"))
+
+        assertEquals(favorites, resolveBaGuideBgmFavoritePlaybackQueue(favorites, null))
+        assertEquals(
+            favorites,
+            resolveBaGuideBgmFavoritePlaybackQueue(
+                favorites,
+                nativeSession().copy(selectedAudioUrl = "unknown"),
+            ),
+        )
+    }
+
+    @Test
     fun `queue selection keeps current hidden track when metadata is available`() {
         val selection = resolveBaGuideBgmPlaybackQueueSelection(
             nextQueue = listOf(track("a"), track("b"), track("c")),
@@ -87,4 +128,10 @@ class BaGuideBgmPlaybackQueueTest {
             title = "Track $id",
             studentTitle = "Student $id",
         )
+
+    private fun nativeSession() = BaGuideBgmNativeSessionSnapshot(
+        queue = listOf(track("a"), track("b"), track("c")),
+        selectedAudioUrl = "b",
+        queueMode = BaGuideBgmQueueMode.Continuous,
+    )
 }

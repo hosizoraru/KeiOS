@@ -59,6 +59,28 @@ internal class BaGuideBgmNativeMediaController(
     private var artworkHydrationJob: Job? = null
     private var artworkHydrationGeneration = 0L
 
+    val isConnected: Boolean
+        get() = controller != null
+
+    fun connect(onConnected: () -> Unit) {
+        submit { onConnected() }
+    }
+
+    fun currentSession(): BaGuideBgmNativeSessionSnapshot? {
+        val mediaController = controller ?: return null
+        return runCatching {
+            val selected = mediaController.currentMediaItem?.toBaGuideBgmFavoriteItem()
+                ?: return@runCatching null
+            BaGuideBgmNativeSessionSnapshot(
+                queue = (0 until mediaController.mediaItemCount)
+                    .mapNotNull { mediaController.getMediaItemAt(it).toBaGuideBgmFavoriteItem() },
+                selectedAudioUrl = selected.audioUrl,
+                queueMode = BaGuideBgmMediaButtonPreferences
+                    .queueModeFromNativeRepeatMode(mediaController.repeatMode),
+            )
+        }.getOrNull()
+    }
+
     fun syncQueue(
         queue: List<GuideBgmFavoriteItem>,
         selectedAudioUrl: String,

@@ -7,6 +7,18 @@ internal data class BaGuideBgmPlaybackQueueSelection(
     val selectedAudioUrl: String
 )
 
+internal fun resolveBaGuideBgmFavoritePlaybackQueue(
+    favorites: List<GuideBgmFavoriteItem>,
+    nativeSession: BaGuideBgmNativeSessionSnapshot?,
+): List<GuideBgmFavoriteItem> {
+    val playing = nativeSession?.queue?.firstOrNull { it.audioUrl == nativeSession.selectedAudioUrl }
+    return if (playing != null && favorites.none { it.audioUrl == playing.audioUrl }) {
+        nativeSession.queue
+    } else {
+        favorites
+    }
+}
+
 internal fun resolveBaGuideBgmPlaybackQueueSelection(
     nextQueue: List<GuideBgmFavoriteItem>,
     currentSelectedAudioUrl: String,
