@@ -48,6 +48,7 @@ import os.kei.ui.page.main.widget.glass.LocalGlassEffectRuntime
 import os.kei.ui.page.main.widget.isAppInDarkTheme
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import kotlin.math.abs
+import os.kei.ui.document.OpenJsonDocument
 
 @Composable
 fun GitHubPage(
@@ -232,7 +233,7 @@ fun GitHubPage(
         }
     val tracksImportLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenJsonDocument(),
         ) { uri ->
             handleGitHubTrackImportSourceResult(
                 context = context,
@@ -261,7 +262,7 @@ fun GitHubPage(
                 actions = actions,
                 githubPageViewModel = githubPageViewModel,
                 launchTrackedExport = { fileName -> tracksExportLauncher.launch(fileName) },
-                launchTrackedImport = { mimeTypes -> tracksImportLauncher.launch(mimeTypes) },
+                launchTrackedImport = { tracksImportLauncher.launch(Unit) },
                 launchStarImport = { intent -> starImportLauncher.launch(intent) },
             )
         }

@@ -106,7 +106,7 @@ internal fun buildGitHubPageTrackTransferCallbacks(
     actions: GitHubPageActions,
     githubPageViewModel: GitHubPageViewModel,
     launchTrackedExport: (String) -> Unit,
-    launchTrackedImport: (Array<String>) -> Unit,
+    launchTrackedImport: () -> Unit,
     launchStarImport: (Intent) -> Unit
 ): GitHubPageTrackTransferCallbacks {
     val exportFileNameFormatter = DateTimeFormatter.ofPattern("yyMMdd-HHmm", Locale.getDefault())
@@ -157,7 +157,7 @@ internal fun buildGitHubPageTrackTransferCallbacks(
                 GitHubTrackedImportStartResult.Busy -> Unit
                 GitHubTrackedImportStartResult.Ready -> {
                     runCatching {
-                        launchTrackedImport(arrayOf("application/json", "text/plain"))
+                        launchTrackedImport()
                     }.onFailure {
                         githubPageViewModel.finishTrackedImport()
                         context.showToast(context.getString(

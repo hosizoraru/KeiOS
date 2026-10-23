@@ -9,10 +9,11 @@ import androidx.compose.runtime.Composable
 import os.kei.ui.page.main.os.OsGoogleSystemServiceConfig
 import os.kei.ui.page.main.os.OsPageViewModel
 import os.kei.ui.page.main.os.shortcut.OsActivityShortcutCard
+import os.kei.ui.document.OpenJsonDocument
 
 internal data class OsPageCardTransferState(
     val exportLauncher: ActivityResultLauncher<String>,
-    val importLauncher: ActivityResultLauncher<Array<String>>,
+    val importLauncher: ActivityResultLauncher<Unit>,
     val confirmImport: () -> Unit,
 )
 
@@ -40,7 +41,7 @@ internal fun rememberOsPageCardTransferState(
 
     val importLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenJsonDocument(),
         ) { uri: Uri? ->
             val target = overlayState.pendingImportTarget
             overlayState.onPendingImportTargetChange(null)

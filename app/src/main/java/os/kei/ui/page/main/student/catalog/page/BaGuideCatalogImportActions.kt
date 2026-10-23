@@ -3,13 +3,13 @@ package os.kei.ui.page.main.student.catalog.page
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import os.kei.ui.document.OpenJsonDocument
 
 internal data class BaGuideCatalogImportActions(
-    val importStudentFavoritesLauncher: ActivityResultLauncher<Array<String>>,
-    val importBgmFavoritesLauncher: ActivityResultLauncher<Array<String>>,
-    val importAllFavoritesLauncher: ActivityResultLauncher<Array<String>>,
+    val importStudentFavoritesLauncher: ActivityResultLauncher<Unit>,
+    val importBgmFavoritesLauncher: ActivityResultLauncher<Unit>,
+    val importAllFavoritesLauncher: ActivityResultLauncher<Unit>,
     val confirmFavoritesImport: (BaGuideCatalogImportPreviewState) -> Unit,
 )
 
@@ -20,7 +20,7 @@ internal fun rememberBaGuideCatalogImportActions(
 ): BaGuideCatalogImportActions {
     val importStudentFavoritesLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenJsonDocument(),
         ) { uri ->
             onRequestImportPreview(
                 uri,
@@ -29,7 +29,7 @@ internal fun rememberBaGuideCatalogImportActions(
         }
     val importBgmFavoritesLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenJsonDocument(),
         ) { uri ->
             onRequestImportPreview(
                 uri,
@@ -38,7 +38,7 @@ internal fun rememberBaGuideCatalogImportActions(
         }
     val importAllFavoritesLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenJsonDocument(),
         ) { uri ->
             onRequestImportPreview(
                 uri,

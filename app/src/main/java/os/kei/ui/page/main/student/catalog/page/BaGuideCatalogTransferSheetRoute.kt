@@ -49,13 +49,7 @@ internal fun BaGuideCatalogTransferSheetRoute(
         },
         onImportAllFavorites = {
             pageState.closeTransferSheet()
-            importActions.importAllFavoritesLauncher.launch(
-                arrayOf(
-                    "application/json",
-                    "text/*",
-                    "*/*",
-                ),
-            )
+            importActions.importAllFavoritesLauncher.launch(Unit)
         },
         onExportStudentFavorites = {
             pageState.closeTransferSheet()
@@ -67,13 +61,7 @@ internal fun BaGuideCatalogTransferSheetRoute(
         },
         onImportStudentFavorites = {
             pageState.closeTransferSheet()
-            importActions.importStudentFavoritesLauncher.launch(
-                arrayOf(
-                    "application/json",
-                    "text/*",
-                    "*/*",
-                ),
-            )
+            importActions.importStudentFavoritesLauncher.launch(Unit)
         },
         onExportBgmFavorites = {
             pageState.closeTransferSheet()
@@ -85,13 +73,7 @@ internal fun BaGuideCatalogTransferSheetRoute(
         },
         onImportBgmFavorites = {
             pageState.closeTransferSheet()
-            importActions.importBgmFavoritesLauncher.launch(
-                arrayOf(
-                    "application/json",
-                    "text/*",
-                    "*/*",
-                ),
-            )
+            importActions.importBgmFavoritesLauncher.launch(Unit)
         },
         bgmCacheSummary = bgmCacheState.summary,
         onCacheAllBgm = {
