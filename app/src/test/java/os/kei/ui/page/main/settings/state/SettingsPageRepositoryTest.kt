@@ -1,6 +1,7 @@
 package os.kei.ui.page.main.settings.state
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -9,7 +10,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import com.yalantis.ucrop.UCrop
+import kotlinx.coroutines.test.runTest
 import java.io.File
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -55,6 +59,19 @@ class SettingsPageRepositoryTest {
 
         assertFalse(crop.exists())
         assertTrue(unrelated.exists())
+    }
+
+    @Test
+    fun `crop keeps source read access scoped and writes to an app owned output`() = runTest {
+        val source = Uri.parse("content://readonly.documents/document/portrait")
+        val intent = SettingsPageRepository().buildNonHomeBackgroundCropIntent(context, source).getOrThrow()
+
+        assertEquals(context.packageName, intent.component?.packageName)
+        assertEquals(source, intent.getParcelableExtra(UCrop.EXTRA_INPUT_URI, Uri::class.java))
+        val output = requireNotNull(intent.getParcelableExtra(UCrop.EXTRA_OUTPUT_URI, Uri::class.java))
+        assertEquals("${context.packageName}.fileprovider", output.authority)
+        assertEquals(0, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        assertFalse(context.contentResolver.persistedUriPermissions.any { it.uri == source })
     }
 
     private fun managedBackgroundFile(name: String): File =

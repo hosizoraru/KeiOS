@@ -12,7 +12,6 @@ import kotlinx.coroutines.withContext
 import os.kei.R
 import os.kei.core.concurrency.AppDispatchers
 import os.kei.core.export.ExportJobResult
-import os.kei.core.intent.UriGrantCompat
 import os.kei.core.log.AppLogStore
 import os.kei.feature.keepalive.accessibility.AccessibilityGuardHistoryEntry
 import os.kei.feature.keepalive.accessibility.AccessibilityGuardHistoryStore
@@ -264,12 +263,6 @@ internal open class SettingsPageRepository(
         val appContext = context.applicationContext
         return withContext(ioDispatcher) {
             runCatching {
-                appContext.contentResolver.takePersistableUriPermission(
-                    sourceUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            }
-            runCatching {
                 val outputUri = createNonHomeBackgroundCropOutputUri(appContext)
                 val (aspectRatioX, aspectRatioY) = resolveNonHomeBackgroundAspectRatio(appContext)
                 val (maxResultWidth, maxResultHeight) = resolveNonHomeBackgroundCropSize(appContext)
@@ -283,22 +276,13 @@ internal open class SettingsPageRepository(
                         setShowCropFrame(true)
                         setShowCropGrid(true)
                     }
-                val cropIntent =
-                    UCrop
-                        .of(sourceUri, outputUri)
-                        .withAspectRatio(aspectRatioX, aspectRatioY)
-                        .withMaxResultSize(maxResultWidth, maxResultHeight)
-                        .withOptions(cropOptions)
-                        .getIntent(appContext)
-                val cropGrantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                cropIntent.addFlags(cropGrantFlags)
-                UriGrantCompat.grantToIntentTargets(
-                    context = appContext,
-                    intent = cropIntent,
-                    uris = listOf(sourceUri, outputUri),
-                    flags = cropGrantFlags,
-                )
-                cropIntent
+                // UCrop runs in our UID; the selected source only needs its current read grant.
+                UCrop
+                    .of(sourceUri, outputUri)
+                    .withAspectRatio(aspectRatioX, aspectRatioY)
+                    .withMaxResultSize(maxResultWidth, maxResultHeight)
+                    .withOptions(cropOptions)
+                    .getIntent(appContext)
             }
         }
     }

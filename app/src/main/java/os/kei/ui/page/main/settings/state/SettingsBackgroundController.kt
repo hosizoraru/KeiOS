@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.yalantis.ucrop.UCrop
 import os.kei.R
 import os.kei.core.ui.resource.resolveString
+import os.kei.ui.document.OpenReadableDocument
 
 @Stable
 internal data class SettingsBackgroundController(
@@ -71,7 +72,7 @@ internal fun rememberSettingsBackgroundController(
 
     val pickerLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
+            contract = OpenReadableDocument(),
         ) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
             settingsPageViewModel.prepareNonHomeBackgroundCrop(context, uri)
