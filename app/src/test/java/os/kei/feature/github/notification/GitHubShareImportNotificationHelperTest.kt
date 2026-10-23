@@ -213,10 +213,15 @@ class GitHubShareImportNotificationHelperTest {
         rows.forEach { case ->
             val notification = buildModern(case.state)
 
-            assertEquals(Notification.CATEGORY_PROGRESS, notification.category, case.name)
+            val expectedCategory =
+                if (case.ongoing) Notification.CATEGORY_PROGRESS else Notification.CATEGORY_STATUS
+            assertEquals(expectedCategory, notification.category, case.name)
             assertEquals(McpNotificationHelper.LIVE_CHANNEL_ID, notification.channelId, case.name)
             assertEquals(case.ongoing, notification.flags and Notification.FLAG_ONGOING_EVENT != 0, case.name)
-            if (!case.ongoing) assertNotNull(notification.deleteIntent, case.name)
+            if (!case.ongoing) {
+                assertNotNull(notification.deleteIntent, case.name)
+                assertFalse(notification.extras.getBoolean("android.requestPromotedOngoing"), case.name)
+            }
             assertEquals(case.primary, notification.actions[0].title.toString(), case.name)
             if (case.secondary == null) {
                 assertEquals(1, notification.actions.size, case.name)
