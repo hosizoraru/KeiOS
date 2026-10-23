@@ -759,3 +759,51 @@ freshness check at the pre-change base passed and the existing profiles are pack
 result does not establish coverage of the new runtime changes. The final committed-ref check reports
 STALE for seven runtime paths and the compatibility dependency change. New Profile collection and the
 normal release gates remain necessary before shipping these changes as a new release.
+
+
+## System document picker alignment - 2026-10-23
+
+[Xiaomi's file picker guide](https://dev.mi.com/xiaomihyperos/documentation/detail?pId=2220)
+(updated 2025-12-26) uses the standard Storage Access Framework. HyperOS 3 based on Android 16 and newer
+can supply the OEM visual surface; API 35 and other systems keep the standard document-provider flow.
+No OEM package/component pin or broad storage permission is required. The SDK floor remains 35.
+
+All JSON import entries (OS cards, GitHub tracking, and BA student/BGM/combined favorites) now use
+`OpenJsonDocument`. It delegates to AndroidX `OpenDocument` through `OpenReadableDocument`, which adds
+`CATEGORY_OPENABLE` because these consumers read streams rather than convert virtual documents.
+The background-image picker uses the same readable-document constraint with `image/*` filtering.
+
+The JSON request keeps the standard `*/*` base type needed for multiple MIME filters. Its
+`EXTRA_MIME_TYPES` includes JSON, text and generic binary content; an all-files `*/*` entry no longer
+neutralizes that filter. Generic binary MIME preserves imports from providers that do not identify JSON
+precisely, including extensionless content. MIME filtering does not establish payload validity: existing
+JSON routing, parsing and import-preview validation still decide whether content can be imported.
+These are single-document operations, with `EXTRA_ALLOW_MULTIPLE=false` explicit. The guide also
+documents single selection as the default. The physical HyperOS picker still displays `0/100` in its
+preview footer with this parameter set to false; that OEM counter does not establish multi-selection.
+Selecting a second fixture replaced the first selection (`1/100`) and returned only the second URI.
+
+One-time imports use the returned URI with ContentResolver and retain existing cancellation handling.
+Background cropping also uses the current read grant: UCrop is an explicit activity in the same app UID,
+and its result is written into the existing app-private managed-background directory. It no longer
+persists the original image grant or attempts to grant original-image write access. Existing crop quality,
+size, aspect ratio and controls are preserved. The resulting managed background remains app-owned across
+restarts. Long-term SAF directory selections for media export remain a separate use case with their
+existing persistable grants; `CreateDocument` export contracts are also retained.
+
+Focused contract, crop and domain-import tests cover request filtering, openable/single selection,
+provider-neutral resolution, cancellation/missing results, URI identity and app-owned crop output.
+All 27 focused tests passed, followed by an R8-enabled, non-debuggable `ReleaseDiagnostic` build with
+minSdk 35 and targetSdk 37. The signed APK was verified and installed under an isolated QA package on
+the physical Android 17 / HyperOS `OS4.0.4.0.XBLCNXM` phone, preserving the existing application installs.
+The harness calls the production contracts and crop repository. The native picker successfully returned
+readable URIs for JSON, text and extensionless/generic fixtures; PDF and image fixtures were excluded
+from the JSON-filtered list. Cancellation, retry and single-selection replacement passed. Image selection
+reached the existing UCrop UI and produced a readable 413 x 900 app-owned JPEG; the source image hash
+was unchanged. No persistent grants were taken in these flows, and the crop intent had no URI grant flags.
+This verifies the shared picker/crop path on that OEM build; it does not establish cross-OEM coverage or
+end-to-end import of real user data through every business page. Evidence is kept under
+`.planning/file-picker-2220-20261023/`. The shared HyperOS-AVD was not used. The five owned fixtures and
+crop output were cleaned through the QA app; its package was retained and stopped. Seven protected
+package identities and notification-listener settings matched the pre-test snapshot. Existing KeiOS and
+ErinAO sessions remained playing, with the audio-focus stack and music-volume state unchanged.
