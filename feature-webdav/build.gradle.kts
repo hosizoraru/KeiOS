@@ -22,10 +22,14 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit4)
     testImplementation(libs.ktor.client.mock)
+    // Test service metadata selects kxml2's parser and serializer instead of xmlpull-min's
+    // unavailable MXSerializer. Android supplies its own XmlPullParser.
+    testImplementation(libs.xmlpull)
+    testRuntimeOnly(libs.kxml2)
 
     // WebDAV client (used by DAVx⁵, production-grade).
-    // A tagged release (JitPack builds the tag). 4.x is the Ktor API with suspend/Flow multi-status
-    // handling; an upgrade across a major version needs a matching WebDavSyncClient migration.
+    // Tagged JitPack release. 5.x retains the Ktor suspend/Flow WebDAV API used here.
+    // Preserve server href encoding; decoded names are for display, not URL reconstruction.
     // Exclude xpp3 — Android has built-in XmlPullParser.
     implementation(libs.dav4jvm) {
         exclude(group = "org.ogce", module = "xpp3")
