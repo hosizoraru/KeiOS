@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-[Main README](../README.md) · [Documentation Index](INDEX.md)
+[Main README](../README.md) · [Documentation Index](INDEX.md) · [CI Workflow Guide](../docs/build/github-actions.md)
 
 ## Install Channels
 
@@ -314,6 +314,9 @@ Current baseline scope:
 ## GitHub Actions: CI / Debug APK
 
 Workflow: `.github/workflows/ci-debug-apk.yml`
+
+See the [CI Workflow Guide](../docs/build/github-actions.md) for manual-run examples,
+artifact downloads, checksum verification, and the difference between APK and test job results.
 
 - Runner: `ubuntu-26.04` for APK and test jobs. The explicit LTS label avoids automatic
   `ubuntu-latest` OS migrations. Image updates still occur within Ubuntu 26.04; Java 21,

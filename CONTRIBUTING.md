@@ -13,7 +13,9 @@ KeiOS is built primarily with:
 - Android minSdk 35
 - Miuix and custom liquid glass style UI components
 
-For local build instructions, please read `readme/BUILD.md` and `readme/BUILD_CN.md`.
+For local builds, read the [English](readme/BUILD.md) or [Chinese](readme/BUILD_CN.md)
+build guide. The [CI Workflow Guide](docs/build/github-actions.md) explains automated builds,
+manual runs, test reports, artifact verification, and signing differences.
 
 ## Issues
 
@@ -54,8 +56,35 @@ This repository may not have complete automated coverage for every feature. Use 
 local validation for your change, such as building the app, running available tests, checking the
 affected screen on a device or emulator, and reviewing logs.
 
+Choose checks that can catch the changed behavior:
+
+| Change | Evidence to include |
+| --- | --- |
+| Documentation | Valid local links, current source/configuration claims, and Markdown checks |
+| Logic or state | Focused behavior tests and compilation of affected consumers |
+| UI or localized copy | Relevant screenshot/semantics/resource checks and affected device/window states |
+| Dependencies, R8, or packaging | Relevant Release/Benchmark build and packaged-artifact checks |
+| Workflows or composite actions | `actionlint`, changed-script checks, behavior fixtures, and the resulting cloud run |
+| Performance | Comparable Release/Benchmark measurements with device and capture conditions |
+
+Debug CI runs build-logic checks, Android module unit tests, and screenshot verification
+in a separate job from APK assembly. Report their outcomes separately. Keep source/build,
+installation, observed UI behavior, and performance claims tied to their own evidence.
+
+Generated Baseline Profiles, screenshot goldens, the Gradle Wrapper, and the public CI debug
+key are tracked project inputs. Build caches, private keys, tokens, local paths, and raw
+device captures stay local. Check `.gitignore` and the staged diff rather than treating every
+generated-looking file as disposable.
+
 ## Documentation
 
 Update documentation when the user-facing behavior, build process, setup flow, or contribution
 workflow changes. If your change affects local builds, check whether `readme/BUILD.md` or
 `readme/BUILD_CN.md` should be updated.
+
+Keep the [main README](README.md) and [Chinese overview](readme/CN.md) aligned on release
+channels, package names, and supported platforms. Put contributor procedures in the build/CI
+guides and link them from the [documentation index](readme/INDEX.md). Local one-run logs and
+handoffs belong in ignored `.planning/`; keep reusable conclusions in `docs/` with their inputs
+and evidence limits. Published release notes describe that release, so later CI maintenance
+should update contributor documentation.

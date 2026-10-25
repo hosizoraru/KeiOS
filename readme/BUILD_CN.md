@@ -243,6 +243,8 @@ scripts/qa/baseline_profile_freshness.sh
 
 工作流路径：`.github/workflows/ci-debug-apk.yml`
 
+手动运行、制品下载、校验方法及 APK job 与测试 job 的结果区别，见 [CI 工作流说明（EN）](../docs/build/github-actions.md)。
+
 - Runner：APK 与测试 job 均使用 `ubuntu-26.04`。显式指定 LTS 版本，避免
   `ubuntu-latest` 自动迁移操作系统；Ubuntu 26.04 镜像本身仍会更新。Java 21、Gradle Wrapper
   和所需 Android SDK 组件由构建步骤显式配置。

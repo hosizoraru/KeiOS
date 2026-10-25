@@ -8,6 +8,9 @@
 - [功能完整介绍 (CN)](FEATURES_CN.md)
 - [Build Guide (EN)](BUILD.md)
 - [构建指南 (CN)](BUILD_CN.md)
+- [CI Workflow Guide](../docs/build/github-actions.md)
+- [Engineering Documentation](../docs/README.md)
+- [Build Logic](../build-logic/README.md)
 - [Release Notes v1.19.0](RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](RELEASE_V1.18.0.md)
 - [Release Notes v1.17.0](RELEASE_V1.17.0.md)
@@ -31,6 +34,10 @@
   i18n.
 - `BUILD.md` / `BUILD_CN.md`: local build, versioning, CI APK, signing, nightly.link, live GitHub
   strategy/subscription tests, and screenshot-baseline workflow.
+- `../docs/build/github-actions.md`: CI triggers, manual inputs, package/signing choices,
+  artifact checksums, reports, cancellation, and workflow maintenance.
+- `../docs/README.md`: engineering documentation by ownership: build, performance, planning, and QA.
+- `../build-logic/README.md`: convention plugins, version/profile helpers, and included-build checks.
 - `RELEASE_V1.19.0.md`: bilingual update notes for BGM playback, launcher icons, imports, unfinished
   edits, reminders, window resizing, and upgrading.
 - `RELEASE_V1.18.0.md`: retained bilingual notes for the published v1.18.0, including Sheet/performance
