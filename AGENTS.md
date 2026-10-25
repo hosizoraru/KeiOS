@@ -9,7 +9,7 @@
 - Keep commit subjects concise, aiming for 50 characters or fewer. Put details, rationale, and validation in the body.
 - Keep long-task handoffs in ignored .planning/: objective, owning paths, decisions, verification results and inputs, remaining gates, and next action. On resume, refresh evidence whose inputs changed.
 - When parallel work is authorized, keep one owner for shared worktree, device, ADB, and Gradle state.
-- Report what changed, what was checked, and the remaining evidence limits. Separate source, build/artifact, installation, and observed behavior claims.
+- Report what changed, checks passed, checks not run and why, and blocked checks. Separate source, build/artifact, installation, and observed behavior claims.
 
 ## Evidence and architecture
 
@@ -31,6 +31,8 @@
 - Apply skill checklists to the selected task and supported environment. A text edit does not need an app-wide UX audit; a Profile-only refresh does not need a new performance study. Preserve release gates when shipping is in scope.
 
 ## Verification by change
+
+Before running device scripts, inspect the target and side effects: AVD helpers can build, install, replace packages, or erase data through optional flags. A documented option is not authorization to use it.
 
 Choose checks that can falsify the changed behavior. For build and test commands, consult [readme/BUILD.md](readme/BUILD.md), affected Gradle configuration, and nearby tests. Use only the row relevant to the change.
 
@@ -55,4 +57,11 @@ Choose checks that can falsify the changed behavior. For build and test commands
 - Keep dated measurements and evolving findings in their owning planning documents instead of copying them into general instructions. Treat memory as a locator, not refreshed evidence. Generated memory storage is updated only through the supported workflow on explicit user request.
 - When revising instructions, validate changed paths, links, and skill routing against representative requests. Format validation alone does not prove better task outcomes; claim quality or efficiency gains only after comparable task runs.
 
-Instruction design references: [OpenAI GPT-6 model guide](https://openai.com/index/practical-guide-building-gpt-6/) and [Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
+Instruction design: [OpenAI’s Astra guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra) recommends task-relevant context and fewer redundant prescriptions. The verification and authorization rules here are project practices for all agents, including Sol; they do not change model settings or grant permissions.
+
+## macOS APFS copies
+
+- Only when a task needs an independent project or experiment copy, prefer system `/bin/cp -cRp project project-experiment` on the same APFS volume. First confirm that the source and destination parent are on the same clone-capable filesystem, and that the destination does not exist and is outside the source tree. Do not copy the whole project for ordinary edits.
+- Cloned files initially share data blocks but remain independently editable through copy-on-write; they are not hard links. Later writes, new dependencies, and build/DerivedData outputs still consume space; whole-file rewrites can lose the sharing benefit.
+- Across volumes or without clone support, `cp -c` falls back to ordinary copying. Command success alone does not prove cloning or space savings. Assess available space before copying, especially large directories, to avoid an unintended full copy. Do not sum logical directory sizes as physical storage growth. Clones replace neither Git nor backups on another disk.
+- References: Apple [cp(1)](https://github.com/apple-oss-distributions/file_cmds/blob/main/cp/cp.1) and [clonefile(2)](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/man/man2/clonefile.2).
