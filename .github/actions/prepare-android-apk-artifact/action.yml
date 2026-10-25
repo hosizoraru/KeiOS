@@ -38,6 +38,9 @@ outputs:
   apk-path:
     description: Path to the built APK.
     value: ${{ steps.meta.outputs.apk_path }}
+  apk-sha256:
+    description: SHA-256 of the APK file, independent of the uploaded artifact archive.
+    value: ${{ steps.meta.outputs.apk_sha256 }}
 
 runs:
   using: composite
@@ -52,11 +55,10 @@ runs:
       run: |
         set -euo pipefail
         test -f "${METADATA_PATH}"
-        export SHORT_SHA
         export FULL_SHA
-        SHORT_SHA="$(git rev-parse --short=12 HEAD)"
         FULL_SHA="$(git rev-parse HEAD)"
         python3 - "${METADATA_PATH}" "${GITHUB_OUTPUT}" <<'PY'
+        import hashlib
         import json
         import os
         import pathlib
@@ -66,7 +68,10 @@ runs:
         metadata_path = pathlib.Path(sys.argv[1])
         output_path = pathlib.Path(sys.argv[2])
         data = json.loads(metadata_path.read_text())
-        element = data["elements"][0]
+        elements = data["elements"]
+        if len(elements) != 1:
+            raise ValueError("Expected exactly one APK output before publishing")
+        element = elements[0]
 
         def slug(value, fallback):
             safe = re.sub(r"[^a-z0-9.]+", "-", str(value).lower()).strip("-")
@@ -84,7 +89,16 @@ runs:
         safe_version = filename_component(version_name, "0")
 
         artifact_base = f"KeiOS_{safe_version}_{variant}"
+        if pathlib.Path(output_file).name != output_file:
+            raise ValueError("APK outputFile must be a file name within the metadata directory")
         apk_path = metadata_path.parent / output_file
+        if not apk_path.is_file() or apk_path.suffix != ".apk":
+            raise ValueError(f"APK output is missing or invalid: {apk_path}")
+        apk_path.resolve().relative_to(metadata_path.parent.resolve())
+        apk_hash = hashlib.sha256()
+        with apk_path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                apk_hash.update(chunk)
         outputs = {
             "application_id": str(data.get("applicationId", "")),
             "variant_name": str(data.get("variantName", variant)),
@@ -94,7 +108,10 @@ runs:
             "artifact_name": artifact_base,
             "apk_file_name": f"{artifact_base}.apk",
             "apk_path": str(apk_path),
+            "apk_sha256": apk_hash.hexdigest(),
         }
+        if any("\n" in value or "\r" in value for value in outputs.values()):
+            raise ValueError("APK metadata outputs must contain a single line")
         with output_path.open("a", encoding="utf-8") as handle:
             for key, value in outputs.items():
                 handle.write(f"{key}={value}\n")

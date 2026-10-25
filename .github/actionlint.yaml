@@ -1,0 +1,5 @@
+# GitHub-hosted label not yet recognized by actionlint 1.7.12.
+# https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

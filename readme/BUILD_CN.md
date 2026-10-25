@@ -50,9 +50,9 @@ Git 版本元数据辅助代码和 Profile 采集完整性校验任务也位于�
 - Debug / Benchmark 构建使用下一 patch 版本，并追加 commit 数和短 SHA，例如 `1.19.1+12.gabcdef0`。
 - 缺少 CI 注入 metadata 的本地构建会直接读取 git metadata，以最新已合入 tag 作为 commit 数锚点，并在发布目标更新时使用发布目标作为 release base。
 - 包名链路保持精简：Debug 安装为 `os.kei.debug`；Benchmark 与 Release 安装为 `os.kei`。
-- 当前 CI artifact 名称保持简洁：`KeiOS_<versionName>`，APK 文件名为 `KeiOS_<versionName>.apk`。
+- 当前 CI artifact 名称包含构建变体：`KeiOS_<versionName>_<variant>`，APK 文件名为 `KeiOS_<versionName>_<variant>.apk`。
 - workflow run name 会用 `D#<run_number>` 表示 Debug、`B#<run_number>` 表示 Benchmark；job summary
-  会输出完整 commit SHA、run number、versionName、versionCode、application ID 与 artifact digest。
+  会输出完整 commit SHA、run number、versionName、versionCode、application ID、APK SHA-256 与制品归档 SHA-256。
 
 ### 必需的本地凭据（依赖解析）
 
@@ -248,13 +248,16 @@ scripts/qa/baseline_profile_freshness.sh
   和所需 Android SDK 组件由构建步骤显式配置。
 - 触发方式：`master` 分支 `push` 与非 draft `pull_request`；仅 Markdown/readme 变更会跳过。
 - 手动触发：`workflow_dispatch`，可选 `commit`（commit SHA / branch / tag）。
+- 手动参数使用保留布尔类型的 `inputs` 上下文；`publish-build-scan` 默认关闭。
+- `scripts/qa/test_report.sh` 由测试 job 执行，单独修改它也会触发 Debug CI。
+- 并发组按事件及 PR 编号、手动目标或分支区分；不同 fork 的 PR 和不同提交的手动构建不会互相取消。
 - 构建产物：自动构建并上传 Debug APK 到 GitHub Actions。
 - 使用场景：开发过程中的快速预览与验证。
 - 签名：仅 Debug / Benchmark artifact 使用 `app/signing/` 内的共享 CI debug keystore。
 - 保留期：14 天。
 - nightly.link：`https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master`
-- APK 文件名格式：`KeiOS_<versionName>.apk`。
-- Artifact 名称格式：`KeiOS_<versionName>`。
+- APK 文件名格式：`KeiOS_<versionName>_debug.apk`。
+- Artifact 名称格式：`KeiOS_<versionName>_debug`。
 
 ## GitHub Actions：CI / Benchmark APK
 
@@ -264,14 +267,30 @@ scripts/qa/baseline_profile_freshness.sh
 - 触发方式：`master` 分支 `push`；仅 Markdown/readme 变更会跳过。
 - 手动触发：`workflow_dispatch`，可选 `commit`（commit SHA / branch / tag）。
 - 默认行为：`commit` 为空时构建所选分支的最新提交。
-- 构建任务：`./gradlew :app:assembleBenchmark --stacktrace`。
+- 默认构建任务：`./gradlew :app:assembleBenchmark --stacktrace -x lintVitalBenchmark`；手动开启 `run-lint-vital` 可包含该 lint 任务。
 - 构建产物：自动上传 Benchmark APK 到 GitHub Actions Artifact。
 - 使用场景：以接近 Release 的 R8、资源收缩和 Baseline Profile 链路做预发行性能验证。
 - 签名：CI Benchmark artifact 使用 `app/signing/` 内的共享 debug keystore；本地签名构建可复用 release 签名。
 - 保留期：14 天。
 - nightly.link：`https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master`
-- APK 文件名格式：`KeiOS_<versionName>.apk`。
-- Artifact 名称格式：`KeiOS_<versionName>`。
+- APK 文件名格式：`KeiOS_<versionName>_benchmark.apk`。
+- Artifact 名称格式：`KeiOS_<versionName>_benchmark`。
+
+### 工作流共用规则
+
+- 外部 Action 固定到完整 commit SHA，并在注释中标明对应发布版本。
+- Token 保持 `contents: read`、`packages: read`；checkout 不持久化凭据。
+- 只有 `master` 上由 push 自动触发的 Debug APK job 写入共享 Gradle 缓存；PR、手动构建、单元测试和 Benchmark job 均只读缓存。
+- APK 元数据必须对应输出目录内唯一且存在的 APK；写入步骤输出前拒绝包含换行的字段。
+- 摘要分别记录 APK 文件和上传制品归档的 SHA-256，并提供制品链接；元数据通过环境变量传给 shell。
+- 测试摘要和耗时制品在成功或失败后生成，取消运行后停止处理。
+- 在仓库根目录运行 `actionlint` 检查工作流；`.github/actionlint.yaml` 补充官方已支持、当前 linter 尚未识别的 Ubuntu 26.04 标签。
+  修改 composite action 脚本时，还需检查 shell/Python 及其实际行为。
+
+参考：[工作流语法](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)、
+[并发控制](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)、
+[安全用法](https://docs.github.com/en/actions/reference/security/secure-use)、
+[Gradle 缓存行为](https://github.com/gradle/actions/blob/v6.4.0/docs/setup-gradle.md)。
 
 ## GitHub 实时基准测试（GitHub Live Benchmark Test）
 

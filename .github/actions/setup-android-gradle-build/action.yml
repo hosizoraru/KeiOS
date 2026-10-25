@@ -27,7 +27,7 @@ inputs:
   cache-read-only:
     description: Read existing Gradle caches without writing new cache entries.
     required: false
-    default: "false"
+    default: "true"
   build-scan-publish:
     description: Publish Gradle Build Scan data for this job.
     required: false
@@ -37,13 +37,13 @@ runs:
   using: composite
   steps:
     - name: Setup JDK
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
       with:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v6
+      uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       with:
         # Wrapper validation was its own `gradle/actions/wrapper-validation` step and another
         # action to download; setup-gradle does the same check itself, before any Gradle runs.
@@ -52,7 +52,7 @@ runs:
         cache-cleanup: on-success
         build-scan-publish: ${{ inputs.build-scan-publish }}
         build-scan-terms-of-use-url: https://gradle.com/terms-of-service
-        build-scan-terms-of-use-agree: yes
+        build-scan-terms-of-use-agree: "yes"
 
     - name: Confirm Android SDK components
       shell: bash
@@ -95,7 +95,7 @@ runs:
           echo "Installing ${package} with ${sdkmanager}"
           # Licences are accepted in the image, but answer anyway for the case where they are not.
           # `printf` rather than `yes`, whose SIGPIPE death would trip `set -o pipefail`.
-          printf 'y\n%.0s' $(seq 1 10) | "${sdkmanager}" --channel=3 "${package}"
+          printf 'y\n%.0s' {1..10} | "${sdkmanager}" --channel=3 "${package}"
         }
 
         require_dir() {

@@ -5,20 +5,19 @@ on:
   push:
     branches:
       - master
-    # Exclusions, not inclusions. The hand-written module allowlist this replaces had gone stale:
-    # core-download, core-notification, core-versioning, feature-keepalive and feature-github-engine
-    # were all missing from it, so a commit touching only one of them built and tested nothing.
-    # A missing entry here costs a run nobody needed; a missing entry there cost the run that was.
-    paths-ignore:
-      - "**/*.md"
-      - ".agents/**"
-      - ".claude/**"
-      - ".github/ISSUE_TEMPLATE/**"
-      - "docs/**"
-      - "readme/**"
-      - "scripts/dev/**"
-      - "scripts/perf/**"
-      - "scripts/qa/**"
+    # Include every module, skip local-only tooling, then restore the reporter executed by CI.
+    paths:
+      - "**"
+      - "!**/*.md"
+      - "!.agents/**"
+      - "!.claude/**"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!docs/**"
+      - "!readme/**"
+      - "!scripts/dev/**"
+      - "!scripts/perf/**"
+      - "!scripts/qa/**"
+      - "scripts/qa/test_report.sh"
   pull_request:
     types:
       - opened
@@ -27,17 +26,18 @@ on:
       - ready_for_review
     branches:
       - master
-    # Same exclusion list as the push trigger above, for the same reason.
-    paths-ignore:
-      - "**/*.md"
-      - ".agents/**"
-      - ".claude/**"
-      - ".github/ISSUE_TEMPLATE/**"
-      - "docs/**"
-      - "readme/**"
-      - "scripts/dev/**"
-      - "scripts/perf/**"
-      - "scripts/qa/**"
+    paths:
+      - "**"
+      - "!**/*.md"
+      - "!.agents/**"
+      - "!.claude/**"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "!docs/**"
+      - "!readme/**"
+      - "!scripts/dev/**"
+      - "!scripts/perf/**"
+      - "!scripts/qa/**"
+      - "scripts/qa/test_report.sh"
   workflow_dispatch:
     inputs:
       commit:
@@ -51,7 +51,8 @@ on:
         default: false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref }}
+  # PR numbers distinguish same-named branches in different forks; manual targets are independent.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || inputs.commit || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -77,14 +78,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Full history, because the version metadata counts commits back to the release tag --
           # but blobless, so the clone carries commits and trees only and no step reads a file
           # out of history.
           fetch-depth: 0
           filter: blob:none
-          ref: ${{ github.event.inputs.commit || github.sha }}
+          ref: ${{ inputs.commit || github.sha }}
           persist-credentials: false
 
       - name: Build context
@@ -108,7 +109,9 @@ jobs:
           android-build-tools-version: ${{ env.ANDROID_BUILD_TOOLS_VERSION }}
           github-actor: ${{ env.GITHUB_ACTOR }}
           github-token: ${{ env.GITHUB_TOKEN }}
-          build-scan-publish: ${{ github.event.inputs.publish-build-scan || 'false' }}
+          # Only automatic master builds populate the shared Gradle cache.
+          cache-read-only: ${{ github.event_name != 'push' || github.ref != 'refs/heads/master' }}
+          build-scan-publish: ${{ inputs.publish-build-scan || false }}
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
@@ -121,9 +124,10 @@ jobs:
           metadata-path: app/build/outputs/apk/debug/output-metadata.json
 
       - name: Verify debug APK signing certificate
+        env:
+          APK_PATH: ${{ steps.meta.outputs.apk-path }}
         run: |
           set -euo pipefail
-          APK_PATH="${{ steps.meta.outputs.apk-path }}"
           ACTUAL_SHA256="$("${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS_VERSION}/apksigner" verify --print-certs "${APK_PATH}" \
             | awk -F': ' '/certificate SHA-256 digest/ {print tolower($NF); exit}')"
           echo "Debug signer SHA-256: ${ACTUAL_SHA256}"
@@ -131,16 +135,19 @@ jobs:
 
       - name: Prepare artifact
         id: artifact
+        env:
+          APK_PATH: ${{ steps.meta.outputs.apk-path }}
+          APK_FILE_NAME: ${{ steps.meta.outputs.apk-file-name }}
+          ARTIFACT_NAME: ${{ steps.meta.outputs.artifact-name }}
         run: |
           set -euo pipefail
-          APK_FILE_NAME="${{ steps.meta.outputs.apk-file-name }}"
-          cp "${{ steps.meta.outputs.apk-path }}" "${RUNNER_TEMP}/${APK_FILE_NAME}"
+          cp "${APK_PATH}" "${RUNNER_TEMP}/${APK_FILE_NAME}"
           echo "apk_file_name=${APK_FILE_NAME}" >> "${GITHUB_OUTPUT}"
-          echo "artifact_name=${{ steps.meta.outputs.artifact-name }}" >> "${GITHUB_OUTPUT}"
+          echo "artifact_name=${ARTIFACT_NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload debug APK
         id: upload_apk
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ steps.artifact.outputs.artifact_name }}
           path: ${{ runner.temp }}/${{ steps.artifact.outputs.apk_file_name }}
@@ -149,18 +156,30 @@ jobs:
           retention-days: 14
 
       - name: Write artifact summary
+        env:
+          ARTIFACT_NAME: ${{ steps.artifact.outputs.artifact_name }}
+          APK_FILE_NAME: ${{ steps.artifact.outputs.apk_file_name }}
+          APPLICATION_ID: ${{ steps.meta.outputs.application-id }}
+          VARIANT_NAME: ${{ steps.meta.outputs.variant-name }}
+          VERSION_NAME: ${{ steps.meta.outputs.version-name }}
+          VERSION_CODE: ${{ steps.meta.outputs.version-code }}
+          COMMIT_SHA: ${{ steps.context.outputs.commit_sha }}
+          APK_SHA256: ${{ steps.meta.outputs.apk-sha256 }}
+          ARTIFACT_DIGEST: ${{ steps.upload_apk.outputs.artifact-digest }}
+          ARTIFACT_URL: ${{ steps.upload_apk.outputs.artifact-url }}
         run: |
           {
             echo "### Debug APK artifact"
             echo ""
-            echo "- Artifact: \`${{ steps.artifact.outputs.artifact_name }}\`"
-            echo "- File: \`${{ steps.artifact.outputs.apk_file_name }}\`"
-            echo "- Application ID: \`${{ steps.meta.outputs.application-id }}\`"
-            echo "- Variant: \`${{ steps.meta.outputs.variant-name }}\`"
-            echo "- Version: \`${{ steps.meta.outputs.version-name }}\` (\`${{ steps.meta.outputs.version-code }}\`)"
-            echo "- Commit: \`${{ steps.context.outputs.commit_sha }}\`"
-            echo "- Run number: \`${{ steps.context.outputs.run_number }}\`"
-            echo "- Digest: \`${{ steps.upload_apk.outputs.artifact-digest }}\`"
+            echo "- Artifact: [${ARTIFACT_NAME}](${ARTIFACT_URL})"
+            echo "- File: \`${APK_FILE_NAME}\`"
+            echo "- Application ID: \`${APPLICATION_ID}\`"
+            echo "- Variant: \`${VARIANT_NAME}\`"
+            echo "- Version: \`${VERSION_NAME}\` (\`${VERSION_CODE}\`)"
+            echo "- Commit: \`${COMMIT_SHA}\`"
+            echo "- Run number: \`${GITHUB_RUN_NUMBER}\`"
+            echo "- APK SHA-256: \`${APK_SHA256}\`"
+            echo "- Artifact archive SHA-256: \`${ARTIFACT_DIGEST}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   # Job 2: Unit tests — runs in PARALLEL with build-debug-apk.
@@ -178,12 +197,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Full history for the version metadata, blobless -- see the job above.
           fetch-depth: 0
           filter: blob:none
-          ref: ${{ github.event.inputs.commit || github.sha }}
+          ref: ${{ inputs.commit || github.sha }}
           persist-credentials: false
 
       - name: Setup Android Gradle build
@@ -192,14 +211,9 @@ jobs:
           android-build-tools-version: ${{ env.ANDROID_BUILD_TOOLS_VERSION }}
           github-actor: ${{ env.GITHUB_ACTOR }}
           github-token: ${{ env.GITHUB_TOKEN }}
-          # Read-only on purpose, and not a speed oversight to be optimised away. Writing the
-          # Gradle cache from here filled the Actions cache until GitHub warned about it on every
-          # run, back when nothing pruned it. And the suite is meant to actually execute: with no
-          # write, this job never stores a `testDebugUnitTest` entry, so no later run can take a
-          # cache hit on it and report a pass it never ran. `cache-cleanup: on-success` bounds the
-          # space now, but that second reason stands on its own and is the one that matters.
+          # One cache writer keeps test/benchmark jobs from evicting the shared build cache.
           cache-read-only: "true"
-          build-scan-publish: ${{ github.event.inputs.publish-build-scan || 'false' }}
+          build-scan-publish: ${{ inputs.publish-build-scan || false }}
 
       # Every module's tests, by the unqualified task name, never a list of modules. This ran only
       # `:app:testDebugUnitTest` until 2026-09-25, so the ~1,500 tests in the extracted modules
@@ -215,7 +229,7 @@ jobs:
 
       - name: Upload test results
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unit-test-results
           path: |
@@ -227,7 +241,9 @@ jobs:
           retention-days: 7
 
       - name: Write test summary
-        if: always()
+        if: ${{ !cancelled() }}
+        env:
+          TEST_OUTCOME: ${{ steps.unit_tests.outcome }}
         run: |
           report_status=0
           scripts/qa/test_report.sh --slowest 10 > "${RUNNER_TEMP}/unit-test-summary.txt" || report_status=$?
@@ -235,7 +251,7 @@ jobs:
             echo "### Unit tests"
             echo ""
             echo "- Requested tasks: \`:build-logic:check\`, \`testDebugUnitTest\` (every Android module), screenshot verification enabled"
-            echo "- Gradle test step: \`${{ steps.unit_tests.outcome }}\`"
+            echo "- Gradle test step: \`${TEST_OUTCOME}\`"
             echo "- Commit: \`$(git rev-parse HEAD)\`"
             echo "- Run number: \`${GITHUB_RUN_NUMBER}\`"
             echo "- XML report exit code: \`${report_status}\` (0 passed, 1 failed, 3 no results)"
@@ -248,8 +264,8 @@ jobs:
       # Successful runs supply the timing baseline too. Keep the small XML reports for two weeks;
       # HTML and screenshot diffs above remain failure-only. Reporting never replaces the test gate.
       - name: Upload unit test timing data
-        if: always()
-        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unit-test-timings
           path: |

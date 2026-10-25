@@ -58,11 +58,11 @@ ownership and configuration-cache checks. This command does not generate Baselin
 - Local builds resolve git metadata directly when CI metadata is absent, using the latest merged tag
   as the commit-count anchor and the current release target as the release base when it is newer.
 - Package chains stay compact: debug installs as `os.kei.debug`; benchmark and release install as `os.kei`.
-- Current CI artifact names are intentionally compact: `KeiOS_<versionName>` with an APK file named
-  `KeiOS_<versionName>.apk`.
+- Current CI artifact names include the build variant: `KeiOS_<versionName>_<variant>` with an APK
+  file named `KeiOS_<versionName>_<variant>.apk`.
 - Workflow run names include `D#<run_number>` for debug and `B#<run_number>` for benchmark, and job
   summaries print the full commit SHA, run number, versionName, versionCode, application ID, and
-  artifact digest.
+  APK SHA-256, and uploaded artifact archive SHA-256.
 
 ### Required Local Secrets (for dependency resolution)
 
@@ -319,15 +319,18 @@ Workflow: `.github/workflows/ci-debug-apk.yml`
   `ubuntu-latest` OS migrations. Image updates still occur within Ubuntu 26.04; Java 21,
   the Gradle Wrapper, and required Android SDK components are configured explicitly.
 - Trigger: `push` and non-draft `pull_request` on `master`; Markdown/readme-only changes are
-  ignored.
+  ignored. Changes to `scripts/qa/test_report.sh` trigger CI because the test job executes it.
 - Manual trigger: `workflow_dispatch` with optional `commit` (commit SHA / branch / tag).
+- Manual inputs use the typed `inputs` context. `publish-build-scan` is opt-in and defaults to false.
+- Concurrency is scoped by event and PR number, manual target, or branch. Separate fork PRs and
+  manual builds of different commits do not cancel each other.
 - Job output: debug APK artifact uploaded to GitHub Actions.
 - Intended use: quick preview builds for development validation.
 - Signing: the shared CI debug keystore in `app/signing/` is used only for debug/benchmark artifacts.
 - Retention: 14 days.
 - nightly.link: `https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master`
-- APK file name format: `KeiOS_<versionName>.apk`.
-- Artifact name format: `KeiOS_<versionName>`.
+- APK file name format: `KeiOS_<versionName>_debug.apk`.
+- Artifact name format: `KeiOS_<versionName>_debug`.
 
 ## GitHub Actions: CI / Benchmark APK
 
@@ -337,14 +340,35 @@ Workflow: `.github/workflows/ci-benchmark-apk.yml`
 - Trigger: `push` on `master`; Markdown/readme-only changes are ignored.
 - Manual trigger: `workflow_dispatch` with optional `commit` (commit SHA / branch / tag).
 - Default behavior: build latest commit on selected branch when `commit` is empty.
-- Build task: `./gradlew :app:assembleBenchmark --stacktrace`.
+- Build task: `./gradlew :app:assembleBenchmark --stacktrace -x lintVitalBenchmark` by default.
+  Enable the manual `run-lint-vital` input to include that lint task.
 - Job output: benchmark APK artifact uploaded to GitHub Actions.
 - Intended use: release-like preview verification for R8, resource shrinking, and Baseline Profile performance.
 - Signing: CI uses the shared debug keystore for benchmark artifacts; local signed builds can reuse release signing.
 - Retention: 14 days.
 - nightly.link: `https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master`
-- APK file name format: `KeiOS_<versionName>.apk`.
-- Artifact name format: `KeiOS_<versionName>`.
+- APK file name format: `KeiOS_<versionName>_benchmark.apk`.
+- Artifact name format: `KeiOS_<versionName>_benchmark`.
+
+### Shared workflow rules
+
+- External actions are pinned to full commit SHAs with their release versions in comments.
+- Tokens retain `contents: read` and `packages: read`; checkout does not persist credentials.
+- Only automatic debug APK builds pushed to `master` write the shared Gradle cache.
+  Pull requests, manual builds, unit tests, and benchmark jobs use read-only caches.
+- APK metadata must identify one existing APK within its output directory. Multiline metadata
+  values are rejected before writing step outputs.
+- Summaries report the APK file SHA-256 separately from the uploaded artifact archive digest and
+  link to the uploaded artifact. Metadata reaches shell scripts through environment variables.
+- Test summaries and timing artifacts run after success or failure, and stop on cancellation.
+- Run `actionlint` from the repository root to validate workflows. `.github/actionlint.yaml`
+  supplies the officially supported Ubuntu 26.04 label until the linter recognizes it natively.
+  Composite action scripts also need shell/Python and behavior checks when changed.
+
+References: [workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
+[concurrency](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency),
+[secure use](https://docs.github.com/en/actions/reference/security/secure-use),
+and [Gradle cache behavior](https://github.com/gradle/actions/blob/v6.4.0/docs/setup-gradle.md).
 
 ## GitHub Live Benchmark Test
 
