@@ -4,6 +4,7 @@ Thumbs.db
 Desktop.ini
 .AppleDouble
 .LSOverride
+._*
 
 # IDE / Editor
 .idea/
@@ -19,8 +20,10 @@ Desktop.ini
 .gradle/
 .gradle-home/
 .kotlin/
-build/
-**/build/
+# Gradle projects live at the root; assets and docs also contain build/ directories.
+/build/
+/*/build/
+!/docs/build/
 **/outputs/
 **/reports/
 **/test-results/
@@ -43,6 +46,12 @@ captures/
 .navigation/
 *.hprof
 *.prof
+*.profm
+*.trace
+*.trace.gz
+*.perfetto-trace
+*.perfetto-trace.gz
+*.heapprofd
 *.apk
 *.aab
 *.ap_
@@ -63,18 +72,23 @@ replay_pid*
 *.keystore
 *.pem
 *.p12
+*.pfx
+*.pkcs12
 *.key
 keystore.properties
 signing.properties
 *.env
 .env
 .env.*
-!/app/signing/
+# Only the documented public CI debug key belongs in version control.
+/app/signing/*
+!/app/signing/README.md
 !/app/signing/keios-ci-debug.keystore
 
 # Temporary / local scratch
 tmp/
 /tmp/
+/.tmp/
 # Local planning scratch; publish durable plans under docs/planning/.
 /.planning/
 *.tmp
@@ -92,6 +106,14 @@ tmp/
 !/.claude/skills/
 /.codex/
 /trace_processor
+
+# Local Python / Node tooling environments and caches
+.venv/
+venv/
+node_modules/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Local QA artifacts
 /artifacts/
@@ -113,4 +135,5 @@ docs/小米超级岛模板库20260129.pdf
 
 # Python bytecode from the perf harness
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
