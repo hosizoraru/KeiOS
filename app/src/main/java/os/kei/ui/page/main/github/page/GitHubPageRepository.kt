@@ -196,6 +196,7 @@ internal class GitHubPageRepository(
                     includeUserApps = input.includeUserApps,
                     includeSystemApps = input.includeSystemApps,
                     includeTrackedApps = input.includeTrackedApps,
+                    includeDisabledOrFrozenApps = input.includeDisabledOrFrozenApps,
                     trackedPackageNames = input.trackedPackageNames,
                     pinnedPackageNames = input.pinnedPackageNames,
                     sortMode = input.sortMode,

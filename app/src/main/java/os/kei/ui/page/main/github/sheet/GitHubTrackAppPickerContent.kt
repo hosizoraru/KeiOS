@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
@@ -57,10 +59,12 @@ import os.kei.ui.page.main.widget.glass.AppLiquidExpandableSection
 import os.kei.ui.page.main.widget.glass.AppLiquidIconButton
 import os.kei.ui.page.main.widget.glass.AppLiquidSearchField
 import os.kei.ui.page.main.widget.glass.AppLiquidTextButton
+import os.kei.ui.page.main.widget.glass.AppSwitch
 import os.kei.ui.page.main.widget.glass.GlassVariant
 import os.kei.ui.page.main.widget.glass.LiquidInfoBlock
 import os.kei.ui.page.main.widget.glass.LiquidInfoBlockDensity
 import os.kei.ui.page.main.widget.sheet.SheetContentColumn
+import os.kei.ui.page.main.widget.sheet.SheetControlRow
 import os.kei.ui.page.main.widget.sheet.SheetInputTitle
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionTitle
@@ -73,11 +77,13 @@ internal fun GitHubTrackAppPickerControls(
     includeUserApps: Boolean,
     includeSystemApps: Boolean,
     includeTrackedApps: Boolean,
+    includeDisabledOrFrozenApps: Boolean,
     sortMode: GitHubTrackAppPickerSortMode,
     sortDirection: GitHubTrackAppPickerSortDirection,
     onIncludeUserAppsChange: (Boolean) -> Unit,
     onIncludeSystemAppsChange: (Boolean) -> Unit,
     onIncludeTrackedAppsChange: (Boolean) -> Unit,
+    onIncludeDisabledOrFrozenAppsChange: (Boolean) -> Unit,
     onSortModeChange: (GitHubTrackAppPickerSortMode) -> Unit,
     onSortDirectionChange: (GitHubTrackAppPickerSortDirection) -> Unit
 ) {
@@ -89,6 +95,7 @@ internal fun GitHubTrackAppPickerControls(
     val directionOptions = sortDirections.map { direction -> stringResource(direction.labelRes) }
     val sortIndex = sortModes.indexOf(sortMode).coerceAtLeast(0)
     val directionIndex = sortDirections.indexOf(sortDirection).coerceAtLeast(0)
+    val frozenAppsLabel = stringResource(R.string.github_track_sheet_app_filter_frozen_apps)
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         GitHubTrackAppPickerButtonRow(
@@ -111,6 +118,16 @@ internal fun GitHubTrackAppPickerControls(
                 text = stringResource(R.string.github_track_sheet_app_filter_tracked_apps),
                 checked = includeTrackedApps,
                 onCheckedChange = onIncludeTrackedAppsChange,
+            )
+        }
+        SheetControlRow(
+            label = frozenAppsLabel,
+            summary = stringResource(R.string.github_track_sheet_app_filter_frozen_apps_summary),
+        ) {
+            AppSwitch(
+                checked = includeDisabledOrFrozenApps,
+                onCheckedChange = onIncludeDisabledOrFrozenAppsChange,
+                modifier = Modifier.semantics { contentDescription = frozenAppsLabel },
             )
         }
         GitHubTrackAppPickerSortRow(
@@ -289,6 +306,9 @@ internal fun GitHubTrackAppPickerContent(
     var includeTrackedApps by remember(appPickerPreferences) {
         mutableStateOf(appPickerPreferences.includeTrackedApps)
     }
+    var includeDisabledOrFrozenApps by remember(appPickerPreferences) {
+        mutableStateOf(appPickerPreferences.includeDisabledOrFrozenApps)
+    }
     var sortMode by remember(appPickerPreferences) {
         mutableStateOf(GitHubTrackAppPickerSortMode.fromStorageId(appPickerPreferences.sortModeId))
     }
@@ -309,6 +329,7 @@ internal fun GitHubTrackAppPickerContent(
             includeUserApps,
             includeSystemApps,
             includeTrackedApps,
+            includeDisabledOrFrozenApps,
             trackedPackageNames,
             selectedApp?.packageName,
             editingPackageName,
@@ -326,6 +347,7 @@ internal fun GitHubTrackAppPickerContent(
                 includeUserApps = includeUserApps,
                 includeSystemApps = includeSystemApps,
                 includeTrackedApps = includeTrackedApps,
+                includeDisabledOrFrozenApps = includeDisabledOrFrozenApps,
                 trackedPackageNames = trackedPackageNames,
                 pinnedPackageNames = pinnedPackageNames,
                 sortMode = sortMode,
@@ -354,6 +376,7 @@ internal fun GitHubTrackAppPickerContent(
                 includeUserApps = includeUserApps,
                 includeSystemApps = includeSystemApps,
                 includeTrackedApps = includeTrackedApps,
+                includeDisabledOrFrozenApps = includeDisabledOrFrozenApps,
                 sortModeId = sortMode.storageId,
                 sortDirectionId = sortDirection.storageId
             )
@@ -503,6 +526,7 @@ internal fun GitHubTrackAppPickerContent(
                 includeUserApps = includeUserApps,
                 includeSystemApps = includeSystemApps,
                 includeTrackedApps = includeTrackedApps,
+                includeDisabledOrFrozenApps = includeDisabledOrFrozenApps,
                 sortMode = sortMode,
                 sortDirection = sortDirection,
                 onIncludeUserAppsChange = {
@@ -517,6 +541,11 @@ internal fun GitHubTrackAppPickerContent(
                 },
                 onIncludeTrackedAppsChange = {
                     includeTrackedApps = it
+                    saveAppPickerPreferences()
+                    scrollAppListToTop()
+                },
+                onIncludeDisabledOrFrozenAppsChange = {
+                    includeDisabledOrFrozenApps = it
                     saveAppPickerPreferences()
                     scrollAppListToTop()
                 },

@@ -104,7 +104,8 @@ data class GitHubAppPickerPreferences(
     val includeSystemApps: Boolean = false,
     val includeTrackedApps: Boolean = false,
     val sortModeId: String = "name",
-    val sortDirectionId: String = "ascending"
+    val sortDirectionId: String = "ascending",
+    val includeDisabledOrFrozenApps: Boolean = false,
 )
 
 object GitHubTrackStore {
@@ -147,6 +148,7 @@ object GitHubTrackStore {
     private const val KEY_APP_PICKER_INCLUDE_USER_APPS = "github_app_picker_include_user_apps"
     private const val KEY_APP_PICKER_INCLUDE_SYSTEM_APPS = "github_app_picker_include_system_apps"
     private const val KEY_APP_PICKER_INCLUDE_TRACKED_APPS = "github_app_picker_include_tracked_apps"
+    private const val KEY_APP_PICKER_INCLUDE_DISABLED_OR_FROZEN_APPS = "github_app_picker_include_disabled_or_frozen_apps"
     private const val KEY_APP_PICKER_SORT_MODE = "github_app_picker_sort_mode"
     private const val KEY_APP_PICKER_SORT_DIRECTION = "github_app_picker_sort_direction"
 
@@ -257,6 +259,7 @@ object GitHubTrackStore {
             includeUserApps = store.decodeBool(KEY_APP_PICKER_INCLUDE_USER_APPS, true),
             includeSystemApps = store.decodeBool(KEY_APP_PICKER_INCLUDE_SYSTEM_APPS, false),
             includeTrackedApps = store.decodeBool(KEY_APP_PICKER_INCLUDE_TRACKED_APPS, false),
+            includeDisabledOrFrozenApps = store.decodeBool(KEY_APP_PICKER_INCLUDE_DISABLED_OR_FROZEN_APPS, false),
             sortModeId = store.decodeString(KEY_APP_PICKER_SORT_MODE, "name").orEmpty(),
             sortDirectionId = store.decodeString(
                 KEY_APP_PICKER_SORT_DIRECTION,
@@ -270,6 +273,7 @@ object GitHubTrackStore {
         store.encode(KEY_APP_PICKER_INCLUDE_USER_APPS, preferences.includeUserApps)
         store.encode(KEY_APP_PICKER_INCLUDE_SYSTEM_APPS, preferences.includeSystemApps)
         store.encode(KEY_APP_PICKER_INCLUDE_TRACKED_APPS, preferences.includeTrackedApps)
+        store.encode(KEY_APP_PICKER_INCLUDE_DISABLED_OR_FROZEN_APPS, preferences.includeDisabledOrFrozenApps)
         store.encode(KEY_APP_PICKER_SORT_MODE, preferences.sortModeId)
         store.encode(KEY_APP_PICKER_SORT_DIRECTION, preferences.sortDirectionId)
     }

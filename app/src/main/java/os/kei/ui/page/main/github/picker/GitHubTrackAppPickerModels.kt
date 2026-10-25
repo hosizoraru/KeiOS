@@ -14,6 +14,7 @@ internal class GitHubTrackAppPickerInput(
     val pinnedPackageNames: Set<String>,
     val sortMode: GitHubTrackAppPickerSortMode,
     val sortDirection: GitHubTrackAppPickerSortDirection,
+    val includeDisabledOrFrozenApps: Boolean = false,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -23,6 +24,7 @@ internal class GitHubTrackAppPickerInput(
             includeUserApps == other.includeUserApps &&
             includeSystemApps == other.includeSystemApps &&
             includeTrackedApps == other.includeTrackedApps &&
+            includeDisabledOrFrozenApps == other.includeDisabledOrFrozenApps &&
             trackedPackageNames == other.trackedPackageNames &&
             pinnedPackageNames == other.pinnedPackageNames &&
             sortMode == other.sortMode &&
@@ -35,6 +37,7 @@ internal class GitHubTrackAppPickerInput(
         result = 31 * result + includeUserApps.hashCode()
         result = 31 * result + includeSystemApps.hashCode()
         result = 31 * result + includeTrackedApps.hashCode()
+        result = 31 * result + includeDisabledOrFrozenApps.hashCode()
         result = 31 * result + trackedPackageNames.hashCode()
         result = 31 * result + pinnedPackageNames.hashCode()
         result = 31 * result + sortMode.hashCode()
@@ -121,6 +124,7 @@ internal fun filterAndSortGitHubTrackAppCandidates(
     pinnedPackageNames: Set<String>,
     sortMode: GitHubTrackAppPickerSortMode,
     sortDirection: GitHubTrackAppPickerSortDirection,
+    includeDisabledOrFrozenApps: Boolean = false,
 ): List<InstalledAppItem> {
     val normalizedTrackedPackages =
         trackedPackageNames
@@ -138,6 +142,7 @@ internal fun filterAndSortGitHubTrackAppCandidates(
                 includeUserApps = includeUserApps,
                 includeSystemApps = includeSystemApps,
                 includeTrackedApps = includeTrackedApps,
+                includeDisabledOrFrozenApps = includeDisabledOrFrozenApps,
                 trackedPackageNames = normalizedTrackedPackages,
                 pinnedPackageNames = normalizedPinnedPackages,
             )
@@ -207,12 +212,14 @@ private fun GitHubTrackAppCandidateProjection.matchesAppPickerScope(
     includeUserApps: Boolean,
     includeSystemApps: Boolean,
     includeTrackedApps: Boolean,
+    includeDisabledOrFrozenApps: Boolean,
     trackedPackageNames: Set<String>,
     pinnedPackageNames: Set<String>,
 ): Boolean {
     if (normalizedPackageName != null && normalizedPackageName in pinnedPackageNames) {
         return true
     }
+    if (app.isDisabledOrFrozen && !includeDisabledOrFrozenApps) return false
     val matchesType =
         when {
             app.isSystemApp -> includeSystemApps

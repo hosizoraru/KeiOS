@@ -3,8 +3,63 @@ package os.kei.ui.page.main.github.picker
 import org.junit.Test
 import os.kei.feature.github.model.InstalledAppItem
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class GitHubTrackAppPickerModelsTest {
+    @Test
+    fun `frozen toggle respects type tracked search and pinned selection filters`() {
+        val ordinary = InstalledAppItem("Ordinary", "test.active")
+        val frozen = InstalledAppItem("Frozen", "test.frozen", isDisabledOrFrozen = true)
+        val system = InstalledAppItem("System", "test.system", isSystemApp = true, isDisabledOrFrozen = true)
+        val apps = listOf(ordinary, frozen, system)
+        fun candidates(
+            showFrozen: Boolean = false,
+            showSystem: Boolean = false,
+            tracked: Set<String> = emptySet(),
+            pinned: Set<String> = emptySet(),
+            query: String = "",
+        ) = filterAndSortGitHubTrackAppCandidates(
+            apps = apps,
+            query = query,
+            includeUserApps = true,
+            includeSystemApps = showSystem,
+            includeTrackedApps = false,
+            trackedPackageNames = tracked,
+            pinnedPackageNames = pinned,
+            sortMode = GitHubTrackAppPickerSortMode.Name,
+            sortDirection = GitHubTrackAppPickerSortDirection.Ascending,
+            includeDisabledOrFrozenApps = showFrozen,
+        )
+
+        assertEquals(listOf(ordinary), candidates())
+        assertEquals(listOf(frozen, ordinary), candidates(showFrozen = true))
+        assertEquals(listOf(frozen, ordinary, system), candidates(showFrozen = true, showSystem = true))
+        assertEquals(listOf(ordinary), candidates(showFrozen = true, tracked = setOf(frozen.packageName)))
+        assertEquals(listOf(frozen, ordinary), candidates(pinned = setOf("TEST.FROZEN")))
+        assertEquals(listOf(frozen), candidates(showFrozen = true, query = "test.frozen"))
+        assertEquals(emptyList(), candidates(query = "test.frozen"))
+    }
+
+    @Test
+    fun `frozen toggle changes derivation input even when app list instance is unchanged`() {
+        val apps = listOf(InstalledAppItem("Frozen", "test.frozen", isDisabledOrFrozen = true))
+        fun input(showFrozen: Boolean) = GitHubTrackAppPickerInput(
+            appList = apps,
+            query = "",
+            includeUserApps = true,
+            includeSystemApps = false,
+            includeTrackedApps = false,
+            trackedPackageNames = emptySet(),
+            pinnedPackageNames = emptySet(),
+            sortMode = GitHubTrackAppPickerSortMode.Name,
+            sortDirection = GitHubTrackAppPickerSortDirection.Ascending,
+            includeDisabledOrFrozenApps = showFrozen,
+        )
+
+        assertEquals(input(false), input(false))
+        assertNotEquals(input(false), input(true))
+    }
+
     @Test
     fun `candidate filter applies scope, tracked, pinned and search rules`() {
         data class Case(

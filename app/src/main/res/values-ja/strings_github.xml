@@ -1142,6 +1142,8 @@ nightly.link は公開リポジトリ、成功した実行、保持期限内の�
     <string name="github_track_sheet_app_filter_user_apps">ユーザー</string>
     <string name="github_track_sheet_app_filter_system_apps">システム</string>
     <string name="github_track_sheet_app_filter_tracked_apps">追跡済み</string>
+    <string name="github_track_sheet_app_filter_frozen_apps">凍結・無効化したアプリ</string>
+    <string name="github_track_sheet_app_filter_frozen_apps_summary">無効化・非表示・一時停止中のインストール済みアプリも表示します</string>
     <string name="github_track_sheet_app_sort_label">並び順</string>
     <string name="github_track_sheet_app_sort_dropdown_format">%1$s 順</string>
     <string name="github_track_sheet_app_sort_direction_dropdown_format">%1$s</string>

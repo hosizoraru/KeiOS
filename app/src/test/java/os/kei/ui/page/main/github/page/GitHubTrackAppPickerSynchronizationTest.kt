@@ -4,19 +4,32 @@ package os.kei.ui.page.main.github.page
 
 import android.app.Application
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import os.kei.R
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.feature.github.model.InstalledAppItem
 import os.kei.ui.page.main.github.picker.GitHubTrackAppPickerSortDirection
 import os.kei.ui.page.main.github.picker.GitHubTrackAppPickerSortMode
 import os.kei.ui.page.main.github.picker.filterAndSortGitHubTrackAppCandidates
+import os.kei.ui.page.main.github.sheet.GitHubTrackAppPickerControls
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -31,6 +44,7 @@ import top.yukonga.miuix.kmp.theme.ThemeController
  * apps that were already tracked until the page was recreated.
  */
 @RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(
     application = Application::class,
     sdk = [35],
@@ -39,6 +53,59 @@ import top.yukonga.miuix.kmp.theme.ThemeController
 class GitHubTrackAppPickerSynchronizationTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun frozenSwitchImmediatelyUpdatesCandidatesInBothDirections() {
+        val showFrozen = mutableStateOf(false)
+        val frozen = InstalledAppItem("Frozen fixture", "test.frozen", isDisabledOrFrozen = true)
+        composeRule.setContent {
+            MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
+                Column {
+                    GitHubTrackAppPickerControls(
+                        backdrop = rememberLayerBackdrop(),
+                        includeUserApps = true,
+                        includeSystemApps = false,
+                        includeTrackedApps = false,
+                        includeDisabledOrFrozenApps = showFrozen.value,
+                        sortMode = GitHubTrackAppPickerSortMode.Name,
+                        sortDirection = GitHubTrackAppPickerSortDirection.Ascending,
+                        onIncludeUserAppsChange = {},
+                        onIncludeSystemAppsChange = {},
+                        onIncludeTrackedAppsChange = {},
+                        onIncludeDisabledOrFrozenAppsChange = { showFrozen.value = it },
+                        onSortModeChange = {},
+                        onSortDirectionChange = {},
+                    )
+                    filterAndSortGitHubTrackAppCandidates(
+                        apps = listOf(frozen),
+                        query = "",
+                        includeUserApps = true,
+                        includeSystemApps = false,
+                        includeTrackedApps = false,
+                        trackedPackageNames = emptySet(),
+                        pinnedPackageNames = emptySet(),
+                        sortMode = GitHubTrackAppPickerSortMode.Name,
+                        sortDirection = GitHubTrackAppPickerSortDirection.Ascending,
+                        includeDisabledOrFrozenApps = showFrozen.value,
+                    ).forEach { Text(it.label) }
+                }
+            }
+        }
+
+        val switch = composeRule.onNode(
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch) and
+                hasContentDescription(
+                    ApplicationProvider.getApplicationContext<Application>()
+                        .getString(R.string.github_track_sheet_app_filter_frozen_apps),
+                ),
+        )
+        switch.assertIsOff()
+        composeRule.onAllNodes(hasText(frozen.label)).assertCountEquals(0)
+        switch.performClick().assertIsOn()
+        composeRule.onAllNodes(hasText(frozen.label)).assertCountEquals(1)
+        switch.performClick().assertIsOff()
+        composeRule.onAllNodes(hasText(frozen.label)).assertCountEquals(0)
+    }
 
     @Test
     fun trackingAnAppRemovesItFromThePickerWithoutRecreatingThePage() {

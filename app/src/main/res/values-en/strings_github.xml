@@ -1170,6 +1170,8 @@
     <string name="github_track_sheet_app_filter_user_apps">User</string>
     <string name="github_track_sheet_app_filter_system_apps">System</string>
     <string name="github_track_sheet_app_filter_tracked_apps">Tracked</string>
+    <string name="github_track_sheet_app_filter_frozen_apps">Frozen or disabled apps</string>
+    <string name="github_track_sheet_app_filter_frozen_apps_summary">Include installed apps that are disabled, hidden or suspended</string>
     <string name="github_track_sheet_app_sort_label">Sort</string>
     <string name="github_track_sheet_app_sort_dropdown_format">By %1$s</string>
     <string name="github_track_sheet_app_sort_direction_dropdown_format">%1$s</string>
