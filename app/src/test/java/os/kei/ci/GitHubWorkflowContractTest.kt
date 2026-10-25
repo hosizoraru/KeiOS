@@ -13,9 +13,7 @@ class GitHubWorkflowContractTest {
         val workflow = workflowText("ci-debug-apk.yml")
         val setupAction = actionText("setup-android-gradle-build/action.yml")
 
-        // Every module's tests, by the unqualified task name. Until 2026-09-25 this pinned
-        // `:app:testDebugUnitTest`, and the ~1,500 tests of the extracted modules never ran in CI:
-        // the same allowlist failure the paths-ignore test below describes, one level down.
+        // An unqualified task selector also covers modules added after this test was written.
         val testCommands = runCommandsOf(workflow).map { it.split(Regex("\\s+")) }
             .filter { "testDebugUnitTest" in it }
         assertEquals(1, testCommands.size, "CI must run every module's unit tests")
@@ -31,15 +29,13 @@ class GitHubWorkflowContractTest {
             "run unit tests with the unqualified `testDebugUnitTest`; a module-qualified task tests only " +
                 "that module: $qualified",
         )
-        // Deliberate, and pinned here so it survives the next round of speed work: writing the
-        // Gradle cache from the unit test job filled the Actions cache, and a stored
-        // `testDebugUnitTest` entry would let a later run report a pass it never executed.
+        // Only the automatic debug APK job writes the shared cache.
         assertContains(
             workflow,
             "cache-read-only: \"true\"",
             message = "the unit test job is cache-read-only on purpose; see the comment at its call site",
         )
-        assertSetupActionUsesCurrentActions(setupAction)
+        assertSetupActionUsesPinnedActions(setupAction)
     }
 
     @Test
@@ -47,12 +43,12 @@ class GitHubWorkflowContractTest {
         val debugWorkflow = workflowText("ci-debug-apk.yml")
         val benchmarkWorkflow = workflowText("ci-benchmark-apk.yml")
 
-        assertWorkflowUsesCurrentActions(debugWorkflow)
+        assertWorkflowUsesPinnedActions(debugWorkflow)
         assertContains(debugWorkflow, "./gradlew :app:assembleDebug --stacktrace")
         assertContains(debugWorkflow, "EXPECTED_APK_SIGNER_SHA256")
         assertContains(debugWorkflow, "apksigner\" verify --print-certs")
 
-        assertWorkflowUsesCurrentActions(benchmarkWorkflow)
+        assertWorkflowUsesPinnedActions(benchmarkWorkflow)
         assertContains(benchmarkWorkflow, "\":app:assembleBenchmark\"")
         assertContains(benchmarkWorkflow, "lintVitalBenchmark")
         assertContains(benchmarkWorkflow, "EXPECTED_APK_SIGNER_SHA256")
@@ -91,20 +87,40 @@ class GitHubWorkflowContractTest {
         listOf("ci-debug-apk.yml", "ci-benchmark-apk.yml").forEach { name ->
             val workflow = workflowText(name)
 
-            assertFalse(
-                PATHS_ALLOWLIST.containsMatchIn(workflow),
-                "$name filters triggers with an allowlist. Use paths-ignore: an allowlist stops " +
-                    "testing every module added after it was written, and does it silently.",
-            )
+            val filters = triggerPathFilters(workflow)
+            assertTrue(filters.isNotEmpty(), "$name has no path filters to check")
+            filters.forEach { filter ->
+                if (filter.includesPaths) {
+                    assertEquals(
+                        "**",
+                        filter.patterns.first().first,
+                        "$name must start by including every module, including future modules",
+                    )
+                }
+                (buildInputs + "future-module/src/main/kotlin/Feature.kt").forEach { path ->
+                    assertTrue(
+                        filter.triggersOn(path),
+                        "$name would skip a change to $path under ${filter.patterns.map { it.first }}",
+                    )
+                }
+            }
+        }
+    }
 
-            val ignored = ignoredPathPatterns(workflow)
-            assertTrue(ignored.isNotEmpty(), "$name has no paths-ignore entries to check")
-            buildInputs.forEach { path ->
-                val matched = ignored.firstOrNull { (_, regex) -> regex.matches(path) }
-                assertTrue(
-                    matched == null,
-                    "$name would skip a change to $path, ignored by \"${matched?.first}\"",
-                )
+    @Test
+    fun `debug ci includes its reporter while excluding local documentation and helpers`() {
+        val filters = triggerPathFilters(workflowText("ci-debug-apk.yml"))
+        assertTrue(filters.isNotEmpty())
+        filters.forEach { filter ->
+            assertTrue(filter.triggersOn("scripts/qa/test_report.sh"))
+            listOf(
+                "README.md",
+                "docs/build/github-actions.md",
+                ".agents/skills/example/SKILL.md",
+                "scripts/qa/device.local.sh",
+                "scripts/perf/profile.sh",
+            ).forEach { path ->
+                assertFalse(filter.triggersOn(path), "Local-only changes should not trigger CI: $path")
             }
         }
     }
@@ -127,17 +143,17 @@ class GitHubWorkflowContractTest {
         )
     }
 
-    private fun assertWorkflowUsesCurrentActions(workflow: String) {
+    private fun assertWorkflowUsesPinnedActions(workflow: String) {
         val used = actionsUsedBy(workflow)
-        assertContains(used, "actions/checkout@v7")
-        assertContains(used, "actions/upload-artifact@v7")
+        assertActionPinned(used, "actions/checkout")
+        assertActionPinned(used, "actions/upload-artifact")
         assertContains(workflow, "persist-credentials: false")
     }
 
-    private fun assertSetupActionUsesCurrentActions(action: String) {
+    private fun assertSetupActionUsesPinnedActions(action: String) {
         val used = actionsUsedBy(action)
-        assertContains(used, "actions/setup-java@v5")
-        assertContains(used, "gradle/actions/setup-gradle@v6")
+        assertActionPinned(used, "actions/setup-java")
+        assertActionPinned(used, "gradle/actions/setup-gradle")
         // Wrapper validation belongs to setup-gradle, not to a second action of its own.
         assertContains(action, "validate-wrappers: true")
         assertFalse(
@@ -149,6 +165,17 @@ class GitHubWorkflowContractTest {
             "the runner image ships build-tools and the platform this build names, and that " +
                 "action's default package list is what took CI down when Google deleted `tools`",
         )
+    }
+
+    private fun assertActionPinned(used: List<String>, action: String) {
+        val references = used.filter { it.startsWith("$action@") }
+        assertTrue(references.isNotEmpty(), "Expected a use of $action")
+        references.forEach { reference ->
+            assertTrue(
+                Regex("[0-9a-f]{40}").matches(reference.substringAfter('@')),
+                "$action must be fixed to a full commit SHA",
+            )
+        }
     }
 
     /**
@@ -169,21 +196,41 @@ class GitHubWorkflowContractTest {
             .toList()
             .also { assertTrue(it.size > 10, "Parsed only ${it.size} modules from settings.gradle.kts") }
 
-    /** Every entry of every `paths-ignore` block, paired with the glob compiled to a regex. */
-    private fun ignoredPathPatterns(workflow: String): List<Pair<String, Regex>> {
-        val globs = mutableListOf<String>()
-        var insideBlock = false
-        workflow.lineSequence().forEach { line ->
-            val entry = PATHS_IGNORE_ENTRY.matchEntire(line)
-            when {
-                PATHS_IGNORE_HEADER.matchEntire(line) != null -> insideBlock = true
-                !insideBlock -> Unit
-                entry != null -> globs += entry.groupValues[1]
-                line.isBlank() || line.trimStart().startsWith("#") -> Unit
-                else -> insideBlock = false
+    private data class TriggerPathFilter(
+        val includesPaths: Boolean,
+        val patterns: MutableList<Pair<String, Regex>> = mutableListOf(),
+    ) {
+        fun triggersOn(path: String): Boolean {
+            if (!includesPaths) return patterns.none { (_, regex) -> regex.matches(path) }
+            return patterns.fold(false) { included, (glob, regex) ->
+                if (regex.matches(path)) !glob.startsWith('!') else included
             }
         }
-        return globs.distinct().map { it to globToRegex(it) }
+    }
+
+    /** Preserve ordering: a later positive paths entry can restore an excluded CI helper. */
+    private fun triggerPathFilters(workflow: String): List<TriggerPathFilter> {
+        val filters = mutableListOf<TriggerPathFilter>()
+        var active: TriggerPathFilter? = null
+        workflow.lineSequence().forEach { line ->
+            val header = PATH_FILTER_HEADER.matchEntire(line)
+            val entry = PATH_FILTER_ENTRY.matchEntire(line)
+            when {
+                header != null -> {
+                    active = TriggerPathFilter(header.groupValues[1] == "paths")
+                    filters += checkNotNull(active)
+                }
+                active == null -> Unit
+                entry != null -> {
+                    val glob = entry.groupValues[1]
+                    active?.patterns?.add(glob to globToRegex(glob.removePrefix("!")))
+                }
+                line.isBlank() || line.trimStart().startsWith("#") -> Unit
+                else -> active = null
+            }
+        }
+        filters.forEach { assertTrue(it.patterns.isNotEmpty(), "Empty trigger path filter") }
+        return filters
     }
 
     private fun globToRegex(glob: String): Regex {
@@ -225,10 +272,9 @@ class GitHubWorkflowContractTest {
 
     private companion object {
         val GRADLE_INCLUDE = Regex("""^\s*include\("::?([A-Za-z0-9._-]+)"\)""", RegexOption.MULTILINE)
-        val PATHS_IGNORE_HEADER = Regex("""\s*paths-ignore:\s*""")
-        val PATHS_IGNORE_ENTRY = Regex("""\s+- "([^"]+)"\s*""")
-        val PATHS_ALLOWLIST = Regex("""^\s+paths:\s*$""", RegexOption.MULTILINE)
-        val USES_LINE = Regex("""^\s*(?:- )?uses:\s*(\S+)\s*$""", RegexOption.MULTILINE)
+        val PATH_FILTER_HEADER = Regex("""\s*(paths|paths-ignore):\s*""")
+        val PATH_FILTER_ENTRY = Regex("""\s+- "([^"]+)"\s*""")
+        val USES_LINE = Regex("""^\s*(?:- )?uses:\s*(\S+)(?:\s+#.*)?\s*$""", RegexOption.MULTILINE)
         val RUN_LINE = Regex("""^\s*(?:- )?run:\s*(\S.*)$""", RegexOption.MULTILINE)
         val MODULE_QUALIFIED_TEST_TASK = Regex(""":[A-Za-z0-9._-]+:test[A-Za-z]*UnitTest\b""")
     }

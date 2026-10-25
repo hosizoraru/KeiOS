@@ -64,7 +64,7 @@ Choose checks that can catch the changed behavior:
 | Logic or state | Focused behavior tests and compilation of affected consumers |
 | UI or localized copy | Relevant screenshot/semantics/resource checks and affected device/window states |
 | Dependencies, R8, or packaging | Relevant Release/Benchmark build and packaged-artifact checks |
-| Workflows or composite actions | `actionlint`, changed-script checks, behavior fixtures, and the resulting cloud run |
+| Workflows or composite actions | `actionlint`, [workflow contract tests](docs/build/github-actions.md#maintain-the-workflows), changed-script checks, behavior fixtures, and the resulting cloud run |
 | Performance | Comparable Release/Benchmark measurements with device and capture conditions |
 
 Debug CI runs build-logic checks, Android module unit tests, and screenshot verification

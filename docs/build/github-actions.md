@@ -142,6 +142,17 @@ action scripts also need shell/Python checks and behavior fixtures. Relevant
 APK metadata cases include missing/multiple outputs, traversal or symlink
 escapes, multiline fields, and literal shell metacharacters.
 
+Also run the existing workflow contract tests:
+
+```bash
+./gradlew :app:testDebugUnitTest \
+  --tests os.kei.ci.GitHubWorkflowContractTest --stacktrace
+```
+
+These check module coverage, ordered path exclusions and re-inclusions, pinned
+actions, build tasks, and signing checks. Keep the tests aligned with the
+workflow behavior when changing its configuration.
+
 An ordinary push across changed workflow/build files is the cloud validation
 step. Check both workflow conclusions and every job against the pushed SHA;
 then confirm the uploaded APK's metadata and checksums. A local lint pass,
