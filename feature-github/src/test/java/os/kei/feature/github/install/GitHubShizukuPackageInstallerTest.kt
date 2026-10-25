@@ -3,6 +3,8 @@ package os.kei.feature.github.install
 import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
+import android.content.pm.PackageInstaller
+import android.os.Parcel
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
@@ -11,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.util.ReflectionHelpers
 import os.kei.feature.github.data.remote.GitHubReleaseAssetFile
 import os.kei.feature.github.model.GitHubLookupConfig
 import kotlin.test.assertEquals
@@ -20,6 +23,25 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(application = Application::class, sdk = [35])
 class GitHubShizukuPackageInstallerTest {
+    @Test
+    fun `install session preserves the disabled setting across framework serialization`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+        ShizukuPackageInstallerBridge().applySessionParams(params, context, "demo.app")
+
+        val parcel = Parcel.obtain()
+        try {
+            params.writeToParcel(parcel, 0)
+            parcel.setDataPosition(0)
+            val restored = PackageInstaller.SessionParams.CREATOR.createFromParcel(parcel)
+
+            assertTrue(ReflectionHelpers.getField(restored, "applicationEnabledSettingPersistent"))
+            assertEquals("demo.app", ReflectionHelpers.getField(restored, "appPackageName"))
+        } finally {
+            parcel.recycle()
+        }
+    }
+
     @Test
     fun `installer fails before session when shizuku is unavailable`() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Application>()

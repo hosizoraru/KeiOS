@@ -263,8 +263,8 @@ class GitHubRootPackageInstaller(
 
     /**
      * Mirrors the flags [ShizukuPackageInstallerBridge.applySessionParams] sets on the binder path:
-     * replace an existing install, allow test packages, allow downgrade, full app, user install
-     * reason, and update ownership.
+     * replace an existing install, preserve the enabled setting, allow test packages, allow
+     * downgrade, full app, user install reason, and update ownership.
      */
     private suspend fun createSession(
         appPackageName: String,
@@ -272,7 +272,7 @@ class GitHubRootPackageInstaller(
     ): Result<Int> {
         val command =
             buildString {
-                append("pm install-create -r -t -d --full --update-ownership")
+                append("pm install-create -r -t -d --full --update-ownership --skip-enable")
                 append(" --install-reason ").append(INSTALL_REASON_USER)
                 append(" --user 0")
                 append(" -i ").append(installerPackageName)

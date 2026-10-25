@@ -120,6 +120,7 @@ open class ShizukuPackageInstallerBridge {
         appPackageName: String
     ) {
         params.setInstallReason(PackageManager.INSTALL_REASON_USER)
+        params.setApplicationEnabledSettingPersistent()
         params.setOriginatingUid(context.applicationInfo.uid)
         params.setPackageSource(PackageInstaller.PACKAGE_SOURCE_DOWNLOADED_FILE)
         if (appPackageName.isNotBlank()) {
