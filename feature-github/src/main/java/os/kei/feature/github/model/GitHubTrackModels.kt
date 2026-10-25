@@ -442,7 +442,8 @@ data class InstalledAppItem(
     val lastUpdateTimeMs: Long = -1L,
     val isSystemApp: Boolean = false,
     val installSourcePackageName: String = "",
-    val installSourceLabel: String = ""
+    val installSourceLabel: String = "",
+    val isDisabledOrFrozen: Boolean = false,
 )
 
 data class GitHubCheckCacheEntry(

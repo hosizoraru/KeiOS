@@ -65,13 +65,21 @@ object GitHubInstalledAppRepository {
         val overlayFlagMask = installedAppResourceOverlayFlagMask()
         val installSourceLabelCache = mutableMapOf<String, String>()
         val labelSortLocale = Locale.getDefault()
-        val scannedApps = packageManager.getInstalledPackageInfosSafely()
+        val availablePackageNames = runCatching {
+            packageManager.getInstalledPackages(
+                PackageManager.PackageInfoFlags.of(PackageManager.MATCH_DISABLED_COMPONENTS.toLong()),
+            ).mapTo(HashSet()) { it.packageName.lowercase(Locale.ROOT) }
+        }.getOrNull()
+        val scannedApps = packageManager.getInstalledPackageInfosSafely(
+            flags = PackageManager.PackageInfoFlags.of(gitHubInstalledAppQueryFlags),
+        )
             .asSequence()
             .mapNotNull { packageInfo ->
                 packageManager.toInstalledAppItem(
                     packageInfo = packageInfo,
                     overlayFlagMask = overlayFlagMask,
                     installSourceLabelCache = installSourceLabelCache,
+                    availablePackageNames = availablePackageNames,
                 )
             }
             .toMutableList()
@@ -83,6 +91,7 @@ object GitHubInstalledAppRepository {
                 packageName = packageName,
                 overlayFlagMask = overlayFlagMask,
                 installSourceLabelCache = installSourceLabelCache,
+                availablePackageNames = availablePackageNames,
             )?.let { app ->
                 scannedApps += app
                 scannedPackages += packageName
@@ -196,22 +205,35 @@ object GitHubInstalledAppRepository {
         context: Context,
         packageName: String,
     ): GitHubLocalVersionInfo? {
+        val packageInfo = installedPackageInfoOrNull(context, packageName) ?: return null
+        val appInfo = packageInfo.applicationInfo
+            ?: context.packageManager.getApplicationInfoCompat(packageName) ?: return null
+        return GitHubLocalVersionInfo(
+            versionName = packageInfo.versionName?.trim().orEmpty().ifBlank { "unknown" },
+            versionCode = packageInfo.longVersionCode,
+            isSystemApp = appInfo.isSystemAppForPicker(),
+        )
+    }
+
+    fun installedPackageInfoOrNull(
+        context: Context,
+        packageName: String,
+    ): PackageInfo? {
         val packageManager = context.packageManager
         val packageInfo = runCatching {
-            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            packageManager.getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(gitHubInstalledAppQueryFlags),
+            )
         }.getOrElse { error ->
             if (error is PackageManager.NameNotFoundException) return null
             throw error
         }
         val appInfo = packageInfo.applicationInfo
-            ?: packageManager.getApplicationInfoCompat(packageName)
+            ?: packageManager.getApplicationInfoCompat(packageName) ?: return null
         val overlayFlagMask = installedAppResourceOverlayFlagMask()
-        if (appInfo != null && shouldIgnoreInstalledApp(appInfo, overlayFlagMask)) return null
-        return GitHubLocalVersionInfo(
-            versionName = packageInfo.versionName?.trim().orEmpty().ifBlank { "unknown" },
-            versionCode = packageInfo.longVersionCode,
-            isSystemApp = appInfo?.isSystemAppForPicker() == true,
-        )
+        if (shouldIgnoreInstalledApp(appInfo, overlayFlagMask)) return null
+        return packageInfo
     }
 
     private data class CachedInstalledApps(
@@ -353,14 +375,19 @@ object GitHubInstalledAppRepository {
         packageName: String,
         overlayFlagMask: Int,
         installSourceLabelCache: MutableMap<String, String>,
+        availablePackageNames: Set<String>? = null,
     ): InstalledAppItem? {
         val packageInfo = runCatching {
-            getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(gitHubInstalledAppQueryFlags),
+            )
         }.getOrNull() ?: return null
         return toInstalledAppItem(
             packageInfo = packageInfo,
             overlayFlagMask = overlayFlagMask,
             installSourceLabelCache = installSourceLabelCache,
+            availablePackageNames = availablePackageNames,
         )
     }
 
@@ -368,6 +395,7 @@ object GitHubInstalledAppRepository {
         packageInfo: PackageInfo,
         overlayFlagMask: Int,
         installSourceLabelCache: MutableMap<String, String>,
+        availablePackageNames: Set<String>? = null,
     ): InstalledAppItem? {
         val packageName = packageInfo.packageName.trim()
         if (packageName.isBlank()) return null
@@ -389,7 +417,26 @@ object GitHubInstalledAppRepository {
             isSystemApp = appInfo.isSystemAppForPicker(),
             installSourcePackageName = installSource.packageName,
             installSourceLabel = installSource.label,
+            isDisabledOrFrozen = !appInfo.enabled ||
+                (appInfo.flags and ApplicationInfo.FLAG_SUSPENDED) != 0 ||
+                isHiddenInstalledApp(packageName, availablePackageNames),
         )
+    }
+
+    private fun PackageManager.isHiddenInstalledApp(
+        packageName: String,
+        availablePackageNames: Set<String>?,
+    ): Boolean {
+        if (availablePackageNames != null) {
+            return packageName.lowercase(Locale.ROOT) !in availablePackageNames
+        }
+        // A failed bulk query must not classify ordinary headless apps as hidden.
+        return runCatching {
+            getApplicationInfo(
+                packageName,
+                PackageManager.ApplicationInfoFlags.of(PackageManager.MATCH_DISABLED_COMPONENTS.toLong()),
+            )
+        }.exceptionOrNull() is PackageManager.NameNotFoundException
     }
 
     private val PRIVILEGED_PACKAGE_QUERY_COMMAND =
@@ -481,7 +528,7 @@ private val PACKAGE_NAME_PATTERN = Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*")
 
 private fun PackageManager.getApplicationInfoCompat(packageName: String): ApplicationInfo? {
     return runCatching {
-        getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0))
+        getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(gitHubInstalledAppQueryFlags))
     }.getOrNull()
 }
 
@@ -529,13 +576,17 @@ private fun shouldIgnoreInstalledApp(
     appInfo: ApplicationInfo,
     overlayFlagMask: Int,
 ): Boolean {
-    if (!appInfo.enabled) return true
+    // Hidden packages require MATCH_UNINSTALLED_PACKAGES, which also returns removed/archived apps.
     if ((appInfo.flags and ApplicationInfo.FLAG_INSTALLED) == 0) return true
     if ((appInfo.flags and ApplicationInfo.FLAG_HAS_CODE) == 0) return true
     if ((appInfo.flags and ApplicationInfo.FLAG_TEST_ONLY) != 0) return true
     if (overlayFlagMask != 0 && (appInfo.flags and overlayFlagMask) != 0) return true
     return false
 }
+
+internal val gitHubInstalledAppQueryFlags: Long =
+    PackageManager.MATCH_UNINSTALLED_PACKAGES.toLong() or
+        PackageManager.MATCH_DISABLED_COMPONENTS.toLong()
 
 private fun ApplicationInfo.isSystemAppForPicker(): Boolean {
     return (flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||

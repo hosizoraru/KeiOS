@@ -1,6 +1,8 @@
 package os.kei.feature.github.data.local
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
@@ -26,7 +28,13 @@ object AppIconCache {
     fun getOrLoad(context: Context, packageName: String): Bitmap? {
         get(packageName)?.let { return it }
         val bitmap = runCatching {
-            val drawable = context.packageManager.getApplicationIcon(packageName)
+            val packageManager = context.packageManager
+            val appInfo = packageManager.getApplicationInfo(
+                packageName,
+                PackageManager.ApplicationInfoFlags.of(gitHubInstalledAppQueryFlags),
+            )
+            if ((appInfo.flags and ApplicationInfo.FLAG_INSTALLED) == 0) return null
+            val drawable = packageManager.getApplicationIcon(appInfo)
             drawableToBitmap(drawable)
         }.getOrNull() ?: return null
         synchronized(cache) { cache.put(packageName, bitmap) }

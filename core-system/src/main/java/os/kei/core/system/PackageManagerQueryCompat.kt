@@ -31,7 +31,7 @@ fun PackageManager.queryLaunchablePackageInfos(
     flags: PackageManager.PackageInfoFlags = PackageManager.PackageInfoFlags.of(0)
 ): List<PackageInfo> {
     val launchIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-    return queryIntentActivities(launchIntent, PackageManager.ResolveInfoFlags.of(0))
+    return queryIntentActivities(launchIntent, PackageManager.ResolveInfoFlags.of(flags.value))
         .asSequence()
         .mapNotNull { it.activityInfo?.packageName?.trim() }
         .filter { it.isNotBlank() }

@@ -2,8 +2,8 @@ package os.kei.ui.page.main.github.install
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import java.io.File
+import os.kei.feature.github.data.local.GitHubInstalledAppRepository
 import os.kei.feature.github.model.GitHubInstalledPackageInfo
 
 /** What is installed under [packageName] right now, or null when nothing is. */
@@ -15,10 +15,7 @@ internal fun loadInstalledPackageInfo(
     if (normalizedPackageName.isBlank()) return null
     val packageInfo =
         runCatching {
-            context.packageManager.getPackageInfo(
-                normalizedPackageName,
-                PackageManager.PackageInfoFlags.of(0),
-            )
+            GitHubInstalledAppRepository.installedPackageInfoOrNull(context, normalizedPackageName)
         }.getOrNull() ?: return null
     val applicationInfo = packageInfo.applicationInfo
     return GitHubInstalledPackageInfo(

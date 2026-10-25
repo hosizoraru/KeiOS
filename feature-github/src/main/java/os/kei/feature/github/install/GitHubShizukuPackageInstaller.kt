@@ -13,6 +13,8 @@ import okhttp3.OkHttpClient
 import os.kei.core.concurrency.AppDispatchers
 import os.kei.core.io.SharedHttpClient
 import os.kei.core.log.AppLogger
+import os.kei.feature.github.data.local.GitHubInstalledAppRepository
+import os.kei.feature.github.data.local.gitHubInstalledAppQueryFlags
 import os.kei.feature.github.data.remote.GitHubReleaseAssetRepository
 import os.kei.feature.github.model.GitHubLookupStrategyOption
 
@@ -451,12 +453,12 @@ class GitHubShizukuPackageInstaller(
     ): InstalledPackageInfo? {
         val pm = context.packageManager
         val info = runCatching {
-            pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            GitHubInstalledAppRepository.installedPackageInfoOrNull(context, packageName)
         }.getOrNull() ?: return null
         val label = runCatching {
             val appInfo = info.applicationInfo ?: pm.getApplicationInfo(
                 packageName,
-                PackageManager.ApplicationInfoFlags.of(0)
+                PackageManager.ApplicationInfoFlags.of(gitHubInstalledAppQueryFlags)
             )
             pm.getApplicationLabel(appInfo).toString().trim()
         }.getOrDefault("")
