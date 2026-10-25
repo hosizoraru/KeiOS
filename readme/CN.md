@@ -50,6 +50,7 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
 - [Benchmark APK CI artifact](https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master)
 - [功能完整介绍](FEATURES_CN.md)
 - [构建指南](BUILD_CN.md)
+- [CI 工作流说明（EN）](../docs/build/github-actions.md)
 - [贡献指南](../CONTRIBUTING.md)
 - [安全策略](../SECURITY.md)
 
@@ -95,9 +96,17 @@ v1.19.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/ta
 
 ## 当前分发方式
 
+| 渠道 | 包名 | 签名 | 下载 |
+| --- | --- | --- | --- |
+| 稳定版 | `os.kei` | KeiOS Release | [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) |
+| Debug 预览版 | `os.kei.debug` | 公开 CI debug key | [Debug 制品](https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master) |
+| Benchmark 预览版 | `os.kei` | 公开 CI debug key | [Benchmark 制品](https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master) |
+
 - 稳定版安装包通过 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases) 发布。
-- 公开稳定版始终通过 [最新稳定版](https://github.com/hosizoraru/KeiOS/releases/latest) 获取。
-- [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) 已提供 KeiOS Release 签名 APK 与 SHA-256 校验文件。后续公开更新以稳定版入口为准，CI 包使用独立的签名证书。
+- [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) 已提供 KeiOS Release 签名 APK 与 SHA-256 校验文件，后续公开更新以稳定版入口为准。
+- Debug 可与稳定版共存。CI Benchmark 与稳定版使用相同包名、不同签名，不能直接覆盖已安装的稳定版。
+- CI APK 是开发预览包，保留 14 天；版本名包含 commit 数和短 SHA。job summary 分别提供完整源码 commit、APK SHA-256 与制品归档 SHA-256。
+  下载、手动构建和校验方法见 [CI 工作流说明（EN）](../docs/build/github-actions.md)。
 - 正式版基线：`os.kei`、`arm64-v8a`、Android 15+（`minSdk 35`）。
 - 运行与构建基线：`targetSdk=37`、Java 21、Gradle Wrapper `9.8.2`、Kotlin `2.4.21`、
   Compose `1.12.1`、Android Gradle Plugin `9.5.0-rc01`、Ktor `3.6.0`。
@@ -112,6 +121,8 @@ v1.19.0 已在 [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases/ta
 - [Release Notes v1.16.0](RELEASE_V1.16.0.md)
 - [Build Guide (EN)](BUILD.md)
 - [构建指南 (CN)](BUILD_CN.md)
+- [CI 工作流说明（EN）](../docs/build/github-actions.md)
+- [工程文档](../docs/README.md)
 - [Todo List (EN)](TODO.md)
 - [待办清单 (CN)](TODO_CN.md)
 - [行为准则](../CODE_OF_CONDUCT.md)

@@ -51,6 +51,7 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 - [Benchmark APK CI artifact](https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master)
 - [Feature Overview](readme/FEATURES.md)
 - [Build Guide](readme/BUILD.md)
+- [CI Workflow Guide](docs/build/github-actions.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
 
@@ -117,11 +118,22 @@ Read the full feature tour:
 
 ## Current Distribution
 
+| Channel | Package | Signing | Download |
+| --- | --- | --- | --- |
+| Stable | `os.kei` | KeiOS Release | [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest) |
+| Debug preview | `os.kei.debug` | Public CI debug key | [Debug artifacts](https://nightly.link/hosizoraru/KeiOS/workflows/ci-debug-apk/master) |
+| Benchmark preview | `os.kei` | Public CI debug key | [Benchmark artifacts](https://nightly.link/hosizoraru/KeiOS/workflows/ci-benchmark-apk/master) |
+
 - Stable APKs are published through [GitHub Releases](https://github.com/hosizoraru/KeiOS/releases).
-- The public stable channel always resolves through [Latest Stable Release](https://github.com/hosizoraru/KeiOS/releases/latest).
 - [v1.19.0](https://github.com/hosizoraru/KeiOS/releases/tag/v1.19.0) is published with the
   KeiOS Release-signed APK and a SHA-256 checksum. Use the stable-channel link for future
-  public updates; CI packages use their own signing certificate.
+  public updates.
+- Debug can be installed alongside Stable. CI Benchmark uses the Stable package name with a
+  different signing certificate, so it cannot update an installed Stable build in place.
+- CI APKs are development previews, retained for 14 days. Their version names include a commit
+  count and short SHA; their job summaries show the full source commit, APK SHA-256, and artifact
+  archive SHA-256. See the [CI Workflow Guide](docs/build/github-actions.md) for downloads,
+  manual builds, and verification.
 - Release package baseline: `os.kei`, `arm64-v8a`, Android 15+ (`minSdk 35`).
 - Runtime and build baseline: `targetSdk=37`, Java 21, Gradle Wrapper `9.8.2`, Kotlin `2.4.21`,
   Compose `1.12.1`, Android Gradle Plugin `9.5.0-rc01`, Ktor `3.6.0`.
@@ -136,6 +148,8 @@ Read the full feature tour:
 - [Release Notes v1.16.0](readme/RELEASE_V1.16.0.md)
 - [Build Guide (EN)](readme/BUILD.md)
 - [构建指南 (CN)](readme/BUILD_CN.md)
+- [CI Workflow Guide](docs/build/github-actions.md)
+- [Engineering Documentation](docs/README.md)
 - [Todo List (EN)](readme/TODO.md)
 - [待办清单 (CN)](readme/TODO_CN.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
