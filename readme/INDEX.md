@@ -9,6 +9,7 @@
 - [Build Guide (EN)](BUILD.md)
 - [构建指南 (CN)](BUILD_CN.md)
 - [CI Workflow Guide](../docs/build/github-actions.md)
+- [WebDAV Sync, Recovery and Nutstore / 坚果云同步与恢复](../feature-webdav/README.md)
 - [Engineering Documentation](../docs/README.md)
 - [Build Logic](../build-logic/README.md)
 - [Release Notes v1.19.0](RELEASE_V1.19.0.md)
@@ -36,6 +37,8 @@
   strategy/subscription tests, and screenshot-baseline workflow.
 - `../docs/build/github-actions.md`: CI triggers, manual inputs, package/signing choices,
   artifact checksums, reports, cancellation, and workflow maintenance.
+- `../feature-webdav/README.md`: synchronization and restore rules, Nutstore setup, protocol
+  ownership, compatibility, failure handling, and verification.
 - `../docs/README.md`: engineering documentation by ownership: build, performance, planning, and QA.
 - `../build-logic/README.md`: convention plugins, version/profile helpers, and included-build checks.
 - `RELEASE_V1.19.0.md`: bilingual update notes for BGM playback, launcher icons, imports, unfinished

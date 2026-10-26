@@ -79,6 +79,8 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
   query support.
 - JSON import and WebDAV sync for multi-schema KeiOS data migration, including GitHub/F-Droid
   tracking, OS card transfer data, BA multi-account data, previews, and routed result screens.
+  See [WebDAV recovery and Nutstore setup](feature-webdav/README.md) for merge, verified upload,
+  and cloud-authoritative restore behavior in current source.
 - BA office helpers for AP, cafe visit, arena refresh reminders, six-slot Craft Chamber timers,
   configurable one-tap dailies, per-account Quick Settings tiles and launcher shortcuts,
   server-aware calendar/pool data, Super Island notifications, and student-guide entry points.
