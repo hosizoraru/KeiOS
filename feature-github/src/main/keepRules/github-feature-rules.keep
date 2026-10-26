@@ -1,18 +1,10 @@
 # ---------- KeiOS GitHub feature R8 rules ----------
 # Shizuku managed install mirrors the vvb2060/InstallerX binder route:
 # system service binder -> ShizukuBinderWrapper -> hidden PackageInstaller interfaces.
-# Keep the tiny hidden-api and Shizuku bridge surfaces stable across benchmark/release R8.
--dontwarn dalvik.system.VMRuntime
+# core-system owns the shared HiddenApiBypass and ShizukuBinderWrapper rules and is
+# a required dependency. Only feature-specific platform references belong here.
 -dontwarn android.app.ContextImpl
 -dontwarn android.app.LoadedApk
--keep class org.lsposed.hiddenapibypass.LSPass { *; }
--keep class org.lsposed.hiddenapibypass.Helper { *; }
--keepclassmembers class org.lsposed.hiddenapibypass.Helper$* { *; }
--keepnames class org.lsposed.hiddenapibypass.CoreOjClassLoader
--keep class rikka.shizuku.ShizukuBinderWrapper {
-    public <init>(android.os.IBinder);
-    public android.os.IInterface queryLocalInterface(java.lang.String);
-}
 
 # Keep the managed install bridge readable in release-only device traces while R8 can still
 # optimize call bodies. The receiver is a manifest component; the registries build package-

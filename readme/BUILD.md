@@ -30,7 +30,8 @@ This repo keeps machine-specific paths and secrets out of VCS on purpose.
   Compose runtime: `1.12.1`; Ktor: `3.6.0`.
 - Release APKs read generated Baseline Profiles from `app/src/release/generated/baselineProfiles/`.
   The benchmark build wires the same profile directory so pre-release performance checks exercise
-  the release profile path.
+  the release profile path. `automaticGenerationDuringBuild = false` keeps device collection
+  separate from ordinary builds; compilation does not refresh an accepted profile.
 - Keep local JDK paths and tokens in untracked local config files.
 
 ### Shared Build Logic
@@ -150,6 +151,40 @@ It prints per-module totals and, when something failed, groups the failures by c
 listing them one by one — a systemic breakage arrives as hundreds of lines with one cause buried in
 each. `--slowest 10` ranks the slowest classes, `--all` shows every cause, `--module app` narrows
 it. Exit codes: 0 green, 1 failures.
+
+### Profile Preparation and R8 Rules
+
+Compile the collector and check its app tag contracts without installing or running it:
+
+```bash
+./gradlew :baselineprofile:compileNonMinifiedReleaseKotlin \
+  :app:testDebugUnitTest --tests os.kei.ui.testing.BaselineProfileTestTagContractTest
+python3 -m unittest scripts.qa.tests.test_baseline_profile_rules
+```
+
+The collector still has six journeys and a 16-replay maximum. Changes to those journeys are
+preparation for the next explicit capture, not evidence that generated profiles are current.
+The [coverage plan](../docs/planning/baseline-profile-coverage.md) lists the paths and acceptance
+gates. Keep generated profile text and capture provenance unchanged until collection succeeds.
+
+Release adds `app/proguard-rules.pro` to AGP's optimized defaults. AGP also discovers each
+module's `src/main/keepRules/*.keep`; shared HiddenApiBypass/Shizuku rules belong to
+`core-system`, which `feature-github` depends on. Rules for persisted enum names protect only
+constant fields while allowing methods and helper fields to optimize. WebDAV also needs stable
+names on both enums used by its app/module status conversion.
+
+```bash
+./gradlew :app:analyzeReleaseR8Config
+./gradlew :app:assembleRelease
+```
+
+The standalone analyzer writes `app/build/reports/r8/r8-config-analyzer-release.html`.
+The release build writes the merged configuration and mapping under
+`app/build/outputs/mapping/release/`, plus its analyzer report as `configanalyzer.html`.
+Use these to verify the actual inputs and retained names, alongside the signed APK and its
+packaged ART profile. Analyzer scores describe keep-rule constraints; they are not frame-time
+or startup measurements. See Android's [R8 Configuration Analyzer](https://developer.android.com/topic/performance/app-optimization/r8-configuration-analyzer)
+and [keep-rule modifiers](https://developer.android.com/topic/performance/app-optimization/add-keep-rules).
 
 ### Validation AVDs
 

@@ -1,52 +1,102 @@
 # ---------- KeiOS R8 baseline ----------
-# Keep enum member names stable only where stores or protocol payloads persist enum.name.
--keepclassmembernames enum os.kei.core.prefs.AppThemeMode { *; }
--keepclassmembernames enum os.kei.feature.home.model.HomeOverviewCard { *; }
--keepclassmembernames enum os.kei.ui.page.main.model.BottomPage { *; }
--keepclassmembernames enum os.kei.ui.page.main.os.OsSectionCard { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubDirectApkRemoteHealth { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubReleaseChannel { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubRepositoryProfilePurpose { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubRepositoryProfileCapability { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubRepositoryProfileSource { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubRepositoryProfileAvailabilityStatus { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubRepositoryProfileConfidence { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubStarImportQuality { *; }
--keepclassmembernames enum os.kei.feature.github.model.GitHubStarImportApkVerificationStatus { *; }
--keepclassmembernames enum os.kei.ui.page.main.github.importer.StarImportViewFilter { *; }
--keepclassmembernames enum os.kei.ui.page.main.github.importer.StarImportConflictStrategy { *; }
--keepclassmembernames enum os.kei.ui.page.main.github.importer.StarImportUiSource { *; }
--keepclassmembernames enum os.kei.ui.page.main.github.share.GitHubShareImportPhase { *; }
--keepclassmembernames enum os.kei.ui.page.main.student.catalog.BaGuideCatalogTab { *; }
--keepclassmembernames enum os.kei.ui.page.main.student.catalog.component.BaGuideBgmQueueMode { *; }
--keepclassmembernames enum os.kei.mcp.server.McpToolExecutionProfile { *; }
+# Keep only enum constant names used by stores and protocols. Methods, enum helper
+# fields and class names remain available for optimization and obfuscation.
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.core.prefs.AppThemeMode {
+    public static final os.kei.core.prefs.AppThemeMode *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.home.model.HomeOverviewCard {
+    public static final os.kei.feature.home.model.HomeOverviewCard *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.model.BottomPage {
+    public static final os.kei.ui.page.main.model.BottomPage *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.os.OsSectionCard {
+    public static final os.kei.ui.page.main.os.OsSectionCard *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubDirectApkRemoteHealth {
+    public static final os.kei.feature.github.model.GitHubDirectApkRemoteHealth *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubReleaseChannel {
+    public static final os.kei.feature.github.model.GitHubReleaseChannel *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubRepositoryProfilePurpose {
+    public static final os.kei.feature.github.model.GitHubRepositoryProfilePurpose *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubRepositoryProfileCapability {
+    public static final os.kei.feature.github.model.GitHubRepositoryProfileCapability *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubRepositoryProfileSource {
+    public static final os.kei.feature.github.model.GitHubRepositoryProfileSource *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubRepositoryProfileAvailabilityStatus {
+    public static final os.kei.feature.github.model.GitHubRepositoryProfileAvailabilityStatus *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubRepositoryProfileConfidence {
+    public static final os.kei.feature.github.model.GitHubRepositoryProfileConfidence *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubStarImportQuality {
+    public static final os.kei.feature.github.model.GitHubStarImportQuality *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.github.model.GitHubStarImportApkVerificationStatus {
+    public static final os.kei.feature.github.model.GitHubStarImportApkVerificationStatus *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.github.importer.StarImportViewFilter {
+    public static final os.kei.ui.page.main.github.importer.StarImportViewFilter *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.github.importer.StarImportConflictStrategy {
+    public static final os.kei.ui.page.main.github.importer.StarImportConflictStrategy *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.github.importer.StarImportUiSource {
+    public static final os.kei.ui.page.main.github.importer.StarImportUiSource *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.github.share.GitHubShareImportPhase {
+    public static final os.kei.ui.page.main.github.share.GitHubShareImportPhase *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.student.catalog.BaGuideCatalogTab {
+    public static final os.kei.ui.page.main.student.catalog.BaGuideCatalogTab *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.student.catalog.component.BaGuideBgmQueueMode {
+    public static final os.kei.ui.page.main.student.catalog.component.BaGuideBgmQueueMode *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.mcp.server.McpToolExecutionProfile {
+    public static final os.kei.mcp.server.McpToolExecutionProfile *;
+}
 
-# WebDavSyncItem and WebDavProvider enum constant names are persisted as MMKV key
-# suffixes (`enabled_<name>`, `last_sync_<name>`, etc.) and as the saved provider id
-# (`WebDavSyncStore.saveConfig` writes `provider.name`). Renaming would orphan user data
-# on every release. Keep the names, allow class-name obfuscation and member optimization.
--keepclassmembernames enum os.kei.ui.page.main.sync.WebDavSyncItem { *; }
--keepclassmembernames enum os.kei.ui.page.main.sync.WebDavProvider { *; }
-
-# dav4jvm WebDAV library
-#
-# Confirmed via bytecode scan of dav4jvm-main-SNAPSHOT.jar (no Class.forName, no
-# ServiceLoader, no getDeclared*): the property pipeline is fully statically traceable.
-# `PropertyRegistry.<clinit>` references every `<Property>$Factory.INSTANCE` via
-# `getstatic`, and the XML parser invokes `Factory.create()` via the `PropertyFactory`
-# interface — both paths R8 follows on its own. The previous broad keep rules
-# (`Property`, `PropertyFactory`, `extends PropertyFactory`, and `property.**`) were
-# redundant and the `extends` rule matched zero classes (factories implement, not
-# extend, the interface). They were dropped after a release build verified the
-# property graph is still reached transitively.
+# WebDAV stores enum names in MMKV keys, provider/state values and history identifiers.
+# The two outcome enums also cross the app/module boundary through valueOf(status.name).
+# Preserve constant names on both sides while allowing unused members to shrink.
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavSyncItem {
+    public static final os.kei.ui.page.main.sync.WebDavSyncItem *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavProvider {
+    public static final os.kei.ui.page.main.sync.WebDavProvider *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavSyncPendingState {
+    public static final os.kei.ui.page.main.sync.WebDavSyncPendingState *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavAutoSyncStatus {
+    public static final os.kei.ui.page.main.sync.WebDavAutoSyncStatus *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavSyncHistorySource {
+    public static final os.kei.ui.page.main.sync.WebDavSyncHistorySource *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavSyncHistoryKind {
+    public static final os.kei.ui.page.main.sync.WebDavSyncHistoryKind *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.ui.page.main.sync.WebDavItemStatus {
+    public static final os.kei.ui.page.main.sync.WebDavItemStatus *;
+}
+-keepclassmembers,allowshrinking,allowoptimization enum os.kei.feature.webdav.sync.WebDavSyncStatus {
+    public static final os.kei.feature.webdav.sync.WebDavSyncStatus *;
+}
 
 # Keep internal component class names stable for manifest lookups and About-page introspection.
 # This covers future KeiOS activities/services/receivers/providers without needing manual updates.
--keepnames class os.kei.** extends android.app.Application
--keepnames class os.kei.** extends android.app.Activity
--keepnames class os.kei.** extends android.app.Service
--keepnames class os.kei.** extends android.content.BroadcastReceiver
--keepnames class os.kei.** extends android.content.ContentProvider
+-keep,allowshrinking,allowoptimization class os.kei.** extends android.app.Application
+-keep,allowshrinking,allowoptimization class os.kei.** extends android.app.Activity
+-keep,allowshrinking,allowoptimization class os.kei.** extends android.app.Service
+-keep,allowshrinking,allowoptimization class os.kei.** extends android.content.BroadcastReceiver
+-keep,allowshrinking,allowoptimization class os.kei.** extends android.content.ContentProvider
 
 # Keep Miuix Nav route key type and Kotlin serialization entry points.
 # Route classes are referenced directly by entry<T>; keep only restore/serializer anchors.
