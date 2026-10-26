@@ -1,6 +1,6 @@
 package os.kei.ui.page.main.os.shell
 
-import com.tencent.mmkv.MMKV
+import os.kei.ui.page.main.os.store.OsCardKeyValueStore
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import os.kei.core.json.encodeCompact
@@ -11,7 +11,7 @@ internal object OsShellCommandBuiltInMerge {
     fun appendMissingBuiltInShellCommandCards(
         cards: List<OsShellCommandCard>,
         builtInShellCommandCards: List<OsShellCommandCard>,
-        store: MMKV,
+        store: OsCardKeyValueStore,
         persistCards: (List<OsShellCommandCard>) -> Unit,
     ): List<OsShellCommandCard> {
         val builtIns = builtInShellCommandCards.mapNotNull(OsShellCommandCardCodec::normalizeCard)
@@ -35,7 +35,7 @@ internal object OsShellCommandBuiltInMerge {
         return normalized
     }
 
-    fun readDeletedBuiltInShellCardIds(store: MMKV): Set<String> {
+    fun readDeletedBuiltInShellCardIds(store: OsCardKeyValueStore): Set<String> {
         val raw = store.decodeString(OS_SHELL_COMMAND_CARD_KEY_DELETED_BUILT_INS).orEmpty().trim()
         if (raw.isBlank()) return emptySet()
         return runCatching {
@@ -50,7 +50,7 @@ internal object OsShellCommandBuiltInMerge {
     }
 
     fun persistDeletedBuiltInShellCardIds(
-        store: MMKV,
+        store: OsCardKeyValueStore,
         ids: Set<String>,
     ) {
         val normalized = ids.filter { id -> id in BUILT_IN_SHELL_COMMAND_CARD_IDS }.sorted()

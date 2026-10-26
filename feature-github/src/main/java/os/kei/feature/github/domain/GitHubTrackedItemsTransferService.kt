@@ -5,6 +5,12 @@ import os.kei.feature.github.data.local.GitHubTrackedItemsImportPayload
 import os.kei.feature.github.data.local.GitHubTrackedItemsOptionCounts
 import os.kei.feature.github.data.local.GitHubTrackedItemsSourceCounts
 import os.kei.feature.github.model.GitHubTrackedApp
+import os.kei.feature.github.model.GitHubTrackChangeHistorySource
+import os.kei.feature.github.data.local.GitHubTrackStoreSignals
+import os.kei.feature.github.data.local.GitHubApkManifestInfoCacheStore
+import os.kei.feature.github.data.local.GitHubReleaseAssetCacheStore
+import os.kei.feature.github.data.local.GitHubStarImportApkVerificationCacheStore
+import os.kei.feature.github.data.local.fdroid.FdroidMetadataSidecarStore
 
 data class GitHubTrackedItemsImportPreview(
     val payload: GitHubTrackedItemsImportPayload,
@@ -31,6 +37,26 @@ data class GitHubTrackedItemsImportPreview(
 }
 
 object GitHubTrackedItemsTransferService {
+    fun replaceFromSync(payload: GitHubTrackedItemsImportPayload, onRefreshNeeded: () -> Unit) {
+        require(payload.invalidCount == 0) { "The backup contains invalid tracking entries" }
+        val previous = GitHubTrackStore.load()
+        GitHubTrackStore.save(payload.items)
+        val affectedIds = (previous + payload.items).map { it.id }.toSet()
+        GitHubTrackStore.removeCheckCacheEntries(affectedIds)
+        affectedIds.forEach(FdroidMetadataSidecarStore::clear)
+        GitHubReleaseAssetCacheStore.clearAll()
+        GitHubApkManifestInfoCacheStore.clearAll()
+        GitHubStarImportApkVerificationCacheStore.clearAll()
+        GitHubTrackChangeHistoryService().recordChangesBlocking(
+            previousItems = previous,
+            nextItems = payload.items,
+            source = GitHubTrackChangeHistorySource.Import,
+            changedAtMillis = System.currentTimeMillis(),
+        )
+        GitHubTrackStoreSignals.notifyChanged()
+        onRefreshNeeded()
+    }
+
     fun loadItems(): List<GitHubTrackedApp> =
         GitHubTrackStore.load()
 

@@ -1,13 +1,16 @@
 package os.kei.ui.page.main.os.shortcut
 
-import com.tencent.mmkv.MMKV
-import os.kei.core.prefs.KeiMmkv
+import os.kei.ui.page.main.os.store.OsCardKeyValueStore
+import os.kei.ui.page.main.os.store.MmkvOsCardKeyValueStore
 import os.kei.ui.page.main.os.OsGoogleSystemServiceConfig
 import os.kei.ui.page.main.os.OsShortcutCardStore
 
-internal class OsActivityShortcutCardPersistence {
-    private val store: MMKV by lazy { KeiMmkv.byId(OS_ACTIVITY_SHORTCUT_CARD_KV_ID) }
-    private val legacyStore: MMKV by lazy { KeiMmkv.byId(OS_ACTIVITY_SHORTCUT_CARD_LEGACY_KV_ID) }
+internal class OsActivityShortcutCardPersistence(
+    private val store: OsCardKeyValueStore = MmkvOsCardKeyValueStore(OS_ACTIVITY_SHORTCUT_CARD_KV_ID),
+    private val legacyStore: OsCardKeyValueStore = MmkvOsCardKeyValueStore(OS_ACTIVITY_SHORTCUT_CARD_LEGACY_KV_ID),
+    private val saveLegacyConfig: (OsGoogleSystemServiceConfig, OsGoogleSystemServiceConfig) -> Unit =
+        OsShortcutCardStore::saveGoogleSystemServiceConfig,
+) {
 
     fun loadCards(
         defaults: OsGoogleSystemServiceConfig,
@@ -15,6 +18,14 @@ internal class OsActivityShortcutCardPersistence {
         builtInActivityShortcutCards: List<OsActivityShortcutCard>,
     ): List<OsActivityShortcutCard> {
         val persistedRaw = store.decodeString(OS_ACTIVITY_SHORTCUT_CARD_KEY_CARDS).orEmpty().trim()
+        if (store.decodeBool(KEY_AUTHORITATIVE_SNAPSHOT, false)) {
+            return OsActivityShortcutCardMigration.migrateBuiltInActivityShortcutCards(
+                cards = OsActivityShortcutCardCodec.decodeCards(persistedRaw, defaults),
+                builtInSampleDefaults = builtInSampleDefaults,
+                builtInActivityShortcutCards = builtInActivityShortcutCards,
+                appendMissingBuiltIns = false,
+            )
+        }
         if (persistedRaw.isNotBlank()) {
             decodeAndPersistMigratedCards(
                 raw = persistedRaw,
@@ -59,8 +70,17 @@ internal class OsActivityShortcutCardPersistence {
         store.encode(OS_ACTIVITY_SHORTCUT_CARD_KEY_CARDS, OsActivityShortcutCardCodec.encodeCards(normalized))
         legacyStore.removeValueForKey(OS_ACTIVITY_SHORTCUT_CARD_KEY_CARDS)
         normalized.firstOrNull()?.let { first ->
-            OsShortcutCardStore.saveGoogleSystemServiceConfig(first.config, defaults)
+            saveLegacyConfig(first.config, defaults)
         }
+    }
+
+    fun replaceFromSync(cards: List<OsActivityShortcutCard>, defaults: OsGoogleSystemServiceConfig) {
+        saveCards(cards, defaults)
+        store.encode(KEY_AUTHORITATIVE_SNAPSHOT, true)
+    }
+
+    private companion object {
+        const val KEY_AUTHORITATIVE_SNAPSHOT = "authoritative_sync_snapshot"
     }
 
     private fun decodeAndPersistMigratedCards(

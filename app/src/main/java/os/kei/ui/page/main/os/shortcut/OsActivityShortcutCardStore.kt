@@ -10,6 +10,9 @@ import os.kei.ui.page.main.os.transfer.parseOsCardImportRoot
 internal object OsActivityShortcutCardStore {
     private val persistence = OsActivityShortcutCardPersistence()
 
+    fun replaceFromSync(cards: List<OsActivityShortcutCard>, defaults: OsGoogleSystemServiceConfig) =
+        persistence.replaceFromSync(cards, defaults)
+
     fun loadCards(
         defaults: OsGoogleSystemServiceConfig = OsGoogleSystemServiceConfig(),
         builtInSampleDefaults: OsGoogleSystemServiceConfig,

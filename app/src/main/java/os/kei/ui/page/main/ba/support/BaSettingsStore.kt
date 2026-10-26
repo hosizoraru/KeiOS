@@ -188,6 +188,20 @@ internal object BASettingsStore {
 
     fun countAccountsSyncJson(raw: String): Int = countBaAccountsExportJson(raw)
 
+    fun replaceAccountsSyncJson(raw: String) {
+        val payload = parseBaAccountsExportJson(raw)
+        val store = migratedAccountStore()
+        store.replaceAll(payload.accounts, payload.activeAccountId, payload.activeAccountUpdatedAtMs)
+        store.saveAllAccountsFollowGlobalNotificationSettingsFromSync(
+            payload.allAccountsFollowGlobalNotificationSettings,
+            payload.allAccountsFollowGlobalNotificationSettingsUpdatedAtMs,
+        )
+        store.saveGlobalReminderSettingsFromSync(
+            payload.globalReminderSettings, payload.globalReminderSettingsUpdatedAtMs,
+        )
+        notifyChanged()
+    }
+
     fun selectActiveAccount(accountId: BaAccountId): Boolean {
         val selected = migratedAccountStore().selectActiveAccount(accountId)
         if (selected) {

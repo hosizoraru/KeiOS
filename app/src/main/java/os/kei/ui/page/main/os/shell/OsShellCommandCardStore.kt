@@ -9,6 +9,8 @@ import os.kei.ui.page.main.os.transfer.parseOsCardImportRoot
 internal object OsShellCommandCardStore {
     private val persistence = OsShellCommandCardPersistence()
 
+    fun replaceFromSync(cards: List<OsShellCommandCard>) = persistence.replaceFromSync(cards)
+
     fun loadCards(builtInShellCommandCards: List<OsShellCommandCard> = emptyList()): List<OsShellCommandCard> =
         persistence.loadCards(builtInShellCommandCards)
 

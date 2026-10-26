@@ -48,12 +48,18 @@ internal fun parseBaAccountsExportJson(raw: String): BaAccountsTransferPayload =
 internal fun countBaAccountsExportJson(raw: String): Int =
     parseBaAccountsExportJson(raw).accounts.size
 
-internal fun buildBaAccountsSyncFingerprintJson(raw: String): String =
-    KeiJson.pretty.encodeToString(
-        parseBaAccountsExportJson(raw)
-            .copy(exportedAtMs = 0L)
-            .normalized(),
+internal fun buildBaAccountsSyncFingerprintJson(raw: String): String {
+    val payload = parseBaAccountsExportJson(raw)
+    // Match replaceAll's active-account repair without changing timestamp-based merge policy.
+    val active = payload.activeAccountId ?: payload.accounts.firstOrNull()?.profile?.id
+    return KeiJson.pretty.encodeToString(
+        payload.copy(
+            exportedAtMs = 0L,
+            activeAccountId = active,
+            activeAccountUpdatedAtMs = if (active == null) 0L else payload.activeAccountUpdatedAtMs,
+        ),
     )
+}
 
 internal fun mergeBaAccountsForSync(
     local: BaAccountStoreSnapshot,

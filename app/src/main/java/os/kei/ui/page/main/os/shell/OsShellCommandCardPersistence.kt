@@ -1,10 +1,11 @@
 package os.kei.ui.page.main.os.shell
 
-import com.tencent.mmkv.MMKV
-import os.kei.core.prefs.KeiMmkv
+import os.kei.ui.page.main.os.store.OsCardKeyValueStore
+import os.kei.ui.page.main.os.store.MmkvOsCardKeyValueStore
 
-internal class OsShellCommandCardPersistence {
-    private val store: MMKV by lazy { KeiMmkv.byId(OS_SHELL_COMMAND_CARD_KV_ID) }
+internal class OsShellCommandCardPersistence(
+    private val store: OsCardKeyValueStore = MmkvOsCardKeyValueStore(OS_SHELL_COMMAND_CARD_KV_ID),
+) {
     private val storeLock = Any()
     private var cachedCards: List<OsShellCommandCard>? = null
 
@@ -18,6 +19,12 @@ internal class OsShellCommandCardPersistence {
         synchronized(storeLock) {
             persistCardsLocked(cards.mapNotNull(OsShellCommandCardCodec::normalizeCard))
         }
+    }
+
+    fun replaceFromSync(cards: List<OsShellCommandCard>) = synchronized(storeLock) {
+        persistCardsLocked(cards.mapNotNull(OsShellCommandCardCodec::normalizeCard))
+        clearLegacySnapshot()
+        store.encode(KEY_AUTHORITATIVE_SNAPSHOT, true)
     }
 
     fun createCard(
@@ -149,6 +156,11 @@ internal class OsShellCommandCardPersistence {
     }
 
     private fun readCachedCardsLocked(builtInShellCommandCards: List<OsShellCommandCard> = emptyList()): List<OsShellCommandCard> {
+        if (store.decodeBool(KEY_AUTHORITATIVE_SNAPSHOT, false)) {
+            return cachedCards ?: OsShellCommandCardCodec.decodeCards(
+                store.decodeString(OS_SHELL_COMMAND_CARD_KEY_CARDS).orEmpty(),
+            ).also { cachedCards = it }
+        }
         cachedCards?.let { cached ->
             return appendMissingBuiltInsLocked(
                 cards = cached,
@@ -183,6 +195,10 @@ internal class OsShellCommandCardPersistence {
             cards = emptyList(),
             builtInShellCommandCards = builtInShellCommandCards,
         )
+    }
+
+    private companion object {
+        const val KEY_AUTHORITATIVE_SNAPSHOT = "authoritative_sync_snapshot"
     }
 
     private fun persistCardsLocked(cards: List<OsShellCommandCard>) {

@@ -164,6 +164,16 @@ internal object GuideBgmFavoriteStore {
         }
     }
 
+    fun replaceFavoritesFromSync(raw: String) {
+        val imported = parseFavoritesImport(raw)
+        synchronized(lock) {
+            ensureLoadedLocked()
+            val frozen = sortedUniqueFavorites(imported)
+            saveFavoritesLocked(frozen)
+            favoritesState.value = frozen
+        }
+    }
+
     fun previewFavoritesJsonImport(raw: String): GuideBgmFavoriteImportPreview {
         val imported = parseFavoritesImport(raw)
         if (imported.isEmpty()) {
@@ -223,7 +233,7 @@ internal object GuideBgmFavoriteStore {
                         note = item.optString("note").trim(),
                         favoritedAtMs = item.optLong("favoritedAtMs", 0L).coerceAtLeast(0L)
                     )
-                    normalizeFavorite(favorite)?.let(::add)
+                    normalizeFavorite(favorite, nowMs = 1L)?.let(::add)
                 }
             }.let(::sortedUniqueFavorites)
         }.getOrDefault(emptyList())
@@ -311,7 +321,7 @@ internal object GuideBgmFavoriteStore {
                         note = item.optString("note").trim(),
                         favoritedAtMs = item.optLong("favoritedAtMs", 0L).coerceAtLeast(0L)
                     )
-                    normalizeFavorite(favorite)?.let(::add)
+                    normalizeFavorite(favorite, nowMs = 1L)?.let(::add)
                 }
             }.let(::sortedUniqueFavorites)
         }.getOrDefault(emptyList())
