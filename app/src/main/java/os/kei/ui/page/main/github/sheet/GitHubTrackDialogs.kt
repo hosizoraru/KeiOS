@@ -4,11 +4,14 @@ package os.kei.ui.page.main.github.sheet
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
@@ -17,22 +20,28 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import os.kei.R
 import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.GitHubStatusPalette
 import os.kei.ui.page.main.github.page.GitHubTrackImportPreview
-import os.kei.ui.page.main.widget.core.MiuixInfoItem
+import os.kei.ui.page.main.widget.core.AppStatusPillSize
 import os.kei.ui.page.main.widget.dialog.AppDialogDimensions
 import os.kei.ui.page.main.widget.dialog.AppWindowDialogHost
 import os.kei.ui.page.main.widget.dialog.LiquidActionRole
 import os.kei.ui.page.main.widget.dialog.LiquidActionSheet
 import os.kei.ui.page.main.widget.dialog.LiquidPresentationAction
 import os.kei.ui.page.main.widget.glass.AppLiquidDialogActionButton
-import os.kei.ui.page.main.widget.glass.GlassVariant
-import os.kei.ui.page.main.widget.sheet.SheetSectionCard
+import os.kei.ui.page.main.widget.status.StatusPill
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import java.text.NumberFormat
+
+private val GitHubImportStatisticsMaxHeight = 360.dp
+internal const val GITHUB_IMPORT_STATISTICS_TEST_TAG = "github_import_statistics"
 
 @Stable
 internal class GitHubTrackDialogExitSnapshot<T : Any>(
@@ -177,185 +186,49 @@ internal fun GitHubTrackImportDialogContent(
     onCancel: () -> Unit,
     onConfirmImport: () -> Unit,
 ) {
+    val neutral = MiuixTheme.colorScheme.onBackgroundVariant
+    val statistics = buildList {
+        add(ImportStatistic(R.string.github_import_dialog_label_file_items, preview.fileItemCount, neutral))
+        add(ImportStatistic(R.string.github_import_dialog_label_valid_items, preview.validCount, GitHubStatusPalette.Active))
+        add(ImportStatistic(R.string.github_import_dialog_label_duplicate_items, preview.duplicateCount, GitHubStatusPalette.PreRelease))
+        add(ImportStatistic(R.string.github_import_dialog_label_invalid_items, preview.invalidCount, GitHubStatusPalette.Error))
+        add(ImportStatistic(R.string.github_import_dialog_label_new_items, preview.newCount, GitHubStatusPalette.Update))
+        add(ImportStatistic(R.string.github_import_dialog_label_updated_items, preview.updatedCount, GitHubStatusPalette.Active))
+        add(ImportStatistic(R.string.github_import_dialog_label_unchanged_items, preview.unchangedCount, neutral))
+        add(ImportStatistic(R.string.github_import_dialog_label_merged_items, preview.mergedCount, GitHubStatusPalette.Stable))
+        if (preview.hasSourceBreakdown) {
+            add(ImportStatistic(R.string.github_import_dialog_label_github_items, preview.githubRepositoryCount, GitHubStatusPalette.Cache))
+            add(ImportStatistic(R.string.github_import_dialog_label_git_items, preview.gitRepositoryCount, GitHubStatusPalette.PreRelease))
+            add(ImportStatistic(R.string.github_import_dialog_label_direct_apk_items, preview.directApkCount, GitHubStatusPalette.Active))
+            add(ImportStatistic(R.string.github_import_dialog_label_fdroid_items, preview.fdroidRepositoryCount, GitHubStatusPalette.Install))
+        }
+    }
+    val options = if (preview.hasImportedProjectOptions) {
+        listOf(
+            ImportStatistic(R.string.github_import_dialog_label_project_options, preview.importedProjectOptionCount, GitHubStatusPalette.Cache),
+            ImportStatistic(R.string.github_import_dialog_label_pre_release_items, preview.preferPreReleaseCount, GitHubStatusPalette.PreRelease),
+            ImportStatistic(R.string.github_import_dialog_label_actions_items, preview.actionsUpdateCount, GitHubStatusPalette.Cache),
+            ImportStatistic(R.string.github_import_dialog_label_update_interval_items, preview.updateIntervalOverrideCount, GitHubStatusPalette.Stable),
+            ImportStatistic(R.string.github_import_dialog_label_precise_items, preview.preciseApkVersionOverrideCount, GitHubStatusPalette.Active),
+            ImportStatistic(R.string.github_import_dialog_label_download_items, preview.latestReleaseDownloadCount, GitHubStatusPalette.Update),
+        )
+    } else emptyList()
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Spacer(modifier = Modifier.height(4.dp))
-        SheetSectionCard(
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-            verticalSpacing = 6.dp,
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .heightIn(max = GitHubImportStatisticsMaxHeight)
+                .verticalScroll(rememberScrollState())
+                .testTag(GITHUB_IMPORT_STATISTICS_TEST_TAG),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_file_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.fileItemCount,
-                    ),
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_valid_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.validCount,
-                    ),
-                valueColor = GitHubStatusPalette.Active,
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_duplicate_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.duplicateCount,
-                    ),
-                valueColor = GitHubStatusPalette.PreRelease,
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_invalid_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.invalidCount,
-                    ),
-                valueColor = GitHubStatusPalette.Error,
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_new_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.newCount,
-                    ),
-                valueColor = GitHubStatusPalette.Update,
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_updated_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.updatedCount,
-                    ),
-                valueColor = GitHubStatusPalette.Active,
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_unchanged_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.unchangedCount,
-                    ),
-                valueColor = MiuixTheme.colorScheme.onBackgroundVariant,
-            )
-            MiuixInfoItem(
-                key = stringResource(R.string.github_import_dialog_label_merged_items),
-                value =
-                    stringResource(
-                        R.string.github_check_sheet_value_track_count,
-                        preview.mergedCount,
-                    ),
-                valueColor = GitHubStatusPalette.Stable,
-            )
-            if (preview.hasSourceBreakdown) {
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_github_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.githubRepositoryCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Cache,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_git_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.gitRepositoryCount,
-                        ),
-                    valueColor = GitHubStatusPalette.PreRelease,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_direct_apk_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.directApkCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Active,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_fdroid_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.fdroidRepositoryCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Install,
-                )
-            }
-        }
-        if (preview.hasImportedProjectOptions) {
-            SheetSectionCard(
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-                verticalSpacing = 6.dp,
-            ) {
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_project_options),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.importedProjectOptionCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Cache,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_pre_release_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.preferPreReleaseCount,
-                        ),
-                    valueColor = GitHubStatusPalette.PreRelease,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_actions_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.actionsUpdateCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Cache,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_update_interval_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.updateIntervalOverrideCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Stable,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_precise_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.preciseApkVersionOverrideCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Active,
-                )
-                MiuixInfoItem(
-                    key = stringResource(R.string.github_import_dialog_label_download_items),
-                    value =
-                        stringResource(
-                            R.string.github_check_sheet_value_track_count,
-                            preview.latestReleaseDownloadCount,
-                        ),
-                    valueColor = GitHubStatusPalette.Update,
-                )
-            }
+            ImportStatisticsFlow(statistics)
+            if (options.isNotEmpty()) ImportStatisticsFlow(options)
         }
         GitHubTrackImportDialogActions(
             canImport = preview.canImport,
@@ -365,6 +238,30 @@ internal fun GitHubTrackImportDialogContent(
             onCancel = onCancel,
             onConfirmImport = onConfirmImport,
         )
+    }
+}
+
+private data class ImportStatistic(val label: Int, val count: Int, val color: Color)
+
+@Composable
+private fun ImportStatisticsFlow(statistics: List<ImportStatistic>) {
+    val locale = LocalConfiguration.current.locales[0]
+    val formatter = remember(locale) { NumberFormat.getIntegerInstance(locale) }
+    val neutral = MiuixTheme.colorScheme.onBackgroundVariant
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        statistics.forEach { statistic ->
+            val isNeutral = statistic.count == 0 || statistic.color == neutral
+            StatusPill(
+                label = "${stringResource(statistic.label)}  ${formatter.format(statistic.count)}",
+                color = if (isNeutral) neutral else statistic.color,
+                contentColorOverride = if (isNeutral) MiuixTheme.colorScheme.onBackground else null,
+                size = AppStatusPillSize.Compact,
+            )
+        }
     }
 }
 
@@ -384,6 +281,7 @@ internal fun GitHubTrackImportDialogActions(
         AppLiquidDialogActionButton(
             modifier = Modifier.weight(1f),
             text = stringResource(R.string.common_cancel),
+            textColor = MiuixTheme.colorScheme.onBackground,
             onClick = onCancel,
             enabled = actionsEnabled && !importInProgress,
         )
@@ -396,6 +294,7 @@ internal fun GitHubTrackImportDialogActions(
                     else -> stringResource(R.string.common_close)
                 },
             containerColor = if (canImport) GitHubStatusPalette.Active else null,
+            textColor = MiuixTheme.colorScheme.onBackground,
             onClick = if (canImport) onConfirmImport else onDismissRequest,
             enabled = actionsEnabled && !importInProgress,
         )

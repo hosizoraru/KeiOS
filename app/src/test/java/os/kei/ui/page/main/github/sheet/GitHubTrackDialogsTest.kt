@@ -10,6 +10,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -19,8 +20,12 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
@@ -34,12 +39,14 @@ import os.kei.feature.github.model.GitHubTrackedApp
 import os.kei.ui.page.main.github.page.GitHubTrackImportPreview
 import os.kei.ui.page.main.widget.dialog.LiquidGlassDialog
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
+import os.kei.ui.page.main.widget.support.LocalTextCopyExpandedOverride
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -171,6 +178,68 @@ class GitHubTrackDialogsTest {
         assertNull(assertNotNull(observedSnapshot).retainedValue)
         assertEquals(1, cancelCount)
         assertEquals(1, confirmCount)
+    }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h760dp-xxhdpi")
+    fun richImportPreviewKeepsActionsVisibleAndAllStatisticsReachable() {
+        assertRichImportPreview()
+    }
+
+    @Test
+    @Config(qualifiers = "ja-rJP-w320dp-h640dp-xxhdpi")
+    fun richImportPreviewFitsJapaneseOnAShortNarrowScreen() {
+        assertRichImportPreview()
+    }
+
+    private fun assertRichImportPreview() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val preview =
+            readyImportPreview().copy(
+                fileItemCount = 41,
+                validCount = 41,
+                newCount = 40,
+                updatedCount = 1,
+                mergedCount = 41,
+                githubRepositoryCount = 39,
+                directApkCount = 2,
+                preferPreReleaseCount = 7,
+                actionsUpdateCount = 12,
+            )
+        var confirms = 0
+        val confirm = context.getString(R.string.github_import_dialog_action_confirm)
+        val cancel = context.getString(R.string.common_cancel)
+        val lastStatistic = context.getString(R.string.github_import_dialog_label_download_items)
+
+        composeRule.setContent {
+            val density = LocalDensity.current
+            MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, 1.5f),
+                    LocalTransitionAnimationsEnabled provides false,
+                    LocalTextCopyExpandedOverride provides false,
+                ) {
+                    GitHubTrackImportDialog(
+                        preview = preview,
+                        importInProgress = false,
+                        onDismissRequest = {},
+                        onCancel = {},
+                        onConfirmImport = { confirms++ },
+                    )
+                }
+            }
+        }
+
+        composeRule.onNode(hasText(confirm) and hasClickAction()).assertIsDisplayed()
+        composeRule.onNode(hasText(cancel) and hasClickAction()).assertIsDisplayed()
+        val height = with(composeRule.density) {
+            composeRule.onNodeWithTag(GITHUB_IMPORT_STATISTICS_TEST_TAG)
+                .fetchSemanticsNode().boundsInRoot.height.toDp()
+        }
+        assertTrue(height > 0.dp && height <= 360.dp, "Statistics viewport height: $height")
+        composeRule.onNode(hasText(lastStatistic, substring = true)).performScrollTo().assertIsDisplayed()
+        composeRule.onNode(hasText(confirm) and hasClickAction()).assertIsDisplayed().performClick()
+        assertEquals(1, confirms)
     }
 
     @Test
