@@ -292,6 +292,12 @@ android {
     }
 }
 
+baselineProfile {
+    // Collection is an explicit device operation; ordinary builds consume accepted source profiles.
+    automaticGenerationDuringBuild = false
+    saveInSrc = true
+}
+
 androidComponents {
     finalizeDsl { android ->
         // AndroidX copies release's manifest onto its derived collector source set. Restore the

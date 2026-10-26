@@ -139,12 +139,7 @@ class BaselineProfileGenerator {
                 pageTag = ABOUT_PAGE_ROOT,
                 returnTag = HOME_PAGE_ROOT,
             )
-            pushRouteAndReturn(
-                entryTag = HOME_WEBDAV_CARD,
-                pageTag = WEBDAV_SYNC_PAGE_ROOT,
-                returnTag = HOME_PAGE_ROOT,
-                flings = 1,
-            )
+            exerciseWebDavAndReturn()
 
             navigateToMainPage(
                 tabTag = MAIN_BOTTOM_TAB_OS,
@@ -182,7 +177,7 @@ class BaselineProfileGenerator {
     }
 
     /**
-     * The frequent GitHub work: inspect a tracked app and open the two primary editing sheets.
+     * The frequent GitHub work: inspect a tracked app, editing sheets and a reversible draft switch.
      *
      * A fresh install can legitimately have no tracked card. The page, navigation and edit surfaces
      * still collect deterministically; the card branch becomes available once user state exists.
@@ -227,6 +222,7 @@ class BaselineProfileGenerator {
                 panelTag = LIQUID_SHEET_PANEL,
             )
             openExerciseAndDismissLiquidSheet(GITHUB_STRATEGY_SHEET_BUTTON)
+            exerciseCheckLogicAndReturn()
         }
     }
 

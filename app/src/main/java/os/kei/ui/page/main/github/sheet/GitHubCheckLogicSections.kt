@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.Backdrop
@@ -32,6 +33,7 @@ import os.kei.ui.page.main.widget.sheet.SheetDescriptionText
 import os.kei.ui.page.main.widget.sheet.SheetSectionCard
 import os.kei.ui.page.main.widget.sheet.SheetSectionHeader
 import os.kei.ui.page.main.widget.sheet.SheetSummaryCard
+import os.kei.ui.testing.KeiOsTestTags
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -176,6 +178,7 @@ internal fun GitHubCheckStrategySection(
             AppSwitch(
                 checked = checkAllTrackedPreReleasesInput,
                 onCheckedChange = onCheckAllTrackedPreReleasesInputChange,
+                modifier = Modifier.testTag(KeiOsTestTags.GitHubCheckPrereleaseSwitch),
             )
         }
         SheetControlRow(

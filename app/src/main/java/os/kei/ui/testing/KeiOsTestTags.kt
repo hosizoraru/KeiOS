@@ -35,6 +35,10 @@ object KeiOsTestTags {
     const val SettingsPageRoot = "settings_page_root"
     const val AboutPageRoot = "about_page_root"
     const val WebDavSyncPageRoot = "webdav_sync_page_root"
+    const val WebDavTabConnection = "webdav_sync_tab_0"
+    const val WebDavTabData = "webdav_sync_tab_1"
+    const val WebDavTabHistory = "webdav_sync_tab_2"
+    const val WebDavTabAdvanced = "webdav_sync_tab_3"
     const val OsPageRoot = "os_page_root"
     const val OsShellRunnerButton = "os_shell_runner_button"
     const val OsShellRunnerPageRoot = "os_shell_runner_page_root"
@@ -96,6 +100,7 @@ object KeiOsTestTags {
     /** The two top-bar toolbar actions that open sheets of their own. */
     const val GitHubStrategySheetButton = "github_strategy_sheet_button"
     const val GitHubCheckLogicSheetButton = "github_check_logic_sheet_button"
+    const val GitHubCheckPrereleaseSwitch = "github_check_prerelease_switch"
 
     /**
      * The first cooldown card, the cafe's headpat.

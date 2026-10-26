@@ -224,6 +224,10 @@ class BaselineProfileTestTagContractTest {
     @Test
     fun theDerivedTabbedPageTagsMatchTheDeclaredOnes() {
         assertEquals(KeiOsTestTags.SettingsTabInterface, tabbedPageCategoryTabTestTag("settings", 2))
+        assertEquals(KeiOsTestTags.WebDavTabConnection, tabbedPageCategoryTabTestTag("webdav_sync", 0))
+        assertEquals(KeiOsTestTags.WebDavTabData, tabbedPageCategoryTabTestTag("webdav_sync", 1))
+        assertEquals(KeiOsTestTags.WebDavTabHistory, tabbedPageCategoryTabTestTag("webdav_sync", 2))
+        assertEquals(KeiOsTestTags.WebDavTabAdvanced, tabbedPageCategoryTabTestTag("webdav_sync", 3))
         assertEquals(KeiOsTestTags.GitHubHistoryTabRefresh, tabbedPageCategoryTabTestTag("github_history", 0))
         assertEquals(KeiOsTestTags.GitHubHistoryTabActions, tabbedPageCategoryTabTestTag("github_history", 1))
         assertEquals(KeiOsTestTags.GitHubHistoryTabTracking, tabbedPageCategoryTabTestTag("github_history", 2))
@@ -263,6 +267,11 @@ class BaselineProfileTestTagContractTest {
      */
     @Test
     fun thePagesStillPassThePrefixesThoseTagsAssume() {
+        assertTrue(
+            """labelPrefix = "webdav_sync"""" in repoSource(
+                "app/src/main/java/os/kei/ui/page/main/sync/WebDavSyncBottomChrome.kt",
+            ),
+        )
         assertTrue(
             """labelPrefix = "about"""" in repoSource(ABOUT_BOTTOM_CHROME),
             "$ABOUT_BOTTOM_CHROME must keep the prefix KeiOsTestTags.AboutTabLab is spelled from",

@@ -56,6 +56,22 @@ internal fun MacrobenchmarkScope.exerciseSettingsAndReturn(wide: Boolean) {
     returnFromPushedRoute(SETTINGS_PAGE_ROOT, HOME_PAGE_ROOT)
 }
 
+/** Visit the local WebDAV categories without credentials, sync, restore or clearing data. */
+internal fun MacrobenchmarkScope.exerciseWebDavAndReturn() {
+    openWindowFrom(HOME_WEBDAV_CARD, WEBDAV_SYNC_PAGE_ROOT)
+    listOf(WEBDAV_TAB_DATA, WEBDAV_TAB_HISTORY, WEBDAV_TAB_ADVANCED, WEBDAV_TAB_CONNECTION)
+        .forEach { tag ->
+            clickBottomBarTab(tag)
+            check(device.wait(Until.hasObject(testTagSelector(tag).selected(true)), 5_000)) {
+                "WebDAV category did not settle: $tag"
+            }
+            if (tag == WEBDAV_TAB_DATA || tag == WEBDAV_TAB_ADVANCED) {
+                flingVisibleScrollable(times = 1)
+            }
+        }
+    returnFromPushedRoute(WEBDAV_SYNC_PAGE_ROOT, HOME_PAGE_ROOT)
+}
+
 internal fun MacrobenchmarkScope.navigateAndScrollMainPage(
     tabTag: String,
     pageTag: String,
@@ -265,6 +281,39 @@ internal fun MacrobenchmarkScope.openExerciseAndDismissLiquidSheet(triggerTag: S
     swipeWithinTestTag(LIQUID_SHEET_PANEL, up = false)
     dragLiquidSheetRegion(up = false)
 
+    dismissTheOpenOverlay(LIQUID_SHEET_PANEL)
+}
+
+/** Exercise controlled switch updates in a draft, then restore it without applying settings. */
+internal fun MacrobenchmarkScope.exerciseCheckLogicAndReturn() {
+    openWindowFrom(GITHUB_CHECK_LOGIC_SHEET_BUTTON, LIQUID_SHEET_PANEL)
+    scrollTestTagIntoReach(GITHUB_CHECK_PRERELEASE_SWITCH)
+    val selector = testTagSelector(GITHUB_CHECK_PRERELEASE_SWITCH)
+    val original = requireNotNull(device.findObject(selector)).isChecked
+    try {
+        clickTestTag(GITHUB_CHECK_PRERELEASE_SWITCH)
+        check(
+            device.wait(
+                Until.hasObject(testTagSelector(GITHUB_CHECK_PRERELEASE_SWITCH).checked(!original)),
+                5_000,
+            ),
+        ) {
+            "Check-logic switch did not change state"
+        }
+    } finally {
+        // Resolve a fresh node after recomposition; the previous UiObject2 may be stale.
+        if (device.findObject(selector)?.isChecked != original) {
+            clickTestTag(GITHUB_CHECK_PRERELEASE_SWITCH)
+        }
+        check(
+            device.wait(
+                Until.hasObject(testTagSelector(GITHUB_CHECK_PRERELEASE_SWITCH).checked(original)),
+                5_000,
+            ),
+        ) {
+            "Check-logic draft did not return to its original state"
+        }
+    }
     dismissTheOpenOverlay(LIQUID_SHEET_PANEL)
 }
 

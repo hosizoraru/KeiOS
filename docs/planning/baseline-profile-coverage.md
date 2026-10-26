@@ -9,10 +9,10 @@ The default generator contains six user journeys with a maximum of 16 replays pe
 
 | Journey | Max/stable replays | What it warms |
 | --- | ---: | --- |
-| startupAndFirstScroll | 5/2 | cold startup, Home first frame, first two list flings, startup dex layout |
+| startupAndFirstScroll | 5/2 | cold startup, Home first frame, first two list flings, startup ART compilation |
 | mainPagesAndNavigation | 3/2 | Home, OS, MCP, GitHub and BA destination switches, first scrolls, and one hand swipe both ways |
-| commonRoutesAndChrome | 2/2 | Settings Interface and theme selector, About, WebDAV, Shell, MCP Skill, shared menu presentation |
-| gitHubTrackingCore | 2/2 | tracked-card expansion, Actions, add-track, and strategy-Sheet drag/content motion |
+| commonRoutesAndChrome | 2/2 | Settings Interface and theme selector, About, all four local WebDAV categories, Shell, MCP Skill, shared menu presentation |
+| gitHubTrackingCore | 2/2 | tracked-card expansion, Actions, add-track, strategy-Sheet drag/content motion and a restored check-logic draft switch |
 | baOfficeAndCatalogCore | 2/2 | office cards, calendar/pool, daily sheet, catalog, selected guide tabs, playback |
 | adaptiveLargeScreenCore | 2/2 | two-lane pages, sidebar/fold reflow, compact guide paging, compatible model tools/palette/IME/camera and Spine controls |
 
@@ -39,6 +39,25 @@ navigation and adaptive layout.
 
 BaselineProfileTestTagContractTest pins the six-journey and 16-replay limits. Increasing either
 requires an explicit update to the test and this plan.
+
+### Preparation after the glass/WebDAV changes, 2026-10-26
+
+Ordinary builds explicitly set `automaticGenerationDuringBuild = false` and consume the
+accepted source profiles. Collection remains a separate, explicit device operation. This
+preparation does not update generated profile text or capture provenance.
+
+The common-route journey now selects Connection, Data, History and Advanced on the rewritten
+WebDAV page. It scrolls the local data/advanced lists without entering credentials or invoking
+sync, replacement or cache clearing. The GitHub journey opens check logic, changes the
+prerelease draft switch, waits for the checked state, then restores and verifies its initial
+state in `finally` before dismissing. It never applies that draft. Both additions stay within
+the existing six journeys and 16-replay ceiling.
+
+These paths are prepared for the next capture; compilation and tag-contract checks do not
+establish device traversal, profile freshness or a performance improvement. The accepted
+2026-10-24 profile predates the current runtime changes and still requires recollection.
+Startup Profile text is retained, but startup DEX layout optimization remains disabled in the
+current build configuration; packaged ART Baseline Profiles remain enabled.
 
 ### Collection maintenance, 2026-10-06
 
