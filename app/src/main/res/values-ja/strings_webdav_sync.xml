@@ -43,7 +43,7 @@
     <string name="webdav_sync_status_saved">保存済み</string>
     <string name="webdav_sync_status_setup_required">設定が必要です</string>
     <string name="webdav_sync_jianguoyun_hint">Jianguoyun のアカウントメールアドレスとアプリ専用パスワードを使用してください。アカウント本体のパスワードは使用しません。アカウント設定 → セキュリティ → サードパーティアプリ管理で生成できます。</string>
-    <string name="webdav_sync_jianguoyun_quota_hint">Jianguoyun の無料アカウントには WebDAV のリクエスト頻度と月間通信量の制限があります。KeiOS は起動時の自動同期と重複したディレクトリ確認を減らします。大量移行時は手動同期を 1 回実行し、時間を置いてから再試行してください。</string>
+    <string name="webdav_sync_jianguoyun_quota_hint">Jianguoyun は WebDAV のリクエストを制限します。KeiOS は間隔を空け、制限の応答後は一時停止します。時間を置いて再試行してください。連続タップでは制限は解除されません。</string>
     <string name="webdav_sync_jianguoyun_password_hint">自動生成された英数字文字列（英字 + 数字）</string>
     <string name="webdav_sync_jianguoyun_server_label">推奨サーバー</string>
     <string name="webdav_sync_server_url">サーバー URL</string>
@@ -193,7 +193,7 @@
     <string name="webdav_sync_confirm_upload_summary">有効なすべての項目で、ローカルデータがリモートコピーを上書きします。ローカルを正本として送る意図がある場合に使ってください。通常は同期（マージ）が安全です。</string>
     <string name="webdav_sync_confirm_upload_shrink_warning">リモートにはローカルより多くの項目があります。今アップロードするとリモートデータセットが小さくなります。先に同期でマージすることを検討してください。</string>
     <string name="webdav_sync_confirm_download_title">すべてリモートからダウンロードしますか？</string>
-    <string name="webdav_sync_confirm_download_summary">有効なすべての項目で、リモートデータをローカルへマージします。ローカルのみの項目は保持され、リモートのみの項目は追加されます。</string>
+    <string name="webdav_sync_confirm_download_summary">有効なすべての項目で、ローカルデータをクラウドのバックアップに置き換え、ローカルにしかない項目を削除します。復元したい内容がクラウドにあることを確認してください。</string>
     <string name="webdav_sync_confirm_continue">続行</string>
     <string name="webdav_sync_confirm_cancel">キャンセル</string>
     <string name="webdav_sync_confirm_item_upload_title">%1$s をリモートへアップロードしますか？</string>
@@ -205,7 +205,7 @@
     <string name="webdav_sync_totals_contract_note">件数は各項目のエクスポート JSON ペイロードに基づきます。</string>
     <string name="webdav_sync_totals_remote_format">リモート: %1$d 件 · %2$s</string>
     <string name="webdav_sync_totals_remote_unknown">リモート: 「リモート更新」をタップして読み込みます。</string>
-    <string name="webdav_sync_actions_contract_summary">同期はローカルとリモートをマージします。アップロードはローカルをリモートへ書き込みます。ダウンロードはリモートをローカルへマージします。各操作は先にリモートを更新し、確認リストを表示します。</string>
+    <string name="webdav_sync_actions_contract_summary">同期は両方のデータをマージします。アップロードはクラウドをローカルで上書きし、ダウンロードはローカルをクラウドで置き換え、ローカルにしかない項目を削除します。実行前に変更を確認してください。</string>
     <string name="webdav_sync_history_summary_title">同期履歴</string>
     <string name="webdav_sync_history_summary_desc">手動同期、リモート更新、自動 WebDAV 同期のローカル診断記録です。この記録は端末内に保存され、WebDAV へアップロードされません。</string>
     <string name="webdav_sync_history_total_format">%1$d 件</string>
@@ -255,8 +255,8 @@
     <string name="webdav_sync_plan_item_upload_title">%1$s のアップロードを確認</string>
     <string name="webdav_sync_plan_item_download_title">%1$s のダウンロードを確認</string>
     <string name="webdav_sync_plan_sync_summary">同期はまずリモートスナップショットを更新し、その後ローカルとリモートの JSON をマージします。ローカルのみ、リモートのみの項目は両方保持されます。</string>
-    <string name="webdav_sync_plan_upload_summary">アップロードはまずリモートスナップショットを更新し、その後ローカル JSON を正本として書き込みます。KeiOS はプレビュー書き込みで ETag 保護を使い、確認済み上書きの前に再度リモートを更新します。これにより条件付き PUT を拒否するプロバイダーにも対応します。</string>
-    <string name="webdav_sync_plan_download_summary">ダウンロードはまずリモートスナップショットを更新し、その後リモート JSON をローカルデータへマージします。</string>
+    <string name="webdav_sync_plan_upload_summary">ローカルデータでクラウドファイルを上書きし、再取得して検証します。クラウドにしかない項目は削除されます。読み取れない古いバックアップも置き換えられます。</string>
+    <string name="webdav_sync_plan_download_summary">クラウドのバックアップでこのローカルデータを置き換え、ローカルにしかない項目を削除します。復元したいバージョンであることを確認してください。</string>
     <string name="webdav_sync_plan_remote_refreshed">リモート更新済み: %1$s</string>
     <string name="webdav_sync_plan_upload_shrink_warning">一部のリモートデータセットはローカルより項目数が多い状態です。アップロードするとリモートファイルは小さくなります。</string>
     <string name="webdav_sync_plan_blocking_error">少なくとも 1 つのデータセットでリモート更新に失敗しました。続行前にエラーを解決するか、そのデータセットを無効化してください。</string>
@@ -270,8 +270,11 @@
     <string name="webdav_sync_plan_effect_create_remote">ローカルデータからリモートファイルを作成</string>
     <string name="webdav_sync_plan_effect_merge_upload">ローカル + リモートをマージし、マージ済み JSON をアップロード</string>
     <string name="webdav_sync_plan_effect_upload_overwrite">リモートファイルをローカル JSON で上書き</string>
-    <string name="webdav_sync_plan_effect_download_merge">リモート JSON をローカルデータへマージ</string>
+    <string name="webdav_sync_plan_effect_download_replace">クラウドのバックアップでローカルを置き換え、ローカルのみの項目を削除</string>
     <string name="webdav_sync_plan_effect_remote_empty">リモートは空です。ローカルデータはそのまま保持されます</string>
     <string name="webdav_sync_plan_effect_error">リモート更新に失敗</string>
     <string name="webdav_sync_plan_effect_remote_shrink">リモート項目数が減少します</string>
+    <string name="webdav_sync_status_rate_limited">サービスのリクエスト制限中です。時間を置いて再試行してください</string>
+    <string name="webdav_sync_plan_remote_unknown_count">内容を認識できません。アップロードでこのファイルを置き換えます</string>
+    <string name="webdav_sync_url_error_invalid">サーバー URL とリモートディレクトリを確認してください</string>
 </resources>

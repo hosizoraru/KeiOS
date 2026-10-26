@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import os.kei.core.concurrency.AppDispatchers
 import os.kei.feature.webdav.model.WebDavConfig
+import os.kei.feature.webdav.model.workspaceIdentity
 
 /**
  * Data boundary for the WebDAV sync page.
@@ -17,6 +18,8 @@ internal class WebDavSyncRepository(
     private val ioDispatcher: CoroutineDispatcher = AppDispatchers.fileIo,
     private val nowMs: () -> Long = System::currentTimeMillis,
 ) {
+    fun close() = engine.close()
+
     fun buildInitialState(): WebDavSyncUiState {
         val config = WebDavSyncStore.loadConfig()
         val provider = WebDavSyncStore.loadProvider()
@@ -45,17 +48,22 @@ internal class WebDavSyncRepository(
         remoteDir: String,
     ): WebDavConfig =
         withContext(ioDispatcher) {
-            provider.buildConfig(serverUrl, username, appPassword, remoteDir).also { config ->
-                WebDavSyncStore.saveConfig(config, provider)
-                engine.invalidate()
+            WebDavSyncOperationCoordinator.run {
+                provider.buildConfig(serverUrl, username, appPassword, remoteDir).also { config ->
+                    config.workspaceIdentity()
+                    WebDavSyncStore.saveConfig(config, provider)
+                    engine.invalidate()
+                }
             }
         }
 
     suspend fun clearConfig(): WebDavSyncUiState =
         withContext(ioDispatcher) {
-            WebDavSyncStore.clearConfig()
-            engine.invalidate()
-            buildInitialState()
+            WebDavSyncOperationCoordinator.run {
+                WebDavSyncStore.clearConfig()
+                engine.invalidate()
+                buildInitialState()
+            }
         }
 
     suspend fun setAutoSyncEnabled(enabled: Boolean) =
@@ -106,6 +114,18 @@ internal class WebDavSyncRepository(
         planItem: WebDavSyncPlanItem? = null,
     ): WebDavItemOutcome =
         withContext(ioDispatcher) {
+            val isCurrent = {
+                !(planItem != null && (
+                    planItem.workspaceIdentity?.let { it != config.workspaceIdentity() } == true ||
+                    (kind != WebDavBatchKind.Sync &&
+                        planItem.localHash != WebDavSyncEngine.contentHash(port.fingerprintJson()))
+                ))
+            }
+            if (!isCurrent()) {
+                return@withContext WebDavItemOutcome(
+                    WebDavItemStatus.ConflictUnresolved, "Local data or connection changed; review a fresh plan",
+                )
+            }
             val outcome = when (kind) {
                 WebDavBatchKind.Sync -> engine.sync(config, item, port)
                 WebDavBatchKind.Upload ->
@@ -117,8 +137,14 @@ internal class WebDavSyncRepository(
                             (planItem?.remoteState as? WebDavSyncPlanRemoteState.Found)?.etag,
                         remoteKnownEmpty = planItem?.remoteState == WebDavSyncPlanRemoteState.Empty,
                         confirmedOverwrite = planItem != null,
+                        isCurrent = isCurrent,
                     )
-                WebDavBatchKind.Download -> engine.download(config, item, port)
+                WebDavBatchKind.Download -> engine.download(
+                    config, item, port,
+                    expectedRemoteHash = (planItem?.remoteState as? WebDavSyncPlanRemoteState.Found)?.contentHash,
+                    remoteKnownEmpty = planItem?.remoteState == WebDavSyncPlanRemoteState.Empty,
+                    isCurrent = isCurrent,
+                )
             }
             if (outcome.isSuccess) {
                 WebDavSyncStore.setItemFingerprintRevision(item, port.fingerprintRevision)

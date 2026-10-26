@@ -5,13 +5,7 @@ import os.kei.feature.webdav.client.WebDavSyncClient
 import os.kei.feature.webdav.client.WebDavTestConnectionResult
 import os.kei.feature.webdav.client.WebDavUploadResult
 
-internal interface WebDavSyncClientBridge {
-    suspend fun testConnection(): WebDavTestConnectionResult
-    suspend fun upload(fileName: String, content: String, etag: String? = null): WebDavUploadResult
-    suspend fun uploadIfAbsent(fileName: String, content: String): WebDavUploadResult
-    suspend fun download(fileName: String): WebDavDownloadResult
-    fun close() = Unit
-}
+internal typealias WebDavSyncClientBridge = os.kei.feature.webdav.client.WebDavRemoteClient
 
 internal class RealWebDavSyncClientBridge(
     private val delegate: WebDavSyncClient,
@@ -36,6 +30,15 @@ internal class RealWebDavSyncClientBridge(
 }
 
 internal interface WebDavSyncMetadataStore {
+    fun acceptsConfig(config: os.kei.feature.webdav.model.WebDavConfig): Boolean = true
+    fun getItemContentHash(item: WebDavSyncItem): String? = null
+    fun recordCheckpoint(item: WebDavSyncItem, etag: String?, hash: String, timeMs: Long) {
+        setItemEtag(item, etag)
+        setItemContentHash(item, hash)
+        setLastSyncTime(item, timeMs)
+        clearItemPendingState(item)
+    }
+
     fun setItemEtag(item: WebDavSyncItem, etag: String?)
     fun setItemContentHash(item: WebDavSyncItem, hash: String)
     fun setLastSyncTime(item: WebDavSyncItem, timeMs: Long)
@@ -57,6 +60,13 @@ internal interface WebDavSyncMetadataStore {
 }
 
 internal object StoreBackedWebDavSyncMetadataStore : WebDavSyncMetadataStore {
+    override fun getItemContentHash(item: WebDavSyncItem): String? = WebDavSyncStore.getItemContentHash(item)
+    override fun acceptsConfig(config: os.kei.feature.webdav.model.WebDavConfig): Boolean =
+        WebDavSyncStore.loadConfig() == config
+    override fun recordCheckpoint(item: WebDavSyncItem, etag: String?, hash: String, timeMs: Long) {
+        WebDavSyncStore.recordCheckpoint(item, etag, hash, timeMs)
+    }
+
     override fun setItemEtag(item: WebDavSyncItem, etag: String?) {
         WebDavSyncStore.setItemEtag(item, etag)
     }
@@ -125,6 +135,7 @@ internal enum class WebDavItemStatus {
     NetworkError,
     ConflictUnresolved,
     BaselineRequired,
+    RateLimited,
     Error,
 }
 
@@ -155,14 +166,4 @@ internal sealed interface WebDavRemoteProbeOutcome {
     data class Error(val status: WebDavItemStatus, val detail: String?) : WebDavRemoteProbeOutcome
 }
 
-/** Bridge between a sync item and its domain store. */
-internal data class WebDavSyncDataPort(
-    val exportJson: () -> String,
-    val merge: (remoteJson: String) -> Unit,
-    val localCount: () -> Int,
-    val countRemoteItems: (raw: String) -> Int,
-    val fingerprintJson: () -> String = exportJson,
-    val remoteFingerprintJson: (raw: String) -> String = { it },
-    val mergeRemoteOnAutoConflict: Boolean = false,
-    val fingerprintRevision: Int = 1,
-)
+internal typealias WebDavSyncDataPort = os.kei.feature.webdav.sync.WebDavDocumentPort

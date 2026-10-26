@@ -25,6 +25,7 @@ internal data class WebDavSyncPlanItem(
     val localHash: String,
     val remoteState: WebDavSyncPlanRemoteState,
     val effect: WebDavSyncPlanEffect,
+    val workspaceIdentity: String? = null,
 ) {
     val remoteEtag: String?
         get() = (remoteState as? WebDavSyncPlanRemoteState.Found)?.etag
@@ -64,7 +65,7 @@ internal enum class WebDavSyncPlanEffect {
     CreateRemote,
     MergeThenUpload,
     UploadOverwrite,
-    DownloadMerge,
+    DownloadReplace,
     RemoteEmpty,
     Error,
 }

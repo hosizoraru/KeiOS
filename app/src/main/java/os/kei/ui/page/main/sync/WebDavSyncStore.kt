@@ -1,14 +1,14 @@
 package os.kei.ui.page.main.sync
 
-import com.tencent.mmkv.MMKV
 import kotlinx.serialization.encodeToString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import os.kei.core.json.KeiJson
 import os.kei.core.json.decodeFromStringOrNull
-import os.kei.core.prefs.KeiMmkv
 import os.kei.feature.webdav.model.WebDavConfig
+import os.kei.feature.webdav.model.workspaceIdentity
 import kotlin.math.abs
+import org.json.JSONObject
 
 /**
  * Persists WebDAV connection config and per-item sync metadata in MMKV.
@@ -18,39 +18,48 @@ import kotlin.math.abs
  * the hash of the last-synced local content) lives alongside it so the sync engine can make
  * conditional writes and the auto-sync coordinator can detect real local changes.
  */
-internal object WebDavSyncStore {
-    private const val STORE_ID = "webdav_sync"
+internal object WebDavSyncStore : WebDavSyncPersistence(MmkvWebDavPreferences()) {
+    const val DEFAULT_REMOTE_DIR = WebDavSyncPersistence.DEFAULT_REMOTE_DIR
+    const val DEFAULT_AUTO_SYNC_INTERVAL_HOURS = WebDavSyncPersistence.DEFAULT_AUTO_SYNC_INTERVAL_HOURS
+    val AUTO_SYNC_INTERVAL_HOUR_OPTIONS = WebDavSyncPersistence.AUTO_SYNC_INTERVAL_HOUR_OPTIONS
+}
 
-    private const val KEY_PROVIDER = "provider"
-    private const val KEY_SERVER_URL = "server_url"
-    private const val KEY_USERNAME = "username"
-    private const val KEY_APP_PASSWORD = "app_password"
-    private const val KEY_REMOTE_DIR = "remote_dir"
-    private const val KEY_AUTO_SYNC = "auto_sync"
-    private const val KEY_AUTO_SYNC_INTERVAL_HOURS = "auto_sync_interval_hours"
-    private const val KEY_LAST_FULL_SYNC = "last_full_sync"
-    private const val KEY_LAST_REMOTE_PROBE = "last_remote_probe"
-    private const val KEY_LAST_AUTO_SYNC_ATTEMPT = "last_auto_sync_attempt"
-    private const val KEY_LAST_AUTO_SYNC_STATUS = "last_auto_sync_status"
-    private const val KEY_LAST_AUTO_SYNC_REASON = "last_auto_sync_reason"
-    private const val KEY_LAST_AUTO_SYNC_FINISHED = "last_auto_sync_finished"
-    private const val KEY_LAST_AUTO_SYNC_TARGETS = "last_auto_sync_targets"
-    private const val KEY_LAST_AUTO_SYNC_SUCCEEDED = "last_auto_sync_succeeded"
-    private const val KEY_LAST_AUTO_SYNC_FAILED = "last_auto_sync_failed"
-    private const val KEY_LAST_AUTO_SYNC_SKIPPED = "last_auto_sync_skipped"
-    private const val KEY_SYNC_HISTORY = "sync_history_v1"
-    private const val KEY_LAST_JOB_STOP_REASON = "last_job_stop_reason"
-    private const val DEFAULT_FINGERPRINT_REVISION = 1
+internal open class WebDavSyncPersistence(private val mmkv: WebDavPreferences) {
+    companion object {
 
-    const val DEFAULT_REMOTE_DIR = "KeiOS/"
-    const val DEFAULT_AUTO_SYNC_INTERVAL_HOURS = 3
-    val AUTO_SYNC_INTERVAL_HOUR_OPTIONS = listOf(1, 3, 6, 12, 24)
+        private const val KEY_PROVIDER = "provider"
+        private const val KEY_SERVER_URL = "server_url"
+        private const val KEY_USERNAME = "username"
+        private const val KEY_APP_PASSWORD = "app_password"
+        private const val KEY_REMOTE_DIR = "remote_dir"
+        private const val KEY_AUTO_SYNC = "auto_sync"
+        private const val KEY_AUTO_SYNC_INTERVAL_HOURS = "auto_sync_interval_hours"
+        private const val KEY_LAST_FULL_SYNC = "last_full_sync"
+        private const val KEY_LAST_REMOTE_PROBE = "last_remote_probe"
+        private const val KEY_LAST_AUTO_SYNC_ATTEMPT = "last_auto_sync_attempt"
+        private const val KEY_LAST_AUTO_SYNC_STATUS = "last_auto_sync_status"
+        private const val KEY_LAST_AUTO_SYNC_REASON = "last_auto_sync_reason"
+        private const val KEY_LAST_AUTO_SYNC_FINISHED = "last_auto_sync_finished"
+        private const val KEY_LAST_AUTO_SYNC_TARGETS = "last_auto_sync_targets"
+        private const val KEY_LAST_AUTO_SYNC_SUCCEEDED = "last_auto_sync_succeeded"
+        private const val KEY_LAST_AUTO_SYNC_FAILED = "last_auto_sync_failed"
+        private const val KEY_LAST_AUTO_SYNC_SKIPPED = "last_auto_sync_skipped"
+        private const val KEY_SYNC_HISTORY = "sync_history_v1"
+        private const val KEY_LAST_JOB_STOP_REASON = "last_job_stop_reason"
+        private const val DEFAULT_FINGERPRINT_REVISION = 1
 
-    private val mmkv: MMKV get() = KeiMmkv.byId(STORE_ID)
+        const val DEFAULT_REMOTE_DIR = "KeiOS/"
+        const val DEFAULT_AUTO_SYNC_INTERVAL_HOURS = 3
+        val AUTO_SYNC_INTERVAL_HOUR_OPTIONS = listOf(1, 3, 6, 12, 24)
+    }
 
     // ── Connection config ──────────────────────────────────────────────
 
     fun saveConfig(config: WebDavConfig, provider: WebDavProvider) {
+        val previous = loadConfig()
+        if (previous?.let { runCatching { it.workspaceIdentity() }.getOrNull() } != config.workspaceIdentity()) {
+            clearRemoteMetadata()
+        }
         mmkv.encode(KEY_PROVIDER, provider.name)
         mmkv.encode(KEY_SERVER_URL, config.serverUrl)
         mmkv.encode(KEY_USERNAME, config.username)
@@ -87,6 +96,7 @@ internal object WebDavSyncStore {
                 lastSyncKey(item),
                 etagKey(item),
                 hashKey(item),
+                checkpointKey(item),
                 fingerprintRevisionKey(item),
                 remoteCountKey(item),
                 remoteByteSizeKey(item),
@@ -160,7 +170,7 @@ internal object WebDavSyncStore {
     // ── Per-item last sync time ────────────────────────────────────────
 
     fun getLastSyncTime(item: WebDavSyncItem): Long =
-        mmkv.decodeLong(lastSyncKey(item), 0L)
+        checkpoint(item)?.optLong("timeMs") ?: mmkv.decodeLong(lastSyncKey(item), 0L)
 
     fun setLastSyncTime(item: WebDavSyncItem, timeMs: Long) {
         mmkv.encode(lastSyncKey(item), timeMs)
@@ -168,8 +178,10 @@ internal object WebDavSyncStore {
 
     // ── Per-item remote ETag (conditional writes) ──────────────────────
 
-    fun getItemEtag(item: WebDavSyncItem): String? =
-        mmkv.decodeString(etagKey(item), null)?.takeIf { it.isNotBlank() }
+    fun getItemEtag(item: WebDavSyncItem): String? {
+        checkpoint(item)?.let { return it.optString("etag").takeIf { value -> value.isNotBlank() && value != "null" } }
+        return mmkv.decodeString(etagKey(item), null)?.takeIf { it.isNotBlank() }
+    }
 
     fun setItemEtag(item: WebDavSyncItem, etag: String?) {
         if (etag.isNullOrBlank()) {
@@ -182,7 +194,35 @@ internal object WebDavSyncStore {
     // ── Per-item local content hash (auto-sync change detection) ───────
 
     fun getItemContentHash(item: WebDavSyncItem): String? =
-        mmkv.decodeString(hashKey(item), null)?.takeIf { it.isNotBlank() }
+        checkpoint(item)?.optString("hash") ?: mmkv.decodeString(hashKey(item), null)?.takeIf { it.isNotBlank() }
+
+    fun recordCheckpoint(item: WebDavSyncItem, etag: String?, hash: String, timeMs: Long) {
+        mmkv.encode(checkpointKey(item), JSONObject().apply {
+            put("etag", etag ?: JSONObject.NULL)
+            put("hash", hash)
+            put("timeMs", timeMs)
+        }.toString())
+        clearItemPendingState(item)
+    }
+
+    private fun checkpointKey(item: WebDavSyncItem) = "checkpoint_v2_${item.name}"
+
+    private fun checkpoint(item: WebDavSyncItem): JSONObject? =
+        mmkv.decodeString(checkpointKey(item), null)?.let { raw ->
+            runCatching { JSONObject(raw) }.getOrNull()
+        }
+
+    private fun clearRemoteMetadata() {
+        val keys = WebDavSyncItem.entries.flatMap { item ->
+            listOf(
+                checkpointKey(item), etagKey(item), hashKey(item), lastSyncKey(item),
+                fingerprintRevisionKey(item), remoteCountKey(item), remoteByteSizeKey(item),
+                remoteEtagKey(item), remoteProbedAtKey(item), remoteEmptyKey(item),
+                pendingStateKey(item), pendingUpdatedAtKey(item),
+            )
+        }
+        mmkv.removeValuesForKeys((keys + listOf(KEY_LAST_FULL_SYNC, KEY_LAST_REMOTE_PROBE)).toTypedArray())
+    }
 
     fun setItemContentHash(item: WebDavSyncItem, hash: String) {
         mmkv.encode(hashKey(item), hash)

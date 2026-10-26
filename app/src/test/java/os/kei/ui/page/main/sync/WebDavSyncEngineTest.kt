@@ -62,8 +62,8 @@ class WebDavSyncEngineTest {
                 return WebDavDownloadResult.Success("same", "etag-second")
             }
         }
-        val firstEngine = WebDavSyncEngine(clientFactory = { firstClient })
-        val secondEngine = WebDavSyncEngine(clientFactory = { secondClient })
+        val firstEngine = WebDavSyncEngine(clientFactory = { firstClient }, metadataStore = FakeWebDavSyncMetadataStore())
+        val secondEngine = WebDavSyncEngine(clientFactory = { secondClient }, metadataStore = FakeWebDavSyncMetadataStore())
         val firstPort = FakeWebDavSyncDataPort(localJson = "same")
         val secondPort = FakeWebDavSyncDataPort(localJson = "same")
 
@@ -276,13 +276,12 @@ class WebDavSyncEngineTest {
     }
 
     @Test
-    fun `confirmed upload refreshes remote once then overwrites without conditional etag`() = runBlocking {
+    fun `confirmed upload writes local authority without a rejected conditional preflight`() = runBlocking {
         val client = FakeWebDavSyncClientBridge(
             downloadResults = mutableListOf(
                 WebDavDownloadResult.Success("""{"items":[1,2]}""", "etag-refreshed"),
             ),
             uploadResults = mutableListOf(
-                WebDavUploadResult.Conflict,
                 WebDavUploadResult.Success("etag-after"),
             ),
         )
@@ -304,7 +303,7 @@ class WebDavSyncEngineTest {
             )
 
         assertEquals(WebDavItemStatus.Uploaded, outcome.status)
-        assertEquals(listOf("etag-preview", null), client.uploadCalls.map { it.etag })
+        assertEquals(listOf<String?>(null), client.uploadCalls.map { it.etag })
         assertEquals("""{"items":[1,2,3]}""", client.uploadCalls.last().content)
         assertEquals("etag-after", metadata.etags[WebDavSyncItem.GitHubTracked])
         assertEquals(3, metadata.remoteFound[WebDavSyncItem.GitHubTracked]?.itemCount)
@@ -341,13 +340,13 @@ class WebDavSyncEngineTest {
             )
 
         assertEquals(WebDavItemStatus.ConflictUnresolved, outcome.status)
-        assertEquals(listOf("etag-preview", null), client.uploadCalls.map { it.etag })
+        assertEquals(listOf<String?>(null), client.uploadCalls.map { it.etag })
         assertTrue(metadata.etags.isEmpty())
         assertEquals(WebDavSyncPendingState.RemoteConflict, metadata.pendingStates[WebDavSyncItem.GitHubTracked])
     }
 
     @Test
-    fun `confirmed upload overwrites when preview empty write collides`() = runBlocking {
+    fun `confirmed upload intentionally replaces remote even when the preview was empty`() = runBlocking {
         val client = FakeWebDavSyncClientBridge(
             downloadResults = mutableListOf(WebDavDownloadResult.Empty),
             uploadIfAbsentResults = mutableListOf(WebDavUploadResult.Conflict),
@@ -370,11 +369,11 @@ class WebDavSyncEngineTest {
             )
 
         assertEquals(WebDavItemStatus.Uploaded, outcome.status)
-        assertEquals(1, client.uploadIfAbsentCalls.size)
+        assertTrue(client.uploadIfAbsentCalls.isEmpty())
         assertEquals(listOf(null), client.uploadCalls.map { it.etag })
         assertEquals("etag-after", metadata.etags[WebDavSyncItem.GitHubTracked])
         assertEquals(1, metadata.remoteFound[WebDavSyncItem.GitHubTracked]?.itemCount)
-        assertTrue(metadata.remoteEmpty.containsKey(WebDavSyncItem.GitHubTracked))
+        assertTrue(client.downloadCalls.isEmpty())
     }
 
     @Test
@@ -770,12 +769,14 @@ internal class FakeWebDavSyncDataPort(
     private val mergeRemoteOnAutoConflict: Boolean = false,
 ) {
     val mergeCalls = mutableListOf<String>()
+    val replaceCalls = mutableListOf<String>()
 
     fun replaceLocalJson(value: String) {
         localJson = value
     }
 
     val port = WebDavSyncDataPort(
+        replace = { raw -> replaceCalls += raw; localJson = raw },
         exportJson = { localJson },
         fingerprintJson = { localFingerprintJson ?: localJson },
         remoteFingerprintJson = remoteFingerprintJson,

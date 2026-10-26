@@ -43,7 +43,7 @@
     <string name="webdav_sync_status_saved">已保存</string>
     <string name="webdav_sync_status_setup_required">待配置</string>
     <string name="webdav_sync_jianguoyun_hint">请使用坚果云账号邮箱和第三方应用密码（非账号密码）。在坚果云网页端：账户设置 → 安全选项 → 第三方应用管理 中生成。</string>
-    <string name="webdav_sync_jianguoyun_quota_hint">坚果云免费账号有 WebDAV 访问频率和月流量限制。KeiOS 会减少启动自动同步和重复目录检查；大量数据迁移建议完成一次手动同步后等待一段时间再重试。</string>
+    <string name="webdav_sync_jianguoyun_quota_hint">坚果云限制 WebDAV 请求频率。KeiOS 会控制请求间隔；收到限流响应后会按服务器要求暂停。请等待后重试，连续点击不会解除限流。</string>
     <string name="webdav_sync_jianguoyun_password_hint">自动生成的英文字母与数字混合字符串</string>
     <string name="webdav_sync_jianguoyun_server_label">推荐服务器</string>
     <string name="webdav_sync_server_url">服务器地址</string>
@@ -207,7 +207,7 @@
     <string name="webdav_sync_confirm_upload_summary">本地数据将以本地为准覆盖每个启用项的远端副本。除非你确实想以本地为权威，否则建议优先使用「同步」（合并）。</string>
     <string name="webdav_sync_confirm_upload_shrink_warning">远端目前条目数多于本地。现在上传会让远端数据变少 — 建议先执行「同步」进行合并。</string>
     <string name="webdav_sync_confirm_download_title">全部从远端下载？</string>
-    <string name="webdav_sync_confirm_download_summary">远端数据将合并到本地的每个启用项。本地独有项目会保留，远端独有项目会被添加。</string>
+    <string name="webdav_sync_confirm_download_summary">云端备份将替换每个启用项的本地数据，并移除本地独有条目。请先确认云端是你要恢复的版本。</string>
     <string name="webdav_sync_confirm_continue">继续</string>
     <string name="webdav_sync_confirm_cancel">取消</string>
 
@@ -225,7 +225,7 @@
     <string name="webdav_sync_totals_contract_note">计数口径跟随各项目导出的 JSON 内容。</string>
     <string name="webdav_sync_totals_remote_format">远端：%1$d 项 · %2$s</string>
     <string name="webdav_sync_totals_remote_unknown">远端：点击"刷新远端"载入。</string>
-    <string name="webdav_sync_actions_contract_summary">同步会合并本地与远端；上传会以本地写入远端；下载会把远端合并到本地。每次操作都会先刷新远端并显示确认清单。</string>
+    <string name="webdav_sync_actions_contract_summary">同步会合并两端数据；上传用本地覆盖云端；下载用云端覆盖本地，并移除本地独有条目。操作前会显示确认清单。</string>
 
     <!-- Local sync history -->
     <string name="webdav_sync_history_summary_title">同步历史</string>
@@ -279,8 +279,8 @@
     <string name="webdav_sync_plan_item_upload_title">确认上传「%1$s」</string>
     <string name="webdav_sync_plan_item_download_title">确认下载「%1$s」</string>
     <string name="webdav_sync_plan_sync_summary">同步会先刷新远端快照，再合并本地与远端 JSON。本地独有和远端独有项目都会保留。</string>
-    <string name="webdav_sync_plan_upload_summary">上传会先刷新远端快照，再以本地 JSON 作为权威副本写入服务器。KeiOS 会在预览写入时使用 ETag 保护，确认覆盖前会再次刷新远端，也能兼容拒绝条件 PUT 的服务商。</string>
-    <string name="webdav_sync_plan_download_summary">下载会先刷新远端快照，再把远端 JSON 合并到本地数据。</string>
+    <string name="webdav_sync_plan_upload_summary">确认后将用本地数据覆盖对应云端文件，并读回校验。云端独有条目会被移除；此操作也可以替换无法解析的旧备份。</string>
+    <string name="webdav_sync_plan_download_summary">下载将用云端数据替换本地对应数据集，本地独有条目会被移除。请确认云端备份是你要恢复的版本。</string>
     <string name="webdav_sync_plan_remote_refreshed">远端已刷新：%1$s</string>
     <string name="webdav_sync_plan_upload_shrink_warning">部分远端数据集条目数多于本地。继续上传会让这些远端文件变小。</string>
     <string name="webdav_sync_plan_blocking_error">至少一个数据集刷新远端失败。请先处理错误，或关闭该数据集后继续。</string>
@@ -294,8 +294,11 @@
     <string name="webdav_sync_plan_effect_create_remote">用本地数据创建远端文件</string>
     <string name="webdav_sync_plan_effect_merge_upload">合并本地与远端后，上传合并后的 JSON</string>
     <string name="webdav_sync_plan_effect_upload_overwrite">使用本地 JSON 覆盖远端文件</string>
-    <string name="webdav_sync_plan_effect_download_merge">把远端 JSON 合并到本地数据</string>
+    <string name="webdav_sync_plan_effect_download_replace">用云端备份替换本地数据，包括移除本地独有条目</string>
     <string name="webdav_sync_plan_effect_remote_empty">远端暂无数据，本地保持现状</string>
     <string name="webdav_sync_plan_effect_error">远端刷新失败</string>
     <string name="webdav_sync_plan_effect_remote_shrink">远端条目数会减少</string>
+    <string name="webdav_sync_status_rate_limited">服务商暂时限流，请稍后重试</string>
+    <string name="webdav_sync_plan_remote_unknown_count">内容无法识别，上传将替换此文件</string>
+    <string name="webdav_sync_url_error_invalid">请检查服务器地址和远程目录</string>
 </resources>

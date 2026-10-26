@@ -737,7 +737,8 @@ private fun itemStatusText(status: WebDavItemStatus): String = when (status) {
     WebDavItemStatus.NetworkError -> stringResource(R.string.webdav_sync_status_network_error)
     WebDavItemStatus.ConflictUnresolved -> stringResource(R.string.webdav_sync_status_conflict)
     WebDavItemStatus.BaselineRequired -> stringResource(R.string.webdav_sync_status_baseline_required)
-    WebDavItemStatus.Error -> stringResource(R.string.webdav_sync_status_error)
+    WebDavItemStatus.RateLimited -> stringResource(R.string.webdav_sync_status_rate_limited)
+            WebDavItemStatus.Error -> stringResource(R.string.webdav_sync_status_error)
 }
 
 @Composable
@@ -765,6 +766,7 @@ private fun urlErrorText(error: WebDavUrlError?): String? = when (error) {
     null -> null
     WebDavUrlError.Empty -> stringResource(R.string.webdav_sync_url_error_empty)
     WebDavUrlError.Scheme -> stringResource(R.string.webdav_sync_url_error_scheme)
+        WebDavUrlError.Invalid -> stringResource(R.string.webdav_sync_url_error_invalid)
 }
 
 private fun formatTime(timeMs: Long): String {

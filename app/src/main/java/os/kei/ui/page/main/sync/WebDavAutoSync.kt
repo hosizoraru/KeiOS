@@ -527,8 +527,7 @@ internal object WebDavAutoSync {
                 )
             is WebDavSyncPlanRemoteState.Found -> {
                 if (planItem.localHash == remote.contentHash) {
-                    engine.recordCurrentLocalAsSynced(item, remote.etag, port)
-                    WebDavItemOutcome(WebDavItemStatus.UpToDate)
+                    engine.sync(config, item, port)
                 } else if (port.mergeRemoteOnAutoConflict) {
                     engine.sync(config, item, port)
                 } else {

@@ -33,7 +33,7 @@ internal fun WebDavSyncPlanDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val destructive = plan.kind == WebDavBatchKind.Upload
+    val destructive = plan.kind == WebDavBatchKind.Upload || plan.kind == WebDavBatchKind.Download
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(CardLayoutRhythm.compactSectionGap),
@@ -207,7 +207,8 @@ private fun countsLine(item: WebDavSyncPlanItem): String {
             WebDavSyncPlanRemoteState.Empty -> stringResource(R.string.webdav_sync_plan_remote_empty_count)
             is WebDavSyncPlanRemoteState.Error -> itemStatusText(remote.status)
             is WebDavSyncPlanRemoteState.Found ->
-                stringResource(
+                if (remote.itemCount < 0) stringResource(R.string.webdav_sync_plan_remote_unknown_count)
+                else stringResource(
                     R.string.webdav_sync_plan_remote_count_format,
                     remote.itemCount.coerceAtLeast(0),
                     formatPlanBytes(remote.byteSize),
@@ -229,7 +230,7 @@ private fun effectLine(item: WebDavSyncPlanItem, kind: WebDavBatchKind): String 
                 WebDavSyncPlanEffect.CreateRemote -> R.string.webdav_sync_plan_effect_create_remote
                 WebDavSyncPlanEffect.MergeThenUpload -> R.string.webdav_sync_plan_effect_merge_upload
                 WebDavSyncPlanEffect.UploadOverwrite -> R.string.webdav_sync_plan_effect_upload_overwrite
-                WebDavSyncPlanEffect.DownloadMerge -> R.string.webdav_sync_plan_effect_download_merge
+                WebDavSyncPlanEffect.DownloadReplace -> R.string.webdav_sync_plan_effect_download_replace
                 WebDavSyncPlanEffect.RemoteEmpty -> R.string.webdav_sync_plan_effect_remote_empty
                 WebDavSyncPlanEffect.Error -> R.string.webdav_sync_plan_effect_error
             },
@@ -245,6 +246,8 @@ private fun effectColor(item: WebDavSyncPlanItem): Color =
     when {
         item.remoteState is WebDavSyncPlanRemoteState.Error -> MiuixTheme.colorScheme.error
         item.shrinksRemote -> MiuixTheme.colorScheme.error
+        item.effect == WebDavSyncPlanEffect.DownloadReplace ||
+            item.effect == WebDavSyncPlanEffect.UploadOverwrite -> MiuixTheme.colorScheme.error
         item.effect == WebDavSyncPlanEffect.NoChange -> Color(0xFF22C55E)
         else -> MiuixTheme.colorScheme.primary
     }
@@ -263,6 +266,7 @@ private fun itemStatusText(status: WebDavItemStatus): String =
             WebDavItemStatus.NetworkError -> R.string.webdav_sync_status_network_error
             WebDavItemStatus.ConflictUnresolved -> R.string.webdav_sync_status_conflict
             WebDavItemStatus.BaselineRequired -> R.string.webdav_sync_status_baseline_required
+            WebDavItemStatus.RateLimited -> R.string.webdav_sync_status_rate_limited
             WebDavItemStatus.Error -> R.string.webdav_sync_status_error
         },
     )

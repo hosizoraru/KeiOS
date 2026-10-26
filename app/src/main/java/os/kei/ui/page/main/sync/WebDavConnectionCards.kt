@@ -217,15 +217,15 @@ internal fun WebDavRemoteWorkspaceCard(
                 onValueChange = onUpdateServerUrl,
                 label = stringResource(R.string.webdav_sync_server_url_placeholder),
             )
-            webDavUrlErrorText(state.urlError)?.let { error ->
-                AppSupportingBlock(
-                    text = error,
-                    accentColor = MiuixTheme.colorScheme.error,
-                    containerColor = MiuixTheme.colorScheme.error.copy(alpha = 0.08f),
-                    contentColor = MiuixTheme.colorScheme.error,
-                    fillWidth = true,
-                )
-            }
+        }
+        webDavUrlErrorText(state.urlError)?.let { error ->
+            AppSupportingBlock(
+                text = error,
+                accentColor = MiuixTheme.colorScheme.error,
+                containerColor = MiuixTheme.colorScheme.error.copy(alpha = 0.08f),
+                contentColor = MiuixTheme.colorScheme.error,
+                fillWidth = true,
+            )
         }
         WebDavFieldLabel(stringResource(R.string.webdav_sync_remote_dir))
         WebDavLiquidTextField(
@@ -394,4 +394,5 @@ private fun webDavUrlErrorText(error: WebDavUrlError?): String? =
         null -> null
         WebDavUrlError.Empty -> stringResource(R.string.webdav_sync_url_error_empty)
         WebDavUrlError.Scheme -> stringResource(R.string.webdav_sync_url_error_scheme)
+        WebDavUrlError.Invalid -> stringResource(R.string.webdav_sync_url_error_invalid)
     }

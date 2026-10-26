@@ -97,6 +97,13 @@ private fun buildWebDavSyncDataPorts(
 ): Map<WebDavSyncItem, WebDavSyncDataPort> =
     mapOf(
         WebDavSyncItem.GitHubTracked to WebDavSyncDataPort(
+            replace = { raw ->
+                val payload = GitHubTrackedItemsTransferService.parseImport(raw)
+                GitHubTrackedItemsTransferService.replaceFromSync(
+                    payload.copy(items = normalizeGitHubTrackedItemsForSync(payload.items)),
+                    onRefreshNeeded = { AppBackgroundScheduler.scheduleGitHubRefresh(context) },
+                )
+            },
             exportJson = {
                 val items =
                     normalizeGitHubTrackedItemsForSync(
@@ -141,6 +148,10 @@ private fun buildWebDavSyncDataPorts(
             },
         ),
         WebDavSyncItem.BaAccounts to WebDavSyncDataPort(
+            replace = { raw ->
+                BASettingsStore.replaceAccountsSyncJson(raw)
+                AppBackgroundScheduler.scheduleBaApThreshold(context)
+            },
             exportJson = { BASettingsStore.buildAccountsSyncExportJson() },
             fingerprintJson = {
                 BASettingsStore.buildAccountsSyncExportJson(nowMs = 0L)
@@ -159,6 +170,7 @@ private fun buildWebDavSyncDataPorts(
             fingerprintRevision = BA_ACCOUNTS_FINGERPRINT_REVISION,
         ),
         WebDavSyncItem.BaCatalogFavorites to WebDavSyncDataPort(
+            replace = { raw -> BaGuideCatalogStore.saveFavorites(parseCatalogFavoritesExport(raw, 1L)) },
             exportJson = {
                 buildCatalogFavoritesExportJson(BaGuideCatalogStore.loadFavorites())
             },
@@ -166,10 +178,10 @@ private fun buildWebDavSyncDataPorts(
                 buildCatalogFavoritesExportJson(BaGuideCatalogStore.loadFavorites(), nowMs = 0L)
             },
             remoteFingerprintJson = { raw ->
-                buildCatalogFavoritesExportJson(parseCatalogFavoritesExport(raw), nowMs = 0L)
+                buildCatalogFavoritesExportJson(parseCatalogFavoritesExport(raw, 1L), nowMs = 0L)
             },
             merge = { raw ->
-                val imported = parseCatalogFavoritesExport(raw)
+                val imported = parseCatalogFavoritesExport(raw, 1L)
                 val existing = BaGuideCatalogStore.loadFavorites()
                 // Union of favorited content; keep the earliest favorited timestamp on conflict.
                 val merged = HashMap(existing)
@@ -190,6 +202,7 @@ private fun buildWebDavSyncDataPorts(
             mergeRemoteOnAutoConflict = true,
         ),
         WebDavSyncItem.BaBgmFavorites to WebDavSyncDataPort(
+            replace = { raw -> GuideBgmFavoriteStore.replaceFavoritesFromSync(raw) },
             exportJson = { GuideBgmFavoriteStore.buildFavoritesExportJson() },
             fingerprintJson = { GuideBgmFavoriteStore.buildFavoritesExportJson(nowMs = 0L) },
             remoteFingerprintJson = { raw -> GuideBgmFavoriteStore.buildFavoritesFingerprintJson(raw) },
@@ -202,6 +215,12 @@ private fun buildWebDavSyncDataPorts(
             mergeRemoteOnAutoConflict = true,
         ),
         WebDavSyncItem.OsActivityCards to WebDavSyncDataPort(
+            replace = { raw ->
+                val payload = OsCardTransferService.parseActivityImportPayload(
+                    raw, googleSystemServiceDefaults, googleSystemServiceDefaults, builtInActivityShortcutCards,
+                )
+                OsActivityShortcutCardStore.replaceFromSync(payload.cards, googleSystemServiceDefaults)
+            },
             exportJson = {
                 val cards = OsActivityShortcutCardStore.loadCards(
                     defaults = googleSystemServiceDefaults,
@@ -273,6 +292,10 @@ private fun buildWebDavSyncDataPorts(
             mergeRemoteOnAutoConflict = true,
         ),
         WebDavSyncItem.OsShellCards to WebDavSyncDataPort(
+            replace = { raw ->
+                val payload = OsCardTransferService.parseShellImportPayload(raw)
+                OsShellCommandCardStore.replaceFromSync(payload.cards)
+            },
             exportJson = {
                 val cards = OsShellCommandCardStore.loadCards(
                     builtInShellCommandCards = builtInShellCommandCards,
@@ -311,7 +334,12 @@ private fun buildWebDavSyncDataPorts(
             },
             mergeRemoteOnAutoConflict = true,
         ),
-    )
+    ).mapValues { (item, port) ->
+        port.copy(remoteFingerprintJson = { raw ->
+            validateWebDavPayload(item, raw)
+            port.remoteFingerprintJson(raw)
+        })
+    }
 
 internal fun resolveWebDavBuiltInCardSets(context: Context): WebDavBuiltInCardSets {
     val defaultIntentFlags =
@@ -399,6 +427,7 @@ internal fun buildRemoteOsActivityCardsSyncFingerprintJson(
             builtInSampleDefaults = builtInSampleDefaults,
             builtInActivityShortcutCards = builtInActivityShortcutCards,
         )
+    require(payload.invalidCount == 0) { "Invalid activity card backup" }
     return buildOsActivityCardsSyncFingerprintJson(
         cards = payload.cards,
         defaults = defaults,
@@ -413,6 +442,7 @@ internal fun buildOsShellCardsSyncFingerprintJson(cards: List<OsShellCommandCard
 
 internal fun buildRemoteOsShellCardsSyncFingerprintJson(raw: String): String {
     val payload = OsCardTransferService.parseShellImportPayload(raw)
+    require(payload.invalidCount == 0) { "Invalid shell card backup" }
     return buildOsShellCardsSyncFingerprintJson(payload.cards)
 }
 

@@ -362,6 +362,7 @@ private fun historyItemStatusLine(item: WebDavSyncHistoryItem): String {
             WebDavItemStatus.NetworkError -> stringResource(R.string.webdav_sync_status_network_error)
             WebDavItemStatus.ConflictUnresolved -> stringResource(R.string.webdav_sync_status_conflict)
             WebDavItemStatus.BaselineRequired -> stringResource(R.string.webdav_sync_status_baseline_required)
+            WebDavItemStatus.RateLimited -> stringResource(R.string.webdav_sync_status_rate_limited)
             WebDavItemStatus.Error -> stringResource(R.string.webdav_sync_status_error)
         }
     val detail = item.detail?.takeIf { it.isNotBlank() } ?: return base

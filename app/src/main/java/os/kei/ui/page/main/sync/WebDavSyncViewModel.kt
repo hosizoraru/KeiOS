@@ -3,6 +3,7 @@ package os.kei.ui.page.main.sync
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.content.Context
+import os.kei.feature.webdav.model.workspaceIdentity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +24,11 @@ internal class WebDavSyncViewModel(
 
     private var syncJob: Job? = null
 
+    override fun onCleared() {
+        repository.close()
+        super.onCleared()
+    }
+
     // ── Field edits ────────────────────────────────────────────────────
 
     fun updateServerUrl(value: String) {
@@ -38,7 +44,7 @@ internal class WebDavSyncViewModel(
     }
 
     fun updateRemoteDir(value: String) {
-        _uiState.update { it.copy(remoteDir = value, connectionResult = null) }
+        _uiState.update { it.copy(remoteDir = value, urlError = null, connectionResult = null) }
     }
 
     fun togglePasswordVisible() {
@@ -64,7 +70,7 @@ internal class WebDavSyncViewModel(
         if (s.interactionLocked) return
         if (!validate()) return
         viewModelScope.launch {
-            val config =
+            val config = try {
                 repository.saveConfig(
                     provider = s.provider,
                     serverUrl = s.serverUrl,
@@ -72,6 +78,12 @@ internal class WebDavSyncViewModel(
                     appPassword = s.appPassword,
                     remoteDir = s.remoteDir,
                 )
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                _uiState.update { it.copy(connectionResult = WebDavConnectionOutcome(WebDavConnectionStatus.Unknown)) }
+                return@launch
+            }
             _uiState.update { state ->
                 state.copy(
                     isConfigured = true,
@@ -583,6 +595,13 @@ internal class WebDavSyncViewModel(
             }
         }
         if (s.username.isBlank() || s.appPassword.isBlank()) return false
+        if (runCatching {
+                s.provider.buildConfig(s.serverUrl, s.username, s.appPassword, s.remoteDir).workspaceIdentity()
+            }.isFailure
+        ) {
+            _uiState.value = s.copy(urlError = WebDavUrlError.Invalid)
+            return false
+        }
         return true
     }
 
@@ -615,7 +634,7 @@ internal class WebDavSyncViewModel(
 
 internal enum class WebDavBatchKind { Sync, Upload, Download }
 
-internal enum class WebDavUrlError { Empty, Scheme }
+internal enum class WebDavUrlError { Empty, Scheme, Invalid }
 
 internal data class WebDavSyncUiState(
     val provider: WebDavProvider = WebDavProvider.Jianguoyun,

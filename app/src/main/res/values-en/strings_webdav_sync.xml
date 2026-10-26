@@ -43,7 +43,7 @@
     <string name="webdav_sync_status_saved">Saved</string>
     <string name="webdav_sync_status_setup_required">Setup required</string>
     <string name="webdav_sync_jianguoyun_hint">Use your Jianguoyun account email and an app-specific password (not your account password). Generate one at Account Settings → Security → Third-party App Management.</string>
-    <string name="webdav_sync_jianguoyun_quota_hint">Jianguoyun free accounts limit WebDAV request frequency and monthly traffic. KeiOS reduces launch auto-sync and repeated directory checks; for large migrations, run one manual sync and wait before retrying.</string>
+    <string name="webdav_sync_jianguoyun_quota_hint">Jianguoyun limits WebDAV requests. KeiOS spaces requests and pauses after rate-limit responses. Wait before retrying; repeated taps do not clear the limit.</string>
     <string name="webdav_sync_jianguoyun_password_hint">Auto-generated alphanumeric string (letters + numbers)</string>
     <string name="webdav_sync_jianguoyun_server_label">Recommended Server</string>
     <string name="webdav_sync_server_url">Server URL</string>
@@ -207,7 +207,7 @@
     <string name="webdav_sync_confirm_upload_summary">Local data will overwrite the remote copy for every enabled item. Sync (merge) is the safer default unless you specifically want to push local as authoritative.</string>
     <string name="webdav_sync_confirm_upload_shrink_warning">The remote currently holds more items than local. Uploading now will shrink the remote dataset — consider running Sync first to merge instead.</string>
     <string name="webdav_sync_confirm_download_title">Download all from remote?</string>
-    <string name="webdav_sync_confirm_download_summary">Remote data will be merged into local for every enabled item. Local-only items are kept; remote-only items are added.</string>
+    <string name="webdav_sync_confirm_download_summary">The cloud backup replaces local data for every enabled item and removes local-only entries. Confirm that the cloud copy is the version you want to restore.</string>
     <string name="webdav_sync_confirm_continue">Continue</string>
     <string name="webdav_sync_confirm_cancel">Cancel</string>
 
@@ -225,7 +225,7 @@
     <string name="webdav_sync_totals_contract_note">Counts follow each item\'s exported JSON payload.</string>
     <string name="webdav_sync_totals_remote_format">Remote: %1$d items · %2$s</string>
     <string name="webdav_sync_totals_remote_unknown">Remote: tap "Refresh remote" to load.</string>
-    <string name="webdav_sync_actions_contract_summary">Sync merges local and remote; Upload writes local to remote; Download merges remote into local. Every action refreshes remote first and shows a review list.</string>
+    <string name="webdav_sync_actions_contract_summary">Sync merges both copies; Upload replaces cloud data with local data; Download replaces local data with the cloud backup and removes local-only entries. Review the changes before proceeding.</string>
 
     <!-- Local sync history -->
     <string name="webdav_sync_history_summary_title">Sync history</string>
@@ -279,8 +279,8 @@
     <string name="webdav_sync_plan_item_upload_title">Review %1$s upload</string>
     <string name="webdav_sync_plan_item_download_title">Review %1$s download</string>
     <string name="webdav_sync_plan_sync_summary">Sync first refreshes the remote snapshot, then merges local and remote JSON. Local-only and remote-only items are both kept.</string>
-    <string name="webdav_sync_plan_upload_summary">Upload first refreshes the remote snapshot, then writes local JSON as the authoritative copy. KeiOS uses ETag protection for the preview write and refreshes the remote again before a confirmed overwrite, which also avoids providers that reject conditional PUT.</string>
-    <string name="webdav_sync_plan_download_summary">Download first refreshes the remote snapshot, then merges remote JSON into local data.</string>
+    <string name="webdav_sync_plan_upload_summary">Upload replaces the cloud file with local data, then reads it back for verification. Cloud-only entries are removed. This can also replace an unreadable old backup.</string>
+    <string name="webdav_sync_plan_download_summary">Download replaces this local dataset with the cloud backup and removes local-only entries. Confirm that the cloud copy is the version you want to restore.</string>
     <string name="webdav_sync_plan_remote_refreshed">Remote refreshed: %1$s</string>
     <string name="webdav_sync_plan_upload_shrink_warning">Some remote datasets currently contain more items than local. Uploading will make those remote files smaller.</string>
     <string name="webdav_sync_plan_blocking_error">Remote refresh failed for at least one dataset. Resolve the error or disable that dataset before continuing.</string>
@@ -294,8 +294,11 @@
     <string name="webdav_sync_plan_effect_create_remote">Create the remote file from local data</string>
     <string name="webdav_sync_plan_effect_merge_upload">Merge local + remote, then upload the merged JSON</string>
     <string name="webdav_sync_plan_effect_upload_overwrite">Overwrite the remote file with local JSON</string>
-    <string name="webdav_sync_plan_effect_download_merge">Merge remote JSON into local data</string>
+    <string name="webdav_sync_plan_effect_download_replace">Replace local data with the cloud backup, removing local-only entries</string>
     <string name="webdav_sync_plan_effect_remote_empty">Remote is empty; local data is kept as-is</string>
     <string name="webdav_sync_plan_effect_error">Remote refresh failed</string>
     <string name="webdav_sync_plan_effect_remote_shrink">remote item count will decrease</string>
+    <string name="webdav_sync_status_rate_limited">Provider rate limit reached; retry later</string>
+    <string name="webdav_sync_plan_remote_unknown_count">Unrecognized content; upload will replace this file</string>
+    <string name="webdav_sync_url_error_invalid">Check the server URL and remote directory</string>
 </resources>
