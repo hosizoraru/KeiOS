@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@android:id/background" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/github_widget_background" android:clipToOutline="true" android:orientation="vertical" android:padding="8dp">
+    <include layout="@layout/github_widget_header" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:orientation="horizontal">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView style="@style/GitHubWidgetValue" android:id="@+id/github_widget_count" android:textSize="18sp" />
+            <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_updates_label" android:text="@string/github_widget_updates" android:textSize="10sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView style="@style/GitHubWidgetValue" android:id="@+id/github_widget_banner_total" android:textSize="18sp" />
+            <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_banner_total_label" android:text="@string/github_widget_summary_tracked" android:textSize="10sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView style="@style/GitHubWidgetValue" android:id="@+id/github_widget_banner_attention" android:textSize="18sp" />
+            <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_banner_attention_label" android:text="@string/github_widget_needs_check" android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

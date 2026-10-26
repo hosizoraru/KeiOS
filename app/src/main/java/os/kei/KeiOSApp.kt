@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.StatFs
+import os.kei.appwidget.github.GitHubWidgetPublisher
+import os.kei.appwidget.github.isGitHubWidgetProcess
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import os.kei.memory.AppMemoryRelease
@@ -113,6 +115,7 @@ class KeiOSApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        if (isGitHubWidgetProcess(getProcessName(), packageName)) return
         // First-frame critical path: keep this list as small as possible. Anything that touches
         // MMKV, AlarmManager, or scans tracked-app state should run via [applicationScope] below.
         MMKV.initialize(this)
@@ -157,6 +160,7 @@ class KeiOSApp : Application() {
         registerMemoryPressureHandling()
         Android17StrictModeProbes.install(isDebugBuild = BuildConfig.DEBUG)
         WebDavAutoSync.init(this)
+        GitHubWidgetPublisher.start(this, applicationScope)
         scheduleDeferredStartupWork()
     }
 
@@ -185,6 +189,7 @@ class KeiOSApp : Application() {
      */
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        if (isGitHubWidgetProcess(getProcessName(), packageName)) return
         val releaseLevel = AppMemoryRelease.levelForTrimMemory(level) ?: return
         applicationScope.launch {
             runCatching { AppMemoryRelease.release(this@KeiOSApp, releaseLevel) }
@@ -193,6 +198,7 @@ class KeiOSApp : Application() {
 
     override fun onLowMemory() {
         super.onLowMemory()
+        if (isGitHubWidgetProcess(getProcessName(), packageName)) return
         applicationScope.launch {
             runCatching { AppMemoryRelease.release(this@KeiOSApp, AppMemoryReleaseLevel.Critical) }
         }

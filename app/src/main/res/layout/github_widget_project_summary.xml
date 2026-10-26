@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/github_widget_project_summary" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="4dp" android:background="@drawable/github_widget_tile" android:gravity="center_vertical" android:orientation="vertical" android:paddingHorizontal="7dp" android:visibility="gone">
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_summary_checked" android:layout_width="match_parent" android:textSize="10sp" />
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_summary_current" android:layout_width="match_parent" android:textSize="10sp" />
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_summary_attention" android:layout_width="match_parent" android:textSize="10sp" />
+</LinearLayout>

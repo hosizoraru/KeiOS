@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.update
 object GitHubTrackStoreSignals {
     private val _version = MutableStateFlow(0L)
     val version: StateFlow<Long> = _version.asStateFlow()
+    private val _persistedSummaryVersion = MutableStateFlow(0L)
+    val persistedSummaryVersion: StateFlow<Long> = _persistedSummaryVersion.asStateFlow()
     private val trackRefreshLock = Any()
     private val _pendingTrackRefreshIds = MutableStateFlow<Set<String>>(emptySet())
 
@@ -15,6 +17,11 @@ object GitHubTrackStoreSignals {
         _version.update { previous ->
             atMillis.coerceAtLeast(previous + 1L)
         }
+        notifySummaryChanged()
+    }
+
+    fun notifySummaryChanged() {
+        _persistedSummaryVersion.update { it + 1L }
     }
 
     fun requestTrackRefresh(

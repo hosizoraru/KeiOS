@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Reserve the previous layout ID so upgraded hosts inflate the new shell. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/github_widget_shell_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />

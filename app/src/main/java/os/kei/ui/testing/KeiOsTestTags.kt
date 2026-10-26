@@ -262,6 +262,7 @@ object KeiOsTestTags {
     const val BaDailyTemplateHeadpatSwitch = "ba_daily_template_headpat_switch"
     const val GitHubPageRoot = "github_page_root"
     const val GitHubImportMenuButton = "github_import_menu_button"
+    const val GitHubDesktopWidgetButton = "github_desktop_widget_button"
     const val GitHubImportTracks = "github_import_tracks"
     const val GitHubImportStars = "github_import_stars"
     const val GitHubShareImportCancel = "github_share_import_cancel"

@@ -636,6 +636,7 @@ internal fun GitHubMainContent(
                 onExportTrackedItems = actions.onExportTrackedItems,
                 onImportTrackedItems = actions.onImportTrackedItems,
                 onOpenStarImport = actions.onOpenStarImport,
+                onOpenDesktopWidget = { os.kei.appwidget.github.GitHubWidgetConfigureActivity.launch(context) },
             )
         }
     }

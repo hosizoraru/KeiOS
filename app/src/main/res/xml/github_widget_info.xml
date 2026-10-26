@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="os.kei.appwidget.github.GitHubWidgetConfigureActivity"
+    android:description="@string/github_widget_description"
+    android:initialLayout="@layout/github_widget_strip"
+    android:minWidth="110dp"
+    android:minHeight="72dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="72dp"
+    android:previewLayout="@layout/github_widget_strip"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="43200000"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

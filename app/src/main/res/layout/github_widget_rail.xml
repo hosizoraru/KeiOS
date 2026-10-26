@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="64dp" android:layout_height="match_parent" android:layout_marginEnd="10dp" android:orientation="vertical">
+    <TextView style="@style/GitHubWidgetBrand" android:id="@+id/github_widget_brand_label" android:text="@string/github_widget_brand" />
+    <TextView style="@style/GitHubWidgetValue" android:id="@+id/github_widget_count" android:layout_marginTop="2dp" android:textSize="30sp" />
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_updates_label" android:text="@string/github_widget_updates" android:textSize="11sp" />
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_tracked" android:visibility="gone" />
+    <LinearLayout android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1" android:importantForAccessibility="no" />
+    <TextView style="@style/GitHubWidgetBrand" android:id="@+id/github_widget_refresh" android:layout_width="match_parent" android:layout_height="48dp" android:background="@drawable/github_widget_button" android:gravity="center" android:text="@string/github_widget_check_short" android:textSize="12sp" />
+</LinearLayout>

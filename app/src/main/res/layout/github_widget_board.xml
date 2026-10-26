@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@android:id/background" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/github_widget_background" android:clipToOutline="true" android:orientation="horizontal" android:padding="10dp">
+    <include layout="@layout/github_widget_rail" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+            <LinearLayout android:id="@+id/github_widget_names" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:visibility="gone">
+                <LinearLayout android:id="@+id/github_widget_project_group_1" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginBottom="6dp" android:orientation="horizontal">
+                    <LinearLayout android:id="@+id/github_widget_project_row_1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="0dp" android:layout_marginEnd="4dp" android:background="@drawable/github_widget_tile" android:paddingHorizontal="7dp" android:paddingVertical="2dp" android:gravity="center_vertical" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:id="@+id/github_widget_project_icon_1" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="4dp" android:importantForAccessibility="no" />
+                            <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_project_name_1" android:layout_width="0dp" android:layout_weight="1" />
+                        </LinearLayout>
+                        <TextView style="@style/GitHubWidgetVersion" android:id="@+id/github_widget_project_version_1" android:layout_width="match_parent" />
+                        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_detail_1" android:layout_width="match_parent" android:textSize="10sp" android:visibility="gone" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/github_widget_project_row_2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp" android:layout_marginEnd="0dp" android:background="@drawable/github_widget_tile" android:paddingHorizontal="7dp" android:paddingVertical="2dp" android:gravity="center_vertical" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:id="@+id/github_widget_project_icon_2" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="4dp" android:importantForAccessibility="no" />
+                            <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_project_name_2" android:layout_width="0dp" android:layout_weight="1" />
+                        </LinearLayout>
+                        <TextView style="@style/GitHubWidgetVersion" android:id="@+id/github_widget_project_version_2" android:layout_width="match_parent" />
+                        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_detail_2" android:layout_width="match_parent" android:textSize="10sp" android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/github_widget_project_group_2" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginBottom="6dp" android:orientation="horizontal">
+                    <LinearLayout android:id="@+id/github_widget_project_row_3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="0dp" android:layout_marginEnd="4dp" android:background="@drawable/github_widget_tile" android:paddingHorizontal="7dp" android:paddingVertical="2dp" android:gravity="center_vertical" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:id="@+id/github_widget_project_icon_3" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="4dp" android:importantForAccessibility="no" />
+                            <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_project_name_3" android:layout_width="0dp" android:layout_weight="1" />
+                        </LinearLayout>
+                        <TextView style="@style/GitHubWidgetVersion" android:id="@+id/github_widget_project_version_3" android:layout_width="match_parent" />
+                        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_detail_3" android:layout_width="match_parent" android:textSize="10sp" android:visibility="gone" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/github_widget_project_row_4" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp" android:layout_marginEnd="0dp" android:background="@drawable/github_widget_tile" android:paddingHorizontal="7dp" android:paddingVertical="2dp" android:gravity="center_vertical" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:id="@+id/github_widget_project_icon_4" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="4dp" android:importantForAccessibility="no" />
+                            <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_project_name_4" android:layout_width="0dp" android:layout_weight="1" />
+                        </LinearLayout>
+                        <TextView style="@style/GitHubWidgetVersion" android:id="@+id/github_widget_project_version_4" android:layout_width="match_parent" />
+                        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_detail_4" android:layout_width="match_parent" android:textSize="10sp" android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/github_widget_project_group_3" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginBottom="0dp" android:orientation="horizontal">
+                    <LinearLayout android:id="@+id/github_widget_project_row_5" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="0dp" android:layout_marginEnd="4dp" android:background="@drawable/github_widget_tile" android:paddingHorizontal="7dp" android:paddingVertical="2dp" android:gravity="center_vertical" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:id="@+id/github_widget_project_icon_5" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="4dp" android:importantForAccessibility="no" />
+                            <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_project_name_5" android:layout_width="0dp" android:layout_weight="1" />
+                        </LinearLayout>
+                        <TextView style="@style/GitHubWidgetVersion" android:id="@+id/github_widget_project_version_5" android:layout_width="match_parent" />
+                        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_detail_5" android:layout_width="match_parent" android:textSize="10sp" android:visibility="gone" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/github_widget_project_row_6" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp" android:layout_marginEnd="0dp" android:background="@drawable/github_widget_tile" android:paddingHorizontal="7dp" android:paddingVertical="2dp" android:gravity="center_vertical" android:orientation="vertical">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <ImageView android:id="@+id/github_widget_project_icon_6" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="4dp" android:importantForAccessibility="no" />
+                            <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_project_name_6" android:layout_width="0dp" android:layout_weight="1" />
+                        </LinearLayout>
+                        <TextView style="@style/GitHubWidgetVersion" android:id="@+id/github_widget_project_version_6" android:layout_width="match_parent" />
+                        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_project_detail_6" android:layout_width="match_parent" android:textSize="10sp" android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+                <include layout="@layout/github_widget_project_summary" />
+            </LinearLayout>
+            <include layout="@layout/github_widget_metrics" />
+        </FrameLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:orientation="vertical">
+            <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_status" android:layout_width="match_parent" android:textSize="10sp" />
+            <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_checked" android:layout_width="match_parent" android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

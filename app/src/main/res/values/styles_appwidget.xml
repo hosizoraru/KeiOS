@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="GitHubWidgetCaption">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/github_widget_secondary</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style name="GitHubWidgetBrand" parent="GitHubWidgetCaption">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/github_widget_primary</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+    <style name="GitHubWidgetValue" parent="GitHubWidgetCaption">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:textColor">@color/github_widget_foreground</item>
+        <item name="android:textSize">30sp</item>
+    </style>
+    <style name="GitHubWidgetProject" parent="GitHubWidgetCaption">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/github_widget_foreground</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+    <style name="GitHubWidgetVersion" parent="GitHubWidgetCaption">
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+    <style name="GitHubWidgetMetricValue" parent="GitHubWidgetValue">
+        <item name="android:textSize">18sp</item>
+    </style>
+    <style name="GitHubWidgetMetricLabel" parent="GitHubWidgetCaption">
+        <item name="android:textSize">11sp</item>
+    </style>
+</resources>

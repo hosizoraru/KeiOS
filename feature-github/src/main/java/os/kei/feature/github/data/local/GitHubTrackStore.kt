@@ -206,6 +206,7 @@ object GitHubTrackStore {
             }
         }
         kv().encode(KEY_ITEMS, array.encodeCompact())
+        GitHubTrackStoreSignals.notifySummaryChanged()
     }
 
     fun loadPendingShareImportTrack(): GitHubPendingShareImportTrackRecord? {
@@ -738,6 +739,7 @@ object GitHubTrackStore {
             store.removeValueForKey(KEY_CHECK_CACHE)
             store.removeValueForKey(KEY_PROFILE_CACHE)
             store.removeValueForKey(KEY_LAST_REFRESH_MS)
+            GitHubTrackStoreSignals.notifySummaryChanged()
             return 0L
         }
         val resolvedLastRefreshMs = states.resolvedRefreshTimestamp(lastRefreshMs)
@@ -804,6 +806,7 @@ object GitHubTrackStore {
             kv().removeValueForKey(KEY_PROFILE_CACHE)
         }
         kv().encode(KEY_LAST_REFRESH_MS, resolvedLastRefreshMs)
+        GitHubTrackStoreSignals.notifySummaryChanged()
         return resolvedLastRefreshMs
     }
 
@@ -813,6 +816,7 @@ object GitHubTrackStore {
         store.removeValueForKey(KEY_PROFILE_CACHE)
         store.removeValueForKey(KEY_LAST_REFRESH_MS)
         store.trim()
+        GitHubTrackStoreSignals.notifySummaryChanged()
     }
 
     fun cachedCheckCount(): Int = loadCheckCache().first.size
@@ -979,6 +983,7 @@ object GitHubTrackStore {
             KEY_FDROID_COMMON_REPO_IDS,
             config.normalizedFdroidCommonRepoIds.joinToString(",")
         )
+        GitHubTrackStoreSignals.notifySummaryChanged()
     }
 
     private fun loadFdroidCommonRepoIds(): List<String> {

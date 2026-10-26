@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <corners android:radius="24dp" />
+            <gradient android:angle="315" android:startColor="@color/github_widget_surface_start" android:endColor="@color/github_widget_surface_end" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <corners android:radius="24dp" />
+            <gradient android:type="radial" android:centerX="0.05" android:centerY="0" android:gradientRadius="220dp" android:startColor="@color/github_widget_glow" android:endColor="@color/github_widget_glow_end" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <corners android:radius="24dp" />
+            <gradient android:angle="135" android:startColor="@color/github_widget_reflection" android:endColor="@android:color/transparent" />
+            <stroke android:width="0.7dp" android:color="@color/github_widget_outline" />
+        </shape>
+    </item>
+    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp">
+        <shape>
+            <corners android:radius="23dp" />
+            <stroke android:width="0.5dp" android:color="@color/github_widget_inner_edge" />
+        </shape>
+    </item>
+</layer-list>

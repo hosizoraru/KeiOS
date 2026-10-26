@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@android:id/background" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/github_widget_background" android:clipToOutline="true" android:orientation="vertical" android:padding="10dp">
+    <include layout="@layout/github_widget_header" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center_vertical" android:orientation="horizontal">
+        <TextView style="@style/GitHubWidgetValue" android:id="@+id/github_widget_count" android:text="—" />
+        <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_updates_label" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="6dp" android:text="@string/github_widget_updates" />
+    </LinearLayout>
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_progress" android:layout_marginBottom="4dp" />
+    <TextView style="@style/GitHubWidgetProject" android:id="@+id/github_widget_names" android:layout_width="match_parent" android:layout_marginBottom="4dp" android:visibility="gone" />
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_status" android:layout_width="match_parent" android:layout_marginBottom="4dp" />
+    <TextView style="@style/GitHubWidgetCaption" android:id="@+id/github_widget_checked" android:layout_width="match_parent" android:textSize="10sp" />
+</LinearLayout>

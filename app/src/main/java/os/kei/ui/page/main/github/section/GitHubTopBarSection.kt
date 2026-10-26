@@ -23,6 +23,7 @@ import os.kei.ui.page.main.os.appLucideEditIcon
 import os.kei.ui.page.main.os.appLucideFilterIcon
 import os.kei.ui.page.main.os.appLucideFlaskIcon
 import os.kei.ui.page.main.os.appLucideHeartIcon
+import os.kei.ui.page.main.os.appLucideGridIcon
 import os.kei.ui.page.main.os.appLucideMoreIcon
 import os.kei.ui.page.main.os.appLucideRefreshIcon
 import os.kei.ui.page.main.os.appLucideSortIcon
@@ -64,7 +65,7 @@ internal fun GitHubTopBarSection(
         scrollBehavior = scrollBehavior,
         color = topBarColor,
         titleBackdrop = titleBackdrop,
-        titleEndReserve = AppChromeTokens.topBarTitleActionReserve,
+        titleEndReserve = AppChromeTokens.topBarTitleActionReserve + 44.dp,
         onTitleClick = onTitleClick,
     )
 }
@@ -93,6 +94,7 @@ internal fun GitHubTopBarActions(
     onExportTrackedItems: () -> Unit,
     onImportTrackedItems: () -> Unit,
     onOpenStarImport: () -> Unit,
+    onOpenDesktopWidget: () -> Unit = {},
 ) {
     val editStrategyIcon = appLucideEditIcon()
     val checkLogicIcon = appLucideConfigIcon()
@@ -106,6 +108,8 @@ internal fun GitHubTopBarActions(
     val debugIcon = appLucideFlaskIcon()
     val refreshAppsIcon = appLucideRefreshIcon()
     val moreIcon = appLucideMoreIcon()
+    val widgetIcon = appLucideGridIcon()
+    val widgetDescription = stringResource(R.string.github_widget_add)
     val chevronRightIcon = appLucideChevronRightIcon()
     val editStrategyContentDescription = stringResource(R.string.github_topbar_cd_edit_strategy)
     val checkLogicContentDescription = stringResource(R.string.github_topbar_cd_check_logic)
@@ -145,6 +149,9 @@ internal fun GitHubTopBarActions(
             editStrategyIcon,
             checkLogicIcon,
             moreIcon,
+            widgetIcon,
+            widgetDescription,
+            onOpenDesktopWidget,
             editStrategyContentDescription,
             checkLogicContentDescription,
             moreContentDescription,
@@ -173,6 +180,15 @@ internal fun GitHubTopBarActions(
                     testTag = KeiOsTestTags.GitHubCheckLogicSheetButton,
                 ),
                 LiquidToolbarAction(
+                    icon = widgetIcon,
+                    contentDescription = widgetDescription,
+                    onClick = {
+                        onShowActionMenuPopupChange(false)
+                        onOpenDesktopWidget()
+                    },
+                    testTag = KeiOsTestTags.GitHubDesktopWidgetButton,
+                ),
+                LiquidToolbarAction(
                     icon = moreIcon,
                     contentDescription = moreContentDescription,
                     onClick = { onShowActionMenuPopupChange(!showActionMenuPopup) },
@@ -186,9 +202,9 @@ internal fun GitHubTopBarActions(
             actions = actionItems,
         )
 
-        LiquidToolbarPopupAnchors(itemCount = 3) { slotIndex, popupAnchorBounds ->
+        LiquidToolbarPopupAnchors(itemCount = 4) { slotIndex, popupAnchorBounds ->
             when (slotIndex) {
-                2 -> {
+                3 -> {
                     key("github-top-bar-action-popup") {
                         SnapshotWindowListPopup(
                             show = showActionMenuPopup,

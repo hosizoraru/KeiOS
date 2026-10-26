@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="github_widget_surface_start">#F2242C38</color>
+    <color name="github_widget_surface_end">#F5111A25</color>
+    <color name="github_widget_glow">#306F8FA5</color>
+    <color name="github_widget_glow_end">#006F8FA5</color>
+    <color name="github_widget_reflection">#185796AC</color>
+    <color name="github_widget_outline">#547F94A6</color>
+    <color name="github_widget_inner_edge">#10FFFFFF</color>
+    <color name="github_widget_tile">#0CFFFFFF</color>
+    <color name="github_widget_tile_edge">#23FFFFFF</color>
+    <color name="github_widget_primary">#B8DFFF</color>
+    <color name="github_widget_foreground">#F2F5F8</color>
+    <color name="github_widget_secondary">#D3DEEB</color>
+    <color name="github_widget_warning">#FFCA9B</color>
+    <color name="github_widget_button">#18FFFFFF</color>
+</resources>

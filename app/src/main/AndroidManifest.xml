@@ -20,6 +20,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 
     <queries>
         <intent>
@@ -51,6 +52,37 @@
         <receiver
             android:name=".core.notification.VivoAtomicDismissReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".appwidget.github.GitHubWidgetProvider"
+            android:exported="false"
+            android:label="@string/github_widget_title"
+            android:process=":widgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/github_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".appwidget.github.GitHubWidgetPinReceiver"
+            android:exported="false"
+            android:process=":widgetProvider" />
+
+        <activity
+            android:name=".appwidget.github.GitHubWidgetConfigureActivity"
+            android:exported="true"
+            android:label="@string/github_widget_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
 
         <provider
             android:name="rikka.shizuku.ShizukuProvider"

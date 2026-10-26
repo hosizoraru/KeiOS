@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/github_widget_metrics" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/github_widget_tile" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="2dp" android:orientation="horizontal" android:layout_weight="1">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp" android:paddingVertical="2dp">
+            <TextView style="@style/GitHubWidgetMetricValue" android:id="@+id/github_widget_metric_total" />
+            <TextView style="@style/GitHubWidgetMetricLabel" android:id="@+id/github_widget_metric_label_total" android:text="@string/github_widget_summary_tracked" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp" android:paddingVertical="2dp">
+            <TextView style="@style/GitHubWidgetMetricValue" android:id="@+id/github_widget_metric_checked" />
+            <TextView style="@style/GitHubWidgetMetricLabel" android:id="@+id/github_widget_metric_label_checked" android:text="@string/github_widget_summary_checked" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="2dp" android:orientation="horizontal" android:layout_weight="1">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp" android:paddingVertical="2dp">
+            <TextView style="@style/GitHubWidgetMetricValue" android:id="@+id/github_widget_metric_current" />
+            <TextView style="@style/GitHubWidgetMetricLabel" android:id="@+id/github_widget_metric_label_current" android:text="@string/github_widget_summary_current" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp" android:paddingVertical="2dp">
+            <TextView style="@style/GitHubWidgetMetricValue" android:id="@+id/github_widget_metric_unchecked" />
+            <TextView style="@style/GitHubWidgetMetricLabel" android:id="@+id/github_widget_metric_label_unchecked" android:text="@string/github_widget_summary_unchecked" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="2dp" android:orientation="horizontal" android:layout_weight="1">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp" android:paddingVertical="2dp">
+            <TextView style="@style/GitHubWidgetMetricValue" android:id="@+id/github_widget_metric_failed" />
+            <TextView style="@style/GitHubWidgetMetricLabel" android:id="@+id/github_widget_metric_label_failed" android:text="@string/github_widget_summary_failed" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:layout_margin="2dp" android:paddingVertical="2dp">
+            <TextView style="@style/GitHubWidgetMetricValue" android:id="@+id/github_widget_metric_paused" />
+            <TextView style="@style/GitHubWidgetMetricLabel" android:id="@+id/github_widget_metric_label_paused" android:text="@string/github_widget_summary_paused" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
