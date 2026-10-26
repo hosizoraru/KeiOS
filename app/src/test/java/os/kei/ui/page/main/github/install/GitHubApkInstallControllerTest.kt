@@ -7,6 +7,7 @@ import android.content.pm.PackageInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
@@ -98,6 +99,7 @@ class GitHubApkInstallControllerTest {
     @Test
     fun aConfirmedInstallRunsOnceAndMovesWhatThePageSaysIsInstalled() {
         installPackage(versionName = "1.4.1", versionCode = 229L)
+        assertNotNull(loadInstalledPackageInfo(application, TRACK.packageName))
         val asset = apkAsset("rollback")
         val host = RecordingHost()
         val installer = FakeInstaller(GitHubApkInstallResult.Succeeded("request", 7, TRACK.packageName))
@@ -208,7 +210,11 @@ class GitHubApkInstallControllerTest {
                 packageName = TRACK.packageName
                 this.versionName = versionName
                 longVersionCode = versionCode
-                applicationInfo = ApplicationInfo().apply { packageName = TRACK.packageName }
+                applicationInfo =
+                    ApplicationInfo().apply {
+                        packageName = TRACK.packageName
+                        flags = ApplicationInfo.FLAG_INSTALLED or ApplicationInfo.FLAG_HAS_CODE
+                    }
             }
         shadowOf(application.packageManager).installPackage(info)
     }
