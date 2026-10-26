@@ -107,7 +107,7 @@ class InteractiveHighlight(
         }
 
     val gestureModifier: Modifier =
-        Modifier.pointerInput(animationScope, animationsEnabled) {
+        Modifier.pointerInput(this@InteractiveHighlight) {
             inspectDragGestures(
                 onDragStart = { down ->
                     interactionGeneration++

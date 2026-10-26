@@ -313,4 +313,45 @@ class LiquidSliderGestureTest {
         assertEquals(0.5f, sliderValue)
         assertTrue(observedScrollValue > 0)
     }
+
+    @Test
+    fun changingRangeRebindsDragMappingWithoutRequiringATapFirst() {
+        val rangeEnd = mutableStateOf(1f)
+        val sliderValue = mutableStateOf(0.25f)
+        val finishedValues = mutableListOf<Float>()
+        composeRule.setContent {
+            CompositionLocalProvider(LocalTransitionAnimationsEnabled provides false) {
+                MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
+                    LiquidVolumeSlider(
+                        value = { sliderValue.value },
+                        onValueChange = { sliderValue.value = it },
+                        onValueChangeFinished = { finishedValues += it },
+                        valueRange = 0f..rangeEnd.value,
+                        visibilityThreshold = 0.001f,
+                        backdrop = null,
+                        modifier = Modifier.testTag("range-slider"),
+                    )
+                }
+            }
+        }
+        composeRule.onNodeWithTag("range-slider").performTouchInput {
+            down(Offset(width * 0.25f, centerY))
+            moveBy(Offset(width * 0.1f, 0f))
+            up()
+        }
+        composeRule.runOnIdle {
+            finishedValues.clear()
+            rangeEnd.value = 100f
+            sliderValue.value = 25f
+        }
+        composeRule.onNodeWithTag("range-slider").performTouchInput {
+            down(Offset(width * 0.25f, centerY))
+            moveBy(Offset(width * 0.4f, 0f))
+            up()
+        }
+        composeRule.runOnIdle {
+            assertTrue(sliderValue.value in 60f..70f, "Expected the new range, got ${sliderValue.value}")
+            assertEquals(listOf(sliderValue.value), finishedValues)
+        }
+    }
 }

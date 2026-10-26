@@ -92,6 +92,38 @@ class DampedDragAnimationReducedMotionTest {
         assertTrue(animation.scaleY > 1.1f)
     }
 
+    @Test
+    fun externalValueTransitionDoesNotInventAPress() {
+        val animation = setAnimation(animationsEnabled = true)
+        composeRule.mainClock.autoAdvance = false
+
+        composeRule.runOnIdle { animation.animateToValue(0.75f, pressFeedback = false) }
+        composeRule.mainClock.advanceTimeBy(160)
+        composeRule.runOnIdle {
+            assertTrue(animation.value > 0f)
+            assertEquals(0f, animation.pressProgress)
+            assertEquals(1f, animation.scaleX)
+            assertEquals(1f, animation.scaleY)
+        }
+        composeRule.mainClock.advanceTimeBy(1_500)
+        composeRule.runOnIdle { assertEquals(0.75f, animation.value) }
+    }
+
+    @Test
+    fun valueOnlyTransitionDoesNotReleaseAnExistingFingerPress() {
+        val animation = setAnimation(animationsEnabled = true)
+        composeRule.runOnIdle { animation.press() }
+        composeRule.waitUntil(timeoutMillis = 5_000) { animation.pressProgress > 0.99f }
+
+        composeRule.runOnIdle { animation.animateToValue(0.75f, pressFeedback = false) }
+        composeRule.mainClock.advanceTimeBy(1_500)
+        composeRule.runOnIdle {
+            assertEquals(0.75f, animation.value)
+            assertTrue(animation.pressProgress > 0.99f)
+            animation.release()
+        }
+    }
+
     private fun setAnimation(animationsEnabled: Boolean): DampedDragAnimation {
         lateinit var animation: DampedDragAnimation
         composeRule.setContent {

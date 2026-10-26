@@ -338,7 +338,7 @@ fun LiquidGlassBottomBar(
                     val previousIndex = currentIndex
                     currentIndex = resolvedIndex
                     if (transitionAnimationsEnabled) {
-                        animateToValue(resolvedIndex.toFloat())
+                        animateToValue(resolvedIndex.toFloat(), pressFeedback = false)
                     } else {
                         snapToValue(resolvedIndex.toFloat())
                     }
@@ -357,7 +357,7 @@ fun LiquidGlassBottomBar(
                     selectionGestureDragged = false
                     localDragSettledIndex = -1
                     if (transitionAnimationsEnabled) {
-                        animateToValue(currentIndex.toFloat())
+                        animateToValue(currentIndex.toFloat(), pressFeedback = false)
                     } else {
                         snapToValue(currentIndex.toFloat())
                     }
@@ -485,7 +485,7 @@ fun LiquidGlassBottomBar(
                     return@collectLatest
                 }
                 if (transitionAnimationsEnabled) {
-                    dampedDragAnimation.animateToValue(target)
+                    dampedDragAnimation.animateToValue(target, pressFeedback = false)
                 } else {
                     dampedDragAnimation.snapToValue(target)
                 }

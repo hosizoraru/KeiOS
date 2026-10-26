@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,8 +53,6 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.Capsule
-import kotlinx.coroutines.flow.collectLatest
-import os.kei.core.ui.snapshot.rememberAppSnapshotFlowManager
 import os.kei.ui.animation.DampedDragAnimation
 import os.kei.ui.page.main.widget.isAppInDarkTheme
 import os.kei.ui.page.main.widget.motion.LocalTransitionAnimationsEnabled
@@ -214,6 +213,7 @@ private fun LiquidSwitchToggle(
     val animationScope = rememberCoroutineScope()
     var didDrag by remember { mutableStateOf(false) }
     var fraction by remember { mutableFloatStateOf(if (selected()) 1f else 0f) }
+    var settledRevision by remember { mutableIntStateOf(0) }
     val dampedDragAnimation =
         remember(animationScope, dragWidth, isLtr, touchSlop, transitionAnimationsEnabled) {
             DampedDragAnimation(
@@ -250,11 +250,12 @@ private fun LiquidSwitchToggle(
                         currentOnSelect(nextSelected)
                     }
                     didDrag = false
+                    settledRevision++
                 },
                 onDragCancelled = {
                     didDrag = false
                     fraction = if (currentSelected()) 1f else 0f
-                    animateToValue(fraction)
+                    animateToValue(fraction, pressFeedback = false)
                 },
                 onDrag = { _, dragAmount ->
                     if (!currentEnabled) return@DampedDragAnimation
@@ -271,18 +272,12 @@ private fun LiquidSwitchToggle(
                 },
             )
         }
-    val snapshotFlowManager = rememberAppSnapshotFlowManager()
-    LaunchedEffect(dampedDragAnimation, snapshotFlowManager) {
-        snapshotFlowManager
-            .snapshotFlow { fraction }
-            .collectLatest { value -> dampedDragAnimation.updateValue(value) }
-    }
     val externalSelected = selected()
-    LaunchedEffect(externalSelected) {
+    LaunchedEffect(externalSelected, enabled, settledRevision, dampedDragAnimation) {
         val target = if (externalSelected) 1f else 0f
-        if (target != fraction) {
-            fraction = target
-            dampedDragAnimation.animateToValue(target)
+        fraction = target
+        if (target != dampedDragAnimation.targetValue) {
+            dampedDragAnimation.animateToValue(target, pressFeedback = false)
         }
     }
     val glassRuntime = glassEffectRuntime()

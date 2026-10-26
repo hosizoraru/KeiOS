@@ -22,17 +22,22 @@ suspend fun PointerInputScope.inspectDragGestures(
         val initialDown = awaitFirstDown(false, PointerEventPass.Initial)
         val down = awaitFirstDown(false)
 
-        onDragStart(down)
-        onDrag(initialDown, Offset.Zero)
-        val upEvent =
-            drag(
-                pointerId = initialDown.id,
-                onDrag = { onDrag(it, it.positionChange()) }
-            )
-        if (upEvent == null) {
-            onDragCancel()
-        } else {
-            onDragEnd(upEvent)
+        var completed = false
+        try {
+            onDragStart(down)
+            onDrag(initialDown, Offset.Zero)
+            val upEvent =
+                drag(
+                    pointerId = initialDown.id,
+                    onDrag = { onDrag(it, it.positionChange()) }
+                )
+            if (upEvent != null) {
+                completed = true
+                onDragEnd(upEvent)
+            }
+        } finally {
+            // A key change cancels the coroutine without delivering an up event.
+            if (!completed) onDragCancel()
         }
     }
 }

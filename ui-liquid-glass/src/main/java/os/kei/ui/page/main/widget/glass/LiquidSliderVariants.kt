@@ -434,7 +434,7 @@ private fun LiquidTrackSlider(
                             onValueChangeState.value(next)
                             onValueChangeFinishedState.value?.invoke(next)
                             if (snapToKeyPoints) {
-                                animateToValue(next)
+                                animateToValue(next, pressFeedback = false)
                             }
                         }
                         didDrag = false

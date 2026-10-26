@@ -85,7 +85,7 @@ class DampedDragAnimation(
     val modifier: Modifier =
         Modifier
             .then(if (excludeFromSystemGestures) Modifier.systemGestureExclusion() else Modifier)
-            .pointerInput(gestureKey, animationsEnabled) {
+            .pointerInput(this@DampedDragAnimation, gestureKey) {
                 var accumulatedDrag = Offset.Zero
                 var axisAccepted = dragOrientation == null
                 var axisRejected = false
@@ -105,20 +105,26 @@ class DampedDragAnimation(
                         press()
                     },
                     onDragEnd = {
-                        if (axisRejected) {
-                            onDragCancelled()
-                        } else {
-                            if (!dragStartedDispatched) {
-                                onDragStarted(initialDownPosition)
-                                dragStartedDispatched = true
+                        try {
+                            if (axisRejected) {
+                                onDragCancelled()
+                            } else {
+                                if (!dragStartedDispatched) {
+                                    onDragStarted(initialDownPosition)
+                                    dragStartedDispatched = true
+                                }
+                                onDragStopped()
                             }
-                            onDragStopped()
+                        } finally {
+                            release()
                         }
-                        release()
                     },
                     onDragCancel = {
-                        onDragCancelled()
-                        release()
+                        try {
+                            onDragCancelled()
+                        } finally {
+                            release()
+                        }
                     },
                 ) { change, dragAmount ->
                     if (!axisAccepted && !axisRejected && dragOrientation != null) {
@@ -264,7 +270,7 @@ class DampedDragAnimation(
         }
     }
 
-    fun animateToValue(value: Float) {
+    fun animateToValue(value: Float, pressFeedback: Boolean = true) {
         val targetValue = value.coerceIn(valueRange)
         if (!animationsEnabled) {
             animationScope.launch(start = CoroutineStart.UNDISPATCHED) {
@@ -274,12 +280,12 @@ class DampedDragAnimation(
         }
         animationScope.launch {
             mutatorMutex.mutate {
-                press()
+                if (pressFeedback) press()
                 launch { valueAnimation.animateTo(targetValue, valueAnimationSpec) }
                 if (velocity != 0f) {
                     launch { velocityAnimation.animateTo(0f, velocityAnimationSpec) }
                 }
-                release()
+                if (pressFeedback) release()
             }
         }
     }
