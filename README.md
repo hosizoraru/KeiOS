@@ -66,6 +66,9 @@ feedback issue drafting, cache diagnostics, and generated Baseline Profiles.
 - GitHub tracking for Releases, Actions artifacts, generic Git sources, Direct APKs, and F-Droid
   repositories, with Atom/API strategy comparison, package-name scanning, installed-app reverse
   scan, subscription projects, share-import links, app linkage, and Star List import.
+- A [GitHub tracking home-screen widget](docs/planning/github-project-widget.md) with cached update
+  counts, responsive layouts, optional project names and versions, and an add-widget entry in the
+  GitHub toolbar.
 - GitHub Star import activity for authenticated stars, public user stars, and public Star List URLs,
   with list discovery, quality filters, multi-select import, APK verification, and exit
   confirmation.

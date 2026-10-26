@@ -63,6 +63,8 @@ MCP Skill、支持语义化图标的通知提醒、仓库发现、反馈 Issue �
   SKILL.md、工作流蓝图、结构化工具元数据，以及覆盖运行态、Home、OS、GitHub 发现/追踪、BA 账号、日常与缓存巡检的 51 个工具。
 - GitHub 页面支持 Releases、Actions artifact、通用 Git、Direct APK 和 F-Droid 仓库追踪，提供
   Atom/API 策略对比、包名扫描、已安装应用反扫、订阅项目、分享链接导入、本机应用联动和 Star List 导入。
+- [GitHub 项目追踪桌面小组件](../docs/planning/github-project-widget.md)支持缓存更新数、响应式布局、
+  可选的项目名称与版本，并在 GitHub 页顶栏提供添加入口。
 - GitHub Star 导入 Activity 支持自己的 stars、他人的公开 stars 与公开 Star List
   链接，提供分类发现、质量筛选、多选导入、APK 验证和退出确认。
 - GitHub 托管安装与分享导入联动支持 Shizuku APK 交付，提供通知 / 超级岛进度、Manifest 检查、versionCode 展示和安装确认界面。

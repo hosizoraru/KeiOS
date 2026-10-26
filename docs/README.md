@@ -19,6 +19,9 @@ or [build guide](../readme/BUILD.md) ([中文](../readme/BUILD_CN.md)).
 - [Build Logic](../build-logic/README.md): shared Gradle conventions and verification helpers.
 - [R8 Configuration Analysis](build/r8-configuration-analysis.md): retained analysis of shrinker configuration.
 - [Liquid Glass Study](planning/liquid-glass-meilox-study.md): MeiloX reference analysis, retained material updates, gesture ownership, and verification boundaries.
+- [Android Widget and OEM Study](planning/android-appwidget-oem-study.md): AOSP/Google contracts, Xiaomi, OPPO, vivo, and HONOR extensions, evidence gaps, and KeiOS implementation considerations.
+- [GitHub Project Widget](planning/github-project-widget.md): addition, responsive content, privacy, cached state, and implementation ownership.
+- [Widget Layout and Material Study](planning/github-widget-material-study.md): system-widget references, Super Island hierarchy, soft-light surfaces, and the Xiaomi MAML glass boundary.
 - [Contributing](../CONTRIBUTING.md): change scope, evidence, and documentation expectations.
 
 Local draft notes belong in `.planning/`, which is ignored by Git. Move durable

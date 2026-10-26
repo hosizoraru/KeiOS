@@ -11,6 +11,9 @@
 - [CI Workflow Guide](../docs/build/github-actions.md)
 - [WebDAV Sync, Recovery and Nutstore / 坚果云同步与恢复](../feature-webdav/README.md)
 - [Engineering Documentation](../docs/README.md)
+- [Android Widget and OEM Study / Android 小组件与厂商扩展调研](../docs/planning/android-appwidget-oem-study.md)
+- [GitHub Project Widget / GitHub 项目追踪桌面小组件](../docs/planning/github-project-widget.md)
+- [Widget Layout and Material Study / 小组件布局与材质研究](../docs/planning/github-widget-material-study.md)
 - [Build Logic](../build-logic/README.md)
 - [Release Notes v1.19.0](RELEASE_V1.19.0.md)
 - [Release Notes v1.18.0](RELEASE_V1.18.0.md)
@@ -40,6 +43,10 @@
 - `../feature-webdav/README.md`: synchronization and restore rules, Nutstore setup, protocol
   ownership, compatibility, failure handling, and verification.
 - `../docs/README.md`: engineering documentation by ownership: build, performance, planning, and QA.
+- `../docs/planning/android-appwidget-oem-study.md`: official Android and OEM widget research,
+  verified extensions, unresolved vendor contracts, and implementation/acceptance planning.
+- `../docs/planning/github-project-widget.md`: widget entry, responsive layouts, privacy, cached
+  data, lifecycle ownership, and OEM addition limits.
 - `../build-logic/README.md`: convention plugins, version/profile helpers, and included-build checks.
 - `RELEASE_V1.19.0.md`: bilingual update notes for BGM playback, launcher icons, imports, unfinished
   edits, reminders, window resizing, and upgrading.
