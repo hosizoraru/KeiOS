@@ -111,6 +111,7 @@ internal class LiquidOutlineProvider(
     private var cachedSize = Size.Unspecified
     private var cachedLayoutDirection: LayoutDirection? = null
     private var cachedDensity = Float.NaN
+    private var cachedFontScale = Float.NaN
 
     val shape: Shape =
         object : Shape {
@@ -126,7 +127,8 @@ internal class LiquidOutlineProvider(
                     current == cachedShape &&
                     size == cachedSize &&
                     layoutDirection == cachedLayoutDirection &&
-                    density.density == cachedDensity
+                    density.density == cachedDensity &&
+                    density.fontScale == cachedFontScale
                 ) {
                     return cached
                 }
@@ -136,6 +138,7 @@ internal class LiquidOutlineProvider(
                     cachedSize = size
                     cachedLayoutDirection = layoutDirection
                     cachedDensity = density.density
+                    cachedFontScale = density.fontScale
                 }
             }
         }

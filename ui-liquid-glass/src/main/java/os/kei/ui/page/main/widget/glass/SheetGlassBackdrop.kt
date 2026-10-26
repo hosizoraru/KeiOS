@@ -126,13 +126,17 @@ private data class SheetGlassElement(
     )
 
     override fun update(node: SheetGlassNode) {
+        val opticsChanged = node.outline != outline || node.effects != effects
         if (node.backdrop != backdrop) {
             node.backdrop = backdrop
             node.invalidateSource()
         }
-        node.outline = outline
+        if (node.outline != outline) node.outline = outline
         node.effects = effects
-        node.layerBlock = layerBlock
+        if (node.layerBlock != layerBlock) {
+            node.layerBlock = layerBlock
+            node.invalidateSource()
+        }
         if (node.exportedBackdrop != exportedBackdrop) {
             node.exportedBackdrop?.layerCoordinates = null
             node.exportedBackdrop = exportedBackdrop
@@ -146,10 +150,11 @@ private data class SheetGlassElement(
             exportedFrontBackdrop?.layerCoordinates = node.coordinates
             node.invalidateExport()
         }
-        if (node.onDrawSurface != onDrawSurface || node.onDrawFront != onDrawFront) node.invalidateExport()
+        if (node.onDrawSurface != onDrawSurface) node.invalidateMaterial()
+        if (node.onDrawFront != onDrawFront) node.invalidateFront()
         node.onDrawSurface = onDrawSurface
         node.onDrawFront = onDrawFront
-        node.invalidateEffects()
+        if (opticsChanged) node.invalidateEffects()
     }
 }
 
@@ -171,7 +176,8 @@ private class SheetGlassNode(
         private set
     private var samplePosition: Offset? = null
     private var sourceDirty = true
-    private var exportDirty = true
+    private var materialDirty = true
+    private var frontDirty = true
     private var effectsDirty = true
     private var exportOutset = -1
     private var hasDrawn = false
@@ -185,7 +191,8 @@ private class SheetGlassNode(
     private val surfaceReads = Any()
     private val frontReads = Any()
     private val sourceChanged: (Any) -> Unit = { invalidateSource() }
-    private val exportChanged: (Any) -> Unit = { invalidateExport() }
+    private val surfaceChanged: (Any) -> Unit = { invalidateMaterial() }
+    private val frontChanged: (Any) -> Unit = { invalidateFront() }
 
     override fun onAttach() {
         drawObserver.start()
@@ -203,7 +210,8 @@ private class SheetGlassNode(
         coordinates = null
         samplePosition = null
         sourceDirty = true
-        exportDirty = true
+        materialDirty = true
+        frontDirty = true
         effectsDirty = true
         exportOutset = -1
         hasDrawn = false
@@ -218,6 +226,7 @@ private class SheetGlassNode(
         if (samplePosition != position) {
             samplePosition = position
             invalidateSource()
+            invalidateFront()
         }
         this.coordinates = if (backdrop.isCoordinatesDependent) coordinates else null
         exportedBackdrop?.layerCoordinates = coordinates
@@ -242,12 +251,22 @@ private class SheetGlassNode(
 
     fun invalidateSource() {
         sourceDirty = true
-        exportDirty = true
+        invalidateMaterial()
+    }
+
+    fun invalidateMaterial() {
+        materialDirty = true
+        if (isAttached) invalidateDraw()
+    }
+
+    fun invalidateFront() {
+        frontDirty = true
         if (isAttached) invalidateDraw()
     }
 
     fun invalidateExport() {
-        exportDirty = true
+        materialDirty = true
+        frontDirty = true
         if (isAttached) invalidateDraw()
     }
 
@@ -304,15 +323,19 @@ private class SheetGlassNode(
         val front = exportedFrontBackdrop
         val recordingSize = IntSize(size.width.toInt(), size.height.toInt())
         if (export != null && front != null) {
-            if (exportDirty) {
+            // Foreground animation must not re-record the material that child controls sample.
+            if (materialDirty) {
                 recordLayer(export.graphicsLayer, recordingSize) {
                     drawLayer(effect)
-                    drawObserver.observeReads(surfaceReads, exportChanged) { onDrawSurface(this) }
+                    drawObserver.observeReads(surfaceReads, surfaceChanged) { onDrawSurface(this) }
                 }
+                materialDirty = false
+            }
+            if (frontDirty) {
                 recordLayer(front.graphicsLayer, recordingSize) {
-                    drawObserver.observeReads(frontReads, exportChanged) { onDrawFront(this) }
+                    drawObserver.observeReads(frontReads, frontChanged) { onDrawFront(this) }
                 }
-                exportDirty = false
+                frontDirty = false
             }
             // Reuse the already-rasterized exported material on screen. Keeping the front in its
             // own display list preserves its position above child content and in control samples.
@@ -321,16 +344,17 @@ private class SheetGlassNode(
             drawLayer(front.graphicsLayer)
         } else {
             drawLayer(effect)
-            drawObserver.observeReads(surfaceReads, exportChanged) { onDrawSurface(this) }
+            drawObserver.observeReads(surfaceReads, surfaceChanged) { onDrawSurface(this) }
             drawContent()
-            drawObserver.observeReads(frontReads, exportChanged) { onDrawFront(this) }
-            if (export != null && exportDirty) {
+            drawObserver.observeReads(frontReads, frontChanged) { onDrawFront(this) }
+            if (export != null && (materialDirty || frontDirty)) {
                 recordLayer(export.graphicsLayer, recordingSize) {
                     drawLayer(effect)
                     onDrawSurface(this)
                     onDrawFront(this)
                 }
-                exportDirty = false
+                materialDirty = false
+                frontDirty = false
             }
         }
         hasDrawn = true
