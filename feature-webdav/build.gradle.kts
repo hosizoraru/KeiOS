@@ -9,15 +9,11 @@ android {
 
 dependencies {
     implementation(project(":core-concurrency"))
-    implementation(project(":core-log"))
-    implementation(project(":core-io"))
-    implementation(project(":core-prefs"))
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(platform(libs.ktor.bom))
     implementation(libs.ktor.client.auth)
     implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.encoding)
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit4)
@@ -27,8 +23,7 @@ dependencies {
     testImplementation(libs.xmlpull)
     testRuntimeOnly(libs.kxml2)
 
-    // WebDAV client (used by DAVx⁵, production-grade).
-    // Tagged JitPack release. 5.x retains the Ktor suspend/Flow WebDAV API used here.
+    // Retained for directory browsing; known-file synchronization uses the direct transport.
     // Preserve server href encoding; decoded names are for display, not URL reconstruction.
     // Exclude xpp3 — Android has built-in XmlPullParser.
     implementation(libs.dav4jvm) {

@@ -9,6 +9,7 @@ import io.ktor.client.plugins.auth.providers.DigestAuthProvider
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.auth.HttpAuthHeader
+import io.ktor.http.Url
 import os.kei.feature.webdav.model.WebDavConfig
 
 internal fun AuthConfig.configureWebDavAuth(
@@ -17,6 +18,7 @@ internal fun AuthConfig.configureWebDavAuth(
 ) {
     providers += HostScopedAuthProvider(
         credentialHost = credentialHost,
+        origin = Url(config.serverUrl),
         delegate = BasicAuthProvider(
             credentials = {
                 BasicAuthCredentials(
@@ -29,6 +31,7 @@ internal fun AuthConfig.configureWebDavAuth(
     )
     providers += HostScopedAuthProvider(
         credentialHost = credentialHost,
+        origin = Url(config.serverUrl),
         delegate = DigestAuthProvider(
             credentials = {
                 DigestAuthCredentials(
@@ -42,6 +45,7 @@ internal fun AuthConfig.configureWebDavAuth(
 
 private class HostScopedAuthProvider(
     private val credentialHost: String,
+    private val origin: Url,
     private val delegate: AuthProvider,
 ) : AuthProvider {
     @Suppress("OVERRIDE_DEPRECATION")
@@ -70,5 +74,6 @@ private class HostScopedAuthProvider(
     }
 
     private fun matches(request: HttpRequestBuilder): Boolean =
-        request.url.host.equals(credentialHost, ignoreCase = true)
+        request.url.host.equals(credentialHost, ignoreCase = true) &&
+            request.url.protocol == origin.protocol && request.url.build().port == origin.port
 }

@@ -20,3 +20,9 @@ data class WebDavRemoteFile(
     val contentLength: Long,
     val etag: String?,
 )
+
+/** Password rotation keeps a baseline; moving the account, server or directory does not. */
+fun WebDavConfig.workspaceIdentity(): String {
+    val endpoint = os.kei.feature.webdav.client.WebDavEndpoint(this)
+    return os.kei.feature.webdav.sync.contentHash("${endpoint.collection}\n${username.trim()}")
+}

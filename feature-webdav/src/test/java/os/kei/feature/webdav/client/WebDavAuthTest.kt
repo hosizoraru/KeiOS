@@ -68,6 +68,20 @@ class WebDavAuthTest {
         assertNull(authorizationHeaders[1])
     }
 
+    @Test
+    fun `credentials never follow a scheme downgrade or a different port`() = runBlocking {
+        val headers = mutableListOf<String?>()
+        val client = webDavAuthTestClient(MockEngine { request ->
+            headers += request.headers[HttpHeaders.Authorization]
+            respond("ok")
+        })
+        client.use {
+            it.get("http://dav.example.test/KeiOS/data")
+            it.get("https://dav.example.test:8443/KeiOS/data")
+        }
+        assertEquals(listOf<String?>(null, null), headers)
+    }
+
     private fun webDavAuthTestClient(engine: MockEngine): HttpClient =
         HttpClient(engine) {
             install(Auth) {
