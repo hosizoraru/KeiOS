@@ -125,18 +125,24 @@ internal fun GitHubTopBarActions(
     val refreshAppsLabel = stringResource(R.string.github_topbar_refresh_app_list)
     val refreshAppsSummary = stringResource(R.string.github_topbar_refresh_app_list_summary)
     val moreContentDescription = stringResource(R.string.github_item_cd_more_actions)
-    val exportTracksLabel =
+    val exportTracksDescription =
         if (tracksExporting) {
             stringResource(R.string.github_check_sheet_action_exporting)
         } else {
             stringResource(R.string.github_check_sheet_action_export_tracks)
         }
-    val importTracksLabel =
+    val importTracksDescription =
         if (tracksImporting) {
             stringResource(R.string.github_check_sheet_action_importing)
         } else {
             stringResource(R.string.github_check_sheet_action_import_tracks)
         }
+    val exportTracksLabel =
+        if (tracksExporting) exportTracksDescription
+        else stringResource(R.string.github_check_sheet_action_export_tracks_compact)
+    val importTracksLabel =
+        if (tracksImporting) importTracksDescription
+        else stringResource(R.string.github_check_sheet_action_import_tracks_compact)
     val importStarsLabel = stringResource(R.string.github_check_sheet_action_import_stars)
     val transferActionEnabled = !tracksExporting && !tracksImporting
     val screenWidth = appWindowWidthDp()
@@ -261,6 +267,7 @@ internal fun GitHubTopBarActions(
                                             id = "export_tracks",
                                             icon = exportTracksIcon,
                                             label = exportTracksLabel,
+                                            contentDescription = exportTracksDescription,
                                             enabled = transferActionEnabled,
                                             onClick = onExportTrackedItems,
                                         ),
@@ -268,6 +275,7 @@ internal fun GitHubTopBarActions(
                                             id = "import_tracks",
                                             icon = importTracksIcon,
                                             label = importTracksLabel,
+                                            contentDescription = importTracksDescription,
                                             enabled = transferActionEnabled,
                                             testTag = KeiOsTestTags.GitHubImportTracks,
                                             onClick = onImportTrackedItems,

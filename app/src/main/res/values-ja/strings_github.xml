@@ -811,6 +811,8 @@ nightly.link は公開リポジトリ、成功した実行、保持期限内の�
     <string name="github_check_sheet_action_track_current_app_exists">追跡中</string>
     <string name="github_check_sheet_action_export_tracks">追跡をエクスポート</string>
     <string name="github_check_sheet_action_import_tracks">追跡をインポート</string>
+    <string name="github_check_sheet_action_export_tracks_compact">エクスポート</string>
+    <string name="github_check_sheet_action_import_tracks_compact">インポート</string>
     <string name="github_check_sheet_action_exporting">エクスポート中</string>
     <string name="github_check_sheet_action_importing">インポート中</string>
     <string name="github_check_sheet_action_import_stars">StarList</string>

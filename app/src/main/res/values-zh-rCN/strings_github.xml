@@ -840,6 +840,8 @@
     <string name="github_check_sheet_action_track_current_app_exists">已跟踪</string>
     <string name="github_check_sheet_action_export_tracks">导出跟踪</string>
     <string name="github_check_sheet_action_import_tracks">导入跟踪</string>
+    <string name="github_check_sheet_action_export_tracks_compact">导出跟踪</string>
+    <string name="github_check_sheet_action_import_tracks_compact">导入跟踪</string>
     <string name="github_check_sheet_action_exporting">导出中</string>
     <string name="github_check_sheet_action_importing">导入中</string>
     <string name="github_check_sheet_action_import_stars">StarList</string>

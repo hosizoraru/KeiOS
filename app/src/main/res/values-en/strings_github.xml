@@ -820,6 +820,8 @@
     <string name="github_check_sheet_action_track_current_app_exists">Tracked</string>
     <string name="github_check_sheet_action_export_tracks">Export tracks</string>
     <string name="github_check_sheet_action_import_tracks">Import tracks</string>
+    <string name="github_check_sheet_action_export_tracks_compact">Export tracks</string>
+    <string name="github_check_sheet_action_import_tracks_compact">Import tracks</string>
     <string name="github_check_sheet_action_exporting">Exporting</string>
     <string name="github_check_sheet_action_importing">Importing</string>
     <string name="github_check_sheet_action_import_stars">StarList</string>
