@@ -15,9 +15,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +37,28 @@ import top.yukonga.miuix.kmp.theme.ThemeController
 class GitHubWidgetConfigurationScreenTest {
     @get:Rule val composeRule = createComposeRule()
     private val context get() = ApplicationProvider.getApplicationContext<Application>()
+
+    @Test
+    fun `english guide keeps its title compact at normal font size`() {
+        composeRule.setContent {
+            MiuixTheme(controller = remember { ThemeController(ColorSchemeMode.Light) }) {
+                CompositionLocalProvider(LocalLiquidControlsEnabled provides false) {
+                    GitHubWidgetConfigurationScreen(
+                        snapshot = GitHubWidgetSnapshot(available = true, trackedCount = 41),
+                        showProjectNames = false, isGuide = true, ready = true, saving = false,
+                        pinSupported = true, message = null,
+                        onShowProjectNamesChange = {}, onConfirm = {}, onClose = {},
+                    )
+                }
+            }
+        }
+        val title = composeRule.onNodeWithText(context.getString(R.string.github_widget_title))
+            .fetchSemanticsNode().boundsInRoot
+        assertTrue(
+            title.height <= with(composeRule.density) { 40.dp.toPx() },
+            "The guide title should fit on one line at normal font size: $title",
+        )
+    }
 
     @Test
     fun `large font guide keeps the add action visible and exposes labeled privacy and preview`() {

@@ -532,7 +532,7 @@ nightly.link は公開リポジトリ、成功した実行、保持期限内の�
     <string name="github_toast_app_list_refreshed">更新完了：%1$d 個のアプリを検出</string>
     <string name="github_toast_app_list_refresh_failed">アプリ一覧の更新に失敗しました</string>
     <string name="github_topbar_search_label">追跡プロジェクトを検索（リポジトリ / アプリ / パッケージ）</string>
-    <string name="github_overview_title">バージョン追跡</string>
+    <string name="github_overview_title">更新追跡</string>
     <string name="github_overview_incremental_refresh_time">増分キャッシュ更新: %1$s</string>
     <string name="github_overview_full_refresh_time">全件更新: %1$s</string>
     <string name="github_overview_action_show_failed">失敗項目を表示</string>

@@ -532,7 +532,7 @@
     <string name="github_toast_app_list_refreshed">Refreshed; found %1$d apps</string>
     <string name="github_toast_app_list_refresh_failed">App list refresh failed</string>
     <string name="github_topbar_search_label">Search tracked projects (repository / app / package)</string>
-    <string name="github_overview_title">Version tracking</string>
+    <string name="github_overview_title">Tracking</string>
     <string name="github_overview_incremental_refresh_time">Incremental cache updated: %1$s</string>
     <string name="github_overview_full_refresh_time">Full refresh: %1$s</string>
     <string name="github_overview_action_show_failed">Show failed</string>
@@ -1874,7 +1874,7 @@
     </plurals>
     <string name="github_history_refresh_network_reused">%1$d/%2$d connections reused</string>
     <string name="github_widget_brand">GitHub</string>
-    <string name="github_widget_title">Project tracking summary</string>
+    <string name="github_widget_title">Tracked projects</string>
     <string name="github_widget_description">See tracked projects and saved update results on your home screen. Tap to open GitHub tracking.</string>
     <string name="github_widget_updates">Updates</string>
     <string name="github_widget_tracked_count">Tracked: %1$d</string>

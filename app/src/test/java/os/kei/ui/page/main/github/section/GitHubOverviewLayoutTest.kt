@@ -65,12 +65,34 @@ class GitHubOverviewLayoutTest {
         )
     }
 
+    @Test
+    @Config(qualifiers = "en-rUS-w375dp-h817dp-520dpi")
+    fun englishOverviewKeepsItsTitleAndMetricsOnTwoRows() {
+        val checkedAt = System.currentTimeMillis() - 94 * 60_000L - 30_000L
+        assertOverviewPillsStayOnTwoRows(
+            lookupStrategy = GitHubLookupStrategyOption.AtomFeed,
+            lastRefreshMs = checkedAt,
+            incrementalRefreshMs = checkedAt,
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "ja-rJP-w375dp-h817dp-520dpi")
+    fun japaneseOverviewKeepsItsTitleAndMetricsOnTwoRows() {
+        val checkedAt = System.currentTimeMillis() - 94 * 60_000L - 30_000L
+        assertOverviewPillsStayOnTwoRows(
+            lookupStrategy = GitHubLookupStrategyOption.AtomFeed,
+            lastRefreshMs = checkedAt,
+            incrementalRefreshMs = checkedAt,
+        )
+    }
+
     private fun assertOverviewPillsStayOnTwoRows(
         lookupStrategy: GitHubLookupStrategyOption = GitHubLookupStrategyOption.GitHubApiToken,
         refreshState: OverviewRefreshState = OverviewRefreshState.Completed,
         lastRefreshMs: Long = System.currentTimeMillis() - 3_600_000L,
+        incrementalRefreshMs: Long = System.currentTimeMillis() - 30 * 60_000L,
     ) {
-        val incrementalRefreshMs = System.currentTimeMillis() - 30 * 60_000L
         composeRule.setContent {
             MiuixTheme(controller = ThemeController(ColorSchemeMode.Light)) {
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
